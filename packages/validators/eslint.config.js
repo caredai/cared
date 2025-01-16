@@ -1,9 +1,9 @@
-import baseConfig from "@mindworld/eslint-config/base";
+import baseConfig from '@mindworld/eslint-config/base'
 
 /** @type {import('typescript-eslint').Config} */
 export default [
   {
-    ignores: ["dist/**"],
+    ignores: ['dist/**'],
   },
   ...baseConfig,
-];
+]

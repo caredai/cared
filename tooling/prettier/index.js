@@ -1,50 +1,59 @@
-import { fileURLToPath } from "url";
+import { fileURLToPath } from 'url'
 
-/** @typedef {import("prettier").Config} PrettierConfig */
-/** @typedef {import("prettier-plugin-tailwindcss").PluginOptions} TailwindConfig */
-/** @typedef {import("@ianvs/prettier-plugin-sort-imports").PluginConfig} SortImportsConfig */
+/** @typedef {import('prettier').Config} PrettierConfig */
+/** @typedef {import('prettier-plugin-tailwindcss').PluginOptions} TailwindConfig */
+/** @typedef {import('@ianvs/prettier-plugin-sort-imports').PluginConfig} SortImportsConfig */
 
 /** @type { PrettierConfig | SortImportsConfig | TailwindConfig } */
 const config = {
+  printWidth: 100,
+  semi: false,
+  singleQuote: true,
   plugins: [
-    "@ianvs/prettier-plugin-sort-imports",
-    "prettier-plugin-tailwindcss",
+    '@ianvs/prettier-plugin-sort-imports',
+    'prettier-plugin-tailwindcss',
+    'prettier-plugin-multiline-arrays',
   ],
-  tailwindConfig: fileURLToPath(
-    new URL("../../tooling/tailwind/web.ts", import.meta.url),
-  ),
-  tailwindFunctions: ["cn", "cva"],
+  tailwindConfig: fileURLToPath(new URL('../../tooling/tailwind/web.ts', import.meta.url)),
+  tailwindFunctions: ['cn', 'cva'],
   importOrder: [
-    "<TYPES>",
-    "^(react/(.*)$)|^(react$)|^(react-native(.*)$)",
-    "^(next/(.*)$)|^(next$)",
-    "^(expo(.*)$)|^(expo$)",
-    "<THIRD_PARTY_MODULES>",
-    "",
-    "<TYPES>^@mindworld",
-    "^@mindworld/(.*)$",
-    "",
-    "<TYPES>^[.|..|~]",
-    "^~/",
-    "^[../]",
-    "^[./]",
+    '<TYPES>',
+    '^(react/(.*)$)|^(react$)|^(react-native(.*)$)',
+    '^(next/(.*)$)|^(next$)',
+    '^(expo(.*)$)|^(expo$)',
+    '<THIRD_PARTY_MODULES>',
+    '',
+    '<TYPES>^@mindworld',
+    '^@mindworld/(.*)$',
+    '',
+    '<TYPES>^[.|..|~]',
+    '^~/',
+    '^@/',
+    '^[../]',
+    '^[./]',
   ],
-  importOrderParserPlugins: ["typescript", "jsx", "decorators-legacy"],
-  importOrderTypeScriptVersion: "4.4.0",
+  importOrderParserPlugins: ['typescript', 'jsx', 'decorators-legacy'],
+  importOrderTypeScriptVersion: '4.4.0',
   overrides: [
     {
-      files: "*.json.hbs",
+      files: '*.json.hbs',
       options: {
-        parser: "json",
+        parser: 'json',
       },
     },
     {
-      files: "*.js.hbs",
+      files: '*.js.hbs',
       options: {
-        parser: "babel",
+        parser: 'babel',
+      },
+    },
+    {
+      files: '**/*.json',
+      options: {
+        plugins: ['prettier-plugin-sort-json'],
       },
     },
   ],
-};
+}
 
-export default config;
+export default config

@@ -1,15 +1,13 @@
-import { createEnv } from "@t3-oss/env-nextjs";
-import { vercel } from "@t3-oss/env-nextjs/presets";
-import { z } from "zod";
+import { createEnv } from '@t3-oss/env-nextjs'
+import { vercel } from '@t3-oss/env-nextjs/presets'
+import { z } from 'zod'
 
-import { env as authEnv } from "@mindworld/auth/env";
+import { env as authEnv } from '@mindworld/auth/env'
 
 export const env = createEnv({
   extends: [authEnv, vercel()],
   shared: {
-    NODE_ENV: z
-      .enum(["development", "production", "test"])
-      .default("development"),
+    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   },
   /**
    * Specify your server-side environment variables schema here.
@@ -34,6 +32,5 @@ export const env = createEnv({
 
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
-  skipValidation:
-    !!process.env.CI || process.env.npm_lifecycle_event === "lint",
-});
+  skipValidation: !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
+})

@@ -18,6 +18,8 @@
   },
   "devDependencies": {
     "@mindworld/tsconfig": "workspace:*",
+    "prettier-plugin-multiline-arrays": "^4.0.2",
+    "prettier-plugin-sort-json": "^4.1.1",
     "typescript": "catalog:"
   },
   "prettier": "@mindworld/prettier-config"
