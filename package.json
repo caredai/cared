@@ -21,11 +21,14 @@
     "lint:ws": "pnpm dlx sherif@latest",
     "postinstall": "pnpm lint:ws",
     "typecheck": "turbo run typecheck",
-    "ui-add": "turbo run ui-add"
+    "ui-add": "turbo run ui-add",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@mindworld/prettier-config": "workspace:*",
     "@turbo/gen": "^2.3.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.4.0",
     "prettier": "catalog:",
     "turbo": "^2.3.3",
     "typescript": "catalog:"
