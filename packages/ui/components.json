@@ -7,11 +7,15 @@
     "config": "../../tooling/tailwind/web.ts",
     "css": "unused.css",
     "baseColor": "zinc",
-    "cssVariables": true
+    "cssVariables": true,
+    "prefix": ""
   },
   "aliases": {
-    "utils": "@mindworld/ui",
-    "components": "src/",
-    "ui": "src/"
-  }
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
 }
