@@ -47,12 +47,12 @@ const config = {
         parser: 'babel',
       },
     },
-    {
-      files: '**/*.json',
-      options: {
-        plugins: ['prettier-plugin-sort-json'],
-      },
-    },
+    // {
+    //   files: '**/*.json',
+    //   options: {
+    //     plugins: ['prettier-plugin-sort-json'],
+    //   },
+    // },
   ],
 }
 
