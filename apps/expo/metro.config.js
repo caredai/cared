@@ -1,24 +1,24 @@
 // Learn more: https://docs.expo.dev/guides/monorepos/
-const { getDefaultConfig } = require("expo/metro-config");
-const { FileStore } = require("metro-cache");
-const { withNativeWind } = require("nativewind/metro");
+const { getDefaultConfig } = require('expo/metro-config')
+const { FileStore } = require('metro-cache')
+const { withNativeWind } = require('nativewind/metro')
 
-const path = require("path");
+const path = require('path')
 
 const config = withTurborepoManagedCache(
   withMonorepoPaths(
     withNativeWind(getDefaultConfig(__dirname), {
-      input: "./src/styles.css",
-      configPath: "./tailwind.config.ts",
+      input: './src/styles.css',
+      configPath: './tailwind.config.ts',
     }),
   ),
-);
+)
 
 // XXX: Resolve our exports in workspace packages
 // https://github.com/expo/expo/issues/26926
-config.resolver.unstable_enablePackageExports = true;
+config.resolver.unstable_enablePackageExports = true
 
-module.exports = config;
+module.exports = config
 
 /**
  * Add the monorepo paths to the Metro config.
@@ -29,19 +29,19 @@ module.exports = config;
  * @returns {import('expo/metro-config').MetroConfig}
  */
 function withMonorepoPaths(config) {
-  const projectRoot = __dirname;
-  const workspaceRoot = path.resolve(projectRoot, "../..");
+  const projectRoot = __dirname
+  const workspaceRoot = path.resolve(projectRoot, '../..')
 
   // #1 - Watch all files in the monorepo
-  config.watchFolders = [workspaceRoot];
+  config.watchFolders = [workspaceRoot]
 
   // #2 - Resolve modules within the project's `node_modules` first, then all monorepo modules
   config.resolver.nodeModulesPaths = [
-    path.resolve(projectRoot, "node_modules"),
-    path.resolve(workspaceRoot, "node_modules"),
-  ];
+    path.resolve(projectRoot, 'node_modules'),
+    path.resolve(workspaceRoot, 'node_modules'),
+  ]
 
-  return config;
+  return config
 }
 
 /**
@@ -54,7 +54,7 @@ function withMonorepoPaths(config) {
  */
 function withTurborepoManagedCache(config) {
   config.cacheStores = [
-    new FileStore({ root: path.join(__dirname, ".cache/metro") }),
-  ];
-  return config;
+    new FileStore({ root: path.join(__dirname, '.cache/metro') }),
+  ]
+  return config
 }
