@@ -1,7 +1,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 
-import { appRouter, createTRPCContext } from "@acme/api";
-import { auth } from "@acme/auth";
+import { appRouter, createTRPCContext } from "@mindworld/api";
+import { auth } from "@mindworld/auth";
 
 /**
  * Configure basic CORS headers
