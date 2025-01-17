@@ -1,7 +1,7 @@
 import type { Config } from 'tailwindcss'
 
 export default {
-  darkMode: ['class'],
+  darkMode: ['selector'],
   content: ['src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -49,6 +49,9 @@ export default {
       },
       borderColor: {
         DEFAULT: 'hsl(var(--border))',
+      },
+      ringColor: {
+        DEFAULT: 'hsl(var(--ring))',
       },
     },
   },
