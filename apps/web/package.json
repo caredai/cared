@@ -34,6 +34,8 @@
     "@clerk/nextjs": "^6.9.11",
     "@clerk/themes": "^2.2.7",
     "@mindworld/ui": "workspace:*",
+    "@privy-io/react-auth": "^2.0.4",
+    "@privy-io/server-auth": "^1.18.1",
     "@t3-oss/env-nextjs": "^0.11.1",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",

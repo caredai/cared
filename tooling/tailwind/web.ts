@@ -4,7 +4,7 @@ import animate from 'tailwindcss-animate'
 import base from './base'
 
 export default {
-  darkMode: ['class'],
+  darkMode: ['selector'],
   content: base.content,
   presets: [base],
   theme: {
