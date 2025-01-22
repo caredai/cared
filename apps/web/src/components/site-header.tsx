@@ -1,16 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  useClerk,
-  UserButton,
-} from '@clerk/nextjs'
-import { dark } from '@clerk/themes'
-import { useTheme } from 'next-themes'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
+import { usePrivy } from '@privy-io/react-auth'
+import { FaWallet } from 'react-icons/fa6'
+import { VscDebugDisconnect } from 'react-icons/vsc'
 
 import { Button } from '@mindworld/ui/components/button'
 
@@ -18,43 +11,10 @@ import { CommandMenu } from '@/components/command-menu'
 import { MainNav } from '@/components/main-nav'
 import { MobileNav } from '@/components/mobile-nav'
 import { ThemeSwitcher } from '@/components/theme'
+import { WalletInfo } from '@/components/wallet-info'
 
 export function SiteHeader() {
-  const clerk = useClerk()
-  const { resolvedTheme } = useTheme()
-
-  useEffect(() => {
-    const baseTheme = resolvedTheme === 'dark' ? dark : undefined
-
-    const openSignIn = clerk.openSignIn
-    const openSignup = clerk.openSignUp
-    const openUserProfile = clerk.openUserProfile
-
-    clerk.openSignIn = (props) => {
-      openSignIn({
-        appearance: {
-          baseTheme,
-        },
-        ...props,
-      })
-    }
-    clerk.openSignUp = (props) => {
-      openSignup({
-        appearance: {
-          baseTheme,
-        },
-        ...props,
-      })
-    }
-    clerk.openUserProfile = (props) => {
-      openUserProfile({
-        appearance: {
-          baseTheme,
-        },
-        ...props,
-      })
-    }
-  }, [clerk, resolvedTheme])
+  const { ready, authenticated, login, logout } = usePrivy()
 
   return (
     <header className="border-grid sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -76,8 +36,35 @@ export function SiteHeader() {
                 </SignUpButton>
               </SignedOut>
               <SignedIn>
-                <UserButton />
+                <UserButton>
+                  {ready && (
+                    <UserButton.MenuItems>
+                      <UserButton.Action
+                        label={!authenticated ? 'Connect wallet' : 'Disconnect wallet'}
+                        labelIcon={
+                          <div className="flex justify-center items-center h-full">
+                            <VscDebugDisconnect size="1rem" />
+                          </div>
+                        }
+                        onClick={!authenticated ? login : logout}
+                      />
+                    </UserButton.MenuItems>
+                  )}
+                  <UserButton.UserProfilePage
+                    label="Wallet"
+                    url="wallet"
+                    labelIcon={
+                      <div className="flex justify-center items-center h-full">
+                        <FaWallet />
+                      </div>
+                    }
+                  >
+                    haha
+                  </UserButton.UserProfilePage>
+                </UserButton>
+                {ready && !authenticated && <Button onClick={login}>Connect wallet</Button>}
               </SignedIn>
+              {ready && authenticated && <WalletInfo />}
               <ThemeSwitcher />
             </nav>
           </div>
