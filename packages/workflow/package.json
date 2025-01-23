@@ -25,6 +25,6 @@
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
-    "@xyflow/react": "^12.4.1"
+    "@xyflow/react": "^12.4.2"
   }
 }

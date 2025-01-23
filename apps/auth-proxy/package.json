@@ -17,9 +17,9 @@
     "@mindworld/prettier-config": "workspace:*",
     "@mindworld/tailwind-config": "workspace:*",
     "@mindworld/tsconfig": "workspace:*",
-    "@types/node": "^22.10.6",
+    "@types/node": "^22.10.9",
     "eslint": "catalog:",
-    "h3": "^1.13.1",
+    "h3": "^1.14.0",
     "nitropack": "^2.10.4",
     "prettier": "catalog:",
     "typescript": "catalog:"
