@@ -63,8 +63,8 @@ export function SiteHeader() {
                   </UserButton.UserProfilePage>
                 </UserButton>
                 {ready && !authenticated && <Button onClick={login}>Connect wallet</Button>}
+                {ready && authenticated && <WalletInfo />}
               </SignedIn>
-              {ready && authenticated && <WalletInfo />}
               <ThemeSwitcher />
             </nav>
           </div>

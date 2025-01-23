@@ -1,0 +1,55 @@
+{
+  "name": "@mindworld/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "CLI for the Mind AI platform",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mindplatform/mind",
+    "directory": "packages/cli"
+  },
+  "author": "Mind Team <support@mindai.world>",
+  "license": "MIT",
+  "bin": {
+    "mind": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "ncc build ./index.ts -w -o dist/",
+    "prerelease": "node rimraf dist",
+    "release": "ncc build ./index.ts -o ./dist/ --minify --no-cache --no-source-map-register",
+    "build": "pnpm release",
+    "prepublishOnly": "pnpm build",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "devDependencies": {
+    "@mindworld/eslint-config": "workspace:*",
+    "@mindworld/prettier-config": "workspace:*",
+    "@mindworld/tsconfig": "workspace:*",
+    "@types/async-retry": "1.4.9",
+    "@types/cross-spawn": "6.0.6",
+    "@types/node": "^22.10.9",
+    "@types/prompts": "2.4.9",
+    "@types/tar": "6.1.13",
+    "@types/validate-npm-package-name": "4.0.2",
+    "@vercel/ncc": "0.38.3",
+    "async-retry": "1.3.3",
+    "ci-info": "4.1.0",
+    "commander": "13.1.0",
+    "conf": "13.1.0",
+    "cross-spawn": "7.0.6",
+    "eslint": "catalog:",
+    "fast-glob": "3.3.3",
+    "picocolors": "1.1.1",
+    "prettier": "catalog:",
+    "prompts": "2.4.2",
+    "tar": "7.4.3",
+    "typescript": "catalog:",
+    "update-check": "1.5.4",
+    "validate-npm-package-name": "6.0.0"
+  }
+}

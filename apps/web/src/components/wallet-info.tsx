@@ -1,18 +1,17 @@
 'use client'
 
 import type { ConnectedSolanaWallet, ConnectedWallet } from '@privy-io/react-auth'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePrivy, useSolanaWallets, useWallets } from '@privy-io/react-auth'
 import { CheckIcon, CopyIcon } from '@radix-ui/react-icons'
-import { useCopyToClipboard, useTimeout } from 'react-use'
+import { useCopyToClipboard } from 'react-use'
 
+import { Badge } from '@mindworld/ui/components/badge'
 import { Button } from '@mindworld/ui/components/button'
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -56,33 +55,35 @@ export function WalletInfo() {
           })}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] w-full h-full">
+      <DialogContent
+        className="sm:max-w-[660px]"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Wallet</DialogTitle>
           <DialogDescription>View and manage your wallet.</DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label className="text-left">Main wallet:</Label>
-          <p>{user.wallet.chainType === 'ethereum' ? 'Ethereum' : 'Solana'}</p>
-          <div className="col-span-2">
-            <AddressTooltip address={user.wallet.address} copyToClipboard={copyToClipboard} />
+        <div className="py-8 flex flex-col gap-8">
+          <div className="grid grid-cols-5 items-center gap-8">
+            <Label className="col-span-2">Main wallet:</Label>
+            <Badge variant="secondary" className="col-start-3 w-fit">
+              {user.wallet.chainType === 'ethereum' ? 'Ethereum' : 'Solana'}
+            </Badge>
+            <div className="col-span-2 flex justify-center">
+              <AddressTooltip address={user.wallet.address} copyToClipboard={copyToClipboard} />
+            </div>
+          </div>
+          <Separator />
+          <div className="grid grid-cols-5 items-center gap-8">
+            <Label className="col-span-2">Ephemeral wallets:</Label>
+            {solanaWallets.map((wallet) => (
+              <WalletItem key={wallet.address} wallet={wallet} copyToClipboard={copyToClipboard} />
+            ))}
+            {ethereumWallets.map((wallet) => (
+              <WalletItem key={wallet.address} wallet={wallet} copyToClipboard={copyToClipboard} />
+            ))}
           </div>
         </div>
-        <Separator />
-        <div className="grid grid-cols-2 items-center gap-4">
-          <Label className="text-left">Ephemeral wallets:</Label>
-          {solanaWallets.map((wallet) => (
-            <WalletItem key={wallet.address} wallet={wallet} copyToClipboard={copyToClipboard} />
-          ))}
-          {ethereumWallets.map((wallet) => (
-            <WalletItem key={wallet.address} wallet={wallet} copyToClipboard={copyToClipboard} />
-          ))}
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button>Close</Button>
-          </DialogClose>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -97,8 +98,10 @@ function WalletItem({
 }) {
   return (
     <>
-      <p>{wallet.type === 'ethereum' ? 'Ethereum' : 'Solana'}</p>
-      <div className="col-span-2">
+      <Badge variant="secondary" className="col-start-3 w-fit">
+        {wallet.type === 'ethereum' ? 'Ethereum' : 'Solana'}
+      </Badge>
+      <div className="col-span-2 flex justify-center">
         <AddressTooltip address={wallet.address} copyToClipboard={copyToClipboard} />
       </div>
     </>
@@ -112,33 +115,47 @@ function AddressTooltip({
   address: string
   copyToClipboard: (value: string) => void
 }) {
-  const [isReady, cancel, reset] = useTimeout(3000)
-  useEffect(() => {
-    cancel()
-  }, [cancel])
+  const timeoutHandle = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const [copied, setCopied] = useState(false)
+  const copy = useCallback(() => {
+    copyToClipboard(address)
+    clearTimeout(timeoutHandle.current)
+    timeoutHandle.current = setTimeout(() => {
+      setCopied(false)
+    }, 1000)
+    setCopied(true)
+  }, [address, copyToClipboard, setCopied])
 
   return (
     <TooltipProvider delayDuration={0}>
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger
+          asChild
+          onClick={(event) => {
+            event.preventDefault()
+          }}
+        >
           <Button
             className="py-1 px-2 h-fit text-muted-foreground"
             variant="outline"
-            onClick={() => {
-              copyToClipboard(address)
-              reset()
-            }}
+            onClick={copy}
           >
-            {isReady() === false ? <CheckIcon /> : isReady() === true && <CopyIcon />}
+            <p className="font-mono">
+              {shortenString(address, {
+                prefixChars: 4,
+                suffixChars: 6,
+              })}
+            </p>
+            {copied ? <CheckIcon /> : <CopyIcon />}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
-          <p className="font-mono">
-            {shortenString(address, {
-              prefixChars: 4,
-              suffixChars: 6,
-            })}
-          </p>
+        <TooltipContent
+          align="end"
+          onPointerDownOutside={(event) => {
+            event.preventDefault()
+          }}
+        >
+          {copied ? 'Copied' : 'Copy'}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
