@@ -1,55 +1,55 @@
-/**
- * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
- * 1. You want to modify request context (see Part 1)
- * 2. You want to create a new middleware or type of procedure (see Part 3)
- *
- * tl;dr - this is where all the tRPC server stuff is created and plugged in.
- * The pieces you will need to use are documented accordingly near the end
- */
-import { initTRPC, TRPCError } from '@trpc/server'
+import type * as trpcNext from '@trpc/server/adapters/next'
+import { headers } from 'next/headers'
+import { auth, getAuth } from '@clerk/nextjs/server'
+import * as trpc from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 
-import type { Session } from '@mindworld/auth'
-import { auth, validateToken } from '@mindworld/auth'
 import { db } from '@mindworld/db/client'
-
-/**
- * Isomorphic Session getter for API requests
- * - Expo requests will have a session token in the Authorization header
- * - Next.js requests will have a session token in cookies
- */
-const isomorphicGetSession = async (headers: Headers) => {
-  const authToken = headers.get('Authorization') ?? null
-  if (authToken) return validateToken(authToken)
-  return auth()
-}
 
 /**
  * 1. CONTEXT
  *
  * This section defines the "contexts" that are available in the backend API.
  *
- * These allow you to access things when processing a request, like the database, the session, etc.
+ * These allow you to access things when processing a request, like the database, the auth, etc.
  *
  * This helper generates the "internals" for a tRPC context. The API handler and RSC clients each
  * wrap this and provides the required context.
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers; session: Session | null }) => {
-  const authToken = opts.headers.get('Authorization') ?? null
-  const session = await isomorphicGetSession(opts.headers)
+export const createContext = (opts: trpcNext.CreateNextContextOptions) => {
+  const auth = getAuth(opts.req)
 
-  const source = opts.headers.get('x-trpc-source') ?? 'unknown'
-  console.log('>>> tRPC Request from', source, 'by', session?.user)
+  const source = opts.req.headers['x-trpc-source'] ?? 'unknown'
+  console.log('>>> tRPC Request from', source, 'by', auth.userId)
 
   return {
-    session,
+    auth,
     db,
-    token: authToken,
   }
 }
+
+/**
+ * This section defines the "contexts" that are available when
+ * handling a tRPC call from a React Server Component.
+ */
+export const createContextForRsc = async () => {
+  const _auth = await auth()
+
+  const heads = new Headers(await headers())
+  heads.set('x-trpc-source', 'rsc')
+
+  console.log('>>> tRPC Request from', heads.get('x-trpc-source') ?? 'unknown', 'by', _auth.userId)
+
+  return {
+    auth: _auth,
+    db,
+  }
+}
+
+export type Context = trpc.inferAsyncReturnType<typeof createContext>
 
 /**
  * 2. INITIALIZATION
@@ -57,7 +57,7 @@ export const createTRPCContext = async (opts: { headers: Headers; session: Sessi
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = trpc.initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter: ({ shape, error }) => ({
     ...shape,
@@ -88,7 +88,7 @@ export const createCallerFactory = t.createCallerFactory
 export const createTRPCRouter = t.router
 
 /**
- * Middleware for timing procedure execution and adding an articifial delay in development.
+ * Middleware for timing procedure execution and adding an artificial delay in development.
  *
  * You can remove this if you don't like it, but it can help catch unwanted waterfalls by simulating
  * network latency that would occur in production but not in local development.
@@ -115,26 +115,25 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  *
  * This is the base piece you use to build new queries and mutations on your
  * tRPC API. It does not guarantee that a user querying is authorized, but you
- * can still access user session data if they are logged in
+ * can still access user auth data if they are logged in
  */
 export const publicProcedure = t.procedure.use(timingMiddleware)
 
 /**
  * Protected (authenticated) procedure
  *
- * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user` is not null.
+ * If you want a query or mutation to ONLY be accessible to authenticated users, use this.
+ * It verifies the auth is valid.
  *
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  if (!ctx.auth.userId) {
+    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
-      // infers the `session` as non-nullable
-      session: { ...ctx.session, user: ctx.session.user },
+      auth: ctx.auth,
     },
   })
 })
