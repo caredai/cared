@@ -2,6 +2,7 @@ packages:
   - apps/*
   - packages/*
   - tooling/*
+  - '!apps/nextjs'
 
 catalog:
   "@tanstack/react-query": ^5.64.1

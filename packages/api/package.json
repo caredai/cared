@@ -19,7 +19,6 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@mindworld/auth": "workspace:*",
     "@mindworld/db": "workspace:*",
     "@mindworld/validators": "workspace:*",
     "@trpc/server": "catalog:",
