@@ -5,6 +5,7 @@ import * as trpc from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 
+import type { DB } from '@mindworld/db/client'
 import { db } from '@mindworld/db/client'
 
 /**
@@ -19,7 +20,9 @@ import { db } from '@mindworld/db/client'
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createContext = (opts: trpcNext.CreateNextContextOptions) => {
+export const createContext = (
+  opts: trpcNext.CreateNextContextOptions,
+): { auth: ReturnType<typeof getAuth>; db: DB } => {
   const auth = getAuth(opts.req)
 
   const source = opts.req.headers['x-trpc-source'] ?? 'unknown'
@@ -35,7 +38,10 @@ export const createContext = (opts: trpcNext.CreateNextContextOptions) => {
  * This section defines the "contexts" that are available when
  * handling a tRPC call from a React Server Component.
  */
-export const createContextForRsc = async () => {
+export const createContextForRsc = async (): Promise<{
+  auth: Awaited<ReturnType<typeof auth>>
+  db: DB
+}> => {
   const _auth = await auth()
 
   const heads = new Headers(await headers())

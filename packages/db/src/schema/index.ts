@@ -1,3 +1,10 @@
-export { Post, Account, Session } from './deprecated'
+export {
+  Post,
+  Account,
+  Session,
+  CreatePostSchema,
+  AccountRelations,
+  SessionRelations,
+} from './deprecated'
 export * from './agent'
 export * from './workspace'
