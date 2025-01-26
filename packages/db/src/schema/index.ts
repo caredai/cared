@@ -8,3 +8,4 @@ export {
 } from './deprecated'
 export * from './agent'
 export * from './workspace'
+export * from './chat'

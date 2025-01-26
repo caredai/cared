@@ -10,11 +10,14 @@ import { useTheme } from 'next-themes'
 import { Logo } from '@/components/logo'
 import { ThemeProvider } from '@/components/theme'
 import { env } from '@/env'
+import { TRPCReactProvider } from '@/trpc/react'
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <InnerProviders>{children}</InnerProviders>
+      <TRPCReactProvider>
+        <InnerProviders>{children}</InnerProviders>
+      </TRPCReactProvider>
     </ThemeProvider>
   )
 }
