@@ -23,5 +23,13 @@
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
+  "dependencies": {
+    "@mindworld/api": "workspace:*",
+    "@mindworld/db": "workspace:*",
+    "@mindworld/ui": "workspace:*",
+    "classnames": "^2.5.1",
+    "framer-motion": "^12.0.5",
+    "usehooks-ts": "^3.1.0"
+  },
   "prettier": "@mindworld/prettier-config"
 }
