@@ -1,31 +1,28 @@
-'use client';
+'use client'
 
-import { ReactNode, useMemo, useState } from 'react';
-import { Button } from '@mindworld/ui/components/button';
+import type { ReactNode } from 'react'
+import { useMemo, useState } from 'react'
+
+import { Button } from '@mindworld/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu';
-import { cn } from '@mindworld/ui/lib/utils';
+} from '@mindworld/ui/components/dropdown-menu'
+import { cn } from '@mindworld/ui/lib/utils'
 
-import {
-  CheckCircleFillIcon,
-  ChevronDownIcon,
-  GlobeIcon,
-  LockIcon,
-} from './icons';
-import { useChatVisibility } from '@/hooks/use-chat-visibility';
+import { useChatVisibility } from '@/hooks/use-chat-visibility'
+import { CheckCircleFillIcon, ChevronDownIcon, GlobeIcon, LockIcon } from './icons'
 
-export type VisibilityType = 'private' | 'public';
+export type VisibilityType = 'private' | 'public'
 
-const visibilities: Array<{
-  id: VisibilityType;
-  label: string;
-  description: string;
-  icon: ReactNode;
-}> = [
+const visibilities: {
+  id: VisibilityType
+  label: string
+  description: string
+  icon: ReactNode
+}[] = [
   {
     id: 'private',
     label: 'Private',
@@ -38,27 +35,27 @@ const visibilities: Array<{
     description: 'Anyone with the link can access this chat',
     icon: <GlobeIcon />,
   },
-];
+]
 
 export function VisibilitySelector({
   chatId,
   className,
   selectedVisibilityType,
 }: {
-  chatId: string;
-  selectedVisibilityType: VisibilityType;
+  chatId: string
+  selectedVisibilityType: VisibilityType
 } & React.ComponentProps<typeof Button>) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
   const { visibilityType, setVisibilityType } = useChatVisibility({
     chatId,
     initialVisibility: selectedVisibilityType,
-  });
+  })
 
   const selectedVisibility = useMemo(
     () => visibilities.find((visibility) => visibility.id === visibilityType),
     [visibilityType],
-  );
+  )
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -69,10 +66,7 @@ export function VisibilitySelector({
           className,
         )}
       >
-        <Button
-          variant="outline"
-          className="hidden md:flex md:px-2 md:h-[34px]"
-        >
+        <Button variant="outline" className="hidden md:flex md:px-2 md:h-[34px]">
           {selectedVisibility?.icon}
           {selectedVisibility?.label}
           <ChevronDownIcon />
@@ -84,8 +78,8 @@ export function VisibilitySelector({
           <DropdownMenuItem
             key={visibility.id}
             onSelect={() => {
-              setVisibilityType(visibility.id);
-              setOpen(false);
+              setVisibilityType(visibility.id)
+              setOpen(false)
             }}
             className="gap-4 group/item flex flex-row justify-between items-center"
             data-active={visibility.id === visibilityType}
@@ -93,9 +87,7 @@ export function VisibilitySelector({
             <div className="flex flex-col gap-1 items-start">
               {visibility.label}
               {visibility.description && (
-                <div className="text-xs text-muted-foreground">
-                  {visibility.description}
-                </div>
+                <div className="text-xs text-muted-foreground">{visibility.description}</div>
               )}
             </div>
             <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
@@ -105,5 +97,5 @@ export function VisibilitySelector({
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  )
 }
