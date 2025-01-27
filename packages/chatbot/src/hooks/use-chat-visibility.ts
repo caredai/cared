@@ -6,7 +6,7 @@ import useSWR, { useSWRConfig } from 'swr'
 
 import type { Chat } from '@mindworld/db/schema'
 
-import { updateChatVisibility } from '@/app/(chat)/actions'
+import { useAPI } from '@/lib/api'
 
 export function useChatVisibility({
   chatId,
@@ -15,6 +15,21 @@ export function useChatVisibility({
   chatId: string
   initialVisibility: VisibilityType
 }) {
+  const api = useAPI()
+  const utils = api.useUtils()
+  const updateChat = api.chat.update.useMutation({
+    onSuccess: async () => {
+      await utils.chat.invalidate()
+    },
+    onError: (err) => {
+      console.error(
+        err.data?.code === 'UNAUTHORIZED'
+          ? 'You must be logged in to update chat'
+          : 'Failed to update chat',
+      )
+    },
+  })
+
   const { mutate, cache } = useSWRConfig()
   const history = cache.get('/api/history')?.data as Chat[] | undefined
 
@@ -54,8 +69,8 @@ export function useChatVisibility({
       { revalidate: false },
     )
 
-    updateChatVisibility({
-      chatId: chatId,
+    updateChat.mutate({
+      id: chatId,
       visibility: updatedVisibilityType,
     })
   }

@@ -1,24 +1,24 @@
-'use client';
+'use client'
 
-import type { ChatRequestOptions, Message } from 'ai';
-import cx from 'classnames';
-import { AnimatePresence, motion } from 'framer-motion';
-import { memo, useMemo, useState } from 'react';
+import type { ChatRequestOptions, Message } from 'ai'
+import { memo, useState } from 'react'
+import cx from 'classnames'
+import equal from 'fast-deep-equal'
+import { AnimatePresence, motion } from 'framer-motion'
 
-import type { Vote } from '@/lib/db/schema';
+import type { Vote } from '@mindworld/db/schema'
+import { Button } from '@mindworld/ui/components/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
 
-import { DocumentToolCall, DocumentToolResult } from './document';
-import { PencilEditIcon, SparklesIcon } from './icons';
-import { Markdown } from './markdown';
-import { MessageActions } from './message-actions';
-import { PreviewAttachment } from './preview-attachment';
-import { Weather } from './weather';
-import equal from 'fast-deep-equal';
-import { cn } from '@/lib/utils';
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { MessageEditor } from './message-editor';
-import { DocumentPreview } from './document-preview';
+import { cn } from '@/lib/utils'
+import { DocumentToolCall, DocumentToolResult } from './document'
+import { DocumentPreview } from './document-preview'
+import { PencilEditIcon, SparklesIcon } from './icons'
+import { Markdown } from './markdown'
+import { MessageActions } from './message-actions'
+import { MessageEditor } from './message-editor'
+import { PreviewAttachment } from './preview-attachment'
+import { Weather } from './weather'
 
 const PurePreviewMessage = ({
   chatId,
@@ -29,19 +29,15 @@ const PurePreviewMessage = ({
   reload,
   isReadonly,
 }: {
-  chatId: string;
-  message: Message;
-  vote: Vote | undefined;
-  isLoading: boolean;
-  setMessages: (
-    messages: Message[] | ((messages: Message[]) => Message[]),
-  ) => void;
-  reload: (
-    chatRequestOptions?: ChatRequestOptions,
-  ) => Promise<string | null | undefined>;
-  isReadonly: boolean;
+  chatId: string
+  message: Message
+  vote: Vote | undefined
+  isLoading: boolean
+  setMessages: (messages: Message[] | ((messages: Message[]) => Message[])) => void
+  reload: (chatRequestOptions?: ChatRequestOptions) => Promise<string | null | undefined>
+  isReadonly: boolean
 }) => {
-  const [mode, setMode] = useState<'view' | 'edit'>('view');
+  const [mode, setMode] = useState<'view' | 'edit'>('view')
 
   return (
     <AnimatePresence>
@@ -72,10 +68,7 @@ const PurePreviewMessage = ({
             {message.experimental_attachments && (
               <div className="flex flex-row justify-end gap-2">
                 {message.experimental_attachments.map((attachment) => (
-                  <PreviewAttachment
-                    key={attachment.url}
-                    attachment={attachment}
-                  />
+                  <PreviewAttachment key={attachment.url} attachment={attachment} />
                 ))}
               </div>
             )}
@@ -89,7 +82,7 @@ const PurePreviewMessage = ({
                         variant="ghost"
                         className="px-2 h-fit rounded-full text-muted-foreground opacity-0 group-hover/message:opacity-100"
                         onClick={() => {
-                          setMode('edit');
+                          setMode('edit')
                         }}
                       >
                         <PencilEditIcon />
@@ -105,7 +98,7 @@ const PurePreviewMessage = ({
                       message.role === 'user',
                   })}
                 >
-                  <Markdown>{message.content as string}</Markdown>
+                  <Markdown>{message.content}</Markdown>
                 </div>
               </div>
             )}
@@ -127,20 +120,17 @@ const PurePreviewMessage = ({
             {message.toolInvocations && message.toolInvocations.length > 0 && (
               <div className="flex flex-col gap-4">
                 {message.toolInvocations.map((toolInvocation) => {
-                  const { toolName, toolCallId, state, args } = toolInvocation;
+                  const { toolName, toolCallId, state, args } = toolInvocation
 
                   if (state === 'result') {
-                    const { result } = toolInvocation;
+                    const { result } = toolInvocation
 
                     return (
                       <div key={toolCallId}>
                         {toolName === 'getWeather' ? (
                           <Weather weatherAtLocation={result} />
                         ) : toolName === 'createDocument' ? (
-                          <DocumentPreview
-                            isReadonly={isReadonly}
-                            result={result}
-                          />
+                          <DocumentPreview isReadonly={isReadonly} result={result} />
                         ) : toolName === 'updateDocument' ? (
                           <DocumentToolResult
                             type="update"
@@ -157,7 +147,7 @@ const PurePreviewMessage = ({
                           <pre>{JSON.stringify(result, null, 2)}</pre>
                         )}
                       </div>
-                    );
+                    )
                   }
                   return (
                     <div
@@ -171,11 +161,7 @@ const PurePreviewMessage = ({
                       ) : toolName === 'createDocument' ? (
                         <DocumentPreview isReadonly={isReadonly} args={args} />
                       ) : toolName === 'updateDocument' ? (
-                        <DocumentToolCall
-                          type="update"
-                          args={args}
-                          isReadonly={isReadonly}
-                        />
+                        <DocumentToolCall type="update" args={args} isReadonly={isReadonly} />
                       ) : toolName === 'requestSuggestions' ? (
                         <DocumentToolCall
                           type="request-suggestions"
@@ -184,7 +170,7 @@ const PurePreviewMessage = ({
                         />
                       ) : null}
                     </div>
-                  );
+                  )
                 })}
               </div>
             )}
@@ -202,29 +188,20 @@ const PurePreviewMessage = ({
         </div>
       </motion.div>
     </AnimatePresence>
-  );
-};
+  )
+}
 
-export const PreviewMessage = memo(
-  PurePreviewMessage,
-  (prevProps, nextProps) => {
-    if (prevProps.isLoading !== nextProps.isLoading) return false;
-    if (prevProps.message.content !== nextProps.message.content) return false;
-    if (
-      !equal(
-        prevProps.message.toolInvocations,
-        nextProps.message.toolInvocations,
-      )
-    )
-      return false;
-    if (!equal(prevProps.vote, nextProps.vote)) return false;
+export const PreviewMessage = memo(PurePreviewMessage, (prevProps, nextProps) => {
+  if (prevProps.isLoading !== nextProps.isLoading) return false
+  if (prevProps.message.content !== nextProps.message.content) return false
+  if (!equal(prevProps.message.toolInvocations, nextProps.message.toolInvocations)) return false
+  if (!equal(prevProps.vote, nextProps.vote)) return false
 
-    return true;
-  },
-);
+  return true
+})
 
 export const ThinkingMessage = () => {
-  const role = 'assistant';
+  const role = 'assistant'
 
   return (
     <motion.div
@@ -246,11 +223,9 @@ export const ThinkingMessage = () => {
         </div>
 
         <div className="flex flex-col gap-2 w-full">
-          <div className="flex flex-col gap-4 text-muted-foreground">
-            Thinking...
-          </div>
+          <div className="flex flex-col gap-4 text-muted-foreground">Thinking...</div>
         </div>
       </div>
     </motion.div>
-  );
-};
+  )
+}

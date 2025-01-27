@@ -9,19 +9,22 @@ import { Button } from '@mindworld/ui/components/button'
 import { useSidebar } from '@mindworld/ui/components/sidebar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
 
-import type { VisibilitySelector, VisibilityType } from './visibility-selector'
+import type { VisibilityType } from './visibility-selector'
 import { ModelSelector } from '@/components/model-selector'
 import { SidebarToggle } from '@/components/sidebar-toggle'
 import { PlusIcon, VercelIcon } from './icons'
+import { VisibilitySelector } from './visibility-selector'
 
 function PureChatHeader({
   chatId,
-  selectedModelId,
+  modelId,
+  setModelId,
   selectedVisibilityType,
   isReadonly,
 }: {
   chatId: string
-  selectedModelId: string
+  modelId: string
+  setModelId: (modelId: string) => void
   selectedVisibilityType: VisibilityType
   isReadonly: boolean
 }) {
@@ -54,7 +57,7 @@ function PureChatHeader({
       )}
 
       {!isReadonly && (
-        <ModelSelector selectedModelId={selectedModelId} className="order-1 md:order-2" />
+        <ModelSelector modelId={modelId} setModelId={setModelId} className="order-1 md:order-2" />
       )}
 
       {!isReadonly && (
@@ -82,5 +85,5 @@ function PureChatHeader({
 }
 
 export const ChatHeader = memo(PureChatHeader, (prevProps, nextProps) => {
-  return prevProps.selectedModelId === nextProps.selectedModelId
+  return prevProps.modelId === nextProps.modelId
 })

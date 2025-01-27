@@ -1,0 +1,50 @@
+{
+  "name": "@mindworld/providers",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^1.1.2",
+    "@ai-sdk/anthropic": "^1.1.2",
+    "@ai-sdk/azure": "^1.1.2",
+    "@ai-sdk/cerebras": "^0.1.2",
+    "@ai-sdk/cohere": "^1.1.2",
+    "@ai-sdk/deepinfra": "^0.1.2",
+    "@ai-sdk/deepseek": "^0.1.2",
+    "@ai-sdk/fireworks": "^0.1.2",
+    "@ai-sdk/google": "^1.1.2",
+    "@ai-sdk/google-vertex": "^2.1.2",
+    "@ai-sdk/groq": "^1.1.2",
+    "@ai-sdk/luma": "^0.0.2",
+    "@ai-sdk/mistral": "^1.1.2",
+    "@ai-sdk/openai": "^1.1.2",
+    "@ai-sdk/openai-compatible": "^0.1.2",
+    "@ai-sdk/perplexity": "^0.0.3",
+    "@ai-sdk/provider": "^1.0.6",
+    "@ai-sdk/replicate": "^0.1.2",
+    "@ai-sdk/togetherai": "^0.1.2",
+    "@ai-sdk/xai": "^1.1.2"
+  },
+  "devDependencies": {
+    "@mindworld/eslint-config": "workspace:*",
+    "@mindworld/prettier-config": "workspace:*",
+    "@mindworld/tsconfig": "workspace:*",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "tsx": "^4.19.2",
+    "typescript": "catalog:"
+  },
+  "prettier": "@mindworld/prettier-config"
+}

@@ -1,30 +1,46 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import {
-  boolean,
-  json,
-  pgTable,
-  primaryKey,
-  text,
-  timestamp,
-  uuid,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { boolean, index, json, pgTable, primaryKey, text, uuid, varchar } from 'drizzle-orm/pg-core'
+import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
+import { z } from 'zod'
 
+import { createdAt, timestamps, visibilityEnum, visibilityEnumValues } from './utils'
 import { User } from './workspace'
 
-export const chat = pgTable('chat', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  createdAt: timestamp('createdAt').notNull(),
-  title: text('title').notNull(),
-  userId: uuid('userId')
-    .notNull()
-    .references(() => User.id),
-  visibility: varchar('visibility', { enum: ['public', 'private'] })
-    .notNull()
-    .default('private'),
-})
+export const chat = pgTable(
+  'chat',
+  {
+    id: uuid('id').primaryKey().notNull().defaultRandom(),
+    title: text('title').notNull(),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => User.id),
+    visibility: visibilityEnum().notNull().default('private'),
+    ...timestamps,
+  },
+  (table) => ({
+    userIdIdx: index().on(table.userId),
+  }),
+)
 
 export type Chat = InferSelectModel<typeof chat>
+
+export const CreateChatSchema = createInsertSchema(chat, {
+  title: z.string(),
+  userId: z.string(),
+  visibility: z.enum(visibilityEnumValues).optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+})
+
+export const UpdateChatSchema = createUpdateSchema(chat, {
+  id: z.string(),
+}).omit({
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+})
 
 export const message = pgTable('message', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),
@@ -33,7 +49,7 @@ export const message = pgTable('message', {
     .references(() => chat.id),
   role: varchar('role').notNull(),
   content: json('content').notNull(),
-  createdAt: timestamp('createdAt').notNull(),
+  createdAt,
 })
 
 export type Message = InferSelectModel<typeof message>

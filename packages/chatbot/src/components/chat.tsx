@@ -1,69 +1,60 @@
-'use client';
+'use client'
 
-import type { Attachment, Message } from 'ai';
-import { useChat } from 'ai/react';
-import { useState } from 'react';
-import useSWR, { useSWRConfig } from 'swr';
+import type { Attachment, Message } from 'ai'
+import { useState } from 'react'
+import { useChat } from 'ai/react'
+import useSWR, { useSWRConfig } from 'swr'
 
-import { ChatHeader } from '@/components/chat-header';
-import type { Vote } from '@/lib/db/schema';
-import { fetcher } from '@/lib/utils';
+import type { Vote } from '@mindworld/db/schema'
 
-import { Block } from './block';
-import { MultimodalInput } from './multimodal-input';
-import { Messages } from './messages';
-import { VisibilityType } from './visibility-selector';
-import { useBlockSelector } from '@/hooks/use-block';
+import type { VisibilityType } from './visibility-selector'
+import { ChatHeader } from '@/components/chat-header'
+import { useBlockSelector } from '@/hooks/use-block'
+import { fetcher } from '@/lib/utils'
+import { Block } from './block'
+import { Messages } from './messages'
+import { MultimodalInput } from './multimodal-input'
 
 export function Chat({
   id,
   initialMessages,
-  selectedModelId,
+  modelId,
+  setModelId,
   selectedVisibilityType,
   isReadonly,
 }: {
-  id: string;
-  initialMessages: Array<Message>;
-  selectedModelId: string;
-  selectedVisibilityType: VisibilityType;
-  isReadonly: boolean;
+  id: string
+  initialMessages: Message[]
+  modelId: string
+  setModelId: (modelId: string) => void
+  selectedVisibilityType: VisibilityType
+  isReadonly: boolean
 }) {
-  const { mutate } = useSWRConfig();
+  const { mutate } = useSWRConfig()
 
-  const {
-    messages,
-    setMessages,
-    handleSubmit,
-    input,
-    setInput,
-    append,
-    isLoading,
-    stop,
-    reload,
-  } = useChat({
-    id,
-    body: { id, modelId: selectedModelId },
-    initialMessages,
-    experimental_throttle: 100,
-    onFinish: () => {
-      mutate('/api/history');
-    },
-  });
+  const { messages, setMessages, handleSubmit, input, setInput, append, isLoading, stop, reload } =
+    useChat({
+      id,
+      body: { id, modelId: modelId },
+      initialMessages,
+      experimental_throttle: 100,
+      onFinish: () => {
+        void mutate('/api/history')
+      },
+    })
 
-  const { data: votes } = useSWR<Array<Vote>>(
-    `/api/vote?chatId=${id}`,
-    fetcher,
-  );
+  const { data: votes } = useSWR<Vote[]>(`/api/vote?chatId=${id}`, fetcher)
 
-  const [attachments, setAttachments] = useState<Array<Attachment>>([]);
-  const isBlockVisible = useBlockSelector((state) => state.isVisible);
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const isBlockVisible = useBlockSelector((state) => state.isVisible)
 
   return (
     <>
       <div className="flex flex-col min-w-0 h-dvh bg-background">
         <ChatHeader
           chatId={id}
-          selectedModelId={selectedModelId}
+          modelId={modelId}
+          setModelId={setModelId}
           selectedVisibilityType={selectedVisibilityType}
           isReadonly={isReadonly}
         />
@@ -115,5 +106,5 @@ export function Chat({
         isReadonly={isReadonly}
       />
     </>
-  );
+  )
 }

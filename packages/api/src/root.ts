@@ -1,7 +1,10 @@
+import { chatRouter, messageRouter } from './router/chat'
 import { postRouter } from './router/post'
 import { createTRPCRouter } from './trpc'
 
 export const appRouter = createTRPCRouter({
+  chat: chatRouter,
+  message: messageRouter,
   post: postRouter,
 })
 

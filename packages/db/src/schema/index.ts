@@ -9,3 +9,4 @@ export {
 export * from './agent'
 export * from './workspace'
 export * from './chat'
+export * from './dataset'
