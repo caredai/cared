@@ -17,6 +17,7 @@
     "@clerk/nextjs": "^6.10.0",
     "@clerk/themes": "^2.2.10",
     "@mindworld/api": "workspace:*",
+    "@mindworld/i18n": "workspace:*",
     "@mindworld/ui": "workspace:*",
     "@privy-io/react-auth": "^2.0.5",
     "@privy-io/server-auth": "^1.18.1",

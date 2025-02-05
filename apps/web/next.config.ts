@@ -12,6 +12,7 @@ const config = {
     'next-image-export-optimizer',
     '@mindworld/api',
     '@mindworld/ui',
+    '@mindworld/i18n',
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

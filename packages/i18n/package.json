@@ -1,0 +1,36 @@
+{
+  "name": "@mindworld/i18n",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.tsx"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "devDependencies": {
+    "@mindworld/eslint-config": "workspace:*",
+    "@mindworld/prettier-config": "workspace:*",
+    "@mindworld/tsconfig": "workspace:*",
+    "@types/negotiator": "^0.6.3",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "prettier": "@mindworld/prettier-config",
+  "dependencies": {
+    "@formatjs/intl-localematcher": "^0.5.10",
+    "i18next": "^24.2.2",
+    "i18next-resources-to-backend": "^1.2.1",
+    "negotiator": "^1.0.0",
+    "react-i18next": "^15.4.0"
+  }
+}
