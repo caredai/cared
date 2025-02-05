@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
+import I18nServer from '@mindworld/i18n/i18n-server'
+
 import './globals.css'
 
 import { Providers } from '@/components/providers'
@@ -28,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <Providers>{children}</Providers>
+        <I18nServer>
+          <Providers>{children}</Providers>
+        </I18nServer>
       </body>
     </html>
   )
