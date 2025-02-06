@@ -81,6 +81,7 @@ export default tseslint.config(
       '@typescript-eslint/no-redundant-type-constituents': 'warn',
       '@typescript-eslint/ban-ts-comment': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/prefer-nullish-coalescing': 'warn'
     },
   },
   {
