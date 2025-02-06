@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.tsx"
   },
   "license": "MIT",
   "scripts": {
@@ -25,6 +25,8 @@
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
+    "@mindworld/ui": "workspace:*",
+    "@remixicon/react": "^4.6.0",
     "@xyflow/react": "^12.4.2"
   }
 }

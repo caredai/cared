@@ -3,7 +3,6 @@ packages:
   - packages/*
   - tooling/*
   - '!apps/nextjs'
-  - '!packages/workflow'
 
 catalog:
   "@tanstack/react-query": ^5.64.1
