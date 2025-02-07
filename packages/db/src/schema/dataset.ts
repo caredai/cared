@@ -1,62 +1,113 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import {
-  boolean,
-  foreignKey,
+  index,
+  integer,
+  json,
   pgTable,
-  primaryKey,
   text,
-  timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
 
-import { User } from './workspace'
+import { timestamps } from './utils'
+import { workspace } from './workspace'
+
+export const dataset = pgTable(
+  'dataset',
+  {
+    id: uuid().primaryKey().notNull().defaultRandom(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspace.id),
+    name: varchar({ length: 255 }).notNull(),
+    metadata: json(),
+    ...timestamps,
+  },
+  (table) => [
+    index().on(table.workspaceId),
+  ],
+)
+
+export type Dataset = InferSelectModel<typeof dataset>
 
 export const document = pgTable(
   'document',
   {
-    id: uuid('id').notNull().defaultRandom(),
-    createdAt: timestamp('createdAt').notNull(),
-    title: text('title').notNull(),
-    content: text('content'),
-    kind: varchar('text', { enum: ['text', 'code', 'image'] })
+    id: uuid().primaryKey().notNull().defaultRandom(),
+    workspaceId: uuid()
       .notNull()
-      .default('text'),
-    userId: uuid('userId')
+      .references(() => workspace.id),
+    datasetId: uuid()
       .notNull()
-      .references(() => User.id),
+      .references(() => dataset.id),
+    name: varchar({ length: 255 }).notNull(),
+    url: text(), // optional
+    ...timestamps,
   },
-  (table) => {
-    return {
-      pk: primaryKey({ columns: [table.id, table.createdAt] }),
-    }
-  },
+  (table) => [
+    index().on(table.workspaceId, table.datasetId),
+  ],
 )
 
 export type Document = InferSelectModel<typeof document>
 
-export const suggestion = pgTable(
-  'suggestion',
+export const segment = pgTable(
+  'segment',
   {
-    id: uuid('id').notNull().defaultRandom(),
-    documentId: uuid('documentId').notNull(),
-    documentCreatedAt: timestamp('documentCreatedAt').notNull(),
-    originalText: text('originalText').notNull(),
-    suggestedText: text('suggestedText').notNull(),
-    description: text('description'),
-    isResolved: boolean('isResolved').notNull().default(false),
-    userId: uuid('userId')
+    id: uuid().primaryKey().notNull().defaultRandom(),
+    workspaceId: uuid()
       .notNull()
-      .references(() => User.id),
-    createdAt: timestamp('createdAt').notNull(),
+      .references(() => workspace.id),
+    datasetId: uuid()
+      .notNull()
+      .references(() => dataset.id),
+    documentId: uuid()
+      .notNull()
+      .references(() => document.id),
+    index: integer().notNull(),
+    content: text().notNull(),
+    metadata: json(),
+    ...timestamps,
   },
-  (table) => ({
-    pk: primaryKey({ columns: [table.id] }),
-    documentRef: foreignKey({
-      columns: [table.documentId, table.documentCreatedAt],
-      foreignColumns: [document.id, document.createdAt],
-    }),
-  }),
+  (table) => [
+    uniqueIndex().on(table.workspaceId, table.datasetId, table.documentId, table.index),
+  ],
 )
 
-export type Suggestion = InferSelectModel<typeof suggestion>
+export type Segment = InferSelectModel<typeof segment>
+
+export const chunk = pgTable(
+  'chunk',
+  {
+    id: uuid().primaryKey().notNull().defaultRandom(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspace.id),
+    datasetId: uuid()
+      .notNull()
+      .references(() => dataset.id),
+    documentId: uuid()
+      .notNull()
+      .references(() => document.id),
+    segmentId: uuid()
+      .notNull()
+      .references(() => segment.id),
+    index: integer().notNull(),
+    content: text().notNull(),
+    embedding: text(),
+    metadata: json(),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex().on(
+      table.workspaceId,
+      table.datasetId,
+      table.documentId,
+      table.segmentId,
+      table.index,
+    ),
+  ],
+)
+
+export type Chunk = InferSelectModel<typeof chunk>

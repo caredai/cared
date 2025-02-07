@@ -4,7 +4,7 @@ import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { createdAt, timestamps, visibilityEnum, visibilityEnumValues } from './utils'
-import { User } from './workspace'
+import { user } from './workspace'
 
 export const chat = pgTable(
   'chat',
@@ -13,7 +13,7 @@ export const chat = pgTable(
     title: text('title').notNull(),
     userId: uuid('userId')
       .notNull()
-      .references(() => User.id),
+      .references(() => user.id),
     visibility: visibilityEnum().notNull().default('private'),
     ...timestamps,
   },

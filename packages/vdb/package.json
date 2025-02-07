@@ -1,0 +1,31 @@
+{
+  "name": "@mindworld/vdb",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "devDependencies": {
+    "@mindworld/eslint-config": "workspace:*",
+    "@mindworld/prettier-config": "workspace:*",
+    "@mindworld/tsconfig": "workspace:*",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "prettier": "@mindworld/prettier-config",
+  "dependencies": {
+    "@qdrant/js-client-rest": "^1.13.0",
+    "async-mutex": "^0.5.0"
+  }
+}

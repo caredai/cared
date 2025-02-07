@@ -4,7 +4,7 @@ import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import Discord from 'next-auth/providers/discord'
 
 import { db } from '@mindworld/db/client'
-import { Account, Session, User } from '@mindworld/db/schema'
+import { Account, Session, user } from '@mindworld/db/schema'
 
 import { env } from '../env'
 
@@ -17,7 +17,7 @@ declare module 'next-auth' {
 }
 
 const adapter = DrizzleAdapter(db, {
-  usersTable: User,
+  usersTable: user,
   accountsTable: Account,
   sessionsTable: Session,
 })
