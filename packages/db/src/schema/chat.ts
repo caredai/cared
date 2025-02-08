@@ -3,23 +3,28 @@ import { boolean, index, json, pgTable, primaryKey, text, uuid, varchar } from '
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
+import { agent } from './agent'
 import { createdAt, timestamps, visibilityEnum, visibilityEnumValues } from './utils'
 import { user } from './workspace'
 
 export const chat = pgTable(
   'chat',
   {
-    id: uuid('id').primaryKey().notNull().defaultRandom(),
-    title: text('title').notNull(),
-    userId: uuid('userId')
+    id: uuid().primaryKey().notNull().defaultRandom(),
+    title: text().notNull(),
+    agentId: uuid()
+      .notNull()
+      .references(() => agent.id),
+    userId: uuid()
       .notNull()
       .references(() => user.id),
     visibility: visibilityEnum().notNull().default('private'),
     ...timestamps,
   },
-  (table) => ({
-    userIdIdx: index().on(table.userId),
-  }),
+  (table) => [
+    index().on(table.agentId, table.userId),
+    index().on(table.userId),
+  ],
 )
 
 export type Chat = InferSelectModel<typeof chat>
@@ -43,12 +48,12 @@ export const UpdateChatSchema = createUpdateSchema(chat, {
 })
 
 export const message = pgTable('message', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  chatId: uuid('chatId')
+  id: uuid().primaryKey().notNull().defaultRandom(),
+  chatId: uuid()
     .notNull()
     .references(() => chat.id),
-  role: varchar('role').notNull(),
-  content: json('content').notNull(),
+  role: varchar().notNull(),
+  content: json().notNull(),
   createdAt,
 })
 
@@ -57,13 +62,13 @@ export type Message = InferSelectModel<typeof message>
 export const vote = pgTable(
   'vote',
   {
-    chatId: uuid('chatId')
+    chatId: uuid()
       .notNull()
       .references(() => chat.id),
-    messageId: uuid('messageId')
+    messageId: uuid()
       .notNull()
       .references(() => message.id),
-    isUpvoted: boolean('isUpvoted').notNull(),
+    isUpvoted: boolean().notNull(),
   },
   (table) => {
     return {

@@ -4,7 +4,7 @@ import { z } from 'zod'
 
 import { timestamps, visibilityEnum, visibilityEnumValues } from './utils'
 
-export const Agent = pgTable('agent', {
+export const agent = pgTable('agent', {
   id: uuid().primaryKey().notNull().defaultRandom(),
   name: varchar({ length: 255 }).notNull(),
   description: text(),
@@ -14,7 +14,7 @@ export const Agent = pgTable('agent', {
   ...timestamps,
 })
 
-export const CreateAgentSchema = createInsertSchema(Agent, {
+export const CreateAgentSchema = createInsertSchema(agent, {
   name: z.string().max(255),
   description: z.string().optional(),
   type: z.string().max(63),

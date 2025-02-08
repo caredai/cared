@@ -1,9 +1,9 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { json, pgEnum, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
+import { json, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { timestamps } from './utils'
+import { roleEnum, roleEnumValues, timestamps } from './utils'
 
 export const workspace = pgTable('workspace', {
   id: uuid().primaryKey().notNull().defaultRandom(),
@@ -32,9 +32,6 @@ export const CreateUserSchema = createInsertSchema(user, {
   id: z.string().max(255),
   info: z.record(z.unknown()),
 }).omit({})
-
-export const roleEnumValues = ['owner', 'member'] as const
-export const roleEnum = pgEnum('role', roleEnumValues)
 
 export const membership = pgTable(
   'membership',

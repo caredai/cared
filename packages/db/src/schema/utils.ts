@@ -10,3 +10,6 @@ export const timestamps = {
 
 export const visibilityEnumValues = ['public', 'private'] as const
 export const visibilityEnum = pgEnum('visibility', visibilityEnumValues)
+
+export const roleEnumValues = ['owner', 'member'] as const
+export const roleEnum = pgEnum('role', roleEnumValues)
