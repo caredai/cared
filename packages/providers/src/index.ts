@@ -732,9 +732,25 @@ export const providerInfos: ProviderInfo[] = [
   },
 ] as const
 
-export const modelInfos = providerInfos.flatMap(
+export const languageModelInfos = providerInfos.flatMap(
   (provider) =>
     provider.languageModels?.map((model) => ({
+      ...model,
+      id: modelFullId(provider.id, model.id),
+    })) ?? [],
+)
+
+export const textEmbeddingModelInfos = providerInfos.flatMap(
+  (provider) =>
+    provider.textEmbeddingModels?.map((model) => ({
+      ...model,
+      id: modelFullId(provider.id, model.id),
+    })) ?? [],
+)
+
+export const imageModelInfos = providerInfos.flatMap(
+  (provider) =>
+    provider.imageModels?.map((model) => ({
       ...model,
       id: modelFullId(provider.id, model.id),
     })) ?? [],

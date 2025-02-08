@@ -6,17 +6,24 @@ import type { Document, Memory, SearchOptions } from './base'
 import { BaseVector } from './base'
 import { env } from './env'
 
+type CollectionType = 'knowledge' | 'memory'
+
 export class QdrantVector extends BaseVector {
   private static singleton?: QdrantClient
+  private static mutex = new Mutex()
 
   private client: QdrantClient
   private initialized = false
-  private mutex = new Mutex()
 
-  private knowledgeCollection = 'knowledge'
-  private memoryCollection = 'memory'
+  private static getCollectionName(prefix: string, size: number) {
+    return `${prefix}-${size}`
+  }
 
-  constructor(private vectorSize: number) {
+  private static readonly KNOWLEDGE_PREFIX: CollectionType = 'knowledge'
+  private static readonly MEMORY_PREFIX: CollectionType = 'memory'
+  private collectionSizes = new Set<number>()
+
+  constructor(private vectorSize?: number) {
     super()
 
     if (!QdrantVector.singleton) {
@@ -28,48 +35,241 @@ export class QdrantVector extends BaseVector {
     this.client = QdrantVector.singleton
   }
 
+  private async getAllCollections() {
+    const collections = await this.client.getCollections()
+    return collections.collections.map((c) => c.name)
+  }
+
+  private async createCollectionIfNotExists(prefix: CollectionType, size: number) {
+    if (this.collectionSizes.has(size)) {
+      return
+    }
+
+    await QdrantVector.mutex.runExclusive(async () => {
+      const collectionName = QdrantVector.getCollectionName(prefix, size)
+      const collections = await this.getAllCollections()
+
+      if (!collections.includes(collectionName)) {
+        await this.createCollection(collectionName, size, prefix)
+      }
+    })
+
+    this.collectionSizes.add(size)
+  }
+
+  private async createCollection(collectionName: string, size: number, type: CollectionType) {
+    await this.client.recreateCollection(collectionName, {
+      vectors: {
+        size,
+        distance: 'Cosine',
+      },
+      hnsw_config: {
+        m: 0,
+        ef_construct: 100,
+        full_scan_threshold: 10000,
+        max_indexing_threads: 0,
+        on_disk: false,
+        payload_m: 16,
+      },
+      timeout: 20,
+    })
+
+    if (type === QdrantVector.KNOWLEDGE_PREFIX) {
+      await this.client.createPayloadIndex(collectionName, {
+        field_name: 'metadata.workspaceId',
+        field_schema: {
+          type: 'uuid',
+          is_tenant: true,
+        },
+        wait: true,
+      })
+
+      await this.client.createPayloadIndex(collectionName, {
+        field_name: 'metadata.datasetId',
+        field_schema: 'uuid',
+        wait: true,
+      })
+
+      await this.client.createPayloadIndex(collectionName, {
+        field_name: 'metadata.documentId',
+        field_schema: 'uuid',
+        wait: true,
+      })
+    } else {
+      await this.client.createPayloadIndex(collectionName, {
+        field_name: 'metadata.userId',
+        field_schema: {
+          type: 'uuid',
+          is_tenant: true,
+        },
+        wait: true,
+      })
+
+      await this.client.createPayloadIndex(collectionName, {
+        field_name: 'metadata.agentId',
+        field_schema: 'uuid',
+        wait: true,
+      })
+
+      await this.client.createPayloadIndex(collectionName, {
+        field_name: 'metadata.chatId',
+        field_schema: 'uuid',
+        wait: true,
+      })
+
+      await this.client.createPayloadIndex(collectionName, {
+        field_name: 'metadata.roomId',
+        field_schema: 'uuid',
+        wait: true,
+      })
+    }
+
+    await this.client.createPayloadIndex(collectionName, {
+      field_name: 'content',
+      field_schema: {
+        type: 'text',
+        tokenizer: 'multilingual',
+        min_token_len: 2,
+        max_token_len: 20,
+        lowercase: true,
+      },
+      wait: true,
+    })
+  }
+
+  private async init() {
+    if (this.initialized) {
+      return
+    }
+
+    await QdrantVector.mutex.runExclusive(async () => {
+      const collections = await this.getAllCollections()
+
+      for (const collection of collections) {
+        const [prefix, sizeStr] = collection.split('-')
+        if (
+          (prefix === QdrantVector.KNOWLEDGE_PREFIX || prefix === QdrantVector.MEMORY_PREFIX) &&
+          sizeStr
+        ) {
+          const size = parseInt(sizeStr)
+          if (!isNaN(size)) {
+            this.collectionSizes.add(size)
+          }
+        }
+      }
+    })
+
+    if (this.vectorSize) {
+      await this.createCollectionIfNotExists(QdrantVector.KNOWLEDGE_PREFIX, this.vectorSize)
+      await this.createCollectionIfNotExists(QdrantVector.MEMORY_PREFIX, this.vectorSize)
+    }
+
+    this.initialized = true
+  }
+
   async insertDocuments(documents: Document | Document[]) {
     await this.init()
 
     documents = Array.isArray(documents) ? documents : [documents]
-    await this.client.upsert(this.knowledgeCollection, {
-      wait: true,
-      points: documents.map((doc) => ({
-        id: doc.id,
-        vector: doc.embedding,
-        payload: {
-          content: doc.content,
-          metadata: doc.metadata,
-        },
-      })),
-    })
-    return documents.map((doc) => doc.id)
+
+    const docsBySize = new Map<number, Document[]>()
+    for (const doc of documents) {
+      const size = doc.embedding.length
+      const docs = docsBySize.get(size) ?? []
+      docsBySize.set(size, [...docs, doc])
+    }
+
+    const results: string[] = []
+    for (const [size, docs] of docsBySize) {
+      await this.createCollectionIfNotExists(QdrantVector.KNOWLEDGE_PREFIX, size)
+
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
+
+      await this.client.upsert(collectionName, {
+        wait: true,
+        points: docs.map((doc) => ({
+          id: doc.id,
+          vector: doc.embedding,
+          payload: {
+            content: doc.content,
+            metadata: doc.metadata,
+          },
+        })),
+      })
+      results.push(...docs.map((doc) => doc.id))
+    }
+    return results
   }
 
   async getDocument(id: string) {
-    const response = (
-      await this.client.retrieve(this.knowledgeCollection, {
-        ids: [id],
-        with_payload: true,
-        with_vector: true,
-      })
-    ).at(0)
-    if (!response?.payload) {
-      return
+    await this.init()
+
+    if (this.vectorSize) {
+      const collectionName = QdrantVector.getCollectionName(
+        QdrantVector.KNOWLEDGE_PREFIX,
+        this.vectorSize,
+      )
+      const response = (
+        await this.client.retrieve(collectionName, {
+          ids: [id],
+          with_payload: true,
+          with_vector: true,
+        })
+      ).at(0)
+      if (response?.payload) {
+        return {
+          id: response.id,
+          content: response.payload.content,
+          embedding: response.vector,
+          metadata: response.payload.metadata,
+        } as Document
+      }
+    } else {
+      for (const size of this.collectionSizes) {
+        const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
+        const response = (
+          await this.client.retrieve(collectionName, {
+            ids: [id],
+            with_payload: true,
+            with_vector: true,
+          })
+        ).at(0)
+        if (response?.payload) {
+          return {
+            id: response.id,
+            content: response.payload.content,
+            embedding: response.vector,
+            metadata: response.payload.metadata,
+          } as Document
+        }
+      }
     }
-    return {
-      id: response.id,
-      content: response.payload.content,
-      embedding: response.vector,
-      metadata: response.payload.metadata,
-    } as Document
   }
 
   async hasDocument(id: string) {
-    const response = await this.client.retrieve(this.knowledgeCollection, {
-      ids: [id],
-    })
-    return response.length > 0
+    await this.init()
+
+    if (this.vectorSize) {
+      const collectionName = QdrantVector.getCollectionName(
+        QdrantVector.KNOWLEDGE_PREFIX,
+        this.vectorSize,
+      )
+      const response = await this.client.retrieve(collectionName, {
+        ids: [id],
+      })
+      return response.length > 0
+    } else {
+      for (const size of this.collectionSizes) {
+        const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
+        const response = await this.client.retrieve(collectionName, {
+          ids: [id],
+        })
+        if (response.length > 0) {
+          return true
+        }
+      }
+      return false
+    }
   }
 
   async searchDocumentsByEmbedding(
@@ -81,6 +281,8 @@ export class QdrantVector extends BaseVector {
     },
     opts?: SearchOptions,
   ) {
+    await this.init()
+
     const must = []
     if (filter?.workspaceId) {
       must.push({
@@ -107,34 +309,43 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const response = await this.client.search(this.knowledgeCollection, {
-      vector: embedding,
-      with_payload: true,
-      with_vector: true,
-      filter: {
-        must,
-      },
-      limit: opts?.topK ?? 4,
-      score_threshold: opts?.scoreThreshold ?? 0,
-    })
-
     const results: Document[] = []
-    for (const item of response) {
-      if (!item.payload) {
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      if (embedding.length !== size) {
         continue
       }
-      if (item.score < (opts?.scoreThreshold ?? 0)) {
-        continue
-      }
-      results.push({
-        id: item.id as string,
-        content: item.payload.content as string,
-        embedding: item.vector as number[],
-        metadata: {
-          ...(item.payload.metadata as Document['metadata']),
-          score: item.score,
+
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
+      const response = await this.client.search(collectionName, {
+        vector: embedding,
+        with_payload: true,
+        with_vector: true,
+        filter: {
+          must,
         },
+        limit: opts?.topK ?? 4,
+        score_threshold: opts?.scoreThreshold ?? 0,
       })
+
+      for (const item of response) {
+        if (!item.payload) {
+          continue
+        }
+        if (item.score < (opts?.scoreThreshold ?? 0)) {
+          continue
+        }
+        results.push({
+          id: item.id as string,
+          content: item.payload.content as string,
+          embedding: item.vector as number[],
+          metadata: {
+            ...(item.payload.metadata as Document['metadata']),
+            score: item.score,
+          },
+        })
+      }
     }
     return results
   }
@@ -148,6 +359,8 @@ export class QdrantVector extends BaseVector {
     },
     opts?: SearchOptions,
   ) {
+    await this.init()
+
     const must: Schemas['Filter']['must'] = [
       {
         key: 'content',
@@ -181,38 +394,56 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const response = await this.client.scroll(this.knowledgeCollection, {
-      with_payload: true,
-      with_vector: true,
-      filter: {
-        must,
-      },
-      limit: opts?.topK ?? 2,
-    })
-
     const results: (Omit<Document, 'embedding'> & { embedding?: number[] })[] = []
-    for (const item of response.points) {
-      if (!item.payload) {
-        continue
-      }
-      results.push({
-        id: item.id as string,
-        content: item.payload.content as string,
-        embedding: (item.vector ?? undefined) as number[] | undefined,
-        metadata: item.payload.metadata as Document['metadata'],
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
+      const response = await this.client.scroll(collectionName, {
+        with_payload: true,
+        with_vector: true,
+        filter: {
+          must,
+        },
+        limit: opts?.topK ?? 2,
       })
+
+      for (const item of response.points) {
+        if (!item.payload) {
+          continue
+        }
+        results.push({
+          id: item.id as string,
+          content: item.payload.content as string,
+          embedding: (item.vector ?? undefined) as number[] | undefined,
+          metadata: item.payload.metadata as Document['metadata'],
+        })
+      }
     }
     return results
   }
 
   async deleteDocuments(ids: string[]) {
-    await this.client.delete(this.knowledgeCollection, {
-      wait: true,
-      points: ids,
-    })
+    await this.init()
+
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
+      await this.client.delete(collectionName, {
+        wait: true,
+        points: ids,
+      })
+    }
   }
 
-  async deleteDocumentsByFilter(filter: { workspaceId?: string; datasetId?: string; documentId?: string }) {
+  async deleteDocumentsByFilter(filter: {
+    workspaceId?: string
+    datasetId?: string
+    documentId?: string
+  }) {
+    await this.init()
+
     const match: Record<string, unknown> = {}
     if (filter.workspaceId) {
       match['metadata.workspaceId'] = filter.workspaceId
@@ -223,58 +454,125 @@ export class QdrantVector extends BaseVector {
     if (filter.documentId) {
       match['metadata.documentId'] = filter.documentId
     }
-    await this.client.delete(this.knowledgeCollection, {
-      wait: true,
-      filter: {
-        must: {
-          match,
+
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
+      await this.client.delete(collectionName, {
+        wait: true,
+        filter: {
+          must: {
+            match,
+          },
         },
-      },
-    })
+      })
+    }
   }
 
   async insertMemories(memories: Memory | Memory[]) {
     await this.init()
 
     memories = Array.isArray(memories) ? memories : [memories]
-    await this.client.upsert(this.memoryCollection, {
-      wait: true,
-      points: memories.map((memory) => ({
-        id: memory.id,
-        vector: memory.embedding,
-        payload: {
-          content: memory.content,
-          metadata: memory.metadata,
-        },
-      })),
-    })
-    return memories.map((memory) => memory.id)
+
+    const memoriesBySize = new Map<number, Memory[]>()
+    for (const memory of memories) {
+      const size = memory.embedding.length
+      const mems = memoriesBySize.get(size) ?? []
+      memoriesBySize.set(size, [...mems, memory])
+    }
+
+    const results: string[] = []
+    for (const [size, mems] of memoriesBySize) {
+      await this.createCollectionIfNotExists(QdrantVector.MEMORY_PREFIX, size)
+
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
+
+      await this.client.upsert(collectionName, {
+        wait: true,
+        points: mems.map((memory) => ({
+          id: memory.id,
+          vector: memory.embedding,
+          payload: {
+            content: memory.content,
+            metadata: memory.metadata,
+          },
+        })),
+      })
+      results.push(...mems.map((memory) => memory.id))
+    }
+    return results
   }
 
   async getMemory(id: string) {
-    const response = (
-      await this.client.retrieve(this.memoryCollection, {
-        ids: [id],
-        with_payload: true,
-        with_vector: true,
-      })
-    ).at(0)
-    if (!response?.payload) {
-      return
+    await this.init()
+
+    if (this.vectorSize) {
+      const collectionName = QdrantVector.getCollectionName(
+        QdrantVector.MEMORY_PREFIX,
+        this.vectorSize,
+      )
+      const response = (
+        await this.client.retrieve(collectionName, {
+          ids: [id],
+          with_payload: true,
+          with_vector: true,
+        })
+      ).at(0)
+      if (response?.payload) {
+        return {
+          id: response.id,
+          content: response.payload.content,
+          embedding: response.vector,
+          metadata: response.payload.metadata,
+        } as Memory
+      }
+    } else {
+      for (const size of this.collectionSizes) {
+        const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
+        const response = (
+          await this.client.retrieve(collectionName, {
+            ids: [id],
+            with_payload: true,
+            with_vector: true,
+          })
+        ).at(0)
+        if (response?.payload) {
+          return {
+            id: response.id,
+            content: response.payload.content,
+            embedding: response.vector,
+            metadata: response.payload.metadata,
+          } as Memory
+        }
+      }
     }
-    return {
-      id: response.id,
-      content: response.payload.content,
-      embedding: response.vector,
-      metadata: response.payload.metadata,
-    } as Memory
   }
 
   async hasMemory(id: string) {
-    const response = await this.client.retrieve(this.memoryCollection, {
-      ids: [id],
-    })
-    return response.length > 0
+    await this.init()
+
+    if (this.vectorSize) {
+      const collectionName = QdrantVector.getCollectionName(
+        QdrantVector.MEMORY_PREFIX,
+        this.vectorSize,
+      )
+      const response = await this.client.retrieve(collectionName, {
+        ids: [id],
+      })
+      return response.length > 0
+    } else {
+      for (const size of this.collectionSizes) {
+        const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
+        const response = await this.client.retrieve(collectionName, {
+          ids: [id],
+        })
+        if (response.length > 0) {
+          return true
+        }
+      }
+      return false
+    }
   }
 
   async searchMemoriesByEmbedding(
@@ -287,6 +585,8 @@ export class QdrantVector extends BaseVector {
     },
     opts?: SearchOptions,
   ) {
+    await this.init()
+
     const must = []
     if (filter?.userId) {
       must.push({
@@ -321,34 +621,43 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const response = await this.client.search(this.memoryCollection, {
-      vector: embedding,
-      with_payload: true,
-      with_vector: true,
-      filter: {
-        must,
-      },
-      limit: opts?.topK ?? 4,
-      score_threshold: opts?.scoreThreshold ?? 0,
-    })
-
     const results: Memory[] = []
-    for (const item of response) {
-      if (!item.payload) {
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      if (embedding.length !== size) {
         continue
       }
-      if (item.score < (opts?.scoreThreshold ?? 0)) {
-        continue
-      }
-      results.push({
-        id: item.id as string,
-        content: item.payload.content as string,
-        embedding: item.vector as number[],
-        metadata: {
-          ...(item.payload.metadata as Memory['metadata']),
-          score: item.score,
+
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
+      const response = await this.client.search(collectionName, {
+        vector: embedding,
+        with_payload: true,
+        with_vector: true,
+        filter: {
+          must,
         },
+        limit: opts?.topK ?? 4,
+        score_threshold: opts?.scoreThreshold ?? 0,
       })
+
+      for (const item of response) {
+        if (!item.payload) {
+          continue
+        }
+        if (item.score < (opts?.scoreThreshold ?? 0)) {
+          continue
+        }
+        results.push({
+          id: item.id as string,
+          content: item.payload.content as string,
+          embedding: item.vector as number[],
+          metadata: {
+            ...(item.payload.metadata as Memory['metadata']),
+            score: item.score,
+          },
+        })
+      }
     }
     return results
   }
@@ -363,6 +672,8 @@ export class QdrantVector extends BaseVector {
     },
     opts?: SearchOptions,
   ) {
+    await this.init()
+
     const must: Schemas['Filter']['must'] = [
       {
         key: 'content',
@@ -404,35 +715,47 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const response = await this.client.scroll(this.memoryCollection, {
-      with_payload: true,
-      with_vector: true,
-      filter: {
-        must,
-      },
-      limit: opts?.topK ?? 2,
-    })
-
     const results: (Omit<Memory, 'embedding'> & { embedding?: number[] })[] = []
-    for (const item of response.points) {
-      if (!item.payload) {
-        continue
-      }
-      results.push({
-        id: item.id as string,
-        content: item.payload.content as string,
-        embedding: (item.vector ?? undefined) as number[] | undefined,
-        metadata: item.payload.metadata as Memory['metadata'],
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
+      const response = await this.client.scroll(collectionName, {
+        with_payload: true,
+        with_vector: true,
+        filter: {
+          must,
+        },
+        limit: opts?.topK ?? 2,
       })
+
+      for (const item of response.points) {
+        if (!item.payload) {
+          continue
+        }
+        results.push({
+          id: item.id as string,
+          content: item.payload.content as string,
+          embedding: (item.vector ?? undefined) as number[] | undefined,
+          metadata: item.payload.metadata as Memory['metadata'],
+        })
+      }
     }
     return results
   }
 
   async deleteMemories(ids: string[]) {
-    await this.client.delete(this.memoryCollection, {
-      wait: true,
-      points: ids,
-    })
+    await this.init()
+
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
+      await this.client.delete(collectionName, {
+        wait: true,
+        points: ids,
+      })
+    }
   }
 
   async deleteMemoriesByFilter(filter: {
@@ -441,6 +764,8 @@ export class QdrantVector extends BaseVector {
     chatId?: string
     roomId?: string
   }) {
+    await this.init()
+
     const match: Record<string, unknown> = {}
     if (filter.userId) {
       match['metadata.userId'] = filter.userId
@@ -454,144 +779,19 @@ export class QdrantVector extends BaseVector {
     if (filter.roomId) {
       match['metadata.roomId'] = filter.roomId
     }
-    await this.client.delete(this.memoryCollection, {
-      wait: true,
-      filter: {
-        must: {
-          match,
+
+    const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
+
+    for (const size of targetSizes) {
+      const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
+      await this.client.delete(collectionName, {
+        wait: true,
+        filter: {
+          must: {
+            match,
+          },
         },
-      },
-    })
-  }
-
-  private async init() {
-    if (this.initialized) {
-      return
+      })
     }
-
-    await this.mutex.runExclusive(async () => {
-      const collections = await this.client.getCollections()
-      const existingCollections = collections.collections.map((c) => c.name)
-
-      // Initialize knowledge collection if not exists
-      if (!existingCollections.includes(this.knowledgeCollection)) {
-        await this.initKnowledgeCollection()
-      }
-
-      // Initialize memory collection if not exists
-      if (!existingCollections.includes(this.memoryCollection)) {
-        await this.initMemoryCollection()
-      }
-    })
-
-    this.initialized = true
-  }
-
-  private async initKnowledgeCollection() {
-    await this.client.recreateCollection(this.knowledgeCollection, {
-      vectors: {
-        size: this.vectorSize,
-        distance: 'Cosine',
-      },
-      hnsw_config: {
-        m: 0,
-        ef_construct: 100,
-        full_scan_threshold: 10000,
-        max_indexing_threads: 0,
-        on_disk: false,
-        payload_m: 16,
-      },
-      timeout: 20,
-    })
-
-    await this.client.createPayloadIndex(this.knowledgeCollection, {
-      field_name: 'metadata.workspaceId',
-      field_schema: {
-        type: 'uuid',
-        is_tenant: true,
-      },
-      wait: true,
-    })
-
-    await this.client.createPayloadIndex(this.knowledgeCollection, {
-      field_name: 'metadata.datasetId',
-      field_schema: 'uuid',
-      wait: true,
-    })
-
-    await this.client.createPayloadIndex(this.knowledgeCollection, {
-      field_name: 'metadata.documentId',
-      field_schema: 'uuid',
-      wait: true,
-    })
-
-    await this.client.createPayloadIndex(this.knowledgeCollection, {
-      field_name: 'content',
-      field_schema: {
-        type: 'text',
-        tokenizer: 'multilingual',
-        min_token_len: 2,
-        max_token_len: 20,
-        lowercase: true,
-      },
-      wait: true,
-    })
-  }
-
-  private async initMemoryCollection() {
-    await this.client.recreateCollection(this.memoryCollection, {
-      vectors: {
-        size: this.vectorSize,
-        distance: 'Cosine',
-      },
-      hnsw_config: {
-        m: 0,
-        ef_construct: 100,
-        full_scan_threshold: 10000,
-        max_indexing_threads: 0,
-        on_disk: false,
-        payload_m: 16,
-      },
-      timeout: 20,
-    })
-
-    await this.client.createPayloadIndex(this.memoryCollection, {
-      field_name: 'metadata.userId',
-      field_schema: {
-        type: 'uuid',
-        is_tenant: true,
-      },
-      wait: true,
-    })
-
-    await this.client.createPayloadIndex(this.memoryCollection, {
-      field_name: 'metadata.agentId',
-      field_schema: 'uuid',
-      wait: true,
-    })
-
-    await this.client.createPayloadIndex(this.memoryCollection, {
-      field_name: 'metadata.chatId',
-      field_schema: 'uuid',
-      wait: true,
-    })
-
-    await this.client.createPayloadIndex(this.memoryCollection, {
-      field_name: 'metadata.roomId',
-      field_schema: 'uuid',
-      wait: true,
-    })
-
-    await this.client.createPayloadIndex(this.memoryCollection, {
-      field_name: 'content',
-      field_schema: {
-        type: 'text',
-        tokenizer: 'multilingual',
-        min_token_len: 2,
-        max_token_len: 20,
-        lowercase: true,
-      },
-      wait: true,
-    })
   }
 }

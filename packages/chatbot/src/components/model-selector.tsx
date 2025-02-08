@@ -2,7 +2,7 @@
 
 import { startTransition, useMemo, useOptimistic, useState } from 'react'
 
-import { modelInfos } from '@mindworld/providers'
+import { languageModelInfos } from '@mindworld/providers'
 import { Button } from '@mindworld/ui/components/button'
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ export function ModelSelector({
   const [optimisticModelId, setOptimisticModelId] = useOptimistic(modelId)
 
   const selectedModel = useMemo(
-    () => modelInfos.find((model) => model.id === optimisticModelId),
+    () => languageModelInfos.find((model) => model.id === optimisticModelId),
     [optimisticModelId],
   )
 
@@ -45,7 +45,7 @@ export function ModelSelector({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {modelInfos.map((model) => (
+        {languageModelInfos.map((model) => (
           <DropdownMenuItem
             key={model.id}
             onSelect={() => {
