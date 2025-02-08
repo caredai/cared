@@ -1,7 +1,8 @@
+import type { Schemas } from '@qdrant/js-client-rest';
 import { QdrantClient } from '@qdrant/js-client-rest'
 import { Mutex } from 'async-mutex'
 
-import type { Document } from './base'
+import type { Document, SearchOptions } from './base'
 import { BaseVector } from './base'
 import { env } from './env'
 
@@ -28,11 +29,13 @@ export class QdrantVector extends BaseVector {
   }
 
   async insert(documents: Document | Document[]) {
+    await this.init()
+
     documents = Array.isArray(documents) ? documents : [documents]
     await this.client.upsert(this.collection, {
       wait: true,
       points: documents.map((doc) => ({
-        id: doc.metadata.documentId,
+        id: doc.id,
         vector: doc.embedding,
         payload: {
           content: doc.content,
@@ -40,7 +43,194 @@ export class QdrantVector extends BaseVector {
         },
       })),
     })
-    return documents.map((doc) => doc.metadata.documentId)
+    return documents.map((doc) => doc.id)
+  }
+
+  async get(id: string) {
+    const response = (
+      await this.client.retrieve(this.collection, {
+        ids: [id],
+        with_payload: true,
+        with_vector: true,
+      })
+    ).at(0)
+    if (!response?.payload) {
+      return
+    }
+    return {
+      id: response.id,
+      content: response.payload.content,
+      embedding: response.vector,
+      metadata: response.payload.metadata,
+    } as Document
+  }
+
+  async exists(id: string) {
+    const response = await this.client.retrieve(this.collection, {
+      ids: [id],
+    })
+    return response.length > 0
+  }
+
+  async searchByEmbedding(
+    embedding: number[],
+    filter?: {
+      workspaceId?: string
+      datasetId?: string
+      documentId?: string
+    },
+    opts?: SearchOptions,
+  ) {
+    const must = []
+    if (filter?.workspaceId) {
+      must.push({
+        key: 'metadata.workspaceId',
+        match: {
+          value: filter.workspaceId,
+        },
+      })
+    }
+    if (filter?.datasetId) {
+      must.push({
+        key: 'metadata.datasetId',
+        match: {
+          value: filter.datasetId,
+        },
+      })
+    }
+    if (filter?.documentId) {
+      must.push({
+        key: 'metadata.documentId',
+        match: {
+          value: filter.documentId,
+        },
+      })
+    }
+
+    const response = await this.client.search(this.collection, {
+      vector: embedding,
+      with_payload: true,
+      with_vector: true,
+      filter: {
+        must,
+      },
+      limit: opts?.topK ?? 4,
+      score_threshold: opts?.scoreThreshold ?? 0,
+    })
+
+    const results: Document[] = []
+    for (const item of response) {
+      if (!item.payload) {
+        continue
+      }
+      if (item.score < (opts?.scoreThreshold ?? 0)) {
+        continue
+      }
+      results.push({
+        id: item.id as string,
+        content: item.payload.content as string,
+        embedding: item.vector as number[],
+        metadata: {
+          ...(item.payload.metadata as Record<string, unknown>),
+          score: item.score,
+        } as any,
+      })
+    }
+    return results
+  }
+
+  async searchByFulltext(
+    query: string,
+    filter?: {
+      workspaceId?: string
+      datasetId?: string
+      documentId?: string
+    },
+    opts?: SearchOptions,
+  ) {
+    const must: Schemas['Filter']['must'] = [
+      {
+        key: 'content',
+        match: {
+          text: query,
+        },
+      },
+    ]
+    if (filter?.workspaceId) {
+      must.push({
+        key: 'metadata.workspaceId',
+        match: {
+          value: filter.workspaceId,
+        },
+      })
+    }
+    if (filter?.datasetId) {
+      must.push({
+        key: 'metadata.datasetId',
+        match: {
+          value: filter.datasetId,
+        },
+      })
+    }
+    if (filter?.documentId) {
+      must.push({
+        key: 'metadata.documentId',
+        match: {
+          value: filter.documentId,
+        },
+      })
+    }
+
+    const response = await this.client.scroll(this.collection, {
+      with_payload: true,
+      with_vector: true,
+      filter: {
+        must,
+      },
+      limit: opts?.topK ?? 2,
+    })
+
+    const results: (Omit<Document, 'embedding'> & Partial<Pick<Document, 'embedding'>>)[] = []
+    for (const item of response.points) {
+      if (!item.payload) {
+        continue
+      }
+      results.push({
+        id: item.id as string,
+        content: item.payload.content as string,
+        embedding: (item.vector ?? undefined) as number[] | undefined,
+        metadata: item.payload.metadata as any,
+      })
+    }
+    return results
+  }
+
+  async delete(ids: string[]) {
+    await this.client.delete(this.collection, {
+      wait: true,
+      points: ids,
+    })
+  }
+
+  async deleteByFilter(filter: { workspaceId?: string; datasetId?: string; documentId?: string }) {
+    const match: Record<string, unknown> = {}
+    if (filter.workspaceId) {
+      match['metadata.workspaceId'] = filter.workspaceId
+    }
+    if (filter.datasetId) {
+      match['metadata.datasetId'] = filter.datasetId
+    }
+    if (filter.documentId) {
+      match['metadata.documentId'] = filter.documentId
+    }
+    await this.client.delete(this.collection, {
+      wait: true,
+      filter: {
+        must: {
+          match,
+        },
+      },
+    })
   }
 
   private async init() {

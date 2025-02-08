@@ -1,4 +1,5 @@
 export interface Document {
+  id: string // segmentId or chunkId
   content: string
   embedding: number[]
   metadata: {
@@ -7,6 +8,11 @@ export interface Document {
     documentId: string
     [key: string]: unknown
   }
+}
+
+export interface SearchOptions {
+  topK?: number
+  scoreThreshold?: number
 }
 
 export abstract class BaseVector {
