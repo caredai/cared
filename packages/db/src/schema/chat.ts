@@ -7,7 +7,14 @@ import { agent } from './agent'
 import { createdAt, timestamps, visibilityEnum, visibilityEnumValues } from './utils'
 import { user } from './workspace'
 
-export const chat = pgTable(
+export interface ChatMetadata {
+  languageModel: string
+  embeddingModel: string
+
+  [key: string]: unknown
+}
+
+export const Chat = pgTable(
   'chat',
   {
     id: uuid().primaryKey().notNull().defaultRandom(),
@@ -18,6 +25,7 @@ export const chat = pgTable(
     userId: uuid()
       .notNull()
       .references(() => user.id),
+    metadata: json().$type<ChatMetadata>().notNull(),
     visibility: visibilityEnum().notNull().default('private'),
     ...timestamps,
   },
@@ -27,11 +35,17 @@ export const chat = pgTable(
   ],
 )
 
-export type Chat = InferSelectModel<typeof chat>
+export type Chat = InferSelectModel<typeof Chat>
 
-export const CreateChatSchema = createInsertSchema(chat, {
+export const CreateChatSchema = createInsertSchema(Chat, {
   title: z.string(),
   userId: z.string(),
+  metadata: z
+    .object({
+      languageModel: z.string(),
+      embeddingModel: z.string(),
+    })
+    .catchall(z.unknown()),
   visibility: z.enum(visibilityEnumValues).optional(),
 }).omit({
   id: true,
@@ -39,8 +53,14 @@ export const CreateChatSchema = createInsertSchema(chat, {
   updatedAt: true,
 })
 
-export const UpdateChatSchema = createUpdateSchema(chat, {
+export const UpdateChatSchema = createUpdateSchema(Chat, {
   id: z.string(),
+  metadata: z
+    .object({
+      languageModel: z.string(),
+      embeddingModel: z.string(),
+    })
+    .catchall(z.unknown()),
 }).omit({
   userId: true,
   createdAt: true,
@@ -51,7 +71,7 @@ export const message = pgTable('message', {
   id: uuid().primaryKey().notNull().defaultRandom(),
   chatId: uuid()
     .notNull()
-    .references(() => chat.id),
+    .references(() => Chat.id),
   role: varchar().notNull(),
   content: json().notNull(),
   createdAt,
@@ -64,7 +84,7 @@ export const vote = pgTable(
   {
     chatId: uuid()
       .notNull()
-      .references(() => chat.id),
+      .references(() => Chat.id),
     messageId: uuid()
       .notNull()
       .references(() => message.id),

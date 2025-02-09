@@ -247,8 +247,7 @@ const DocumentContent = ({ document }: { document: Document }) => {
             <CodeEditor {...commonProps} />
           </div>
         </div>
-      ) : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      document.kind === 'image' ? (
+      ) : document.kind === 'image' ? (
         <ImageEditor
           title={document.title}
           content={document.content ?? ''}

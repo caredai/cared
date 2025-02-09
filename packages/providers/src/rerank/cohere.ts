@@ -29,7 +29,7 @@ export class CohereReranker extends BaseReranker {
       documents: response.results
         .map((item) => ({
           content: documents[item.index] ?? '',
-          score: item.relevanceScore,
+          relevanceScore: item.relevanceScore,
         }))
         .filter((item) => item.content),
       units: response.meta?.billedUnits?.searchUnits ?? 0,

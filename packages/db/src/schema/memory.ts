@@ -4,12 +4,12 @@ import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { agent } from './agent'
-import { chat } from './chat'
+import { Chat } from './chat'
 import { room } from './room'
 import { timestamps } from './utils'
 import { user } from './workspace'
 
-export const memory = pgTable(
+export const Memory = pgTable(
   'memory',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
@@ -18,9 +18,9 @@ export const memory = pgTable(
       .notNull()
       .references(() => user.id),
     agentId: uuid('agentId').references(() => agent.id),
-    chatId: uuid('chatId').references(() => chat.id),
+    chatId: uuid('chatId').references(() => Chat.id),
     roomId: uuid('roomId').references(() => room.id),
-    metadata: json('metadata').$type<Record<string, unknown>>().notNull(),
+    metadata: json('metadata').$type<Record<string, unknown>>().notNull().default({}),
     ...timestamps,
   },
   (table) => [
@@ -30,15 +30,15 @@ export const memory = pgTable(
   ],
 )
 
-export type Memory = InferSelectModel<typeof memory>
+export type Memory = InferSelectModel<typeof Memory>
 
-export const CreateMemorySchema = createInsertSchema(memory, {
+export const CreateMemorySchema = createInsertSchema(Memory, {
   content: z.string(),
   userId: z.string().uuid(),
   agentId: z.string().uuid().optional(),
   chatId: z.string().uuid().optional(),
   roomId: z.string().uuid().optional(),
-  metadata: z.record(z.unknown()),
+  metadata: z.record(z.unknown()).optional(),
 }).omit({
   id: true,
   createdAt: true,

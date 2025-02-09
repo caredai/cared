@@ -50,7 +50,7 @@ export interface ProviderInfo {
   id: ProviderId
   name: string
   languageModels?: ModelInfo[]
-  textEmbeddingModels?: ModelInfo[]
+  textEmbeddingModels?: (ModelInfo & { dimensions?: number })[]
   imageModels?: ModelInfo[]
 }
 
@@ -58,6 +58,7 @@ export interface ModelInfo {
   id: string
   name: string
   description: string
+  dimensions?: number
 }
 
 export const providerInfos: ProviderInfo[] = [
@@ -161,16 +162,19 @@ export const providerInfos: ProviderInfo[] = [
         id: 'text-embedding-3-small',
         name: 'Text Embedding 3 Small',
         description: 'Efficient embedding model',
+        dimensions: 1536,
       },
       {
         id: 'text-embedding-3-large',
         name: 'Text Embedding 3 Large',
         description: 'Most capable embedding model',
+        dimensions: 3072,
       },
       {
         id: 'text-embedding-ada-002',
         name: 'Text Embedding Ada 002',
         description: 'Legacy embedding model',
+        dimensions: 1536,
       },
     ],
     imageModels: [
@@ -356,21 +360,25 @@ export const providerInfos: ProviderInfo[] = [
         id: 'amazon.titan-embed-text-v1',
         name: 'Titan Embed Text',
         description: 'Base Titan embedding model',
+        dimensions: 1024,
       },
       {
         id: 'amazon.titan-embed-text-v2:0',
         name: 'Titan Embed Text V2',
         description: 'Enhanced Titan embedding model',
+        dimensions: 1024,
       },
       {
         id: 'cohere.embed-english-v3',
         name: 'Cohere Embed English',
         description: 'English embedding model',
+        dimensions: 1024,
       },
       {
         id: 'cohere.embed-multilingual-v3',
         name: 'Cohere Embed Multilingual',
         description: 'Multilingual embedding model',
+        dimensions: 1024,
       },
     ],
   },
@@ -402,6 +410,7 @@ export const providerInfos: ProviderInfo[] = [
         id: 'text-embedding-004',
         name: 'Text Embedding 004',
         description: 'Latest embedding model',
+        dimensions: 768,
       },
     ],
   },
@@ -463,7 +472,12 @@ export const providerInfos: ProviderInfo[] = [
       },
     ],
     textEmbeddingModels: [
-      { id: 'mistral-embed', name: 'Mistral Embed', description: 'Mistral embedding model' },
+      {
+        id: 'mistral-embed',
+        name: 'Mistral Embed',
+        description: 'Mistral embedding model',
+        dimensions: 1024,
+      },
     ],
   },
   {
@@ -548,21 +562,25 @@ export const providerInfos: ProviderInfo[] = [
         id: 'embed-english-v3.0',
         name: 'Embed English v3.0',
         description: 'Latest English embedding model',
+        dimensions: 1024,
       },
       {
         id: 'embed-multilingual-v3.0',
         name: 'Embed Multilingual v3.0',
         description: 'Latest multilingual embedding model',
+        dimensions: 1024,
       },
       {
         id: 'embed-english-light-v3.0',
         name: 'Embed English Light v3.0',
         description: 'Lightweight English embedding model',
+        dimensions: 384,
       },
       {
         id: 'embed-multilingual-light-v3.0',
         name: 'Embed Multilingual Light v3.0',
         description: 'Lightweight multilingual embedding model',
+        dimensions: 384,
       },
     ],
   },
@@ -756,17 +774,25 @@ export const imageModelInfos = providerInfos.flatMap(
     })) ?? [],
 )
 
+export function getLanguageModelInfo(fullId: string) {
+  return languageModelInfos.find((model) => model.id === fullId)
+}
+
+export function getTextEmbeddingModelInfo(fullId: string) {
+  return textEmbeddingModelInfos.find((model) => model.id === fullId)
+}
+
+export function getImageModelInfo(fullId: string) {
+  return imageModelInfos.find((model) => model.id === fullId)
+}
+
 export function modelFullId(providerId: string, modelId: string) {
   return `${providerId}::${modelId}`
 }
 
 export function splitModelFullId(fullId: string) {
-  let [providerId, modelId] = fullId.split('::')
-  if (!modelId) {
-    modelId = providerId
-    providerId = undefined
-  }
-  return { providerId, modelId }
+  const [providerId, modelId] = fullId.split('::')
+  return { providerId, modelId } as { providerId: ProviderId; modelId: string }
 }
 
 export const providers: Record<ProviderId, Provider> = {

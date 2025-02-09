@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { and, desc, eq, gte } from '@mindworld/db'
-import { chat, CreateChatSchema, message, UpdateChatSchema } from '@mindworld/db/schema'
+import { Chat, CreateChatSchema, message, UpdateChatSchema } from '@mindworld/db/schema'
 
 import { protectedProcedure } from '../trpc'
 
@@ -15,19 +15,19 @@ export const chatRouter = {
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.auth.userId
-      return ctx.db.query.chat.findMany({
-        where: eq(chat.userId, userId),
-        orderBy: desc(chat.updatedAt),
+      return ctx.db.query.Chat.findMany({
+        where: eq(Chat.userId, userId),
+        orderBy: desc(Chat.updatedAt),
         offset: input.offset,
         limit: input.limit,
       })
     }),
   create: protectedProcedure.input(CreateChatSchema).mutation(({ ctx, input }) => {
-    return ctx.db.insert(chat).values(input)
+    return ctx.db.insert(Chat).values(input)
   }),
   update: protectedProcedure.input(UpdateChatSchema).mutation(async ({ ctx, input }) => {
     const { id, ...update } = input
-    await ctx.db.update(chat).set(update).where(eq(chat.id, id))
+    await ctx.db.update(Chat).set(update).where(eq(Chat.id, id))
   }),
 }
 

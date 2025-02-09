@@ -1,9 +1,9 @@
-import { json, pgTable, uuid, real, text } from 'drizzle-orm/pg-core'
+import type { InferSelectModel } from 'drizzle-orm'
+import { json, pgTable, real, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { timestamps } from './utils'
-import type { InferSelectModel } from 'drizzle-orm'
 
 export const knowledge = pgTable('knowledge', {
   id: uuid().primaryKey().notNull().defaultRandom(),

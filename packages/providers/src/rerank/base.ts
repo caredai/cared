@@ -1,7 +1,7 @@
 export interface RerankResult {
   documents: {
     content: string
-    score: number
+    relevanceScore: number
   }[]
   units: number
 }
