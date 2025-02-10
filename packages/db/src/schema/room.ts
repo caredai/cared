@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 import { agent } from './agent'
 import { timestamps } from './utils'
-import { user } from './workspace'
+import { User } from './workspace'
 
 export const room = pgTable(
   'room',
@@ -14,7 +14,7 @@ export const room = pgTable(
     name: text().notNull(),
     ownerId: uuid()
       .notNull()
-      .references(() => user.id),
+      .references(() => User.id),
     metadata: json().$type<Record<string, unknown>>(),
     ...timestamps,
   },
@@ -42,7 +42,7 @@ export const userParticipant = pgTable(
       .references(() => room.id),
     userId: uuid()
       .notNull()
-      .references(() => user.id),
+      .references(() => User.id),
     ...timestamps,
   },
   (table) => [

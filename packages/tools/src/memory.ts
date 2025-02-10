@@ -11,7 +11,7 @@ import { QdrantVector } from '@mindworld/vdb'
 
 import type { Context } from './context'
 
-function addMemory(ctx: Context) {
+function storeMemory(ctx: Context) {
   return tool({
     description:
       'Store a new memory into the long-term memory database. This tool allows you to save important information or knowledge about the user, which can be retrieved later. If the user provides a random piece of knowledge unprompted, use this tool without asking for confirmation.',
@@ -67,7 +67,7 @@ function addMemory(ctx: Context) {
   })
 }
 
-function getMemory(ctx: Context) {
+function retrieveMemory(ctx: Context) {
   return tool({
     description:
       'Retrieve memories from the long-term memory database based on specified criteria. You can search for memories associated with the user. This tool helps you access previously stored information to maintain context and provide more relevant responses.',
@@ -103,6 +103,6 @@ function getMemory(ctx: Context) {
 }
 
 export const memoryTools = {
-  addMemory,
-  getMemory,
+  storeMemory,
+  retrieveMemory,
 }

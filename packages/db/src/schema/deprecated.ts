@@ -13,7 +13,7 @@ import {
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { user } from './workspace'
+import { User } from './workspace'
 
 export const Post = pgTable('post', (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
@@ -101,7 +101,7 @@ export const document = pgTable(
       .default('text'),
     userId: uuid('userId')
       .notNull()
-      .references(() => user.id),
+      .references(() => User.id),
   },
   (table) => {
     return {
@@ -124,7 +124,7 @@ export const suggestion = pgTable(
     isResolved: boolean('isResolved').notNull().default(false),
     userId: uuid('userId')
       .notNull()
-      .references(() => user.id),
+      .references(() => User.id),
     createdAt: timestamp('createdAt').notNull(),
   },
   (table) => ({

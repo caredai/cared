@@ -8,6 +8,8 @@ import { ZodError } from 'zod'
 import type { DB } from '@mindworld/db/client'
 import { db } from '@mindworld/db/client'
 
+import { env } from './env'
+
 /**
  * 1. CONTEXT
  *
@@ -136,6 +138,20 @@ export const publicProcedure = t.procedure.use(timingMiddleware)
 export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
   if (!ctx.auth.userId) {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next({
+    ctx: {
+      auth: ctx.auth,
+    },
+  })
+})
+
+export const adminProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+  if (!ctx.auth.userId) {
+    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  if (ctx.auth.orgId !== env.CLERK_ADMIN_ORGANIZATION_ID || ctx.auth.orgRole !== 'org:admin') {
+    throw new trpc.TRPCError({ code: 'FORBIDDEN' })
   }
   return next({
     ctx: {

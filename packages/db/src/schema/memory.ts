@@ -7,7 +7,7 @@ import { agent } from './agent'
 import { Chat } from './chat'
 import { room } from './room'
 import { timestamps } from './utils'
-import { user } from './workspace'
+import { User } from './workspace'
 
 export const Memory = pgTable(
   'memory',
@@ -16,7 +16,7 @@ export const Memory = pgTable(
     content: text('content').notNull(),
     userId: uuid('userId')
       .notNull()
-      .references(() => user.id),
+      .references(() => User.id),
     agentId: uuid('agentId').references(() => agent.id),
     chatId: uuid('chatId').references(() => Chat.id),
     roomId: uuid('roomId').references(() => room.id),

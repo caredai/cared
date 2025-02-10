@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 import { agent } from './agent'
 import { createdAt, timestamps, visibilityEnum, visibilityEnumValues } from './utils'
-import { user } from './workspace'
+import { User } from './workspace'
 
 export interface ChatMetadata {
   languageModel: string
@@ -24,7 +24,7 @@ export const Chat = pgTable(
       .references(() => agent.id),
     userId: uuid()
       .notNull()
-      .references(() => user.id),
+      .references(() => User.id),
     metadata: json().$type<ChatMetadata>().notNull(),
     visibility: visibilityEnum().notNull().default('private'),
     ...timestamps,

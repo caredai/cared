@@ -11,7 +11,7 @@ import {
 } from 'drizzle-orm/pg-core'
 
 import { timestamps } from './utils'
-import { workspace } from './workspace'
+import { Workspace } from './workspace'
 
 export const dataset = pgTable(
   'dataset',
@@ -19,7 +19,7 @@ export const dataset = pgTable(
     id: uuid().primaryKey().notNull().defaultRandom(),
     workspaceId: uuid()
       .notNull()
-      .references(() => workspace.id),
+      .references(() => Workspace.id),
     name: varchar({ length: 255 }).notNull(),
     metadata: json(),
     ...timestamps,
@@ -37,7 +37,7 @@ export const document = pgTable(
     id: uuid().primaryKey().notNull().defaultRandom(),
     workspaceId: uuid()
       .notNull()
-      .references(() => workspace.id),
+      .references(() => Workspace.id),
     datasetId: uuid()
       .notNull()
       .references(() => dataset.id),
@@ -58,7 +58,7 @@ export const segment = pgTable(
     id: uuid().primaryKey().notNull().defaultRandom(),
     workspaceId: uuid()
       .notNull()
-      .references(() => workspace.id),
+      .references(() => Workspace.id),
     datasetId: uuid()
       .notNull()
       .references(() => dataset.id),
@@ -83,7 +83,7 @@ export const chunk = pgTable(
     id: uuid().primaryKey().notNull().defaultRandom(),
     workspaceId: uuid()
       .notNull()
-      .references(() => workspace.id),
+      .references(() => Workspace.id),
     datasetId: uuid()
       .notNull()
       .references(() => dataset.id),
