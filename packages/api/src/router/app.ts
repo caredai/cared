@@ -1,7 +1,14 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import { desc, eq } from '@mindworld/db'
-import { App, AppsToCategories, CreateAppSchema, UpdateAppSchema } from '@mindworld/db/schema'
+import {
+  App,
+  AppMetadata,
+  AppsToCategories,
+  CreateAppSchema,
+  UpdateAppSchema,
+} from '@mindworld/db/schema'
 
 import { protectedProcedure } from '../trpc'
 
@@ -15,7 +22,7 @@ export const appRouter = {
     )
     .query(async ({ ctx, input }) => {
       return ctx.db.query.App.findMany({
-        orderBy: desc(App.updatedAt),
+        orderBy: desc(App.createdAt),
         offset: input.offset,
         limit: input.limit,
       })
@@ -35,7 +42,7 @@ export const appRouter = {
         with: {
           app: true,
         },
-        orderBy: desc(App.updatedAt),
+        orderBy: desc(App.createdAt),
         offset: input.offset,
         limit: input.limit,
       })

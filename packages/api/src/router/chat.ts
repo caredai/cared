@@ -17,7 +17,7 @@ export const chatRouter = {
       const userId = ctx.auth.userId
       return ctx.db.query.Chat.findMany({
         where: eq(Chat.userId, userId),
-        orderBy: desc(Chat.updatedAt),
+        orderBy: desc(Chat.updatedAt), // order by updatedAt descending
         offset: input.offset,
         limit: input.limit,
       })

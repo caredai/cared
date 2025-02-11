@@ -20,7 +20,7 @@ export const appCategoryRouter = {
     )
     .query(async ({ ctx, input }) => {
       return await ctx.db.query.Category.findMany({
-        orderBy: desc(Category.updatedAt),
+        orderBy: desc(Category.createdAt),
         offset: input.offset,
         limit: input.limit,
       })
@@ -36,7 +36,7 @@ export const appCategoryRouter = {
       with: {
         category: true,
       },
-      orderBy: desc(Category.updatedAt),
+      orderBy: desc(Category.createdAt),
     })
     return result.map((r) => r.category)
   }),

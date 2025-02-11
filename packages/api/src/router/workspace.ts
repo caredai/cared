@@ -22,7 +22,7 @@ export const workspaceRouter = createTRPCRouter({
       }),
     )
     .query(async ({ input, ctx }) => {
-      return await ctx.db
+      const workspaces = await ctx.db
         .select({
           workspace: Workspace,
           role: Membership.role,
@@ -30,13 +30,18 @@ export const workspaceRouter = createTRPCRouter({
         .from(Membership)
         .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
         .where(eq(Membership.userId, ctx.auth.userId))
-        .orderBy(desc(Workspace.updatedAt))
+        .orderBy(desc(Workspace.createdAt))
         .offset(input.offset)
         .limit(input.limit)
+      return {
+        workspaces,
+        offset: input.offset,
+        limit: input.limit,
+      }
     }),
 
   get: protectedProcedure.input(z.string().uuid()).query(async ({ input, ctx }) => {
-    const workspaces = await ctx.db
+    const workspace = await ctx.db
       .select({
         workspace: Workspace,
         role: Membership.role,
@@ -45,15 +50,16 @@ export const workspaceRouter = createTRPCRouter({
       .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
       .where(and(eq(Membership.workspaceId, input), eq(Membership.userId, ctx.auth.userId)))
       .limit(1)
+      .then((rows) => rows[0])
 
-    if (!workspaces[0]) {
+    if (!workspace) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Workspace not found',
       })
     }
 
-    return workspaces[0]
+    return workspace
   }),
 
   create: protectedProcedure.input(CreateWorkspaceSchema).mutation(async ({ input, ctx }) => {
@@ -160,7 +166,7 @@ export const workspaceRouter = createTRPCRouter({
         })
       }
 
-      return (
+      const members = (
         await ctx.db
           .select({
             user: User,
@@ -176,6 +182,12 @@ export const workspaceRouter = createTRPCRouter({
           .offset(input.offset)
           .limit(input.limit)
       ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+
+      return {
+        members,
+        offset: input.offset,
+        limit: input.limit,
+      }
     }),
 
   getMember: protectedProcedure
@@ -243,9 +255,11 @@ export const workspaceRouter = createTRPCRouter({
       })
     }
 
-    const user = await ctx.db.select().from(User).where(eq(User.id, input.userId)).limit(1)
+    const user = await ctx.db.query.User.findFirst({
+      where: eq(User.id, input.userId),
+    })
 
-    if (!user[0]) {
+    if (!user) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'User not found',
@@ -268,7 +282,10 @@ export const workspaceRouter = createTRPCRouter({
       })
     }
 
-    return { membership }
+    return {
+      user: filteredUser(user),
+      role: membership.role,
+    }
   }),
 
   deleteMember: protectedProcedure
