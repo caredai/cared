@@ -1,12 +1,12 @@
 import { TRPCError } from '@trpc/server'
-import { and, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { db } from '@mindworld/db/client'
 import {
   CreateMembershipSchema,
   CreateWorkspaceSchema,
   Membership,
+  UpdateWorkspaceSchema,
   User,
   Workspace,
 } from '@mindworld/db/schema'
@@ -14,92 +14,221 @@ import {
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const workspaceRouter = createTRPCRouter({
-  create: protectedProcedure.input(CreateWorkspaceSchema).mutation(async ({ input, ctx }) => {
-    const [workspace] = await db.insert(Workspace).values(input).returning()
-    if (!workspace) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create workspace',
-      })
-    }
-
-    await db.insert(Membership).values({
-      workspaceId: workspace.id,
-      userId: ctx.auth.userId,
-      role: 'owner',
-    })
-
-    return workspace
-  }),
-
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const memberships = await db
-      .select({
-        workspace: Workspace,
-        role: Membership.role,
-      })
-      .from(Membership)
-      .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
-      .where(eq(Membership.userId, ctx.auth.userId))
-
-    return memberships
-  }),
-
-  get: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+  list: protectedProcedure
+    .input(
+      z.object({
+        offset: z.number().min(0).default(0),
+        limit: z.number().min(1).max(100).default(50),
+      }),
+    )
     .query(async ({ input, ctx }) => {
-      const membership = await db
+      return await ctx.db
         .select({
           workspace: Workspace,
           role: Membership.role,
         })
         .from(Membership)
         .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
-        .where(and(eq(Membership.workspaceId, input.id), eq(Membership.userId, ctx.auth.userId)))
-        .limit(1)
-
-      if (!membership[0]) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Workspace not found or no access',
-        })
-      }
-
-      return membership[0]
+        .where(eq(Membership.userId, ctx.auth.userId))
+        .orderBy(desc(Workspace.updatedAt))
+        .offset(input.offset)
+        .limit(input.limit)
     }),
 
-  update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z.string().max(255),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const membership = await db
-        .select({ role: Membership.role })
-        .from(Membership)
-        .where(and(eq(Membership.workspaceId, input.id), eq(Membership.userId, ctx.auth.userId)))
-        .limit(1)
+  get: protectedProcedure.input(z.string().uuid()).query(async ({ input, ctx }) => {
+    const workspaces = await ctx.db
+      .select({
+        workspace: Workspace,
+        role: Membership.role,
+      })
+      .from(Membership)
+      .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
+      .where(and(eq(Membership.workspaceId, input), eq(Membership.userId, ctx.auth.userId)))
+      .limit(1)
 
-      if (!membership[0] || membership[0].role !== 'owner') {
+    if (!workspaces[0]) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Workspace not found',
+      })
+    }
+
+    return workspaces[0]
+  }),
+
+  create: protectedProcedure.input(CreateWorkspaceSchema).mutation(async ({ input, ctx }) => {
+    return await ctx.db.transaction(async (tx) => {
+      const [workspace] = await tx.insert(Workspace).values(input).returning()
+      if (!workspace) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only admin can update workspace',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create workspace',
         })
       }
 
-      const [workspace] = await db
-        .update(Workspace)
-        .set({ name: input.name })
-        .where(eq(Workspace.id, input.id))
-        .returning()
+      await tx.insert(Membership).values({
+        workspaceId: workspace.id,
+        userId: ctx.auth.userId,
+        role: 'owner',
+      })
 
-      return workspace
+      return {
+        workspace,
+        role: 'owner',
+      }
+    })
+  }),
+
+  update: protectedProcedure.input(UpdateWorkspaceSchema).mutation(async ({ input, ctx }) => {
+    const memberships = await ctx.db
+      .select({ role: Membership.role })
+      .from(Membership)
+      .where(and(eq(Membership.workspaceId, input.id), eq(Membership.userId, ctx.auth.userId)))
+      .limit(1)
+
+    if (memberships[0]?.role !== 'owner') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only owner can update workspace',
+      })
+    }
+
+    const [workspace] = await ctx.db
+      .update(Workspace)
+      .set({ name: input.name })
+      .where(eq(Workspace.id, input.id))
+      .returning()
+
+    if (!workspace) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to update workspace',
+      })
+    }
+
+    return {
+      workspace,
+      role: 'owner',
+    }
+  }),
+
+  delete: protectedProcedure.input(z.string().uuid()).mutation(async ({ input, ctx }) => {
+    return await ctx.db.transaction(async (tx) => {
+      const memberships = await tx
+        .select({ role: Membership.role })
+        .from(Membership)
+        .where(and(eq(Membership.workspaceId, input), eq(Membership.userId, ctx.auth.userId)))
+        .limit(1)
+
+      if (memberships[0]?.role !== 'owner') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only owner can delete workspace',
+        })
+      }
+
+      // Delete all memberships first
+      await tx.delete(Membership).where(eq(Membership.workspaceId, input))
+
+      // Then delete the workspace
+      await tx.delete(Workspace).where(eq(Workspace.id, input))
+    })
+  }),
+
+  listMembers: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string().uuid(),
+        offset: z.number().min(0).default(0),
+        limit: z.number().min(1).max(100).default(50),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      // Check if the current user is a member of the workspace
+      const currentMembership = await ctx.db.query.Membership.findFirst({
+        where: (membership, { and, eq }) =>
+          and(
+            eq(membership.workspaceId, input.workspaceId),
+            eq(membership.userId, ctx.auth.userId),
+          ),
+      })
+
+      if (!currentMembership) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Workspace not found',
+        })
+      }
+
+      return (
+        await ctx.db
+          .select({
+            user: User,
+            role: Membership.role,
+          })
+          .from(Membership)
+          .innerJoin(User, eq(User.id, Membership.userId))
+          .where(eq(Membership.workspaceId, input.workspaceId))
+          .orderBy(
+            desc(Membership.role), // Sort 'owner' first since it's alphabetically greater than 'member' when using desc
+            desc(Membership.createdAt),
+          )
+          .offset(input.offset)
+          .limit(input.limit)
+      ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+    }),
+
+  getMember: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string().uuid(),
+        userId: z.string(),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      // Check if the current user is a member of the workspace
+      const currentMembership = await ctx.db.query.Membership.findFirst({
+        where: (membership, { and, eq }) =>
+          and(
+            eq(membership.workspaceId, input.workspaceId),
+            eq(membership.userId, ctx.auth.userId),
+          ),
+      })
+
+      if (!currentMembership) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Workspace not found',
+        })
+      }
+
+      const [member] = await ctx.db
+        .select({
+          user: User,
+          role: Membership.role,
+        })
+        .from(Membership)
+        .innerJoin(User, eq(User.id, Membership.userId))
+        .where(
+          and(eq(Membership.workspaceId, input.workspaceId), eq(Membership.userId, input.userId)),
+        )
+        .limit(1)
+
+      if (!member) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Member not found',
+        })
+      }
+
+      return {
+        ...member,
+        user: filteredUser(member.user),
+      }
     }),
 
   addMember: protectedProcedure.input(CreateMembershipSchema).mutation(async ({ input, ctx }) => {
-    const membership = await db
+    const memberships = await ctx.db
       .select({ role: Membership.role })
       .from(Membership)
       .where(
@@ -107,14 +236,14 @@ export const workspaceRouter = createTRPCRouter({
       )
       .limit(1)
 
-    if (!membership[0] || membership[0].role !== 'owner') {
+    if (memberships[0]?.role !== 'owner') {
       throw new TRPCError({
         code: 'FORBIDDEN',
-        message: 'Only admin can add members',
+        message: 'Only owner can add members',
       })
     }
 
-    const user = await db.select().from(User).where(eq(User.id, input.userId)).limit(1)
+    const user = await ctx.db.select().from(User).where(eq(User.id, input.userId)).limit(1)
 
     if (!user[0]) {
       throw new TRPCError({
@@ -123,12 +252,26 @@ export const workspaceRouter = createTRPCRouter({
       })
     }
 
-    const [newMembership] = await db.insert(Membership).values(input).returning()
+    if (input.role !== 'member') {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Role can only be "member"',
+      })
+    }
 
-    return newMembership
+    const [membership] = await ctx.db.insert(Membership).values(input).returning()
+
+    if (!membership) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to add member',
+      })
+    }
+
+    return { membership }
   }),
 
-  removeMember: protectedProcedure
+  deleteMember: protectedProcedure
     .input(
       z.object({
         workspaceId: z.string().uuid(),
@@ -136,7 +279,7 @@ export const workspaceRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const membership = await db
+      const memberships = await ctx.db
         .select({ role: Membership.role })
         .from(Membership)
         .where(
@@ -147,53 +290,104 @@ export const workspaceRouter = createTRPCRouter({
         )
         .limit(1)
 
-      if (!membership[0] || membership[0].role !== 'owner') {
+      if (memberships[0]?.role !== 'owner') {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'Only admin can remove members',
+          message: 'Only owner can delete members',
         })
       }
 
-      await db
+      // Owner cannot be deleted
+      if (input.userId === ctx.auth.userId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Owner cannot be deleted',
+        })
+      }
+
+      await ctx.db
         .delete(Membership)
         .where(
           and(eq(Membership.workspaceId, input.workspaceId), eq(Membership.userId, input.userId)),
         )
-
-      return { success: true }
     }),
 
-  listMembers: protectedProcedure
-    .input(z.object({ workspaceId: z.string().uuid() }))
-    .query(async ({ input, ctx }) => {
-      const membership = await db
-        .select()
-        .from(Membership)
-        .where(
-          and(
-            eq(Membership.workspaceId, input.workspaceId),
-            eq(Membership.userId, ctx.auth.userId),
-          ),
-        )
-        .limit(1)
+  transferOwner: protectedProcedure
+    .input(
+      z.object({
+        workspaceId: z.string().uuid(),
+        userId: z.string(),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      await ctx.db.transaction(async (tx) => {
+        // Check if current user is the owner
+        const currentMembership = await tx
+          .select()
+          .from(Membership)
+          .where(
+            and(
+              eq(Membership.workspaceId, input.workspaceId),
+              eq(Membership.userId, ctx.auth.userId),
+            ),
+          )
+          .limit(1)
 
-      if (!membership[0]) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Not a member of this workspace',
-        })
-      }
+        if (currentMembership[0]?.role !== 'owner') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Only owner can transfer ownership',
+          })
+        }
 
-      const members = await db
-        .select({
-          userId: User.id,
-          userInfo: User.info,
-          role: Membership.role,
-        })
-        .from(Membership)
-        .innerJoin(User, eq(User.id, Membership.userId))
-        .where(eq(Membership.workspaceId, input.workspaceId))
+        // Check if new owner exists and is a member
+        const newOwnerMembership = await tx
+          .select()
+          .from(Membership)
+          .where(
+            and(eq(Membership.workspaceId, input.workspaceId), eq(Membership.userId, input.userId)),
+          )
+          .limit(1)
 
-      return members
+        if (!newOwnerMembership[0]) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'New owner must be an existing member',
+          })
+        }
+
+        // Update current owner to member
+        await tx
+          .update(Membership)
+          .set({ role: 'member' })
+          .where(
+            and(
+              eq(Membership.workspaceId, input.workspaceId),
+              eq(Membership.userId, ctx.auth.userId),
+            ),
+          )
+
+        // Update new owner
+        await tx
+          .update(Membership)
+          .set({ role: 'owner' })
+          .where(
+            and(eq(Membership.workspaceId, input.workspaceId), eq(Membership.userId, input.userId)),
+          )
+      })
     }),
 })
+
+function filteredUser(user: User) {
+  const info = user.info
+  return {
+    ...user,
+    info: {
+      username: info.username!, // this requires enabling "Users can set usernames to their account" in Clerk
+      firstName: info.firstName,
+      lastName: info.lastName,
+      imageUrl: info.imageUrl,
+      hasImage: info.hasImage,
+    },
+  }
+}
