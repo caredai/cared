@@ -7,6 +7,13 @@ import { Membership, User, Workspace } from '@mindworld/db/schema'
 import { adminProcedure } from '../../trpc'
 
 export const workspaceRouter = {
+  /**
+   * List all workspaces across the platform.
+   * Only accessible by admin users.
+   * @param input - Pagination parameters
+   * @returns List of workspaces with total count and pagination info
+   * @throws {TRPCError} If failed to get workspace count
+   */
   listWorkspaces: adminProcedure
     .input(
       z.object({
@@ -38,6 +45,13 @@ export const workspaceRouter = {
       }
     }),
 
+  /**
+   * Get a single workspace by ID.
+   * Only accessible by admin users.
+   * @param input - The workspace ID
+   * @returns The workspace if found
+   * @throws {TRPCError} If workspace not found
+   */
   getWorkspace: adminProcedure.input(z.string().uuid()).query(async ({ ctx, input }) => {
     const workspace = await ctx.db.query.Workspace.findFirst({
       where: eq(Workspace.id, input),
@@ -55,6 +69,13 @@ export const workspaceRouter = {
     }
   }),
 
+  /**
+   * List all members of a specific workspace.
+   * Only accessible by admin users.
+   * @param input - Object containing workspaceId and pagination parameters
+   * @returns List of workspace members with their roles, total count and pagination info
+   * @throws {TRPCError} If failed to get member count
+   */
   listMembers: adminProcedure
     .input(
       z.object({
@@ -96,6 +117,13 @@ export const workspaceRouter = {
       }
     }),
 
+  /**
+   * Get a specific member of a workspace.
+   * Only accessible by admin users.
+   * @param input - Object containing workspaceId and userId
+   * @returns The member's user info and role if found
+   * @throws {TRPCError} If member not found
+   */
   getMember: adminProcedure
     .input(
       z.object({

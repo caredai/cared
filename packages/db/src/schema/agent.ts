@@ -1,4 +1,4 @@
-import { index, json, pgTable, uuid, varchar } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -25,7 +25,7 @@ export const agent = pgTable(
       .notNull()
       .references(() => App.id),
     name: varchar({ length: 255 }).notNull(),
-    metadata: json('metadata').$type<AgentMetadata>().notNull().default({}),
+    metadata: jsonb('metadata').$type<AgentMetadata>().notNull().default({}),
     visibility: visibilityEnum().notNull().default('private'),
     ...timestamps,
   },

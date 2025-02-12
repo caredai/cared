@@ -1,6 +1,7 @@
 import type { User as ClerkUser } from '@clerk/nextjs/server'
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, json, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import { index, jsonb, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -28,11 +29,21 @@ export const UpdateWorkspaceSchema = createUpdateSchema(Workspace, {
   ...timestampsOmits,
 })
 
-export const User = pgTable('user', {
-  id: varchar({ length: 127 }).primaryKey().notNull(),
-  info: json().$type<ClerkUser>().notNull(),
-  ...timestamps,
-})
+export const User = pgTable(
+  'user',
+  {
+    id: varchar({ length: 127 }).primaryKey().notNull(),
+    info: jsonb().$type<ClerkUser>().notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index('user_username_idx').using('btree', sql`((${table.info}->>'username'))`),
+    index('user_firstname_idx').using('btree', sql`((${table.info}->>'firstName'))`),
+    index('user_lastname_idx').using('btree', sql`((${table.info}->>'lastName'))`),
+    index('user_emails_search_idx').using('gin', sql`to_tsvector('simple', array_to_string(array(select jsonb_array_elements(${table.info}->'emailAddresses')->>'emailAddress'), ' '))`),
+    ...timestampsIndices(table),
+  ],
+)
 
 export type User = InferSelectModel<typeof User>
 

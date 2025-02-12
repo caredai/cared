@@ -14,6 +14,12 @@ import {
 import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 export const workspaceRouter = createTRPCRouter({
+  /**
+   * List all workspaces for the current user.
+   * Only accessible by authenticated users.
+   * @param input - Pagination parameters
+   * @returns List of workspaces with user's role in each workspace
+   */
   list: protectedProcedure
     .input(
       z.object({
@@ -40,6 +46,13 @@ export const workspaceRouter = createTRPCRouter({
       }
     }),
 
+  /**
+   * Get a single workspace by ID.
+   * Only accessible by authenticated users who are members of the workspace.
+   * @param input - The workspace ID
+   * @returns The workspace and user's role if found
+   * @throws {TRPCError} If workspace not found or user is not a member
+   */
   get: protectedProcedure.input(z.string().uuid()).query(async ({ input, ctx }) => {
     const workspace = await ctx.db
       .select({
@@ -118,6 +131,13 @@ export const workspaceRouter = createTRPCRouter({
     }
   }),
 
+  /**
+   * Delete a workspace.
+   * Only accessible by the workspace owner.
+   * Deletes all memberships before deleting the workspace.
+   * @param input - The workspace ID
+   * @throws {TRPCError} If user is not the workspace owner
+   */
   delete: protectedProcedure.input(z.string().uuid()).mutation(async ({ input, ctx }) => {
     return await ctx.db.transaction(async (tx) => {
       const memberships = await tx
@@ -141,6 +161,12 @@ export const workspaceRouter = createTRPCRouter({
     })
   }),
 
+  /**
+   * List all members of a workspace.
+   * Only accessible by workspace members.
+   * @param input - The workspace ID and pagination parameters
+   * @returns List of workspace members with their roles
+   */
   listMembers: protectedProcedure
     .input(
       z.object({
@@ -190,6 +216,13 @@ export const workspaceRouter = createTRPCRouter({
       }
     }),
 
+  /**
+   * Get a specific member of a workspace.
+   * Only accessible by workspace members.
+   * @param input - Object containing workspaceId and userId
+   * @returns The member's user info and role if found
+   * @throws {TRPCError} If member not found or user doesn't have access
+   */
   getMember: protectedProcedure
     .input(
       z.object({

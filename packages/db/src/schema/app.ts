@@ -1,17 +1,19 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { relations } from 'drizzle-orm'
-import { index, json, pgEnum, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
+import {
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import {
-  timestamps,
-  timestampsIndices,
-  timestampsOmits,
-  visibilityEnum,
-  visibilityEnumValues,
-} from './utils'
-import {Workspace} from './workspace'
+import { timestamps, timestampsIndices, timestampsOmits } from './utils'
+import { Workspace } from './workspace'
 
 export const appTypeEnumValues = ['single-agent', 'multiple-agents'] as const
 export const appTypeEnum = pgEnum('appType', appTypeEnumValues)
@@ -29,17 +31,16 @@ export const App = pgTable(
     workspaceId: uuid()
       .notNull()
       .references(() => Workspace.id),
+    // type, name, metadata are always the same as the latest published version in the app version table
     type: appTypeEnum().notNull().default('single-agent'),
     name: varchar({ length: 255 }).notNull(),
-    metadata: json('metadata').$type<AppMetadata>().notNull().default({}),
-    visibility: visibilityEnum().notNull().default('private'),
+    metadata: jsonb().$type<AppMetadata>().notNull().default({}),
     ...timestamps,
   },
   (table) => [
     index().on(table.workspaceId),
     index().on(table.type),
     index().on(table.name),
-    index().on(table.visibility),
     ...timestampsIndices(table),
   ],
 )
@@ -54,8 +55,8 @@ export const CreateAppSchema = createInsertSchema(App, {
     .object({
       description: z.string().optional(),
     })
-    .catchall(z.unknown()),
-  visibility: z.enum(visibilityEnumValues).optional(),
+    .catchall(z.unknown())
+    .optional(),
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -63,6 +64,7 @@ export const CreateAppSchema = createInsertSchema(App, {
 
 export const UpdateAppSchema = createUpdateSchema(App, {
   id: z.string(),
+  workspaceId: z.string().uuid(),
   name: z.string().max(255).optional(),
   metadata: z
     .object({
@@ -70,9 +72,63 @@ export const UpdateAppSchema = createUpdateSchema(App, {
     })
     .catchall(z.unknown())
     .optional(),
-  visibility: z.enum(visibilityEnumValues).optional(),
 }).omit({
-  workspaceId: true,
+  type: true,
+  ...timestampsOmits,
+})
+
+// Use a fixed large number as the draft version.
+// Choose 9007199254740991 because it's far beyond any reasonable Unix timestamp.
+export const DRAFT_VERSION = 9007199254740991
+
+export const AppVersion = pgTable(
+  'app_version',
+  {
+    appId: uuid()
+      .notNull()
+      .references(() => App.id),
+    // Must be Unix timestamp of the publishing time.
+    // DRAFT_VERSION indicates an unpublished draft.
+    version: integer().notNull().default(DRAFT_VERSION),
+    type: appTypeEnum().notNull().default('single-agent'),
+    name: varchar({ length: 255 }).notNull(),
+    metadata: jsonb().$type<AppMetadata>().notNull().default({}),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.appId, table.version] }),
+    ...timestampsIndices(table),
+  ],
+)
+
+export type AppVersion = InferSelectModel<typeof AppVersion>
+
+export const CreateAppVersionSchema = createInsertSchema(AppVersion, {
+  appId: z.string().uuid(),
+  version: z.number().int().optional(),
+  type: z.enum(appTypeEnumValues).optional(),
+  name: z.string().max(255),
+  metadata: z
+    .object({
+      description: z.string().optional(),
+    })
+    .catchall(z.unknown())
+    .optional(),
+}).omit({
+  ...timestampsOmits,
+})
+
+export const UpdateAppVersionSchema = createUpdateSchema(AppVersion, {
+  appId: z.string(),
+  version: z.number().int().optional(),
+  name: z.string().max(255).optional(),
+  metadata: z
+    .object({
+      description: z.string().optional(),
+    })
+    .catchall(z.unknown())
+    .optional(),
+}).omit({
   type: true,
   ...timestampsOmits,
 })
@@ -81,7 +137,7 @@ export const Category = pgTable(
   'category',
   {
     id: uuid().primaryKey().notNull().defaultRandom(),
-    name: varchar({ length: 255 }).notNull(),
+    name: varchar({ length: 255 }).unique().notNull(),
     ...timestamps,
   },
   (table) => [
@@ -133,21 +189,48 @@ export const CreateAppsToCategoriesSchema = createInsertSchema(AppsToCategories,
   ...timestampsOmits,
 })
 
-export const appRelations = relations(App, ({ many }) => ({
-  categories: many(AppsToCategories),
-}))
+export const Tag = pgTable(
+  'tag',
+  {
+    name: varchar({ length: 255 }).primaryKey().notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    ...timestampsIndices(table),
+  ],
+)
 
-export const categoryRelations = relations(Category, ({ many }) => ({
-  apps: many(AppsToCategories),
-}))
+export type Tag = InferSelectModel<typeof Tag>
 
-export const appsToCategoriesRelations = relations(AppsToCategories, ({ one }) => ({
-  app: one(App, {
-    fields: [AppsToCategories.appId],
-    references: [App.id],
-  }),
-  category: one(Category, {
-    fields: [AppsToCategories.categoryId],
-    references: [Category.id],
-  }),
-}))
+export const CreateTagSchema = createInsertSchema(Tag, {
+  name: z.string().max(255),
+}).omit({
+  ...timestampsOmits,
+})
+
+export const AppsToTags = pgTable(
+  'apps_to_tags',
+  {
+    appId: uuid()
+      .notNull()
+      .references(() => App.id),
+    tag: varchar({ length: 255 })
+      .notNull()
+      .references(() => Tag.name),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.appId, table.tag] }),
+    index().on(table.tag),
+    ...timestampsIndices(table),
+  ],
+)
+
+export type AppsToTags = InferSelectModel<typeof AppsToTags>
+
+export const CreateAppsToTagsSchema = createInsertSchema(AppsToTags, {
+  appId: z.string().uuid(),
+  tag: z.string().max(255),
+}).omit({
+  ...timestampsOmits,
+})

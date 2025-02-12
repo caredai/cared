@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { json, pgTable, real, text, uuid } from 'drizzle-orm/pg-core'
+import { jsonb, pgTable, real, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -8,7 +8,7 @@ import { timestamps } from './utils'
 export const knowledge = pgTable('knowledge', {
   id: uuid().primaryKey().notNull().defaultRandom(),
   content: text().notNull(),
-  metadata: json(),
+  metadata: jsonb(),
   embedding: real().array().$type<number[]>(),
   ...timestamps,
 })

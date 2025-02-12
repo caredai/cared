@@ -13,8 +13,6 @@ import {
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { User } from './workspace'
-
 export const Post = pgTable('post', (t) => ({
   id: t.uuid().notNull().primaryKey().defaultRandom(),
   title: t.varchar({ length: 255 }).notNull(),

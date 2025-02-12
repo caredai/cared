@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, json, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -15,7 +15,7 @@ export const room = pgTable(
     ownerId: uuid()
       .notNull()
       .references(() => User.id),
-    metadata: json().$type<Record<string, unknown>>(),
+    metadata: jsonb().$type<Record<string, unknown>>(),
     ...timestamps,
   },
   (table) => [

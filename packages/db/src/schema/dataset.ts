@@ -2,7 +2,7 @@ import type { InferSelectModel } from 'drizzle-orm'
 import {
   index,
   integer,
-  json,
+  jsonb,
   pgTable,
   text,
   uniqueIndex,
@@ -21,7 +21,7 @@ export const dataset = pgTable(
       .notNull()
       .references(() => Workspace.id),
     name: varchar({ length: 255 }).notNull(),
-    metadata: json(),
+    metadata: jsonb(),
     ...timestamps,
   },
   (table) => [
@@ -67,7 +67,7 @@ export const segment = pgTable(
       .references(() => document.id),
     index: integer().notNull(),
     content: text().notNull(),
-    metadata: json(),
+    metadata: jsonb(),
     ...timestamps,
   },
   (table) => [
@@ -96,7 +96,7 @@ export const chunk = pgTable(
     index: integer().notNull(),
     content: text().notNull(),
     embedding: text(),
-    metadata: json(),
+    metadata: jsonb(),
     ...timestamps,
   },
   (table) => [

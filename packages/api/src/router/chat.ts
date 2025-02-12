@@ -6,6 +6,12 @@ import { Chat, CreateChatSchema, message, UpdateChatSchema } from '@mindworld/db
 import { protectedProcedure } from '../trpc'
 
 export const chatRouter = {
+  /**
+   * Get all chats for the current user.
+   * Only accessible by authenticated users.
+   * @param input - Pagination parameters with optional offset and limit
+   * @returns List of chats ordered by last update time
+   */
   byUserId: protectedProcedure
     .input(
       z.object({
@@ -22,9 +28,20 @@ export const chatRouter = {
         limit: input.limit,
       })
     }),
+  /**
+   * Create a new chat.
+   * Only accessible by authenticated users.
+   * @param input - The chat data following the {@link CreateChatSchema}
+   * @returns The created chat
+   */
   create: protectedProcedure.input(CreateChatSchema).mutation(({ ctx, input }) => {
     return ctx.db.insert(Chat).values(input)
   }),
+  /**
+   * Update an existing chat.
+   * Only accessible by authenticated users.
+   * @param input - The chat data following the {@link UpdateChatSchema}
+   */
   update: protectedProcedure.input(UpdateChatSchema).mutation(async ({ ctx, input }) => {
     const { id, ...update } = input
     await ctx.db.update(Chat).set(update).where(eq(Chat.id, id))
@@ -32,11 +49,22 @@ export const chatRouter = {
 }
 
 export const messageRouter = {
+  /**
+   * Get a single message by ID.
+   * Only accessible by authenticated users.
+   * @param input - The message ID
+   * @returns The message if found
+   */
   byId: protectedProcedure.input(z.string()).query(({ ctx, input }) => {
     return ctx.db.query.message.findFirst({
       where: eq(message.id, input),
     })
   }),
+  /**
+   * Delete all messages in a chat that were created after the specified message.
+   * Only accessible by authenticated users.
+   * @param input - The reference message ID
+   */
   deleteTrailing: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const msg = await ctx.db.query.message.findFirst({
       where: eq(message.id, input),
