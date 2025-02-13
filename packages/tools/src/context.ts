@@ -1,15 +1,10 @@
 import type { Tool } from 'ai'
 
-export type Context = {
+export interface Context {
   userId: string
-} & (
-  | {
-      agentId: string
-      chatId: string
-    }
-  | {
-      roomId: string
-    }
-)
+  appId: string
+  agentId: string
+  chatId: string
+}
 
 export type ContextAwareTool = (context: Context) => Tool

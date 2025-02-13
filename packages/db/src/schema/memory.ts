@@ -3,30 +3,34 @@ import { index, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { Agent } from './agent'
+import { App } from './app'
 import { Chat } from './chat'
-import { room } from './room'
-import { timestamps } from './utils'
+import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { User } from './workspace'
 
 export const Memory = pgTable(
   'memory',
   {
     id: uuid('id').primaryKey().notNull().defaultRandom(),
-    content: text('content').notNull(),
+    // The user whom the memory belongs to.
     userId: uuid('userId')
       .notNull()
       .references(() => User.id),
-    agentId: uuid('agentId').references(() => Agent.id),
+    // The memory is always associated with an app.
+    appId: uuid('agentId')
+      .notNull()
+      .references(() => App.id),
+    // Optional. If set, the memory is at `chat` level; otherwise, it's at `app` level.
     chatId: uuid('chatId').references(() => Chat.id),
-    roomId: uuid('roomId').references(() => room.id),
+    content: text('content').notNull(),
     metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
     ...timestamps,
   },
   (table) => [
-    index().on(table.userId, table.agentId),
+    index().on(table.userId, table.appId, table.chatId),
+    index().on(table.appId),
     index().on(table.chatId),
-    index().on(table.userId, table.roomId),
+    ...timestampsIndices(table),
   ],
 )
 
@@ -35,12 +39,10 @@ export type Memory = InferSelectModel<typeof Memory>
 export const CreateMemorySchema = createInsertSchema(Memory, {
   content: z.string(),
   userId: z.string().uuid(),
-  agentId: z.string().uuid().optional(),
+  appId: z.string().uuid(),
   chatId: z.string().uuid().optional(),
-  roomId: z.string().uuid().optional(),
   metadata: z.record(z.unknown()).optional(),
 }).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true,
+  ...timestampsOmits,
 })

@@ -106,19 +106,13 @@ export class QdrantVector extends BaseVector {
       })
 
       await this.client.createPayloadIndex(collectionName, {
-        field_name: 'metadata.agentId',
+        field_name: 'metadata.appId',
         field_schema: 'uuid',
         wait: true,
       })
 
       await this.client.createPayloadIndex(collectionName, {
         field_name: 'metadata.chatId',
-        field_schema: 'uuid',
-        wait: true,
-      })
-
-      await this.client.createPayloadIndex(collectionName, {
-        field_name: 'metadata.roomId',
         field_schema: 'uuid',
         wait: true,
       })
@@ -579,9 +573,8 @@ export class QdrantVector extends BaseVector {
     embedding: number[],
     filter?: {
       userId?: string
-      agentId?: string
+      appId?: string
       chatId?: string
-      roomId?: string
     },
     opts?: SearchOptions,
   ) {
@@ -596,11 +589,11 @@ export class QdrantVector extends BaseVector {
         },
       })
     }
-    if (filter?.agentId) {
+    if (filter?.appId) {
       must.push({
-        key: 'metadata.agentId',
+        key: 'metadata.appId',
         match: {
-          value: filter.agentId,
+          value: filter.appId,
         },
       })
     }
@@ -609,14 +602,6 @@ export class QdrantVector extends BaseVector {
         key: 'metadata.chatId',
         match: {
           value: filter.chatId,
-        },
-      })
-    }
-    if (filter?.roomId) {
-      must.push({
-        key: 'metadata.roomId',
-        match: {
-          value: filter.roomId,
         },
       })
     }
@@ -666,9 +651,8 @@ export class QdrantVector extends BaseVector {
     query: string,
     filter?: {
       userId?: string
-      agentId?: string
+      appId?: string
       chatId?: string
-      roomId?: string
     },
     opts?: SearchOptions,
   ) {
@@ -690,11 +674,11 @@ export class QdrantVector extends BaseVector {
         },
       })
     }
-    if (filter?.agentId) {
+    if (filter?.appId) {
       must.push({
-        key: 'metadata.agentId',
+        key: 'metadata.appId',
         match: {
-          value: filter.agentId,
+          value: filter.appId,
         },
       })
     }
@@ -703,14 +687,6 @@ export class QdrantVector extends BaseVector {
         key: 'metadata.chatId',
         match: {
           value: filter.chatId,
-        },
-      })
-    }
-    if (filter?.roomId) {
-      must.push({
-        key: 'metadata.roomId',
-        match: {
-          value: filter.roomId,
         },
       })
     }
@@ -760,9 +736,8 @@ export class QdrantVector extends BaseVector {
 
   async deleteMemoriesByFilter(filter: {
     userId?: string
-    agentId?: string
+    appId?: string
     chatId?: string
-    roomId?: string
   }) {
     await this.init()
 
@@ -770,14 +745,11 @@ export class QdrantVector extends BaseVector {
     if (filter.userId) {
       match['metadata.userId'] = filter.userId
     }
-    if (filter.agentId) {
-      match['metadata.agentId'] = filter.agentId
+    if (filter.appId) {
+      match['metadata.appId'] = filter.appId
     }
     if (filter.chatId) {
       match['metadata.chatId'] = filter.chatId
-    }
-    if (filter.roomId) {
-      match['metadata.roomId'] = filter.roomId
     }
 
     const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)

@@ -16,8 +16,10 @@ export interface Memory {
   embedding: number[]
   metadata: {
     userId: string
+    appId: string
+    chatId?: string
     [key: string]: unknown
-  } & ({ agentId: string; chatId: string } | { roomId: string })
+  }
 }
 
 export interface SearchOptions {
@@ -70,9 +72,8 @@ export abstract class BaseVector {
     embedding: number[],
     filter?: {
       userId?: string
-      agentId?: string
+      appId?: string
       chatId?: string
-      roomId?: string
     },
     opts?: SearchOptions,
   ): Promise<Memory[]>
@@ -81,9 +82,8 @@ export abstract class BaseVector {
     query: string,
     filter?: {
       userId?: string
-      agentId?: string
+      appId?: string
       chatId?: string
-      roomId?: string
     },
     opts?: SearchOptions,
   ): Promise<(Omit<Memory, 'embedding'> & { embedding?: number[] })[]>
@@ -92,8 +92,7 @@ export abstract class BaseVector {
 
   abstract deleteMemoriesByFilter(filter: {
     userId?: string
-    agentId?: string
+    appId?: string
     chatId?: string
-    roomId?: string
   }): Promise<void>
 }

@@ -1,4 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
+import type { CoreMessage } from 'ai'
 import {
   boolean,
   index,
@@ -75,7 +76,7 @@ export const CreateChatSchema = createInsertSchema(Chat, {
 export const UpdateChatSchema = createUpdateSchema(Chat, {
   id: z.string(),
   owner: z.string().uuid().optional(),
-  metadata: chatMetadataZod.partial().optional(),
+  metadata: chatMetadataZod.optional(),
 }).omit({
   appId: true,
   type: true,
@@ -123,6 +124,8 @@ export const UpdateChatUserSchema = createUpdateSchema(ChatUser, {
 export const messageRoleEnumValues = ['user', 'assistant', 'system', 'data'] as const
 export const messageRoleEnum = pgEnum('role', messageRoleEnumValues)
 
+export type MessageContent = CoreMessage['content']
+
 export const Message = pgTable(
   'message',
   {
@@ -134,7 +137,7 @@ export const Message = pgTable(
     role: messageRoleEnum().notNull(),
     agentId: uuid().references(() => Agent.id),
     userId: uuid().references(() => User.id),
-    content: jsonb().notNull(),
+    content: jsonb().$type<MessageContent>().notNull(),
     ...timestamps,
   },
   (table) => [
@@ -151,10 +154,11 @@ export type Message = InferSelectModel<typeof Message>
 export const CreateMessageSchema = createInsertSchema(Message, {
   chatId: z.string().uuid(),
   index: z.number().int(),
+  // @ts-ignore
   role: z.enum(messageRoleEnumValues),
   agentId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
-  content: z.any(),
+  content: z.record(z.unknown()),
 }).omit({
   id: true,
   ...timestampsOmits,
