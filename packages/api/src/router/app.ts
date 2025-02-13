@@ -2,13 +2,16 @@ import type { SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { and, asc, count, desc, eq, inArray, sql } from '@mindworld/db'
+import { and, count, desc, eq, inArray, sql } from '@mindworld/db'
 import {
+  Agent,
+  AgentVersion,
   App,
   AppsToCategories,
   AppsToTags,
   AppVersion,
   Category,
+  CreateAgentVersionSchema,
   CreateAppSchema,
   CreateAppVersionSchema,
   DRAFT_VERSION,
@@ -24,8 +27,15 @@ import { protectedProcedure, publicProcedure } from '../trpc'
  * Verify if the user is a member of the workspace
  */
 async function verifyWorkspaceMembership(ctx: Context, workspaceId: string) {
+  if (!ctx.auth.userId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in',
+    })
+  }
+
   const membership = await ctx.db.query.Membership.findFirst({
-    where: and(eq(Membership.workspaceId, workspaceId), eq(Membership.userId, ctx.auth.userId!)),
+    where: and(eq(Membership.workspaceId, workspaceId), eq(Membership.userId, ctx.auth.userId)),
   })
 
   if (!membership) {
@@ -125,16 +135,7 @@ export async function getApps(
           AppsToCategories.appId,
           apps.map((app) => app.id),
         ),
-        sql`row_number
-        () over (partition by
-        ${AppsToCategories.appId}
-        order
-        by
-        ${Category.createdAt}
-        asc
-        )
-        <=
-        5`,
+        sql`row_number() over (partition by ${AppsToCategories.appId} order by ${Category.createdAt} asc) <= 5`,
       ),
     )
 
@@ -154,16 +155,7 @@ export async function getApps(
           AppsToTags.appId,
           apps.map((app) => app.id),
         ),
-        sql`row_number
-        () over (partition by
-        ${AppsToTags.appId}
-        order
-        by
-        ${Tag.createdAt}
-        asc
-        )
-        <=
-        5`,
+        sql`row_number() over (partition by ${AppsToTags.appId} order by ${Tag.createdAt} asc) <= 5`,
       ),
     )
 
@@ -500,6 +492,7 @@ export const appRouter = {
    * Delete an app from a workspace.
    * Only accessible by workspace members.
    * Also deletes all related category and tag associations.
+   * Also deletes all related agents and their versions.
    * @param input - Object containing workspaceId and app ID
    * @returns Success status
    * @throws {TRPCError} If app deletion fails
@@ -516,6 +509,22 @@ export const appRouter = {
       await getAppById(ctx, input.id, input.workspaceId)
 
       return await ctx.db.transaction(async (tx) => {
+        // Get all agent IDs for this app
+        const agents = await tx
+          .select({ id: Agent.id })
+          .from(Agent)
+          .where(eq(Agent.appId, input.id))
+
+        if (agents.length > 0) {
+          const agentIds = agents.map((agent) => agent.id)
+
+          // Delete all agent versions in one query
+          await tx.delete(AgentVersion).where(inArray(AgentVersion.agentId, agentIds))
+
+          // Delete all agents in one query
+          await tx.delete(Agent).where(inArray(Agent.id, agentIds))
+        }
+
         // Delete all app versions
         await tx.delete(AppVersion).where(eq(AppVersion.appId, input.id))
 
@@ -538,6 +547,7 @@ export const appRouter = {
    * Publish an app version.
    * Creates a new published version while keeping the draft version.
    * Updates the app's main record to match the published version.
+   * Also publishes all associated agents.
    * @param input - Object containing workspaceId and app ID
    * @returns The updated app and new version number
    * @throws {TRPCError} If publishing fails
@@ -578,6 +588,78 @@ export const appRouter = {
           })
           .where(eq(App.id, input.id))
           .returning()
+
+        // Get all agents and their draft versions for this app in one query
+        const agentsWithDrafts = await tx
+          .select({
+            agent: Agent,
+            draft: AgentVersion,
+          })
+          .from(Agent)
+          .innerJoin(
+            AgentVersion,
+            and(eq(AgentVersion.agentId, Agent.id), eq(AgentVersion.version, DRAFT_VERSION)),
+          )
+          .where(eq(Agent.appId, input.id))
+
+        // Get total number of agents for this app
+        const agentsCount = await tx
+          .select({ count: count() })
+          .from(Agent)
+          .where(eq(Agent.appId, input.id))
+
+        // Check if any agent is missing a draft version
+        if (agentsWithDrafts.length !== agentsCount[0]!.count) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Some agents are missing draft versions',
+          })
+        }
+
+        if (agentsWithDrafts.length > 0) {
+          // Bulk insert new published versions
+          await tx.insert(AgentVersion).values(
+            agentsWithDrafts.map((item) =>
+              CreateAgentVersionSchema.parse({
+                agentId: item.agent.id,
+                version: publishedVersion,
+                name: item.draft.name,
+                metadata: item.draft.metadata,
+              }),
+            ),
+          )
+
+          // Build CASE expressions for name and metadata updates
+          const nameCaseChunks: SQL[] = []
+          const metadataCaseChunks: SQL[] = []
+          const agentIds: string[] = []
+
+          nameCaseChunks.push(sql`(case`)
+          metadataCaseChunks.push(sql`(case`)
+
+          for (const item of agentsWithDrafts) {
+            nameCaseChunks.push(sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.name}`)
+            metadataCaseChunks.push(
+              sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.metadata}`,
+            )
+            agentIds.push(item.agent.id)
+          }
+
+          nameCaseChunks.push(sql`end)`)
+          metadataCaseChunks.push(sql`end)`)
+
+          const nameCase = sql.join(nameCaseChunks, sql.raw(' '))
+          const metadataCase = sql.join(metadataCaseChunks, sql.raw(' '))
+
+          // Update all agents in a single query
+          await tx
+            .update(Agent)
+            .set({
+              name: nameCase,
+              metadata: metadataCase,
+            })
+            .where(inArray(Agent.id, agentIds))
+        }
 
         return {
           app: updatedApp,

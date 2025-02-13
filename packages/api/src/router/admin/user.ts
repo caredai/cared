@@ -29,14 +29,11 @@ export const userRouter = {
             ilike(sql`${User.info}->>'username'`, `%${input.search}%`),
             ilike(sql`${User.info}->>'firstName'`, `%${input.search}%`),
             ilike(sql`${User.info}->>'lastName'`, `%${input.search}%`),
-            sql`to_tsvector('simple', array_to_string(array(select jsonb_array_elements(${User.info}->'emailAddresses')->>>'emailAddress'), ' ')) @@ to_tsquery('simple', ${input.search}:*)`
+            sql`to_tsvector('simple', array_to_string(array(select jsonb_array_elements(${User.info}->'emailAddresses')->>>'emailAddress'), ' ')) @@ to_tsquery('simple', ${input.search}:*)`,
           )
         : undefined
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(User)
-        .where(where)
+      const counts = await ctx.db.select({ count: count() }).from(User).where(where)
 
       if (!counts[0]) {
         throw new TRPCError({

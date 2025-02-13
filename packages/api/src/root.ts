@@ -1,4 +1,5 @@
 import { adminRouter } from './router/admin'
+import { agentRouter } from './router/agent'
 import { appRouter as _appRouter } from './router/app'
 import { chatRouter, messageRouter } from './router/chat'
 import { postRouter } from './router/post'
@@ -9,6 +10,7 @@ import { createTRPCRouter } from './trpc'
 export const appRouter = createTRPCRouter({
   admin: adminRouter,
   app: _appRouter,
+  agent: agentRouter,
   chat: chatRouter,
   message: messageRouter,
   post: postRouter,

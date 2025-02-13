@@ -3,7 +3,7 @@ import { index, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { agent } from './agent'
+import { Agent } from './agent'
 import { Chat } from './chat'
 import { room } from './room'
 import { timestamps } from './utils'
@@ -17,7 +17,7 @@ export const Memory = pgTable(
     userId: uuid('userId')
       .notNull()
       .references(() => User.id),
-    agentId: uuid('agentId').references(() => agent.id),
+    agentId: uuid('agentId').references(() => Agent.id),
     chatId: uuid('chatId').references(() => Chat.id),
     roomId: uuid('roomId').references(() => room.id),
     metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),

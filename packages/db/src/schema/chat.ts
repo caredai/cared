@@ -1,9 +1,18 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { boolean, index, jsonb, pgTable, primaryKey, text, uuid, varchar } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  index,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { agent } from './agent'
+import { Agent } from './agent'
 import { createdAt, timestamps, visibilityEnum, visibilityEnumValues } from './utils'
 import { User } from './workspace'
 
@@ -21,7 +30,7 @@ export const Chat = pgTable(
     title: text().notNull(),
     agentId: uuid()
       .notNull()
-      .references(() => agent.id),
+      .references(() => Agent.id),
     userId: uuid()
       .notNull()
       .references(() => User.id),

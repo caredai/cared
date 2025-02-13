@@ -20,9 +20,18 @@ export const appTypeEnum = pgEnum('appType', appTypeEnumValues)
 
 export interface AppMetadata {
   description?: string
+  imageUrl?: string
 
   [key: string]: unknown
 }
+
+const appMetadataZod = z
+  .object({
+    description: z.string().optional(),
+    imageUrl: z.string().optional(),
+  })
+  .catchall(z.unknown())
+  .optional()
 
 export const App = pgTable(
   'app',
@@ -51,12 +60,7 @@ export const CreateAppSchema = createInsertSchema(App, {
   workspaceId: z.string().uuid(),
   type: z.enum(appTypeEnumValues).optional(),
   name: z.string().max(255),
-  metadata: z
-    .object({
-      description: z.string().optional(),
-    })
-    .catchall(z.unknown())
-    .optional(),
+  metadata: appMetadataZod,
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -66,12 +70,7 @@ export const UpdateAppSchema = createUpdateSchema(App, {
   id: z.string(),
   workspaceId: z.string().uuid(),
   name: z.string().max(255).optional(),
-  metadata: z
-    .object({
-      description: z.string().optional(),
-    })
-    .catchall(z.unknown())
-    .optional(),
+  metadata: appMetadataZod,
 }).omit({
   type: true,
   ...timestampsOmits,
@@ -108,12 +107,7 @@ export const CreateAppVersionSchema = createInsertSchema(AppVersion, {
   version: z.number().int().optional(),
   type: z.enum(appTypeEnumValues).optional(),
   name: z.string().max(255),
-  metadata: z
-    .object({
-      description: z.string().optional(),
-    })
-    .catchall(z.unknown())
-    .optional(),
+  metadata: appMetadataZod,
 }).omit({
   ...timestampsOmits,
 })
@@ -122,12 +116,7 @@ export const UpdateAppVersionSchema = createUpdateSchema(AppVersion, {
   appId: z.string(),
   version: z.number().int().optional(),
   name: z.string().max(255).optional(),
-  metadata: z
-    .object({
-      description: z.string().optional(),
-    })
-    .catchall(z.unknown())
-    .optional(),
+  metadata: appMetadataZod,
 }).omit({
   type: true,
   ...timestampsOmits,

@@ -2,7 +2,14 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import { count, desc, eq, inArray } from '@mindworld/db'
-import { App, AppsToCategories, AppsToTags, AppVersion, Category, CreateCategorySchema } from '@mindworld/db/schema'
+import {
+  App,
+  AppsToCategories,
+  AppsToTags,
+  AppVersion,
+  Category,
+  CreateCategorySchema,
+} from '@mindworld/db/schema'
 
 import { adminProcedure } from '../../trpc'
 import { getAppById, getApps } from '../app'
@@ -204,7 +211,7 @@ export const appRouter = {
   createCategory: adminProcedure.input(CreateCategorySchema).mutation(async ({ ctx, input }) => {
     const category = await ctx.db.insert(Category).values(input).returning()
     return {
-      category
+      category,
     }
   }),
 }

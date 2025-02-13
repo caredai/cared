@@ -40,7 +40,10 @@ export const User = pgTable(
     index('user_username_idx').using('btree', sql`((${table.info}->>'username'))`),
     index('user_firstname_idx').using('btree', sql`((${table.info}->>'firstName'))`),
     index('user_lastname_idx').using('btree', sql`((${table.info}->>'lastName'))`),
-    index('user_emails_search_idx').using('gin', sql`to_tsvector('simple', array_to_string(array(select jsonb_array_elements(${table.info}->'emailAddresses')->>'emailAddress'), ' '))`),
+    index('user_emails_search_idx').using(
+      'gin',
+      sql`to_tsvector('simple', array_to_string(array(select jsonb_array_elements(${table.info}->'emailAddresses')->>'emailAddress'), ' '))`,
+    ),
     ...timestampsIndices(table),
   ],
 )

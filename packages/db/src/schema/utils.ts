@@ -5,9 +5,7 @@ export const createdAt = timestamp({ mode: 'date' }).notNull().defaultNow()
 export const updatedAt = timestamp({ mode: 'date' })
   .notNull()
   .defaultNow()
-  .$onUpdateFn(
-    () => sql`now()`,
-  )
+  .$onUpdateFn(() => sql`now()`)
 export const timestamps = {
   createdAt,
   updatedAt,

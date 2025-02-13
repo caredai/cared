@@ -3,7 +3,7 @@ import { index, jsonb, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-co
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { agent } from './agent'
+import { Agent } from './agent'
 import { timestamps } from './utils'
 import { User } from './workspace'
 
@@ -68,7 +68,7 @@ export const agentParticipant = pgTable(
       .references(() => room.id),
     agentId: uuid()
       .notNull()
-      .references(() => agent.id),
+      .references(() => Agent.id),
     ...timestamps,
   },
   (table) => [
