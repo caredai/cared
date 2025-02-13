@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { and, desc, eq, gte } from '@mindworld/db'
-import { Chat, CreateChatSchema, message, UpdateChatSchema } from '@mindworld/db/schema'
+import { Chat, CreateChatSchema, Message, UpdateChatSchema } from '@mindworld/db/schema'
 
 import { protectedProcedure } from '../trpc'
 
@@ -57,7 +57,7 @@ export const messageRouter = {
    */
   byId: protectedProcedure.input(z.string()).query(({ ctx, input }) => {
     return ctx.db.query.message.findFirst({
-      where: eq(message.id, input),
+      where: eq(Message.id, input),
     })
   }),
   /**
@@ -67,13 +67,13 @@ export const messageRouter = {
    */
   deleteTrailing: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const msg = await ctx.db.query.message.findFirst({
-      where: eq(message.id, input),
+      where: eq(Message.id, input),
     })
     if (!msg) {
       return
     }
     await ctx.db
-      .delete(message)
-      .where(and(eq(message.chatId, msg.chatId), gte(message.createdAt, msg.createdAt)))
+      .delete(Message)
+      .where(and(eq(Message.chatId, msg.chatId), gte(Message.createdAt, msg.createdAt)))
   }),
 }
