@@ -1,1 +1,2 @@
-export const name = 'utils'
+export * from './utils'
+export * from './log'

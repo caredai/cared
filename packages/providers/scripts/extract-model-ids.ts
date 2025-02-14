@@ -7,6 +7,26 @@ import * as ts from 'typescript'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Additional model IDs that are not exported in index.d.ts
+const additionalModelIds: Record<string, {
+  languageModels?: string[]
+  embeddingModels?: string[]
+  imageModels?: string[]
+}> = {
+  'google-vertex': {
+    embeddingModels: [
+      'textembedding-gecko',
+      'textembedding-gecko@001',
+      'textembedding-gecko@003',
+      'textembedding-gecko-multilingual',
+      'textembedding-gecko-multilingual@001',
+      'text-multilingual-embedding-002',
+      'text-embedding-004',
+      'text-embedding-005'
+    ]
+  }
+}
+
 function extractModelIds(providerPath: string): {
   languageModels?: string[]
   embeddingModels?: string[]
@@ -54,6 +74,25 @@ function extractModelIds(providerPath: string): {
   }
 
   visit(sourceFile)
+
+  // Get provider name from path
+  const providerName = path.basename(providerPath)
+  
+  // Merge additional model IDs if they exist for this provider
+  // Additional IDs are appended at the end to preserve the original order
+  if (additionalModelIds[providerName]) {
+    const additional = additionalModelIds[providerName]
+    if (additional.languageModels?.length) {
+      result.languageModels = [...result.languageModels, ...additional.languageModels]
+    }
+    if (additional.embeddingModels?.length) {
+      result.embeddingModels = [...result.embeddingModels, ...additional.embeddingModels]
+    }
+    if (additional.imageModels?.length) {
+      result.imageModels = [...result.imageModels, ...additional.imageModels]
+    }
+  }
+
   return result
 }
 

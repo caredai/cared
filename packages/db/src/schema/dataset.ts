@@ -15,6 +15,27 @@ import { z } from 'zod'
 import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { Workspace } from './workspace'
 
+const retrievalModes = ['vector-search', 'full-text-search', 'hybrid-search'] as const
+export interface DatasetMetadata {
+  languageModel: string // used for splitting a document into segments and chunks
+  embeddingModel: string
+  rerankModel: string
+  retrievalMode: typeof retrievalModes[number]
+  topK?: number
+  scoreThreshold?: number
+
+  [key: string]: unknown
+}
+
+const datasetMetadataZod = z.object({
+  languageModel: z.string().min(1).optional(),
+  embeddingModel: z.string().min(1).optional(),
+  rerankModel: z.string().min(1).optional(),
+  retrievalMode: z.enum(retrievalModes).optional(),
+  topK: z.number().int().min(1).max(10).optional(),
+  scoreThreshold: z.number().min(0).max(1).step(0.01).optional(),
+})
+
 export const Dataset = pgTable(
   'dataset',
   {
@@ -23,11 +44,12 @@ export const Dataset = pgTable(
       .notNull()
       .references(() => Workspace.id),
     name: varchar({ length: 255 }).notNull(),
-    metadata: jsonb().notNull().default({}),
+    metadata: jsonb().$type<DatasetMetadata>().notNull(),
     ...timestamps,
   },
   (table) => [
     index().on(table.workspaceId),
+    index().on(table.name),
     ...timestampsIndices(table),
   ],
 )
@@ -37,7 +59,7 @@ export type Dataset = InferSelectModel<typeof Dataset>
 export const CreateDatasetSchema = createInsertSchema(Dataset, {
   workspaceId: z.string().uuid(),
   name: z.string().max(255),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: datasetMetadataZod,
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -46,7 +68,7 @@ export const CreateDatasetSchema = createInsertSchema(Dataset, {
 export const UpdateDatasetSchema = createUpdateSchema(Dataset, {
   id: z.string().uuid(),
   name: z.string().max(255).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: datasetMetadataZod.optional(),
 }).omit({
   workspaceId: true,
   ...timestampsOmits,

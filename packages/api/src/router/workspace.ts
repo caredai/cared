@@ -11,7 +11,32 @@ import {
   Workspace,
 } from '@mindworld/db/schema'
 
-import { createTRPCRouter, protectedProcedure } from '../trpc'
+import { Context, createTRPCRouter, protectedProcedure } from '../trpc'
+
+/**
+ * Verify if the user is a member of the workspace
+ */
+export async function verifyWorkspaceMembership(ctx: Context, workspaceId: string) {
+  if (!ctx.auth.userId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be logged in',
+    })
+  }
+
+  const membership = await ctx.db.query.Membership.findFirst({
+    where: and(eq(Membership.workspaceId, workspaceId), eq(Membership.userId, ctx.auth.userId)),
+  })
+
+  if (!membership) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'You are not a member of this workspace',
+    })
+  }
+
+  return membership
+}
 
 export const workspaceRouter = createTRPCRouter({
   /**

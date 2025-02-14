@@ -7,6 +7,8 @@
       "o1-mini-2024-09-12",
       "o1-preview",
       "o1-preview-2024-09-12",
+      "o3-mini",
+      "o3-mini-2025-01-31",
       "gpt-4o",
       "gpt-4o-2024-05-13",
       "gpt-4o-2024-08-06",
@@ -109,22 +111,24 @@
   },
   "google": {
     "languageModels": [
-      "gemini-2.0-flash-exp",
+      "gemini-2.0-flash-001",
       "gemini-1.5-flash",
       "gemini-1.5-flash-latest",
       "gemini-1.5-flash-001",
       "gemini-1.5-flash-002",
-      "gemini-1.5-flash-exp-0827",
       "gemini-1.5-flash-8b",
       "gemini-1.5-flash-8b-latest",
-      "gemini-1.5-flash-8b-exp-0924",
-      "gemini-1.5-flash-8b-exp-0827",
-      "gemini-1.5-pro-latest",
+      "gemini-1.5-flash-8b-001",
       "gemini-1.5-pro",
+      "gemini-1.5-pro-latest",
       "gemini-1.5-pro-001",
       "gemini-1.5-pro-002",
-      "gemini-1.5-pro-exp-0827",
-      "gemini-1.0-pro"
+      "gemini-2.0-flash-lite-preview-02-05",
+      "gemini-2.0-pro-exp-02-05",
+      "gemini-2.0-flash-thinking-exp-01-21",
+      "gemini-2.0-flash-exp",
+      "gemini-exp-1206",
+      "learnlm-1.5-pro-experimental"
     ],
     "embeddingModels": [
       "text-embedding-004"
@@ -133,7 +137,7 @@
   },
   "google-vertex": {
     "languageModels": [
-      "gemini-2.0-flash-exp",
+      "gemini-2.0-flash-001",
       "gemini-1.5-flash",
       "gemini-1.5-flash-001",
       "gemini-1.5-flash-002",
@@ -144,9 +148,21 @@
       "gemini-1.0-pro-vision-001",
       "gemini-1.0-pro",
       "gemini-1.0-pro-001",
-      "gemini-1.0-pro-002"
+      "gemini-1.0-pro-002",
+      "gemini-2.0-flash-lite-preview-02-05",
+      "gemini-2.0-pro-exp-02-05",
+      "gemini-2.0-flash-exp"
     ],
-    "embeddingModels": [],
+    "embeddingModels": [
+      "textembedding-gecko",
+      "textembedding-gecko@001",
+      "textembedding-gecko@003",
+      "textembedding-gecko-multilingual",
+      "textembedding-gecko-multilingual@001",
+      "text-multilingual-embedding-002",
+      "text-embedding-004",
+      "text-embedding-005"
+    ],
     "imageModels": [
       "imagen-3.0-generate-001",
       "imagen-3.0-fast-generate-001"
@@ -231,7 +247,18 @@
       "sentence-transformers/msmarco-bert-base-dot-v5",
       "bert-base-uncased"
     ],
-    "imageModels": []
+    "imageModels": [
+      "stabilityai/stable-diffusion-xl-base-1.0",
+      "black-forest-labs/FLUX.1-dev",
+      "black-forest-labs/FLUX.1-dev-lora",
+      "black-forest-labs/FLUX.1-schnell",
+      "black-forest-labs/FLUX.1-canny",
+      "black-forest-labs/FLUX.1-depth",
+      "black-forest-labs/FLUX.1-redux",
+      "black-forest-labs/FLUX.1.1-pro",
+      "black-forest-labs/FLUX.1-pro",
+      "black-forest-labs/FLUX.1-schnell-Free"
+    ]
   },
   "cohere": {
     "languageModels": [
@@ -373,7 +400,15 @@
       "thenlper/gte-base",
       "thenlper/gte-large"
     ],
-    "imageModels": []
+    "imageModels": [
+      "stabilityai/sd3.5",
+      "black-forest-labs/FLUX-1.1-pro",
+      "black-forest-labs/FLUX-1-schnell",
+      "black-forest-labs/FLUX-1-dev",
+      "black-forest-labs/FLUX-pro",
+      "stabilityai/sd3.5-medium",
+      "stabilityai/sdxl-turbo"
+    ]
   },
   "cerebras": {
     "languageModels": [
@@ -386,6 +421,7 @@
   },
   "groq": {
     "languageModels": [
+      "deepseek-r1-distill-llama-70b",
       "gemma2-9b-it",
       "gemma-7b-it",
       "llama-3.3-70b-versatile",
