@@ -21,6 +21,7 @@
     "@mindworld/utils": "workspace:*",
     "@mindworld/validators": "workspace:*",
     "@trpc/server": "catalog:",
+    "@upstash/qstash": "^2.7.21",
     "next-s3-upload": "^0.3.4",
     "superjson": "2.2.2",
     "zod": "catalog:"
