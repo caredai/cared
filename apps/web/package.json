@@ -14,8 +14,8 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.10.0",
-    "@clerk/themes": "^2.2.10",
+    "@clerk/nextjs": "^6.11.3",
+    "@clerk/themes": "^2.2.18",
     "@mindworld/api": "workspace:*",
     "@mindworld/i18n": "workspace:*",
     "@mindworld/ui": "workspace:*",

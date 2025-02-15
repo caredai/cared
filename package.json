@@ -33,5 +33,10 @@
     "turbo": "^2.4.0",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config"
+  "prettier": "@mindworld/prettier-config",
+  "pnpm": {
+    "patchedDependencies": {
+      "@clerk/backend": "patches/@clerk__backend.patch"
+    }
+  }
 }
