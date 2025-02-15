@@ -21,7 +21,10 @@
     "@mindworld/utils": "workspace:*",
     "@mindworld/validators": "workspace:*",
     "@trpc/server": "catalog:",
+    "@unkey/api": "^0.33.1",
+    "@unkey/nextjs": "^0.18.8",
     "@upstash/qstash": "^2.7.21",
+    "@upstash/workflow": "^0.2.7",
     "next-s3-upload": "^0.3.4",
     "superjson": "2.2.2",
     "zod": "catalog:"
@@ -30,6 +33,7 @@
     "@mindworld/eslint-config": "workspace:*",
     "@mindworld/prettier-config": "workspace:*",
     "@mindworld/tsconfig": "workspace:*",
+    "@upstash/qstash-cli": "^2.21.1",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"

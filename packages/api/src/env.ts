@@ -4,6 +4,8 @@ import { z } from 'zod'
 export const env = createEnv({
   server: {
     CLERK_ADMIN_ORGANIZATION_ID: z.string().min(1),
+    UNKEY_ROOT_KEY: z.string().min(1),
+    UNKEY_API_ID: z.string().min(1),
     S3_BUCKET: z.string().min(1),
     S3_ENDPOINT: z.string().min(1),
     S3_REGION: z.string().min(1),

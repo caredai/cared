@@ -360,9 +360,18 @@ importers:
       '@trpc/server':
         specifier: 'catalog:'
         version: 11.0.0-rc.700(typescript@5.7.3)
+      '@unkey/api':
+        specifier: ^0.33.1
+        version: 0.33.1
+      '@unkey/nextjs':
+        specifier: ^0.18.8
+        version: 0.18.8
       '@upstash/qstash':
         specifier: ^2.7.21
         version: 2.7.21
+      '@upstash/workflow':
+        specifier: ^0.2.7
+        version: 0.2.7(react@19.0.0)
       next-s3-upload:
         specifier: ^0.3.4
         version: 0.3.4(next@15.1.6(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
@@ -382,6 +391,9 @@ importers:
       '@mindworld/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
+      '@upstash/qstash-cli':
+        specifier: ^2.21.1
+        version: 2.21.1
       eslint:
         specifier: 'catalog:'
         version: 9.18.0(jiti@2.4.2)
@@ -5866,8 +5878,27 @@ packages:
   '@ungap/structured-clone@1.3.0':
     resolution: {integrity: sha512-WmoN8qaIAo7WTYWbAZuG8PYEhn5fkz7dZrqTBZ7dtt//lL2Gwms1IcnQ5yHqjDfX8Ft5j4YzDM23f87zBfDe9g==}
 
+  '@unkey/api@0.33.1':
+    resolution: {integrity: sha512-HXFQOGjO3S0+N6GMBOz9lkn2Fp41rdgNrafBkjRg8IjOsNv6SNdWrXZSELONinZYycr7Wxc/t7Vhx7xUdb0cdA==}
+
+  '@unkey/error@0.2.0':
+    resolution: {integrity: sha512-DFGb4A7SrusZPP0FYuRIF0CO+Gi4etLUAEJ6EKc+TKYmscL0nEJ2Pr38FyX9MvjI4Wx5l35Wc9KsBjMm9Ybh7w==}
+
+  '@unkey/nextjs@0.18.8':
+    resolution: {integrity: sha512-VJ9tR4yK+nR+woCfqNfH2UQ9xw1XqdaP5C035MQDUG7Fj329dcBx82Wl3UGVpXCq3wOSbdHpyTd5SSPtN13sRg==}
+
+  '@unkey/rbac@0.3.1':
+    resolution: {integrity: sha512-Hj+52XRIlBBl3/qOUq9K71Fwy3PWExBQOpOClVYHdrcmbgqNL6L4EdW/BzliLhqPCdwZTPVSJTnZ3Hw4ZYixsQ==}
+
+  '@upstash/qstash-cli@2.21.1':
+    resolution: {integrity: sha512-T8F3ZJSVS9KR99rD9wQHkinywP3+PSQk9heQKTnM9e9XamCmjf3bCUNOHlDcWp4F/PIDYcCA/EOcMz1UL2vCmQ==}
+    hasBin: true
+
   '@upstash/qstash@2.7.21':
     resolution: {integrity: sha512-qZJyHPpWAgtHruJtiAjUEen+pB+9543Cck7JlmGH+dMlrDOSUP1z7PUp6pmexKP2sJwG25gsY3JlDqpCrcj/rQ==}
+
+  '@upstash/workflow@0.2.7':
+    resolution: {integrity: sha512-Hzlc1XruG3u2cCqmzy8doJyt4h8iEC0yU+ipRJR2mwWYwa99rz0xgLmMm/3PhGzxg51KocOm6Q04JP6KkyvnfA==}
 
   '@urql/core@5.1.0':
     resolution: {integrity: sha512-yC3sw8yqjbX45GbXxfiBY8GLYCiyW/hLBbQF9l3TJrv4ro00Y0ChkKaD9I2KntRxAVm9IYBqh0awX8fwWAe/Yw==}
@@ -6418,6 +6449,9 @@ packages:
 
   bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
+
+  bluebird@3.7.2:
+    resolution: {integrity: sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==}
 
   bn.js@4.12.1:
     resolution: {integrity: sha512-k8TVBiPkPJT9uHLdOKfFpqcfprwBFOAAXXozRubr7R7PfIuKvQlzcI4M0pALeqXN09vdaMbUdUj+pass+uULAg==}
@@ -7370,6 +7404,9 @@ packages:
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
     engines: {node: '>= 0.4'}
+
+  duplexer2@0.1.4:
+    resolution: {integrity: sha512-asLFVfWWtJ90ZyOUHMqk7/S2w2guQKxUI2itj3d92ADHhxUSbCMGi1f1cBcJ7xM1To+pE/Khbwo1yuNbMEPKeA==}
 
   duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
@@ -9904,6 +9941,10 @@ packages:
   node-fetch-native@1.6.6:
     resolution: {integrity: sha512-8Mc2HhqPdlIfedsuZoc3yioPuzp6b+L5jRCRY1QzuWZh2EGJVQrGppC6V6cF0bLdbW0+O2YpqCA25aF/1lvipQ==}
 
+  node-fetch@2.6.2:
+    resolution: {integrity: sha512-aLoxToI6RfZ+0NOjmWAgn9+LEd30YCkJKFSyWacNZdEKTit/ZMcKjGkTRo8uWEsnIb/hfKecNPEbln02PdWbcA==}
+    engines: {node: 4.x || >=6.0.0}
+
   node-fetch@2.7.0:
     resolution: {integrity: sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==}
     engines: {node: 4.x || >=6.0.0}
@@ -12274,6 +12315,9 @@ packages:
 
   unwasm@0.3.9:
     resolution: {integrity: sha512-LDxTx/2DkFURUd+BU1vUsF/moj0JsoTvl+2tcg2AUOiEzVturhGGx17/IMgGvKUYdZwr33EJHtChCJuhu9Ouvg==}
+
+  unzipper@0.12.3:
+    resolution: {integrity: sha512-PZ8hTS+AqcGxsaQntl3IRBw65QrBI6lxzqDEL7IAo/XCEqRTKGfOX56Vea5TH9SZczRVxuzk1re04z/YjuYCJA==}
 
   update-browserslist-db@1.1.2:
     resolution: {integrity: sha512-PPypAm5qvlD7XMZC3BujecnaOxwhrtoFR+Dqkk5Aa/6DssiH0ibKoketaj9w8LP7Bont1rYeoV5plxD7RTEPRg==}
@@ -19068,11 +19112,43 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
+  '@unkey/api@0.33.1':
+    dependencies:
+      '@unkey/rbac': 0.3.1
+
+  '@unkey/error@0.2.0':
+    dependencies:
+      zod: 3.24.1
+
+  '@unkey/nextjs@0.18.8':
+    dependencies:
+      '@unkey/api': 0.33.1
+
+  '@unkey/rbac@0.3.1':
+    dependencies:
+      '@unkey/error': 0.2.0
+      zod: 3.24.1
+
+  '@upstash/qstash-cli@2.21.1':
+    dependencies:
+      node-fetch: 2.6.2
+      tar: 6.2.1
+      unzipper: 0.12.3
+
   '@upstash/qstash@2.7.21':
     dependencies:
       crypto-js: 4.2.0
       jose: 5.9.6
       neverthrow: 7.2.0
+
+  '@upstash/workflow@0.2.7(react@19.0.0)':
+    dependencies:
+      '@ai-sdk/openai': 1.1.11(zod@3.24.1)
+      '@upstash/qstash': 2.7.21
+      ai: 4.1.26(react@19.0.0)(zod@3.24.1)
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - react
 
   '@urql/core@5.1.0(graphql@15.8.0)':
     dependencies:
@@ -19969,6 +20045,8 @@ snapshots:
       buffer: 5.7.1
       inherits: 2.0.4
       readable-stream: 3.6.2
+
+  bluebird@3.7.2: {}
 
   bn.js@4.12.1: {}
 
@@ -20896,6 +20974,10 @@ snapshots:
       call-bind-apply-helpers: 1.0.1
       es-errors: 1.3.0
       gopd: 1.2.0
+
+  duplexer2@0.1.4:
+    dependencies:
+      readable-stream: 2.3.8
 
   duplexer@0.1.2: {}
 
@@ -24262,6 +24344,8 @@ snapshots:
 
   node-fetch-native@1.6.6: {}
 
+  node-fetch@2.6.2: {}
+
   node-fetch@2.7.0(encoding@0.1.13):
     dependencies:
       whatwg-url: 5.0.0
@@ -25836,8 +25920,7 @@ snapshots:
 
   semver@7.6.3: {}
 
-  semver@7.7.1:
-    optional: true
+  semver@7.7.1: {}
 
   send@0.19.0:
     dependencies:
@@ -25951,7 +26034,7 @@ snapshots:
     dependencies:
       color: 4.2.3
       detect-libc: 2.0.3
-      semver: 7.6.3
+      semver: 7.7.1
     optionalDependencies:
       '@img/sharp-darwin-arm64': 0.33.5
       '@img/sharp-darwin-x64': 0.33.5
@@ -26997,6 +27080,14 @@ snapshots:
       pathe: 1.1.2
       pkg-types: 1.3.1
       unplugin: 1.16.1
+
+  unzipper@0.12.3:
+    dependencies:
+      bluebird: 3.7.2
+      duplexer2: 0.1.4
+      fs-extra: 11.3.0
+      graceful-fs: 4.2.11
+      node-int64: 0.4.0
 
   update-browserslist-db@1.1.2(browserslist@4.24.4):
     dependencies:

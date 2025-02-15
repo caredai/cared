@@ -11,27 +11,40 @@ import {
   Workspace,
 } from '@mindworld/db/schema'
 
-import { Context, createTRPCRouter, protectedProcedure } from '../trpc'
+import type { Context } from '../trpc'
+import { createTRPCRouter, protectedProcedure } from '../trpc'
 
 /**
  * Verify if the user is a member of the workspace
  */
 export async function verifyWorkspaceMembership(ctx: Context, workspaceId: string) {
-  if (!ctx.auth.userId) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'You must be logged in',
-    })
-  }
-
   const membership = await ctx.db.query.Membership.findFirst({
-    where: and(eq(Membership.workspaceId, workspaceId), eq(Membership.userId, ctx.auth.userId)),
+    where: and(eq(Membership.workspaceId, workspaceId), eq(Membership.userId, ctx.auth.userId!)),
   })
 
   if (!membership) {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'You are not a member of this workspace',
+    })
+  }
+
+  return membership
+}
+
+/**
+ * Verify if the user is the owner of the workspace.
+ * @param ctx - The context object
+ * @param workspaceId - The workspace ID to verify ownership for
+ * @throws {TRPCError} If user is not the workspace owner
+ */
+export async function verifyWorkspaceOwner(ctx: Context, workspaceId: string) {
+  const membership = await verifyWorkspaceMembership(ctx, workspaceId)
+
+  if (membership.role !== 'owner') {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Only workspace owner can perform this action',
     })
   }
 
