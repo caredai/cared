@@ -4,6 +4,7 @@ import { apiKeyRouter } from './router/api-key'
 import { appRouter as _appRouter } from './router/app'
 import { chatRouter } from './router/chat'
 import { datasetRouter } from './router/dataset'
+import { oauthAppRouter } from './router/oauth-app'
 import { postRouter } from './router/post'
 import { userRouter } from './router/user'
 import { workspaceRouter } from './router/workspace'
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   user: userRouter,
   app: _appRouter,
   apiKey: apiKeyRouter,
+  oauthApp: oauthAppRouter,
   agent: agentRouter,
   dataset: datasetRouter,
   chat: chatRouter,

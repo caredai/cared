@@ -49,7 +49,7 @@ catalogs:
 
 patchedDependencies:
   '@clerk/backend':
-    hash: ax3sbkadlkurxqhpkufjy4dt2i
+    hash: 3w6qvaybkbe5g5haxhbfi24kpq
     path: patches/@clerk__backend.patch
 
 importers:
@@ -352,7 +352,7 @@ importers:
     dependencies:
       '@clerk/backend':
         specifier: ^1.24.1
-        version: 1.24.1(patch_hash=ax3sbkadlkurxqhpkufjy4dt2i)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+        version: 1.24.1(patch_hash=3w6qvaybkbe5g5haxhbfi24kpq)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@mindworld/db':
         specifier: workspace:*
         version: link:../db
@@ -14977,7 +14977,7 @@ snapshots:
     dependencies:
       react-native: 0.77.0(@babel/core@7.26.0)(@babel/preset-env@7.26.0(@babel/core@7.26.0))(@react-native-community/cli-server-api@13.6.9(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@types/react@19.0.7)(bufferutil@4.0.9)(react@19.0.0)(utf-8-validate@5.0.10)
 
-  '@clerk/backend@1.24.1(patch_hash=ax3sbkadlkurxqhpkufjy4dt2i)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+  '@clerk/backend@1.24.1(patch_hash=3w6qvaybkbe5g5haxhbfi24kpq)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
       '@clerk/shared': 2.21.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@clerk/types': 4.46.0
@@ -14998,7 +14998,7 @@ snapshots:
 
   '@clerk/nextjs@6.11.3(next@15.1.6(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
     dependencies:
-      '@clerk/backend': 1.24.1(patch_hash=ax3sbkadlkurxqhpkufjy4dt2i)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      '@clerk/backend': 1.24.1(patch_hash=3w6qvaybkbe5g5haxhbfi24kpq)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@clerk/clerk-react': 5.22.13(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@clerk/shared': 2.21.1(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@clerk/types': 4.46.0
