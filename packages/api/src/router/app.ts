@@ -2,6 +2,7 @@ import type { SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
+import type { AppMetadata } from '@mindworld/db/schema'
 import { and, count, desc, eq, inArray, sql } from '@mindworld/db'
 import {
   Agent,
@@ -13,15 +14,16 @@ import {
   Category,
   CreateAgentVersionSchema,
   CreateAppSchema,
-  CreateAppVersionSchema,
   DRAFT_VERSION,
   Tag,
   UpdateAppSchema,
 } from '@mindworld/db/schema'
+import { defaultModels } from '@mindworld/providers'
+import { mergeWithoutUndefined } from '@mindworld/utils'
 
 import type { Context } from '../trpc'
 import { protectedProcedure, publicProcedure } from '../trpc'
-import {verifyWorkspaceMembership} from './workspace'
+import { verifyWorkspaceMembership } from './workspace'
 
 /**
  * Get an app by ID and verify workspace access.
@@ -110,7 +112,16 @@ export async function getApps(
           AppsToCategories.appId,
           apps.map((app) => app.id),
         ),
-        sql`row_number() over (partition by ${AppsToCategories.appId} order by ${Category.createdAt} asc) <= 5`,
+        sql`row_number
+        () over (partition by
+        ${AppsToCategories.appId}
+        order
+        by
+        ${Category.createdAt}
+        asc
+        )
+        <=
+        5`,
       ),
     )
 
@@ -130,7 +141,16 @@ export async function getApps(
           AppsToTags.appId,
           apps.map((app) => app.id),
         ),
-        sql`row_number() over (partition by ${AppsToTags.appId} order by ${Tag.createdAt} asc) <= 5`,
+        sql`row_number
+        () over (partition by
+        ${AppsToTags.appId}
+        order
+        by
+        ${Tag.createdAt}
+        asc
+        )
+        <=
+        5`,
       ),
     )
 
@@ -382,8 +402,13 @@ export const appRouter = {
   create: protectedProcedure.input(CreateAppSchema).mutation(async ({ ctx, input }) => {
     await verifyWorkspaceMembership(ctx, input.workspaceId)
 
+    const appValues = {
+      ...input,
+      metadata: mergeWithoutUndefined<AppMetadata>(defaultModels.app, input.metadata),
+    }
+
     return ctx.db.transaction(async (tx) => {
-      const [app] = await tx.insert(App).values(input).returning()
+      const [app] = await tx.insert(App).values(appValues).returning()
 
       if (!app) {
         throw new TRPCError({
@@ -392,18 +417,15 @@ export const appRouter = {
         })
       }
 
-      const [draft] = await tx
-        .insert(AppVersion)
-        .values(
-          CreateAppVersionSchema.parse({
-            appId: app.id,
-            version: DRAFT_VERSION,
-            type: input.type ?? 'single-agent',
-            name: input.name,
-            metadata: input.metadata ?? {},
-          }),
-        )
-        .returning()
+      const appVersionValues = {
+        appId: app.id,
+        version: DRAFT_VERSION,
+        type: appValues.type ?? 'single-agent',
+        name: appValues.name,
+        metadata: appValues.metadata,
+      }
+
+      const [draft] = await tx.insert(AppVersion).values(appVersionValues).returning()
 
       if (!draft) {
         throw new TRPCError({
@@ -435,18 +457,16 @@ export const appRouter = {
     const app = await getAppById(ctx, id, workspaceId)
     const draft = await getDraftVersion(ctx, id)
 
-    // Merge new metadata with existing metadata
-    if (update.metadata) {
-      update.metadata = {
-        ...draft.metadata,
-        ...update.metadata,
-      }
+    const updateValues = {
+      ...update,
+      // Merge new metadata with existing metadata
+      metadata: mergeWithoutUndefined<AppMetadata>(draft.metadata, update.metadata),
     }
 
     // Update only the draft version
     const [updatedDraft] = await ctx.db
       .update(AppVersion)
-      .set(update)
+      .set(updateValues)
       .where(and(eq(AppVersion.appId, id), eq(AppVersion.version, DRAFT_VERSION)))
       .returning()
 
@@ -543,15 +563,13 @@ export const appRouter = {
         // Create new published version with current timestamp
         const publishedVersion = Math.floor(Date.now() / 1000)
 
-        await tx.insert(AppVersion).values(
-          CreateAppVersionSchema.parse({
-            appId: input.id,
-            version: publishedVersion,
-            type: draftVersion.type,
-            name: draftVersion.name,
-            metadata: draftVersion.metadata,
-          }),
-        )
+        await tx.insert(AppVersion).values({
+          appId: input.id,
+          version: publishedVersion,
+          type: draftVersion.type,
+          name: draftVersion.name,
+          metadata: draftVersion.metadata,
+        })
 
         // Update the app's main record to match the published version
         const [updatedApp] = await tx
@@ -613,15 +631,27 @@ export const appRouter = {
           metadataCaseChunks.push(sql`(case`)
 
           for (const item of agentsWithDrafts) {
-            nameCaseChunks.push(sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.name}`)
+            nameCaseChunks.push(sql`when
+            ${Agent.id}
+            =
+            ${item.agent.id}
+            then
+            ${item.draft.name}`)
             metadataCaseChunks.push(
-              sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.metadata}`,
+              sql`when
+              ${Agent.id}
+              =
+              ${item.agent.id}
+              then
+              ${item.draft.metadata}`,
             )
             agentIds.push(item.agent.id)
           }
 
-          nameCaseChunks.push(sql`end)`)
-          metadataCaseChunks.push(sql`end)`)
+          nameCaseChunks.push(sql`end
+          )`)
+          metadataCaseChunks.push(sql`end
+          )`)
 
           const nameCase = sql.join(nameCaseChunks, sql.raw(' '))
           const metadataCase = sql.join(metadataCaseChunks, sql.raw(' '))

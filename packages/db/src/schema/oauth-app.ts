@@ -3,8 +3,8 @@ import { index, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { App } from './app'
+import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 
 // OAuthApp table to store the mapping between app and Clerk OAuth App.
 export const OAuthApp = pgTable(

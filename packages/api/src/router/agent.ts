@@ -187,7 +187,7 @@ export const agentRouter = {
             agentId: agent.id,
             version: DRAFT_VERSION,
             name: input.name,
-            metadata: input.metadata ?? {},
+            metadata: input.metadata,
           }),
         )
         .returning()

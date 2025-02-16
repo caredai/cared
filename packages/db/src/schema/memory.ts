@@ -8,6 +8,10 @@ import { Chat } from './chat'
 import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { User } from './workspace'
 
+export type MemoryMetadata = Record<string, unknown>
+
+const memoryMetadataZod = z.object({}).catchall(z.unknown())
+
 export const Memory = pgTable(
   'memory',
   {
@@ -23,7 +27,7 @@ export const Memory = pgTable(
     // Optional. If set, the memory is at `chat` level; otherwise, it's at `app` level.
     chatId: uuid('chatId').references(() => Chat.id),
     content: text('content').notNull(),
-    metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+    metadata: jsonb('metadata').$type<MemoryMetadata>().notNull().default({}),
     ...timestamps,
   },
   (table) => [
@@ -41,7 +45,7 @@ export const CreateMemorySchema = createInsertSchema(Memory, {
   userId: z.string().uuid(),
   appId: z.string().uuid(),
   chatId: z.string().uuid().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: memoryMetadataZod.optional(),
 }).omit({
   id: true,
   ...timestampsOmits,

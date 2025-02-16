@@ -1,2 +1,4 @@
-import { Client } from "@upstash/workflow";
-import { serve } from "@upstash/workflow/nextjs";
+import { Client } from '@upstash/workflow'
+import { serve } from '@upstash/workflow/nextjs'
+
+export { Client, serve }

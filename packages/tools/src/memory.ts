@@ -1,15 +1,50 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 
-import { eq } from '@mindworld/db'
+import { and, eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
-import { Chat, Memory } from '@mindworld/db/schema'
+import { AgentVersion, AppVersion, Chat, Memory } from '@mindworld/db/schema'
 import { getTextEmbeddingModelInfo } from '@mindworld/providers'
 import { embed } from '@mindworld/providers/embed'
 import { CohereReranker } from '@mindworld/providers/rerank'
 import { QdrantVector } from '@mindworld/vdb'
 
 import type { Context } from './context'
+
+/**
+ * Get the embedding model based on scope priority:
+ * - For 'app' scope: Agent > App
+ * - For 'chat' scope: Chat > Agent > App
+ */
+async function getEmbeddingModel(ctx: Context, scope: 'chat' | 'app') {
+  // Get chat info if needed for chat scope
+  const chat =
+    scope === 'chat'
+      ? await db.query.Chat.findFirst({
+          where: eq(Chat.id, ctx.chatId),
+        })
+      : null
+
+  if (scope === 'chat' && chat?.metadata.embeddingModel) {
+    return chat.metadata.embeddingModel
+  }
+
+  // Get agent version info
+  const agentVersion = await db.query.AgentVersion.findFirst({
+    where: and(eq(AgentVersion.agentId, ctx.agentId), eq(AgentVersion.version, ctx.version)),
+  })
+
+  if (agentVersion?.metadata.embeddingModel) {
+    return agentVersion.metadata.embeddingModel
+  }
+
+  // Get app version info
+  const appVersion = await db.query.AppVersion.findFirst({
+    where: and(eq(AppVersion.appId, ctx.appId), eq(AppVersion.version, ctx.version)),
+  })
+
+  return appVersion?.metadata.embeddingModel
+}
 
 function storeMemory(ctx: Context) {
   return tool({
@@ -24,13 +59,12 @@ function storeMemory(ctx: Context) {
         ),
     }),
     execute: async ({ content, scope }) => {
-      const chat = await db.query.Chat.findFirst({
-        where: eq(Chat.id, ctx.chatId),
-      })
-      if (!chat) {
+      const embeddingModel = await getEmbeddingModel(ctx, scope)
+      if (!embeddingModel) {
         return
       }
-      const modelInfo = getTextEmbeddingModelInfo(chat.metadata.embeddingModel)
+
+      const modelInfo = getTextEmbeddingModelInfo(embeddingModel)
       if (!modelInfo?.dimensions) {
         return
       }
@@ -50,7 +84,7 @@ function storeMemory(ctx: Context) {
         return
       }
 
-      const embeddings = await embed([content], chat.metadata.embeddingModel)
+      const embeddings = await embed([content], embeddingModel)
       const embedding = embeddings.at(0)
       if (!embedding) {
         return
@@ -85,18 +119,22 @@ function retrieveMemory(ctx: Context) {
         ),
     }),
     execute: async ({ query, scope }) => {
-      const chat = await db.query.Chat.findFirst({
-        where: eq(Chat.id, ctx.chatId),
-      })
-      if (!chat) {
+      const embeddingModel = await getEmbeddingModel(ctx, scope)
+      if (!embeddingModel) {
         return []
       }
-      const modelInfo = getTextEmbeddingModelInfo(chat.metadata.embeddingModel)
+
+      const modelInfo = getTextEmbeddingModelInfo(embeddingModel)
       if (!modelInfo?.dimensions) {
         return []
       }
 
-      const embeddings = await embed([query], chat.metadata.embeddingModel)
+      const embeddings = await embed([query], embeddingModel)
+      const embedding = embeddings.at(0)
+      if (!embedding) {
+        return []
+      }
+
       const vdb = new QdrantVector(modelInfo.dimensions)
 
       const filter = {
@@ -105,7 +143,7 @@ function retrieveMemory(ctx: Context) {
         chatId: scope === 'chat' ? ctx.chatId : undefined,
       }
 
-      const memories = await vdb.searchMemoriesByEmbedding(embeddings[0]!, filter)
+      const memories = await vdb.searchMemoriesByEmbedding(embedding, filter)
       const reranker = new CohereReranker()
       const result = await reranker.rerank(
         query,

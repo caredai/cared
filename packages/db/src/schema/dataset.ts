@@ -17,10 +17,12 @@ import { Workspace } from './workspace'
 
 const retrievalModes = ['vector-search', 'full-text-search', 'hybrid-search'] as const
 export interface DatasetMetadata {
+  description: string
+
   languageModel: string // used for splitting a document into segments and chunks
   embeddingModel: string
   rerankModel: string
-  retrievalMode: typeof retrievalModes[number]
+  retrievalMode: (typeof retrievalModes)[number]
   topK?: number
   scoreThreshold?: number
 

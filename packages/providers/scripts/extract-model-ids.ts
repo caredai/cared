@@ -8,11 +8,14 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Additional model IDs that are not exported in index.d.ts
-const additionalModelIds: Record<string, {
-  languageModels?: string[]
-  embeddingModels?: string[]
-  imageModels?: string[]
-}> = {
+const additionalModelIds: Record<
+  string,
+  {
+    languageModels?: string[]
+    embeddingModels?: string[]
+    imageModels?: string[]
+  }
+> = {
   'google-vertex': {
     embeddingModels: [
       'textembedding-gecko',
@@ -22,9 +25,9 @@ const additionalModelIds: Record<string, {
       'textembedding-gecko-multilingual@001',
       'text-multilingual-embedding-002',
       'text-embedding-004',
-      'text-embedding-005'
-    ]
-  }
+      'text-embedding-005',
+    ],
+  },
 }
 
 function extractModelIds(providerPath: string): {
@@ -77,7 +80,7 @@ function extractModelIds(providerPath: string): {
 
   // Get provider name from path
   const providerName = path.basename(providerPath)
-  
+
   // Merge additional model IDs if they exist for this provider
   // Additional IDs are appended at the end to preserve the original order
   if (additionalModelIds[providerName]) {

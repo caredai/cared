@@ -10,6 +10,10 @@ export interface AgentMetadata {
   description?: string
   imageUrl?: string
 
+  languageModel?: string
+  embeddingModel?: string // used for embedding memories
+  rerankModel?: string // used for reranking memories
+
   [key: string]: unknown
 }
 
@@ -17,9 +21,11 @@ const agentMetadataZod = z
   .object({
     description: z.string().optional(),
     imageUrl: z.string().optional(),
+    languageModel: z.string().optional(),
+    embeddingModel: z.string().optional(),
+    rerankModel: z.string().optional(),
   })
   .catchall(z.unknown())
-  .optional()
 
 export const Agent = pgTable(
   'agent',
@@ -44,7 +50,7 @@ export type Agent = InferSelectModel<typeof Agent>
 export const CreateAgentSchema = createInsertSchema(Agent, {
   appId: z.string().uuid(),
   name: z.string().max(255),
-  metadata: agentMetadataZod,
+  metadata: agentMetadataZod.optional(),
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -67,6 +73,7 @@ export const AgentVersion = pgTable(
       .references(() => Agent.id),
     // Must be Unix timestamp of the publishing time.
     // DRAFT_VERSION indicates an unpublished draft.
+    // The version always corresponds to an app version of the app that the agent belongs to.
     version: integer().notNull().default(DRAFT_VERSION),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<AgentMetadata>().notNull().default({}),
@@ -84,7 +91,7 @@ export const CreateAgentVersionSchema = createInsertSchema(AgentVersion, {
   agentId: z.string().uuid(),
   version: z.number().int().optional(),
   name: z.string().max(255),
-  metadata: agentMetadataZod,
+  metadata: agentMetadataZod.optional(),
 }).omit({
   ...timestampsOmits,
 })
@@ -93,7 +100,7 @@ export const UpdateAgentVersionSchema = createUpdateSchema(AgentVersion, {
   agentId: z.string(),
   version: z.number().int().optional(),
   name: z.string().max(255).optional(),
-  metadata: agentMetadataZod,
+  metadata: agentMetadataZod.optional(),
 }).omit({
   ...timestampsOmits,
 })

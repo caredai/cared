@@ -1,7 +1,6 @@
 export interface Document {
   id: string // segmentId or chunkId
   content: string
-  embedding: number[]
   metadata: {
     workspaceId: string
     datasetId: string
@@ -10,10 +9,13 @@ export interface Document {
   }
 }
 
+export interface DocumentWithEmbedding extends Document {
+  embedding: number[]
+}
+
 export interface Memory {
   id: string
   content: string
-  embedding: number[]
   metadata: {
     userId: string
     appId: string
@@ -22,15 +24,21 @@ export interface Memory {
   }
 }
 
+export interface MemoryWithEmbedding extends Memory {
+  embedding: number[]
+}
+
 export interface SearchOptions {
   topK?: number
   scoreThreshold?: number
 }
 
 export abstract class BaseVector {
-  abstract insertDocuments(documents: Document | Document[]): Promise<string[]>
+  abstract insertDocuments(
+    documents: DocumentWithEmbedding | DocumentWithEmbedding[],
+  ): Promise<string[]>
 
-  abstract getDocument(id: string): Promise<Document | undefined>
+  abstract getDocument(id: string): Promise<DocumentWithEmbedding | undefined>
 
   abstract hasDocument(id: string): Promise<boolean>
 
@@ -42,7 +50,7 @@ export abstract class BaseVector {
       documentId?: string
     },
     opts?: SearchOptions,
-  ): Promise<Document[]>
+  ): Promise<DocumentWithEmbedding[]>
 
   abstract searchDocumentsByFulltext(
     query: string,
@@ -52,7 +60,7 @@ export abstract class BaseVector {
       documentId?: string
     },
     opts?: SearchOptions,
-  ): Promise<(Omit<Document, 'embedding'> & { embedding?: number[] })[]>
+  ): Promise<Document[]>
 
   abstract deleteDocuments(ids: string[]): Promise<void>
 
@@ -62,9 +70,9 @@ export abstract class BaseVector {
     documentId?: string
   }): Promise<void>
 
-  abstract insertMemories(memories: Memory | Memory[]): Promise<string[]>
+  abstract insertMemories(memories: MemoryWithEmbedding | MemoryWithEmbedding[]): Promise<string[]>
 
-  abstract getMemory(id: string): Promise<Memory | undefined>
+  abstract getMemory(id: string): Promise<MemoryWithEmbedding | undefined>
 
   abstract hasMemory(id: string): Promise<boolean>
 
@@ -76,7 +84,7 @@ export abstract class BaseVector {
       chatId?: string
     },
     opts?: SearchOptions,
-  ): Promise<Memory[]>
+  ): Promise<MemoryWithEmbedding[]>
 
   abstract searchMemoriesByFulltext(
     query: string,
@@ -86,7 +94,7 @@ export abstract class BaseVector {
       chatId?: string
     },
     opts?: SearchOptions,
-  ): Promise<(Omit<Memory, 'embedding'> & { embedding?: number[] })[]>
+  ): Promise<Memory[]>
 
   abstract deleteMemories(ids: string[]): Promise<void>
 

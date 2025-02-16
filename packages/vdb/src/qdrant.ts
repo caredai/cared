@@ -2,7 +2,13 @@ import type { Schemas } from '@qdrant/js-client-rest'
 import { QdrantClient } from '@qdrant/js-client-rest'
 import { Mutex } from 'async-mutex'
 
-import type { Document, Memory, SearchOptions } from './base'
+import type {
+  Document,
+  DocumentWithEmbedding,
+  Memory,
+  MemoryWithEmbedding,
+  SearchOptions,
+} from './base'
 import { BaseVector } from './base'
 import { env } from './env'
 
@@ -161,12 +167,12 @@ export class QdrantVector extends BaseVector {
     this.initialized = true
   }
 
-  async insertDocuments(documents: Document | Document[]) {
+  async insertDocuments(documents: DocumentWithEmbedding | DocumentWithEmbedding[]) {
     await this.init()
 
     documents = Array.isArray(documents) ? documents : [documents]
 
-    const docsBySize = new Map<number, Document[]>()
+    const docsBySize = new Map<number, DocumentWithEmbedding[]>()
     for (const doc of documents) {
       const size = doc.embedding.length
       const docs = docsBySize.get(size) ?? []
@@ -216,7 +222,7 @@ export class QdrantVector extends BaseVector {
           content: response.payload.content,
           embedding: response.vector,
           metadata: response.payload.metadata,
-        } as Document
+        } as DocumentWithEmbedding
       }
     } else {
       for (const size of this.collectionSizes) {
@@ -234,7 +240,7 @@ export class QdrantVector extends BaseVector {
             content: response.payload.content,
             embedding: response.vector,
             metadata: response.payload.metadata,
-          } as Document
+          } as DocumentWithEmbedding
         }
       }
     }
@@ -303,7 +309,7 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const results: Document[] = []
+    const results: DocumentWithEmbedding[] = []
     const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
 
     for (const size of targetSizes) {
@@ -388,14 +394,14 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const results: (Omit<Document, 'embedding'> & { embedding?: number[] })[] = []
+    const results: Document[] = []
     const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
 
     for (const size of targetSizes) {
       const collectionName = QdrantVector.getCollectionName(QdrantVector.KNOWLEDGE_PREFIX, size)
       const response = await this.client.scroll(collectionName, {
         with_payload: true,
-        with_vector: true,
+        with_vector: false,
         filter: {
           must,
         },
@@ -409,7 +415,6 @@ export class QdrantVector extends BaseVector {
         results.push({
           id: item.id as string,
           content: item.payload.content as string,
-          embedding: (item.vector ?? undefined) as number[] | undefined,
           metadata: item.payload.metadata as Document['metadata'],
         })
       }
@@ -464,12 +469,12 @@ export class QdrantVector extends BaseVector {
     }
   }
 
-  async insertMemories(memories: Memory | Memory[]) {
+  async insertMemories(memories: MemoryWithEmbedding | MemoryWithEmbedding[]) {
     await this.init()
 
     memories = Array.isArray(memories) ? memories : [memories]
 
-    const memoriesBySize = new Map<number, Memory[]>()
+    const memoriesBySize = new Map<number, MemoryWithEmbedding[]>()
     for (const memory of memories) {
       const size = memory.embedding.length
       const mems = memoriesBySize.get(size) ?? []
@@ -519,7 +524,7 @@ export class QdrantVector extends BaseVector {
           content: response.payload.content,
           embedding: response.vector,
           metadata: response.payload.metadata,
-        } as Memory
+        } as MemoryWithEmbedding
       }
     } else {
       for (const size of this.collectionSizes) {
@@ -537,7 +542,7 @@ export class QdrantVector extends BaseVector {
             content: response.payload.content,
             embedding: response.vector,
             metadata: response.payload.metadata,
-          } as Memory
+          } as MemoryWithEmbedding
         }
       }
     }
@@ -606,7 +611,7 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const results: Memory[] = []
+    const results: MemoryWithEmbedding[] = []
     const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
 
     for (const size of targetSizes) {
@@ -638,7 +643,7 @@ export class QdrantVector extends BaseVector {
           content: item.payload.content as string,
           embedding: item.vector as number[],
           metadata: {
-            ...(item.payload.metadata as Memory['metadata']),
+            ...(item.payload.metadata as MemoryWithEmbedding['metadata']),
             score: item.score,
           },
         })
@@ -691,14 +696,14 @@ export class QdrantVector extends BaseVector {
       })
     }
 
-    const results: (Omit<Memory, 'embedding'> & { embedding?: number[] })[] = []
+    const results: Memory[] = []
     const targetSizes = this.vectorSize ? [this.vectorSize] : Array.from(this.collectionSizes)
 
     for (const size of targetSizes) {
       const collectionName = QdrantVector.getCollectionName(QdrantVector.MEMORY_PREFIX, size)
       const response = await this.client.scroll(collectionName, {
         with_payload: true,
-        with_vector: true,
+        with_vector: false,
         filter: {
           must,
         },
@@ -712,7 +717,6 @@ export class QdrantVector extends BaseVector {
         results.push({
           id: item.id as string,
           content: item.payload.content as string,
-          embedding: (item.vector ?? undefined) as number[] | undefined,
           metadata: item.payload.metadata as Memory['metadata'],
         })
       }
@@ -734,11 +738,7 @@ export class QdrantVector extends BaseVector {
     }
   }
 
-  async deleteMemoriesByFilter(filter: {
-    userId?: string
-    appId?: string
-    chatId?: string
-  }) {
+  async deleteMemoriesByFilter(filter: { userId?: string; appId?: string; chatId?: string }) {
     await this.init()
 
     const match: Record<string, unknown> = {}

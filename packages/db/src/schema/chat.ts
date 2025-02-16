@@ -1,20 +1,22 @@
-import type { InferSelectModel } from 'drizzle-orm'
 import type { CoreMessage } from 'ai'
+import type { InferSelectModel } from 'drizzle-orm'
 import {
   boolean,
+  foreignKey,
   index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
   primaryKey,
+  text,
   uuid,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { Agent } from './agent'
-import { App } from './app'
+import { App, AppVersion } from './app'
 import { timestamps, timestampsIndices, timestampsOmits, visibilityEnumValues } from './utils'
 import { User } from './workspace'
 
@@ -25,8 +27,9 @@ export interface ChatMetadata {
   title: string
   visibility: (typeof visibilityEnumValues)[number]
 
-  languageModel: string
-  embeddingModel: string
+  languageModel?: string
+  embeddingModel?: string // used for embedding memories
+  rerankModel?: string // used for reranking memories
 
   [key: string]: unknown
 }
@@ -35,8 +38,9 @@ const chatMetadataZod = z
   .object({
     title: z.string(),
     visibility: z.enum(visibilityEnumValues),
-    languageModel: z.string(),
-    embeddingModel: z.string(),
+    languageModel: z.string().optional(),
+    embeddingModel: z.string().optional(),
+    rerankModel: z.string().optional(),
   })
   .catchall(z.unknown())
 
@@ -47,6 +51,7 @@ export const Chat = pgTable(
     appId: uuid()
       .notNull()
       .references(() => App.id),
+    version: integer().notNull(),
     // The user who created/owns the chat/room
     owner: uuid()
       .notNull()
@@ -56,7 +61,11 @@ export const Chat = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.appId),
+    index().on(table.appId, table.version),
+    foreignKey({
+      columns: [table.appId, table.version],
+      foreignColumns: [AppVersion.appId, AppVersion.version],
+    }),
     index().on(table.owner),
   ],
 )
@@ -65,6 +74,7 @@ export type Chat = InferSelectModel<typeof Chat>
 
 export const CreateChatSchema = createInsertSchema(Chat, {
   appId: z.string().uuid(),
+  version: z.number().int(),
   owner: z.string().uuid(),
   type: z.enum(chatTypeEnumValues),
   metadata: chatMetadataZod,
@@ -79,6 +89,7 @@ export const UpdateChatSchema = createUpdateSchema(Chat, {
   metadata: chatMetadataZod.optional(),
 }).omit({
   appId: true,
+  version: true,
   type: true,
   ...timestampsOmits,
 })
@@ -166,13 +177,52 @@ export const CreateMessageSchema = createInsertSchema(Message, {
 
 export const UpdateMessageSchema = createUpdateSchema(Message, {
   id: z.string(),
-  content: z.any().optional(),
+  content: z.record(z.unknown()),
 }).omit({
   chatId: true,
   index: true,
   role: true,
   agentId: true,
   userId: true,
+  ...timestampsOmits,
+})
+
+// Message summary table to store periodic summaries of chat messages
+export const MessageSummary = pgTable(
+  'message_summary',
+  {
+    id: uuid().primaryKey().notNull().defaultRandom(),
+    chatId: uuid()
+      .notNull()
+      .references(() => Chat.id),
+    // Summary of message history up to this message index (inclusive)
+    checkpoint: integer().notNull(),
+    content: text().notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index().on(table.chatId, table.checkpoint),
+    ...timestampsIndices(table),
+  ],
+)
+
+export type MessageSummary = InferSelectModel<typeof MessageSummary>
+
+export const CreateMessageSummarySchema = createInsertSchema(MessageSummary, {
+  chatId: z.string().uuid(),
+  checkpoint: z.number().int(),
+  content: z.string(),
+}).omit({
+  id: true,
+  ...timestampsOmits,
+})
+
+export const UpdateMessageSummarySchema = createUpdateSchema(MessageSummary, {
+  id: z.string(),
+  content: z.record(z.unknown()).optional(),
+}).omit({
+  chatId: true,
+  checkpoint: true,
   ...timestampsOmits,
 })
 

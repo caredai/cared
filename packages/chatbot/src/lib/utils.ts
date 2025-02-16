@@ -114,7 +114,7 @@ export function convertToUIMessages(messages: DBMessage[]): Message[] {
 
     chatMessages.push({
       id: message.id,
-      role: message.role as Message['role'],
+      role: message.role,
       content: textContent,
       toolInvocations,
     })
