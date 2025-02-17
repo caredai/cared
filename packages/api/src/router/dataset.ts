@@ -24,6 +24,7 @@ import { log, mergeWithoutUndefined } from '@mindworld/utils'
 import type { Context } from '../trpc'
 import { env } from '../env'
 import { getClient } from '../s3-upload/client'
+import { taskTrigger } from '../tasks'
 import { protectedProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
@@ -188,10 +189,11 @@ export const datasetRouter = {
 
     const documentUrls = await ctx.db
       .select({
-        url: Document.url,
+        metadata: Document.metadata,
       })
       .from(Document)
       .where(eq(Document.datasetId, input))
+      .then((docs) => docs.map((doc) => doc.metadata.url))
 
     await ctx.db.transaction(async (tx) => {
       // Delete all document chunks
@@ -209,9 +211,9 @@ export const datasetRouter = {
 
     // Delete S3 files if they exist
     const s3ObjectsToDelete = documentUrls
-      .filter((doc) => doc.url?.startsWith(env.S3_ENDPOINT))
-      .map((doc) => {
-        const url = new URL(doc.url!)
+      .filter((docUrl) => docUrl?.startsWith(env.S3_ENDPOINT))
+      .map((docUrl) => {
+        const url = new URL(docUrl!)
         const key = url.pathname.slice(1) // Remove leading slash
         return { Key: key }
       })
@@ -254,6 +256,8 @@ export const datasetRouter = {
           message: 'Failed to create document',
         })
       }
+
+      await taskTrigger.processDocument(document)
 
       return { document }
     }),
@@ -327,10 +331,10 @@ export const datasetRouter = {
     })
 
     // Delete S3 file if exists
-    if (document.url?.startsWith(env.S3_ENDPOINT)) {
+    if (document.metadata.url?.startsWith(env.S3_ENDPOINT)) {
       try {
         const s3Client = getClient()
-        const url = new URL(document.url)
+        const url = new URL(document.metadata.url)
         const key = url.pathname.slice(1) // Remove leading slash
 
         await s3Client.send(
@@ -341,7 +345,7 @@ export const datasetRouter = {
         )
       } catch (error) {
         log.error('Failed to delete S3 object', {
-          url: document.url,
+          url: document.metadata.url,
           error,
         })
       }

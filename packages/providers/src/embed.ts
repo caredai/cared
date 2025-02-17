@@ -1,15 +1,14 @@
 import { embedMany } from 'ai'
 
-import { providers, splitModelFullId } from '.'
+import { getModel } from '.'
 
 export async function embed(texts: string[], modelFullId: string): Promise<number[][]> {
-  const { providerId, modelId } = splitModelFullId(modelFullId)
-  const provider = providers[providerId]
-  if (!provider.textEmbeddingModel) {
-    throw new Error(`Provider ${providerId} does not support text embedding`)
+  const embeddingModel = getModel(modelFullId, 'text-embedding')
+  if (!embeddingModel) {
+    throw new Error(`Embedding model ${modelFullId} not found`)
   }
   const { embeddings } = await embedMany({
-    model: provider.textEmbeddingModel(modelId),
+    model: embeddingModel,
     values: texts,
   })
   return embeddings

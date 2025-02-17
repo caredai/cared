@@ -28,6 +28,8 @@ export interface Provider {
   image?(modelId: string): ImageModelV1
 }
 
+export type ModelType = 'language' | 'text-embedding' | 'image'
+
 export type ProviderId =
   | 'openai'
   | 'anthropic'
@@ -1697,6 +1699,37 @@ export function modelFullId(providerId: string, modelId: string) {
 export function splitModelFullId(fullId: string) {
   const [providerId, modelId] = fullId.split('::')
   return { providerId, modelId } as { providerId: ProviderId; modelId: string }
+}
+
+/**
+ * Get model instance by model full ID and type
+ * @param fullId Full model ID in format 'providerId::modelId'
+ * @param modelType Type of model to get (language/text-embedding/image)
+ * @returns Model instance of specified type, or undefined if not found
+ */
+export function getModel<T extends ModelType>(
+  fullId: string,
+  modelType: T,
+): T extends 'language'
+  ? LanguageModelV1 | undefined
+  : T extends 'text-embedding'
+    ? EmbeddingModelV1<string> | undefined
+    : T extends 'image'
+      ? ImageModelV1 | undefined
+      : never {
+  const { providerId, modelId } = splitModelFullId(fullId)
+  const provider = providers[providerId]
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!provider) {
+    return undefined as any
+  }
+  if (modelType === 'language') {
+    return provider.languageModel?.(modelId) as any
+  } else if (modelType === 'text-embedding') {
+    return provider.textEmbeddingModel?.(modelId) as any
+  } else {
+    return provider.image?.(modelId) as any
+  }
 }
 
 export const providers: Record<ProviderId, Provider> = {

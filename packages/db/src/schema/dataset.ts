@@ -16,6 +16,7 @@ import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { Workspace } from './workspace'
 
 const retrievalModes = ['vector-search', 'full-text-search', 'hybrid-search'] as const
+
 export interface DatasetMetadata {
   description: string
 
@@ -76,6 +77,20 @@ export const UpdateDatasetSchema = createUpdateSchema(Dataset, {
   ...timestampsOmits,
 })
 
+export interface DocumentMetadata {
+  url?: string
+  processed?: boolean
+  taskId?: string
+
+  [key: string]: unknown
+}
+
+const documentMetadataZod = z.object({
+  url: z.string().optional(),
+  processed: z.boolean().optional(),
+  taskId: z.string().min(1).optional(),
+})
+
 export const Document = pgTable(
   'document',
   {
@@ -87,7 +102,7 @@ export const Document = pgTable(
       .notNull()
       .references(() => Dataset.id),
     name: varchar({ length: 255 }).notNull(),
-    url: text(), // optional
+    metadata: jsonb().$type<DocumentMetadata>().notNull().default({}),
     ...timestamps,
   },
   (table) => [
@@ -103,7 +118,7 @@ export const CreateDocumentSchema = createInsertSchema(Document, {
   workspaceId: z.string().uuid(),
   datasetId: z.string().uuid(),
   name: z.string().max(255),
-  url: z.string().optional(),
+  metadata: documentMetadataZod.optional(),
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -112,7 +127,7 @@ export const CreateDocumentSchema = createInsertSchema(Document, {
 export const UpdateDocumentSchema = createUpdateSchema(Document, {
   id: z.string().uuid(),
   name: z.string().max(255).optional(),
-  url: z.string().optional(),
+  metadata: documentMetadataZod.optional(),
 }).omit({
   workspaceId: true,
   datasetId: true,
