@@ -6,7 +6,7 @@ import { z } from 'zod'
 import type { CreateDocumentChunkSchema } from '@mindworld/db/schema'
 import { db } from '@mindworld/db/client'
 import { Dataset, Document, DocumentChunk, DocumentSegment } from '@mindworld/db/schema'
-import { UnstructuredEtl } from '@mindworld/etl'
+import { loadFile } from '@mindworld/etl'
 import { getModel, getTextEmbeddingModelInfo } from '@mindworld/providers'
 import { embed } from '@mindworld/providers/embed'
 import { log } from '@mindworld/utils'
@@ -111,8 +111,8 @@ export const { POST } = serve<string>(
     })
 
     const chunks = await context.run('extract-content', async () => {
-      // Extract chunks from document using Unstructured
-      const chunks = await new UnstructuredEtl().extract(data, doc.name)
+      // Extract chunks from document
+      const chunks = (await loadFile(data, doc.name)).map((chunk) => chunk.content)
 
       // Split into chunks respecting MAX_SEGMENT_LENGTH
       const newChunks: string[] = []
