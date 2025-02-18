@@ -132,7 +132,7 @@ export const UpdateChatUserSchema = createUpdateSchema(ChatUser, {
   ...timestampsOmits,
 })
 
-export const messageRoleEnumValues = ['user', 'assistant', 'system', 'data'] as const
+export const messageRoleEnumValues = ['system', 'user', 'assistant', 'tool'] as const
 export const messageRoleEnum = pgEnum('role', messageRoleEnumValues)
 
 export type MessageContent = CoreMessage['content']

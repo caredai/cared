@@ -28,7 +28,8 @@ export interface Provider {
   image?(modelId: string): ImageModelV1
 }
 
-export type ModelType = 'language' | 'text-embedding' | 'image'
+export const modelTypes = ['language', 'text-embedding', 'image'] as const
+export type ModelType = (typeof modelTypes)[number]
 
 export type ProviderId =
   | 'openai'

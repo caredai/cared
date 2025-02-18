@@ -27,6 +27,7 @@
   "dependencies": {
     "@langchain/community": "^0.3.31",
     "@langchain/core": "^0.3.40",
+    "@langchain/textsplitters": "^0.1.0",
     "epub2": "^3.0.2",
     "html-to-text": "^9.0.5",
     "langchain": "^0.3.18",
