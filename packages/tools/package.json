@@ -29,6 +29,6 @@
     "@mindworld/providers": "workspace:*",
     "@mindworld/vdb": "workspace:*",
     "agent-twitter-client": "^0.0.18",
-    "ai": "^4.1.26"
+    "ai": "^4.1.41"
   }
 }
