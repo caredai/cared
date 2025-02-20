@@ -33,6 +33,17 @@ const config = {
     nextImageExportOptimizer_generateAndUseBlurImages: 'true',
     nextImageExportOptimizer_remoteImageCacheTTL: '0',
   },
+
+  experimental: {
+    // https://nextjs.org/docs/app/building-your-application/data-fetching/fetching#preventing-sensitive-data-from-being-exposed-to-the-client
+    taint: true,
+  },
+
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
 }
 
 export default config

@@ -37,6 +37,9 @@
   "pnpm": {
     "patchedDependencies": {
       "@clerk/backend": "patches/@clerk__backend.patch"
+    },
+    "overrides": {
+      "zod": "3.24.2"
     }
   }
 }

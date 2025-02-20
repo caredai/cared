@@ -12,7 +12,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
-import { createTRPCRouter, protectedProcedure } from '../trpc'
+import { protectedProcedure } from '../trpc'
 
 /**
  * Verify if the user is a member of the workspace
@@ -51,7 +51,7 @@ export async function verifyWorkspaceOwner(ctx: Context, workspaceId: string) {
   return membership
 }
 
-export const workspaceRouter = createTRPCRouter({
+export const workspaceRouter = {
   /**
    * List all workspaces for the current user.
    * Only accessible by authenticated users.
@@ -464,7 +464,7 @@ export const workspaceRouter = createTRPCRouter({
           )
       })
     }),
-})
+}
 
 function filteredUser(user: User) {
   const info = user.info

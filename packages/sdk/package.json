@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/tools",
+  "name": "@mindworld/sdk",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -16,6 +16,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
+    "@algora/xtrpc": "^0.1.1",
     "@mindworld/eslint-config": "workspace:*",
     "@mindworld/prettier-config": "workspace:*",
     "@mindworld/tsconfig": "workspace:*",
@@ -25,10 +26,8 @@
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
-    "@mindworld/db": "workspace:*",
-    "@mindworld/providers": "workspace:*",
-    "@mindworld/vdb": "workspace:*",
-    "agent-twitter-client": "^0.0.18",
-    "ai": "catalog:"
+    "@trpc/client": "^10.45.2",
+    "@trpc/server": "^10.45.2",
+    "superjson": "2.2.2"
   }
 }

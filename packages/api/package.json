@@ -14,7 +14,8 @@
     "dev": "tsc",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "generate-api-types": "tsx ./scripts/generate-api-types.ts"
   },
   "dependencies": {
     "@clerk/backend": "^1.24.1",

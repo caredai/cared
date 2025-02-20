@@ -4,9 +4,9 @@ import { eq } from 'drizzle-orm'
 
 import { User } from '@mindworld/db/schema'
 
-import { createTRPCRouter, protectedProcedure } from '../trpc'
+import { protectedProcedure } from '../trpc'
 
-export const userRouter = createTRPCRouter({
+export const userRouter = {
   get: protectedProcedure.query(async ({ ctx }) => {
     // Try to find existing user in database
     const users = await ctx.db.select().from(User).where(eq(User.id, ctx.auth.userId)).limit(1)
@@ -53,4 +53,4 @@ export const userRouter = createTRPCRouter({
 
     return user
   }),
-})
+}
