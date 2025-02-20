@@ -2,32 +2,60 @@
   "name": "@mindworld/sdk",
   "private": true,
   "version": "0.1.0",
-  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./react/client": {
+      "types": "./dist/react/client.d.ts",
+      "import": "./dist/react/client.mjs",
+      "require": "./dist/react/client.js",
+      "default": "./dist/react/client.js"
+    },
+    "./react/server": {
+      "types": "./dist/react/server.d.ts",
+      "import": "./dist/react/server.mjs",
+      "require": "./dist/react/server.js",
+      "default": "./dist/react/server.js"
+    }
   },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@algora/xtrpc": "^0.1.1",
     "@mindworld/eslint-config": "workspace:*",
     "@mindworld/prettier-config": "workspace:*",
     "@mindworld/tsconfig": "workspace:*",
+    "@trpc/server": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "tsup": "^8.3.6",
     "typescript": "catalog:"
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
-    "@trpc/client": "^10.45.2",
-    "@trpc/server": "^10.45.2",
+    "@tanstack/react-query": "catalog:",
+    "@trpc/client": "catalog:",
+    "@trpc/tanstack-react-query": "catalog:",
+    "react": "^19.0.0",
+    "server-only": "^0.0.1",
     "superjson": "2.2.2"
   }
 }

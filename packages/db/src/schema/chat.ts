@@ -25,7 +25,7 @@ export const chatTypeEnum = pgEnum('chatType', chatTypeEnumValues)
 
 export interface ChatMetadata {
   title: string
-  visibility: (typeof visibilityEnumValues)[number]
+  visibility: 'public' | 'private'
 
   languageModel?: string
   embeddingModel?: string // used for embedding memories

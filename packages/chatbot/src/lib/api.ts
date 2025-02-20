@@ -1,28 +1,16 @@
-import type { createTRPCReact } from '@trpc/react-query'
-import { useEffect } from 'react'
-import { atom, useAtom } from 'jotai'
+import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query'
 
-import type { AppRouter } from '@mindworld/api'
+import type { API } from '@mindworld/sdk'
+import { useTRPC as useSdkTRPC } from '@mindworld/sdk/react/client'
 
-export type API = ReturnType<typeof createTRPCReact<AppRouter>>
+type UseTRPC = () => TRPCOptionsProxy<API>
 
-const apiAtom = atom<API>()
-const getAPIAtom = atom((get) => get(apiAtom))
-const setAPIAtom = atom(null, (get, set, api: API) => {
-  set(apiAtom, api)
-})
+let useTRPC_: UseTRPC = useSdkTRPC
 
-export function useAPI() {
-  const [api] = useAtom(getAPIAtom)
-  if (!api) {
-    throw new Error('API not set')
-  }
-  return api
+export function setUseTRPC(useTRPC: UseTRPC) {
+  useTRPC_ = useTRPC
 }
 
-export function useSetAPI(api: API) {
-  const [, setAPI] = useAtom(setAPIAtom)
-  useEffect(() => {
-    setAPI(api)
-  }, [api])
+export function useTRPC(): TRPCOptionsProxy<API> {
+  return useTRPC_()
 }

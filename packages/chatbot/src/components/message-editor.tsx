@@ -3,13 +3,14 @@
 import type { ChatRequestOptions, Message } from 'ai'
 import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { Button } from '@mindworld/ui/components/button'
 import { Textarea } from '@mindworld/ui/components/textarea'
 
 import { useUserMessageId } from '@/hooks/use-user-message-id'
-import { useAPI } from '@/lib/api'
+import { useTRPC } from '@/lib/api'
 
 export interface MessageEditorProps {
   message: Message
@@ -43,20 +44,24 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
     adjustHeight()
   }
 
-  const api = useAPI()
-  const utils = api.useUtils()
-  const deleteTrailingMessages = api.message.deleteTrailing.useMutation({
-    onSuccess: async () => {
-      await utils.message.invalidate()
-    },
-    onError: (err) => {
-      console.error(
-        err.data?.code === 'UNAUTHORIZED'
-          ? 'You must be logged in to update chat'
-          : 'Failed to update chat',
-      )
-    },
-  })
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const deleteTrailingMessages = useMutation(
+    trpc.chat.deleteTrailingMessages.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.chat.queryKey(),
+        })
+      },
+      onError: (err) => {
+        console.error(
+          err.data?.code === 'UNAUTHORIZED'
+            ? 'You must be logged in to update chat'
+            : 'Failed to update chat',
+        )
+      },
+    }),
+  )
 
   return (
     <div className="flex flex-col gap-2 w-full">

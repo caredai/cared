@@ -30,7 +30,7 @@ export interface DatasetMetadata {
   languageModel: string // used for splitting a document into segments and chunks
   embeddingModel: string
   rerankModel: string
-  retrievalMode: (typeof retrievalModes)[number]
+  retrievalMode: 'vector-search' | 'full-text-search' | 'hybrid-search'
   topK?: number
   scoreThreshold?: number
 
@@ -67,7 +67,7 @@ export type ProviderId =
 
 export interface ChatMetadata {
   title: string
-  visibility: (typeof visibilityEnumValues)[number]
+  visibility: 'public' | 'private'
 
   languageModel?: string
   embeddingModel?: string // used for embedding memories
@@ -79,14 +79,14 @@ export interface ChatMetadata {
 export declare const appRouter: import("@trpc/server/unstable-core-do-not-import").BuiltRouter<{
     ctx: any;
     meta: object;
-    errorShape: import("@trpc/server").DefaultErrorShape;
+    errorShape: import("@trpc/server/unstable-core-do-not-import").DefaultErrorShape;
     transformer: true;
-}, {
+}, import("@trpc/server/unstable-core-do-not-import").DecorateCreateRouterOptions<{
     admin: {
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
@@ -110,8 +110,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listByCategory: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 categoryId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
@@ -135,8 +135,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listByTags: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 tags: string[];
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
@@ -160,8 +160,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listVersions: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 id: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 versions: {
@@ -209,8 +209,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         }>;
         listWorkspaces: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 workspaces: {
@@ -238,8 +238,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listMembers: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 workspaceId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 members: {
@@ -274,8 +274,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listUsers: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 search?: string | undefined;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 users: {
@@ -308,8 +308,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
     workspace: {
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 workspaces: {
@@ -373,8 +373,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listMembers: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 workspaceId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 members: {
@@ -469,8 +469,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 workspaceId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
@@ -495,8 +495,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             input: {
                 workspaceId: string;
                 categoryId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
@@ -521,8 +521,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             input: {
                 workspaceId: string;
                 tags: string[];
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
@@ -547,8 +547,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             input: {
                 id: string;
                 workspaceId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 versions: {
@@ -695,8 +695,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         }>;
         listCategories: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 categories: {
@@ -847,8 +847,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listByApp: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 appId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 agents: {
@@ -867,8 +867,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listVersionsByApp: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 agentId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 versions: {
@@ -966,8 +966,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 workspaceId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 datasets: {
@@ -1100,8 +1100,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listDocuments: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 datasetId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 documents: {
@@ -1184,8 +1184,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listSegments: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 documentId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 segments: {
@@ -1259,8 +1259,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listChunks: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 segmentId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 chunks: {
@@ -1365,8 +1365,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listByApp: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 appId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 chats: {
@@ -1458,8 +1458,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listMessages: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 chatId: string;
-                limit?: number | undefined;
                 offset?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 messages: {
@@ -1581,5 +1581,5 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             output: import("pg").QueryResult<never>;
         }>;
     };
-}>;
+}>>;
 export type API = typeof appRouter;

@@ -2,7 +2,6 @@
  * Script to generate api types from root.d.ts
  * This script extracts types from root.d.ts and creates a new api.d.ts file
  * with all internal types redefined for external use
- * Uses ts-morph to handle TypeScript AST transformations
  */
 
 import * as fs from 'node:fs'
@@ -38,12 +37,7 @@ function resolveMonorepoPath(importPath: string): string {
   const [pkgName, ...subPaths] = cleanPath.split('/')
 
   // Construct base path
-  const basePath = path.join(
-    PACKAGES_ROOT,
-    pkgName,
-    'src',
-    ...subPaths
-  )
+  const basePath = path.join(PACKAGES_ROOT, pkgName, 'src', ...subPaths)
 
   // Try direct .ts file first
   const tsPath = basePath + '.ts'
@@ -76,7 +70,7 @@ async function extractTypeDefinition(importPath: string): Promise<string | null>
     filePath,
     sourceContent,
     ts.ScriptTarget.Latest,
-    true
+    true,
   )
 
   let typeDefinition = ''
@@ -89,7 +83,8 @@ async function extractTypeDefinition(importPath: string): Promise<string | null>
 
       // Only extract the type if it matches one we're looking for
       if (mindworldImports.get(importPath)?.has(typeName)) {
-        typeDefinition += sourceContent.slice(node.getStart(parsedSourceFile), node.getEnd()) + '\n\n'
+        typeDefinition +=
+          sourceContent.slice(node.getStart(parsedSourceFile), node.getEnd()) + '\n\n'
       }
     }
     ts.forEachChild(node, visit)
@@ -101,12 +96,7 @@ async function extractTypeDefinition(importPath: string): Promise<string | null>
 
 // Read and parse the root.d.ts file
 const content = fs.readFileSync(ROOT_DTS_PATH, 'utf-8')
-const rootSourceFile = ts.createSourceFile(
-  'root.d.ts',
-  content,
-  ts.ScriptTarget.Latest,
-  true
-)
+const rootSourceFile = ts.createSourceFile('root.d.ts', content, ts.ScriptTarget.Latest, true)
 
 // Find all @mindworld imports and their type references
 const mindworldImports = new Map<string, Set<string>>()
@@ -155,7 +145,10 @@ for (const [importPath, types] of mindworldImports) {
 let output = content
 // @ts-ignore
 for (const [fullType, replacement] of typeReplacements) {
-  output = output.replace(new RegExp(fullType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), replacement)
+  output = output.replace(
+    new RegExp(fullType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+    replacement,
+  )
 }
 
 // Replace external imports with our predefined types
@@ -163,7 +156,10 @@ output = output
   .replace(/import\("@clerk\/backend"\)\.User/g, 'UserInfo')
   .replace(/ctx: \{[^}]+\}/g, 'ctx: any')
   .replace(/export type AppRouter/g, 'export type API')
-  .replace(/errorShape: \{[\s\S]*?data: \{[\s\S]*?\};[\s\S]*?\}/g, 'errorShape: import("@trpc/server").DefaultErrorShape')
+  .replace(
+    /errorShape: \{[\s\S]*?data: \{[\s\S]*?\};[\s\S]*?\}/g,
+    'errorShape: import("@trpc/server/unstable-core-do-not-import").DefaultErrorShape',
+  )
   // Remove sourceMappingURL
   .replace(/\/\/# sourceMappingURL=.*$/m, '')
 

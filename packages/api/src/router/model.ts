@@ -77,7 +77,7 @@ export const modelRouter = {
       if (!provider) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+
           message: `Provider ${input.providerId} not found`,
         })
       }
@@ -136,7 +136,7 @@ export const modelRouter = {
       if (!model) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+
           message: `Model ${input.id} not found`,
         })
       }

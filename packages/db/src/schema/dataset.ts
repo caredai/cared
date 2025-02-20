@@ -23,7 +23,7 @@ export interface DatasetMetadata {
   languageModel: string // used for splitting a document into segments and chunks
   embeddingModel: string
   rerankModel: string
-  retrievalMode: (typeof retrievalModes)[number]
+  retrievalMode: 'vector-search' | 'full-text-search' | 'hybrid-search'
   topK?: number
   scoreThreshold?: number
 

@@ -1,6 +1,4 @@
-import type * as trpcNext from '@trpc/server/adapters/next'
-import { headers } from 'next/headers'
-import { auth, getAuth } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import * as trpc from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
@@ -15,41 +13,26 @@ import { env } from './env'
  *
  * This section defines the "contexts" that are available in the backend API.
  *
- * These allow you to access things when processing a request, like the database, the auth, etc.
+ * These allow you to access things when processing a request, like the database, the session, etc.
  *
  * This helper generates the "internals" for a tRPC context. The API handler and RSC clients each
  * wrap this and provides the required context.
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createContext = (
-  opts: trpcNext.CreateNextContextOptions,
-): { auth: ReturnType<typeof getAuth>; db: DB } => {
-  const auth = getAuth(opts.req)
-
-  const source = opts.req.headers['x-trpc-source'] ?? 'unknown'
-  console.log('>>> tRPC Request from', source, 'by', auth.userId)
-
-  return {
-    auth,
-    db,
-  }
-}
-
-/**
- * This section defines the "contexts" that are available when
- * handling a tRPC call from a React Server Component.
- */
-export const createContextForRsc = async (): Promise<{
-  auth: Awaited<ReturnType<typeof auth>>
-  db: DB
-}> => {
+export const createTRPCContext = async ({
+  headers,
+}: {
+  headers: Headers
+}): Promise<{ auth: Awaited<ReturnType<typeof auth>>; db: DB }> => {
   const _auth = await auth()
 
-  const heads = new Headers(await headers())
-  heads.set('x-trpc-source', 'rsc')
-
-  console.log('>>> tRPC Request from', heads.get('x-trpc-source') ?? 'unknown', 'by', _auth.userId)
+  console.log(
+    '>>> tRPC Request from',
+    headers.get('x-trpc-source') ?? 'unknown',
+    'by',
+    _auth.userId,
+  )
 
   return {
     auth: _auth,
@@ -57,7 +40,7 @@ export const createContextForRsc = async (): Promise<{
   }
 }
 
-export type Context = trpc.inferAsyncReturnType<typeof createContext>
+export type Context = trpc.inferAsyncReturnType<typeof createTRPCContext>
 
 /**
  * 2. INITIALIZATION
