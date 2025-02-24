@@ -48,7 +48,7 @@ export function useChatVisibility({
     if (!history) return localVisibility
     const chat = history.find((chat) => chat.id === chatId)
     if (!chat) return 'private'
-    return chat.visibility as VisibilityType
+    return chat.metadata.visibility as VisibilityType
   }, [history, chatId, localVisibility])
 
   const setVisibilityType = (updatedVisibilityType: VisibilityType) => {
@@ -74,7 +74,9 @@ export function useChatVisibility({
 
     updateChat.mutate({
       id: chatId,
-      visibility: updatedVisibilityType,
+      metadata: {
+        visibility: updatedVisibilityType,
+      }
     })
   }
 

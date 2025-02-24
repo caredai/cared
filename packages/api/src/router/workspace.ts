@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, gt, lt, SQL } from 'drizzle-orm'
 import { z } from 'zod'
 
 import {
@@ -61,11 +61,22 @@ export const workspaceRouter = {
   list: protectedProcedure
     .input(
       z.object({
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ input, ctx }) => {
+      const conditions: SQL<unknown>[] = [eq(Membership.userId, ctx.auth.userId)]
+
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(Workspace.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(Workspace.id, input.before))
+      }
+
       const workspaces = await ctx.db
         .select({
           workspace: Workspace,
@@ -73,13 +84,18 @@ export const workspaceRouter = {
         })
         .from(Membership)
         .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
-        .where(eq(Membership.userId, ctx.auth.userId))
-        .orderBy(desc(Workspace.createdAt))
-        .offset(input.offset)
-        .limit(input.limit)
+        .where(and(...conditions))
+        .orderBy(desc(Workspace.id))
+        .limit(input.limit + 1)
+
+      const hasMore = workspaces.length > input.limit
+      if (hasMore) {
+        workspaces.pop()
+      }
+
       return {
         workspaces,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -91,7 +107,7 @@ export const workspaceRouter = {
    * @returns The workspace and user's role if found
    * @throws {TRPCError} If workspace not found or user is not a member
    */
-  get: protectedProcedure.input(z.string().uuid()).query(async ({ input, ctx }) => {
+  get: protectedProcedure.input(z.string().min(32)).query(async ({ input, ctx }) => {
     const workspace = await ctx.db
       .select({
         workspace: Workspace,
@@ -176,7 +192,7 @@ export const workspaceRouter = {
    * @param input - The workspace ID
    * @throws {TRPCError} If user is not the workspace owner
    */
-  delete: protectedProcedure.input(z.string().uuid()).mutation(async ({ input, ctx }) => {
+  delete: protectedProcedure.input(z.string().min(32)).mutation(async ({ input, ctx }) => {
     return await ctx.db.transaction(async (tx) => {
       const memberships = await tx
         .select({ role: Membership.role })
@@ -208,8 +224,9 @@ export const workspaceRouter = {
   listMembers: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
-        offset: z.number().min(0).default(0),
+        workspaceId: z.string().min(32),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
@@ -230,6 +247,16 @@ export const workspaceRouter = {
         })
       }
 
+      const conditions: SQL<unknown>[] = [eq(Membership.workspaceId, input.workspaceId)]
+
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(User.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(User.id, input.before))
+      }
+
       const members = (
         await ctx.db
           .select({
@@ -238,18 +265,22 @@ export const workspaceRouter = {
           })
           .from(Membership)
           .innerJoin(User, eq(User.id, Membership.userId))
-          .where(eq(Membership.workspaceId, input.workspaceId))
+          .where(and(...conditions))
           .orderBy(
             desc(Membership.role), // Sort 'owner' first since it's alphabetically greater than 'member' when using desc
             desc(Membership.createdAt),
           )
-          .offset(input.offset)
-          .limit(input.limit)
+          .limit(input.limit + 1)
       ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+
+      const hasMore = members.length > input.limit
+      if (hasMore) {
+        members.pop()
+      }
 
       return {
         members,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -264,7 +295,7 @@ export const workspaceRouter = {
   getMember: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
+        workspaceId: z.string().min(32),
         userId: z.string(),
       }),
     )
@@ -362,7 +393,7 @@ export const workspaceRouter = {
   deleteMember: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
+        workspaceId: z.string().min(32),
         userId: z.string(),
       }),
     )
@@ -403,7 +434,7 @@ export const workspaceRouter = {
   transferOwner: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
+        workspaceId: z.string().min(32),
         userId: z.string(),
       }),
     )

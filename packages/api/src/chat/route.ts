@@ -1,15 +1,23 @@
 import type { Message } from 'ai'
-import { auth } from '@clerk/nextjs/server'
+import { auth as authorize } from '@clerk/nextjs/server'
 
 import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
-import { Chat, Message as DbMessage } from '@mindworld/db/schema'
+import {Chat, Message as DbMessage} from '@mindworld/db/schema'
+
+import { generateChatTitleFromUserMessage } from './actions'
+import { createCaller } from '..'
 
 export async function POST(request: Request) {
-  const { id, messages } = (await request.json()) as { id: string; messages: Message[] }
+  const { id, appId, appVersion, messages } = (await request.json()) as {
+    id: string
+    appId?: string
+    appVersion?: number | 'latest' | 'draft'
+    messages: Message[]
+  }
 
-  const { userId } = await auth()
-  if (!userId) {
+  const auth = await authorize()
+  if (!auth.userId) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -27,10 +35,42 @@ export async function POST(request: Request) {
     return new Response('User message already exists', { status: 400 })
   }
 
-  const chat = await db.query.Chat.findFirst({
+  let chat = await db.query.Chat.findFirst({
     where: eq(Chat.id, id),
   })
   if (!chat) {
-    // TODO: create chat
+    if (!appId) {
+      return new Response('Missing app id', { status: 400})
+    }
+
+    const caller = createCaller({
+      auth,
+      db
+    })
+
+    const { chat: chat_ } = await caller.chat.create({
+      appId,
+      appVersion,
+      userId: auth.userId,
+      metadata: {
+        title: '',
+        visibility: 'private',
+      }
+    })
+    chat = chat_
+
+    const {version: app} = await caller.app.getVersion({
+      id: chat.appId,
+      version: chat.appVersion,
+    })
+
+    const title = await generateChatTitleFromUserMessage({ message: userMessage, app })
+
+    await caller.chat.update({
+      id: chat.id,
+      metadata: {
+        title
+      }
+    })
   }
 }

@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { and, count, desc, eq, gte } from '@mindworld/db'
+import { and, desc, eq, gte, gt, lt, SQL } from '@mindworld/db'
 import {
   Chat,
   CreateChatSchema,
@@ -14,7 +14,7 @@ import {
 
 import type { Context } from '../trpc'
 import { protectedProcedure } from '../trpc'
-import { getAppById } from './app'
+import { getAppById, getAppVersion } from './app'
 
 /**
  * Get a chat by ID.
@@ -65,42 +65,44 @@ export const chatRouter = {
    * List all chats for an app.
    * Only accessible by authenticated users.
    * @param input - Object containing app ID and pagination parameters
-   * @returns List of chats with total count
+   * @returns List of chats with hasMore flag
    */
   listByApp: protectedProcedure
     .input(
       z.object({
-        appId: z.string().uuid(),
-        offset: z.number().min(0).default(0),
+        appId: z.string().min(32),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
       await getAppById(ctx, input.appId)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(Chat)
-        .where(eq(Chat.appId, input.appId))
+      const conditions: SQL<unknown>[] = [eq(Chat.appId, input.appId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get chat count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(Chat.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(Chat.id, input.before))
       }
 
       const chats = await ctx.db.query.Chat.findMany({
-        where: eq(Chat.appId, input.appId),
-        orderBy: desc(Chat.updatedAt),
-        offset: input.offset,
-        limit: input.limit,
+        where: and(...conditions),
+        orderBy: desc(Chat.id),
+        limit: input.limit + 1,
       })
+
+      const hasMore = chats.length > input.limit
+      if (hasMore) {
+        chats.pop()
+      }
 
       return {
         chats,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -114,7 +116,7 @@ export const chatRouter = {
   byId: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.string().min(32),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -128,10 +130,17 @@ export const chatRouter = {
    * @param input - The chat data following the {@link CreateChatSchema}
    * @returns The created chat
    */
-  create: protectedProcedure.input(CreateChatSchema).mutation(async ({ ctx, input }) => {
+  create: protectedProcedure.input(CreateChatSchema.extend({
+    appVersion: z.number().int().or(z.enum(["latest", "draft"])).optional()
+  })).mutation(async ({ ctx, input }) => {
     await getAppById(ctx, input.appId)
 
-    const [chat] = await ctx.db.insert(Chat).values(input).returning()
+    const appVersion = await getAppVersion(ctx, input.appId, input.appVersion)
+
+    const [chat] = await ctx.db.insert(Chat).values({
+      ...input,
+      appVersion: appVersion.version
+    }).returning()
 
     if (!chat) {
       throw new TRPCError({
@@ -153,14 +162,21 @@ export const chatRouter = {
     const { id, ...update } = input
     const chat = await getChatById(ctx, id)
 
-    if (update.metadata) {
-      update.metadata = {
-        ...chat.metadata,
-        ...update.metadata,
-      }
-    }
+    const metadata = update.metadata
+      ? {
+          ...chat.metadata,
+          ...update.metadata,
+        }
+      : undefined
 
-    const [updatedChat] = await ctx.db.update(Chat).set(update).where(eq(Chat.id, id)).returning()
+    const [updatedChat] = await ctx.db
+      .update(Chat)
+      .set({
+        ...update,
+        metadata,
+      })
+      .where(eq(Chat.id, id))
+      .returning()
 
     if (!updatedChat) {
       throw new TRPCError({
@@ -176,42 +192,44 @@ export const chatRouter = {
    * List all messages in a chat.
    * Only accessible by authenticated users.
    * @param input - Object containing chat ID and pagination parameters
-   * @returns List of messages with total count
+   * @returns List of messages with hasMore flag
    */
   listMessages: protectedProcedure
     .input(
       z.object({
-        chatId: z.string().uuid(),
-        offset: z.number().min(0).default(0),
+        chatId: z.string().min(32),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
       await getChatById(ctx, input.chatId)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(Message)
-        .where(eq(Message.chatId, input.chatId))
+      const conditions: SQL<unknown>[] = [eq(Message.chatId, input.chatId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get message count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(Message.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(Message.id, input.before))
       }
 
       const messages = await ctx.db.query.Message.findMany({
-        where: eq(Message.chatId, input.chatId),
-        orderBy: desc(Message.index),
-        offset: input.offset,
-        limit: input.limit,
+        where: and(...conditions),
+        orderBy: desc(Message.id),
+        limit: input.limit + 1,
       })
+
+      const hasMore = messages.length > input.limit
+      if (hasMore) {
+        messages.pop()
+      }
 
       return {
         messages,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -225,7 +243,7 @@ export const chatRouter = {
   getMessage: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.string().min(32),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -242,8 +260,6 @@ export const chatRouter = {
   createMessage: protectedProcedure.input(CreateMessageSchema).mutation(async ({ ctx, input }) => {
     await getChatById(ctx, input.chatId)
 
-    // TODO
-    // @ts-ignore
     const [message] = await ctx.db.insert(Message).values(input).returning()
 
     if (!message) {
@@ -264,7 +280,7 @@ export const chatRouter = {
   deleteTrailingMessages: protectedProcedure
     .input(
       z.object({
-        messageId: z.string().uuid(),
+        messageId: z.string().min(32),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -292,7 +308,7 @@ export const chatRouter = {
         .insert(MessageVote)
         .values(input)
         .onConflictDoUpdate({
-          target: [MessageVote.chatId, MessageVote.messageId, MessageVote.userId],
+          target: [MessageVote.chatId, MessageVote.messageId],
           set: { isUpvoted: input.isUpvoted },
         })
         .returning()

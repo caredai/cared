@@ -40,7 +40,7 @@ function filteredOauthApp(oauthApp: OAuthApp, clerkOAuthApp: OAuthApplication) {
 
 export const oauthAppRouter = {
   // Check if app has OAuth app
-  has: protectedProcedure.input(z.string().uuid()).query(async ({ ctx, input: appId }) => {
+  has: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
     const app = await getAppById(ctx, appId)
     await verifyWorkspaceOwner(ctx, app.workspaceId)
 
@@ -52,7 +52,7 @@ export const oauthAppRouter = {
   }),
 
   // Get OAuth app
-  get: protectedProcedure.input(z.string().uuid()).query(async ({ ctx, input: appId }) => {
+  get: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
     const app = await getAppById(ctx, appId)
     await verifyWorkspaceOwner(ctx, app.workspaceId)
 
@@ -87,7 +87,7 @@ export const oauthAppRouter = {
   create: protectedProcedure
     .input(
       z.object({
-        appId: z.string().uuid(),
+        appId: z.string().min(32),
         redirectUris: z.array(z.string()).optional(),
         // scopes: z.string().optional(),
       }),
@@ -133,7 +133,7 @@ export const oauthAppRouter = {
   update: protectedProcedure
     .input(
       z.object({
-        appId: z.string().uuid(),
+        appId: z.string().min(32),
         redirectUris: z.array(z.string()).optional(),
         // scopes: z.string().optional(),
       }),
@@ -169,7 +169,7 @@ export const oauthAppRouter = {
     }),
 
   // Delete OAuth app
-  delete: protectedProcedure.input(z.string().uuid()).mutation(async ({ ctx, input: appId }) => {
+  delete: protectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input: appId }) => {
     const app = await getAppById(ctx, appId)
     await verifyWorkspaceOwner(ctx, app.workspaceId)
 
@@ -196,7 +196,7 @@ export const oauthAppRouter = {
 
   // Rotate client secret
   rotateSecret: protectedProcedure
-    .input(z.string().uuid())
+    .input(z.string().min(32))
     .mutation(async ({ ctx, input: appId }) => {
       const app = await getAppById(ctx, appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)

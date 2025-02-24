@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import { TRPCError } from '@trpc/server'
 import { sanitizeKey } from 'next-s3-upload'
 import { POST as APIRoute } from 'next-s3-upload/route'
-import { v4 as uuid } from 'uuid'
+import { v7 as uuid } from 'uuid'
 
 import { and, eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'

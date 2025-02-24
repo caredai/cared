@@ -1,14 +1,14 @@
 import type { User as ClerkUser } from '@clerk/nextjs/server'
 import type { InferSelectModel } from 'drizzle-orm'
 import { sql } from 'drizzle-orm'
-import { index, jsonb, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { roleEnum, roleEnumValues, timestamps, timestampsIndices, timestampsOmits } from './utils'
+import { generateId, roleEnum, roleEnumValues, timestamps, timestampsIndices, timestampsOmits } from './utils'
 
 export const Workspace = pgTable('workspace', {
-  id: uuid().primaryKey().notNull().defaultRandom(),
+  id: text().primaryKey().notNull().$defaultFn(() => generateId('workspace')),
   name: varchar({ length: 255 }).notNull(),
   ...timestamps,
 })
@@ -23,7 +23,7 @@ export const CreateWorkspaceSchema = createInsertSchema(Workspace, {
 })
 
 export const UpdateWorkspaceSchema = createUpdateSchema(Workspace, {
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string().min(1).max(255),
 }).omit({
   ...timestampsOmits,
@@ -53,7 +53,7 @@ export type User = InferSelectModel<typeof User>
 export const Membership = pgTable(
   'membership',
   {
-    workspaceId: uuid()
+    workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
     userId: varchar({ length: 127 })
@@ -73,7 +73,7 @@ export const Membership = pgTable(
 export type Membership = InferSelectModel<typeof Membership>
 
 export const CreateMembershipSchema = createInsertSchema(Membership, {
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string(),
   userId: z.string().max(127),
   role: z.enum(roleEnumValues).optional(),
 }).omit({

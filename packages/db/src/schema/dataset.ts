@@ -6,13 +6,12 @@ import {
   pgTable,
   text,
   uniqueIndex,
-  uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { timestamps, timestampsIndices, timestampsOmits } from './utils'
+import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { Workspace } from './workspace'
 
 const retrievalModes = ['vector-search', 'full-text-search', 'hybrid-search'] as const
@@ -42,8 +41,8 @@ const datasetMetadataZod = z.object({
 export const Dataset = pgTable(
   'dataset',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    workspaceId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('dataset')),
+    workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
     name: varchar({ length: 255 }).notNull(),
@@ -60,7 +59,7 @@ export const Dataset = pgTable(
 export type Dataset = InferSelectModel<typeof Dataset>
 
 export const CreateDatasetSchema = createInsertSchema(Dataset, {
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string(),
   name: z.string().max(255),
   metadata: datasetMetadataZod,
 }).omit({
@@ -69,7 +68,7 @@ export const CreateDatasetSchema = createInsertSchema(Dataset, {
 })
 
 export const UpdateDatasetSchema = createUpdateSchema(Dataset, {
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string().max(255).optional(),
   metadata: datasetMetadataZod.optional(),
 }).omit({
@@ -94,11 +93,11 @@ const documentMetadataZod = z.object({
 export const Document = pgTable(
   'document',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    workspaceId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('doc')),
+    workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
-    datasetId: uuid()
+    datasetId: text()
       .notNull()
       .references(() => Dataset.id),
     name: varchar({ length: 255 }).notNull(),
@@ -115,8 +114,8 @@ export const Document = pgTable(
 export type Document = InferSelectModel<typeof Document>
 
 export const CreateDocumentSchema = createInsertSchema(Document, {
-  workspaceId: z.string().uuid(),
-  datasetId: z.string().uuid(),
+  workspaceId: z.string(),
+  datasetId: z.string(),
   name: z.string().max(255),
   metadata: documentMetadataZod.optional(),
 }).omit({
@@ -125,7 +124,7 @@ export const CreateDocumentSchema = createInsertSchema(Document, {
 })
 
 export const UpdateDocumentSchema = createUpdateSchema(Document, {
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string().max(255).optional(),
   metadata: documentMetadataZod.optional(),
 }).omit({
@@ -137,14 +136,14 @@ export const UpdateDocumentSchema = createUpdateSchema(Document, {
 export const DocumentSegment = pgTable(
   'document_segment',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    workspaceId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('dseg')),
+    workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
-    datasetId: uuid()
+    datasetId: text()
       .notNull()
       .references(() => Dataset.id),
-    documentId: uuid()
+    documentId: text()
       .notNull()
       .references(() => Document.id),
     index: integer().notNull(),
@@ -163,9 +162,9 @@ export const DocumentSegment = pgTable(
 export type DocumentSegment = InferSelectModel<typeof DocumentSegment>
 
 export const CreateDocumentSegmentSchema = createInsertSchema(DocumentSegment, {
-  workspaceId: z.string().uuid(),
-  datasetId: z.string().uuid(),
-  documentId: z.string().uuid(),
+  workspaceId: z.string(),
+  datasetId: z.string(),
+  documentId: z.string(),
   index: z.number().int(),
   content: z.string(),
   metadata: z.record(z.unknown()).optional(),
@@ -175,7 +174,7 @@ export const CreateDocumentSegmentSchema = createInsertSchema(DocumentSegment, {
 })
 
 export const UpdateDocumentSegmentSchema = createUpdateSchema(DocumentSegment, {
-  id: z.string().uuid(),
+  id: z.string(),
   content: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 }).omit({
@@ -189,17 +188,17 @@ export const UpdateDocumentSegmentSchema = createUpdateSchema(DocumentSegment, {
 export const DocumentChunk = pgTable(
   'document_chunk',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    workspaceId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('dchunk')),
+    workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
-    datasetId: uuid()
+    datasetId: text()
       .notNull()
       .references(() => Dataset.id),
-    documentId: uuid()
+    documentId: text()
       .notNull()
       .references(() => Document.id),
-    segmentId: uuid()
+    segmentId: text()
       .notNull()
       .references(() => DocumentSegment.id),
     index: integer().notNull(),
@@ -225,10 +224,10 @@ export const DocumentChunk = pgTable(
 export type DocumentChunk = InferSelectModel<typeof DocumentChunk>
 
 export const CreateDocumentChunkSchema = createInsertSchema(DocumentChunk, {
-  workspaceId: z.string().uuid(),
-  datasetId: z.string().uuid(),
-  documentId: z.string().uuid(),
-  segmentId: z.string().uuid(),
+  workspaceId: z.string(),
+  datasetId: z.string(),
+  documentId: z.string(),
+  segmentId: z.string(),
   index: z.number().int(),
   content: z.string(),
   metadata: z.record(z.unknown()).optional(),
@@ -238,7 +237,7 @@ export const CreateDocumentChunkSchema = createInsertSchema(DocumentChunk, {
 })
 
 export const UpdateDocumentChunkSchema = createUpdateSchema(DocumentChunk, {
-  id: z.string().uuid(),
+  id: z.string(),
   content: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 }).omit({

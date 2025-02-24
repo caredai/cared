@@ -1,6 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import { TRPCError } from '@trpc/server'
-import { count, eq, ilike, or, sql } from 'drizzle-orm'
+import type { SQL} from '@mindworld/db';
+import { and, desc, eq, gt, ilike, lt, or, sql } from '@mindworld/db'
 import { z } from 'zod'
 
 import { User } from '@mindworld/db/schema'
@@ -12,49 +13,58 @@ export const userRouter = {
    * List all users with optional search functionality.
    * Only accessible by admin users.
    * @param input - Object containing search query and pagination parameters
-   * @returns List of users with total count and pagination info
-   * @throws {TRPCError} If failed to get user count
+   * @returns List of users with hasMore flag
    */
   listUsers: adminProcedure
     .input(
       z.object({
         search: z.string().optional(),
-        offset: z.number().int().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().int().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const where = input.search
-        ? or(
+      const conditions: (SQL<unknown> | undefined)[] = []
+
+      // Add search conditions
+      if (input.search) {
+        conditions.push(
+          or(
             ilike(sql`${User.info}->>'username'`, `%${input.search}%`),
             ilike(sql`${User.info}->>'firstName'`, `%${input.search}%`),
             ilike(sql`${User.info}->>'lastName'`, `%${input.search}%`),
             sql`to_tsvector('simple', array_to_string(array(select jsonb_array_elements(${User.info}->'emailAddresses')->>>'emailAddress'), ' ')) @@ to_tsquery('simple', ${input.search}:*)`,
-          )
-        : undefined
-
-      const counts = await ctx.db.select({ count: count() }).from(User).where(where)
-
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get user count',
-        })
+          ),
+        )
       }
+
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(User.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(User.id, input.before))
+      }
+
+      const query = conditions.length > 0 ? and(...conditions) : undefined
 
       const users = await ctx.db
         .select()
         .from(User)
-        .where(where)
-        .orderBy(User.createdAt)
-        .offset(input.offset)
-        .limit(input.limit)
+        .where(query)
+        .orderBy(desc(User.id))
+        .limit(input.limit + 1)
+
+      const hasMore = users.length > input.limit
+      if (hasMore) {
+        users.pop()
+      }
 
       return {
         users,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
-        total: counts[0].count,
       }
     }),
 

@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
+import { index, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -10,7 +10,7 @@ import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 export const OAuthApp = pgTable(
   'oauth_app',
   {
-    appId: uuid()
+    appId: text()
       .notNull()
       .references(() => App.id),
     // Clerk OAuth App ID
@@ -27,7 +27,7 @@ export const OAuthApp = pgTable(
 export type OAuthApp = InferSelectModel<typeof OAuthApp>
 
 export const CreateOAuthAppSchema = createInsertSchema(OAuthApp, {
-  appId: z.string().uuid(),
+  appId: z.string(),
   oauthAppId: z.string().max(255),
 }).omit({
   ...timestampsOmits,

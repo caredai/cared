@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server'
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, gt, lt, SQL } from '@mindworld/db'
 import { z } from 'zod'
 
 import { Membership, User, Workspace } from '@mindworld/db/schema'
@@ -11,37 +11,45 @@ export const workspaceRouter = {
    * List all workspaces across the platform.
    * Only accessible by admin users.
    * @param input - Pagination parameters
-   * @returns List of workspaces with total count and pagination info
-   * @throws {TRPCError} If failed to get workspace count
+   * @returns List of workspaces with hasMore flag
    */
   listWorkspaces: adminProcedure
     .input(
       z.object({
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const counts = await ctx.db.select({ count: count() }).from(Workspace)
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get workspace count',
-        })
+      const conditions: SQL<unknown>[] = []
+
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(Workspace.id, input.after))
       }
+      if (input.before) {
+        conditions.push(lt(Workspace.id, input.before))
+      }
+
+      const query = conditions.length > 0 ? and(...conditions) : undefined
 
       const workspaces = await ctx.db
         .select()
         .from(Workspace)
-        .orderBy(desc(Workspace.createdAt))
-        .offset(input.offset)
-        .limit(input.limit)
+        .where(query)
+        .orderBy(desc(Workspace.id))
+        .limit(input.limit + 1)
+
+      const hasMore = workspaces.length > input.limit
+      if (hasMore) {
+        workspaces.pop()
+      }
 
       return {
         workspaces,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
-        total: counts[0].count,
       }
     }),
 
@@ -52,7 +60,7 @@ export const workspaceRouter = {
    * @returns The workspace if found
    * @throws {TRPCError} If workspace not found
    */
-  getWorkspace: adminProcedure.input(z.string().uuid()).query(async ({ ctx, input }) => {
+  getWorkspace: adminProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
     const workspace = await ctx.db.query.Workspace.findFirst({
       where: eq(Workspace.id, input),
     })
@@ -73,28 +81,26 @@ export const workspaceRouter = {
    * List all members of a specific workspace.
    * Only accessible by admin users.
    * @param input - Object containing workspaceId and pagination parameters
-   * @returns List of workspace members with their roles, total count and pagination info
-   * @throws {TRPCError} If failed to get member count
+   * @returns List of workspace members with their roles and pagination info
    */
   listMembers: adminProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
-        offset: z.number().min(0).default(0),
+        workspaceId: z.string().min(32),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(Membership)
-        .where(eq(Membership.workspaceId, input.workspaceId))
+      const conditions: SQL<unknown>[] = [eq(Membership.workspaceId, input.workspaceId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get member count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(User.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(User.id, input.before))
       }
 
       const members = await ctx.db
@@ -104,16 +110,19 @@ export const workspaceRouter = {
         })
         .from(Membership)
         .innerJoin(User, eq(User.id, Membership.userId))
-        .where(eq(Membership.workspaceId, input.workspaceId))
+        .where(and(...conditions))
         .orderBy(desc(Membership.role), desc(Membership.createdAt))
-        .offset(input.offset)
-        .limit(input.limit)
+        .limit(input.limit + 1)
+
+      const hasMore = members.length > input.limit
+      if (hasMore) {
+        members.pop()
+      }
 
       return {
         members,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
-        total: counts[0].count,
       }
     }),
 
@@ -127,7 +136,7 @@ export const workspaceRouter = {
   getMember: adminProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
+        workspaceId: z.string().min(32),
         userId: z.string(),
       }),
     )

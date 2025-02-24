@@ -6,13 +6,13 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
-  uuid,
+  text,
   varchar,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { timestamps, timestampsIndices, timestampsOmits } from './utils'
+import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { Workspace } from './workspace'
 
 export const appTypeEnumValues = ['single-agent', 'multiple-agents'] as const
@@ -42,8 +42,8 @@ const appMetadataZod = z
 export const App = pgTable(
   'app',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    workspaceId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('app')),
+    workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
     // type, name, metadata are always the same as the latest published version in the app version table
@@ -63,7 +63,7 @@ export const App = pgTable(
 export type App = InferSelectModel<typeof App>
 
 export const CreateAppSchema = createInsertSchema(App, {
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string(),
   type: z.enum(appTypeEnumValues).optional(),
   name: z.string().max(255),
   metadata: appMetadataZod,
@@ -74,7 +74,7 @@ export const CreateAppSchema = createInsertSchema(App, {
 
 export const UpdateAppSchema = createUpdateSchema(App, {
   id: z.string(),
-  workspaceId: z.string().uuid(),
+  workspaceId: z.string(),
   name: z.string().max(255).optional(),
   metadata: appMetadataZod.optional(),
 }).omit({
@@ -89,7 +89,7 @@ export const DRAFT_VERSION = 9007199254740991
 export const AppVersion = pgTable(
   'app_version',
   {
-    appId: uuid()
+    appId: text()
       .notNull()
       .references(() => App.id),
     // Must be Unix timestamp of the publishing time.
@@ -109,7 +109,7 @@ export const AppVersion = pgTable(
 export type AppVersion = InferSelectModel<typeof AppVersion>
 
 export const CreateAppVersionSchema = createInsertSchema(AppVersion, {
-  appId: z.string().uuid(),
+  appId: z.string(),
   version: z.number().int().optional(),
   type: z.enum(appTypeEnumValues).optional(),
   name: z.string().max(255),
@@ -131,7 +131,7 @@ export const UpdateAppVersionSchema = createUpdateSchema(AppVersion, {
 export const Category = pgTable(
   'category',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('category')),
     name: varchar({ length: 255 }).unique().notNull(),
     ...timestamps,
   },
@@ -160,10 +160,10 @@ export const UpdateCategorySchema = createUpdateSchema(Category, {
 export const AppsToCategories = pgTable(
   'apps_to_categories',
   {
-    appId: uuid()
+    appId: text()
       .notNull()
       .references(() => App.id),
-    categoryId: uuid()
+    categoryId: text()
       .notNull()
       .references(() => Category.id),
     ...timestamps,
@@ -178,8 +178,8 @@ export const AppsToCategories = pgTable(
 export type AppsToCategories = InferSelectModel<typeof AppsToCategories>
 
 export const CreateAppsToCategoriesSchema = createInsertSchema(AppsToCategories, {
-  appId: z.string().uuid(),
-  categoryId: z.string().uuid(),
+  appId: z.string(),
+  categoryId: z.string(),
 }).omit({
   ...timestampsOmits,
 })
@@ -206,7 +206,7 @@ export const CreateTagSchema = createInsertSchema(Tag, {
 export const AppsToTags = pgTable(
   'apps_to_tags',
   {
-    appId: uuid()
+    appId: text()
       .notNull()
       .references(() => App.id),
     tag: varchar({ length: 255 })
@@ -224,7 +224,7 @@ export const AppsToTags = pgTable(
 export type AppsToTags = InferSelectModel<typeof AppsToTags>
 
 export const CreateAppsToTagsSchema = createInsertSchema(AppsToTags, {
-  appId: z.string().uuid(),
+  appId: z.string(),
   tag: z.string().max(255),
 }).omit({
   ...timestampsOmits,

@@ -1,10 +1,10 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, integer, jsonb, pgTable, primaryKey, uuid, varchar } from 'drizzle-orm/pg-core'
+import { index, integer, jsonb, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { App, DRAFT_VERSION } from './app'
-import { timestamps, timestampsIndices, timestampsOmits } from './utils'
+import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
 
 export interface AgentMetadata {
   description?: string
@@ -30,12 +30,12 @@ const agentMetadataZod = z
 export const Agent = pgTable(
   'agent',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    appId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('agent')),
+    appId: text()
       .notNull()
       .references(() => App.id),
     name: varchar({ length: 255 }).notNull(),
-    metadata: jsonb('metadata').$type<AgentMetadata>().notNull().default({}),
+    metadata: jsonb().$type<AgentMetadata>().notNull().default({}),
     ...timestamps,
   },
   (table) => [
@@ -48,7 +48,7 @@ export const Agent = pgTable(
 export type Agent = InferSelectModel<typeof Agent>
 
 export const CreateAgentSchema = createInsertSchema(Agent, {
-  appId: z.string().uuid(),
+  appId: z.string(),
   name: z.string().max(255),
   metadata: agentMetadataZod.optional(),
 }).omit({
@@ -57,7 +57,7 @@ export const CreateAgentSchema = createInsertSchema(Agent, {
 })
 
 export const UpdateAgentSchema = createUpdateSchema(Agent, {
-  id: z.string().uuid(),
+  id: z.string(),
   name: z.string().max(255).optional(),
   metadata: agentMetadataZod.optional(),
 }).omit({
@@ -68,7 +68,7 @@ export const UpdateAgentSchema = createUpdateSchema(Agent, {
 export const AgentVersion = pgTable(
   'agent_version',
   {
-    agentId: uuid()
+    agentId: text()
       .notNull()
       .references(() => Agent.id),
     // Must be Unix timestamp of the publishing time.
@@ -88,7 +88,7 @@ export const AgentVersion = pgTable(
 export type AgentVersion = InferSelectModel<typeof AgentVersion>
 
 export const CreateAgentVersionSchema = createInsertSchema(AgentVersion, {
-  agentId: z.string().uuid(),
+  agentId: z.string(),
   version: z.number().int().optional(),
   name: z.string().max(255),
   metadata: agentMetadataZod.optional(),

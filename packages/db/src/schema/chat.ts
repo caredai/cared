@@ -10,18 +10,21 @@ import {
   pgTable,
   primaryKey,
   text,
-  uuid,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { Agent } from './agent'
 import { App, AppVersion } from './app'
-import { timestamps, timestampsIndices, timestampsOmits, visibilityEnumValues } from './utils'
+import {
+  generateId,
+  makeObjectNonempty,
+  timestamps,
+  timestampsIndices,
+  timestampsOmits,
+  visibilityEnumValues,
+} from './utils'
 import { User } from './workspace'
-
-export const chatTypeEnumValues = ['chat', 'room'] as const
-export const chatTypeEnum = pgEnum('chatType', chatTypeEnumValues)
 
 export interface ChatMetadata {
   title: string
@@ -47,36 +50,33 @@ const chatMetadataZod = z
 export const Chat = pgTable(
   'chat',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    appId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('chat')),
+    appId: text()
       .notNull()
       .references(() => App.id),
-    version: integer().notNull(),
-    // The user who created/owns the chat/room
-    owner: uuid()
+    appVersion: integer().notNull(),
+    userId: text()
       .notNull()
       .references(() => User.id),
-    type: chatTypeEnum().notNull().default('chat'),
     metadata: jsonb().$type<ChatMetadata>().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.appId, table.version),
+    index().on(table.appId, table.appVersion),
     foreignKey({
-      columns: [table.appId, table.version],
+      columns: [table.appId, table.appVersion],
       foreignColumns: [AppVersion.appId, AppVersion.version],
     }),
-    index().on(table.owner),
+    index().on(table.userId, table.appId, table.appVersion),
   ],
 )
 
 export type Chat = InferSelectModel<typeof Chat>
 
 export const CreateChatSchema = createInsertSchema(Chat, {
-  appId: z.string().uuid(),
-  version: z.number().int(),
-  owner: z.string().uuid(),
-  type: z.enum(chatTypeEnumValues),
+  appId: z.string(),
+  appVersion: z.number().int(),
+  userId: z.string(),
   metadata: chatMetadataZod,
 }).omit({
   id: true,
@@ -85,50 +85,11 @@ export const CreateChatSchema = createInsertSchema(Chat, {
 
 export const UpdateChatSchema = createUpdateSchema(Chat, {
   id: z.string(),
-  owner: z.string().uuid().optional(),
-  metadata: chatMetadataZod.optional(),
+  metadata: makeObjectNonempty(chatMetadataZod).optional(),
 }).omit({
   appId: true,
-  version: true,
-  type: true,
-  ...timestampsOmits,
-})
-
-export const ChatUser = pgTable(
-  'chat_user',
-  {
-    chatId: uuid()
-      .notNull()
-      .references(() => Chat.id),
-    userId: uuid()
-      .notNull()
-      .references(() => User.id),
-    // Whether the user is still active in the chat/room
-    isActive: boolean().notNull().default(true),
-    ...timestamps,
-  },
-  (table) => [
-    primaryKey({ columns: [table.chatId, table.userId] }),
-    index().on(table.chatId, table.isActive),
-    ...timestampsIndices(table),
-  ],
-)
-
-export type ChatUser = InferSelectModel<typeof ChatUser>
-
-export const CreateChatUserSchema = createInsertSchema(ChatUser, {
-  chatId: z.string().uuid(),
-  userId: z.string().uuid(),
-  isActive: z.boolean().optional(),
-}).omit({
-  ...timestampsOmits,
-})
-
-export const UpdateChatUserSchema = createUpdateSchema(ChatUser, {
-  chatId: z.string().uuid(),
-  userId: z.string().uuid(),
-  isActive: z.boolean().optional(),
-}).omit({
+  appVersion: true,
+  userId: true,
   ...timestampsOmits,
 })
 
@@ -140,22 +101,18 @@ export type MessageContent = CoreMessage['content']
 export const Message = pgTable(
   'message',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    chatId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('msg')),
+    chatId: text()
       .notNull()
       .references(() => Chat.id),
-    index: integer().notNull(),
     role: messageRoleEnum().notNull(),
-    agentId: uuid().references(() => Agent.id),
-    userId: uuid().references(() => User.id),
-    content: jsonb().$type<MessageContent>().notNull(),
+    agentId: text().references(() => Agent.id),
+    content: jsonb().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.chatId, table.index),
     index().on(table.chatId, table.role),
     index().on(table.chatId, table.agentId),
-    index().on(table.chatId, table.userId),
     ...timestampsIndices(table),
   ],
 )
@@ -163,12 +120,9 @@ export const Message = pgTable(
 export type Message = InferSelectModel<typeof Message>
 
 export const CreateMessageSchema = createInsertSchema(Message, {
-  chatId: z.string().uuid(),
-  index: z.number().int(),
-  // @ts-ignore
+  chatId: z.string(),
   role: z.enum(messageRoleEnumValues),
-  agentId: z.string().uuid().optional(),
-  userId: z.string().uuid().optional(),
+  agentId: z.string().optional(),
   content: z.record(z.unknown()),
 }).omit({
   id: true,
@@ -180,10 +134,8 @@ export const UpdateMessageSchema = createUpdateSchema(Message, {
   content: z.record(z.unknown()),
 }).omit({
   chatId: true,
-  index: true,
   role: true,
   agentId: true,
-  userId: true,
   ...timestampsOmits,
 })
 
@@ -191,12 +143,12 @@ export const UpdateMessageSchema = createUpdateSchema(Message, {
 export const MessageSummary = pgTable(
   'message_summary',
   {
-    id: uuid().primaryKey().notNull().defaultRandom(),
-    chatId: uuid()
+    id: text().primaryKey().notNull().$defaultFn(() => generateId('msum')),
+    chatId: text()
       .notNull()
       .references(() => Chat.id),
-    // Summary of message history up to this message index (inclusive)
-    checkpoint: integer().notNull(),
+    // Summary of message history up to the message (inclusive) which has this id.
+    checkpoint: text().notNull(),
     content: text().notNull(),
     ...timestamps,
   },
@@ -209,7 +161,7 @@ export const MessageSummary = pgTable(
 export type MessageSummary = InferSelectModel<typeof MessageSummary>
 
 export const CreateMessageSummarySchema = createInsertSchema(MessageSummary, {
-  chatId: z.string().uuid(),
+  chatId: z.string(),
   checkpoint: z.number().int(),
   content: z.string(),
 }).omit({
@@ -229,20 +181,17 @@ export const UpdateMessageSummarySchema = createUpdateSchema(MessageSummary, {
 export const MessageVote = pgTable(
   'message_vote',
   {
-    chatId: uuid()
+    chatId: text()
       .notNull()
       .references(() => Chat.id),
-    messageId: uuid()
+    messageId: text()
       .notNull()
       .references(() => Message.id),
-    userId: uuid()
-      .notNull()
-      .references(() => User.id),
     isUpvoted: boolean().notNull(),
     ...timestamps,
   },
   (table) => [
-    primaryKey({ columns: [table.chatId, table.messageId, table.userId] }),
+    primaryKey({ columns: [table.chatId, table.messageId] }),
     ...timestampsIndices(table),
   ],
 )
@@ -250,18 +199,16 @@ export const MessageVote = pgTable(
 export type MessageVote = InferSelectModel<typeof MessageVote>
 
 export const CreateMessageVoteSchema = createInsertSchema(MessageVote, {
-  chatId: z.string().uuid(),
-  messageId: z.string().uuid(),
-  userId: z.string().uuid(),
+  chatId: z.string(),
+  messageId: z.string(),
   isUpvoted: z.boolean(),
 }).omit({
   ...timestampsOmits,
 })
 
 export const UpdateMessageVoteSchema = createUpdateSchema(MessageVote, {
-  chatId: z.string().uuid(),
-  messageId: z.string().uuid(),
-  userId: z.string().uuid(),
+  chatId: z.string(),
+  messageId: z.string(),
   isUpvoted: z.boolean().optional(),
 }).omit({
   ...timestampsOmits,

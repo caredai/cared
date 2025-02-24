@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { DatasetMetadata } from '@mindworld/db/schema'
-import { and, count, desc, eq } from '@mindworld/db'
+import { and, desc, eq, gt, lt, SQL } from '@mindworld/db'
 import {
   CreateDatasetSchema,
   CreateDocumentChunkSchema,
@@ -58,38 +58,40 @@ export const datasetRouter = {
   list: protectedProcedure
     .input(
       z.object({
-        workspaceId: z.string().uuid(),
-        offset: z.number().min(0).default(0),
+        workspaceId: z.string().min(32),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(Dataset)
-        .where(eq(Dataset.workspaceId, input.workspaceId))
+      const conditions: SQL<unknown>[] = [eq(Dataset.workspaceId, input.workspaceId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get dataset count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(Dataset.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(Dataset.id, input.before))
       }
 
       const datasets = await ctx.db
         .select()
         .from(Dataset)
-        .where(eq(Dataset.workspaceId, input.workspaceId))
-        .orderBy(desc(Dataset.createdAt))
-        .offset(input.offset)
-        .limit(input.limit)
+        .where(and(...conditions))
+        .orderBy(desc(Dataset.id))
+        .limit(input.limit + 1)
+
+      const hasMore = datasets.length > input.limit
+      if (hasMore) {
+        datasets.pop()
+      }
 
       return {
         datasets,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -360,7 +362,8 @@ export const datasetRouter = {
     .input(
       z.object({
         datasetId: z.string(),
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
@@ -378,30 +381,31 @@ export const datasetRouter = {
 
       await verifyWorkspaceMembership(ctx, dataset.workspaceId)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(Document)
-        .where(eq(Document.datasetId, input.datasetId))
+      const conditions: SQL<unknown>[] = [eq(Document.datasetId, input.datasetId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get document count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(Document.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(Document.id, input.before))
       }
 
       const documents = await ctx.db
         .select()
         .from(Document)
-        .where(eq(Document.datasetId, input.datasetId))
-        .orderBy(desc(Document.createdAt))
-        .offset(input.offset)
-        .limit(input.limit)
+        .where(and(...conditions))
+        .orderBy(desc(Document.id))
+        .limit(input.limit + 1)
+
+      const hasMore = documents.length > input.limit
+      if (hasMore) {
+        documents.pop()
+      }
 
       return {
         documents,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -542,7 +546,8 @@ export const datasetRouter = {
     .input(
       z.object({
         documentId: z.string(),
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
@@ -560,30 +565,31 @@ export const datasetRouter = {
 
       await verifyWorkspaceMembership(ctx, document.workspaceId)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(DocumentSegment)
-        .where(eq(DocumentSegment.documentId, input.documentId))
+      const conditions: SQL<unknown>[] = [eq(DocumentSegment.documentId, input.documentId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get segment count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(DocumentSegment.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(DocumentSegment.id, input.before))
       }
 
       const segments = await ctx.db
         .select()
         .from(DocumentSegment)
-        .where(eq(DocumentSegment.documentId, input.documentId))
-        .orderBy(desc(DocumentSegment.index))
-        .offset(input.offset)
-        .limit(input.limit)
+        .where(and(...conditions))
+        .orderBy(desc(DocumentSegment.id))
+        .limit(input.limit + 1)
+
+      const hasMore = segments.length > input.limit
+      if (hasMore) {
+        segments.pop()
+      }
 
       return {
         segments,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -705,7 +711,8 @@ export const datasetRouter = {
     .input(
       z.object({
         segmentId: z.string(),
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
@@ -723,30 +730,31 @@ export const datasetRouter = {
 
       await verifyWorkspaceMembership(ctx, segment.workspaceId)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(DocumentChunk)
-        .where(eq(DocumentChunk.segmentId, input.segmentId))
+      const conditions: SQL<unknown>[] = [eq(DocumentChunk.segmentId, input.segmentId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get chunk count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(DocumentChunk.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(DocumentChunk.id, input.before))
       }
 
       const chunks = await ctx.db
         .select()
         .from(DocumentChunk)
-        .where(eq(DocumentChunk.segmentId, input.segmentId))
-        .orderBy(desc(DocumentChunk.index))
-        .offset(input.offset)
-        .limit(input.limit)
+        .where(and(...conditions))
+        .orderBy(desc(DocumentChunk.id))
+        .limit(input.limit + 1)
+
+      const hasMore = chunks.length > input.limit
+      if (hasMore) {
+        chunks.pop()
+      }
 
       return {
         chunks,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),

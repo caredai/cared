@@ -1,9 +1,7 @@
-import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { count, desc, eq, inArray } from '@mindworld/db'
+import { and, desc, eq, gt, inArray, lt, SQL } from '@mindworld/db'
 import {
-  App,
   AppsToCategories,
   AppsToTags,
   AppVersion,
@@ -19,35 +17,26 @@ export const appRouter = {
    * List all apps across all workspaces.
    * Only accessible by admin users.
    * @param input - Pagination parameters
-   * @returns List of apps with total count and pagination info
-   * @throws {TRPCError} If failed to get app count
+   * @returns List of apps with hasMore flag
    */
   list: adminProcedure
     .input(
       z.object({
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const counts = await ctx.db.select({ count: count() }).from(App)
-
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get app count',
-        })
-      }
-
-      const apps = await getApps(ctx, {
-        offset: input.offset,
+      const result = await getApps(ctx, {
+        after: input.after,
+        before: input.before,
         limit: input.limit,
       })
 
       return {
-        apps,
-        total: counts[0].count,
-        offset: input.offset,
+        apps: result.apps,
+        hasMore: result.hasMore,
         limit: input.limit,
       }
     }),
@@ -56,41 +45,28 @@ export const appRouter = {
    * List all apps in a specific category across all workspaces.
    * Only accessible by admin users.
    * @param input - Object containing categoryId and pagination parameters
-   * @returns List of apps in the category with total count and pagination info
-   * @throws {TRPCError} If failed to get app count
+   * @returns List of apps in the category
    */
   listByCategory: adminProcedure
     .input(
       z.object({
         categoryId: z.string(),
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(AppsToCategories)
-        .innerJoin(App, eq(App.id, AppsToCategories.appId))
-        .where(eq(AppsToCategories.categoryId, input.categoryId))
-
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get app count',
-        })
-      }
-
-      const apps = await getApps(ctx, {
+      const result = await getApps(ctx, {
         where: eq(AppsToCategories.categoryId, input.categoryId),
-        offset: input.offset,
+        after: input.after,
+        before: input.before,
         limit: input.limit,
       })
 
       return {
-        apps,
-        total: counts[0].count,
-        offset: input.offset,
+        apps: result.apps,
+        hasMore: result.hasMore,
         limit: input.limit,
       }
     }),
@@ -99,41 +75,28 @@ export const appRouter = {
    * List all apps with any of the specified tags across all workspaces.
    * Only accessible by admin users.
    * @param input - Object containing tags array and pagination parameters
-   * @returns List of apps with matching tags, total count and pagination info
-   * @throws {TRPCError} If failed to get app count
+   * @returns List of apps with matching tags
    */
   listByTags: adminProcedure
     .input(
       z.object({
         tags: z.array(z.string()).min(1).max(10),
-        offset: z.number().min(0).default(0),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(App)
-        .innerJoin(AppsToTags, eq(App.id, AppsToTags.appId))
-        .where(inArray(AppsToTags.tag, input.tags))
-
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get app count',
-        })
-      }
-
-      const apps = await getApps(ctx, {
+      const result = await getApps(ctx, {
         where: inArray(AppsToTags.tag, input.tags),
-        offset: input.offset,
+        after: input.after,
+        before: input.before,
         limit: input.limit,
       })
 
       return {
-        apps,
-        total: counts[0].count,
-        offset: input.offset,
+        apps: result.apps,
+        hasMore: result.hasMore,
         limit: input.limit,
       }
     }),
@@ -142,44 +105,45 @@ export const appRouter = {
    * List all versions of an app across all workspaces.
    * Only accessible by admin users.
    * @param input - Object containing app ID and pagination parameters
-   * @returns List of app versions with total count and pagination info
-   * @throws {TRPCError} If app not found or failed to get version count
+   * @returns List of app versions sorted by version number
+   * @throws {TRPCError} If app not found
    */
   listVersions: adminProcedure
     .input(
       z.object({
         id: z.string(),
-        offset: z.number().min(0).default(0),
+        after: z.number().optional(),
+        before: z.number().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
       await getAppById(ctx, input.id)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(AppVersion)
-        .where(eq(AppVersion.appId, input.id))
+      const conditions: SQL<unknown>[] = [eq(AppVersion.appId, input.id)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get version count',
-        })
+      if (typeof input.after === 'number') {
+        conditions.push(gt(AppVersion.version, input.after))
+      }
+      if (typeof input.before === 'number') {
+        conditions.push(lt(AppVersion.version, input.before))
       }
 
       const versions = await ctx.db
         .select()
         .from(AppVersion)
-        .where(eq(AppVersion.appId, input.id))
+        .where(and(...conditions))
         .orderBy(desc(AppVersion.version))
-        .offset(input.offset)
-        .limit(input.limit)
+        .limit(input.limit + 1)
+
+      const hasMore = versions.length > input.limit
+      if (hasMore) {
+        versions.pop()
+      }
 
       return {
         versions,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),

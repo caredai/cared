@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { and, count, desc, eq } from '@mindworld/db'
+import { and, desc, eq, gt, lt, SQL } from '@mindworld/db'
 import {
   Agent,
   AgentVersion,
@@ -63,40 +63,42 @@ export const agentRouter = {
   /**
    * List all agents for an app.
    * @param input - Object containing app ID and pagination parameters
-   * @returns List of agents with total count
+   * @returns List of agents with hasMore flag
    */
   listByApp: protectedProcedure
     .input(
       z.object({
-        appId: z.string().uuid(),
-        offset: z.number().min(0).default(0),
+        appId: z.string().min(32),
+        after: z.string().optional(),
+        before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(Agent)
-        .where(eq(Agent.appId, input.appId))
+      const conditions: SQL<unknown>[] = [eq(Agent.appId, input.appId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get agent count',
-        })
+      // Add cursor conditions
+      if (input.after) {
+        conditions.push(gt(Agent.id, input.after))
+      }
+      if (input.before) {
+        conditions.push(lt(Agent.id, input.before))
       }
 
       const agents = await ctx.db.query.Agent.findMany({
-        where: eq(Agent.appId, input.appId),
-        orderBy: desc(Agent.createdAt),
-        offset: input.offset,
-        limit: input.limit,
+        where: and(...conditions),
+        orderBy: desc(Agent.id),
+        limit: input.limit + 1,
       })
+
+      const hasMore = agents.length > input.limit
+      if (hasMore) {
+        agents.pop()
+      }
 
       return {
         agents,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -109,38 +111,40 @@ export const agentRouter = {
   listVersionsByApp: protectedProcedure
     .input(
       z.object({
-        agentId: z.string().uuid(),
-        offset: z.number().min(0).default(0),
+        agentId: z.string().min(32),
+        after: z.number().optional(),
+        before: z.number().optional(),
         limit: z.number().min(1).max(100).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
       await getAgentById(ctx, input.agentId)
 
-      const counts = await ctx.db
-        .select({ count: count() })
-        .from(AgentVersion)
-        .where(eq(AgentVersion.agentId, input.agentId))
+      const conditions: SQL<unknown>[] = [eq(AgentVersion.agentId, input.agentId)]
 
-      if (!counts[0]) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get version count',
-        })
+      // Add cursor conditions
+      if (typeof input.after === 'number') {
+        conditions.push(gt(AgentVersion.version, input.after))
+      }
+      if (typeof input.before === 'number') {
+        conditions.push(lt(AgentVersion.version, input.before))
       }
 
       const versions = await ctx.db
         .select()
         .from(AgentVersion)
-        .where(eq(AgentVersion.agentId, input.agentId))
+        .where(and(...conditions))
         .orderBy(desc(AgentVersion.version))
-        .offset(input.offset)
-        .limit(input.limit)
+        .limit(input.limit + 1)
+
+      const hasMore = versions.length > input.limit
+      if (hasMore) {
+        versions.pop()
+      }
 
       return {
         versions,
-        total: counts[0].count,
-        offset: input.offset,
+        hasMore,
         limit: input.limit,
       }
     }),
@@ -153,7 +157,7 @@ export const agentRouter = {
   byId: protectedProcedure
     .input(
       z.object({
-        id: z.string().uuid(),
+        id: z.string().min(32),
       }),
     )
     .query(async ({ ctx, input }) => {

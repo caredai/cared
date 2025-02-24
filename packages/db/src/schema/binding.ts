@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, integer, pgTable, primaryKey, uuid } from 'drizzle-orm/pg-core'
+import { index, integer, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -12,13 +12,13 @@ import { timestamps, timestampsIndices, timestampsOmits } from './utils'
 export const AppVersionToDataset = pgTable(
   'app_version_to_dataset',
   {
-    appId: uuid()
+    appId: text()
       .notNull()
       .references(() => AppVersion.appId),
     version: integer()
       .notNull()
       .references(() => AppVersion.version),
-    datasetId: uuid()
+    datasetId: text()
       .notNull()
       .references(() => Dataset.id),
     ...timestamps,
@@ -33,9 +33,9 @@ export const AppVersionToDataset = pgTable(
 export type AppVersionToDataset = InferSelectModel<typeof AppVersionToDataset>
 
 export const CreateAppVersionToDatasetSchema = createInsertSchema(AppVersionToDataset, {
-  appId: z.string().uuid(),
+  appId: z.string(),
   version: z.number().int(),
-  datasetId: z.string().uuid(),
+  datasetId: z.string(),
 }).omit({
   ...timestampsOmits,
 })
@@ -44,13 +44,13 @@ export const CreateAppVersionToDatasetSchema = createInsertSchema(AppVersionToDa
 export const AgentVersionToDataset = pgTable(
   'agent_version_to_dataset',
   {
-    agentId: uuid()
+    agentId: text()
       .notNull()
       .references(() => AgentVersion.agentId),
     version: integer()
       .notNull()
       .references(() => AgentVersion.version),
-    datasetId: uuid()
+    datasetId: text()
       .notNull()
       .references(() => Dataset.id),
     ...timestamps,
@@ -65,9 +65,9 @@ export const AgentVersionToDataset = pgTable(
 export type AgentVersionToDataset = InferSelectModel<typeof AgentVersionToDataset>
 
 export const CreateAgentVersionToDatasetSchema = createInsertSchema(AgentVersionToDataset, {
-  agentId: z.string().uuid(),
+  agentId: z.string(),
   version: z.number().int(),
-  datasetId: z.string().uuid(),
+  datasetId: z.string(),
 }).omit({
   ...timestampsOmits,
 })
