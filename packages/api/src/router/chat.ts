@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { and, desc, eq, gte, gt, lt, SQL } from '@mindworld/db'
+import { and, desc, eq, gt, gte, lt, SQL } from '@mindworld/db'
 import {
   Chat,
   CreateChatSchema,
@@ -130,27 +130,38 @@ export const chatRouter = {
    * @param input - The chat data following the {@link CreateChatSchema}
    * @returns The created chat
    */
-  create: protectedProcedure.input(CreateChatSchema.extend({
-    appVersion: z.number().int().or(z.enum(["latest", "draft"])).optional()
-  })).mutation(async ({ ctx, input }) => {
-    await getAppById(ctx, input.appId)
+  create: protectedProcedure
+    .input(
+      CreateChatSchema.extend({
+        appVersion: z
+          .number()
+          .int()
+          .or(z.enum(['latest', 'draft']))
+          .optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await getAppById(ctx, input.appId)
 
-    const appVersion = await getAppVersion(ctx, input.appId, input.appVersion)
+      const appVersion = await getAppVersion(ctx, input.appId, input.appVersion)
 
-    const [chat] = await ctx.db.insert(Chat).values({
-      ...input,
-      appVersion: appVersion.version
-    }).returning()
+      const [chat] = await ctx.db
+        .insert(Chat)
+        .values({
+          ...input,
+          appVersion: appVersion.version,
+        })
+        .returning()
 
-    if (!chat) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create chat',
-      })
-    }
+      if (!chat) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create chat',
+        })
+      }
 
-    return { chat }
-  }),
+      return { chat }
+    }),
 
   /**
    * Update an existing chat.

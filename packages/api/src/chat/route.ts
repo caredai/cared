@@ -7,10 +7,11 @@ import {Chat, Message as DbMessage} from '@mindworld/db/schema'
 
 import { generateChatTitleFromUserMessage } from './actions'
 import { createCaller } from '..'
+import {getModel} from '@mindworld/providers'
 
 export async function POST(request: Request) {
   const { id, appId, appVersion, messages } = (await request.json()) as {
-    id: string
+    id?: string
     appId?: string
     appVersion?: number | 'latest' | 'draft'
     messages: Message[]
@@ -35,9 +36,12 @@ export async function POST(request: Request) {
     return new Response('User message already exists', { status: 400 })
   }
 
-  let chat = await db.query.Chat.findFirst({
-    where: eq(Chat.id, id),
-  })
+  let chat: Chat | undefined
+  if (id) {
+    chat = await db.query.Chat.findFirst({
+      where: eq(Chat.id, id),
+    })
+  }
   if (!chat) {
     if (!appId) {
       return new Response('Missing app id', { status: 400})
@@ -64,7 +68,13 @@ export async function POST(request: Request) {
       version: chat.appVersion,
     })
 
-    const title = await generateChatTitleFromUserMessage({ message: userMessage, app })
+    // TODO: use the main agent in the app
+    const languageModel = getModel(app.metadata.languageModel, 'language')
+    if (!languageModel) {
+      throw new Error(`Invalid language model configuration for app ${app.appId}/${app.version}`)
+    }
+
+    const title = await generateChatTitleFromUserMessage({ message: userMessage, model: languageModel })
 
     await caller.chat.update({
       id: chat.id,

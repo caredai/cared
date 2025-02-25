@@ -1,24 +1,16 @@
+import type { LanguageModelV1 } from '@ai-sdk/provider'
 import type { Message } from 'ai'
 import { generateText } from 'ai'
 
-import type { AppVersion } from '@mindworld/db/schema'
-import { getModel } from '@mindworld/providers'
-
 export async function generateChatTitleFromUserMessage({
   message,
-  app,
+  model,
 }: {
   message: Message
-  app: AppVersion
+  model: LanguageModelV1
 }) {
-  // TODO: use the main agent in the app
-  const languageModel = getModel(app.metadata.languageModel, 'language')
-  if (!languageModel) {
-    throw new Error(`Invalid language model configuration for app ${app.appId}/${app.version}`)
-  }
-
   const { text: title } = await generateText({
-    model: languageModel,
+    model,
     system: `\n
     - you will generate a short title based on the first message a user begins a conversation with
     - ensure it is not more than 80 characters long

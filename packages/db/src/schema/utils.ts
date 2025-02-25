@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { index, pgEnum, timestamp } from 'drizzle-orm/pg-core'
-import type { z } from 'zod';
+import { z } from 'zod';
 import {v7} from 'uuid'
 
 export function generateId(prefix: string) {
@@ -19,15 +19,24 @@ export function parseTimestampFromId(id: string) {
   return Number.parseInt(id_.slice(0, 12), 16) // Unix timestamp in milliseconds
 }
 
-export function validateId(id: string, prefix: string) {
-  const prefix_ = id.split('_')[0]
-  if (prefix_ !== prefix) {
-    throw new Error(`Invalid ID prefix: should be '${prefix}'`)
-  }
-  const timestamp = parseTimestampFromId(id)
-  if (Math.abs(Date.now() - timestamp) > 1000 * 10) {
-    throw new Error('Invalid ID timestamp: should be within 10 seconds of current time')
-  }
+export function makeIdValid(prefix: string) {
+  return z.string().superRefine((id, ctx) => {
+    const prefix_ = id.split('_')[0]
+    if (prefix_ !== prefix) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Invalid ID prefix: should be '${prefix}_'`,
+      });
+      return z.NEVER
+    }
+    const timestamp = parseTimestampFromId(id)
+    if (Math.abs(Date.now() - timestamp) > 1000 * 10) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Invalid ID timestamp: should be within 10 seconds of current time',
+      });
+    }
+  })
 }
 
 export function makeObjectNonempty<T extends z.ZodRawShape>(schema: z.ZodObject<T>) {

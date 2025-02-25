@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { and, desc, eq, gt, lt, SQL } from '@mindworld/db'
+import { and, desc, eq, gt, inArray, lt, SQL } from '@mindworld/db'
 import {
   Agent,
   AgentVersion,
@@ -104,11 +104,49 @@ export const agentRouter = {
     }),
 
   /**
+   * List all agent versions for a specific app version.
+   * @param input - Object containing app ID and version
+   * @returns List of agent versions bound to the specified app version
+   */
+  listByAppVersion: protectedProcedure
+    .input(
+      z.object({
+        appId: z.string().min(32),
+        version: z.number(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      // Verify app exists
+      await getAppById(ctx, input.appId)
+
+      const agents = await ctx.db.query.Agent.findMany({
+        where: eq(Agent.appId, input.appId),
+      })
+
+      const agentIds = agents.map(agent => agent.id)
+
+      const versions = await ctx.db
+        .select()
+        .from(AgentVersion)
+        .where(
+          and(
+            inArray(AgentVersion.agentId, agentIds),
+            eq(AgentVersion.version, input.version)
+          )
+        )
+        .orderBy(AgentVersion.agentId)
+
+      return {
+        versions,
+      }
+    }),
+
+  /**
    * List all versions of an agent.
    * @param input - Object containing agent ID and pagination parameters
    * @returns List of agent versions sorted by version number
    */
-  listVersionsByApp: protectedProcedure
+  listVersions: protectedProcedure
     .input(
       z.object({
         agentId: z.string().min(32),

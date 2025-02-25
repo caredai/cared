@@ -17,7 +17,7 @@ import { z } from 'zod'
 import { Agent } from './agent'
 import { App, AppVersion } from './app'
 import {
-  generateId,
+  generateId, makeIdValid,
   makeObjectNonempty,
   timestamps,
   timestampsIndices,
@@ -74,12 +74,12 @@ export const Chat = pgTable(
 export type Chat = InferSelectModel<typeof Chat>
 
 export const CreateChatSchema = createInsertSchema(Chat, {
+  id: makeIdValid('chat').optional(),
   appId: z.string(),
   appVersion: z.number().int(),
   userId: z.string(),
   metadata: chatMetadataZod,
 }).omit({
-  id: true,
   ...timestampsOmits,
 })
 

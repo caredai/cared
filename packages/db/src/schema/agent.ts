@@ -14,6 +14,10 @@ export interface AgentMetadata {
   embeddingModel?: string // used for embedding memories
   rerankModel?: string // used for reranking memories
 
+  languageModelSettings?: {
+    systemPrompt?: string
+  }
+
   [key: string]: unknown
 }
 
@@ -24,6 +28,11 @@ const agentMetadataZod = z
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),
+    languageModelSettings: z
+      .object({
+        systemPrompt: z.string().optional(),
+      })
+      .optional(),
   })
   .catchall(z.unknown())
 
