@@ -47,28 +47,6 @@ export async function getAppById(ctx: Context, id: string) {
 }
 
 /**
- * Get draft version of an app.
- * @param ctx - The context object
- * @param appId - The app ID
- * @returns The draft version if found
- * @throws {TRPCError} If draft version not found
- */
-export async function getDraftVersion(ctx: Context, appId: string) {
-  const draft = await ctx.db.query.AppVersion.findFirst({
-    where: and(eq(AppVersion.appId, appId), eq(AppVersion.version, DRAFT_VERSION)),
-  })
-
-  if (!draft) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Draft version not found',
-    })
-  }
-
-  return draft
-}
-
-/**
  * Get apps with their categories and tags.
  * @param ctx - The context object
  * @param baseQuery - Query parameters including where clause and limit
@@ -468,9 +446,9 @@ export const appRouter = {
       const appVersionValues = {
         appId: app.id,
         version: DRAFT_VERSION,
-        type: appValues.type ?? 'single-agent',
-        name: appValues.name,
-        metadata: appValues.metadata,
+        type: app.type,
+        name: app.name,
+        metadata: app.metadata,
       }
 
       const [draft] = await tx.insert(AppVersion).values(appVersionValues).returning()
@@ -503,7 +481,10 @@ export const appRouter = {
       const { id, ...update } = input
       const app = await getAppById(ctx, id)
       await verifyWorkspaceMembership(ctx, app.workspaceId)
-      const draft = await getDraftVersion(ctx, id)
+
+      const draft = await getAppVersion(ctx, id, 'draft')
+      // Check if there's any published version
+      const publishedVersion = await getAppVersion(ctx, id, 'latest').catch(() => undefined)
 
       const updateValues = {
         ...update,
@@ -511,24 +492,44 @@ export const appRouter = {
         metadata: mergeWithoutUndefined<AppMetadata>(draft.metadata, update.metadata),
       }
 
-      // Update only the draft version
-      const [updatedDraft] = await ctx.db
-        .update(AppVersion)
-        .set(updateValues)
-        .where(and(eq(AppVersion.appId, id), eq(AppVersion.version, DRAFT_VERSION)))
-        .returning()
+      return ctx.db.transaction(async (tx) => {
+        // Update draft version
+        const [updatedDraft] = await tx
+          .update(AppVersion)
+          .set(updateValues)
+          .where(and(eq(AppVersion.appId, id), eq(AppVersion.version, DRAFT_VERSION)))
+          .returning()
 
-      if (!updatedDraft) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update draft version',
-        })
-      }
+        if (!updatedDraft) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to update draft version',
+          })
+        }
 
-      return {
-        app,
-        draft: updatedDraft,
-      }
+        // If no published version exists, update the app's main record as well
+        let updatedApp = app
+        if (!publishedVersion) {
+          const [newApp] = await tx
+            .update(App)
+            .set(updateValues)
+            .where(eq(App.id, id))
+            .returning()
+
+          if (!newApp) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to update app',
+            })
+          }
+          updatedApp = newApp
+        }
+
+        return {
+          app: updatedApp,
+          draft: updatedDraft,
+        }
+      })
     }),
 
   /**
@@ -593,7 +594,7 @@ export const appRouter = {
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input)
       await verifyWorkspaceMembership(ctx, app.workspaceId)
-      const draftVersion = await getDraftVersion(ctx, input)
+      const draftVersion = await getAppVersion(ctx, input, 'draft')
 
       return ctx.db.transaction(async (tx) => {
         // Create new published version with current timestamp

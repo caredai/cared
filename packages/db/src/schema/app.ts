@@ -26,6 +26,12 @@ export interface AppMetadata {
   embeddingModel: string // used for embedding memories
   rerankModel: string // used for reranking memories
 
+  languageModelSettings?: {
+    systemPrompt?: string
+  }
+
+  datasetBindings?: string[]
+
   [key: string]: unknown
 }
 
@@ -46,7 +52,8 @@ export const App = pgTable(
     workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
-    // type, name, metadata are always the same as the latest published version in the app version table
+    // Column type, name, metadata are always the same as the latest published version in the app version table.
+    // If no version is published, they are always the same as the draft version.
     type: appTypeEnum().notNull().default('single-agent'),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<AppMetadata>().notNull(),
@@ -74,10 +81,10 @@ export const CreateAppSchema = createInsertSchema(App, {
 
 export const UpdateAppSchema = createUpdateSchema(App, {
   id: z.string(),
-  workspaceId: z.string(),
   name: z.string().max(255).optional(),
   metadata: appMetadataZod.optional(),
 }).omit({
+  workspaceId: true,
   type: true,
   ...timestampsOmits,
 })

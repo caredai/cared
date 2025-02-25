@@ -3,7 +3,7 @@ import type { Tool } from 'ai'
 export interface Context {
   userId: string
   appId: string
-  version: number
+  preview: boolean
   agentId: string
   chatId: string
 }

@@ -38,25 +38,52 @@ async function getAgentById(ctx: Context, id: string) {
 }
 
 /**
- * Get draft version of an agent.
+ * Get an agent version by agent ID and version.
  * @param ctx - The context object
  * @param agentId - The agent ID
- * @returns The draft version if found
- * @throws {TRPCError} If draft version not found
+ * @param version - The version number or 'latest' or 'draft'
+ * @returns The agent version if found
+ * @throws {TRPCError} If agent version not found
  */
-async function getDraftVersion(ctx: Context, agentId: string) {
-  const draft = await ctx.db.query.AgentVersion.findFirst({
-    where: and(eq(AgentVersion.agentId, agentId), eq(AgentVersion.version, DRAFT_VERSION)),
-  })
+export async function getAgentVersion(ctx: Context, agentId: string, version?: number | 'latest' | 'draft') {
+  let agentVersion;
 
-  if (!draft) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Draft version not found',
-    })
+  if (!version) {
+    version = 'latest'
   }
 
-  return draft
+  if (version === 'draft') {
+    agentVersion = await ctx.db.query.AgentVersion.findFirst({
+      where: and(
+        eq(AgentVersion.agentId, agentId),
+        eq(AgentVersion.version, DRAFT_VERSION)
+      ),
+    });
+  } else if (version === 'latest') {
+    agentVersion = await ctx.db.query.AgentVersion.findFirst({
+      where: and(
+        eq(AgentVersion.agentId, agentId),
+        lt(AgentVersion.version, DRAFT_VERSION) // Exclude draft version
+      ),
+      orderBy: desc(AgentVersion.version),
+    });
+  } else {
+    agentVersion = await ctx.db.query.AgentVersion.findFirst({
+      where: and(
+        eq(AgentVersion.agentId, agentId),
+        eq(AgentVersion.version, version)
+      ),
+    });
+  }
+
+  if (!agentVersion) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: `Agent version '${version}' not found for agent ${agentId}`,
+    });
+  }
+
+  return agentVersion;
 }
 
 export const agentRouter = {
@@ -258,7 +285,9 @@ export const agentRouter = {
     const { id, ...update } = input
 
     const agent = await getAgentById(ctx, id)
-    const draft = await getDraftVersion(ctx, id)
+    const draft = await getAgentVersion(ctx, id, 'draft')
+    // Check if there's any published version
+    const publishedVersion = await getAgentVersion(ctx, id, 'latest').catch(() => undefined)
 
     // Merge new metadata with existing metadata
     if (update.metadata) {
@@ -268,23 +297,43 @@ export const agentRouter = {
       }
     }
 
-    // Update only the draft version
-    const [updatedDraft] = await ctx.db
-      .update(AgentVersion)
-      .set(update)
-      .where(and(eq(AgentVersion.agentId, id), eq(AgentVersion.version, DRAFT_VERSION)))
-      .returning()
+    return ctx.db.transaction(async (tx) => {
+      // Update draft version
+      const [updatedDraft] = await tx
+        .update(AgentVersion)
+        .set(update)
+        .where(and(eq(AgentVersion.agentId, id), eq(AgentVersion.version, DRAFT_VERSION)))
+        .returning()
 
-    if (!updatedDraft) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to update draft version',
-      })
-    }
+      if (!updatedDraft) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update draft version',
+        })
+      }
 
-    return {
-      agent,
-      draft: updatedDraft,
-    }
+      // If no published version exists, update the agent's main record as well
+      let updatedAgent = agent
+      if (!publishedVersion) {
+        const [newAgent] = await tx
+          .update(Agent)
+          .set(update)
+          .where(eq(Agent.id, id))
+          .returning()
+
+        if (!newAgent) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to update agent',
+          })
+        }
+        updatedAgent = newAgent
+      }
+
+      return {
+        agent: updatedAgent,
+        draft: updatedDraft,
+      }
+    })
   }),
 }

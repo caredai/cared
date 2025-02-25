@@ -3,7 +3,15 @@ import { z } from 'zod'
 
 import { and, eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
-import { AgentVersion, AppVersion, Chat, Memory } from '@mindworld/db/schema'
+import {
+  Agent,
+  AgentVersion,
+  App,
+  AppVersion,
+  Chat,
+  DRAFT_VERSION,
+  Memory,
+} from '@mindworld/db/schema'
 import { getTextEmbeddingModelInfo } from '@mindworld/providers'
 import { embed } from '@mindworld/providers/embed'
 import { CohereReranker } from '@mindworld/providers/rerank'
@@ -29,21 +37,29 @@ async function getEmbeddingModel(ctx: Context, scope: 'chat' | 'app') {
     return chat.metadata.embeddingModel
   }
 
-  // Get agent version info
-  const agentVersion = await db.query.AgentVersion.findFirst({
-    where: and(eq(AgentVersion.agentId, ctx.agentId), eq(AgentVersion.version, ctx.version)),
-  })
+  // Get agent info
+  const agent = ctx.preview
+    ? await db.query.AgentVersion.findFirst({
+        where: and(eq(AgentVersion.agentId, ctx.agentId), eq(AgentVersion.version, DRAFT_VERSION)),
+      })
+    : await db.query.Agent.findFirst({
+        where: eq(Agent.id, ctx.agentId),
+      })
 
-  if (agentVersion?.metadata.embeddingModel) {
-    return agentVersion.metadata.embeddingModel
+  if (agent?.metadata.embeddingModel) {
+    return agent.metadata.embeddingModel
   }
 
-  // Get app version info
-  const appVersion = await db.query.AppVersion.findFirst({
-    where: and(eq(AppVersion.appId, ctx.appId), eq(AppVersion.version, ctx.version)),
-  })
+  // Get app info
+  const app = ctx.preview
+    ? await db.query.AppVersion.findFirst({
+        where: and(eq(AppVersion.appId, ctx.appId), eq(AppVersion.version, DRAFT_VERSION)),
+      })
+    : await db.query.App.findFirst({
+        where: eq(App.id, ctx.appId),
+      })
 
-  return appVersion?.metadata.embeddingModel
+  return app?.metadata.embeddingModel
 }
 
 function storeMemory(ctx: Context) {

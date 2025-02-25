@@ -18,6 +18,8 @@ export interface AgentMetadata {
     systemPrompt?: string
   }
 
+  datasetBindings?: string[]
+
   [key: string]: unknown
 }
 
