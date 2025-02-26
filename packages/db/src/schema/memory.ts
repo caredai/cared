@@ -5,8 +5,8 @@ import { z } from 'zod'
 
 import { App } from './app'
 import { Chat } from './chat'
-import { User } from './workspace'
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
+import { User } from './workspace'
 
 export type MemoryMetadata = Record<string, unknown>
 
@@ -15,7 +15,10 @@ const memoryMetadataZod = z.object({}).catchall(z.unknown())
 export const Memory = pgTable(
   'memory',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('mem')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('mem')),
     // The user whom the memory belongs to.
     userId: text()
       .notNull()

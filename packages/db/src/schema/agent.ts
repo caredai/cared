@@ -41,7 +41,10 @@ const agentMetadataZod = z
 export const Agent = pgTable(
   'agent',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('agent')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('agent')),
     appId: text()
       .notNull()
       .references(() => App.id),

@@ -1,23 +1,15 @@
 import type { CoreMessage } from 'ai'
 import type { InferSelectModel } from 'drizzle-orm'
-import {
-  boolean,
-  foreignKey,
-  index,
-  integer,
-  jsonb,
-  pgEnum,
-  pgTable,
-  primaryKey,
-  text,
-} from 'drizzle-orm/pg-core'
+import { coreMessageSchema } from 'ai'
+import { boolean, index, jsonb, pgEnum, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import { Agent } from './agent'
-import { App, AppVersion } from './app'
+import { App } from './app'
 import {
-  generateId, makeIdValid,
+  generateId,
+  makeIdValid,
   makeObjectNonempty,
   timestamps,
   timestampsIndices,
@@ -50,24 +42,26 @@ const chatMetadataZod = z
 export const Chat = pgTable(
   'chat',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('chat')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('chat')),
     appId: text()
       .notNull()
       .references(() => App.id),
-    appVersion: integer().notNull(),
     userId: text()
       .notNull()
       .references(() => User.id),
+    // Whether the chat is in debug mode.
+    // Only workspace owners and members (with RBAC) can create debug chats.
+    // Only one debug chat is allowed per app per user.
+    debug: boolean().notNull().default(false),
     metadata: jsonb().$type<ChatMetadata>().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.appId, table.appVersion),
-    foreignKey({
-      columns: [table.appId, table.appVersion],
-      foreignColumns: [AppVersion.appId, AppVersion.version],
-    }),
-    index().on(table.userId, table.appId, table.appVersion),
+    index().on(table.appId),
+    index().on(table.userId, table.appId, table.debug),
   ],
 )
 
@@ -76,8 +70,8 @@ export type Chat = InferSelectModel<typeof Chat>
 export const CreateChatSchema = createInsertSchema(Chat, {
   id: makeIdValid('chat').optional(),
   appId: z.string(),
-  appVersion: z.number().int(),
   userId: z.string(),
+  debug: z.boolean().optional(),
   metadata: chatMetadataZod,
 }).omit({
   ...timestampsOmits,
@@ -88,7 +82,6 @@ export const UpdateChatSchema = createUpdateSchema(Chat, {
   metadata: makeObjectNonempty(chatMetadataZod).optional(),
 }).omit({
   appId: true,
-  appVersion: true,
   userId: true,
   ...timestampsOmits,
 })
@@ -98,10 +91,14 @@ export const messageRoleEnum = pgEnum('role', messageRoleEnumValues)
 
 export type MessageContent = CoreMessage['content']
 
+export function generateMessageId() {
+  return generateId('msg')
+}
+
 export const Message = pgTable(
   'message',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('msg')),
+    id: text().primaryKey().notNull().$defaultFn(generateMessageId),
     chatId: text()
       .notNull()
       .references(() => Chat.id),
@@ -119,31 +116,22 @@ export const Message = pgTable(
 
 export type Message = InferSelectModel<typeof Message>
 
-export const CreateMessageSchema = createInsertSchema(Message, {
-  chatId: z.string(),
-  role: z.enum(messageRoleEnumValues),
-  agentId: z.string().optional(),
-  content: z.record(z.unknown()),
-}).omit({
-  id: true,
-  ...timestampsOmits,
-})
-
-export const UpdateMessageSchema = createUpdateSchema(Message, {
-  id: z.string(),
-  content: z.record(z.unknown()),
-}).omit({
-  chatId: true,
-  role: true,
-  agentId: true,
-  ...timestampsOmits,
-})
+export const CreateMessageSchema = z
+  .object({
+    id: makeIdValid('msg').optional(),
+    chatId: z.string(),
+    agentId: z.string().optional(),
+  })
+  .and(coreMessageSchema)
 
 // Message summary table to store periodic summaries of chat messages
 export const MessageSummary = pgTable(
   'message_summary',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('msum')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('msum')),
     chatId: text()
       .notNull()
       .references(() => Chat.id),

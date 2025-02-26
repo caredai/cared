@@ -1,7 +1,8 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { and, desc, eq, gt, inArray, lt, SQL } from '@mindworld/db'
+import type { SQL } from '@mindworld/db'
+import { and, asc, desc, eq, gt, inArray, lt } from '@mindworld/db'
 import {
   Agent,
   AgentVersion,
@@ -22,7 +23,7 @@ import { getAppById } from './app'
  * @returns The agent if found
  * @throws {TRPCError} If agent not found
  */
-async function getAgentById(ctx: Context, id: string) {
+export async function getAgentById(ctx: Context, id: string) {
   const result = await ctx.db.query.Agent.findFirst({
     where: eq(Agent.id, id),
   })
@@ -45,8 +46,12 @@ async function getAgentById(ctx: Context, id: string) {
  * @returns The agent version if found
  * @throws {TRPCError} If agent version not found
  */
-export async function getAgentVersion(ctx: Context, agentId: string, version?: number | 'latest' | 'draft') {
-  let agentVersion;
+export async function getAgentVersion(
+  ctx: Context,
+  agentId: string,
+  version?: number | 'latest' | 'draft',
+) {
+  let agentVersion
 
   if (!version) {
     version = 'latest'
@@ -54,36 +59,30 @@ export async function getAgentVersion(ctx: Context, agentId: string, version?: n
 
   if (version === 'draft') {
     agentVersion = await ctx.db.query.AgentVersion.findFirst({
-      where: and(
-        eq(AgentVersion.agentId, agentId),
-        eq(AgentVersion.version, DRAFT_VERSION)
-      ),
-    });
+      where: and(eq(AgentVersion.agentId, agentId), eq(AgentVersion.version, DRAFT_VERSION)),
+    })
   } else if (version === 'latest') {
     agentVersion = await ctx.db.query.AgentVersion.findFirst({
       where: and(
         eq(AgentVersion.agentId, agentId),
-        lt(AgentVersion.version, DRAFT_VERSION) // Exclude draft version
+        lt(AgentVersion.version, DRAFT_VERSION), // Exclude draft version
       ),
       orderBy: desc(AgentVersion.version),
-    });
+    })
   } else {
     agentVersion = await ctx.db.query.AgentVersion.findFirst({
-      where: and(
-        eq(AgentVersion.agentId, agentId),
-        eq(AgentVersion.version, version)
-      ),
-    });
+      where: and(eq(AgentVersion.agentId, agentId), eq(AgentVersion.version, version)),
+    })
   }
 
   if (!agentVersion) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `Agent version '${version}' not found for agent ${agentId}`,
-    });
+    })
   }
 
-  return agentVersion;
+  return agentVersion
 }
 
 export const agentRouter = {
@@ -114,7 +113,7 @@ export const agentRouter = {
 
       const agents = await ctx.db.query.Agent.findMany({
         where: and(...conditions),
-        orderBy: desc(Agent.id),
+        orderBy: asc(Agent.id),
         limit: input.limit + 1,
       })
 
@@ -150,16 +149,13 @@ export const agentRouter = {
         where: eq(Agent.appId, input.appId),
       })
 
-      const agentIds = agents.map(agent => agent.id)
+      const agentIds = agents.map((agent) => agent.id)
 
       const versions = await ctx.db
         .select()
         .from(AgentVersion)
         .where(
-          and(
-            inArray(AgentVersion.agentId, agentIds),
-            eq(AgentVersion.version, input.version)
-          )
+          and(inArray(AgentVersion.agentId, agentIds), eq(AgentVersion.version, input.version)),
         )
         .orderBy(AgentVersion.agentId)
 
@@ -216,19 +212,13 @@ export const agentRouter = {
 
   /**
    * Get a single agent by ID.
-   * @param input - Object containing agent ID
+   * @param input - The agent ID
    * @returns The agent if found
    */
-  byId: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().min(32),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const agent = await getAgentById(ctx, input.id)
-      return { agent }
-    }),
+  byId: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
+    const agent = await getAgentById(ctx, input)
+    return { agent }
+  }),
 
   /**
    * Create a new agent for an app.
@@ -315,11 +305,7 @@ export const agentRouter = {
       // If no published version exists, update the agent's main record as well
       let updatedAgent = agent
       if (!publishedVersion) {
-        const [newAgent] = await tx
-          .update(Agent)
-          .set(update)
-          .where(eq(Agent.id, id))
-          .returning()
+        const [newAgent] = await tx.update(Agent).set(update).where(eq(Agent.id, id)).returning()
 
         if (!newAgent) {
           throw new TRPCError({

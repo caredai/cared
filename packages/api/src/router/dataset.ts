@@ -2,8 +2,9 @@ import { DeleteObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
+import type { SQL } from '@mindworld/db'
 import type { DatasetMetadata } from '@mindworld/db/schema'
-import { and, desc, eq, gt, lt, SQL } from '@mindworld/db'
+import { and, desc, eq, gt, lt } from '@mindworld/db'
 import {
   CreateDatasetSchema,
   CreateDocumentChunkSchema,

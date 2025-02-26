@@ -48,7 +48,10 @@ const appMetadataZod = z
 export const App = pgTable(
   'app',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('app')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('app')),
     workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
@@ -138,7 +141,10 @@ export const UpdateAppVersionSchema = createUpdateSchema(AppVersion, {
 export const Category = pgTable(
   'category',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('category')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('category')),
     name: varchar({ length: 255 }).unique().notNull(),
     ...timestamps,
   },

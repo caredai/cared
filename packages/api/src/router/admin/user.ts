@@ -1,9 +1,9 @@
 import { clerkClient } from '@clerk/nextjs/server'
 import { TRPCError } from '@trpc/server'
-import type { SQL} from '@mindworld/db';
-import { and, desc, eq, gt, ilike, lt, or, sql } from '@mindworld/db'
 import { z } from 'zod'
 
+import type { SQL } from '@mindworld/db'
+import { and, desc, eq, gt, ilike, lt, or, sql } from '@mindworld/db'
 import { User } from '@mindworld/db/schema'
 
 import { adminProcedure } from '../../trpc'

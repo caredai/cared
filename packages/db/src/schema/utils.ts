@@ -1,14 +1,14 @@
 import { sql } from 'drizzle-orm'
 import { index, pgEnum, timestamp } from 'drizzle-orm/pg-core'
-import { z } from 'zod';
-import {v7} from 'uuid'
+import { v7 } from 'uuid'
+import { z } from 'zod'
 
 export function generateId(prefix: string) {
   const uuid = v7() // time based, monotonically increasing order
   return `${prefix}_${uuid.replaceAll('-', '')}`
 }
 
-const idRe = /^[0-9a-f]{8}[0-9a-f]{4}7[0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}$/i;
+const idRe = /^[0-9a-f]{8}[0-9a-f]{4}7[0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}$/i
 
 // Reference: https://gist.github.com/robinpokorny/3e1ef5eebce096824d3c2054202e4217
 export function parseTimestampFromId(id: string) {
@@ -26,7 +26,7 @@ export function makeIdValid(prefix: string) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: `Invalid ID prefix: should be '${prefix}_'`,
-      });
+      })
       return z.NEVER
     }
     const timestamp = parseTimestampFromId(id)
@@ -34,7 +34,7 @@ export function makeIdValid(prefix: string) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Invalid ID timestamp: should be within 10 seconds of current time',
-      });
+      })
     }
   })
 }

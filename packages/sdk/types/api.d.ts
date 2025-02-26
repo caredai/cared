@@ -10,6 +10,12 @@ export interface AppMetadata {
   embeddingModel: string // used for embedding memories
   rerankModel: string // used for reranking memories
 
+  languageModelSettings?: {
+    systemPrompt?: string
+  }
+
+  datasetBindings?: string[]
+
   [key: string]: unknown
 }
 
@@ -20,6 +26,12 @@ export interface AgentMetadata {
   languageModel?: string
   embeddingModel?: string // used for embedding memories
   rerankModel?: string // used for reranking memories
+
+  languageModelSettings?: {
+    systemPrompt?: string
+  }
+
+  datasetBindings?: string[]
 
   [key: string]: unknown
 }
@@ -602,11 +614,11 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 name: string;
                 workspaceId: string;
                 metadata: {
+                    description?: string | undefined;
+                    imageUrl?: string | undefined;
                     languageModel?: string | undefined;
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
-                    description?: string | undefined;
-                    imageUrl?: string | undefined;
                 } & {
                     [k: string]: unknown;
                 };
@@ -636,7 +648,6 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         update: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 id: string;
-                workspaceId: string;
                 name?: string | undefined;
                 metadata?: import("zod").objectInputType<{
                     description: import("zod").ZodOptional<import("zod").ZodString>;
@@ -871,7 +882,23 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 limit: number;
             };
         }>;
-        listVersionsByApp: import("@trpc/server").TRPCQueryProcedure<{
+        listByAppVersion: import("@trpc/server").TRPCQueryProcedure<{
+            input: {
+                appId: string;
+                version: number;
+            };
+            output: {
+                versions: {
+                    name: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    metadata: AgentMetadata;
+                    version: number;
+                    agentId: string;
+                }[];
+            };
+        }>;
+        listVersions: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 agentId: string;
                 limit?: number | undefined;
@@ -892,9 +919,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         byId: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                id: string;
-            };
+            input: string;
             output: {
                 agent: {
                     name: string;
@@ -916,6 +941,13 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     languageModel: import("zod").ZodOptional<import("zod").ZodString>;
                     embeddingModel: import("zod").ZodOptional<import("zod").ZodString>;
                     rerankModel: import("zod").ZodOptional<import("zod").ZodString>;
+                    languageModelSettings: import("zod").ZodOptional<import("zod").ZodObject<{
+                        systemPrompt: import("zod").ZodOptional<import("zod").ZodString>;
+                    }, "strip", import("zod").ZodTypeAny, {
+                        systemPrompt?: string | undefined;
+                    }, {
+                        systemPrompt?: string | undefined;
+                    }>>;
                 }, import("zod").ZodUnknown, "strip"> | undefined;
             };
             output: {
@@ -947,6 +979,13 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     languageModel: import("zod").ZodOptional<import("zod").ZodString>;
                     embeddingModel: import("zod").ZodOptional<import("zod").ZodString>;
                     rerankModel: import("zod").ZodOptional<import("zod").ZodString>;
+                    languageModelSettings: import("zod").ZodOptional<import("zod").ZodObject<{
+                        systemPrompt: import("zod").ZodOptional<import("zod").ZodString>;
+                    }, "strip", import("zod").ZodTypeAny, {
+                        systemPrompt?: string | undefined;
+                    }, {
+                        systemPrompt?: string | undefined;
+                    }>>;
                 }, import("zod").ZodUnknown, "strip"> | undefined;
             };
             output: {
@@ -1142,10 +1181,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         createSegment: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 workspaceId: string;
-                content: string;
                 datasetId: string;
                 documentId: string;
                 index: number;
+                content: string;
                 metadata?: Record<string, unknown> | undefined;
             };
             output: {
@@ -1155,10 +1194,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
-                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
+                    content: string;
                 };
             };
         }>;
@@ -1202,10 +1241,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
-                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
+                    content: string;
                 }[];
                 hasMore: boolean;
                 limit: number;
@@ -1214,10 +1253,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         createChunk: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 workspaceId: string;
-                content: string;
                 datasetId: string;
                 documentId: string;
                 index: number;
+                content: string;
                 segmentId: string;
                 metadata?: Record<string, unknown> | undefined;
             };
@@ -1228,10 +1267,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
-                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
+                    content: string;
                     segmentId: string;
                 };
             };
@@ -1277,10 +1316,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
-                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
+                    content: string;
                     segmentId: string;
                 }[];
                 hasMore: boolean;
@@ -1381,33 +1420,32 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    userId: string;
                     metadata: ChatMetadata;
                     appId: string;
-                    appVersion: number;
-                    userId: string;
+                    debug: boolean;
                 }[];
                 hasMore: boolean;
                 limit: number;
             };
         }>;
         byId: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                id: string;
-            };
+            input: string;
             output: {
                 chat: {
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    userId: string;
                     metadata: ChatMetadata;
                     appId: string;
-                    appVersion: number;
-                    userId: string;
+                    debug: boolean;
                 };
             };
         }>;
         create: import("@trpc/server").TRPCMutationProcedure<{
             input: {
+                userId: string;
                 metadata: {
                     visibility: "public" | "private";
                     title: string;
@@ -1418,18 +1456,18 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     [k: string]: unknown;
                 };
                 appId: string;
-                userId: string;
-                appVersion?: number | "latest" | "draft" | undefined;
+                id?: string | undefined;
+                debug?: boolean | undefined;
             };
             output: {
                 chat: {
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    userId: string;
                     metadata: ChatMetadata;
                     appId: string;
-                    appVersion: number;
-                    userId: string;
+                    debug: boolean;
                 };
             };
         }>;
@@ -1438,11 +1476,12 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 id: string;
                 metadata?: {
                     visibility?: "public" | "private" | undefined;
-                    title?: string | undefined;
                     languageModel?: string | undefined;
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
+                    title?: string | undefined;
                 } | undefined;
+                debug?: boolean | undefined;
             };
             output: {
                 chat: {
@@ -1450,8 +1489,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     id: string;
                     appId: string;
-                    appVersion: number;
                     userId: string;
+                    debug: boolean;
                     metadata: ChatMetadata;
                 };
             };
@@ -1469,9 +1508,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    agentId: string | null;
                     content: unknown;
                     chatId: string;
-                    agentId: string | null;
                 }[];
                 hasMore: boolean;
                 limit: number;
@@ -1487,29 +1526,46 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    agentId: string | null;
                     content: unknown;
                     chatId: string;
-                    agentId: string | null;
                 };
             };
         }>;
         createMessage: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                role: "user" | "system" | "assistant" | "tool";
-                content: Record<string, unknown>;
                 chatId: string;
+                id?: string | undefined;
                 agentId?: string | undefined;
-            };
+            } & import("ai").CoreMessage;
             output: {
                 message: {
                     role: "user" | "system" | "assistant" | "tool";
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
+                    agentId: string | null;
                     content: unknown;
                     chatId: string;
-                    agentId: string | null;
                 };
+            };
+        }>;
+        createMessages: import("@trpc/server").TRPCMutationProcedure<{
+            input: ({
+                chatId: string;
+                id?: string | undefined;
+                agentId?: string | undefined;
+            } & import("ai").CoreMessage)[];
+            output: {
+                messages: {
+                    role: "user" | "system" | "assistant" | "tool";
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    agentId: string | null;
+                    content: unknown;
+                    chatId: string;
+                }[];
             };
         }>;
         deleteTrailingMessages: import("@trpc/server").TRPCMutationProcedure<{

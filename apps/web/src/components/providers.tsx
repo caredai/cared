@@ -10,7 +10,7 @@ import { useTheme } from 'next-themes'
 import { Logo } from '@/components/logo'
 import { ThemeProvider } from '@/components/theme'
 import { env } from '@/env'
-import { TRPCReactProvider } from '@/trpc/react'
+import { TRPCReactProvider } from '@/trpc/client'
 
 export function Providers({ children }: { children: ReactNode }) {
   return (

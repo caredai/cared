@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-import { and, desc, eq, gt, inArray, lt, SQL } from '@mindworld/db'
+import type { SQL } from '@mindworld/db'
+import { and, desc, eq, gt, inArray, lt } from '@mindworld/db'
 import {
   AppsToCategories,
   AppsToTags,

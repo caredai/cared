@@ -1,13 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import {
-  index,
-  integer,
-  jsonb,
-  pgTable,
-  text,
-  uniqueIndex,
-  varchar,
-} from 'drizzle-orm/pg-core'
+import { index, integer, jsonb, pgTable, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -41,7 +33,10 @@ const datasetMetadataZod = z.object({
 export const Dataset = pgTable(
   'dataset',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('dataset')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('dataset')),
     workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
@@ -93,7 +88,10 @@ const documentMetadataZod = z.object({
 export const Document = pgTable(
   'document',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('doc')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('doc')),
     workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
@@ -136,7 +134,10 @@ export const UpdateDocumentSchema = createUpdateSchema(Document, {
 export const DocumentSegment = pgTable(
   'document_segment',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('dseg')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('dseg')),
     workspaceId: text()
       .notNull()
       .references(() => Workspace.id),
@@ -188,7 +189,10 @@ export const UpdateDocumentSegmentSchema = createUpdateSchema(DocumentSegment, {
 export const DocumentChunk = pgTable(
   'document_chunk',
   {
-    id: text().primaryKey().notNull().$defaultFn(() => generateId('dchunk')),
+    id: text()
+      .primaryKey()
+      .notNull()
+      .$defaultFn(() => generateId('dchunk')),
     workspaceId: text()
       .notNull()
       .references(() => Workspace.id),

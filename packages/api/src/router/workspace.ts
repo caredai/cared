@@ -1,5 +1,6 @@
+import type { SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq, gt, lt, SQL } from 'drizzle-orm'
+import { and, desc, eq, gt, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
 import {

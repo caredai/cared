@@ -5,10 +5,20 @@ import { index, jsonb, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { generateId, roleEnum, roleEnumValues, timestamps, timestampsIndices, timestampsOmits } from './utils'
+import {
+  generateId,
+  roleEnum,
+  roleEnumValues,
+  timestamps,
+  timestampsIndices,
+  timestampsOmits,
+} from './utils'
 
 export const Workspace = pgTable('workspace', {
-  id: text().primaryKey().notNull().$defaultFn(() => generateId('workspace')),
+  id: text()
+    .primaryKey()
+    .notNull()
+    .$defaultFn(() => generateId('workspace')),
   name: varchar({ length: 255 }).notNull(),
   ...timestamps,
 })

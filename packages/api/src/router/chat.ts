@@ -1,7 +1,8 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { and, desc, eq, gt, gte, lt, SQL } from '@mindworld/db'
+import type { SQL } from '@mindworld/db'
+import { and, desc, eq, gt, gte, lt } from '@mindworld/db'
 import {
   Chat,
   CreateChatSchema,
@@ -14,7 +15,7 @@ import {
 
 import type { Context } from '../trpc'
 import { protectedProcedure } from '../trpc'
-import { getAppById, getAppVersion } from './app'
+import { getAppById } from './app'
 
 /**
  * Get a chat by ID.
@@ -110,19 +111,13 @@ export const chatRouter = {
   /**
    * Get a single chat by ID.
    * Only accessible by authenticated users.
-   * @param input - Object containing chat ID
+   * @param input - The chat ID
    * @returns The chat if found
    */
-  byId: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().min(32),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const chat = await getChatById(ctx, input.id)
-      return { chat }
-    }),
+  byId: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
+    const chat = await getChatById(ctx, input)
+    return { chat }
+  }),
 
   /**
    * Create a new chat.
@@ -130,38 +125,39 @@ export const chatRouter = {
    * @param input - The chat data following the {@link CreateChatSchema}
    * @returns The created chat
    */
-  create: protectedProcedure
-    .input(
-      CreateChatSchema.extend({
-        appVersion: z
-          .number()
-          .int()
-          .or(z.enum(['latest', 'draft']))
-          .optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      await getAppById(ctx, input.appId)
+  create: protectedProcedure.input(CreateChatSchema).mutation(async ({ ctx, input }) => {
+    await getAppById(ctx, input.appId)
 
-      const appVersion = await getAppVersion(ctx, input.appId, input.appVersion)
+    if (input.debug) {
+      // TODO: check rbac
 
-      const [chat] = await ctx.db
-        .insert(Chat)
-        .values({
-          ...input,
-          appVersion: appVersion.version,
-        })
-        .returning()
+      const existingDebugChat = await ctx.db.query.Chat.findFirst({
+        where: and(
+          eq(Chat.appId, input.appId),
+          eq(Chat.userId, ctx.auth.userId),
+          eq(Chat.debug, true),
+        ),
+      })
 
-      if (!chat) {
+      if (existingDebugChat) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create chat',
+          code: 'BAD_REQUEST',
+          message: 'A debug chat already exists for you in this app',
         })
       }
+    }
 
-      return { chat }
-    }),
+    const [chat] = await ctx.db.insert(Chat).values(input).returning()
+
+    if (!chat) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to create chat',
+      })
+    }
+
+    return { chat }
+  }),
 
   /**
    * Update an existing chat.
@@ -271,6 +267,20 @@ export const chatRouter = {
   createMessage: protectedProcedure.input(CreateMessageSchema).mutation(async ({ ctx, input }) => {
     await getChatById(ctx, input.chatId)
 
+    if (input.id) {
+      const lastMsg = await ctx.db.query.Message.findFirst({
+        where: eq(Message.chatId, input.chatId),
+        orderBy: desc(Message.id),
+      })
+
+      if (lastMsg && input.id <= lastMsg.id) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Message ID must be greater than the last message ID in the chat',
+        })
+      }
+    }
+
     const [message] = await ctx.db.insert(Message).values(input).returning()
 
     if (!message) {
@@ -282,6 +292,84 @@ export const chatRouter = {
 
     return { message }
   }),
+
+  /**
+   * Create multiple messages in a chat.
+   * Only accessible by authenticated users.
+   * @param input - Array of message data following the {@link CreateMessageSchema}
+   * @returns The created messages
+   */
+  createMessages: protectedProcedure
+    .input(z.array(CreateMessageSchema))
+    .mutation(async ({ ctx, input }) => {
+      const firstMsg = input.at(0)
+      if (!firstMsg) {
+        return { messages: [] }
+      }
+
+      // Verify chat exists and user has access
+      await getChatById(ctx, firstMsg.chatId)
+
+      // Verify all messages are for same chat
+      if (!input.every((msg) => msg.chatId === firstMsg.chatId)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'All messages must belong to the same chat',
+        })
+      }
+
+      if (firstMsg.id) {
+        // If first message has ID, verify all messages have IDs
+        if (!input.every((msg) => msg.id)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'If first message has ID, all messages must have IDs',
+          })
+        }
+
+        // Check IDs are in ascending order
+        for (let i = 1; i < input.length; i++) {
+          if (input[i]!.id! <= input[i - 1]!.id!) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Message IDs must be in ascending order',
+            })
+          }
+        }
+
+        // Verify first message ID is greater than the last message ID in database
+        const lastMsg = await ctx.db.query.Message.findFirst({
+          where: eq(Message.chatId, firstMsg.chatId),
+          orderBy: [desc(Message.id)],
+        })
+
+        if (lastMsg && firstMsg.id <= lastMsg.id) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'First message ID must be greater than the last message ID in chat',
+          })
+        }
+      } else {
+        // If first message has no ID, verify all messages have no IDs
+        if (input.some((msg) => msg.id)) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'If first message has no ID, all messages must have no IDs',
+          })
+        }
+      }
+
+      const messages = await ctx.db.insert(Message).values(input).returning()
+
+      if (!messages.length) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create messages',
+        })
+      }
+
+      return { messages }
+    }),
 
   /**
    * Delete all messages in a chat that were created after the specified message.
