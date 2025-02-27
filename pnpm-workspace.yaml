@@ -2,7 +2,6 @@ packages:
   - apps/*
   - packages/*
   - tooling/*
-  - '!apps/nextjs'
   - '!packages/workflow'
 
 catalog:

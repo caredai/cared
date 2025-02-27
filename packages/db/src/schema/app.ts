@@ -42,6 +42,11 @@ const appMetadataZod = z
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),
+    languageModelSettings: z
+      .object({
+        systemPrompt: z.string().optional(),
+      })
+      .optional(),
   })
   .catchall(z.unknown())
 

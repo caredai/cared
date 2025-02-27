@@ -39,13 +39,17 @@ const chatMetadataZod = z
   })
   .catchall(z.unknown())
 
+export function generateChatId() {
+  return generateId('chat')
+}
+
 export const Chat = pgTable(
   'chat',
   {
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('chat')),
+      .$defaultFn(generateChatId),
     appId: text()
       .notNull()
       .references(() => App.id),

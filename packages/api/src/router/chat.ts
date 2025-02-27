@@ -196,6 +196,27 @@ export const chatRouter = {
   }),
 
   /**
+   * Delete an existing chat.
+   * Only accessible by authenticated users.
+   * @param input - Object containing the chat ID to delete
+   * @returns The deleted chat
+   */
+  delete: protectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input }) => {
+    await getChatById(ctx, input)
+
+    const [deletedChat] = await ctx.db.delete(Chat).where(eq(Chat.id, input)).returning()
+
+    if (!deletedChat) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to delete chat',
+      })
+    }
+
+    return { chat: deletedChat }
+  }),
+
+  /**
    * List all messages in a chat.
    * Only accessible by authenticated users.
    * @param input - Object containing chat ID and pagination parameters
@@ -247,16 +268,10 @@ export const chatRouter = {
    * @param input - Object containing message ID
    * @returns The message if found
    */
-  getMessage: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().min(32),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      const message = await getMessageById(ctx, input.id)
-      return { message }
-    }),
+  getMessage: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
+    const message = await getMessageById(ctx, input)
+    return { message }
+  }),
 
   /**
    * Create a new message in a chat.
@@ -385,11 +400,12 @@ export const chatRouter = {
     .mutation(async ({ ctx, input }) => {
       const message = await getMessageById(ctx, input.messageId)
 
-      await ctx.db
+      const messages = await ctx.db
         .delete(Message)
-        .where(and(eq(Message.chatId, message.chatId), gte(Message.createdAt, message.createdAt)))
+        .where(and(eq(Message.chatId, message.chatId), gte(Message.id, message.id)))
+        .returning()
 
-      return { success: true }
+      return { messages }
     }),
 
   /**

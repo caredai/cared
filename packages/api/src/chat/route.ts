@@ -1,32 +1,67 @@
 import assert from 'assert'
 import type { CoreMessage, Message } from 'ai'
 import { auth as authorize } from '@clerk/nextjs/server'
-import { createDataStreamResponse, smoothStream, streamText } from 'ai'
+import { convertToCoreMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
 
 import type { Agent, App, Chat, MessageContent } from '@mindworld/db/schema'
-import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
-import { Message as DbMessage, generateMessageId } from '@mindworld/db/schema'
+import { generateMessageId } from '@mindworld/db/schema'
 import { getModel } from '@mindworld/providers'
-import { buildTools, memoryTools } from '@mindworld/tools'
+import { buildTools, knowledgeTools, memoryTools } from '@mindworld/tools'
 import { log } from '@mindworld/utils'
 
 import { createCaller } from '..'
 import { generateChatTitleFromUserMessage } from './actions'
 
+/**
+ * POST handler for chat API endpoint.
+ * Handles chat message processing and LLM response generation.
+ *
+ * Important notes for Vercel AI SDK usage:
+ * 1. Chat and message IDs:
+ *    - Must use generateChatId() and generateMessageId()
+ *    - Other ID formats will fail validation
+ *
+ * 2. Input messages handling:
+ *    - Only the last message in input messages array is processed
+ *    - For last message being a user message:
+ *      - If last historical message is not user message: combine historical messages + input user message
+ *      - If last historical message is user message:
+ *        - Error if message IDs conflict
+ *        - If IDs match, use input message content instead, combine historical messages - last historical message + input user message
+ *    - For last message being non-user or empty input:
+ *      - If last historical message is user message or tool message (with tool results): use historical messages
+ *      - Otherwise error
+ *    - Previous messages in input array are ignored
+ *
+ * 3. Tool execution:
+ *    - Currently only supports server-side tools
+ *    - Client-side tools not supported yet
+ *    - Future client tool support requirements:
+ *      - Must track client as tool executor
+ *      - No direct asset manipulation allowed
+ *
+ * @param request - HTTP request containing:
+ *   - id?: string - Optional chat ID
+ *   - appId?: string - Optional app ID
+ *   - agentId?: string - Optional agent ID
+ *   - messages: Message[] - Input messages array, only last message used
+ *   - preview?: boolean - Preview mode flag
+ * @returns Streaming response with LLM generated content
+ */
 export async function POST(request: Request) {
   const {
     id,
     appId,
-    preview,
     agentId,
     messages: inputMessages,
+    preview,
   } = (await request.json()) as {
     id?: string
     appId?: string
-    preview?: boolean
     agentId?: string
     messages: Message[]
+    preview?: boolean
   }
 
   const auth = await authorize()
@@ -40,21 +75,8 @@ export async function POST(request: Request) {
   }
   const caller = createCaller(ctx)
 
-  // Only allow the last message to be from the user
-  const userMessage = inputMessages.at(-1)
-  if (userMessage?.role !== 'user') {
-    return new Response('No user message found', { status: 400 })
-  }
-
-  if (
-    await db.query.Message.findFirst({
-      where: eq(DbMessage.id, userMessage.id),
-    })
-  ) {
-    return new Response('User message already exists', { status: 400 })
-  }
-
   let chat: Chat | undefined
+  let deleteChat: (() => Promise<void>) | undefined
   if (id) {
     chat = (await caller.chat.byId(id)).chat
 
@@ -90,6 +112,45 @@ export async function POST(request: Request) {
         },
       })
     ).chat
+
+    deleteChat = async () => {
+      await caller.chat.delete(chat!.id)
+    }
+  }
+
+  const inputMessage = inputMessages.at(-1)
+  const lastMessage = (
+    await caller.chat.listMessages({
+      chatId: chat.id,
+      limit: 1,
+    })
+  ).messages.at(-1)
+  if (inputMessage?.role === 'user') {
+    if (lastMessage?.role === 'user') {
+      if (lastMessage.id !== inputMessage.id) {
+        return new Response('The last historical message is also another user message', {
+          status: 400,
+        })
+      }
+      // replace the last user message with the new user message
+      await caller.chat.deleteTrailingMessages({
+        messageId: lastMessage.id,
+      })
+    }
+
+    // save the new user message
+    await caller.chat.createMessage({
+      id: inputMessage.id,
+      chatId: chat.id,
+      ...convertToCoreMessages([inputMessage]).at(0)!,
+    })
+  } else {
+    if (lastMessage?.role !== 'user' && lastMessage?.role !== 'tool') {
+      await deleteChat?.()
+      return new Response(`The last historical message is neither user's nor tool's`, {
+        status: 400,
+      })
+    }
   }
 
   const app = (await caller.app.byId(chat.appId)).app
@@ -104,6 +165,7 @@ export async function POST(request: Request) {
   if (agentId) {
     agent = agents.find((agent) => agent.id === agentId)
     if (!agent) {
+      await deleteChat?.()
       return new Response('Unauthorized', { status: 401 })
     }
   } else {
@@ -120,11 +182,11 @@ export async function POST(request: Request) {
     throw new Error(`Invalid language model configuration for app ${app.id}`)
   }
 
-  if (!chat.metadata.title) {
+  if (!chat.metadata.title && inputMessage) {
     const title = preview
       ? 'Preview & debug' // no need to generate a title for debug chats
       : await generateChatTitleFromUserMessage({
-          message: userMessage,
+          message: inputMessage,
           model: languageModel,
         })
 
@@ -138,6 +200,7 @@ export async function POST(request: Request) {
     ).chat
   }
 
+  // TODO: tools selection should be controlled by app/agent configuration
   const tools = buildTools(
     {
       userId: auth.userId,
@@ -148,6 +211,7 @@ export async function POST(request: Request) {
     },
     {
       ...memoryTools,
+      ...knowledgeTools,
     },
   )
 
@@ -162,7 +226,7 @@ export async function POST(request: Request) {
           app.metadata.languageModelSettings?.systemPrompt,
         messages,
         maxSteps: 5, // TODO
-        experimental_activeTools: [],
+        experimental_activeTools: undefined, // TODO
         experimental_transform: smoothStream({ chunking: 'word' }),
         experimental_generateMessageId: generateMessageId,
         tools,
@@ -205,7 +269,7 @@ async function getMessages(
   const dbMesssages = (
     await caller.chat.listMessages({
       chatId: chat.id,
-      limit: 100, // TODO
+      limit: 100, // TODO: truncate
     })
   ).messages
 

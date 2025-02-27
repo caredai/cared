@@ -619,6 +619,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     languageModel?: string | undefined;
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
+                    languageModelSettings?: {
+                        systemPrompt?: string | undefined;
+                    } | undefined;
                 } & {
                     [k: string]: unknown;
                 };
@@ -655,6 +658,13 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     languageModel: import("zod").ZodOptional<import("zod").ZodString>;
                     embeddingModel: import("zod").ZodOptional<import("zod").ZodString>;
                     rerankModel: import("zod").ZodOptional<import("zod").ZodString>;
+                    languageModelSettings: import("zod").ZodOptional<import("zod").ZodObject<{
+                        systemPrompt: import("zod").ZodOptional<import("zod").ZodString>;
+                    }, "strip", import("zod").ZodTypeAny, {
+                        systemPrompt?: string | undefined;
+                    }, {
+                        systemPrompt?: string | undefined;
+                    }>>;
                 }, import("zod").ZodUnknown, "strip"> | undefined;
             };
             output: {
@@ -1181,10 +1191,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         createSegment: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 workspaceId: string;
+                content: string;
                 datasetId: string;
                 documentId: string;
                 index: number;
-                content: string;
                 metadata?: Record<string, unknown> | undefined;
             };
             output: {
@@ -1194,10 +1204,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
+                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
-                    content: string;
                 };
             };
         }>;
@@ -1241,10 +1251,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
+                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
-                    content: string;
                 }[];
                 hasMore: boolean;
                 limit: number;
@@ -1253,10 +1263,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         createChunk: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 workspaceId: string;
+                content: string;
                 datasetId: string;
                 documentId: string;
                 index: number;
-                content: string;
                 segmentId: string;
                 metadata?: Record<string, unknown> | undefined;
             };
@@ -1267,10 +1277,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
+                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
-                    content: string;
                     segmentId: string;
                 };
             };
@@ -1316,10 +1326,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     updatedAt: Date;
                     workspaceId: string;
                     metadata: unknown;
+                    content: string;
                     datasetId: string;
                     documentId: string;
                     index: number;
-                    content: string;
                     segmentId: string;
                 }[];
                 hasMore: boolean;
@@ -1495,6 +1505,20 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 };
             };
         }>;
+        delete: import("@trpc/server").TRPCMutationProcedure<{
+            input: string;
+            output: {
+                chat: {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    userId: string;
+                    metadata: ChatMetadata;
+                    appId: string;
+                    debug: boolean;
+                };
+            };
+        }>;
         listMessages: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 chatId: string;
@@ -1517,9 +1541,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         getMessage: import("@trpc/server").TRPCQueryProcedure<{
-            input: {
-                id: string;
-            };
+            input: string;
             output: {
                 message: {
                     role: "user" | "system" | "assistant" | "tool";
@@ -1573,7 +1595,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 messageId: string;
             };
             output: {
-                success: boolean;
+                messages: {
+                    role: "user" | "system" | "assistant" | "tool";
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    agentId: string | null;
+                    content: unknown;
+                    chatId: string;
+                }[];
             };
         }>;
         voteMessage: import("@trpc/server").TRPCMutationProcedure<{
