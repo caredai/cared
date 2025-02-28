@@ -35,6 +35,7 @@
     "@mindworld/db": "workspace:*",
     "@mindworld/providers": "workspace:*",
     "@mindworld/sdk": "workspace:*",
+    "@mindworld/tools": "workspace:*",
     "@mindworld/ui": "workspace:*",
     "ai": "catalog:",
     "classnames": "^2.5.1",

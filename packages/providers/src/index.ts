@@ -1694,17 +1694,17 @@ export function getImageModelInfo(fullId: string) {
 }
 
 export function modelFullId(providerId: string, modelId: string) {
-  return `${providerId}::${modelId}`
+  return `${providerId}:${modelId}`
 }
 
 export function splitModelFullId(fullId: string) {
-  const [providerId, modelId] = fullId.split('::')
+  const [providerId, modelId] = fullId.split(':')
   return { providerId, modelId } as { providerId: ProviderId; modelId: string }
 }
 
 /**
  * Get model instance by model full ID and type
- * @param fullId Full model ID in format 'providerId::modelId'
+ * @param fullId Full model ID in format 'providerId:modelId'
  * @param modelType Type of model to get (language/text-embedding/image)
  * @returns Model instance of specified type, or undefined if not found
  */

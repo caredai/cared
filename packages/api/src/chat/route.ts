@@ -200,25 +200,29 @@ export async function POST(request: Request) {
     ).chat
   }
 
-  // TODO: tools selection should be controlled by app/agent configuration
-  const tools = buildTools(
-    {
-      userId: auth.userId,
-      appId: app.id,
-      preview,
-      agentId: agent.id,
-      chatId: chat.id,
-    },
-    {
-      ...memoryTools,
-      ...knowledgeTools,
-    },
-  )
-
   const messages = await getMessages(caller, chat, agent, app, agents)
 
   return createDataStreamResponse({
     execute: (dataStream) => {
+      // TODO: tools selection should be controlled by app/agent configuration
+      const tools = buildTools(
+        {
+          userId: auth.userId,
+          appId: app.id,
+          preview,
+          agentId: agent.id,
+          chatId: chat.id,
+          app,
+          agent,
+          chat,
+          dataStream,
+        },
+        {
+          ...memoryTools,
+          ...knowledgeTools,
+        },
+      )
+
       const result = streamText({
         model: languageModel,
         system:

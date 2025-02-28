@@ -7,7 +7,7 @@ import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 
-import type { Suggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@mindworld/db/schema'
 
 interface EditorProps {
   content: string
@@ -15,7 +15,7 @@ interface EditorProps {
   status: 'streaming' | 'idle'
   isCurrentVersion: boolean
   currentVersionIndex: number
-  suggestions: Suggestion[]
+  suggestions: ArtifactSuggestion[]
 }
 
 function PureCodeEditor({ content, saveContent, status }: EditorProps) {

@@ -25,6 +25,7 @@ export interface AppMetadata {
   languageModel: string
   embeddingModel: string // used for embedding memories
   rerankModel: string // used for reranking memories
+  imageModel: string
 
   languageModelSettings?: {
     systemPrompt?: string
@@ -42,6 +43,7 @@ const appMetadataZod = z
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),
+    imageModel: z.string().optional(),
     languageModelSettings: z
       .object({
         systemPrompt: z.string().optional(),

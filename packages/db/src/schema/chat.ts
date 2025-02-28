@@ -25,6 +25,7 @@ export interface ChatMetadata {
   languageModel?: string
   embeddingModel?: string // used for embedding memories
   rerankModel?: string // used for reranking memories
+  imageModel?: string
 
   [key: string]: unknown
 }
@@ -36,6 +37,7 @@ const chatMetadataZod = z
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),
+    imageModel: z.string().optional(),
   })
   .catchall(z.unknown())
 
