@@ -1,19 +1,23 @@
-import { Button } from './ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
-import { artifactDefinitions, UIArtifact } from './artifact';
-import { Dispatch, memo, SetStateAction, useState } from 'react';
-import { ArtifactActionContext } from './create-artifact';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import type { Dispatch, SetStateAction } from 'react'
+import { memo, useState } from 'react'
+import { toast } from 'sonner'
+
+import { Button } from '@mindworld/ui/components/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
+
+import type { UIArtifact } from './artifact'
+import type { ArtifactActionContext } from './create-artifact'
+import { cn } from '@/lib/utils'
+import { artifactDefinitions } from './artifact'
 
 interface ArtifactActionsProps {
-  artifact: UIArtifact;
-  handleVersionChange: (type: 'next' | 'prev' | 'toggle' | 'latest') => void;
-  currentVersionIndex: number;
-  isCurrentVersion: boolean;
-  mode: 'edit' | 'diff';
-  metadata: any;
-  setMetadata: Dispatch<SetStateAction<any>>;
+  artifact: UIArtifact
+  handleVersionChange: (type: 'next' | 'prev' | 'toggle' | 'latest') => void
+  currentVersionIndex: number
+  isCurrentVersion: boolean
+  mode: 'edit' | 'diff'
+  metadata: any
+  setMetadata: Dispatch<SetStateAction<any>>
 }
 
 function PureArtifactActions({
@@ -25,14 +29,14 @@ function PureArtifactActions({
   metadata,
   setMetadata,
 }: ArtifactActionsProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false)
 
   const artifactDefinition = artifactDefinitions.find(
     (definition) => definition.kind === artifact.kind,
-  );
+  )
 
   if (!artifactDefinition) {
-    throw new Error('Artifact definition not found!');
+    throw new Error('Artifact definition not found!')
   }
 
   const actionContext: ArtifactActionContext = {
@@ -43,7 +47,7 @@ function PureArtifactActions({
     mode,
     metadata,
     setMetadata,
-  };
+  }
 
   return (
     <div className="flex flex-row gap-1">
@@ -57,14 +61,14 @@ function PureArtifactActions({
                 'py-1.5 px-2': action.label,
               })}
               onClick={async () => {
-                setIsLoading(true);
+                setIsLoading(true)
 
                 try {
-                  await Promise.resolve(action.onClick(actionContext));
-                } catch (error) {
-                  toast.error('Failed to execute action');
+                  await Promise.resolve(action.onClick(actionContext))
+                } catch {
+                  toast.error('Failed to execute action')
                 } finally {
-                  setIsLoading(false);
+                  setIsLoading(false)
                 }
               }}
               disabled={
@@ -83,18 +87,14 @@ function PureArtifactActions({
         </Tooltip>
       ))}
     </div>
-  );
+  )
 }
 
-export const ArtifactActions = memo(
-  PureArtifactActions,
-  (prevProps, nextProps) => {
-    if (prevProps.artifact.status !== nextProps.artifact.status) return false;
-    if (prevProps.currentVersionIndex !== nextProps.currentVersionIndex)
-      return false;
-    if (prevProps.isCurrentVersion !== nextProps.isCurrentVersion) return false;
-    if (prevProps.artifact.content !== nextProps.artifact.content) return false;
+export const ArtifactActions = memo(PureArtifactActions, (prevProps, nextProps) => {
+  if (prevProps.artifact.status !== nextProps.artifact.status) return false
+  if (prevProps.currentVersionIndex !== nextProps.currentVersionIndex) return false
+  if (prevProps.isCurrentVersion !== nextProps.isCurrentVersion) return false
+  if (prevProps.artifact.content !== nextProps.artifact.content) return false
 
-    return true;
-  },
-);
+  return true
+})

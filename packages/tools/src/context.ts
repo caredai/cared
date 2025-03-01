@@ -30,9 +30,7 @@ export function getLanguageModelFromContext(ctx: Context) {
 
 export function getImageModelFromContext(ctx: Context) {
   return getModel(
-    ctx.chat.metadata.imageModel ??
-      ctx.agent.metadata.imageModel ??
-      ctx.app.metadata.imageModel,
+    ctx.chat.metadata.imageModel ?? ctx.agent.metadata.imageModel ?? ctx.app.metadata.imageModel,
     'image',
   )
 }

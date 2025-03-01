@@ -4,12 +4,10 @@ import type { ChatRequestOptions, Message } from 'ai'
 import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { Button } from '@mindworld/ui/components/button'
 import { Textarea } from '@mindworld/ui/components/textarea'
 
-import { useUserMessageId } from '@/hooks/use-user-message-id'
 import { useTRPC } from '@/lib/api'
 
 export interface MessageEditorProps {
@@ -20,7 +18,6 @@ export interface MessageEditorProps {
 }
 
 export function MessageEditor({ message, setMode, setMessages, reload }: MessageEditorProps) {
-  const { userMessageIdFromServer } = useUserMessageId()
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
   const [draftContent, setDraftContent] = useState<string>(message.content)
@@ -88,15 +85,10 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
           disabled={isSubmitting}
           onClick={() => {
             setIsSubmitting(true)
-            const messageId = userMessageIdFromServer ?? message.id
 
-            if (!messageId) {
-              toast.error('Something went wrong, please try again!')
-              setIsSubmitting(false)
-              return
-            }
-
-            deleteTrailingMessages.mutate(messageId)
+            deleteTrailingMessages.mutate({
+              messageId: message.id,
+            })
 
             setMessages((messages) => {
               const index = messages.findIndex((m) => m.id === message.id)

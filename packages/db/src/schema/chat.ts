@@ -48,10 +48,7 @@ export function generateChatId() {
 export const Chat = pgTable(
   'chat',
   {
-    id: text()
-      .primaryKey()
-      .notNull()
-      .$defaultFn(generateChatId),
+    id: text().primaryKey().notNull().$defaultFn(generateChatId),
     appId: text()
       .notNull()
       .references(() => App.id),

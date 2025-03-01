@@ -6,7 +6,7 @@ import { inputRules } from 'prosemirror-inputrules'
 import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 
-import type { Suggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@mindworld/db/schema'
 
 import { documentSchema, handleTransaction, headingRule } from '@/lib/editor/config'
 import {
@@ -22,14 +22,14 @@ import {
 
 interface EditorProps {
   content: string
-  saveContent: (updatedContent: string, debounce: boolean) => void
+  onSaveContent: (updatedContent: string, debounce: boolean) => void
   status: 'streaming' | 'idle'
   isCurrentVersion: boolean
   currentVersionIndex: number
-  suggestions: Suggestion[]
+  suggestions: ArtifactSuggestion[]
 }
 
-function PureEditor({ content, saveContent, suggestions, status }: EditorProps) {
+function PureEditor({ content, onSaveContent, suggestions, status }: EditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<EditorView | null>(null)
 
@@ -72,11 +72,11 @@ function PureEditor({ content, saveContent, suggestions, status }: EditorProps) 
     if (editorRef.current) {
       editorRef.current.setProps({
         dispatchTransaction: (transaction) => {
-          handleTransaction({ transaction, editorRef, saveContent })
+          handleTransaction({ transaction, editorRef, onSaveContent })
         },
       })
     }
-  }, [saveContent])
+  }, [onSaveContent])
 
   useEffect(() => {
     if (editorRef.current && content) {
@@ -136,7 +136,7 @@ function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
     prevProps.isCurrentVersion === nextProps.isCurrentVersion &&
     !(prevProps.status === 'streaming' && nextProps.status === 'streaming') &&
     prevProps.content === nextProps.content &&
-    prevProps.saveContent === nextProps.saveContent
+    prevProps.onSaveContent === nextProps.onSaveContent
   )
 }
 

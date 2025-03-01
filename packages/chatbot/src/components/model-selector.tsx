@@ -25,7 +25,7 @@ export function ModelSelector({
   const [open, setOpen] = useState(false)
   const [optimisticModelId, setOptimisticModelId] = useOptimistic(modelId)
 
-  const selectedModel = useMemo(
+  const selectedChatModel = useMemo(
     () => languageModelInfos.find((model) => model.id === optimisticModelId),
     [optimisticModelId],
   )
@@ -40,36 +40,39 @@ export function ModelSelector({
         )}
       >
         <Button variant="outline" className="md:px-2 md:h-[34px]">
-          {selectedModel?.name}
+          {selectedChatModel?.name}
           <ChevronDownIcon />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {languageModelInfos.map((model) => (
-          <DropdownMenuItem
-            key={model.id}
-            onSelect={() => {
-              setOpen(false)
+        {languageModelInfos.map((chatModel) => {
+          const { id } = chatModel
 
-              startTransition(() => {
-                setOptimisticModelId(model.id)
-                setModelId(model.id)
-              })
-            }}
-            className="gap-4 group/item flex flex-row justify-between items-center"
-            data-active={model.id === optimisticModelId}
-          >
-            <div className="flex flex-col gap-1 items-start">
-              {model.name}
-              {model.description && (
-                <div className="text-xs text-muted-foreground">{model.description}</div>
-              )}
-            </div>
-            <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
-              <CheckCircleFillIcon />
-            </div>
-          </DropdownMenuItem>
-        ))}
+          return (
+            <DropdownMenuItem
+              key={id}
+              onSelect={() => {
+                setOpen(false)
+
+                startTransition(() => {
+                  setOptimisticModelId(id)
+                  setModelId(id)
+                })
+              }}
+              className="gap-4 group/item flex flex-row justify-between items-center"
+              data-active={id === optimisticModelId}
+            >
+              <div className="flex flex-col gap-1 items-start">
+                <div>{chatModel.name}</div>
+                <div className="text-xs text-muted-foreground">{chatModel.description}</div>
+              </div>
+
+              <div className="text-foreground dark:text-foreground opacity-0 group-data-[active=true]/item:opacity-100">
+                <CheckCircleFillIcon />
+              </div>
+            </DropdownMenuItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )

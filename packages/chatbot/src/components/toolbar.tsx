@@ -1,7 +1,8 @@
 'use client'
 
 import type { ChatRequestOptions, CreateMessage, Message } from 'ai'
-import type { Dispatch, JSX, SetStateAction } from 'react'
+import type { UseChatHelpers } from 'ai/react'
+import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { memo, useEffect, useRef, useState } from 'react'
 import cx from 'classnames'
 import { AnimatePresence, motion, useMotionValue, useTransform } from 'framer-motion'
@@ -15,28 +16,15 @@ import {
   TooltipTrigger,
 } from '@mindworld/ui/components/tooltip'
 
-import type { BlockKind } from './block'
+import type { ArtifactKind } from './artifact'
+import type { ArtifactToolbarItem } from './create-artifact'
 import { sanitizeUIMessages } from '@/lib/utils'
-import {
-  ArrowUpIcon,
-  CodeIcon,
-  LogsIcon,
-  MessageIcon,
-  PenIcon,
-  StopIcon,
-  SummarizeIcon,
-} from './icons'
+import { artifactDefinitions } from './artifact'
+import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons'
 
 interface ToolProps {
-  type:
-    | 'final-polish'
-    | 'request-suggestions'
-    | 'adjust-reading-level'
-    | 'code-review'
-    | 'add-comments'
-    | 'add-logs'
   description: string
-  icon: JSX.Element
+  icon: ReactNode
   selectedTool: string | null
   setSelectedTool: Dispatch<SetStateAction<string | null>>
   isToolbarVisible?: boolean
@@ -46,10 +34,10 @@ interface ToolProps {
     message: Message | CreateMessage,
     chatRequestOptions?: ChatRequestOptions,
   ) => Promise<string | null | undefined>
+  onClick: ({ appendMessage }: { appendMessage: UseChatHelpers['append'] }) => void
 }
 
 const Tool = ({
-  type,
   description,
   icon,
   selectedTool,
@@ -58,14 +46,15 @@ const Tool = ({
   setIsToolbarVisible,
   isAnimating,
   append,
+  onClick,
 }: ToolProps) => {
   const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
-    if (selectedTool !== type) {
+    if (selectedTool !== description) {
       setIsHovered(false)
     }
-  }, [selectedTool, type])
+  }, [selectedTool, description])
 
   const handleSelect = () => {
     if (!isToolbarVisible && setIsToolbarVisible) {
@@ -75,43 +64,15 @@ const Tool = ({
 
     if (!selectedTool) {
       setIsHovered(true)
-      setSelectedTool(type)
+      setSelectedTool(description)
       return
     }
 
-    if (selectedTool !== type) {
-      setSelectedTool(type)
+    if (selectedTool !== description) {
+      setSelectedTool(description)
     } else {
-      if (type === 'final-polish') {
-        void append({
-          role: 'user',
-          content:
-            'Please add final polish and check for grammar, add section titles for better structure, and ensure everything reads smoothly.',
-        })
-
-        setSelectedTool(null)
-      } else if (type === 'request-suggestions') {
-        void append({
-          role: 'user',
-          content: 'Please add suggestions you have that could improve the writing.',
-        })
-
-        setSelectedTool(null)
-      } else if (type === 'add-comments') {
-        void append({
-          role: 'user',
-          content: 'Please add comments to explain the code.',
-        })
-
-        setSelectedTool(null)
-      } else if (type === 'add-logs') {
-        void append({
-          role: 'user',
-          content: 'Please add logs to help debug the code.',
-        })
-
-        setSelectedTool(null)
-      }
+      setSelectedTool(null)
+      onClick({ appendMessage: append })
     }
   }
 
@@ -120,13 +81,13 @@ const Tool = ({
       <TooltipTrigger asChild>
         <motion.div
           className={cx('p-3 rounded-full', {
-            'bg-primary !text-primary-foreground': selectedTool === type,
+            'bg-primary !text-primary-foreground': selectedTool === description,
           })}
           onHoverStart={() => {
             setIsHovered(true)
           }}
           onHoverEnd={() => {
-            if (selectedTool !== type) setIsHovered(false)
+            if (selectedTool !== description) setIsHovered(false)
           }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
@@ -146,7 +107,7 @@ const Tool = ({
             handleSelect()
           }}
         >
-          {selectedTool === type ? <ArrowUpIcon /> : icon}
+          {selectedTool === description ? <ArrowUpIcon /> : icon}
         </motion.div>
       </TooltipTrigger>
       <TooltipContent
@@ -270,52 +231,6 @@ const ReadingLevelSelector = ({
   )
 }
 
-const toolsByBlockKind: Record<
-  BlockKind,
-  {
-    type:
-      | 'final-polish'
-      | 'request-suggestions'
-      | 'adjust-reading-level'
-      | 'code-review'
-      | 'add-comments'
-      | 'add-logs'
-    description: string
-    icon: JSX.Element
-  }[]
-> = {
-  text: [
-    {
-      type: 'final-polish',
-      description: 'Add final polish',
-      icon: <PenIcon />,
-    },
-    {
-      type: 'adjust-reading-level',
-      description: 'Adjust reading level',
-      icon: <SummarizeIcon />,
-    },
-    {
-      type: 'request-suggestions',
-      description: 'Request suggestions',
-      icon: <MessageIcon />,
-    },
-  ],
-  code: [
-    {
-      type: 'add-comments',
-      description: 'Add comments',
-      icon: <CodeIcon />,
-    },
-    {
-      type: 'add-logs',
-      description: 'Add logs',
-      icon: <LogsIcon />,
-    },
-  ],
-  image: [],
-}
-
 export const Tools = ({
   isToolbarVisible,
   selectedTool,
@@ -323,7 +238,7 @@ export const Tools = ({
   append,
   isAnimating,
   setIsToolbarVisible,
-  blockKind,
+  tools,
 }: {
   isToolbarVisible: boolean
   selectedTool: string | null
@@ -334,9 +249,9 @@ export const Tools = ({
   ) => Promise<string | null | undefined>
   isAnimating: boolean
   setIsToolbarVisible: Dispatch<SetStateAction<boolean>>
-  blockKind: BlockKind
+  tools: ArtifactToolbarItem[]
 }) => {
-  const [primaryTool, ...secondaryTools] = toolsByBlockKind[blockKind]
+  const [primaryTool, ...secondaryTools] = tools
 
   return (
     <motion.div
@@ -349,29 +264,31 @@ export const Tools = ({
         {isToolbarVisible &&
           secondaryTools.map((secondaryTool) => (
             <Tool
-              key={secondaryTool.type}
-              type={secondaryTool.type}
+              key={secondaryTool.description}
               description={secondaryTool.description}
               icon={secondaryTool.icon}
               selectedTool={selectedTool}
               setSelectedTool={setSelectedTool}
               append={append}
               isAnimating={isAnimating}
+              onClick={secondaryTool.onClick}
             />
           ))}
       </AnimatePresence>
 
-      <Tool
-        type={primaryTool!.type}
-        description={primaryTool!.description}
-        icon={primaryTool!.icon}
-        selectedTool={selectedTool}
-        setSelectedTool={setSelectedTool}
-        isToolbarVisible={isToolbarVisible}
-        setIsToolbarVisible={setIsToolbarVisible}
-        append={append}
-        isAnimating={isAnimating}
-      />
+      {primaryTool && (
+        <Tool
+          description={primaryTool.description}
+          icon={primaryTool.icon}
+          selectedTool={selectedTool}
+          setSelectedTool={setSelectedTool}
+          isToolbarVisible={isToolbarVisible}
+          setIsToolbarVisible={setIsToolbarVisible}
+          append={append}
+          isAnimating={isAnimating}
+          onClick={primaryTool.onClick}
+        />
+      )}
     </motion.div>
   )
 }
@@ -383,7 +300,7 @@ const PureToolbar = ({
   isLoading,
   stop,
   setMessages,
-  blockKind,
+  artifactKind,
 }: {
   isToolbarVisible: boolean
   setIsToolbarVisible: Dispatch<SetStateAction<boolean>>
@@ -394,7 +311,7 @@ const PureToolbar = ({
   ) => Promise<string | null | undefined>
   stop: () => void
   setMessages: Dispatch<SetStateAction<Message[]>>
-  blockKind: BlockKind
+  artifactKind: ArtifactKind
 }) => {
   const toolbarRef = useRef<HTMLDivElement>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
@@ -439,7 +356,17 @@ const PureToolbar = ({
     }
   }, [isLoading, setIsToolbarVisible])
 
-  if (toolsByBlockKind[blockKind].length === 0) {
+  const artifactDefinition = artifactDefinitions.find(
+    (definition) => definition.kind === artifactKind,
+  )
+
+  if (!artifactDefinition) {
+    throw new Error('Artifact definition not found!')
+  }
+
+  const toolsByArtifactKind = artifactDefinition.toolbar
+
+  if (toolsByArtifactKind.length === 0) {
     return null
   }
 
@@ -461,7 +388,7 @@ const PureToolbar = ({
               : {
                   opacity: 1,
                   y: 0,
-                  height: toolsByBlockKind[blockKind].length * 50,
+                  height: toolsByArtifactKind.length * 50,
                   transition: { delay: 0 },
                   scale: 1,
                 }
@@ -518,7 +445,7 @@ const PureToolbar = ({
             selectedTool={selectedTool}
             setIsToolbarVisible={setIsToolbarVisible}
             setSelectedTool={setSelectedTool}
-            blockKind={blockKind}
+            tools={toolsByArtifactKind}
           />
         )}
       </motion.div>
@@ -529,7 +456,7 @@ const PureToolbar = ({
 export const Toolbar = memo(PureToolbar, (prevProps, nextProps) => {
   if (prevProps.isLoading !== nextProps.isLoading) return false
   if (prevProps.isToolbarVisible !== nextProps.isToolbarVisible) return false
-  if (prevProps.blockKind !== nextProps.blockKind) return false
+  if (prevProps.artifactKind !== nextProps.artifactKind) return false
 
   return true
 })

@@ -1,21 +1,12 @@
-import { Artifact } from '@/components/create-artifact';
-import { CodeEditor } from '@/components/code-editor';
-import {
-  CopyIcon,
-  LogsIcon,
-  MessageIcon,
-  PlayIcon,
-  RedoIcon,
-  UndoIcon,
-} from '@/components/icons';
-import { toast } from 'sonner';
-import { generateUUID } from '@/lib/utils';
-import type {
-  ConsoleOutput,
-  ConsoleOutputContent} from '@/components/console';
-import {
-  Console
-} from '@/components/console';
+import type { ConsoleOutput, ConsoleOutputContent } from '@/components/console'
+import { toast } from 'sonner'
+
+import { generateId } from '@mindworld/db/schema'
+
+import { CodeEditor } from '@/components/code-editor'
+import { Console } from '@/components/console'
+import { Artifact } from '@/components/create-artifact'
+import { CopyIcon, LogsIcon, MessageIcon, PlayIcon, RedoIcon, UndoIcon } from '@/components/icons'
 
 const OUTPUT_HANDLERS = {
   matplotlib: `
@@ -51,30 +42,29 @@ const OUTPUT_HANDLERS = {
   basic: `
     # Basic output capture setup
   `,
-};
-
-function detectRequiredHandlers(code: string): string[] {
-  const handlers: string[] = ['basic'];
-
-  if (code.includes('matplotlib') || code.includes('plt.')) {
-    handlers.push('matplotlib');
-  }
-
-  return handlers;
 }
 
-interface Metadata {
-  outputs: ConsoleOutput[];
+function detectRequiredHandlers(code: string): string[] {
+  const handlers: string[] = ['basic']
+
+  if (code.includes('matplotlib') || code.includes('plt.')) {
+    handlers.push('matplotlib')
+  }
+
+  return handlers
+}
+
+export interface Metadata {
+  outputs: ConsoleOutput[]
 }
 
 export const codeArtifact = new Artifact<'code', Metadata>({
   kind: 'code',
-  description:
-    'Useful for code generation; Code execution is only available for python code.',
+  description: 'Useful for code generation; Code execution is only available for python code.',
   initialize: ({ setMetadata }) => {
     setMetadata({
       outputs: [],
-    });
+    })
   },
   onStreamPart: ({ streamPart, setArtifact }) => {
     if (streamPart.type === 'code-delta') {
@@ -88,7 +78,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
             ? true
             : draftArtifact.isVisible,
         status: 'streaming',
-      }));
+      }))
     }
   },
   content: ({ metadata, setMetadata, ...props }) => {
@@ -106,12 +96,12 @@ export const codeArtifact = new Artifact<'code', Metadata>({
               setMetadata({
                 ...metadata,
                 outputs: [],
-              });
+              })
             }}
           />
         )}
       </>
-    );
+    )
   },
   actions: [
     {
@@ -119,8 +109,8 @@ export const codeArtifact = new Artifact<'code', Metadata>({
       label: 'Run',
       description: 'Execute code',
       onClick: async ({ content, setMetadata }) => {
-        const runId = generateUUID();
-        const outputContent: ConsoleOutputContent[] = [];
+        const runId = generateId('run')
+        const outputContent: ConsoleOutputContent[] = []
 
         setMetadata((metadata) => ({
           ...metadata,
@@ -132,24 +122,22 @@ export const codeArtifact = new Artifact<'code', Metadata>({
               status: 'in_progress',
             },
           ],
-        }));
+        }))
 
         try {
           // @ts-expect-error - loadPyodide is not defined
           const currentPyodideInstance = await globalThis.loadPyodide({
             indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/',
-          });
+          })
 
           currentPyodideInstance.setStdout({
             batched: (output: string) => {
               outputContent.push({
-                type: output.startsWith('data:image/png;base64')
-                  ? 'image'
-                  : 'text',
+                type: output.startsWith('data:image/png;base64') ? 'image' : 'text',
                 value: output,
-              });
+              })
             },
-          });
+          })
 
           await currentPyodideInstance.loadPackagesFromImports(content, {
             messageCallback: (message: string) => {
@@ -163,26 +151,24 @@ export const codeArtifact = new Artifact<'code', Metadata>({
                     status: 'loading_packages',
                   },
                 ],
-              }));
+              }))
             },
-          });
+          })
 
-          const requiredHandlers = detectRequiredHandlers(content);
+          const requiredHandlers = detectRequiredHandlers(content)
           for (const handler of requiredHandlers) {
             if (OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]) {
               await currentPyodideInstance.runPythonAsync(
                 OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS],
-              );
+              )
 
               if (handler === 'matplotlib') {
-                await currentPyodideInstance.runPythonAsync(
-                  'setup_matplotlib_output()',
-                );
+                await currentPyodideInstance.runPythonAsync('setup_matplotlib_output()')
               }
             }
           }
 
-          await currentPyodideInstance.runPythonAsync(content);
+          await currentPyodideInstance.runPythonAsync(content)
 
           setMetadata((metadata) => ({
             ...metadata,
@@ -194,7 +180,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
                 status: 'completed',
               },
             ],
-          }));
+          }))
         } catch (error: any) {
           setMetadata((metadata) => ({
             ...metadata,
@@ -206,7 +192,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
                 status: 'failed',
               },
             ],
-          }));
+          }))
         }
       },
     },
@@ -214,36 +200,36 @@ export const codeArtifact = new Artifact<'code', Metadata>({
       icon: <UndoIcon size={18} />,
       description: 'View Previous version',
       onClick: ({ handleVersionChange }) => {
-        handleVersionChange('prev');
+        handleVersionChange('prev')
       },
       isDisabled: ({ currentVersionIndex }) => {
         if (currentVersionIndex === 0) {
-          return true;
+          return true
         }
 
-        return false;
+        return false
       },
     },
     {
       icon: <RedoIcon size={18} />,
       description: 'View Next version',
       onClick: ({ handleVersionChange }) => {
-        handleVersionChange('next');
+        handleVersionChange('next')
       },
       isDisabled: ({ isCurrentVersion }) => {
         if (isCurrentVersion) {
-          return true;
+          return true
         }
 
-        return false;
+        return false
       },
     },
     {
       icon: <CopyIcon size={18} />,
       description: 'Copy code to clipboard',
       onClick: async ({ content }) => {
-        await navigator.clipboard.writeText(content);
-        toast.success('Copied to clipboard!');
+        await navigator.clipboard.writeText(content)
+        toast.success('Copied to clipboard!')
       },
     },
   ],
@@ -255,7 +241,7 @@ export const codeArtifact = new Artifact<'code', Metadata>({
         void appendMessage({
           role: 'user',
           content: 'Add comments to the code snippet for understanding',
-        });
+        })
       },
     },
     {
@@ -265,8 +251,8 @@ export const codeArtifact = new Artifact<'code', Metadata>({
         void appendMessage({
           role: 'user',
           content: 'Add logs to the code snippet for debugging',
-        });
+        })
       },
     },
   ],
-});
+})

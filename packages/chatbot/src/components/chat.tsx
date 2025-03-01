@@ -3,15 +3,16 @@
 import type { Attachment, Message } from 'ai'
 import { useState } from 'react'
 import { useChat } from 'ai/react'
+import { toast } from 'sonner'
 import useSWR, { useSWRConfig } from 'swr'
 
-import type { Vote } from '@mindworld/db/schema'
+import type { MessageVote } from '@mindworld/db/schema'
 
 import type { VisibilityType } from './visibility-selector'
 import { ChatHeader } from '@/components/chat-header'
-import { useBlockSelector } from '@/hooks/use-block'
-import { fetcher } from '@/lib/utils'
-import { Block } from './block'
+import { useArtifactSelector } from '@/hooks/use-artifact'
+import { fetcher, generateUUID } from '@/lib/utils'
+import { Artifact } from './artifact'
 import { Messages } from './messages'
 import { MultimodalInput } from './multimodal-input'
 
@@ -35,18 +36,23 @@ export function Chat({
   const { messages, setMessages, handleSubmit, input, setInput, append, isLoading, stop, reload } =
     useChat({
       id,
-      body: { id, modelId: modelId },
+      body: { id, selectedChatModel: modelId },
       initialMessages,
       experimental_throttle: 100,
+      sendExtraMessageFields: true,
+      generateId: generateUUID,
       onFinish: () => {
         void mutate('/api/history')
       },
+      onError: (_error) => {
+        toast.error('An error occured, please try again!')
+      },
     })
 
-  const { data: votes } = useSWR<Vote[]>(`/api/vote?chatId=${id}`, fetcher)
+  const { data: votes } = useSWR<MessageVote[]>(`/api/vote?chatId=${id}`, fetcher)
 
   const [attachments, setAttachments] = useState<Attachment[]>([])
-  const isBlockVisible = useBlockSelector((state) => state.isVisible)
+  const isArtifactVisible = useArtifactSelector((state) => state.isVisible)
 
   return (
     <>
@@ -67,7 +73,7 @@ export function Chat({
           setMessages={setMessages}
           reload={reload}
           isReadonly={isReadonly}
-          isBlockVisible={isBlockVisible}
+          isArtifactVisible={isArtifactVisible}
         />
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
@@ -89,7 +95,7 @@ export function Chat({
         </form>
       </div>
 
-      <Block
+      <Artifact
         chatId={id}
         input={input}
         setInput={setInput}

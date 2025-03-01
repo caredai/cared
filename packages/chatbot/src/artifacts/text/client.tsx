@@ -1,32 +1,27 @@
-import { Artifact } from '@/components/create-artifact';
-import { DiffView } from '@/components/diffview';
-import { ArtifactSkeleton } from '@/components/artifact-skeleton';
-import { Editor } from '@/components/text-editor';
-import {
-  ClockRewind,
-  CopyIcon,
-  MessageIcon,
-  PenIcon,
-  RedoIcon,
-  UndoIcon,
-} from '@/components/icons';
-import { Suggestion } from '@/lib/db/schema';
-import { toast } from 'sonner';
-import { getSuggestions } from '../actions';
+import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
-interface TextArtifactMetadata {
-  suggestions: Array<Suggestion>;
+import type { ArtifactSuggestion } from '@mindworld/db/schema'
+
+import { Artifact } from '@/components/create-artifact'
+import { DiffView } from '@/components/diffview'
+import { DocumentSkeleton } from '@/components/document-skeleton'
+import { ClockRewind, CopyIcon, MessageIcon, PenIcon, RedoIcon, UndoIcon } from '@/components/icons'
+import { Editor } from '@/components/text-editor'
+import { useTRPC } from '@/lib/api'
+
+export interface TextArtifactMetadata {
+  suggestions: ArtifactSuggestion[]
 }
 
 export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
   kind: 'text',
   description: 'Useful for text content, like drafting essays and emails.',
-  initialize: async ({ artifactId, setMetadata }) => {
-    const suggestions = await getSuggestions({ artifactId });
-
+  initialize: ({ setMetadata }) => {
     setMetadata({
-      suggestions,
-    });
+      suggestions: [],
+    })
   },
   onStreamPart: ({ streamPart, setMetadata, setArtifact }) => {
     if (streamPart.type === 'suggestion') {
@@ -34,10 +29,10 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
         return {
           suggestions: [
             ...metadata.suggestions,
-            streamPart.content as Suggestion,
+            streamPart.content as ArtifactSuggestion,
           ],
-        };
-      });
+        }
+      })
     }
 
     if (streamPart.type === 'text-delta') {
@@ -52,11 +47,12 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
               ? true
               : draftArtifact.isVisible,
           status: 'streaming',
-        };
-      });
+        }
+      })
     }
   },
   content: ({
+    artifactId,
     mode,
     status,
     content,
@@ -66,16 +62,37 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
     getArtifactContentById,
     isLoading,
     metadata,
+    setMetadata,
   }) => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const trpc = useTRPC()
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const suggestions = useQuery(
+      trpc.artifact.listSuggestions.queryOptions({
+        artifactId,
+      }),
+    ).data?.suggestions
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      setMetadata((metadata) => {
+        return {
+          suggestions: [
+            ...metadata.suggestions,
+            ...(suggestions ?? []),
+          ],
+        }
+      })
+    }, [setMetadata, suggestions])
+
     if (isLoading) {
-      return <ArtifactSkeleton artifactKind="text" />;
+      return <DocumentSkeleton artifactKind="text" />
     }
 
     if (mode === 'diff') {
-      const oldContent = getArtifactContentById(currentVersionIndex - 1);
-      const newContent = getArtifactContentById(currentVersionIndex);
+      const oldContent = getArtifactContentById(currentVersionIndex - 1)
+      const newContent = getArtifactContentById(currentVersionIndex)
 
-      return <DiffView oldContent={oldContent} newContent={newContent} />;
+      return <DiffView oldContent={oldContent} newContent={newContent} />
     }
 
     return (
@@ -83,71 +100,69 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
         <div className="flex flex-row py-8 md:p-20 px-4">
           <Editor
             content={content}
-            suggestions={metadata ? metadata.suggestions : []}
+            suggestions={metadata.suggestions}
             isCurrentVersion={isCurrentVersion}
             currentVersionIndex={currentVersionIndex}
             status={status}
             onSaveContent={onSaveContent}
           />
 
-          {metadata &&
-          metadata.suggestions &&
-          metadata.suggestions.length > 0 ? (
+          {metadata.suggestions.length > 0 ? (
             <div className="md:hidden h-dvh w-12 shrink-0" />
           ) : null}
         </div>
       </>
-    );
+    )
   },
   actions: [
     {
       icon: <ClockRewind size={18} />,
       description: 'View changes',
       onClick: ({ handleVersionChange }) => {
-        handleVersionChange('toggle');
+        handleVersionChange('toggle')
       },
-      isDisabled: ({ currentVersionIndex, setMetadata }) => {
+      isDisabled: ({ currentVersionIndex }) => {
         if (currentVersionIndex === 0) {
-          return true;
+          return true
         }
 
-        return false;
+        return false
       },
     },
     {
       icon: <UndoIcon size={18} />,
       description: 'View Previous version',
       onClick: ({ handleVersionChange }) => {
-        handleVersionChange('prev');
+        handleVersionChange('prev')
       },
       isDisabled: ({ currentVersionIndex }) => {
         if (currentVersionIndex === 0) {
-          return true;
+          return true
         }
 
-        return false;
+        return false
       },
     },
     {
       icon: <RedoIcon size={18} />,
       description: 'View Next version',
       onClick: ({ handleVersionChange }) => {
-        handleVersionChange('next');
+        handleVersionChange('next')
       },
       isDisabled: ({ isCurrentVersion }) => {
         if (isCurrentVersion) {
-          return true;
+          return true
         }
 
-        return false;
+        return false
       },
     },
     {
       icon: <CopyIcon size={18} />,
       description: 'Copy to clipboard',
       onClick: ({ content }) => {
-        navigator.clipboard.writeText(content);
-        toast.success('Copied to clipboard!');
+        void navigator.clipboard.writeText(content)
+        toast.success('Copied to clipboard!')
       },
     },
   ],
@@ -156,23 +171,22 @@ export const textArtifact = new Artifact<'text', TextArtifactMetadata>({
       icon: <PenIcon />,
       description: 'Add final polish',
       onClick: ({ appendMessage }) => {
-        appendMessage({
+        void appendMessage({
           role: 'user',
           content:
             'Please add final polish and check for grammar, add section titles for better structure, and ensure everything reads smoothly.',
-        });
+        })
       },
     },
     {
       icon: <MessageIcon />,
       description: 'Request suggestions',
       onClick: ({ appendMessage }) => {
-        appendMessage({
+        void appendMessage({
           role: 'user',
-          content:
-            'Please add suggestions you have that could improve the writing.',
-        });
+          content: 'Please add suggestions you have that could improve the writing.',
+        })
       },
     },
   ],
-});
+})

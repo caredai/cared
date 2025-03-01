@@ -43,7 +43,8 @@ export const Artifact = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.id, table.version] }),
-    index().on(table.userId, table.chatId, table.id),
+    index().on(table.userId, table.id),
+    index().on(table.chatId, table.id),
     ...timestampsIndices(table),
   ],
 )
@@ -77,7 +78,7 @@ export function generateArtifactSuggestionId() {
 }
 
 export const ArtifactSuggestion = pgTable(
-  'artifact',
+  'artifact_suggestion',
   {
     id: text().primaryKey().notNull().$defaultFn(generateArtifactSuggestionId),
     artifactId: text().notNull(),

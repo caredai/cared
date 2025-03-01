@@ -1,8 +1,8 @@
 import { memo } from 'react'
 import { toast } from 'sonner'
 
-import type { BlockKind } from './block'
-import { useBlock } from '@/hooks/use-block'
+import type { ArtifactKind } from './artifact'
+import { useArtifact } from '@/hooks/use-artifact'
 import { FileIcon, LoaderIcon, MessageIcon, PencilEditIcon } from './icons'
 
 const getActionText = (
@@ -23,12 +23,12 @@ const getActionText = (
 
 interface DocumentToolResultProps {
   type: 'create' | 'update' | 'request-suggestions'
-  result: { id: string; title: string; kind: BlockKind }
+  result: { id: string; title: string; kind: ArtifactKind }
   isReadonly: boolean
 }
 
 function PureDocumentToolResult({ type, result, isReadonly }: DocumentToolResultProps) {
-  const { setBlock } = useBlock()
+  const { setArtifact } = useArtifact()
 
   return (
     <button
@@ -49,7 +49,7 @@ function PureDocumentToolResult({ type, result, isReadonly }: DocumentToolResult
           height: rect.height,
         }
 
-        setBlock({
+        setArtifact({
           documentId: result.id,
           kind: result.kind,
           content: '',
@@ -65,8 +65,7 @@ function PureDocumentToolResult({ type, result, isReadonly }: DocumentToolResult
           <FileIcon />
         ) : type === 'update' ? (
           <PencilEditIcon />
-        ) : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        type === 'request-suggestions' ? (
+        ) : type === 'request-suggestions' ? (
           <MessageIcon />
         ) : null}
       </div>
@@ -84,7 +83,7 @@ interface DocumentToolCallProps {
 }
 
 function PureDocumentToolCall({ type, args, isReadonly }: DocumentToolCallProps) {
-  const { setBlock } = useBlock()
+  const { setArtifact } = useArtifact()
 
   return (
     <button
@@ -105,8 +104,8 @@ function PureDocumentToolCall({ type, args, isReadonly }: DocumentToolCallProps)
           height: rect.height,
         }
 
-        setBlock((currentBlock) => ({
-          ...currentBlock,
+        setArtifact((currentArtifact) => ({
+          ...currentArtifact,
           isVisible: true,
           boundingBox,
         }))

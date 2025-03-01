@@ -1,15 +1,9 @@
-import type {
-  CoreAssistantMessage,
-  CoreMessage,
-  CoreToolMessage,
-  Message,
-  ToolInvocation,
-} from 'ai'
+import type { CoreToolMessage, Message, ToolInvocation } from 'ai'
 import type { ClassValue } from 'clsx'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-import type { Message as DBMessage, Document } from '@mindworld/db/schema'
+import type { Artifact, Message as DBMessage } from '@mindworld/db/schema'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -37,7 +31,7 @@ export const fetcher = async (url: string) => {
 
 export function getLocalStorage(key: string) {
   if (typeof window !== 'undefined') {
-    return JSON.parse(localStorage.getItem(key) ?? '[]')
+    return JSON.parse(localStorage.getItem(key) || '[]')
   }
   return []
 }
@@ -93,6 +87,7 @@ export function convertToUIMessages(messages: DBMessage[]): Message[] {
     }
 
     let textContent = ''
+    let reasoning: string | undefined = undefined
     const toolInvocations: ToolInvocation[] = []
 
     if (typeof message.content === 'string') {
@@ -108,58 +103,22 @@ export function convertToUIMessages(messages: DBMessage[]): Message[] {
             toolName: content.toolName,
             args: content.args,
           })
+        } else if (content.type === 'reasoning') {
+          reasoning = content.reasoning
         }
       }
     }
 
     chatMessages.push({
       id: message.id,
-      role: message.role,
+      role: message.role as Message['role'],
       content: textContent,
+      reasoning,
       toolInvocations,
     })
 
     return chatMessages
   }, [])
-}
-
-export function sanitizeResponseMessages(
-  messages: (CoreToolMessage | CoreAssistantMessage)[],
-): (CoreToolMessage | CoreAssistantMessage)[] {
-  const toolResultIds: string[] = []
-
-  for (const message of messages) {
-    if (message.role === 'tool') {
-      for (const content of message.content) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (content.type === 'tool-result') {
-          toolResultIds.push(content.toolCallId)
-        }
-      }
-    }
-  }
-
-  const messagesBySanitizedContent = messages.map((message) => {
-    if (message.role !== 'assistant') return message
-
-    if (typeof message.content === 'string') return message
-
-    const sanitizedContent = message.content.filter((content) =>
-      content.type === 'tool-call'
-        ? toolResultIds.includes(content.toolCallId)
-        : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          content.type === 'text'
-          ? content.text.length > 0
-          : true,
-    )
-
-    return {
-      ...message,
-      content: sanitizedContent,
-    }
-  })
-
-  return messagesBySanitizedContent.filter((message) => message.content.length > 0)
 }
 
 export function sanitizeUIMessages(messages: Message[]): Message[] {
@@ -193,25 +152,6 @@ export function sanitizeUIMessages(messages: Message[]): Message[] {
   )
 }
 
-export function getMostRecentUserMessage(messages: CoreMessage[]) {
-  const userMessages = messages.filter((message) => message.role === 'user')
-  return userMessages.at(-1)
-}
-
-export function getDocumentTimestampByIndex(documents: Document[], index: number) {
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!documents) return new Date()
-  if (index > documents.length) return new Date()
-
-  return documents[index]!.createdAt
-}
-
-export function getMessageIdFromAnnotations(message: Message) {
-  if (!message.annotations) return message.id
-
-  const [annotation] = message.annotations
-  if (!annotation) return message.id
-
-  // @ts-expect-error messageIdFromServer is not defined in MessageAnnotation
-  return annotation.messageIdFromServer
+export function getDocumentTimestampByIndex(documents: Artifact[], index: number) {
+  return documents.at(index)?.createdAt ?? new Date()
 }

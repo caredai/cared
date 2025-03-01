@@ -1,9 +1,9 @@
 'use client'
 
-import type { BlockKind } from './block'
+import type { ArtifactKind } from './artifact'
 
-export const DocumentSkeleton = ({ blockKind }: { blockKind: BlockKind }) => {
-  return blockKind === 'image' ? (
+export const DocumentSkeleton = ({ artifactKind }: { artifactKind: ArtifactKind }) => {
+  return artifactKind === 'image' ? (
     <div className="flex flex-col gap-4 w-full justify-center items-center h-[calc(100dvh-60px)]">
       <div className="animate-pulse rounded-lg bg-muted-foreground/20 size-96" />
     </div>

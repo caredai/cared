@@ -1,10 +1,12 @@
-import { memo } from 'react';
-import { CrossIcon } from './icons';
-import { Button } from './ui/button';
-import { initialArtifactData, useArtifact } from '@/hooks/use-artifact';
+import { memo } from 'react'
+
+import { Button } from '@mindworld/ui/components/button'
+
+import { initialArtifactData, useArtifact } from '@/hooks/use-artifact'
+import { CrossIcon } from './icons'
 
 function PureArtifactCloseButton() {
-  const { setArtifact } = useArtifact();
+  const { setArtifact } = useArtifact()
 
   return (
     <Button
@@ -18,12 +20,12 @@ function PureArtifactCloseButton() {
                 isVisible: false,
               }
             : { ...initialArtifactData, status: 'idle' },
-        );
+        )
       }}
     >
       <CrossIcon size={18} />
     </Button>
-  );
+  )
 }
 
-export const ArtifactCloseButton = memo(PureArtifactCloseButton, () => true);
+export const ArtifactCloseButton = memo(PureArtifactCloseButton, () => true)

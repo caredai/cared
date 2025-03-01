@@ -2,6 +2,7 @@ import { adminRouter } from './router/admin'
 import { agentRouter } from './router/agent'
 import { apiKeyRouter } from './router/api-key'
 import { appRouter as _appRouter } from './router/app'
+import { artifactRouter } from './router/artifact'
 import { chatRouter } from './router/chat'
 import { datasetRouter } from './router/dataset'
 import { modelRouter } from './router/model'
@@ -21,6 +22,7 @@ export const appRouter = createTRPCRouter({
   dataset: datasetRouter,
   model: modelRouter,
   chat: chatRouter,
+  artifact: artifactRouter,
 })
 
 // export type definition of API

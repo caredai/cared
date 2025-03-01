@@ -2,20 +2,21 @@ import type { ChatRequestOptions, Message } from 'ai'
 import { memo } from 'react'
 import equal from 'fast-deep-equal'
 
-import type { Vote } from '@mindworld/db/schema'
+import type { MessageVote } from '@mindworld/db/schema'
 
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom'
 import { PreviewMessage, ThinkingMessage } from './message'
+import { Overview } from './overview'
 
 interface MessagesProps {
   chatId: string
   isLoading: boolean
-  votes: Vote[] | undefined
+  votes: MessageVote[] | undefined
   messages: Message[]
   setMessages: (messages: Message[] | ((messages: Message[]) => Message[])) => void
   reload: (chatRequestOptions?: ChatRequestOptions) => Promise<string | null | undefined>
   isReadonly: boolean
-  isBlockVisible: boolean
+  isArtifactVisible: boolean
 }
 
 function PureMessages({
@@ -34,6 +35,8 @@ function PureMessages({
       ref={messagesContainerRef}
       className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4"
     >
+      {messages.length === 0 && <Overview />}
+
       {messages.map((message, index) => (
         <PreviewMessage
           key={message.id}
@@ -57,7 +60,7 @@ function PureMessages({
 }
 
 export const Messages = memo(PureMessages, (prevProps, nextProps) => {
-  if (prevProps.isBlockVisible && nextProps.isBlockVisible) return true
+  if (prevProps.isArtifactVisible && nextProps.isArtifactVisible) return true
 
   if (prevProps.isLoading !== nextProps.isLoading) return false
   if (prevProps.isLoading && nextProps.isLoading) return false

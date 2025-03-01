@@ -1,15 +1,15 @@
-import type { BlockKind } from '@/components/block'
+import type { ArtifactKind } from '@/components/artifact'
 import type { Node } from 'prosemirror-model'
 import type { Decoration, EditorView } from 'prosemirror-view'
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { DecorationSet } from 'prosemirror-view'
 import { createRoot } from 'react-dom/client'
 
-import type { Suggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@mindworld/db/schema'
 
 import { Suggestion as PreviewSuggestion } from '@/components/suggestion'
 
-export interface UISuggestion extends Suggestion {
+export interface UISuggestion extends ArtifactSuggestion {
   selectionStart: number
   selectionEnd: number
 }
@@ -42,7 +42,7 @@ function findPositionsInDoc(doc: Node, searchText: string): Position | null {
   return positions
 }
 
-export function projectWithPositions(doc: Node, suggestions: Suggestion[]): UISuggestion[] {
+export function projectWithPositions(doc: Node, suggestions: ArtifactSuggestion[]): UISuggestion[] {
   return suggestions.map((suggestion) => {
     const positions = findPositionsInDoc(doc, suggestion.originalText)
 
@@ -65,7 +65,7 @@ export function projectWithPositions(doc: Node, suggestions: Suggestion[]): UISu
 export function createSuggestionWidget(
   suggestion: UISuggestion,
   view: EditorView,
-  blockKind: BlockKind = 'text',
+  artifactKind: ArtifactKind = 'text',
 ): { dom: HTMLElement; destroy: () => void } {
   const dom = document.createElement('span')
   const root = createRoot(dom)
@@ -109,7 +109,9 @@ export function createSuggestionWidget(
     dispatch(textTransaction)
   }
 
-  root.render(<PreviewSuggestion suggestion={suggestion} onApply={onApply} blockKind={blockKind} />)
+  root.render(
+    <PreviewSuggestion suggestion={suggestion} onApply={onApply} artifactKind={artifactKind} />,
+  )
 
   return {
     dom,

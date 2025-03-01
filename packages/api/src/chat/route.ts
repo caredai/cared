@@ -69,11 +69,10 @@ export async function POST(request: Request) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const ctx = {
+  const caller = createCaller({
     auth,
     db,
-  }
-  const caller = createCaller(ctx)
+  })
 
   let chat: Chat | undefined
   let deleteChat: (() => Promise<void>) | undefined

@@ -6,7 +6,7 @@ import cx from 'classnames'
 import equal from 'fast-deep-equal'
 import { AnimatePresence, motion } from 'framer-motion'
 
-import type { Vote } from '@mindworld/db/schema'
+import type { MessageVote } from '@mindworld/db/schema'
 import { Button } from '@mindworld/ui/components/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
 
@@ -17,6 +17,7 @@ import { PencilEditIcon, SparklesIcon } from './icons'
 import { Markdown } from './markdown'
 import { MessageActions } from './message-actions'
 import { MessageEditor } from './message-editor'
+import { MessageReasoning } from './message-reasoning'
 import { PreviewAttachment } from './preview-attachment'
 import { Weather } from './weather'
 
@@ -31,7 +32,7 @@ const PurePreviewMessage = ({
 }: {
   chatId: string
   message: Message
-  vote: Vote | undefined
+  vote: MessageVote | undefined
   isLoading: boolean
   setMessages: (messages: Message[] | ((messages: Message[]) => Message[])) => void
   reload: (chatRequestOptions?: ChatRequestOptions) => Promise<string | null | undefined>
@@ -64,7 +65,7 @@ const PurePreviewMessage = ({
             </div>
           )}
 
-          <div className="flex flex-col gap-2 w-full">
+          <div className="flex flex-col gap-4 w-full">
             {message.experimental_attachments && (
               <div className="flex flex-row justify-end gap-2">
                 {message.experimental_attachments.map((attachment) => (
@@ -73,7 +74,11 @@ const PurePreviewMessage = ({
               </div>
             )}
 
-            {message.content && mode === 'view' && (
+            {message.reasoning && (
+              <MessageReasoning isLoading={isLoading} reasoning={message.reasoning} />
+            )}
+
+            {(message.content || message.reasoning) && mode === 'view' && (
               <div className="flex flex-row gap-2 items-start">
                 {message.role === 'user' && !isReadonly && (
                   <Tooltip>
@@ -193,6 +198,7 @@ const PurePreviewMessage = ({
 
 export const PreviewMessage = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.isLoading !== nextProps.isLoading) return false
+  if (prevProps.message.reasoning !== nextProps.message.reasoning) return false
   if (prevProps.message.content !== nextProps.message.content) return false
   if (!equal(prevProps.message.toolInvocations, nextProps.message.toolInvocations)) return false
   if (!equal(prevProps.vote, nextProps.vote)) return false

@@ -6,16 +6,16 @@ import { motion } from 'framer-motion'
 import { useSWRConfig } from 'swr'
 import { useWindowSize } from 'usehooks-ts'
 
-import type { Document } from '@mindworld/db/schema'
+import type { Artifact } from '@mindworld/db/schema'
 import { Button } from '@mindworld/ui/components/button'
 
-import { useBlock } from '@/hooks/use-block'
+import { useArtifact } from '@/hooks/use-artifact'
 import { getDocumentTimestampByIndex } from '@/lib/utils'
 import { LoaderIcon } from './icons'
 
 interface VersionFooterProps {
   handleVersionChange: (type: 'next' | 'prev' | 'toggle' | 'latest') => void
-  documents: Document[] | undefined
+  documents: Artifact[] | undefined
   currentVersionIndex: number
 }
 
@@ -24,7 +24,7 @@ export const VersionFooter = ({
   documents,
   currentVersionIndex,
 }: VersionFooterProps) => {
-  const { block } = useBlock()
+  const { artifact } = useArtifact()
 
   const { width } = useWindowSize()
   const isMobile = width < 768
@@ -54,8 +54,8 @@ export const VersionFooter = ({
             setIsMutating(true)
 
             void mutate(
-              `/api/document?id=${block.documentId}`,
-              await fetch(`/api/document?id=${block.documentId}`, {
+              `/api/document?id=${artifact.documentId}`,
+              await fetch(`/api/document?id=${artifact.documentId}`, {
                 method: 'PATCH',
                 body: JSON.stringify({
                   timestamp: getDocumentTimestampByIndex(documents, currentVersionIndex),

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
 import { useCopyToClipboard } from 'usehooks-ts'
 
-import type { Vote } from '@mindworld/db/schema'
+import type { MessageVote } from '@mindworld/db/schema'
 import { Button } from '@mindworld/ui/components/button'
 import {
   Tooltip,
@@ -14,7 +14,6 @@ import {
   TooltipTrigger,
 } from '@mindworld/ui/components/tooltip'
 
-import { getMessageIdFromAnnotations } from '@/lib/utils'
 import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from './icons'
 
 export function PureMessageActions({
@@ -25,7 +24,7 @@ export function PureMessageActions({
 }: {
   chatId: string
   message: Message
-  vote: Vote | undefined
+  vote: MessageVote | undefined
   isLoading: boolean
 }) {
   const { mutate } = useSWRConfig()
@@ -61,21 +60,19 @@ export function PureMessageActions({
               disabled={vote?.isUpvoted}
               variant="outline"
               onClick={() => {
-                const messageId = getMessageIdFromAnnotations(message)
-
                 const upvote = fetch('/api/vote', {
                   method: 'PATCH',
                   body: JSON.stringify({
                     chatId,
-                    messageId,
+                    messageId: message.id,
                     type: 'up',
                   }),
                 })
 
-                void toast.promise(upvote, {
+                toast.promise(upvote, {
                   loading: 'Upvoting Response...',
                   success: () => {
-                    void mutate<Vote[]>(
+                    void mutate<MessageVote[]>(
                       `/api/vote?chatId=${chatId}`,
                       (currentVotes) => {
                         if (!currentVotes) return []
@@ -90,6 +87,8 @@ export function PureMessageActions({
                             chatId,
                             messageId: message.id,
                             isUpvoted: true,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
                           },
                         ]
                       },
@@ -115,21 +114,19 @@ export function PureMessageActions({
               variant="outline"
               disabled={vote && !vote.isUpvoted}
               onClick={() => {
-                const messageId = getMessageIdFromAnnotations(message)
-
                 const downvote = fetch('/api/vote', {
                   method: 'PATCH',
                   body: JSON.stringify({
                     chatId,
-                    messageId,
+                    messageId: message.id,
                     type: 'down',
                   }),
                 })
 
-                void toast.promise(downvote, {
+                toast.promise(downvote, {
                   loading: 'Downvoting Response...',
                   success: () => {
-                    void mutate<Vote[]>(
+                    void mutate<MessageVote[]>(
                       `/api/vote?chatId=${chatId}`,
                       (currentVotes) => {
                         if (!currentVotes) return []
@@ -144,6 +141,8 @@ export function PureMessageActions({
                             chatId,
                             messageId: message.id,
                             isUpvoted: false,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
                           },
                         ]
                       },

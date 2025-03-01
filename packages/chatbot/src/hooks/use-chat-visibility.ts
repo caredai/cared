@@ -1,8 +1,8 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { VisibilityType } from '@/components/visibility-selector'
 import { useMemo } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import useSWR, { useSWRConfig } from 'swr'
 
 import type { Chat } from '@mindworld/db/schema'
@@ -18,20 +18,22 @@ export function useChatVisibility({
 }) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const updateChat = useMutation(trpc.chat.update.mutationOptions({
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: trpc.chat.queryKey(),
-      })
-    },
-    onError: (err) => {
-      console.error(
-        err.data?.code === 'UNAUTHORIZED'
-          ? 'You must be logged in to update chat'
-          : 'Failed to update chat',
-      )
-    },
-  }))
+  const updateChat = useMutation(
+    trpc.chat.update.mutationOptions({
+      onSuccess: async () => {
+        await queryClient.invalidateQueries({
+          queryKey: trpc.chat.queryKey(),
+        })
+      },
+      onError: (err) => {
+        console.error(
+          err.data?.code === 'UNAUTHORIZED'
+            ? 'You must be logged in to update chat'
+            : 'Failed to update chat',
+        )
+      },
+    }),
+  )
 
   const { mutate, cache } = useSWRConfig()
   const history = cache.get('/api/history')?.data as Chat[] | undefined
@@ -76,7 +78,7 @@ export function useChatVisibility({
       id: chatId,
       metadata: {
         visibility: updatedVisibilityType,
-      }
+      },
     })
   }
 
