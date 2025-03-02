@@ -1,3 +1,4 @@
+import type { ArtifactKind } from '@/artifacts'
 import type { Node } from 'prosemirror-model'
 import type { Decoration, EditorView } from 'prosemirror-view'
 import { Plugin, PluginKey } from 'prosemirror-state'
@@ -7,7 +8,6 @@ import { createRoot } from 'react-dom/client'
 import type { ArtifactSuggestion } from '@mindworld/db/schema'
 
 import { Suggestion as PreviewSuggestion } from '@/components/suggestion'
-import { ArtifactKind } from '@/artifacts'
 
 export interface UISuggestion extends ArtifactSuggestion {
   selectionStart: number

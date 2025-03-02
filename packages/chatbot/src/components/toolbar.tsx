@@ -1,5 +1,6 @@
 'use client'
 
+import type { ArtifactKind } from '@/artifacts'
 import type { ChatRequestOptions, CreateMessage, Message } from 'ai'
 import type { UseChatHelpers } from 'ai/react'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
@@ -17,9 +18,9 @@ import {
 } from '@mindworld/ui/components/tooltip'
 
 import type { ArtifactToolbarItem } from './create-artifact'
+import { artifactDefinitions } from '@/artifacts'
 import { sanitizeUIMessages } from '@/lib/utils'
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons'
-import { artifactDefinitions, ArtifactKind } from '@/artifacts'
 
 interface ToolProps {
   description: string

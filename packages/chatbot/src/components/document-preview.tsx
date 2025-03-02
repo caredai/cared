@@ -1,5 +1,6 @@
 'use client'
 
+import type { ArtifactKind } from '@/artifacts'
 import type { MouseEvent } from 'react'
 import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import equal from 'fast-deep-equal'
@@ -17,7 +18,6 @@ import { FileIcon, FullscreenIcon, ImageIcon, LoaderIcon } from './icons'
 import { ImageEditor } from './image-editor'
 import { SpreadsheetEditor } from './sheet-editor'
 import { Editor } from './text-editor'
-import { ArtifactKind } from '@/artifacts'
 
 interface DocumentPreviewProps {
   isReadonly: boolean

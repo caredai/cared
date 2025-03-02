@@ -1,7 +1,6 @@
 'use client'
 
-
-import { ArtifactKind } from '@/artifacts'
+import type { ArtifactKind } from '@/artifacts'
 
 export const DocumentSkeleton = ({ artifactKind }: { artifactKind: ArtifactKind }) => {
   return artifactKind === 'image' ? (

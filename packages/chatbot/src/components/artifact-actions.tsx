@@ -7,9 +7,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/component
 
 import type { UIArtifact } from './artifact'
 import type { ArtifactActionContext } from './create-artifact'
-import { cn } from '@/lib/utils'
-
 import { artifactDefinitions } from '@/artifacts'
+import { cn } from '@/lib/utils'
 
 interface ArtifactActionsProps {
   artifact: UIArtifact

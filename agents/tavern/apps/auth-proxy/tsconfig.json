@@ -1,0 +1,4 @@
+{
+  "extends": "@mindworld/tsconfig/base.json",
+  "include": ["routes"]
+}

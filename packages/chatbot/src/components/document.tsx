@@ -1,9 +1,9 @@
+import type { ArtifactKind } from '@/artifacts'
 import { memo } from 'react'
 import { toast } from 'sonner'
 
 import { useArtifact } from '@/hooks/use-artifact'
 import { FileIcon, LoaderIcon, MessageIcon, PencilEditIcon } from './icons'
-import { ArtifactKind } from '@/artifacts'
 
 const getActionText = (
   type: 'create' | 'update' | 'request-suggestions',
@@ -65,7 +65,8 @@ function PureDocumentToolResult({ type, result, isReadonly }: DocumentToolResult
           <FileIcon />
         ) : type === 'update' ? (
           <PencilEditIcon />
-        ) : type === 'request-suggestions' ? (
+        ) : // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        type === 'request-suggestions' ? (
           <MessageIcon />
         ) : null}
       </div>

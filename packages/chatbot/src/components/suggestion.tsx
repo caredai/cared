@@ -1,5 +1,6 @@
 'use client'
 
+import type { ArtifactKind } from '@/artifacts'
 import type { UISuggestion } from '@/lib/editor/suggestions'
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -9,7 +10,6 @@ import { Button } from '@mindworld/ui/components/button'
 
 import { cn } from '@/lib/utils'
 import { CrossIcon, MessageIcon } from './icons'
-import { ArtifactKind } from '@/artifacts'
 
 export const Suggestion = ({
   suggestion,
