@@ -1,9 +1,9 @@
 import { memo } from 'react'
 import { toast } from 'sonner'
 
-import type { ArtifactKind } from './artifact'
 import { useArtifact } from '@/hooks/use-artifact'
 import { FileIcon, LoaderIcon, MessageIcon, PencilEditIcon } from './icons'
+import { ArtifactKind } from '@/artifacts'
 
 const getActionText = (
   type: 'create' | 'update' | 'request-suggestions',

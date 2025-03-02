@@ -16,11 +16,10 @@ import {
   TooltipTrigger,
 } from '@mindworld/ui/components/tooltip'
 
-import type { ArtifactKind } from './artifact'
 import type { ArtifactToolbarItem } from './create-artifact'
 import { sanitizeUIMessages } from '@/lib/utils'
-import { artifactDefinitions } from './artifact'
 import { ArrowUpIcon, StopIcon, SummarizeIcon } from './icons'
+import { artifactDefinitions, ArtifactKind } from '@/artifacts'
 
 interface ToolProps {
   description: string

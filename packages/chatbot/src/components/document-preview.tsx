@@ -7,7 +7,7 @@ import useSWR from 'swr'
 
 import type { Artifact } from '@mindworld/db/schema'
 
-import type { ArtifactKind, UIArtifact } from './artifact'
+import type { UIArtifact } from './artifact'
 import { useArtifact } from '@/hooks/use-artifact'
 import { cn, fetcher } from '@/lib/utils'
 import { CodeEditor } from './code-editor'
@@ -17,6 +17,7 @@ import { FileIcon, FullscreenIcon, ImageIcon, LoaderIcon } from './icons'
 import { ImageEditor } from './image-editor'
 import { SpreadsheetEditor } from './sheet-editor'
 import { Editor } from './text-editor'
+import { ArtifactKind } from '@/artifacts'
 
 interface DocumentPreviewProps {
   isReadonly: boolean

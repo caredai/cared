@@ -5,9 +5,8 @@ import { useChat } from 'ai/react'
 
 import type { ArtifactSuggestion } from '@mindworld/db/schema'
 
-import type { ArtifactKind } from './artifact'
 import { initialArtifactData, useArtifact } from '@/hooks/use-artifact'
-import { artifactDefinitions } from './artifact'
+import { artifactDefinitions, ArtifactKind } from '@/artifacts'
 
 export interface DataStreamDelta {
   type:

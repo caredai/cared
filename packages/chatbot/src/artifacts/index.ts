@@ -1,13 +1,13 @@
-import { addArtifactHandlers } from '@mindworld/tools'
+import { codeArtifact } from './code/client'
+import { imageArtifact } from './image/client'
+import { sheetArtifact } from './sheet/client'
+import { textArtifact } from './text/client'
 
-import { codeArtifactHandler } from './code/server'
-import { imageArtifactHandler } from './image/server'
-import { sheetArtifactHandler } from './sheet/server'
-import { textArtifactHandler } from './text/server'
+export const artifactDefinitions = [
+  textArtifact,
+  codeArtifact,
+  imageArtifact,
+  sheetArtifact,
+]
 
-addArtifactHandlers(
-  textArtifactHandler,
-  imageArtifactHandler,
-  sheetArtifactHandler,
-  codeArtifactHandler,
-)
+export type ArtifactKind = (typeof artifactDefinitions)[number]['kind']

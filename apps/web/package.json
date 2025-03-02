@@ -17,6 +17,7 @@
     "@clerk/nextjs": "^6.11.3",
     "@clerk/themes": "^2.2.18",
     "@mindworld/api": "workspace:*",
+    "@mindworld/chatbot": "workspace:*",
     "@mindworld/i18n": "workspace:*",
     "@mindworld/ui": "workspace:*",
     "@mindworld/utils": "workspace:*",

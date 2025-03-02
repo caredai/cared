@@ -7,9 +7,9 @@ import { useWindowSize } from 'usehooks-ts'
 
 import { Button } from '@mindworld/ui/components/button'
 
-import type { ArtifactKind } from './artifact'
 import { cn } from '@/lib/utils'
 import { CrossIcon, MessageIcon } from './icons'
+import { ArtifactKind } from '@/artifacts'
 
 export const Suggestion = ({
   suggestion,

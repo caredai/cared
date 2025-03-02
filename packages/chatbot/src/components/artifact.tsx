@@ -1,3 +1,4 @@
+import type { ArtifactKind } from '@/artifacts'
 import type { Attachment, ChatRequestOptions, CreateMessage, Message } from 'ai'
 import type { Dispatch, SetStateAction } from 'react'
 import { memo, useCallback, useEffect, useState } from 'react'
@@ -10,10 +11,7 @@ import { useDebounceCallback, useWindowSize } from 'usehooks-ts'
 import type { Artifact as Document, MessageVote } from '@mindworld/db/schema'
 import { useSidebar } from '@mindworld/ui/components/sidebar'
 
-import { codeArtifact } from '@/artifacts/code/client'
-import { imageArtifact } from '@/artifacts/image/client'
-import { sheetArtifact } from '@/artifacts/sheet/client'
-import { textArtifact } from '@/artifacts/text/client'
+import { artifactDefinitions } from '@/artifacts'
 import { useArtifact } from '@/hooks/use-artifact'
 import { fetcher } from '@/lib/utils'
 import { ArtifactActions } from './artifact-actions'
@@ -22,14 +20,6 @@ import { ArtifactMessages } from './artifact-messages'
 import { MultimodalInput } from './multimodal-input'
 import { Toolbar } from './toolbar'
 import { VersionFooter } from './version-footer'
-
-export const artifactDefinitions = [
-  textArtifact,
-  codeArtifact,
-  imageArtifact,
-  sheetArtifact,
-]
-export type ArtifactKind = (typeof artifactDefinitions)[number]['kind']
 
 export interface UIArtifact {
   title: string

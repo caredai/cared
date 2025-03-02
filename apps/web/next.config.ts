@@ -12,6 +12,7 @@ const config = {
     'next-image-export-optimizer',
     '@mindworld/api',
     '@mindworld/ui',
+    '@mindworld/chatbot',
     '@mindworld/i18n',
     '@mindworld/utils',
   ],

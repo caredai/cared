@@ -130,6 +130,9 @@ importers:
       '@mindworld/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@mindworld/chatbot':
+        specifier: workspace:*
+        version: link:../../packages/chatbot
       '@mindworld/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
