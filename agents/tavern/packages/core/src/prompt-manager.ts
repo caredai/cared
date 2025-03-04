@@ -206,5 +206,19 @@ export class PromptManager {
 
   configuration = {
     version: 1,
+    toggleDisabled: [],
+    promptOrder: {
+      strategy: 'global',
+      dummyId: 100000,
+    },
+    sortableDelay: 30,
+    warningTokenThreshold: 1500,
+    dangerTokenThreshold: 500,
+    defaultPrompts: {
+      main: '',
+      nsfw: '',
+      jailbreak: '',
+      enhanceDefinitions: '',
+    }
   }
 }
