@@ -10,7 +10,7 @@ export {
   timestampsIndices,
   timestampsOmits,
   timestamps,
-} from '@mindworld/sdk/utils'
+} from '@mindworld/utils'
 
 export const visibilityEnumValues = ['public', 'private'] as const
 export const visibilityEnum = pgEnum('visibility', visibilityEnumValues)

@@ -1,4 +1,6 @@
-export type UserInfo = Record<string, unknown>;
+export interface UserInfo {
+  [key: string]: unknown
+}
 
 export interface AppMetadata {
   description?: string
@@ -624,7 +626,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     languageModelSettings?: {
                         systemPrompt?: string | undefined;
                     } | undefined;
-                } & Record<string, unknown>;
+                } & {
+                    [k: string]: unknown;
+                };
                 type?: "single-agent" | "multiple-agents" | undefined;
             };
             output: {
@@ -1466,7 +1470,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
                     imageModel?: string | undefined;
-                } & Record<string, unknown>;
+                } & {
+                    [k: string]: unknown;
+                };
                 appId: string;
                 id?: string | undefined;
                 debug?: boolean | undefined;

@@ -58,15 +58,13 @@
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
+    "@mindworld/utils": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",
     "ai": "catalog:",
-    "drizzle-orm": "^0.38.4",
     "react": "^19.0.0",
     "server-only": "^0.0.1",
-    "superjson": "2.2.2",
-    "uuid": "11.1.0",
-    "zod": "3.24.2"
+    "superjson": "2.2.2"
   }
 }

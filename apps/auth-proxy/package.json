@@ -15,7 +15,6 @@
   "devDependencies": {
     "@mindworld/eslint-config": "workspace:*",
     "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tailwind-config": "workspace:*",
     "@mindworld/tsconfig": "workspace:*",
     "@types/node": "^22.10.9",
     "eslint": "catalog:",

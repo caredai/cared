@@ -34,14 +34,15 @@
   "devDependencies": {
     "@mindworld/eslint-config": "workspace:*",
     "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tailwind-config": "workspace:*",
     "@mindworld/tsconfig": "workspace:*",
+    "@tailwindcss/postcss": "^4.0.10",
     "@types/node": "^22.10.10",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
     "dotenv-cli": "^8.0.0",
     "eslint": "catalog:",
     "jiti": "^1.21.7",
+    "postcss": "^8.5.3",
     "prettier": "catalog:",
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
