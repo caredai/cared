@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from 'next'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 
-import { cn } from '@mindworld/ui'
-import { ThemeProvider, ThemeToggle } from '@mindworld/ui/theme'
-import { Toaster } from '@mindworld/ui/toast'
+import { Toaster } from '@mindworld/ui/components/sonner'
+import { cn } from '@mindworld/ui/lib/utils'
 
 import { TRPCReactProvider } from '~/trpc/react'
+import { ThemeProvider, ThemeSwitcher } from '@/components/theme'
 
-import '~/app/globals.css'
+import '~/globals.css'
 
 import { env } from '~/env'
 
@@ -51,7 +51,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <TRPCReactProvider>{props.children}</TRPCReactProvider>
           <div className="absolute bottom-4 right-4">
-            <ThemeToggle />
+            <ThemeSwitcher />
           </div>
           <Toaster />
         </ThemeProvider>

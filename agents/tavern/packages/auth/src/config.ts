@@ -3,7 +3,6 @@ import { skipCSRFCheck } from '@auth/core'
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
 import { db } from '@tavern/db/client'
 import { Account, Session, User } from '@tavern/db/schema'
-import Discord from 'next-auth/providers/discord'
 
 import { env } from '../env'
 
@@ -33,7 +32,16 @@ export const authConfig = {
       }
     : {}),
   secret: env.AUTH_SECRET,
-  providers: [Discord],
+  providers: [
+    {
+      id: 'mind', // signIn("mind") and will be part of the callback URL
+      name: 'Mind AI', // optional, used on the default login page as the button text.
+      type: 'oidc', // or "oauth" for OAuth 2 providers
+      issuer: env.AUTH_MIND_ISSUER, // to infer the .well-known/openid-configuration URL
+      clientId: env.AUTH_MIND_ID, // from the provider's dashboard
+      clientSecret: env.AUTH_MIND_SECRET, // from the provider's dashboard
+    },
+  ],
   callbacks: {
     session: (opts) => {
       if (!('user' in opts)) throw new Error('unreachable with session strategy')
@@ -47,6 +55,7 @@ export const authConfig = {
       }
     },
   },
+  debug: true,
 } satisfies NextAuthConfig
 
 export const validateToken = async (token: string): Promise<NextAuthSession | null> => {

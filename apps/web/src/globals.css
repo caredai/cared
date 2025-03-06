@@ -1,5 +1,6 @@
 @import 'tailwindcss';
-@import './tailwindcss-animate.css';
+
+@import '../../../packages/ui/src/tailwindcss-animate.css';
 
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 

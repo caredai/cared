@@ -1,58 +1,60 @@
-import type { LogFn } from 'pino'
-import pino from 'pino'
-import pretty from 'pino-pretty'
+import type { LogFn, LoggerOptions } from 'pino'
 
 import { env } from './env'
 
-const customLevels: Record<string, number> = {
-  fatal: 60,
-  error: 50,
-  warn: 40,
-  info: 30,
-  log: 29,
-  progress: 28,
-  success: 27,
-  debug: 20,
-  trace: 10,
-}
+let log = console
 
-const createStream = () => {
-  if (env.LOG_FORMAT === 'pretty') {
-    return pretty({
-      colorize: true,
-      translateTime: 'yyyy-mm-dd HH:MM:ss',
-      ignore: 'pid,hostname',
-    })
+async function setup() {
+  // @ts-ignore
+  if (typeof globalThis.window !== 'undefined' || process.env.NEXT_RUNTIME !== 'nodejs') {
+    return
   }
-}
 
-const options = {
-  level: env.LOG_LEVEL,
-  customLevels,
-  hooks: {
-    logMethod(inputArgs: [string | Record<string, unknown>, ...unknown[]], method: LogFn): void {
-      const [arg0, ...rest] = inputArgs
+  const pino = await import('pino')
+  const pretty = await import('pino-pretty')
 
-      if (typeof arg0 === 'object') {
-        const messageParts = rest.map((arg) =>
-          typeof arg === 'string' ? arg : JSON.stringify(arg),
-        )
-        const message = messageParts.join(' ')
-        // @ts-ignore
-        method.apply(this, [arg0, message])
-      } else {
-        const context = {
-          ...inputArgs.filter((part) => typeof part === 'object'),
+  const createStream = () => {
+    if (env.LOG_FORMAT === 'pretty' && process.env.NEXT_RUNTIME === 'nodejs') {
+      return pretty.default({
+        colorize: true,
+        translateTime: 'yyyy-mm-dd HH:MM:ss',
+        ignore: 'pid,hostname',
+      })
+    }
+  }
+
+  const options: LoggerOptions = {
+    level: env.LOG_LEVEL,
+    hooks: {
+      logMethod(inputArgs: [string | Record<string, unknown>, ...unknown[]], method: LogFn): void {
+        const [arg0, ...rest] = inputArgs
+
+        if (typeof arg0 === 'object') {
+          const messageParts = rest.map((arg) =>
+            typeof arg === 'string' ? arg : JSON.stringify(arg),
+          )
+          const message = messageParts.join(' ')
+          // @ts-ignore
+          method.apply(this, [arg0, message])
+        } else {
+          const context = {
+            ...inputArgs.filter((part) => typeof part === 'object'),
+          }
+          const message = inputArgs.filter((part) => typeof part === 'string').join(' ')
+
+          // @ts-ignore
+          method.apply(this, [context, message])
         }
-        const message = inputArgs.filter((part) => typeof part === 'string').join(' ')
-
-        // @ts-ignore
-        method.apply(this, [context, message])
-      }
+      },
     },
-  },
+  }
+
+  // @ts-ignore
+  log = pino.default(options, createStream())
 }
 
-export const log = pino(options, createStream())
+void setup()
+
+export { log }
 
 export default log

@@ -21,6 +21,8 @@ export const characterSourceEnumValues = [
   'copy', // the character is copied from another character
 ] as const
 
+export const characterSourceEnum = pgEnum('source', characterSourceEnumValues)
+
 export interface CharacterMetadata {
   filename: string // with file extension
   url: string // the url of the file stored in the object storage
@@ -44,7 +46,7 @@ export const Character = pgTable(
       .notNull()
       .$defaultFn(() => generateId('char')),
     userId: varchar({ length: 127 }).notNull(),
-    source: pgEnum('source', characterSourceEnumValues)().notNull().default('create'),
+    source: characterSourceEnum().notNull().default('create'),
     // the nft token id of the character (if the character is nft)
     nftId: text(),
     metadata: jsonb().$type<CharacterMetadata>().notNull(),

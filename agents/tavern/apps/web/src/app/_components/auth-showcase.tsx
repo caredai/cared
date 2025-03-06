@@ -1,6 +1,6 @@
 import { auth, signIn, signOut } from '@tavern/auth'
 
-import { Button } from '@mindworld/ui/button'
+import { Button } from '@mindworld/ui/components/button'
 
 export async function AuthShowcase() {
   const session = await auth()
@@ -12,7 +12,7 @@ export async function AuthShowcase() {
           size="lg"
           formAction={async () => {
             'use server'
-            await signIn('discord')
+            await signIn('mind')
           }}
         >
           Sign in with Discord
