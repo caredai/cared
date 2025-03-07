@@ -30,6 +30,7 @@ const handler = auth(async (req) => {
       createTRPCContext({
         session: req.auth,
         headers: req.headers,
+        baseUrl: new URL(req.url).origin,
       }),
     onError({ error, path }) {
       console.error(`>>> tRPC Error on '${path}'`, error)

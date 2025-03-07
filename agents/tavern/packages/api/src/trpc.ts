@@ -7,9 +7,10 @@
  * The pieces you will need to use are documented accordingly near the end
  */
 import type { Session } from '@tavern/auth'
-import { auth, validateToken } from '@tavern/auth'
+import { auth } from '@tavern/auth'
 import { db } from '@tavern/db/client'
 import { initTRPC, TRPCError } from '@trpc/server'
+import * as cookie from 'cookie'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 
@@ -18,9 +19,25 @@ import { ZodError } from 'zod'
  * - Expo requests will have a session token in the Authorization header
  * - Next.js requests will have a session token in cookies
  */
-const isomorphicGetSession = async (headers: Headers) => {
+const isomorphicGetSession = async (headers: Headers, baseUrl: string) => {
   const authToken = headers.get('Authorization') ?? null
-  if (authToken) return validateToken(authToken)
+  if (authToken) {
+    const useSecureCookies = baseUrl.startsWith('https://')
+    const cookiePrefix = useSecureCookies ? '__Secure-' : ''
+    // @ts-ignore
+    return auth(
+      new Request('', {
+        headers: new Headers({
+          cookie: cookie.serialize(`${cookiePrefix}authjs.session-token`, authToken, {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            secure: useSecureCookies,
+          }),
+        }),
+      }),
+    )
+  }
   return auth()
 }
 
@@ -36,9 +53,13 @@ const isomorphicGetSession = async (headers: Headers) => {
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: { headers: Headers; session: Session | null }) => {
+export const createTRPCContext = async (opts: {
+  session: Session | null
+  headers: Headers
+  baseUrl: string
+}) => {
   const authToken = opts.headers.get('Authorization') ?? null
-  const session = await isomorphicGetSession(opts.headers)
+  const session = await isomorphicGetSession(opts.headers, opts.baseUrl)
 
   const source = opts.headers.get('x-trpc-source') ?? 'unknown'
   console.log('>>> tRPC Request from', source, 'by', session?.user)

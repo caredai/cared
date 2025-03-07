@@ -15,4 +15,4 @@ const auth = cache(defaultAuth)
 
 export { handlers, auth, signIn, signOut }
 
-export { invalidateSessionToken, validateToken, isSecureContext } from './config'
+export { isSecureContext } from './config'

@@ -219,6 +219,6 @@ export class PromptManager {
       nsfw: '',
       jailbreak: '',
       enhanceDefinitions: '',
-    }
+    },
   }
 }
