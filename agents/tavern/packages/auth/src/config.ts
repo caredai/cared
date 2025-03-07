@@ -1,4 +1,4 @@
-import type { DefaultSession, NextAuthConfig } from 'next-auth'
+import type { NextAuthConfig } from 'next-auth'
 import { skipCSRFCheck } from '@auth/core'
 
 import { env } from '../env'
@@ -7,13 +7,20 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string
-    } & DefaultSession['user']
+      username: string
+      name: string
+      email: string
+      image: string
+    }
   }
 }
 
 export const isSecureContext = env.NODE_ENV !== 'development'
 
 export const authConfig = {
+  session: {
+    strategy: 'jwt',
+  },
   // In development, we need to skip checks to allow Expo to work
   ...(!isSecureContext
     ? {
@@ -30,17 +37,32 @@ export const authConfig = {
       issuer: env.AUTH_MIND_ISSUER, // to infer the .well-known/openid-configuration URL
       clientId: env.AUTH_MIND_ID, // from the provider's dashboard
       clientSecret: env.AUTH_MIND_SECRET, // from the provider's dashboard
+      checks: ['pkce', 'state'],
     },
   ],
   callbacks: {
-    session: (opts) => {
-      if (!('user' in opts)) throw new Error('unreachable with session strategy')
+    // @ts-ignore
+    jwt: ({ token, profile, trigger }) => {
+      // console.log(token, profile, trigger)
+      return {
+        ...token,
+        ...(trigger === 'signIn' && {
+          id: (profile as any).sub,
+          username: (profile as any).preferred_username,
+        }),
+      }
+    },
+    // @ts-ignore
+    session: ({ session, token }) => {
+      // console.log(session, token)
+      if (!('user' in session)) throw new Error('unreachable with session strategy')
 
       return {
-        ...opts.session,
+        ...session,
         user: {
-          ...opts.session.user,
-          id: opts.user.id,
+          ...session.user,
+          id: token.id,
+          username: token.username,
         },
       }
     },

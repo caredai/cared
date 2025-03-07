@@ -24,8 +24,8 @@ const isomorphicGetSession = async (headers: Headers, baseUrl: string) => {
   if (authToken) {
     const useSecureCookies = baseUrl.startsWith('https://')
     const cookiePrefix = useSecureCookies ? '__Secure-' : ''
-    // @ts-ignore
     return auth(
+      // @ts-ignore
       new Request('', {
         headers: new Headers({
           cookie: cookie.serialize(`${cookiePrefix}authjs.session-token`, authToken, {
