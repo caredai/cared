@@ -8,8 +8,8 @@ import { createTRPCClient, loggerLink, unstable_httpBatchStreamLink } from '@trp
 import { createTRPCContext } from '@trpc/tanstack-react-query'
 import SuperJSON from 'superjson'
 
-import { env } from '~/env'
-import { createQueryClient, getBaseUrl } from './query-client'
+import { env } from '@/env'
+import { createQueryClient } from './query-client'
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined
 const getQueryClient = () => {
@@ -55,4 +55,11 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       </TRPCProvider>
     </QueryClientProvider>
   )
+}
+
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') return window.location.origin
+  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`
+  // eslint-disable-next-line no-restricted-properties
+  return `http://localhost:${process.env.PORT ?? 3000}`
 }

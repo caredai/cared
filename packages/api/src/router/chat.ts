@@ -14,7 +14,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
-import { protectedProcedure } from '../trpc'
+import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 
 /**
@@ -68,7 +68,7 @@ export const chatRouter = {
    * @param input - Object containing app ID and pagination parameters
    * @returns List of chats with hasMore flag
    */
-  listByApp: protectedProcedure
+  listByApp: userProtectedProcedure
     .input(
       z.object({
         appId: z.string().min(32),
@@ -114,7 +114,7 @@ export const chatRouter = {
    * @param input - The chat ID
    * @returns The chat if found
    */
-  byId: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
+  byId: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
     const chat = await getChatById(ctx, input)
     return { chat }
   }),
@@ -125,7 +125,7 @@ export const chatRouter = {
    * @param input - The chat data following the {@link CreateChatSchema}
    * @returns The created chat
    */
-  create: protectedProcedure.input(CreateChatSchema).mutation(async ({ ctx, input }) => {
+  create: userProtectedProcedure.input(CreateChatSchema).mutation(async ({ ctx, input }) => {
     await getAppById(ctx, input.appId)
 
     if (input.debug) {
@@ -165,7 +165,7 @@ export const chatRouter = {
    * @param input - The chat data following the {@link UpdateChatSchema}
    * @returns The updated chat
    */
-  update: protectedProcedure.input(UpdateChatSchema).mutation(async ({ ctx, input }) => {
+  update: userProtectedProcedure.input(UpdateChatSchema).mutation(async ({ ctx, input }) => {
     const { id, ...update } = input
     const chat = await getChatById(ctx, id)
 
@@ -201,7 +201,7 @@ export const chatRouter = {
    * @param input - Object containing the chat ID to delete
    * @returns The deleted chat
    */
-  delete: protectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input }) => {
+  delete: userProtectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input }) => {
     await getChatById(ctx, input)
 
     const [deletedChat] = await ctx.db.delete(Chat).where(eq(Chat.id, input)).returning()
@@ -222,7 +222,7 @@ export const chatRouter = {
    * @param input - Object containing chat ID and pagination parameters
    * @returns List of messages with hasMore flag
    */
-  listMessages: protectedProcedure
+  listMessages: userProtectedProcedure
     .input(
       z.object({
         chatId: z.string().min(32),
@@ -268,7 +268,7 @@ export const chatRouter = {
    * @param input - Object containing message ID
    * @returns The message if found
    */
-  getMessage: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
+  getMessage: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
     const message = await getMessageById(ctx, input)
     return { message }
   }),
@@ -279,7 +279,7 @@ export const chatRouter = {
    * @param input - The message data following the {@link CreateMessageSchema}
    * @returns The created message
    */
-  createMessage: protectedProcedure.input(CreateMessageSchema).mutation(async ({ ctx, input }) => {
+  createMessage: userProtectedProcedure.input(CreateMessageSchema).mutation(async ({ ctx, input }) => {
     await getChatById(ctx, input.chatId)
 
     if (input.id) {
@@ -314,7 +314,7 @@ export const chatRouter = {
    * @param input - Array of message data following the {@link CreateMessageSchema}
    * @returns The created messages
    */
-  createMessages: protectedProcedure
+  createMessages: userProtectedProcedure
     .input(z.array(CreateMessageSchema))
     .mutation(async ({ ctx, input }) => {
       const firstMsg = input.at(0)
@@ -391,7 +391,7 @@ export const chatRouter = {
    * Only accessible by authenticated users.
    * @param input - Object containing message ID
    */
-  deleteTrailingMessages: protectedProcedure
+  deleteTrailingMessages: userProtectedProcedure
     .input(
       z.object({
         messageId: z.string().min(32),
@@ -414,7 +414,7 @@ export const chatRouter = {
    * @param input - The vote data following the {@link CreateMessageVoteSchema}
    * @returns The created or updated vote
    */
-  voteMessage: protectedProcedure
+  voteMessage: userProtectedProcedure
     .input(CreateMessageVoteSchema)
     .mutation(async ({ ctx, input }) => {
       await getMessageById(ctx, input.messageId)

@@ -13,7 +13,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
-import { protectedProcedure } from '../trpc'
+import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 
 /**
@@ -91,7 +91,7 @@ export const agentRouter = {
    * @param input - Object containing app ID and pagination parameters
    * @returns List of agents with hasMore flag
    */
-  listByApp: protectedProcedure
+  listByApp: userProtectedProcedure
     .input(
       z.object({
         appId: z.string().min(32),
@@ -134,7 +134,7 @@ export const agentRouter = {
    * @param input - Object containing app ID and version
    * @returns List of agent versions bound to the specified app version
    */
-  listByAppVersion: protectedProcedure
+  listByAppVersion: userProtectedProcedure
     .input(
       z.object({
         appId: z.string().min(32),
@@ -169,7 +169,7 @@ export const agentRouter = {
    * @param input - Object containing agent ID and pagination parameters
    * @returns List of agent versions sorted by version number
    */
-  listVersions: protectedProcedure
+  listVersions: userProtectedProcedure
     .input(
       z.object({
         agentId: z.string().min(32),
@@ -215,7 +215,7 @@ export const agentRouter = {
    * @param input - The agent ID
    * @returns The agent if found
    */
-  byId: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
+  byId: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
     const agent = await getAgentById(ctx, input)
     return { agent }
   }),
@@ -225,7 +225,7 @@ export const agentRouter = {
    * @param input - The agent data following the {@link CreateAgentSchema}
    * @returns The created agent and its draft version
    */
-  create: protectedProcedure.input(CreateAgentSchema).mutation(async ({ ctx, input }) => {
+  create: userProtectedProcedure.input(CreateAgentSchema).mutation(async ({ ctx, input }) => {
     // Verify app exists
     await getAppById(ctx, input.appId)
 
@@ -271,7 +271,7 @@ export const agentRouter = {
    * @param input - The agent data following the {@link UpdateAgentSchema}
    * @returns The updated agent and its draft version
    */
-  update: protectedProcedure.input(UpdateAgentSchema).mutation(async ({ ctx, input }) => {
+  update: userProtectedProcedure.input(UpdateAgentSchema).mutation(async ({ ctx, input }) => {
     const { id, ...update } = input
 
     const agent = await getAgentById(ctx, id)

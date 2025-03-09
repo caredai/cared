@@ -1,8 +1,17 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
+import { authenticateForApi } from '@mindworld/api'
+
 const isPublicRoute = createRouteMatcher(['/'])
+const isApiRoute = createRouteMatcher(['/api/trpc/(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
+  if (isApiRoute(request)) {
+    const r = await authenticateForApi()
+    if (r instanceof Response) {
+      return r
+    }
+  }
   if (!isPublicRoute(request)) {
     await auth.protect()
   }

@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { log } from '@mindworld/utils'
 
 import { env } from '../env'
-import { protectedProcedure } from '../trpc'
+import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
 
@@ -58,7 +58,7 @@ export const apiKeyRouter = {
    * @returns List of API keys
    * @throws {TRPCError} If user is not workspace owner
    */
-  list: protectedProcedure
+  list: userProtectedProcedure
     .input(
       z.object({
         appId: z.string(),
@@ -85,7 +85,7 @@ export const apiKeyRouter = {
    * @returns The API key if found
    * @throws {TRPCError} If user is not workspace owner or app not found
    */
-  get: protectedProcedure
+  get: userProtectedProcedure
     .input(
       z.object({
         appId: z.string(),
@@ -113,7 +113,7 @@ export const apiKeyRouter = {
    * @returns The created API key
    * @throws {TRPCError} If user is not workspace owner or app not found
    */
-  create: protectedProcedure
+  create: userProtectedProcedure
     .input(
       z.object({
         appId: z.string(),
@@ -166,7 +166,7 @@ export const apiKeyRouter = {
    * @returns Success status
    * @throws {TRPCError} If user is not workspace owner or app not found
    */
-  delete: protectedProcedure
+  delete: userProtectedProcedure
     .input(
       z.object({
         appId: z.string(),

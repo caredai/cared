@@ -7,12 +7,12 @@ import { z } from 'zod'
 import { eq } from '@mindworld/db'
 import { OAuthApp } from '@mindworld/db/schema'
 
-import { protectedProcedure } from '../trpc'
+import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
 
 // Get OAuth app from Clerk
-async function getClerkOAuthApp(oauthAppId: string) {
+export async function getClerkOAuthApp(oauthAppId: string) {
   const client = await clerkClient()
   try {
     return await client.oauthApplications.getOAuthApplication(oauthAppId)
@@ -40,7 +40,7 @@ function filteredOauthApp(oauthApp: OAuthApp, clerkOAuthApp: OAuthApplication) {
 
 export const oauthAppRouter = {
   // Check if app has OAuth app
-  has: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
+  has: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
     const app = await getAppById(ctx, appId)
     await verifyWorkspaceOwner(ctx, app.workspaceId)
 
@@ -52,7 +52,7 @@ export const oauthAppRouter = {
   }),
 
   // Get OAuth app
-  get: protectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
+  get: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
     const app = await getAppById(ctx, appId)
     await verifyWorkspaceOwner(ctx, app.workspaceId)
 
@@ -84,7 +84,7 @@ export const oauthAppRouter = {
   }),
 
   // Create new OAuth app
-  create: protectedProcedure
+  create: userProtectedProcedure
     .input(
       z.object({
         appId: z.string().min(32),
@@ -112,6 +112,7 @@ export const oauthAppRouter = {
           .values({
             appId: input.appId,
             oauthAppId: clerkOAuthApp.id,
+            clientId: clerkOAuthApp.clientId,
           })
           .returning()
 
@@ -130,7 +131,7 @@ export const oauthAppRouter = {
     }),
 
   // Update OAuth app
-  update: protectedProcedure
+  update: userProtectedProcedure
     .input(
       z.object({
         appId: z.string().min(32),
@@ -169,7 +170,7 @@ export const oauthAppRouter = {
     }),
 
   // Delete OAuth app
-  delete: protectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input: appId }) => {
+  delete: userProtectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input: appId }) => {
     const app = await getAppById(ctx, appId)
     await verifyWorkspaceOwner(ctx, app.workspaceId)
 
@@ -195,7 +196,7 @@ export const oauthAppRouter = {
   }),
 
   // Rotate client secret
-  rotateSecret: protectedProcedure
+  rotateSecret: userProtectedProcedure
     .input(z.string().min(32))
     .mutation(async ({ ctx, input: appId }) => {
       const app = await getAppById(ctx, appId)

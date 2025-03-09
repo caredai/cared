@@ -11,10 +11,10 @@ const config = {
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: [
     '@tavern/api',
-    '@tavern/auth',
     '@tavern/core',
     '@tavern/db',
     '@mindworld/ui',
+    "@mindworld/utils",
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

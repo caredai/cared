@@ -1,4 +1,3 @@
-import { auth } from '@clerk/nextjs/server'
 import * as trpc from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
@@ -6,6 +5,8 @@ import { ZodError } from 'zod'
 import type { DB } from '@mindworld/db/client'
 import { db } from '@mindworld/db/client'
 
+import type { Auth } from './auth'
+import { authenticateForApi } from './auth'
 import { env } from './env'
 
 /**
@@ -24,18 +25,18 @@ export const createTRPCContext = async ({
   headers,
 }: {
   headers: Headers
-}): Promise<{ auth: Awaited<ReturnType<typeof auth>>; db: DB }> => {
-  const _auth = await auth()
+}): Promise<{ auth: Auth; db: DB }> => {
+  const auth = (await authenticateForApi()) as Auth
 
   console.log(
     '>>> tRPC Request from',
     headers.get('x-trpc-source') ?? 'unknown',
     'by',
-    _auth.userId,
+    auth.userId && auth.appId ? `${auth.appId}:${auth.userId}` : (auth.userId ?? auth.appId),
   )
 
   return {
-    auth: _auth,
+    auth,
     db,
   }
 }
@@ -118,13 +119,42 @@ export const publicProcedure = t.procedure.use(timingMiddleware)
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+export const userProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
   if (!ctx.auth.userId) {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
-      auth: ctx.auth,
+      auth: {
+        userId: ctx.auth.userId,
+      },
+    },
+  })
+})
+
+export const appProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+  if (!ctx.auth.appId) {
+    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next({
+    ctx: {
+      auth: {
+        appId: ctx.auth.appId,
+      },
+    },
+  })
+})
+
+export const appUserProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+  if (!ctx.auth.appId || !ctx.auth.userId) {
+    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next({
+    ctx: {
+      auth: {
+        appId: ctx.auth.appId,
+        userId: ctx.auth.userId,
+      },
     },
   })
 })
@@ -138,7 +168,9 @@ export const adminProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next
   }
   return next({
     ctx: {
-      auth: ctx.auth,
+      auth: {
+        userId: ctx.auth.userId,
+      },
     },
   })
 })

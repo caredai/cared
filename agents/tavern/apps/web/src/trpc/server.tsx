@@ -4,10 +4,9 @@ import { cache } from 'react'
 import { headers } from 'next/headers'
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import { appRouter, createTRPCContext } from '@tavern/api'
-import { auth } from '@tavern/auth'
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
 
-import { createQueryClient, getBaseUrl } from './query-client'
+import { createQueryClient } from './query-client'
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -18,9 +17,7 @@ const createContext = cache(async () => {
   heads.set('x-trpc-source', 'rsc')
 
   return createTRPCContext({
-    session: await auth(),
     headers: heads,
-    baseUrl: getBaseUrl(),
   })
 })
 
@@ -36,6 +33,7 @@ export function HydrateClient(props: { children: React.ReactNode }) {
   const queryClient = getQueryClient()
   return <HydrationBoundary state={dehydrate(queryClient)}>{props.children}</HydrationBoundary>
 }
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptions: T) {
   const queryClient = getQueryClient()

@@ -26,7 +26,7 @@ import type { Context } from '../trpc'
 import { env } from '../env'
 import { getClient } from '../s3-upload/client'
 import { taskTrigger } from '../tasks'
-import { protectedProcedure } from '../trpc'
+import { userProtectedProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
 /**
@@ -56,7 +56,7 @@ export const datasetRouter = {
    * List all datasets in a workspace.
    * Only accessible by workspace members.
    */
-  list: protectedProcedure
+  list: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -101,7 +101,7 @@ export const datasetRouter = {
    * Get a single dataset by ID within a workspace.
    * Only accessible by workspace members.
    */
-  byId: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+  byId: userProtectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     const dataset = await ctx.db.query.Dataset.findFirst({
       where: eq(Dataset.id, input),
     })
@@ -122,7 +122,7 @@ export const datasetRouter = {
    * Create a new dataset in a workspace.
    * Only accessible by workspace members.
    */
-  create: protectedProcedure.input(CreateDatasetSchema).mutation(async ({ ctx, input }) => {
+  create: userProtectedProcedure.input(CreateDatasetSchema).mutation(async ({ ctx, input }) => {
     await verifyWorkspaceMembership(ctx, input.workspaceId)
 
     const values = {
@@ -152,7 +152,7 @@ export const datasetRouter = {
    * Update an existing dataset in a workspace.
    * Only accessible by workspace members.
    */
-  update: protectedProcedure.input(UpdateDatasetSchema).mutation(async ({ ctx, input }) => {
+  update: userProtectedProcedure.input(UpdateDatasetSchema).mutation(async ({ ctx, input }) => {
     const { id, ...updates } = input
 
     const dataset = await getDatasetById(ctx, id)
@@ -185,7 +185,7 @@ export const datasetRouter = {
    * Also deletes all associated documents, segments, chunks and S3 files.
    * Only accessible by workspace members.
    */
-  delete: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  delete: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const dataset = await getDatasetById(ctx, input)
 
     await verifyWorkspaceMembership(ctx, dataset.workspaceId)
@@ -245,7 +245,7 @@ export const datasetRouter = {
    * Create a new document in a dataset.
    * Only accessible by workspace members.
    */
-  createDocument: protectedProcedure
+  createDocument: userProtectedProcedure
     .input(CreateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
@@ -269,7 +269,7 @@ export const datasetRouter = {
    * Update an existing document.
    * Only accessible by workspace members.
    */
-  updateDocument: protectedProcedure
+  updateDocument: userProtectedProcedure
     .input(UpdateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...update } = input
@@ -308,7 +308,7 @@ export const datasetRouter = {
    * Also deletes the associated S3 file if it exists.
    * Only accessible by workspace members.
    */
-  deleteDocument: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  deleteDocument: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const document = await ctx.db.query.Document.findFirst({
       where: eq(Document.id, input),
     })
@@ -359,7 +359,7 @@ export const datasetRouter = {
    * List all documents in a dataset.
    * Only accessible by workspace members.
    */
-  listDocuments: protectedProcedure
+  listDocuments: userProtectedProcedure
     .input(
       z.object({
         datasetId: z.string(),
@@ -415,7 +415,7 @@ export const datasetRouter = {
    * Get a single document by ID.
    * Only accessible by workspace members.
    */
-  getDocument: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+  getDocument: userProtectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     const document = await ctx.db.query.Document.findFirst({
       where: eq(Document.id, input),
     })
@@ -436,7 +436,7 @@ export const datasetRouter = {
    * Create a new document segment.
    * Only accessible by workspace members.
    */
-  createSegment: protectedProcedure
+  createSegment: userProtectedProcedure
     .input(CreateDocumentSegmentSchema)
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
@@ -476,7 +476,7 @@ export const datasetRouter = {
    * Update an existing document segment.
    * Only accessible by workspace members.
    */
-  updateSegment: protectedProcedure
+  updateSegment: userProtectedProcedure
     .input(UpdateDocumentSegmentSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input
@@ -514,7 +514,7 @@ export const datasetRouter = {
    * Delete a document segment and all its chunks.
    * Only accessible by workspace members.
    */
-  deleteSegment: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  deleteSegment: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const segment = await ctx.db.query.DocumentSegment.findFirst({
       where: eq(DocumentSegment.id, input),
     })
@@ -543,7 +543,7 @@ export const datasetRouter = {
    * List all segments in a document.
    * Only accessible by workspace members.
    */
-  listSegments: protectedProcedure
+  listSegments: userProtectedProcedure
     .input(
       z.object({
         documentId: z.string(),
@@ -599,7 +599,7 @@ export const datasetRouter = {
    * Create a new document chunk.
    * Only accessible by workspace members.
    */
-  createChunk: protectedProcedure
+  createChunk: userProtectedProcedure
     .input(CreateDocumentChunkSchema)
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
@@ -643,7 +643,7 @@ export const datasetRouter = {
    * Update an existing document chunk.
    * Only accessible by workspace members.
    */
-  updateChunk: protectedProcedure
+  updateChunk: userProtectedProcedure
     .input(UpdateDocumentChunkSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input as {
@@ -685,7 +685,7 @@ export const datasetRouter = {
    * Delete a document chunk.
    * Only accessible by workspace members.
    */
-  deleteChunk: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  deleteChunk: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const chunk = await ctx.db.query.DocumentChunk.findFirst({
       where: eq(DocumentChunk.id, input),
     })
@@ -708,7 +708,7 @@ export const datasetRouter = {
    * List all chunks in a document segment.
    * Only accessible by workspace members.
    */
-  listChunks: protectedProcedure
+  listChunks: userProtectedProcedure
     .input(
       z.object({
         segmentId: z.string(),

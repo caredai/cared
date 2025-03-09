@@ -22,7 +22,7 @@ import { defaultModels } from '@mindworld/providers'
 import { mergeWithoutUndefined } from '@mindworld/utils'
 
 import type { Context } from '../trpc'
-import { protectedProcedure, publicProcedure } from '../trpc'
+import { userProtectedProcedure, publicProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
 /**
@@ -222,7 +222,7 @@ export const appRouter = {
    * @returns List of apps with their categories and tags
    * @throws {TRPCError} If workspace access verification fails
    */
-  list: protectedProcedure
+  list: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -255,7 +255,7 @@ export const appRouter = {
    * @returns List of apps in the category
    * @throws {TRPCError} If workspace access verification fails
    */
-  listByCategory: protectedProcedure
+  listByCategory: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -292,7 +292,7 @@ export const appRouter = {
    * @returns List of apps with matching tags
    * @throws {TRPCError} If workspace access verification fails
    */
-  listByTags: protectedProcedure
+  listByTags: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -326,7 +326,7 @@ export const appRouter = {
    * @returns List of app versions sorted by version number
    * @throws {TRPCError} If app not found or access verification fails
    */
-  listVersions: protectedProcedure
+  listVersions: userProtectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -374,7 +374,7 @@ export const appRouter = {
    * @returns The app if found
    * @throws {TRPCError} If app not found or access verification fails
    */
-  byId: protectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
+  byId: userProtectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
     const app = await getAppById(ctx, input)
     await verifyWorkspaceMembership(ctx, app.workspaceId)
     return { app }
@@ -387,7 +387,7 @@ export const appRouter = {
    * @returns The app version if found
    * @throws {TRPCError} If app version not found or access verification fails
    */
-  getVersion: protectedProcedure
+  getVersion: userProtectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -419,7 +419,7 @@ export const appRouter = {
    * @returns The created app and its draft version
    * @throws {TRPCError} If app creation fails
    */
-  create: protectedProcedure.input(CreateAppSchema).mutation(async ({ ctx, input }) => {
+  create: userProtectedProcedure.input(CreateAppSchema).mutation(async ({ ctx, input }) => {
     await verifyWorkspaceMembership(ctx, input.workspaceId)
 
     const appValues = {
@@ -469,7 +469,7 @@ export const appRouter = {
    * @returns The updated app and its draft version
    * @throws {TRPCError} If app update fails
    */
-  update: protectedProcedure.input(UpdateAppSchema).mutation(async ({ ctx, input }) => {
+  update: userProtectedProcedure.input(UpdateAppSchema).mutation(async ({ ctx, input }) => {
     const { id, ...update } = input
     const app = await getAppById(ctx, id)
     await verifyWorkspaceMembership(ctx, app.workspaceId)
@@ -529,7 +529,7 @@ export const appRouter = {
    * @returns Success status
    * @throws {TRPCError} If app deletion fails
    */
-  delete: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  delete: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const app = await getAppById(ctx, input)
     await verifyWorkspaceMembership(ctx, app.workspaceId)
 
@@ -572,7 +572,7 @@ export const appRouter = {
    * @returns The updated app and new version number
    * @throws {TRPCError} If publishing fails
    */
-  publish: protectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
+  publish: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
     const app = await getAppById(ctx, input)
     await verifyWorkspaceMembership(ctx, app.workspaceId)
     const draftVersion = await getAppVersion(ctx, input, 'draft')
@@ -687,7 +687,7 @@ export const appRouter = {
    * @returns The updated tags
    * @throws {TRPCError} If tag update fails
    */
-  updateTags: protectedProcedure
+  updateTags: userProtectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -783,7 +783,7 @@ export const appRouter = {
    * @returns The updated categories
    * @throws {TRPCError} If category update fails
    */
-  updateCategories: protectedProcedure
+  updateCategories: userProtectedProcedure
     .input(
       z.object({
         id: z.string(),

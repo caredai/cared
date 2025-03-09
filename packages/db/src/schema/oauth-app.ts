@@ -15,11 +15,13 @@ export const OAuthApp = pgTable(
       .references(() => App.id),
     // Clerk OAuth App ID
     oauthAppId: varchar({ length: 255 }).notNull(),
+    clientId: varchar({ length: 255 }).notNull(),
     ...timestamps,
   },
   (table) => [
     primaryKey({ columns: [table.appId] }),
     index().on(table.oauthAppId),
+    index().on(table.clientId),
     ...timestampsIndices(table),
   ],
 )
@@ -29,6 +31,7 @@ export type OAuthApp = InferSelectModel<typeof OAuthApp>
 export const CreateOAuthAppSchema = createInsertSchema(OAuthApp, {
   appId: z.string(),
   oauthAppId: z.string().max(255),
+  clientId: z.string().max(255),
 }).omit({
   ...timestampsOmits,
 })

@@ -13,7 +13,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
-import { protectedProcedure } from '../trpc'
+import { userProtectedProcedure } from '../trpc'
 
 /**
  * Verify if the user is a member of the workspace
@@ -59,7 +59,7 @@ export const workspaceRouter = {
    * @param input - Pagination parameters
    * @returns List of workspaces with user's role in each workspace
    */
-  list: protectedProcedure
+  list: userProtectedProcedure
     .input(
       z.object({
         after: z.string().optional(),
@@ -108,7 +108,7 @@ export const workspaceRouter = {
    * @returns The workspace and user's role if found
    * @throws {TRPCError} If workspace not found or user is not a member
    */
-  get: protectedProcedure.input(z.string().min(32)).query(async ({ input, ctx }) => {
+  get: userProtectedProcedure.input(z.string().min(32)).query(async ({ input, ctx }) => {
     const workspace = await ctx.db
       .select({
         workspace: Workspace,
@@ -130,7 +130,7 @@ export const workspaceRouter = {
     return workspace
   }),
 
-  create: protectedProcedure.input(CreateWorkspaceSchema).mutation(async ({ input, ctx }) => {
+  create: userProtectedProcedure.input(CreateWorkspaceSchema).mutation(async ({ input, ctx }) => {
     return await ctx.db.transaction(async (tx) => {
       const [workspace] = await tx.insert(Workspace).values(input).returning()
       if (!workspace) {
@@ -153,7 +153,7 @@ export const workspaceRouter = {
     })
   }),
 
-  update: protectedProcedure.input(UpdateWorkspaceSchema).mutation(async ({ input, ctx }) => {
+  update: userProtectedProcedure.input(UpdateWorkspaceSchema).mutation(async ({ input, ctx }) => {
     const memberships = await ctx.db
       .select({ role: Membership.role })
       .from(Membership)
@@ -193,7 +193,7 @@ export const workspaceRouter = {
    * @param input - The workspace ID
    * @throws {TRPCError} If user is not the workspace owner
    */
-  delete: protectedProcedure.input(z.string().min(32)).mutation(async ({ input, ctx }) => {
+  delete: userProtectedProcedure.input(z.string().min(32)).mutation(async ({ input, ctx }) => {
     return await ctx.db.transaction(async (tx) => {
       const memberships = await tx
         .select({ role: Membership.role })
@@ -222,7 +222,7 @@ export const workspaceRouter = {
    * @param input - The workspace ID and pagination parameters
    * @returns List of workspace members with their roles
    */
-  listMembers: protectedProcedure
+  listMembers: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -293,7 +293,7 @@ export const workspaceRouter = {
    * @returns The member's user info and role if found
    * @throws {TRPCError} If member not found or user doesn't have access
    */
-  getMember: protectedProcedure
+  getMember: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -342,7 +342,7 @@ export const workspaceRouter = {
       }
     }),
 
-  addMember: protectedProcedure.input(CreateMembershipSchema).mutation(async ({ input, ctx }) => {
+  addMember: userProtectedProcedure.input(CreateMembershipSchema).mutation(async ({ input, ctx }) => {
     const memberships = await ctx.db
       .select({ role: Membership.role })
       .from(Membership)
@@ -391,7 +391,7 @@ export const workspaceRouter = {
     }
   }),
 
-  deleteMember: protectedProcedure
+  deleteMember: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -432,7 +432,7 @@ export const workspaceRouter = {
         )
     }),
 
-  transferOwner: protectedProcedure
+  transferOwner: userProtectedProcedure
     .input(
       z.object({
         workspaceId: z.string().min(32),

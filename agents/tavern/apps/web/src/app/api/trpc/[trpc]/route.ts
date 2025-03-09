@@ -1,6 +1,8 @@
+import type { NextRequest } from 'next/server'
 import { appRouter, createTRPCContext } from '@tavern/api'
-import { auth } from '@tavern/auth'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
+
+import { log } from '@mindworld/utils'
 
 /**
  * Configure basic CORS headers
@@ -21,24 +23,22 @@ export const OPTIONS = () => {
   return response
 }
 
-const handler = auth(async (req) => {
+const handler = async (req: NextRequest) => {
   const response = await fetchRequestHandler({
     endpoint: '/api/trpc',
     router: appRouter,
     req,
     createContext: () =>
       createTRPCContext({
-        session: req.auth,
         headers: req.headers,
-        baseUrl: new URL(req.url).origin,
       }),
     onError({ error, path }) {
-      console.error(`>>> tRPC Error on '${path}'`, error)
+      log.error(`>>> tRPC Error on '${path}'`, error)
     },
   })
 
   setCorsHeaders(response)
   return response
-})
+}
 
 export { handler as GET, handler as POST }

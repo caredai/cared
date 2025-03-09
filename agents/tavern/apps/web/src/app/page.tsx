@@ -1,4 +1,4 @@
-import { HydrateClient } from '~/trpc/server'
+import { HydrateClient } from '@/trpc/server'
 import { AuthShowcase } from './_components/auth-showcase'
 
 export default function HomePage() {

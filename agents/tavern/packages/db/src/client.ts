@@ -6,7 +6,9 @@ import { drizzle as drizzleVercel } from 'drizzle-orm/vercel-postgres'
 
 import * as schema from './schema'
 
-export const db: PostgresJsDatabase<typeof schema> | VercelPgDatabase<typeof schema> = [
+export type DB = PostgresJsDatabase<typeof schema> | VercelPgDatabase<typeof schema>
+
+export const db: DB = [
   '127.0.0.1',
   'localhost',
 ].includes(new URL(process.env.POSTGRES_URL!).hostname)

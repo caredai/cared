@@ -6,7 +6,7 @@ import { and, asc, desc, eq, gt, lt } from '@mindworld/db'
 import { Artifact, ArtifactSuggestion, Chat } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
-import { protectedProcedure } from '../trpc'
+import { userProtectedProcedure } from '../trpc'
 
 async function verifyUserChat(ctx: Context, chatId: string) {
   const chat = await ctx.db.query.Chat.findFirst({
@@ -46,7 +46,7 @@ export const artifactRouter = {
    * List all artifacts (of only latest version) for a chat.
    * Only accessible by authenticated users.
    */
-  listByChat: protectedProcedure
+  listByChat: userProtectedProcedure
     .input(
       z.object({
         chatId: z.string().min(32),
@@ -90,7 +90,7 @@ export const artifactRouter = {
    * List all versions of an artifact by ID.
    * Only accessible by authenticated users.
    */
-  listVersionsById: protectedProcedure
+  listVersionsById: userProtectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -140,7 +140,7 @@ export const artifactRouter = {
    * Delete all versions of an artifact after the specified version.
    * Only accessible by authenticated users.
    */
-  deleteVersionsByIdAfterVersion: protectedProcedure
+  deleteVersionsByIdAfterVersion: userProtectedProcedure
     .input(
       z.object({
         id: z.string(),
@@ -172,7 +172,7 @@ export const artifactRouter = {
    * List suggestions for an artifact.
    * Only accessible by authenticated users.
    */
-  listSuggestions: protectedProcedure
+  listSuggestions: userProtectedProcedure
     .input(
       z.object({
         artifactId: z.string(),

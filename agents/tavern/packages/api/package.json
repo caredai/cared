@@ -19,10 +19,9 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@tavern/auth": "workspace:*",
+    "@clerk/nextjs": "^6.12.4",
     "@tavern/db": "workspace:*",
     "@trpc/server": "catalog:",
-    "cookie": "^1.0.2",
     "superjson": "2.2.2",
     "zod": "catalog:"
   },

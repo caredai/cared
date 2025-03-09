@@ -2,15 +2,12 @@ import type { Metadata, Viewport } from 'next'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 
-import { Toaster } from '@mindworld/ui/components/sonner'
 import { cn } from '@mindworld/ui/lib/utils'
 
-import { TRPCReactProvider } from '~/trpc/react'
-import { ThemeProvider, ThemeSwitcher } from '@/components/theme'
+import '@/globals.css'
 
-import '~/globals.css'
-
-import { env } from '~/env'
+import { Providers } from '@/components/providers'
+import { env } from '@/env'
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -38,7 +35,7 @@ export const viewport: Viewport = {
   ],
 }
 
-export default function RootLayout(props: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -48,13 +45,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
           GeistMono.variable,
         )}
       >
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <TRPCReactProvider>{props.children}</TRPCReactProvider>
-          <div className="absolute bottom-4 right-4">
-            <ThemeSwitcher />
-          </div>
-          <Toaster />
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

@@ -1,43 +1,32 @@
-import { auth, signIn, signOut } from '@tavern/auth'
+import { SignOutButton } from '@clerk/nextjs'
+import { clerkClient, currentUser } from '@clerk/nextjs/server'
 
 import { Button } from '@mindworld/ui/components/button'
 
-export async function AuthShowcase() {
-  const session = await auth()
+import { SignInButton } from '@/components/SignInButton'
 
-  if (!session) {
-    return (
-      <form>
-        <Button
-          size="lg"
-          formAction={async () => {
-            'use server'
-            await signIn('mind')
-          }}
-        >
-          Sign in with Discord
-        </Button>
-      </form>
-    )
+export async function AuthShowcase() {
+  const user = await currentUser()
+
+  if (!user) {
+    return <SignInButton />
   }
+
+  const client = await clerkClient()
+  const { data } = await client.users.getUserOauthAccessToken(user.id, 'oauth_custom_mind')
+  data.forEach((token) => {
+    console.log(token)
+  })
 
   return (
     <div className="flex flex-col items-center justify-center gap-4">
       <p className="text-center text-2xl">
-        <span>Logged in as {session.user.name}</span>
+        <span>Logged in as {user.firstName}</span>
       </p>
 
-      <form>
-        <Button
-          size="lg"
-          formAction={async () => {
-            'use server'
-            await signOut()
-          }}
-        >
-          Sign out
-        </Button>
-      </form>
+      <SignOutButton>
+        <Button>sign out</Button>
+      </SignOutButton>
     </div>
   )
 }

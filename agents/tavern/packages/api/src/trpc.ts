@@ -6,40 +6,12 @@
  * tl;dr - this is where all the tRPC server stuff is created and plugged in.
  * The pieces you will need to use are documented accordingly near the end
  */
-import type { Session } from '@tavern/auth'
-import { auth } from '@tavern/auth'
+import type { DB } from '@tavern/db/client'
+import { auth } from '@clerk/nextjs/server'
 import { db } from '@tavern/db/client'
-import { initTRPC, TRPCError } from '@trpc/server'
-import * as cookie from 'cookie'
+import { inferAsyncReturnType, initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
-
-/**
- * Isomorphic Session getter for API requests
- * - Expo requests will have a session token in the Authorization header
- * - Next.js requests will have a session token in cookies
- */
-const isomorphicGetSession = async (headers: Headers, baseUrl: string) => {
-  const authToken = headers.get('Authorization') ?? null
-  if (authToken) {
-    const useSecureCookies = baseUrl.startsWith('https://')
-    const cookiePrefix = useSecureCookies ? '__Secure-' : ''
-    return auth(
-      // @ts-ignore
-      new Request('', {
-        headers: new Headers({
-          cookie: cookie.serialize(`${cookiePrefix}authjs.session-token`, authToken, {
-            httpOnly: true,
-            sameSite: 'lax',
-            path: '/',
-            secure: useSecureCookies,
-          }),
-        }),
-      }),
-    )
-  }
-  return auth()
-}
 
 /**
  * 1. CONTEXT
@@ -53,23 +25,27 @@ const isomorphicGetSession = async (headers: Headers, baseUrl: string) => {
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = async (opts: {
-  session: Session | null
+export const createTRPCContext = async ({
+  headers,
+}: {
   headers: Headers
-  baseUrl: string
-}) => {
-  const authToken = opts.headers.get('Authorization') ?? null
-  const session = await isomorphicGetSession(opts.headers, opts.baseUrl)
+}): Promise<{ auth: Awaited<ReturnType<typeof auth>>; db: DB }> => {
+  const _auth = await auth()
 
-  const source = opts.headers.get('x-trpc-source') ?? 'unknown'
-  console.log('>>> tRPC Request from', source, 'by', session?.user)
+  console.log(
+    '>>> tRPC Request from',
+    headers.get('x-trpc-source') ?? 'unknown',
+    'by',
+    _auth.userId,
+  )
 
   return {
-    session,
+    auth: _auth,
     db,
-    token: authToken,
   }
 }
+
+export type Context = inferAsyncReturnType<typeof createTRPCContext>
 
 /**
  * 2. INITIALIZATION
@@ -77,7 +53,7 @@ export const createTRPCContext = async (opts: {
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter: ({ shape, error }) => ({
     ...shape,
@@ -148,13 +124,12 @@ export const publicProcedure = t.procedure.use(timingMiddleware)
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.session?.user) {
+  if (!ctx.auth.userId) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
-      // infers the `session` as non-nullable
-      session: { ...ctx.session, user: ctx.session.user },
+      auth: ctx.auth,
     },
   })
 })
