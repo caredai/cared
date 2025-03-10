@@ -93,7 +93,7 @@ export interface ChatMetadata {
 
 export declare const appRouter: import("@trpc/server/unstable-core-do-not-import").BuiltRouter<{
     ctx: any;
-    meta: object;
+    meta: import("trpc-to-openapi").OpenApiMeta;
     errorShape: import("@trpc/server/unstable-core-do-not-import").DefaultErrorShape;
     transformer: true;
 }, import("@trpc/server/unstable-core-do-not-import").DecorateCreateRouterOptions<{
@@ -342,7 +342,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         get: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 workspace: {
                     name: string;
@@ -383,7 +385,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         delete: import("@trpc/server").TRPCMutationProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: void;
         }>;
         listMembers: import("@trpc/server").TRPCQueryProcedure<{
@@ -472,7 +476,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         }>;
     };
     user: {
-        get: import("@trpc/server").TRPCQueryProcedure<{
+        me: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
                 id: string;
@@ -582,7 +586,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         byId: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 app: {
                     name: string;
@@ -694,13 +700,17 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         delete: import("@trpc/server").TRPCMutationProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 success: boolean;
             };
         }>;
         publish: import("@trpc/server").TRPCMutationProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 app: {
                     createdAt: Date;
@@ -802,11 +812,17 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
     };
     oauthApp: {
         has: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
-            output: boolean;
+            input: {
+                appId: string;
+            };
+            output: {
+                exists: boolean;
+            };
         }>;
         get: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
+            input: {
+                appId: string;
+            };
             output: {
                 oauthApp: {
                     discoveryUrl: string;
@@ -857,11 +873,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         delete: import("@trpc/server").TRPCMutationProcedure<{
-            input: string;
+            input: {
+                appId: string;
+            };
             output: void;
         }>;
         rotateSecret: import("@trpc/server").TRPCMutationProcedure<{
-            input: string;
+            input: {
+                appId: string;
+            };
             output: {
                 oauthApp: {
                     discoveryUrl: string;
@@ -934,7 +954,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         byId: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 agent: {
                     name: string;
@@ -1447,7 +1469,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         byId: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 chat: {
                     id: string;
@@ -1515,7 +1539,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         delete: import("@trpc/server").TRPCMutationProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 chat: {
                     id: string;
@@ -1550,7 +1576,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
         getMessage: import("@trpc/server").TRPCQueryProcedure<{
-            input: string;
+            input: {
+                id: string;
+            };
             output: {
                 message: {
                     id: string;

@@ -57,6 +57,15 @@ export const datasetRouter = {
    * Only accessible by workspace members.
    */
   list: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/datasets',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'List all datasets in a workspace',
+      },
+    })
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -101,151 +110,203 @@ export const datasetRouter = {
    * Get a single dataset by ID within a workspace.
    * Only accessible by workspace members.
    */
-  byId: userProtectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    const dataset = await ctx.db.query.Dataset.findFirst({
-      where: eq(Dataset.id, input),
+  byId: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/datasets/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Get a single dataset by ID within a workspace',
+      },
     })
-
-    if (!dataset) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Dataset with id ${input} not found`,
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      const dataset = await ctx.db.query.Dataset.findFirst({
+        where: eq(Dataset.id, input),
       })
-    }
 
-    await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+      if (!dataset) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Dataset with id ${input} not found`,
+        })
+      }
 
-    return { dataset }
-  }),
+      await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+
+      return { dataset }
+    }),
 
   /**
    * Create a new dataset in a workspace.
    * Only accessible by workspace members.
    */
-  create: userProtectedProcedure.input(CreateDatasetSchema).mutation(async ({ ctx, input }) => {
-    await verifyWorkspaceMembership(ctx, input.workspaceId)
+  create: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/datasets',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Create a new dataset in a workspace',
+      },
+    })
+    .input(CreateDatasetSchema)
+    .mutation(async ({ ctx, input }) => {
+      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const values = {
+        ...input,
+        metadata: mergeWithoutUndefined<DatasetMetadata>(
+          {
+            ...defaultModels.dataset,
+            retrievalMode: 'hybrid-search',
+          },
+          input.metadata,
+        ),
+      }
 
-    const values = {
-      ...input,
-      metadata: mergeWithoutUndefined<DatasetMetadata>(
-        {
-          ...defaultModels.dataset,
-          retrievalMode: 'hybrid-search',
-        },
-        input.metadata,
-      ),
-    }
+      const [dataset] = await ctx.db.insert(Dataset).values(values).returning()
 
-    const [dataset] = await ctx.db.insert(Dataset).values(values).returning()
+      if (!dataset) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create dataset',
+        })
+      }
 
-    if (!dataset) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create dataset',
-      })
-    }
-
-    return { dataset }
-  }),
+      return { dataset }
+    }),
 
   /**
    * Update an existing dataset in a workspace.
    * Only accessible by workspace members.
    */
-  update: userProtectedProcedure.input(UpdateDatasetSchema).mutation(async ({ ctx, input }) => {
-    const { id, ...updates } = input
+  update: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/v1/datasets/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Update an existing dataset in a workspace',
+      },
+    })
+    .input(UpdateDatasetSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...updates } = input
 
-    const dataset = await getDatasetById(ctx, id)
-    await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+      const dataset = await getDatasetById(ctx, id)
+      await verifyWorkspaceMembership(ctx, dataset.workspaceId)
 
-    // Merge new metadata with existing metadata
-    const update = {
-      ...updates,
-      metadata: mergeWithoutUndefined<DatasetMetadata>(dataset.metadata, updates.metadata),
-    }
+      // Merge new metadata with existing metadata
+      const update = {
+        ...updates,
+        metadata: mergeWithoutUndefined<DatasetMetadata>(dataset.metadata, updates.metadata),
+      }
 
-    const [updatedDataset] = await ctx.db
-      .update(Dataset)
-      .set(update)
-      .where(eq(Dataset.id, id))
-      .returning()
+      const [updatedDataset] = await ctx.db
+        .update(Dataset)
+        .set(update)
+        .where(eq(Dataset.id, id))
+        .returning()
 
-    if (!updatedDataset) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to update dataset',
-      })
-    }
+      if (!updatedDataset) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update dataset',
+        })
+      }
 
-    return { dataset: updatedDataset }
-  }),
+      return { dataset: updatedDataset }
+    }),
 
   /**
    * Delete a dataset from a workspace.
    * Also deletes all associated documents, segments, chunks and S3 files.
    * Only accessible by workspace members.
    */
-  delete: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    const dataset = await getDatasetById(ctx, input)
-
-    await verifyWorkspaceMembership(ctx, dataset.workspaceId)
-
-    const documentUrls = await ctx.db
-      .select({
-        metadata: Document.metadata,
-      })
-      .from(Document)
-      .where(eq(Document.datasetId, input))
-      .then((docs) => docs.map((doc) => doc.metadata.url))
-
-    await ctx.db.transaction(async (tx) => {
-      // Delete all document chunks
-      await tx.delete(DocumentChunk).where(eq(DocumentChunk.datasetId, input))
-
-      // Delete all document segments
-      await tx.delete(DocumentSegment).where(eq(DocumentSegment.datasetId, input))
-
-      // Delete all documents
-      await tx.delete(Document).where(eq(Document.datasetId, input))
-
-      // Delete the dataset itself
-      await tx.delete(Dataset).where(eq(Dataset.id, input))
+  delete: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/datasets/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Delete a dataset from a workspace',
+      },
     })
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
+      const dataset = await getDatasetById(ctx, input)
 
-    // Delete S3 files if they exist
-    const s3ObjectsToDelete = documentUrls
-      .filter((docUrl) => docUrl?.startsWith(env.S3_ENDPOINT))
-      .map((docUrl) => {
-        const url = new URL(docUrl!)
-        const key = url.pathname.slice(1) // Remove leading slash
-        return { Key: key }
-      })
-    if (s3ObjectsToDelete.length > 0) {
-      try {
-        const s3Client = getClient()
-        await s3Client.send(
-          new DeleteObjectsCommand({
-            Bucket: env.S3_BUCKET,
-            Delete: {
-              Objects: s3ObjectsToDelete,
-              Quiet: true,
-            },
-          }),
-        )
-      } catch (error) {
-        log.error('Failed to delete S3 objects', {
-          datasetId: input,
-          error,
+      await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+
+      const documentUrls = await ctx.db
+        .select({
+          metadata: Document.metadata,
         })
+        .from(Document)
+        .where(eq(Document.datasetId, input))
+        .then((docs) => docs.map((doc) => doc.metadata.url))
+
+      await ctx.db.transaction(async (tx) => {
+        // Delete all document chunks
+        await tx.delete(DocumentChunk).where(eq(DocumentChunk.datasetId, input))
+
+        // Delete all document segments
+        await tx.delete(DocumentSegment).where(eq(DocumentSegment.datasetId, input))
+
+        // Delete all documents
+        await tx.delete(Document).where(eq(Document.datasetId, input))
+
+        // Delete the dataset itself
+        await tx.delete(Dataset).where(eq(Dataset.id, input))
+      })
+
+      // Delete S3 files if they exist
+      const s3ObjectsToDelete = documentUrls
+        .filter((docUrl) => docUrl?.startsWith(env.S3_ENDPOINT))
+        .map((docUrl) => {
+          const url = new URL(docUrl!)
+          const key = url.pathname.slice(1) // Remove leading slash
+          return { Key: key }
+        })
+      if (s3ObjectsToDelete.length > 0) {
+        try {
+          const s3Client = getClient()
+          await s3Client.send(
+            new DeleteObjectsCommand({
+              Bucket: env.S3_BUCKET,
+              Delete: {
+                Objects: s3ObjectsToDelete,
+                Quiet: true,
+              },
+            }),
+          )
+        } catch (error) {
+          log.error('Failed to delete S3 objects', {
+            datasetId: input,
+            error,
+          })
+        }
       }
-    }
-  }),
+    }),
 
   /**
    * Create a new document in a dataset.
    * Only accessible by workspace members.
    */
   createDocument: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/documents',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Create a new document in a dataset',
+      },
+    })
     .input(CreateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
@@ -270,6 +331,15 @@ export const datasetRouter = {
    * Only accessible by workspace members.
    */
   updateDocument: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/v1/documents/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Update an existing document',
+      },
+    })
     .input(UpdateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...update } = input
@@ -308,52 +378,65 @@ export const datasetRouter = {
    * Also deletes the associated S3 file if it exists.
    * Only accessible by workspace members.
    */
-  deleteDocument: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    const document = await ctx.db.query.Document.findFirst({
-      where: eq(Document.id, input),
+  deleteDocument: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/documents/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Delete a document and all its segments and chunks',
+        description:
+          'Deletes a document and all its related segments and chunks. Also deletes the associated S3 file if it exists.',
+      },
     })
-
-    if (!document) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Document with id ${input} not found`,
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
+      const document = await ctx.db.query.Document.findFirst({
+        where: eq(Document.id, input),
       })
-    }
 
-    await verifyWorkspaceMembership(ctx, document.workspaceId)
-
-    await ctx.db.transaction(async (tx) => {
-      // Delete all chunks
-      await tx.delete(DocumentChunk).where(eq(DocumentChunk.documentId, input))
-
-      // Delete all segments
-      await tx.delete(DocumentSegment).where(eq(DocumentSegment.documentId, input))
-
-      // Delete the document itself
-      await tx.delete(Document).where(eq(Document.id, input))
-    })
-
-    // Delete S3 file if exists
-    if (document.metadata.url?.startsWith(env.S3_ENDPOINT)) {
-      try {
-        const s3Client = getClient()
-        const url = new URL(document.metadata.url)
-        const key = url.pathname.slice(1) // Remove leading slash
-
-        await s3Client.send(
-          new DeleteObjectCommand({
-            Bucket: env.S3_BUCKET,
-            Key: key,
-          }),
-        )
-      } catch (error) {
-        log.error('Failed to delete S3 object', {
-          url: document.metadata.url,
-          error,
+      if (!document) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Document with id ${input} not found`,
         })
       }
-    }
-  }),
+
+      await verifyWorkspaceMembership(ctx, document.workspaceId)
+
+      await ctx.db.transaction(async (tx) => {
+        // Delete all chunks
+        await tx.delete(DocumentChunk).where(eq(DocumentChunk.documentId, input))
+
+        // Delete all segments
+        await tx.delete(DocumentSegment).where(eq(DocumentSegment.documentId, input))
+
+        // Delete the document itself
+        await tx.delete(Document).where(eq(Document.id, input))
+      })
+
+      // Delete S3 file if exists
+      if (document.metadata.url?.startsWith(env.S3_ENDPOINT)) {
+        try {
+          const s3Client = getClient()
+          const url = new URL(document.metadata.url)
+          const key = url.pathname.slice(1) // Remove leading slash
+
+          await s3Client.send(
+            new DeleteObjectCommand({
+              Bucket: env.S3_BUCKET,
+              Key: key,
+            }),
+          )
+        } catch (error) {
+          log.error('Failed to delete S3 object', {
+            url: document.metadata.url,
+            error,
+          })
+        }
+      }
+    }),
 
   /**
    * List all documents in a dataset.
@@ -415,28 +498,48 @@ export const datasetRouter = {
    * Get a single document by ID.
    * Only accessible by workspace members.
    */
-  getDocument: userProtectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    const document = await ctx.db.query.Document.findFirst({
-      where: eq(Document.id, input),
+  getDocument: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/documents/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Get a single document by ID',
+      },
     })
-
-    if (!document) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Document with id ${input} not found`,
+    .input(z.string())
+    .query(async ({ ctx, input }) => {
+      const document = await ctx.db.query.Document.findFirst({
+        where: eq(Document.id, input),
       })
-    }
 
-    await verifyWorkspaceMembership(ctx, document.workspaceId)
+      if (!document) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Document with id ${input} not found`,
+        })
+      }
 
-    return { document }
-  }),
+      await verifyWorkspaceMembership(ctx, document.workspaceId)
+
+      return { document }
+    }),
 
   /**
    * Create a new document segment.
    * Only accessible by workspace members.
    */
   createSegment: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/segments',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Create a new document segment',
+      },
+    })
     .input(CreateDocumentSegmentSchema)
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
@@ -477,6 +580,15 @@ export const datasetRouter = {
    * Only accessible by workspace members.
    */
   updateSegment: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/v1/segments/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Update an existing document segment',
+      },
+    })
     .input(UpdateDocumentSegmentSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input
@@ -514,36 +626,56 @@ export const datasetRouter = {
    * Delete a document segment and all its chunks.
    * Only accessible by workspace members.
    */
-  deleteSegment: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    const segment = await ctx.db.query.DocumentSegment.findFirst({
-      where: eq(DocumentSegment.id, input),
+  deleteSegment: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/segments/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Delete a document segment and all its chunks',
+      },
     })
-
-    if (!segment) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Document segment with id ${input} not found`,
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
+      const segment = await ctx.db.query.DocumentSegment.findFirst({
+        where: eq(DocumentSegment.id, input),
       })
-    }
 
-    await verifyWorkspaceMembership(ctx, segment.workspaceId)
+      if (!segment) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Document segment with id ${input} not found`,
+        })
+      }
 
-    return await ctx.db.transaction(async (tx) => {
-      // Delete all chunks
-      await tx.delete(DocumentChunk).where(eq(DocumentChunk.segmentId, input))
+      await verifyWorkspaceMembership(ctx, segment.workspaceId)
 
-      // Delete the segment itself
-      await tx.delete(DocumentSegment).where(eq(DocumentSegment.id, input))
+      return await ctx.db.transaction(async (tx) => {
+        // Delete all chunks
+        await tx.delete(DocumentChunk).where(eq(DocumentChunk.segmentId, input))
 
-      return { success: true }
-    })
-  }),
+        // Delete the segment itself
+        await tx.delete(DocumentSegment).where(eq(DocumentSegment.id, input))
+
+        return { success: true }
+      })
+    }),
 
   /**
    * List all segments in a document.
    * Only accessible by workspace members.
    */
   listSegments: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/segments',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'List all segments in a document',
+      },
+    })
     .input(
       z.object({
         documentId: z.string(),
@@ -600,6 +732,15 @@ export const datasetRouter = {
    * Only accessible by workspace members.
    */
   createChunk: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/chunks',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Create a new document chunk',
+      },
+    })
     .input(CreateDocumentChunkSchema)
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
@@ -644,6 +785,15 @@ export const datasetRouter = {
    * Only accessible by workspace members.
    */
   updateChunk: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/v1/chunks/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Update an existing document chunk',
+      },
+    })
     .input(UpdateDocumentChunkSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input as {
@@ -685,30 +835,50 @@ export const datasetRouter = {
    * Delete a document chunk.
    * Only accessible by workspace members.
    */
-  deleteChunk: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    const chunk = await ctx.db.query.DocumentChunk.findFirst({
-      where: eq(DocumentChunk.id, input),
+  deleteChunk: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/chunks/{id}',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'Delete a document chunk',
+      },
     })
-
-    if (!chunk) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Document chunk with id ${input} not found`,
+    .input(z.string())
+    .mutation(async ({ ctx, input }) => {
+      const chunk = await ctx.db.query.DocumentChunk.findFirst({
+        where: eq(DocumentChunk.id, input),
       })
-    }
 
-    await verifyWorkspaceMembership(ctx, chunk.workspaceId)
+      if (!chunk) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Document chunk with id ${input} not found`,
+        })
+      }
 
-    await ctx.db.delete(DocumentChunk).where(eq(DocumentChunk.id, input))
+      await verifyWorkspaceMembership(ctx, chunk.workspaceId)
 
-    return { success: true }
-  }),
+      await ctx.db.delete(DocumentChunk).where(eq(DocumentChunk.id, input))
+
+      return { success: true }
+    }),
 
   /**
    * List all chunks in a document segment.
    * Only accessible by workspace members.
    */
   listChunks: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/chunks',
+        protect: true,
+        tags: ['datasets'],
+        summary: 'List all chunks in a document segment',
+      },
+    })
     .input(
       z.object({
         segmentId: z.string(),

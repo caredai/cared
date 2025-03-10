@@ -46,6 +46,29 @@ const config = {
       fullUrl: true,
     },
   },
+
+  // @ts-ignore
+  webpack: (config, { webpack }) => {
+    config.experiments = { ...config.experiments, topLevelAwait: true }
+    config.externals['node:path'] = 'commonjs node:path'
+    config.externals['node:fs'] = 'commonjs node:fs'
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      path: false,
+      fs: false,
+    }
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(
+        /^node:/,
+        // @ts-ignore
+        (resource) => {
+          resource.request = resource.request.replace(/^node:/, '')
+        },
+      ),
+    )
+
+    return config
+  },
 }
 
 export default config

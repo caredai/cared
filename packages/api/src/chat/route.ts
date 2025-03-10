@@ -77,7 +77,7 @@ export async function POST(request: Request) {
   let chat: Chat | undefined
   let deleteChat: (() => Promise<void>) | undefined
   if (id) {
-    chat = (await caller.chat.byId(id)).chat
+    chat = (await caller.chat.byId({ id })).chat
 
     // if chat found, check if user is authorized to access it
 
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     ).chat
 
     deleteChat = async () => {
-      await caller.chat.delete(chat!.id)
+      await caller.chat.delete({ id: chat!.id })
     }
   }
 
@@ -152,7 +152,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const app = (await caller.app.byId(chat.appId)).app
+  const app = (await caller.app.byId({ id: chat.appId })).app
 
   const agents = (
     await caller.agent.listByApp({

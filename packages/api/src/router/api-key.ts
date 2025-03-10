@@ -59,6 +59,15 @@ export const apiKeyRouter = {
    * @throws {TRPCError} If user is not workspace owner
    */
   list: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/api-keys',
+        protect: true,
+        tags: ['keys'],
+        summary: 'List all API keys for a workspace',
+      },
+    })
     .input(
       z.object({
         appId: z.string(),
@@ -86,6 +95,15 @@ export const apiKeyRouter = {
    * @throws {TRPCError} If user is not workspace owner or app not found
    */
   get: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/api-keys/{appId}',
+        protect: true,
+        tags: ['keys'],
+        summary: 'Get API key for an app',
+      },
+    })
     .input(
       z.object({
         appId: z.string(),
@@ -114,6 +132,15 @@ export const apiKeyRouter = {
    * @throws {TRPCError} If user is not workspace owner or app not found
    */
   create: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/api-keys',
+        protect: true,
+        tags: ['keys'],
+        summary: 'Create a new API key for an app',
+      },
+    })
     .input(
       z.object({
         appId: z.string(),
@@ -167,6 +194,15 @@ export const apiKeyRouter = {
    * @throws {TRPCError} If user is not workspace owner or app not found
    */
   delete: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/api-keys/{appId}',
+        protect: true,
+        tags: ['keys'],
+        summary: 'Delete the API key for an app',
+      },
+    })
     .input(
       z.object({
         appId: z.string(),

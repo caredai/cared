@@ -8,7 +8,7 @@ import { log } from '@mindworld/utils'
  * Configure CORS headers
  * You should extend this to match your needs
  */
-const setCorsHeaders = (res: Response) => {
+export const setCorsHeaders = (res: Response) => {
   // We can use the response object to enable CORS
   res.headers.set('Access-Control-Allow-Origin', '*')
   res.headers.set('Access-Control-Request-Method', '*')

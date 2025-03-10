@@ -69,6 +69,15 @@ export const chatRouter = {
    * @returns List of chats with hasMore flag
    */
   listByApp: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/chats',
+        protect: true,
+        tags: ['chats'],
+        summary: 'List all chats for an app',
+      },
+    })
     .input(
       z.object({
         appId: z.string().min(32),
@@ -114,10 +123,21 @@ export const chatRouter = {
    * @param input - The chat ID
    * @returns The chat if found
    */
-  byId: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
-    const chat = await getChatById(ctx, input)
-    return { chat }
-  }),
+  byId: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/chats/{id}',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Get a single chat by ID',
+      },
+    })
+    .input(z.object({ id: z.string().min(32) }))
+    .query(async ({ ctx, input }) => {
+      const chat = await getChatById(ctx, input.id)
+      return { chat }
+    }),
 
   /**
    * Create a new chat.
@@ -125,39 +145,50 @@ export const chatRouter = {
    * @param input - The chat data following the {@link CreateChatSchema}
    * @returns The created chat
    */
-  create: userProtectedProcedure.input(CreateChatSchema).mutation(async ({ ctx, input }) => {
-    await getAppById(ctx, input.appId)
+  create: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/chats',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Create a new chat',
+      },
+    })
+    .input(CreateChatSchema)
+    .mutation(async ({ ctx, input }) => {
+      await getAppById(ctx, input.appId)
 
-    if (input.debug) {
-      // TODO: check rbac
+      if (input.debug) {
+        // TODO: check rbac
 
-      const existingDebugChat = await ctx.db.query.Chat.findFirst({
-        where: and(
-          eq(Chat.appId, input.appId),
-          eq(Chat.userId, ctx.auth.userId),
-          eq(Chat.debug, true),
-        ),
-      })
+        const existingDebugChat = await ctx.db.query.Chat.findFirst({
+          where: and(
+            eq(Chat.appId, input.appId),
+            eq(Chat.userId, ctx.auth.userId),
+            eq(Chat.debug, true),
+          ),
+        })
 
-      if (existingDebugChat) {
+        if (existingDebugChat) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'A debug chat already exists for you in this app',
+          })
+        }
+      }
+
+      const [chat] = await ctx.db.insert(Chat).values(input).returning()
+
+      if (!chat) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'A debug chat already exists for you in this app',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create chat',
         })
       }
-    }
 
-    const [chat] = await ctx.db.insert(Chat).values(input).returning()
-
-    if (!chat) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create chat',
-      })
-    }
-
-    return { chat }
-  }),
+      return { chat }
+    }),
 
   /**
    * Update an existing chat.
@@ -165,35 +196,46 @@ export const chatRouter = {
    * @param input - The chat data following the {@link UpdateChatSchema}
    * @returns The updated chat
    */
-  update: userProtectedProcedure.input(UpdateChatSchema).mutation(async ({ ctx, input }) => {
-    const { id, ...update } = input
-    const chat = await getChatById(ctx, id)
+  update: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/v1/chats/{id}',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Update an existing chat',
+      },
+    })
+    .input(UpdateChatSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...update } = input
+      const chat = await getChatById(ctx, id)
 
-    const metadata = update.metadata
-      ? {
-          ...chat.metadata,
-          ...update.metadata,
-        }
-      : undefined
+      const metadata = update.metadata
+        ? {
+            ...chat.metadata,
+            ...update.metadata,
+          }
+        : undefined
 
-    const [updatedChat] = await ctx.db
-      .update(Chat)
-      .set({
-        ...update,
-        metadata,
-      })
-      .where(eq(Chat.id, id))
-      .returning()
+      const [updatedChat] = await ctx.db
+        .update(Chat)
+        .set({
+          ...update,
+          metadata,
+        })
+        .where(eq(Chat.id, id))
+        .returning()
 
-    if (!updatedChat) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to update chat',
-      })
-    }
+      if (!updatedChat) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update chat',
+        })
+      }
 
-    return { chat: updatedChat }
-  }),
+      return { chat: updatedChat }
+    }),
 
   /**
    * Delete an existing chat.
@@ -201,20 +243,31 @@ export const chatRouter = {
    * @param input - Object containing the chat ID to delete
    * @returns The deleted chat
    */
-  delete: userProtectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input }) => {
-    await getChatById(ctx, input)
+  delete: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/chats/{id}',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Delete an existing chat',
+      },
+    })
+    .input(z.object({ id: z.string().min(32) }))
+    .mutation(async ({ ctx, input }) => {
+      await getChatById(ctx, input.id)
 
-    const [deletedChat] = await ctx.db.delete(Chat).where(eq(Chat.id, input)).returning()
+      const [deletedChat] = await ctx.db.delete(Chat).where(eq(Chat.id, input.id)).returning()
 
-    if (!deletedChat) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to delete chat',
-      })
-    }
+      if (!deletedChat) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to delete chat',
+        })
+      }
 
-    return { chat: deletedChat }
-  }),
+      return { chat: deletedChat }
+    }),
 
   /**
    * List all messages in a chat.
@@ -223,6 +276,15 @@ export const chatRouter = {
    * @returns List of messages with hasMore flag
    */
   listMessages: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/messages',
+        protect: true,
+        tags: ['chats'],
+        summary: 'List all messages in a chat',
+      },
+    })
     .input(
       z.object({
         chatId: z.string().min(32),
@@ -268,10 +330,21 @@ export const chatRouter = {
    * @param input - Object containing message ID
    * @returns The message if found
    */
-  getMessage: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
-    const message = await getMessageById(ctx, input)
-    return { message }
-  }),
+  getMessage: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/messages/{id}',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Get a single message by ID',
+      },
+    })
+    .input(z.object({ id: z.string().min(32) }))
+    .query(async ({ ctx, input }) => {
+      const message = await getMessageById(ctx, input.id)
+      return { message }
+    }),
 
   /**
    * Create a new message in a chat.
@@ -279,34 +352,45 @@ export const chatRouter = {
    * @param input - The message data following the {@link CreateMessageSchema}
    * @returns The created message
    */
-  createMessage: userProtectedProcedure.input(CreateMessageSchema).mutation(async ({ ctx, input }) => {
-    await getChatById(ctx, input.chatId)
+  createMessage: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/messages',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Create a new message in a chat',
+      },
+    })
+    .input(CreateMessageSchema)
+    .mutation(async ({ ctx, input }) => {
+      await getChatById(ctx, input.chatId)
 
-    if (input.id) {
-      const lastMsg = await ctx.db.query.Message.findFirst({
-        where: eq(Message.chatId, input.chatId),
-        orderBy: desc(Message.id),
-      })
+      if (input.id) {
+        const lastMsg = await ctx.db.query.Message.findFirst({
+          where: eq(Message.chatId, input.chatId),
+          orderBy: desc(Message.id),
+        })
 
-      if (lastMsg && input.id <= lastMsg.id) {
+        if (lastMsg && input.id <= lastMsg.id) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Message ID must be greater than the last message ID in the chat',
+          })
+        }
+      }
+
+      const [message] = await ctx.db.insert(Message).values(input).returning()
+
+      if (!message) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Message ID must be greater than the last message ID in the chat',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create message',
         })
       }
-    }
 
-    const [message] = await ctx.db.insert(Message).values(input).returning()
-
-    if (!message) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to create message',
-      })
-    }
-
-    return { message }
-  }),
+      return { message }
+    }),
 
   /**
    * Create multiple messages in a chat.
@@ -315,6 +399,15 @@ export const chatRouter = {
    * @returns The created messages
    */
   createMessages: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/messages',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Create multiple messages in a chat',
+      },
+    })
     .input(z.array(CreateMessageSchema))
     .mutation(async ({ ctx, input }) => {
       const firstMsg = input.at(0)
@@ -392,6 +485,15 @@ export const chatRouter = {
    * @param input - Object containing message ID
    */
   deleteTrailingMessages: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/messages',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Delete all messages in a chat that were created after the specified message',
+      },
+    })
     .input(
       z.object({
         messageId: z.string().min(32),
@@ -415,6 +517,15 @@ export const chatRouter = {
    * @returns The created or updated vote
    */
   voteMessage: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/messages/vote',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Vote on a message',
+      },
+    })
     .input(CreateMessageVoteSchema)
     .mutation(async ({ ctx, input }) => {
       await getMessageById(ctx, input.messageId)

@@ -92,6 +92,15 @@ export const agentRouter = {
    * @returns List of agents with hasMore flag
    */
   listByApp: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/agents',
+        protect: true,
+        tags: ['agents'],
+        summary: 'List all agents for an app',
+      },
+    })
     .input(
       z.object({
         appId: z.string().min(32),
@@ -135,6 +144,15 @@ export const agentRouter = {
    * @returns List of agent versions bound to the specified app version
    */
   listByAppVersion: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/agents/by-app-version',
+        protect: true,
+        tags: ['agents'],
+        summary: 'List all agent versions for a specific app version',
+      },
+    })
     .input(
       z.object({
         appId: z.string().min(32),
@@ -170,6 +188,15 @@ export const agentRouter = {
    * @returns List of agent versions sorted by version number
    */
   listVersions: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/agents/{agentId}/versions',
+        protect: true,
+        tags: ['agents'],
+        summary: 'List all versions of an agent',
+      },
+    })
     .input(
       z.object({
         agentId: z.string().min(32),
@@ -215,55 +242,81 @@ export const agentRouter = {
    * @param input - The agent ID
    * @returns The agent if found
    */
-  byId: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input }) => {
-    const agent = await getAgentById(ctx, input)
-    return { agent }
-  }),
+  byId: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/agents/{id}',
+        protect: true,
+        tags: ['agents'],
+        summary: 'Get a single agent by ID',
+      },
+    })
+    .input(
+      z.object({
+        id: z.string().min(32),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const agent = await getAgentById(ctx, input.id)
+      return { agent }
+    }),
 
   /**
    * Create a new agent for an app.
    * @param input - The agent data following the {@link CreateAgentSchema}
    * @returns The created agent and its draft version
    */
-  create: userProtectedProcedure.input(CreateAgentSchema).mutation(async ({ ctx, input }) => {
-    // Verify app exists
-    await getAppById(ctx, input.appId)
-
-    return ctx.db.transaction(async (tx) => {
-      const [agent] = await tx.insert(Agent).values(input).returning()
-
-      if (!agent) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create agent',
-        })
-      }
-
-      const [draft] = await tx
-        .insert(AgentVersion)
-        .values(
-          CreateAgentVersionSchema.parse({
-            agentId: agent.id,
-            version: DRAFT_VERSION,
-            name: input.name,
-            metadata: input.metadata,
-          }),
-        )
-        .returning()
-
-      if (!draft) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create draft version',
-        })
-      }
-
-      return {
-        agent,
-        draft,
-      }
+  create: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/agents',
+        protect: true,
+        tags: ['agents'],
+        summary: 'Create a new agent for an app',
+      },
     })
-  }),
+    .input(CreateAgentSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Verify app exists
+      await getAppById(ctx, input.appId)
+
+      return ctx.db.transaction(async (tx) => {
+        const [agent] = await tx.insert(Agent).values(input).returning()
+
+        if (!agent) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create agent',
+          })
+        }
+
+        const [draft] = await tx
+          .insert(AgentVersion)
+          .values(
+            CreateAgentVersionSchema.parse({
+              agentId: agent.id,
+              version: DRAFT_VERSION,
+              name: input.name,
+              metadata: input.metadata,
+            }),
+          )
+          .returning()
+
+        if (!draft) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create draft version',
+          })
+        }
+
+        return {
+          agent,
+          draft,
+        }
+      })
+    }),
 
   /**
    * Update an existing agent.
@@ -271,55 +324,66 @@ export const agentRouter = {
    * @param input - The agent data following the {@link UpdateAgentSchema}
    * @returns The updated agent and its draft version
    */
-  update: userProtectedProcedure.input(UpdateAgentSchema).mutation(async ({ ctx, input }) => {
-    const { id, ...update } = input
+  update: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/v1/agents/{id}',
+        protect: true,
+        tags: ['agents'],
+        summary: 'Update an existing agent',
+      },
+    })
+    .input(UpdateAgentSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...update } = input
 
-    const agent = await getAgentById(ctx, id)
-    const draft = await getAgentVersion(ctx, id, 'draft')
-    // Check if there's any published version
-    const publishedVersion = await getAgentVersion(ctx, id, 'latest').catch(() => undefined)
+      const agent = await getAgentById(ctx, id)
+      const draft = await getAgentVersion(ctx, id, 'draft')
+      // Check if there's any published version
+      const publishedVersion = await getAgentVersion(ctx, id, 'latest').catch(() => undefined)
 
-    // Merge new metadata with existing metadata
-    if (update.metadata) {
-      update.metadata = {
-        ...draft.metadata,
-        ...update.metadata,
-      }
-    }
-
-    return ctx.db.transaction(async (tx) => {
-      // Update draft version
-      const [updatedDraft] = await tx
-        .update(AgentVersion)
-        .set(update)
-        .where(and(eq(AgentVersion.agentId, id), eq(AgentVersion.version, DRAFT_VERSION)))
-        .returning()
-
-      if (!updatedDraft) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update draft version',
-        })
+      // Merge new metadata with existing metadata
+      if (update.metadata) {
+        update.metadata = {
+          ...draft.metadata,
+          ...update.metadata,
+        }
       }
 
-      // If no published version exists, update the agent's main record as well
-      let updatedAgent = agent
-      if (!publishedVersion) {
-        const [newAgent] = await tx.update(Agent).set(update).where(eq(Agent.id, id)).returning()
+      return ctx.db.transaction(async (tx) => {
+        // Update draft version
+        const [updatedDraft] = await tx
+          .update(AgentVersion)
+          .set(update)
+          .where(and(eq(AgentVersion.agentId, id), eq(AgentVersion.version, DRAFT_VERSION)))
+          .returning()
 
-        if (!newAgent) {
+        if (!updatedDraft) {
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to update agent',
+            message: 'Failed to update draft version',
           })
         }
-        updatedAgent = newAgent
-      }
 
-      return {
-        agent: updatedAgent,
-        draft: updatedDraft,
-      }
-    })
-  }),
+        // If no published version exists, update the agent's main record as well
+        let updatedAgent = agent
+        if (!publishedVersion) {
+          const [newAgent] = await tx.update(Agent).set(update).where(eq(Agent.id, id)).returning()
+
+          if (!newAgent) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to update agent',
+            })
+          }
+          updatedAgent = newAgent
+        }
+
+        return {
+          agent: updatedAgent,
+          draft: updatedDraft,
+        }
+      })
+    }),
 }

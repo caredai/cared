@@ -11,8 +11,7 @@ export default clerkMiddleware(async (auth, request) => {
     if (r instanceof Response) {
       return r
     }
-  }
-  if (!isPublicRoute(request)) {
+  } else if (!isPublicRoute(request)) {
     await auth.protect()
   }
 })

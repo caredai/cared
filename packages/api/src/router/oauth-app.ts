@@ -40,51 +40,60 @@ function filteredOauthApp(oauthApp: OAuthApp, clerkOAuthApp: OAuthApplication) {
 
 export const oauthAppRouter = {
   // Check if app has OAuth app
-  has: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
-    const app = await getAppById(ctx, appId)
-    await verifyWorkspaceOwner(ctx, app.workspaceId)
+  has: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/{appId}/exists' } })
+    .input(z.object({ appId: z.string().min(32) }))
+    .query(async ({ ctx, input }) => {
+      const app = await getAppById(ctx, input.appId)
+      await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-    const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-      where: eq(OAuthApp.appId, appId),
-    })
+      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
+        where: eq(OAuthApp.appId, input.appId),
+      })
 
-    return !!oauthApp && !!(await getClerkOAuthApp(oauthApp.oauthAppId))
-  }),
+      return {
+        exists: !!oauthApp && !!(await getClerkOAuthApp(oauthApp.oauthAppId)),
+      }
+    }),
 
   // Get OAuth app
-  get: userProtectedProcedure.input(z.string().min(32)).query(async ({ ctx, input: appId }) => {
-    const app = await getAppById(ctx, appId)
-    await verifyWorkspaceOwner(ctx, app.workspaceId)
+  get: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/{appId}' } })
+    .input(z.object({ appId: z.string().min(32) }))
+    .query(async ({ ctx, input }) => {
+      const app = await getAppById(ctx, input.appId)
+      await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-    const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-      where: eq(OAuthApp.appId, appId),
-    })
-
-    if (!oauthApp) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'OAuth app not found',
+      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
+        where: eq(OAuthApp.appId, input.appId),
       })
-    }
 
-    const clerkOAuthApp = await getClerkOAuthApp(oauthApp.oauthAppId)
-    if (!clerkOAuthApp) {
-      // Delete the OAuth app record from our database since it no longer exists in Clerk
-      await ctx.db.delete(OAuthApp).where(eq(OAuthApp.appId, appId))
+      if (!oauthApp) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'OAuth app not found',
+        })
+      }
 
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'OAuth app not found',
-      })
-    }
+      const clerkOAuthApp = await getClerkOAuthApp(oauthApp.oauthAppId)
+      if (!clerkOAuthApp) {
+        // Delete the OAuth app record from our database since it no longer exists in Clerk
+        await ctx.db.delete(OAuthApp).where(eq(OAuthApp.appId, input.appId))
 
-    return {
-      oauthApp: filteredOauthApp(oauthApp, clerkOAuthApp),
-    }
-  }),
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'OAuth app not found',
+        })
+      }
+
+      return {
+        oauthApp: filteredOauthApp(oauthApp, clerkOAuthApp),
+      }
+    }),
 
   // Create new OAuth app
   create: userProtectedProcedure
+    .meta({ openapi: { method: 'POST', path: '/v1/oauth-apps' } })
     .input(
       z.object({
         appId: z.string().min(32),
@@ -132,6 +141,7 @@ export const oauthAppRouter = {
 
   // Update OAuth app
   update: userProtectedProcedure
+    .meta({ openapi: { method: 'PATCH', path: '/v1/oauth-apps/{appId}' } })
     .input(
       z.object({
         appId: z.string().min(32),
@@ -170,40 +180,44 @@ export const oauthAppRouter = {
     }),
 
   // Delete OAuth app
-  delete: userProtectedProcedure.input(z.string().min(32)).mutation(async ({ ctx, input: appId }) => {
-    const app = await getAppById(ctx, appId)
-    await verifyWorkspaceOwner(ctx, app.workspaceId)
-
-    const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-      where: eq(OAuthApp.appId, appId),
-    })
-
-    if (!oauthApp) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'OAuth app not found',
-      })
-    }
-
-    await ctx.db.transaction(async (tx) => {
-      // Delete from our database first
-      await tx.delete(OAuthApp).where(eq(OAuthApp.appId, appId))
-
-      // Then delete from Clerk
-      const client = await clerkClient()
-      await client.oauthApplications.deleteOAuthApplication(oauthApp.oauthAppId)
-    })
-  }),
-
-  // Rotate client secret
-  rotateSecret: userProtectedProcedure
-    .input(z.string().min(32))
-    .mutation(async ({ ctx, input: appId }) => {
-      const app = await getAppById(ctx, appId)
+  delete: userProtectedProcedure
+    .meta({ openapi: { method: 'DELETE', path: '/v1/oauth-apps/{appId}' } })
+    .input(z.object({ appId: z.string().min(32) }))
+    .mutation(async ({ ctx, input }) => {
+      const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
       const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-        where: eq(OAuthApp.appId, appId),
+        where: eq(OAuthApp.appId, input.appId),
+      })
+
+      if (!oauthApp) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'OAuth app not found',
+        })
+      }
+
+      await ctx.db.transaction(async (tx) => {
+        // Delete from our database first
+        await tx.delete(OAuthApp).where(eq(OAuthApp.appId, input.appId))
+
+        // Then delete from Clerk
+        const client = await clerkClient()
+        await client.oauthApplications.deleteOAuthApplication(oauthApp.oauthAppId)
+      })
+    }),
+
+  // Rotate client secret
+  rotateSecret: userProtectedProcedure
+    .meta({ openapi: { method: 'POST', path: '/v1/oauth-apps/{appId}/rotate-secret' } })
+    .input(z.object({ appId: z.string().min(32) }))
+    .mutation(async ({ ctx, input }) => {
+      const app = await getAppById(ctx, input.appId)
+      await verifyWorkspaceOwner(ctx, app.workspaceId)
+
+      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
+        where: eq(OAuthApp.appId, input.appId),
       })
 
       if (!oauthApp) {

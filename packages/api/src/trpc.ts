@@ -1,5 +1,6 @@
 import * as trpc from '@trpc/server'
 import superjson from 'superjson'
+import type { OpenApiMeta } from 'trpc-to-openapi'
 import { ZodError } from 'zod'
 
 import type { DB } from '@mindworld/db/client'
@@ -49,16 +50,19 @@ export type Context = trpc.inferAsyncReturnType<typeof createTRPCContext>
  * This is where the trpc api is initialized, connecting the context and
  * transformer
  */
-const t = trpc.initTRPC.context<Context>().create({
-  transformer: superjson,
-  errorFormatter: ({ shape, error }) => ({
-    ...shape,
-    data: {
-      ...shape.data,
-      zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
-    },
-  }),
-})
+const t = trpc.initTRPC
+  .meta<OpenApiMeta>()
+  .context<Context>()
+  .create({
+    transformer: superjson,
+    errorFormatter: ({ shape, error }) => ({
+      ...shape,
+      data: {
+        ...shape.data,
+        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
+      },
+    }),
+  })
 
 /**
  * Create a server-side caller

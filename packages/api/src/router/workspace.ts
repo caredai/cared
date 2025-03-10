@@ -60,6 +60,7 @@ export const workspaceRouter = {
    * @returns List of workspaces with user's role in each workspace
    */
   list: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/workspaces' } })
     .input(
       z.object({
         after: z.string().optional(),
@@ -108,83 +109,96 @@ export const workspaceRouter = {
    * @returns The workspace and user's role if found
    * @throws {TRPCError} If workspace not found or user is not a member
    */
-  get: userProtectedProcedure.input(z.string().min(32)).query(async ({ input, ctx }) => {
-    const workspace = await ctx.db
-      .select({
-        workspace: Workspace,
-        role: Membership.role,
-      })
-      .from(Membership)
-      .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
-      .where(and(eq(Membership.workspaceId, input), eq(Membership.userId, ctx.auth.userId)))
-      .limit(1)
-      .then((rows) => rows[0])
+  get: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/workspaces/{id}' } })
+    .input(
+      z.object({
+        id: z.string().min(32),
+      }),
+    )
+    .query(async ({ input, ctx }) => {
+      const workspace = await ctx.db
+        .select({
+          workspace: Workspace,
+          role: Membership.role,
+        })
+        .from(Membership)
+        .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
+        .where(and(eq(Membership.workspaceId, input.id), eq(Membership.userId, ctx.auth.userId)))
+        .limit(1)
+        .then((rows) => rows[0])
 
-    if (!workspace) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Workspace not found',
-      })
-    }
-
-    return workspace
-  }),
-
-  create: userProtectedProcedure.input(CreateWorkspaceSchema).mutation(async ({ input, ctx }) => {
-    return await ctx.db.transaction(async (tx) => {
-      const [workspace] = await tx.insert(Workspace).values(input).returning()
       if (!workspace) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create workspace',
+          code: 'NOT_FOUND',
+          message: 'Workspace not found',
         })
       }
 
-      await tx.insert(Membership).values({
-        workspaceId: workspace.id,
-        userId: ctx.auth.userId,
-        role: 'owner',
+      return workspace
+    }),
+
+  create: userProtectedProcedure
+    .meta({ openapi: { method: 'POST', path: '/v1/workspaces' } })
+    .input(CreateWorkspaceSchema)
+    .mutation(async ({ input, ctx }) => {
+      return await ctx.db.transaction(async (tx) => {
+        const [workspace] = await tx.insert(Workspace).values(input).returning()
+        if (!workspace) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create workspace',
+          })
+        }
+
+        await tx.insert(Membership).values({
+          workspaceId: workspace.id,
+          userId: ctx.auth.userId,
+          role: 'owner',
+        })
+
+        return {
+          workspace,
+          role: 'owner',
+        }
       })
+    }),
+
+  update: userProtectedProcedure
+    .meta({ openapi: { method: 'PATCH', path: '/v1/workspaces/{id}' } })
+    .input(UpdateWorkspaceSchema)
+    .mutation(async ({ input, ctx }) => {
+      const memberships = await ctx.db
+        .select({ role: Membership.role })
+        .from(Membership)
+        .where(and(eq(Membership.workspaceId, input.id), eq(Membership.userId, ctx.auth.userId)))
+        .limit(1)
+
+      if (memberships[0]?.role !== 'owner') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only owner can update workspace',
+        })
+      }
+
+      const [workspace] = await ctx.db
+        .update(Workspace)
+        .set({ name: input.name })
+        .where(eq(Workspace.id, input.id))
+        .returning()
+
+      if (!workspace) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update workspace',
+        })
+      }
 
       return {
         workspace,
         role: 'owner',
       }
-    })
-  }),
-
-  update: userProtectedProcedure.input(UpdateWorkspaceSchema).mutation(async ({ input, ctx }) => {
-    const memberships = await ctx.db
-      .select({ role: Membership.role })
-      .from(Membership)
-      .where(and(eq(Membership.workspaceId, input.id), eq(Membership.userId, ctx.auth.userId)))
-      .limit(1)
-
-    if (memberships[0]?.role !== 'owner') {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'Only owner can update workspace',
-      })
-    }
-
-    const [workspace] = await ctx.db
-      .update(Workspace)
-      .set({ name: input.name })
-      .where(eq(Workspace.id, input.id))
-      .returning()
-
-    if (!workspace) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to update workspace',
-      })
-    }
-
-    return {
-      workspace,
-      role: 'owner',
-    }
-  }),
+    }),
 
   /**
    * Delete a workspace.
@@ -193,28 +207,35 @@ export const workspaceRouter = {
    * @param input - The workspace ID
    * @throws {TRPCError} If user is not the workspace owner
    */
-  delete: userProtectedProcedure.input(z.string().min(32)).mutation(async ({ input, ctx }) => {
-    return await ctx.db.transaction(async (tx) => {
-      const memberships = await tx
-        .select({ role: Membership.role })
-        .from(Membership)
-        .where(and(eq(Membership.workspaceId, input), eq(Membership.userId, ctx.auth.userId)))
-        .limit(1)
+  delete: userProtectedProcedure
+    .meta({ openapi: { method: 'DELETE', path: '/v1/workspaces/{id}' } })
+    .input(
+      z.object({
+        id: z.string().min(32),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      return await ctx.db.transaction(async (tx) => {
+        const memberships = await tx
+          .select({ role: Membership.role })
+          .from(Membership)
+          .where(and(eq(Membership.workspaceId, input.id), eq(Membership.userId, ctx.auth.userId)))
+          .limit(1)
 
-      if (memberships[0]?.role !== 'owner') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only owner can delete workspace',
-        })
-      }
+        if (memberships[0]?.role !== 'owner') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Only owner can delete workspace',
+          })
+        }
 
-      // Delete all memberships first
-      await tx.delete(Membership).where(eq(Membership.workspaceId, input))
+        // Delete all memberships first
+        await tx.delete(Membership).where(eq(Membership.workspaceId, input.id))
 
-      // Then delete the workspace
-      await tx.delete(Workspace).where(eq(Workspace.id, input))
-    })
-  }),
+        // Then delete the workspace
+        await tx.delete(Workspace).where(eq(Workspace.id, input.id))
+      })
+    }),
 
   /**
    * List all members of a workspace.
@@ -223,6 +244,7 @@ export const workspaceRouter = {
    * @returns List of workspace members with their roles
    */
   listMembers: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/workspaces/{workspaceId}/members' } })
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -294,6 +316,7 @@ export const workspaceRouter = {
    * @throws {TRPCError} If member not found or user doesn't have access
    */
   getMember: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/workspaces/{workspaceId}/members/{userId}' } })
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -342,56 +365,63 @@ export const workspaceRouter = {
       }
     }),
 
-  addMember: userProtectedProcedure.input(CreateMembershipSchema).mutation(async ({ input, ctx }) => {
-    const memberships = await ctx.db
-      .select({ role: Membership.role })
-      .from(Membership)
-      .where(
-        and(eq(Membership.workspaceId, input.workspaceId), eq(Membership.userId, ctx.auth.userId)),
-      )
-      .limit(1)
+  addMember: userProtectedProcedure
+    .meta({ openapi: { method: 'POST', path: '/v1/workspaces/{workspaceId}/members' } })
+    .input(CreateMembershipSchema)
+    .mutation(async ({ input, ctx }) => {
+      const memberships = await ctx.db
+        .select({ role: Membership.role })
+        .from(Membership)
+        .where(
+          and(
+            eq(Membership.workspaceId, input.workspaceId),
+            eq(Membership.userId, ctx.auth.userId),
+          ),
+        )
+        .limit(1)
 
-    if (memberships[0]?.role !== 'owner') {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'Only owner can add members',
+      if (memberships[0]?.role !== 'owner') {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only owner can add members',
+        })
+      }
+
+      const user = await ctx.db.query.User.findFirst({
+        where: eq(User.id, input.userId),
       })
-    }
 
-    const user = await ctx.db.query.User.findFirst({
-      where: eq(User.id, input.userId),
-    })
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'User not found',
+        })
+      }
 
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
-      })
-    }
+      if (input.role !== 'member') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Role can only be "member"',
+        })
+      }
 
-    if (input.role !== 'member') {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Role can only be "member"',
-      })
-    }
+      const [membership] = await ctx.db.insert(Membership).values(input).returning()
 
-    const [membership] = await ctx.db.insert(Membership).values(input).returning()
+      if (!membership) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to add member',
+        })
+      }
 
-    if (!membership) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to add member',
-      })
-    }
-
-    return {
-      user: filteredUser(user),
-      role: membership.role,
-    }
-  }),
+      return {
+        user: filteredUser(user),
+        role: membership.role,
+      }
+    }),
 
   deleteMember: userProtectedProcedure
+    .meta({ openapi: { method: 'DELETE', path: '/v1/workspaces/{workspaceId}/members/{userId}' } })
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -433,6 +463,7 @@ export const workspaceRouter = {
     }),
 
   transferOwner: userProtectedProcedure
+    .meta({ openapi: { method: 'POST', path: '/v1/workspaces/{workspaceId}/transfer-ownership' } })
     .input(
       z.object({
         workspaceId: z.string().min(32),

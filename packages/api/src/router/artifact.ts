@@ -47,6 +47,15 @@ export const artifactRouter = {
    * Only accessible by authenticated users.
    */
   listByChat: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/artifacts',
+        protect: true,
+        tags: ['artifacts'],
+        summary: 'List all artifacts (of only latest version) for a chat',
+      },
+    })
     .input(
       z.object({
         chatId: z.string().min(32),
@@ -91,6 +100,15 @@ export const artifactRouter = {
    * Only accessible by authenticated users.
    */
   listVersionsById: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/artifacts/{id}/versions',
+        protect: true,
+        tags: ['artifacts'],
+        summary: 'List all versions of an artifact by ID',
+      },
+    })
     .input(
       z.object({
         id: z.string(),
@@ -141,6 +159,15 @@ export const artifactRouter = {
    * Only accessible by authenticated users.
    */
   deleteVersionsByIdAfterVersion: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/artifacts/{id}/versions',
+        protect: true,
+        tags: ['artifacts'],
+        summary: 'Delete all versions of an artifact after the specified version',
+      },
+    })
     .input(
       z.object({
         id: z.string(),
@@ -173,6 +200,15 @@ export const artifactRouter = {
    * Only accessible by authenticated users.
    */
   listSuggestions: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/artifacts/suggestions',
+        protect: true,
+        tags: ['artifacts'],
+        summary: 'List suggestions for an artifact',
+      },
+    })
     .input(
       z.object({
         artifactId: z.string(),

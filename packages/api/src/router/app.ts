@@ -22,7 +22,7 @@ import { defaultModels } from '@mindworld/providers'
 import { mergeWithoutUndefined } from '@mindworld/utils'
 
 import type { Context } from '../trpc'
-import { userProtectedProcedure, publicProcedure } from '../trpc'
+import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
 /**
@@ -223,6 +223,7 @@ export const appRouter = {
    * @throws {TRPCError} If workspace access verification fails
    */
   list: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/apps' } })
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -256,6 +257,7 @@ export const appRouter = {
    * @throws {TRPCError} If workspace access verification fails
    */
   listByCategory: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/apps/by-category/{categoryId}' } })
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -293,6 +295,7 @@ export const appRouter = {
    * @throws {TRPCError} If workspace access verification fails
    */
   listByTags: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/apps/by-tags' } })
     .input(
       z.object({
         workspaceId: z.string().min(32),
@@ -327,6 +330,7 @@ export const appRouter = {
    * @throws {TRPCError} If app not found or access verification fails
    */
   listVersions: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/apps/{id}/versions' } })
     .input(
       z.object({
         id: z.string(),
@@ -374,11 +378,18 @@ export const appRouter = {
    * @returns The app if found
    * @throws {TRPCError} If app not found or access verification fails
    */
-  byId: userProtectedProcedure.input(z.string()).query(async ({ ctx, input }) => {
-    const app = await getAppById(ctx, input)
-    await verifyWorkspaceMembership(ctx, app.workspaceId)
-    return { app }
-  }),
+  byId: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/apps/{id}' } })
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const app = await getAppById(ctx, input.id)
+      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      return { app }
+    }),
 
   /**
    * Get a specific version of an app.
@@ -388,6 +399,7 @@ export const appRouter = {
    * @throws {TRPCError} If app version not found or access verification fails
    */
   getVersion: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/apps/{id}/versions/{version}' } })
     .input(
       z.object({
         id: z.string(),
@@ -419,47 +431,50 @@ export const appRouter = {
    * @returns The created app and its draft version
    * @throws {TRPCError} If app creation fails
    */
-  create: userProtectedProcedure.input(CreateAppSchema).mutation(async ({ ctx, input }) => {
-    await verifyWorkspaceMembership(ctx, input.workspaceId)
+  create: userProtectedProcedure
+    .meta({ openapi: { method: 'POST', path: '/v1/apps' } })
+    .input(CreateAppSchema)
+    .mutation(async ({ ctx, input }) => {
+      await verifyWorkspaceMembership(ctx, input.workspaceId)
 
-    const appValues = {
-      ...input,
-      metadata: mergeWithoutUndefined<AppMetadata>(defaultModels.app, input.metadata),
-    }
-
-    return ctx.db.transaction(async (tx) => {
-      const [app] = await tx.insert(App).values(appValues).returning()
-
-      if (!app) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create app',
-        })
+      const appValues = {
+        ...input,
+        metadata: mergeWithoutUndefined<AppMetadata>(defaultModels.app, input.metadata),
       }
 
-      const appVersionValues = {
-        appId: app.id,
-        version: DRAFT_VERSION,
-        type: app.type,
-        name: app.name,
-        metadata: app.metadata,
-      }
+      return ctx.db.transaction(async (tx) => {
+        const [app] = await tx.insert(App).values(appValues).returning()
 
-      const [draft] = await tx.insert(AppVersion).values(appVersionValues).returning()
+        if (!app) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create app',
+          })
+        }
 
-      if (!draft) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create draft version',
-        })
-      }
+        const appVersionValues = {
+          appId: app.id,
+          version: DRAFT_VERSION,
+          type: app.type,
+          name: app.name,
+          metadata: app.metadata,
+        }
 
-      return {
-        app,
-        draft,
-      }
-    })
-  }),
+        const [draft] = await tx.insert(AppVersion).values(appVersionValues).returning()
+
+        if (!draft) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create draft version',
+          })
+        }
+
+        return {
+          app,
+          draft,
+        }
+      })
+    }),
 
   /**
    * Update an existing app.
@@ -469,56 +484,59 @@ export const appRouter = {
    * @returns The updated app and its draft version
    * @throws {TRPCError} If app update fails
    */
-  update: userProtectedProcedure.input(UpdateAppSchema).mutation(async ({ ctx, input }) => {
-    const { id, ...update } = input
-    const app = await getAppById(ctx, id)
-    await verifyWorkspaceMembership(ctx, app.workspaceId)
+  update: userProtectedProcedure
+    .meta({ openapi: { method: 'PATCH', path: '/v1/apps/{id}' } })
+    .input(UpdateAppSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...update } = input
+      const app = await getAppById(ctx, id)
+      await verifyWorkspaceMembership(ctx, app.workspaceId)
 
-    const draft = await getAppVersion(ctx, id, 'draft')
-    // Check if there's any published version
-    const publishedVersion = await getAppVersion(ctx, id, 'latest').catch(() => undefined)
+      const draft = await getAppVersion(ctx, id, 'draft')
+      // Check if there's any published version
+      const publishedVersion = await getAppVersion(ctx, id, 'latest').catch(() => undefined)
 
-    const updateValues = {
-      ...update,
-      // Merge new metadata with existing metadata
-      metadata: mergeWithoutUndefined<AppMetadata>(draft.metadata, update.metadata),
-    }
-
-    return ctx.db.transaction(async (tx) => {
-      // Update draft version
-      const [updatedDraft] = await tx
-        .update(AppVersion)
-        .set(updateValues)
-        .where(and(eq(AppVersion.appId, id), eq(AppVersion.version, DRAFT_VERSION)))
-        .returning()
-
-      if (!updatedDraft) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update draft version',
-        })
+      const updateValues = {
+        ...update,
+        // Merge new metadata with existing metadata
+        metadata: mergeWithoutUndefined<AppMetadata>(draft.metadata, update.metadata),
       }
 
-      // If no published version exists, update the app's main record as well
-      let updatedApp = app
-      if (!publishedVersion) {
-        const [newApp] = await tx.update(App).set(updateValues).where(eq(App.id, id)).returning()
+      return ctx.db.transaction(async (tx) => {
+        // Update draft version
+        const [updatedDraft] = await tx
+          .update(AppVersion)
+          .set(updateValues)
+          .where(and(eq(AppVersion.appId, id), eq(AppVersion.version, DRAFT_VERSION)))
+          .returning()
 
-        if (!newApp) {
+        if (!updatedDraft) {
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to update app',
+            message: 'Failed to update draft version',
           })
         }
-        updatedApp = newApp
-      }
 
-      return {
-        app: updatedApp,
-        draft: updatedDraft,
-      }
-    })
-  }),
+        // If no published version exists, update the app's main record as well
+        let updatedApp = app
+        if (!publishedVersion) {
+          const [newApp] = await tx.update(App).set(updateValues).where(eq(App.id, id)).returning()
+
+          if (!newApp) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Failed to update app',
+            })
+          }
+          updatedApp = newApp
+        }
+
+        return {
+          app: updatedApp,
+          draft: updatedDraft,
+        }
+      })
+    }),
 
   /**
    * Delete an app.
@@ -529,39 +547,49 @@ export const appRouter = {
    * @returns Success status
    * @throws {TRPCError} If app deletion fails
    */
-  delete: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    const app = await getAppById(ctx, input)
-    await verifyWorkspaceMembership(ctx, app.workspaceId)
+  delete: userProtectedProcedure
+    .meta({ openapi: { method: 'DELETE', path: '/v1/apps/{id}' } })
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const app = await getAppById(ctx, input.id)
+      await verifyWorkspaceMembership(ctx, app.workspaceId)
 
-    return await ctx.db.transaction(async (tx) => {
-      // Get all agent IDs for this app
-      const agents = await tx.select({ id: Agent.id }).from(Agent).where(eq(Agent.appId, input))
+      return await ctx.db.transaction(async (tx) => {
+        // Get all agent IDs for this app
+        const agents = await tx
+          .select({ id: Agent.id })
+          .from(Agent)
+          .where(eq(Agent.appId, input.id))
 
-      if (agents.length > 0) {
-        const agentIds = agents.map((agent) => agent.id)
+        if (agents.length > 0) {
+          const agentIds = agents.map((agent) => agent.id)
 
-        // Delete all agent versions in one query
-        await tx.delete(AgentVersion).where(inArray(AgentVersion.agentId, agentIds))
+          // Delete all agent versions in one query
+          await tx.delete(AgentVersion).where(inArray(AgentVersion.agentId, agentIds))
 
-        // Delete all agents in one query
-        await tx.delete(Agent).where(inArray(Agent.id, agentIds))
-      }
+          // Delete all agents in one query
+          await tx.delete(Agent).where(inArray(Agent.id, agentIds))
+        }
 
-      // Delete all app versions
-      await tx.delete(AppVersion).where(eq(AppVersion.appId, input))
+        // Delete all app versions
+        await tx.delete(AppVersion).where(eq(AppVersion.appId, input.id))
 
-      // Delete category associations
-      await tx.delete(AppsToCategories).where(eq(AppsToCategories.appId, input))
+        // Delete category associations
+        await tx.delete(AppsToCategories).where(eq(AppsToCategories.appId, input.id))
 
-      // Delete tag associations
-      await tx.delete(AppsToTags).where(eq(AppsToTags.appId, input))
+        // Delete tag associations
+        await tx.delete(AppsToTags).where(eq(AppsToTags.appId, input.id))
 
-      // Delete the app itself
-      await tx.delete(App).where(eq(App.id, input))
+        // Delete the app itself
+        await tx.delete(App).where(eq(App.id, input.id))
 
-      return { success: true }
-    })
-  }),
+        return { success: true }
+      })
+    }),
 
   /**
    * Publish an app version.
@@ -572,112 +600,119 @@ export const appRouter = {
    * @returns The updated app and new version number
    * @throws {TRPCError} If publishing fails
    */
-  publish: userProtectedProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    const app = await getAppById(ctx, input)
-    await verifyWorkspaceMembership(ctx, app.workspaceId)
-    const draftVersion = await getAppVersion(ctx, input, 'draft')
+  publish: userProtectedProcedure
+    .meta({ openapi: { method: 'POST', path: '/v1/apps/{id}/publish' } })
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const app = await getAppById(ctx, input.id)
+      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const draftVersion = await getAppVersion(ctx, input.id, 'draft')
 
-    return ctx.db.transaction(async (tx) => {
-      // Create new published version with current timestamp
-      const publishedVersion = Math.floor(Date.now() / 1000)
+      return ctx.db.transaction(async (tx) => {
+        // Create new published version with current timestamp
+        const publishedVersion = Math.floor(Date.now() / 1000)
 
-      await tx.insert(AppVersion).values({
-        appId: input,
-        version: publishedVersion,
-        type: draftVersion.type,
-        name: draftVersion.name,
-        metadata: draftVersion.metadata,
-      })
-
-      // Update the app's main record to match the published version
-      const [updatedApp] = await tx
-        .update(App)
-        .set({
+        await tx.insert(AppVersion).values({
+          appId: input.id,
+          version: publishedVersion,
           type: draftVersion.type,
           name: draftVersion.name,
           metadata: draftVersion.metadata,
         })
-        .where(eq(App.id, input))
-        .returning()
 
-      // Get all agents and their draft versions for this app in one query
-      const agentsWithDrafts = await tx
-        .select({
-          agent: Agent,
-          draft: AgentVersion,
-        })
-        .from(Agent)
-        .innerJoin(
-          AgentVersion,
-          and(eq(AgentVersion.agentId, Agent.id), eq(AgentVersion.version, DRAFT_VERSION)),
-        )
-        .where(eq(Agent.appId, input))
+        // Update the app's main record to match the published version
+        const [updatedApp] = await tx
+          .update(App)
+          .set({
+            type: draftVersion.type,
+            name: draftVersion.name,
+            metadata: draftVersion.metadata,
+          })
+          .where(eq(App.id, input.id))
+          .returning()
 
-      // Get total number of agents for this app
-      const agentsCount = await tx
-        .select({ count: count() })
-        .from(Agent)
-        .where(eq(Agent.appId, input))
-
-      // Check if any agent is missing a draft version
-      if (agentsWithDrafts.length !== agentsCount[0]!.count) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Some agents are missing draft versions',
-        })
-      }
-
-      if (agentsWithDrafts.length > 0) {
-        // Bulk insert new published versions
-        await tx.insert(AgentVersion).values(
-          agentsWithDrafts.map((item) =>
-            CreateAgentVersionSchema.parse({
-              agentId: item.agent.id,
-              version: publishedVersion,
-              name: item.draft.name,
-              metadata: item.draft.metadata,
-            }),
-          ),
-        )
-
-        // Build CASE expressions for name and metadata updates
-        const nameCaseChunks: SQL[] = []
-        const metadataCaseChunks: SQL[] = []
-        const agentIds: string[] = []
-
-        nameCaseChunks.push(sql`(case`)
-        metadataCaseChunks.push(sql`(case`)
-
-        for (const item of agentsWithDrafts) {
-          nameCaseChunks.push(sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.name}`)
-          metadataCaseChunks.push(
-            sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.metadata}`,
+        // Get all agents and their draft versions for this app in one query
+        const agentsWithDrafts = await tx
+          .select({
+            agent: Agent,
+            draft: AgentVersion,
+          })
+          .from(Agent)
+          .innerJoin(
+            AgentVersion,
+            and(eq(AgentVersion.agentId, Agent.id), eq(AgentVersion.version, DRAFT_VERSION)),
           )
-          agentIds.push(item.agent.id)
+          .where(eq(Agent.appId, input.id))
+
+        // Get total number of agents for this app
+        const agentsCount = await tx
+          .select({ count: count() })
+          .from(Agent)
+          .where(eq(Agent.appId, input.id))
+
+        // Check if any agent is missing a draft version
+        if (agentsWithDrafts.length !== agentsCount[0]!.count) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Some agents are missing draft versions',
+          })
         }
 
-        nameCaseChunks.push(sql`end)`)
-        metadataCaseChunks.push(sql`end)`)
+        if (agentsWithDrafts.length > 0) {
+          // Bulk insert new published versions
+          await tx.insert(AgentVersion).values(
+            agentsWithDrafts.map((item) =>
+              CreateAgentVersionSchema.parse({
+                agentId: item.agent.id,
+                version: publishedVersion,
+                name: item.draft.name,
+                metadata: item.draft.metadata,
+              }),
+            ),
+          )
 
-        const nameCase = sql.join(nameCaseChunks, sql.raw(' '))
-        const metadataCase = sql.join(metadataCaseChunks, sql.raw(' '))
+          // Build CASE expressions for name and metadata updates
+          const nameCaseChunks: SQL[] = []
+          const metadataCaseChunks: SQL[] = []
+          const agentIds: string[] = []
 
-        // Update all agents in a single query
-        await tx
-          .update(Agent)
-          .set({
-            name: nameCase,
-            metadata: metadataCase,
-          })
-          .where(inArray(Agent.id, agentIds))
-      }
+          nameCaseChunks.push(sql`(case`)
+          metadataCaseChunks.push(sql`(case`)
 
-      return {
-        app: updatedApp,
-        version: publishedVersion,
-      }
-    })
-  }),
+          for (const item of agentsWithDrafts) {
+            nameCaseChunks.push(sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.name}`)
+            metadataCaseChunks.push(
+              sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.metadata}`,
+            )
+            agentIds.push(item.agent.id)
+          }
+
+          nameCaseChunks.push(sql`end)`)
+          metadataCaseChunks.push(sql`end)`)
+
+          const nameCase = sql.join(nameCaseChunks, sql.raw(' '))
+          const metadataCase = sql.join(metadataCaseChunks, sql.raw(' '))
+
+          // Update all agents in a single query
+          await tx
+            .update(Agent)
+            .set({
+              name: nameCase,
+              metadata: metadataCase,
+            })
+            .where(inArray(Agent.id, agentIds))
+        }
+
+        return {
+          app: updatedApp,
+          version: publishedVersion,
+        }
+      })
+    }),
 
   /**
    * Update tags for an app.
@@ -688,6 +723,7 @@ export const appRouter = {
    * @throws {TRPCError} If tag update fails
    */
   updateTags: userProtectedProcedure
+    .meta({ openapi: { method: 'PATCH', path: '/v1/apps/{id}/tags' } })
     .input(
       z.object({
         id: z.string(),
@@ -737,6 +773,7 @@ export const appRouter = {
    * @throws {TRPCError} If category retrieval fails
    */
   listCategories: publicProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/categories' } })
     .input(
       z.object({
         after: z.string().optional(),
@@ -784,6 +821,7 @@ export const appRouter = {
    * @throws {TRPCError} If category update fails
    */
   updateCategories: userProtectedProcedure
+    .meta({ openapi: { method: 'PATCH', path: '/v1/apps/{id}/categories' } })
     .input(
       z.object({
         id: z.string(),

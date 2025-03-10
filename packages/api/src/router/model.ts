@@ -21,11 +21,20 @@ export const modelRouter = {
    * Accessible by anyone.
    * @returns List of providers with their basic information
    */
-  listProviders: publicProcedure.query(() => {
-    return {
-      providers: providerInfos.map(({ id, name }) => ({ id, name })),
-    }
-  }),
+  listProviders: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/providers',
+        tags: ['models'],
+        summary: 'List all available model providers',
+      },
+    })
+    .query(() => {
+      return {
+        providers: providerInfos.map(({ id, name }) => ({ id, name })),
+      }
+    }),
 
   /**
    * List all available models across all providers.
@@ -34,6 +43,14 @@ export const modelRouter = {
    * @returns List of models matching the type
    */
   listModels: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/models',
+        tags: ['models'],
+        summary: 'List all available models across all providers',
+      },
+    })
     .input(
       z.object({
         type: z.enum(modelTypes).optional(),
@@ -66,6 +83,14 @@ export const modelRouter = {
    * @returns List of models from the provider
    */
   listModelsByProvider: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/providers/{providerId}/models',
+        tags: ['models'],
+        summary: 'List all models from a specific provider',
+      },
+    })
     .input(
       z.object({
         providerId: z.string(),
@@ -119,6 +144,14 @@ export const modelRouter = {
    * @returns The model information if found
    */
   getModel: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/models/{id}',
+        tags: ['models'],
+        summary: 'Get detailed information about a specific model',
+      },
+    })
     .input(
       z.object({
         id: z.string(),
