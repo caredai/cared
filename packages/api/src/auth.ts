@@ -1,14 +1,14 @@
 import { cache } from 'react'
 import { headers } from 'next/headers'
-import { auth as clerkAuth } from '@clerk/nextjs/server'
+import { auth as clerkAuth, clerkClient } from '@clerk/nextjs/server'
+import { ClerkAPIResponseError } from '@clerk/shared'
 import { TRPCError } from '@trpc/server'
 
 import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
 import { App, OAuthApp } from '@mindworld/db/schema'
 
-import { env } from '@/env'
-import { getClerkOAuthApp } from './router/oauth-app'
+import { env } from './env'
 
 export type Auth =
   // for user auth
@@ -147,6 +147,23 @@ export function checkAppUser(auth: Auth, appId: string) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: `Accessing the app is not authorized by the user`,
+    })
+  }
+}
+
+// Get OAuth app from Clerk
+export async function getClerkOAuthApp(oauthAppId: string) {
+  const client = await clerkClient()
+  try {
+    return await client.oauthApplications.getOAuthApplication(oauthAppId)
+  } catch (error) {
+    if (error instanceof ClerkAPIResponseError && error.status === 404) {
+      return null
+    }
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to get OAuth app from Clerk',
+      cause: error,
     })
   }
 }

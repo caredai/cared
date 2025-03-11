@@ -9,8 +9,8 @@ import { getModel } from '@mindworld/providers'
 import { buildTools, knowledgeTools, memoryTools } from '@mindworld/tools'
 import { log } from '@mindworld/utils'
 
-import { auth } from '@/auth'
 import { createCaller } from '../..'
+import { auth } from '../../auth'
 import { generateChatTitleFromUserMessage } from './actions'
 
 /**

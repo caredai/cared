@@ -153,9 +153,14 @@ export const DocumentSegment = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex().on(table.workspaceId, table.datasetId, table.documentId, table.index),
-    index().on(table.datasetId, table.documentId, table.index),
-    index().on(table.documentId, table.index),
+    uniqueIndex('document_segment_wddi_index').on(
+      table.workspaceId,
+      table.datasetId,
+      table.documentId,
+      table.index,
+    ),
+    index('document_segment_ddi_index').on(table.datasetId, table.documentId, table.index),
+    index('document_segment_di_index').on(table.documentId, table.index),
     ...timestampsIndices(table),
   ],
 )
@@ -211,16 +216,21 @@ export const DocumentChunk = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex().on(
+    uniqueIndex('document_chunk_wddsi_index').on(
       table.workspaceId,
       table.datasetId,
       table.documentId,
       table.segmentId,
       table.index,
     ),
-    index().on(table.datasetId, table.documentId, table.segmentId, table.index),
-    index().on(table.documentId, table.segmentId, table.index),
-    index().on(table.segmentId, table.index),
+    index('document_chunk_ddsi_index').on(
+      table.datasetId,
+      table.documentId,
+      table.segmentId,
+      table.index,
+    ),
+    index('document_chunk_dsi_index').on(table.documentId, table.segmentId, table.index),
+    index('document_chunk_si_index').on(table.segmentId, table.index),
     ...timestampsIndices(table),
   ],
 )

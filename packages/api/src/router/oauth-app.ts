@@ -1,32 +1,15 @@
 import type { OAuthApplication } from '@clerk/backend'
 import { clerkClient } from '@clerk/nextjs/server'
-import { ClerkAPIResponseError } from '@clerk/shared'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import { eq } from '@mindworld/db'
 import { OAuthApp } from '@mindworld/db/schema'
 
+import { getClerkOAuthApp } from '../auth'
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
-
-// Get OAuth app from Clerk
-export async function getClerkOAuthApp(oauthAppId: string) {
-  const client = await clerkClient()
-  try {
-    return await client.oauthApplications.getOAuthApplication(oauthAppId)
-  } catch (error) {
-    if (error instanceof ClerkAPIResponseError && error.status === 404) {
-      return null
-    }
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Failed to get OAuth app from Clerk',
-      cause: error,
-    })
-  }
-}
 
 function filteredOauthApp(oauthApp: OAuthApp, clerkOAuthApp: OAuthApplication) {
   return {

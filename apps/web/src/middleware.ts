@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-import { authForApi } from '@mindworld/api'
+import { authForApi } from '@mindworld/api/auth'
 
 const isPublicRoute = createRouteMatcher(['/'])
 const isApiRoute = createRouteMatcher(['/api/trpc/(.*)'])

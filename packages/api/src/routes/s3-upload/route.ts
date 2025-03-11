@@ -9,8 +9,8 @@ import { db } from '@mindworld/db/client'
 import { Dataset, Membership } from '@mindworld/db/schema'
 import { log } from '@mindworld/utils'
 
-import { auth } from '@/auth'
-import { env } from '@/env'
+import { auth } from '../../auth'
+import { env } from '../../env'
 
 export interface S3UploadParams {
   workspaceId: string

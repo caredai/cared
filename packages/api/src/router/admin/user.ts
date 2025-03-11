@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@mindworld/db'
-import { and, desc, eq, gt, ilike, lt, or, sql } from '@mindworld/db'
+import { and, desc, eq, gt, lt, sql } from '@mindworld/db'
 import { User } from '@mindworld/db/schema'
 
 import { adminProcedure } from '../../trpc'
@@ -30,12 +30,7 @@ export const userRouter = {
       // Add search conditions
       if (input.search) {
         conditions.push(
-          or(
-            ilike(sql`${User.info}->>'username'`, `%${input.search}%`),
-            ilike(sql`${User.info}->>'firstName'`, `%${input.search}%`),
-            ilike(sql`${User.info}->>'lastName'`, `%${input.search}%`),
-            sql`to_tsvector('simple', array_to_string(array(select jsonb_array_elements(${User.info}->'emailAddresses')->>>'emailAddress'), ' ')) @@ to_tsquery('simple', ${input.search}:*)`,
-          ),
+          sql`to_tsvector('english', ${User.info}::jsonb) @@ to_tsquery('english', ${input.search})`,
         )
       }
 

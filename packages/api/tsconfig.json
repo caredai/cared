@@ -1,10 +1,5 @@
 {
   "extends": "@mindworld/tsconfig/internal-package.json",
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  },
   "include": ["src"],
   "exclude": ["node_modules"]
 }

@@ -19,6 +19,7 @@ import { User } from './workspace'
 
 export const artifactKinds = ['text', 'code', 'image', 'sheet'] as const
 export type ArtifactKind = (typeof artifactKinds)[number]
+export const artifactKindEnum = pgEnum('kind', artifactKinds)
 
 export function generateArtifactId() {
   return generateId('art')
@@ -36,7 +37,7 @@ export const Artifact = pgTable(
       .notNull()
       .references(() => Chat.id),
     // Type of the artifact (e.g., 'image', 'text', 'code')
-    kind: pgEnum('kind', artifactKinds)().notNull(),
+    kind: artifactKindEnum().notNull(),
     title: text('title').notNull(),
     content: jsonb().notNull(),
     ...timestamps,
@@ -91,6 +92,7 @@ export const ArtifactSuggestion = pgTable(
   },
   (table) => [
     foreignKey({
+      name: 'artifact_suggestion_artifact_id_version_fk',
       columns: [table.artifactId, table.artifactVersion],
       foreignColumns: [Artifact.id, Artifact.version],
     }),

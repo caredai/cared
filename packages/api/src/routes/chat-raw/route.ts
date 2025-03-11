@@ -5,7 +5,7 @@ import { generateMessageId } from '@mindworld/db/schema'
 import { getModel } from '@mindworld/providers'
 import { log } from '@mindworld/utils'
 
-import { auth } from '@/auth'
+import { auth } from '../../auth'
 
 export async function POST(request: Request) {
   const { messages, chatModel } = (await request.json()) as {
@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     chatModel: string // model full id
   }
 
+  // TODO: billing
   const { userId } = await auth()
   if (!userId) {
     return new Response('Unauthorized', { status: 401 })
