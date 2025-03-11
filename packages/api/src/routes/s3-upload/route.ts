@@ -1,5 +1,4 @@
 import type { NextRequest } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { TRPCError } from '@trpc/server'
 import { sanitizeKey } from 'next-s3-upload'
 import { POST as APIRoute } from 'next-s3-upload/route'
@@ -10,7 +9,8 @@ import { db } from '@mindworld/db/client'
 import { Dataset, Membership } from '@mindworld/db/schema'
 import { log } from '@mindworld/utils'
 
-import { env } from '../env'
+import { auth } from '@/auth'
+import { env } from '@/env'
 
 export interface S3UploadParams {
   workspaceId: string

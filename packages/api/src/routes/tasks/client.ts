@@ -1,7 +1,7 @@
 import * as path from 'path'
 import { Client } from '@upstash/workflow'
 
-import { env } from '../env'
+import { env } from '@/env'
 
 class WorkflowClient extends Client {
   override trigger(config: Parameters<Client['trigger']>[0]) {

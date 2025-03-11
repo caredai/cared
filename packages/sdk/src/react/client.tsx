@@ -30,7 +30,6 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      // @ts-ignore
       <TRPCProvider trpcClient={trpcClient as any} queryClient={queryClient}>
         {props.children}
       </TRPCProvider>
@@ -39,7 +38,6 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 }
 
 export function createTrpcClient() {
-  // @ts-ignore
   return createTRPCClient<API>({
     links: [
       loggerLink({
@@ -51,9 +49,11 @@ export function createTrpcClient() {
         transformer: SuperJSON,
         // eslint-disable-next-line turbo/no-undeclared-env-vars
         url: process.env.MIND_API_URL ?? 'https://mindai.world/api/trpc',
-        // @ts-ignore
         headers() {
           const headers = new Headers()
+          // eslint-disable-next-line turbo/no-undeclared-env-vars
+          headers.set('Authorization', 'Bearer ' + process.env.MIND_API_KEY)
+          headers.set('X-AUTH-TYPE', 'APP')
           headers.set('x-trpc-source', 'react')
           return headers
         },

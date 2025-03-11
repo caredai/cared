@@ -1,31 +1,48 @@
 import { cache } from 'react'
 import { headers } from 'next/headers'
-import { auth } from '@clerk/nextjs/server'
+import { auth as clerkAuth } from '@clerk/nextjs/server'
 
 import type { App } from '@mindworld/db/schema'
 import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
 import { OAuthApp } from '@mindworld/db/schema'
 
+import { env } from '@/env'
 import { getClerkOAuthApp } from './router/oauth-app'
 
-// userId: for user auth
-// userId & orgId & orgRole: for admin user auth
-// userId & appId: for oauth app user auth
-// appId: for app api key auth
-export interface Auth {
-  userId?: string
-  appId?: string
-  orgId?: string
-  orgRole?: string
-}
+export type Auth =
+  // for user auth
+  | {
+      userId: string
+      isAdmin?: never
+      appId?: never
+    }
+  // for admin user auth
+  | {
+      userId: string
+      isAdmin: true
+      appId?: never
+    }
+  // for oauth app user auth
+  | {
+      userId: string
+      isAdmin?: never
+      appId: string
+    }
+  // for app api key auth
+  | {
+      userId?: never
+      isAdmin?: never
+      appId: string
+    }
 
-export const authenticateForApi = cache(async (): Promise<Auth | Response> => {
+export const authForApi = cache(async (): Promise<Auth | Response> => {
   const h = await headers()
-  const [type, token] = (h.get('Authorization') ?? '').split(' ')
-  if (type === 'Bearer' && token) {
+  const authType = h.get('X-AUTH-TYPE')
+  const [authScheme, token] = (h.get('Authorization') ?? '').split(' ')
+  if (authScheme === 'Bearer' && token) {
     const clientId = h.get('X-OAUTH-CLIENT-ID')
-    if (!clientId) {
+    if (authType?.toUpperCase() === 'APP') {
       // TODO: get app by api key
       const app: App | undefined = {} as App
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -35,7 +52,7 @@ export const authenticateForApi = cache(async (): Promise<Auth | Response> => {
       return {
         appId: app.id,
       }
-    } else {
+    } else if (authType?.toUpperCase() === 'USER' && clientId) {
       const app = await db.query.OAuthApp.findFirst({
         where: eq(OAuthApp.clientId, clientId),
       })
@@ -74,17 +91,25 @@ export const authenticateForApi = cache(async (): Promise<Auth | Response> => {
     }
   }
 
-  const { userId, orgId, orgRole } = await auth()
+  const { userId, orgId, orgRole } = await clerkAuth()
   if (userId) {
-    return {
-      userId,
-      orgId,
-      orgRole,
-    }
+    const isAdmin = orgId === env.CLERK_ADMIN_ORGANIZATION_ID && orgRole === 'org:admin'
+    return !isAdmin
+      ? {
+          userId,
+        }
+      : {
+          userId,
+          isAdmin,
+        }
   }
 
   return new Response('Unauthorized', { status: 401 })
 })
+
+export async function auth(): Promise<Auth> {
+  return (await authForApi()) as Auth
+}
 
 type TokenInfo =
   | {

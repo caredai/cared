@@ -1,6 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3'
 
-import { env } from '../env'
+import { env } from '@/env'
 
 let s3Client: S3Client | undefined
 

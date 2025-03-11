@@ -101,7 +101,7 @@ export const { POST } = serve<string>(
       throw new Error('Invalid language model configuration')
     }
 
-    const modelInfo = getTextEmbeddingModelInfo(dataset.metadata.embeddingModel)
+    const modelInfo = await getTextEmbeddingModelInfo(dataset.metadata.embeddingModel)
     if (!modelInfo?.dimensions) {
       throw new Error('Embedding model configuration lacks dimensions')
     }

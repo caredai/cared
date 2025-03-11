@@ -1,3 +1,4 @@
+import type { Context } from '@/trpc'
 import { DeleteObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
@@ -22,11 +23,10 @@ import {
 import { defaultModels } from '@mindworld/providers'
 import { log, mergeWithoutUndefined } from '@mindworld/utils'
 
-import type { Context } from '../trpc'
-import { env } from '../env'
-import { getClient } from '../s3-upload/client'
-import { taskTrigger } from '../tasks'
-import { userProtectedProcedure } from '../trpc'
+import { env } from '@/env'
+import { getClient } from '@/routes/s3-upload/client'
+import { taskTrigger } from '@/routes/tasks'
+import { userProtectedProcedure } from '@/trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
 /**

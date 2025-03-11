@@ -1,8 +1,9 @@
 'use client'
 
 import { startTransition, useMemo, useOptimistic, useState } from 'react'
+import { useAsync } from 'react-use'
 
-import { languageModelInfos } from '@mindworld/providers'
+import { getLanguageModelInfos } from '@mindworld/providers'
 import { Button } from '@mindworld/ui/components/button'
 import {
   DropdownMenu,
@@ -25,9 +26,11 @@ export function ModelSelector({
   const [open, setOpen] = useState(false)
   const [optimisticModelId, setOptimisticModelId] = useOptimistic(modelId)
 
+  const { value: languageModels } = useAsync(getLanguageModelInfos, [])
+
   const selectedChatModel = useMemo(
-    () => languageModelInfos.find((model) => model.id === optimisticModelId),
-    [optimisticModelId],
+    () => languageModels?.find((model) => model.id === optimisticModelId),
+    [optimisticModelId, languageModels],
   )
 
   return (
@@ -45,7 +48,7 @@ export function ModelSelector({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[300px]">
-        {languageModelInfos.map((chatModel) => {
+        {languageModels?.map((chatModel) => {
           const { id } = chatModel
 
           return (

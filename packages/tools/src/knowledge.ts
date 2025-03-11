@@ -217,7 +217,7 @@ function searchKnowledge(_ctx: Context) {
       }
 
       // Initialize vector database with correct dimensions
-      const modelInfo = getTextEmbeddingModelInfo(dataset.metadata.embeddingModel)
+      const modelInfo = await getTextEmbeddingModelInfo(dataset.metadata.embeddingModel)
       if (!modelInfo?.dimensions) {
         return []
       }

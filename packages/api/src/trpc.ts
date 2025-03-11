@@ -1,14 +1,13 @@
+import type { OpenApiMeta } from 'trpc-to-openapi'
 import * as trpc from '@trpc/server'
 import superjson from 'superjson'
-import type { OpenApiMeta } from 'trpc-to-openapi'
 import { ZodError } from 'zod'
 
 import type { DB } from '@mindworld/db/client'
 import { db } from '@mindworld/db/client'
 
 import type { Auth } from './auth'
-import { authenticateForApi } from './auth'
-import { env } from './env'
+import { auth as authenticate } from './auth'
 
 /**
  * 1. CONTEXT
@@ -27,7 +26,7 @@ export const createTRPCContext = async ({
 }: {
   headers: Headers
 }): Promise<{ auth: Auth; db: DB }> => {
-  const auth = (await authenticateForApi()) as Auth
+  const auth = await authenticate()
 
   console.log(
     '>>> tRPC Request from',
@@ -167,7 +166,7 @@ export const adminProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next
   if (!ctx.auth.userId) {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
-  if (ctx.auth.orgId !== env.CLERK_ADMIN_ORGANIZATION_ID || ctx.auth.orgRole !== 'org:admin') {
+  if (!ctx.auth.isAdmin) {
     throw new trpc.TRPCError({ code: 'FORBIDDEN' })
   }
   return next({

@@ -59,26 +59,6 @@ export interface DocumentMetadata {
   [key: string]: unknown
 }
 
-export type ProviderId =
-  | 'openai'
-  | 'anthropic'
-  | 'deepseek'
-  | 'azure'
-  | 'bedrock'
-  | 'google'
-  | 'vertex'
-  | 'mistral'
-  | 'xai'
-  | 'togetherai'
-  | 'cohere'
-  | 'fireworks'
-  | 'deepinfra'
-  | 'cerebras'
-  | 'groq'
-  | 'replicate'
-  | 'perplexity'
-  | 'luma'
-
 export interface ChatMetadata {
   title: string
   visibility: 'public' | 'private'

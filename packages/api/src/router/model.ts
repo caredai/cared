@@ -3,14 +3,14 @@ import { z } from 'zod'
 
 import {
   getImageModelInfo,
+  getImageModelInfos,
   getLanguageModelInfo,
+  getLanguageModelInfos,
+  getProviderInfos,
   getTextEmbeddingModelInfo,
-  imageModelInfos,
-  languageModelInfos,
+  getTextEmbeddingModelInfos,
   modelFullId,
   modelTypes,
-  providerInfos,
-  textEmbeddingModelInfos,
 } from '@mindworld/providers'
 
 import { publicProcedure } from '../trpc'
@@ -30,7 +30,8 @@ export const modelRouter = {
         summary: 'List all available model providers',
       },
     })
-    .query(() => {
+    .query(async () => {
+      const providerInfos = await getProviderInfos()
       return {
         providers: providerInfos.map(({ id, name }) => ({ id, name })),
       }
@@ -56,7 +57,11 @@ export const modelRouter = {
         type: z.enum(modelTypes).optional(),
       }),
     )
-    .query(({ input }) => {
+    .query(async ({ input }) => {
+      const languageModelInfos = await getLanguageModelInfos()
+      const textEmbeddingModelInfos = await getTextEmbeddingModelInfos()
+      const imageModelInfos = await getImageModelInfos()
+
       if (!input.type) {
         return {
           models: {
@@ -97,7 +102,8 @@ export const modelRouter = {
         type: z.enum(modelTypes).optional(),
       }),
     )
-    .query(({ input }) => {
+    .query(async ({ input }) => {
+      const providerInfos = await getProviderInfos()
       const provider = providerInfos.find((p) => p.id === input.providerId)
       if (!provider) {
         throw new TRPCError({
@@ -158,14 +164,14 @@ export const modelRouter = {
         type: z.enum(modelTypes),
       }),
     )
-    .query(({ input }) => {
+    .query(async ({ input }) => {
       const getModelInfo = {
         language: getLanguageModelInfo,
         'text-embedding': getTextEmbeddingModelInfo,
         image: getImageModelInfo,
       }[input.type]
 
-      const model = getModelInfo(input.id)
+      const model = await getModelInfo(input.id)
       if (!model) {
         throw new TRPCError({
           code: 'NOT_FOUND',

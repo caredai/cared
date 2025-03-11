@@ -80,7 +80,7 @@ function storeMemory(ctx: Context) {
         return
       }
 
-      const modelInfo = getTextEmbeddingModelInfo(embeddingModel)
+      const modelInfo = await getTextEmbeddingModelInfo(embeddingModel)
       if (!modelInfo?.dimensions) {
         return
       }
@@ -140,7 +140,7 @@ function retrieveMemory(ctx: Context) {
         return []
       }
 
-      const modelInfo = getTextEmbeddingModelInfo(embeddingModel)
+      const modelInfo = await getTextEmbeddingModelInfo(embeddingModel)
       if (!modelInfo?.dimensions) {
         return []
       }

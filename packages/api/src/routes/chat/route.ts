@@ -1,6 +1,5 @@
 import assert from 'assert'
 import type { CoreMessage, Message } from 'ai'
-import { auth as authorize } from '@clerk/nextjs/server'
 import { convertToCoreMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
 
 import type { Agent, App, Chat, MessageContent } from '@mindworld/db/schema'
@@ -10,7 +9,8 @@ import { getModel } from '@mindworld/providers'
 import { buildTools, knowledgeTools, memoryTools } from '@mindworld/tools'
 import { log } from '@mindworld/utils'
 
-import { createCaller } from '..'
+import { auth } from '@/auth'
+import { createCaller } from '../..'
 import { generateChatTitleFromUserMessage } from './actions'
 
 /**
@@ -64,13 +64,15 @@ export async function POST(request: Request) {
     preview?: boolean
   }
 
-  const auth = await authorize()
-  if (!auth.userId) {
+  const { userId } = await auth()
+  if (!userId) {
     return new Response('Unauthorized', { status: 401 })
   }
 
   const caller = createCaller({
-    auth,
+    auth: {
+      userId,
+    },
     db,
   })
 
@@ -81,7 +83,7 @@ export async function POST(request: Request) {
 
     // if chat found, check if user is authorized to access it
 
-    if (chat.userId !== auth.userId) {
+    if (chat.userId !== userId) {
       return new Response('Unauthorized', { status: 401 })
     }
     if (appId && chat.appId !== appId) {
@@ -103,7 +105,7 @@ export async function POST(request: Request) {
       await caller.chat.create({
         id, // if id is provided, it will be used; otherwise, a new id will be generated
         appId,
-        userId: auth.userId,
+        userId,
         debug: preview,
         metadata: {
           title: '',
@@ -206,7 +208,7 @@ export async function POST(request: Request) {
       // TODO: tools selection should be controlled by app/agent configuration
       const tools = buildTools(
         {
-          userId: auth.userId,
+          userId,
           appId: app.id,
           preview,
           agentId: agent.id,
