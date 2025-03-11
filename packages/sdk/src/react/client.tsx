@@ -53,7 +53,7 @@ export function createTrpcClient() {
           const headers = new Headers()
           // eslint-disable-next-line turbo/no-undeclared-env-vars
           headers.set('Authorization', 'Bearer ' + process.env.MIND_API_KEY)
-          headers.set('X-AUTH-TYPE', 'APP')
+          headers.set('X-AUTH-TYPE', 'API-KEY') // optional
           headers.set('x-trpc-source', 'react')
           return headers
         },

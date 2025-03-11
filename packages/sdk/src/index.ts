@@ -15,7 +15,7 @@ export function createTrpcClient(
       }
     | {
         userToken: string | (() => string | Promise<string>) // user access token
-        clientId: string
+        appId: string
       },
 ) {
   return createTRPCClient<API>({
@@ -34,17 +34,17 @@ export function createTrpcClient(
           const apiKey = (opts as { apiKey?: string }).apiKey
           if (apiKey) {
             headers.set('Authorization', 'Bearer ' + apiKey)
-            headers.set('X-AUTH-TYPE', 'APP')
+            headers.set('X-AUTH-TYPE', 'API-KEY') // optional
           } else {
             opts = opts as {
               userToken: string | (() => string | Promise<string>)
-              clientId: string
+              appId: string
             }
             const userToken =
               typeof opts.userToken === 'string' ? opts.userToken : await opts.userToken()
             headers.set('Authorization', 'Bearer ' + userToken)
-            headers.set('X-OAUTH-CLIENT-ID', opts.clientId)
-            headers.set('X-AUTH-TYPE', 'USER')
+            headers.set('X-APP-ID', opts.appId)
+            headers.set('X-AUTH-TYPE', 'OAUTH')
           }
           return headers
         },

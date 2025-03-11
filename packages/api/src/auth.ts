@@ -1,11 +1,11 @@
 import { cache } from 'react'
 import { headers } from 'next/headers'
 import { auth as clerkAuth } from '@clerk/nextjs/server'
+import { TRPCError } from '@trpc/server'
 
-import type { App } from '@mindworld/db/schema'
 import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
-import { OAuthApp } from '@mindworld/db/schema'
+import { App, OAuthApp } from '@mindworld/db/schema'
 
 import { env } from '@/env'
 import { getClerkOAuthApp } from './router/oauth-app'
@@ -23,7 +23,7 @@ export type Auth =
       isAdmin: true
       appId?: never
     }
-  // for oauth app user auth
+  // for app user auth
   | {
       userId: string
       isAdmin?: never
@@ -37,24 +37,36 @@ export type Auth =
     }
 
 export const authForApi = cache(async (): Promise<Auth | Response> => {
-  const h = await headers()
-  const authType = h.get('X-AUTH-TYPE')
-  const [authScheme, token] = (h.get('Authorization') ?? '').split(' ')
+  const heads = await headers()
+  const appId = heads.get('X-APP-ID')
+  const authType = heads.get('X-AUTH-TYPE')
+  const [authScheme, token] = (heads.get('Authorization') ?? '').split(' ')
+
   if (authScheme === 'Bearer' && token) {
-    const clientId = h.get('X-OAUTH-CLIENT-ID')
-    if (authType?.toUpperCase() === 'APP') {
+    if (!authType || authType.toUpperCase() === 'API-KEY') {
       // TODO: get app by api key
       const app: App | undefined = {} as App
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!app) {
+        if (authType) {
+          return new Response('Unauthorized', { status: 401 })
+        } else {
+          // pass through
+        }
+      } else {
+        if (appId && appId !== app.id) {
+          return new Response('Unauthorized', { status: 401 })
+        }
+        return {
+          appId: app.id,
+        }
+      }
+    } else if (authType.toUpperCase() === 'OAUTH') {
+      if (!appId) {
         return new Response('Unauthorized', { status: 401 })
       }
-      return {
-        appId: app.id,
-      }
-    } else if (authType?.toUpperCase() === 'USER' && clientId) {
       const app = await db.query.OAuthApp.findFirst({
-        where: eq(OAuthApp.clientId, clientId),
+        where: eq(OAuthApp.appId, appId),
       })
       if (!app) {
         return new Response('Unauthorized', { status: 401 })
@@ -71,7 +83,7 @@ export const authForApi = cache(async (): Promise<Auth | Response> => {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           // basic auth
-          Authorization: `Basic ${Buffer.from(`${clientId}:${oauthApp.clientSecret}`).toString('base64')}`,
+          Authorization: `Basic ${Buffer.from(`${oauthApp.clientId}:${oauthApp.clientSecret}`).toString('base64')}`,
         },
         body: new URLSearchParams({
           token,
@@ -88,12 +100,28 @@ export const authForApi = cache(async (): Promise<Auth | Response> => {
         userId: info.sub,
         appId: app.appId,
       }
+    } else {
+      return new Response('Unauthorized', { status: 401 })
     }
   }
 
   const { userId, orgId, orgRole } = await clerkAuth()
   if (userId) {
     const isAdmin = orgId === env.CLERK_ADMIN_ORGANIZATION_ID && orgRole === 'org:admin'
+
+    if (appId) {
+      const app = await db.query.App.findFirst({
+        where: eq(App.id, appId),
+      })
+      if (!app) {
+        return new Response('Unauthorized', { status: 401 })
+      }
+      return {
+        userId,
+        appId,
+      }
+    }
+
     return !isAdmin
       ? {
           userId,
@@ -109,6 +137,18 @@ export const authForApi = cache(async (): Promise<Auth | Response> => {
 
 export async function auth(): Promise<Auth> {
   return (await authForApi()) as Auth
+}
+
+export function checkAppUser(auth: Auth, appId: string) {
+  if (!auth.userId) {
+    return
+  }
+  if (auth.appId && auth.appId !== appId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: `Accessing the app is not authorized by the user`,
+    })
+  }
 }
 
 type TokenInfo =
