@@ -71,6 +71,7 @@ export const authForApi = cache(async (): Promise<Auth | Response> => {
       if (!app) {
         return new Response('Unauthorized', { status: 401 })
       }
+      // TODO: cache
       const oauthApp = await getClerkOAuthApp(app.oauthAppId)
       if (!oauthApp?.clientSecret) {
         return new Response('Unauthorized', { status: 401 })
@@ -78,7 +79,8 @@ export const authForApi = cache(async (): Promise<Auth | Response> => {
       // Introspect token
       // NOTE: cannot use bearer auth here
       // See: https://github.com/ory/fosite/blob/master/introspection_request_handler.go
-      const r = await fetch('', {
+      // TODO: cache
+      const r = await fetch(oauthApp.tokenIntrospectionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',

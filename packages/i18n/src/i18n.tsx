@@ -1,6 +1,5 @@
 'use client'
 
-import type { FC } from 'react'
 import React, { useEffect } from 'react'
 import i18next from 'i18next'
 
@@ -13,7 +12,7 @@ export interface II18nProps {
   children: React.ReactNode
 }
 
-const I18n: FC<II18nProps> = ({ locale, children }) => {
+export default function I18n({ locale, children }: II18nProps) {
   useEffect(() => {
     void i18next.changeLanguage(locale)
   }, [locale])
@@ -30,4 +29,3 @@ const I18n: FC<II18nProps> = ({ locale, children }) => {
     </I18NContext.Provider>
   )
 }
-export default React.memo(I18n)
