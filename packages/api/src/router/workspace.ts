@@ -1,8 +1,9 @@
 import type { SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq, gt, lt } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
+import type { Transaction } from '@mindworld/db/client'
 import {
   CreateMembershipSchema,
   CreateWorkspaceSchema,
@@ -52,6 +53,31 @@ export async function verifyWorkspaceOwner(ctx: Context, workspaceId: string) {
   return membership
 }
 
+async function createWorkspace(
+  ctx: Context,
+  tx: Transaction,
+  input: z.infer<typeof CreateWorkspaceSchema>,
+) {
+  const [workspace] = await tx.insert(Workspace).values(input).returning()
+  if (!workspace) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to create workspace',
+    })
+  }
+
+  await tx.insert(Membership).values({
+    workspaceId: workspace.id,
+    userId: ctx.auth.userId!,
+    role: 'owner',
+  })
+
+  return {
+    workspace,
+    role: 'owner' as const,
+  }
+}
+
 export const workspaceRouter = {
   /**
    * List all workspaces for the current user.
@@ -62,11 +88,15 @@ export const workspaceRouter = {
   list: userProtectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/workspaces' } })
     .input(
-      z.object({
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .default({
+          limit: 50,
+        }),
     )
     .query(async ({ input, ctx }) => {
       const conditions: SQL<unknown>[] = [eq(Membership.userId, ctx.auth.userId)]
@@ -79,27 +109,39 @@ export const workspaceRouter = {
         conditions.push(lt(Workspace.id, input.before))
       }
 
-      const workspaces = await ctx.db
-        .select({
-          workspace: Workspace,
-          role: Membership.role,
-        })
-        .from(Membership)
-        .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
-        .where(and(...conditions))
-        .orderBy(desc(Workspace.id))
-        .limit(input.limit + 1)
+      return await ctx.db.transaction(async (tx) => {
+        console.log('list workspaces')
+        const workspaces = await tx
+          .select({
+            workspace: Workspace,
+            role: Membership.role,
+          })
+          .from(Membership)
+          .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
+          .where(and(...conditions))
+          .orderBy(asc(Workspace.id))
+          .limit(input.limit + 1)
 
-      const hasMore = workspaces.length > input.limit
-      if (hasMore) {
-        workspaces.pop()
-      }
+        const hasMore = workspaces.length > input.limit
+        if (hasMore) {
+          workspaces.pop()
+        }
 
-      return {
-        workspaces,
-        hasMore,
-        limit: input.limit,
-      }
+        // If no workspaces are found, create a personal workspace
+        if (!input.after && !input.before && !workspaces.length) {
+          workspaces.push(
+            await createWorkspace(ctx, tx, {
+              name: 'Personal',
+            }),
+          )
+        }
+
+        return {
+          workspaces,
+          hasMore,
+          limit: input.limit,
+        }
+      })
     }),
 
   /**
@@ -143,24 +185,7 @@ export const workspaceRouter = {
     .input(CreateWorkspaceSchema)
     .mutation(async ({ input, ctx }) => {
       return await ctx.db.transaction(async (tx) => {
-        const [workspace] = await tx.insert(Workspace).values(input).returning()
-        if (!workspace) {
-          throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
-            message: 'Failed to create workspace',
-          })
-        }
-
-        await tx.insert(Membership).values({
-          workspaceId: workspace.id,
-          userId: ctx.auth.userId,
-          role: 'owner',
-        })
-
-        return {
-          workspace,
-          role: 'owner',
-        }
+        return createWorkspace(ctx, tx, input)
       })
     }),
 

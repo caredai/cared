@@ -4,7 +4,7 @@ import createJiti from 'jiti'
 // Import env files to validate at build time. Use jiti so we can load .ts files in here.
 createJiti(fileURLToPath(import.meta.url))('./src/env')
 
-/** @type {import("next").NextConfig} */
+/** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
 
@@ -14,7 +14,7 @@ const config = {
     '@tavern/core',
     '@tavern/db',
     '@mindworld/ui',
-    "@mindworld/utils",
+    '@mindworld/utils',
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

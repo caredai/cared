@@ -5,6 +5,8 @@ import I18nServer from '@mindworld/i18n/i18n-server'
 
 import '../globals.css'
 
+import { Toaster } from '@mindworld/ui/components/sonner'
+
 import { Providers } from '@/components/providers'
 
 const geistSans = Geist({
@@ -33,6 +35,7 @@ export default function RootLayout({
         <I18nServer>
           <Providers>{children}</Providers>
         </I18nServer>
+        <Toaster />
       </body>
     </html>
   )

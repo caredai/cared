@@ -1,17 +1,31 @@
+import { NextResponse } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
 import { authForApi } from '@mindworld/api/auth'
 
 const isPublicRoute = createRouteMatcher(['/'])
-const isApiRoute = createRouteMatcher(['/api/trpc/(.*)'])
+const isApiRoute = createRouteMatcher(['/api/(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
+  if (isPublicRoute(request)) {
+    const { userId } = await auth()
+    if (userId) {
+      // redirect to /apps if user is signed in
+      return NextResponse.redirect(new URL('/apps', request.url))
+    }
+
+    // public landing page
+    return
+  }
+
   if (isApiRoute(request)) {
+    // auth for api
     const r = await authForApi()
     if (r instanceof Response) {
       return r
     }
-  } else if (!isPublicRoute(request)) {
+  } else {
+    // auth for pages
     await auth.protect()
   }
 })
@@ -20,7 +34,5 @@ export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
   ],
 }

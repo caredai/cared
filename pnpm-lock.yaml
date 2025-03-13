@@ -96,6 +96,9 @@ importers:
       '@mindworld/chatbot':
         specifier: workspace:*
         version: link:../../packages/chatbot
+      '@mindworld/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@mindworld/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
@@ -129,6 +132,9 @@ importers:
       geist:
         specifier: ^1.3.1
         version: 1.3.1(next@15.2.2(@opentelemetry/api@1.9.0)(@playwright/test@1.50.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))
+      jotai:
+        specifier: ^2.11.1
+        version: 2.12.1(@types/react@19.0.7)(react@19.0.0)
       next:
         specifier: ^15.2.2
         version: 15.2.2(@opentelemetry/api@1.9.0)(@playwright/test@1.50.1)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -147,6 +153,9 @@ importers:
       react-use:
         specifier: ^17.6.0
         version: 17.6.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      stable-hash:
+        specifier: ^0.0.4
+        version: 0.0.4
       superjson:
         specifier: 2.2.2
         version: 2.2.2
@@ -166,6 +175,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.0.13
         version: 4.0.13
+      '@tanstack/react-query-devtools':
+        specifier: ^5.67.3
+        version: 5.67.3(@tanstack/react-query@5.66.7(react@19.0.0))(react@19.0.0)
       '@types/node':
         specifier: ^22.13.10
         version: 22.13.10
@@ -4825,6 +4837,15 @@ packages:
 
   '@tanstack/query-core@5.66.4':
     resolution: {integrity: sha512-skM/gzNX4shPkqmdTCSoHtJAPMTtmIJNS0hE+xwTTUVYwezArCT34NMermABmBVUg5Ls5aiUXEDXfqwR1oVkcA==}
+
+  '@tanstack/query-devtools@5.67.2':
+    resolution: {integrity: sha512-O4QXFFd7xqp6EX7sdvc9tsVO8nm4lpWBqwpgjpVLW5g7IeOY6VnS/xvs/YzbRhBVkKTMaJMOUGU7NhSX+YGoNg==}
+
+  '@tanstack/react-query-devtools@5.67.3':
+    resolution: {integrity: sha512-+PM2UnCyXAQozXB32cnawx38wwnaHPTtFAhX1V5QmHy/FL1u9k7nd8nxn2+GTwf15SGbUaGfxA/vq/9EARUEIQ==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.67.3
+      react: ^18 || ^19
 
   '@tanstack/react-query@5.66.7':
     resolution: {integrity: sha512-qd3q/tUpF2K1xItfPZddk1k/8pSXnovg41XyCqJgPoyYEirMBtB0sVEVVQ/CsAOngzgWtBPXimVf4q4kM9uO6A==}
@@ -9494,6 +9515,9 @@ packages:
   srt-parser-2@1.2.3:
     resolution: {integrity: sha512-dANP1AyJTI503H0/kXwRza+7QxDB3BqeFvEKTF4MI9lQcBe8JbRUQTKVIGzGABJCwBovEYavZ2Qsdm/s8XKz8A==}
     hasBin: true
+
+  stable-hash@0.0.4:
+    resolution: {integrity: sha512-LjdcbuBeLcdETCrPn9i8AYAZ1eCtu4ECAWtP7UleOiZ9LzVxRzzUZEoZ8zB24nhkQnDWyET0I+3sWokSDS3E7g==}
 
   stack-generator@2.0.10:
     resolution: {integrity: sha512-mwnua/hkqM6pF4k8SnmZ2zfETsRUpWXREfA/goT8SLCV4iOFa4bzOX2nDipWAZFPTjLvQB82f5yaodMVhK0yJQ==}
@@ -15028,6 +15052,14 @@ snapshots:
       tailwindcss: 4.0.13
 
   '@tanstack/query-core@5.66.4': {}
+
+  '@tanstack/query-devtools@5.67.2': {}
+
+  '@tanstack/react-query-devtools@5.67.3(@tanstack/react-query@5.66.7(react@19.0.0))(react@19.0.0)':
+    dependencies:
+      '@tanstack/query-devtools': 5.67.2
+      '@tanstack/react-query': 5.66.7(react@19.0.0)
+      react: 19.0.0
 
   '@tanstack/react-query@5.66.7(react@19.0.0)':
     dependencies:
@@ -20717,6 +20749,8 @@ snapshots:
     optional: true
 
   srt-parser-2@1.2.3: {}
+
+  stable-hash@0.0.4: {}
 
   stack-generator@2.0.10:
     dependencies:

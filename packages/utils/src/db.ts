@@ -1,4 +1,3 @@
-import { sql } from 'drizzle-orm'
 import { index, timestamp } from 'drizzle-orm/pg-core'
 import { v7 } from 'uuid'
 import { z } from 'zod'
@@ -43,11 +42,19 @@ export function makeObjectNonempty<T extends z.ZodRawShape>(schema: z.ZodObject<
   return schema.partial().refine((obj) => Object.keys(obj).length > 0, 'Object must not be empty')
 }
 
-export const createdAt = timestamp({ mode: 'date' }).notNull().defaultNow()
-export const updatedAt = timestamp({ mode: 'date' })
+export const createdAt = timestamp({
+  mode: 'date',
+  withTimezone: true,
+})
   .notNull()
   .defaultNow()
-  .$onUpdateFn(() => sql`now()`)
+export const updatedAt = timestamp({
+  mode: 'date',
+  withTimezone: true,
+})
+  .notNull()
+  .defaultNow()
+  .$onUpdateFn(() => new Date())
 export const timestamps = {
   createdAt,
   updatedAt,

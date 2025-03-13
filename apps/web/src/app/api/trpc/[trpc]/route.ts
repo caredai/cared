@@ -17,12 +17,12 @@ export const setCorsHeaders = (res: Response) => {
   // If you need to make authenticated CORS calls then
   // remove what is above and uncomment the below code
   // Allow-Origin has to be set to the requesting domain that you want to send the credentials back to
-  // res.headers.setHeader('Access-Control-Allow-Origin', 'http://example:6006');
-  // res.headers.setHeader('Access-Control-Request-Method', '*');
-  // res.headers.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-  // res.headers.setHeader('Access-Control-Allow-Headers', 'content-type');
-  // res.headers.setHeader('Referrer-Policy', 'no-referrer');
-  // res.headers.setHeader('Access-Control-Allow-Credentials', 'true');
+  // res.headers.set('Access-Control-Allow-Origin', 'http://example:6006');
+  // res.headers.set('Access-Control-Request-Method', '*');
+  // res.headers.set('Access-Control-Allow-Methods', 'OPTIONS, GET');
+  // res.headers.set('Access-Control-Allow-Headers', 'content-type');
+  // res.headers.set('Referrer-Policy', 'no-referrer');
+  // res.headers.set('Access-Control-Allow-Credentials', 'true');
 }
 
 export const OPTIONS = () => {
