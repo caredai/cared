@@ -5,6 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { PrivyProvider } from '@privy-io/react-auth'
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana'
+import { Provider as JotaiProvider } from 'jotai'
 import { useTheme } from 'next-themes'
 
 import { Logo } from '@/components/logo'
@@ -34,42 +35,44 @@ function InnerProviders({ children }: { children: ReactNode }) {
       }}
     >
       <TRPCReactProvider>
-        <PrivyProvider
-          appId={env.NEXT_PUBLIC_PRIVY_APP_ID}
-          config={{
-            appearance: {
-              theme: resolvedTheme === 'dark' ? 'dark' : 'light',
-              accentColor: '#676FFF',
-              logo: <Logo />,
-              landingHeader: 'Connect wallet',
-              walletChainType: 'ethereum-and-solana',
-              walletList: [
-                'phantom',
-                'metamask',
-                'okx_wallet',
-                'wallet_connect',
-                'coinbase_wallet',
-                'uniswap',
-                'rainbow',
-                'zerion',
-                'rabby_wallet',
-                'safe',
-              ],
-            },
-            loginMethods: ['wallet'],
-            walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,
-            externalWallets: {
-              solana: {
-                connectors: solanaConnectors,
+        <JotaiProvider>
+          <PrivyProvider
+            appId={env.NEXT_PUBLIC_PRIVY_APP_ID}
+            config={{
+              appearance: {
+                theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+                accentColor: '#676FFF',
+                logo: <Logo />,
+                landingHeader: 'Connect wallet',
+                walletChainType: 'ethereum-and-solana',
+                walletList: [
+                  'phantom',
+                  'metamask',
+                  'okx_wallet',
+                  'wallet_connect',
+                  'coinbase_wallet',
+                  'uniswap',
+                  'rainbow',
+                  'zerion',
+                  'rabby_wallet',
+                  'safe',
+                ],
               },
-              coinbaseWallet: {
-                connectionOptions: 'all',
+              loginMethods: ['wallet'],
+              walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,
+              externalWallets: {
+                solana: {
+                  connectors: solanaConnectors,
+                },
+                coinbaseWallet: {
+                  connectionOptions: 'all',
+                },
               },
-            },
-          }}
-        >
-          {children}
-        </PrivyProvider>
+            }}
+          >
+            {children}
+          </PrivyProvider>
+        </JotaiProvider>
       </TRPCReactProvider>
     </ClerkProvider>
   )

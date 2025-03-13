@@ -110,7 +110,6 @@ export const workspaceRouter = {
       }
 
       return await ctx.db.transaction(async (tx) => {
-        console.log('list workspaces')
         const workspaces = await tx
           .select({
             workspace: Workspace,

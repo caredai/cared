@@ -1,19 +1,8 @@
-"use client"
+'use client'
 
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-  Sparkles,
-} from "lucide-react"
+import { BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut, Sparkles } from 'lucide-react'
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@mindworld/ui/components/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from '@mindworld/ui/components/avatar'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,13 +11,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@mindworld/ui/components/dropdown-menu"
+} from '@mindworld/ui/components/dropdown-menu'
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@mindworld/ui/components/sidebar"
+} from '@mindworld/ui/components/sidebar'
 
 export function NavUser({
   user,
@@ -63,7 +52,7 @@ export function NavUser({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >

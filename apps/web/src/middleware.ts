@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-import { authForApi } from '@mindworld/api/auth'
+import { authForApi, authForUser } from '@mindworld/api/auth'
 
 const isPublicRoute = createRouteMatcher(['/'])
 const isApiRoute = createRouteMatcher(['/api/(.*)'])
@@ -23,10 +23,17 @@ export default clerkMiddleware(async (auth, request) => {
     const r = await authForApi()
     if (r instanceof Response) {
       return r
+    } else if (r) {
+      return
     }
-  } else {
-    // auth for pages
-    await auth.protect()
+  }
+
+  // auth for user
+  await auth.protect()
+
+  const r = await authForUser()
+  if (r instanceof Response) {
+    return r
   }
 })
 

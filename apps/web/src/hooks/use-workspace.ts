@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
@@ -6,7 +6,7 @@ import hash from 'stable-hash'
 
 import { useTRPC } from '@/trpc/client'
 
-const workspaceIdAtom = atomWithStorage<string | undefined>(
+const workspaceAtom = atomWithStorage<Workspaces[number] | undefined>(
   'currentWorkspace',
   undefined,
   undefined,
@@ -14,44 +14,64 @@ const workspaceIdAtom = atomWithStorage<string | undefined>(
     getOnInit: true,
   },
 )
+const workspacesAtom = atomWithStorage<Workspaces | undefined>('workspaces', undefined, undefined, {
+  getOnInit: true,
+})
+
+export function useWorkspaces() {
+  const [workspaces] = useAtom(workspacesAtom)
+  return workspaces
+}
 
 export function useWorkspace() {
-  const workspaces = useWorkspaces()
-  const [workspaceId, setWorkspaceId] = useAtom(workspaceIdAtom)
-  const [workspace, setWorkspace] = useState<(typeof workspaces)[0]>()
+  const [workspace, setWorkspace] = useAtom(workspaceAtom)
+
+  return [workspace, setWorkspace]
+}
+
+function useSetWorkspace(workspaces: Workspaces) {
+  const [_workspace, setWorkspace] = useAtom(workspaceAtom)
 
   useEffect(() => {
     if (!workspaces.length) {
+      setWorkspace(undefined)
       return
     }
 
-    let workspace: (typeof workspaces)[0] | undefined
-    // Find the workspace by ID
-    if (workspaceId) {
-      workspace = workspaces.find((w) => w.workspace.id === workspaceId)
+    let workspace = _workspace
+    if (workspace) {
+      // Find the workspace by ID
+      const found = workspaces.find((w) => w.workspace.id === workspace!.workspace.id)
+      if (!found) {
+        workspace = undefined
+      } else if (hash(found) !== hash(workspace)) {
+        workspace = found
+      }
     }
     if (!workspace) {
       // Fallback to the first workspace
       workspace = workspaces.at(0)!
-      setWorkspaceId(workspace.workspace.id)
     }
 
-    setWorkspace((w) => {
-      if (!w || hash(w) !== hash(workspace)) {
-        return workspace
-      } else {
-        return w
-      }
-    })
-  }, [workspaces, workspaceId, setWorkspaceId])
-
-  return [workspace, setWorkspaceId]
+    setWorkspace(workspace)
+  }, [workspaces, _workspace, setWorkspace])
 }
 
-export function useWorkspaces() {
+type Workspaces = ReturnType<typeof useQueryWorkspaces>
+
+export function useQueryWorkspaces() {
   const trpc = useTRPC()
+
   const {
     data: { workspaces },
   } = useSuspenseQuery(trpc.workspace.list.queryOptions())
+
+  useSetWorkspace(workspaces)
+
+  const [, setWorkspaces] = useAtom(workspacesAtom)
+  useEffect(() => {
+    setWorkspaces(workspaces)
+  }, [workspaces, setWorkspaces])
+
   return workspaces
 }

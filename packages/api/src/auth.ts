@@ -36,7 +36,7 @@ export type Auth =
       appId: string
     }
 
-export const authForApi = cache(async (): Promise<Auth | Response> => {
+export const authForApi = cache(async (): Promise<Auth | Response | undefined> => {
   const heads = await headers()
   const appId = heads.get('X-APP-ID')
   const authType = heads.get('X-AUTH-TYPE')
@@ -106,39 +106,52 @@ export const authForApi = cache(async (): Promise<Auth | Response> => {
       return new Response('Unauthorized', { status: 401 })
     }
   }
+})
 
-  const { userId, orgId, orgRole } = await clerkAuth()
-  if (userId) {
-    const isAdmin = orgId === env.CLERK_ADMIN_ORGANIZATION_ID && orgRole === 'org:admin'
-
-    if (appId) {
-      const app = await db.query.App.findFirst({
-        where: eq(App.id, appId),
-      })
-      if (!app) {
-        return new Response('Unauthorized', { status: 401 })
-      }
-      return {
-        userId,
-        appId,
-      }
+export const authForUser = cache(async (): Promise<Response | undefined> => {
+  const heads = await headers()
+  const appId = heads.get('X-APP-ID')
+  if (appId) {
+    const app = await db.query.App.findFirst({
+      where: eq(App.id, appId),
+    })
+    if (!app) {
+      return new Response('Unauthorized', { status: 401 })
     }
-
-    return !isAdmin
-      ? {
-          userId,
-        }
-      : {
-          userId,
-          isAdmin,
-        }
   }
-
-  return new Response('Unauthorized', { status: 401 })
 })
 
 export async function auth(): Promise<Auth> {
-  return (await authForApi()) as Auth
+  const r = (await authForApi()) as Auth | undefined
+  if (r) {
+    return r
+  }
+
+  const heads = await headers()
+  const appId = heads.get('X-APP-ID')
+
+  const { userId: _userId, orgId, orgRole } = await clerkAuth()
+  // the middleware has already checked the user
+  const userId = _userId!
+
+  const isAdmin = orgId === env.CLERK_ADMIN_ORGANIZATION_ID && orgRole === 'org:admin'
+
+  if (appId) {
+    // appId has been checked in `authForUser`
+    return {
+      userId,
+      appId,
+    }
+  }
+
+  return !isAdmin
+    ? {
+        userId,
+      }
+    : {
+        userId,
+        isAdmin,
+      }
 }
 
 export function checkAppUser(auth: Auth, appId: string) {

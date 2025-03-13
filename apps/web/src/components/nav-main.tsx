@@ -20,6 +20,8 @@ import {
   SidebarMenuSubItem,
 } from '@mindworld/ui/components/sidebar'
 
+import { useWorkspaces } from '@/hooks/use-workspace'
+
 export function NavMain({
   items,
 }: {
@@ -34,6 +36,9 @@ export function NavMain({
     }[]
   }[]
 }) {
+  const workspaces = useWorkspaces()
+  console.log('workspaces:', workspaces)
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>

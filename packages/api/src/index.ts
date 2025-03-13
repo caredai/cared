@@ -1,7 +1,7 @@
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 
 import type { AppRouter } from './root'
-import { auth, authForApi } from './auth'
+import { auth } from './auth'
 import { generateOpenApiDocument } from './openapi'
 import { appRouter } from './root'
 import { createCallerFactory, createTRPCContext } from './trpc'
@@ -31,5 +31,5 @@ type RouterInputs = inferRouterInputs<AppRouter>
  **/
 type RouterOutputs = inferRouterOutputs<AppRouter>
 
-export { createTRPCContext, appRouter, createCaller, generateOpenApiDocument, authForApi, auth }
+export { createTRPCContext, appRouter, createCaller, generateOpenApiDocument, auth }
 export type { AppRouter, RouterInputs, RouterOutputs }
