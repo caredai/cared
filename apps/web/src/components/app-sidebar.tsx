@@ -34,7 +34,7 @@ const data = {
   user: {
     name: 'shadcn',
     email: 'm@example.com',
-    avatar: '/avatars/shadcn.jpg',
+    avatar: '/globe.svg',
   },
   navMain: [
     {
@@ -53,7 +53,7 @@ const data = {
         },
         {
           title: 'Settings',
-          url: '#',
+          url: 'settings',
         },
       ],
     },

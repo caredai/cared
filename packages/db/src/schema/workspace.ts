@@ -26,7 +26,10 @@ export const Workspace = pgTable('workspace', {
 export type Workspace = InferSelectModel<typeof Workspace>
 
 export const CreateWorkspaceSchema = createInsertSchema(Workspace, {
-  name: z.string().min(1, 'Workspace name cannot be empty').max(255, 'Workspace name cannot be longer than 255 characters'),
+  name: z
+    .string()
+    .min(1, 'Workspace name cannot be empty')
+    .max(255, 'Workspace name cannot be longer than 255 characters'),
 }).omit({
   id: true,
   ...timestampsOmits,

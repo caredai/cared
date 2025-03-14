@@ -1,4 +1,4 @@
-import React from 'react'
+import type { ReactNode } from 'react'
 
 import {
   Breadcrumb,
@@ -12,12 +12,17 @@ import { Separator } from '@mindworld/ui/components/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@mindworld/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
+import { RememberWorkspace } from '@/components/remember-workspace'
 
-export default function ProtectedLayout({
+export default async function WorkspaceLayout({
   children,
+  params,
 }: Readonly<{
-  children: React.ReactNode
+  children: ReactNode
+  params: Promise<{ workspaceId: string }>
 }>) {
+  const { workspaceId } = await params
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -39,6 +44,7 @@ export default function ProtectedLayout({
             </Breadcrumb>
           </div>
         </header>
+        <RememberWorkspace id={workspaceId} />
         {children}
       </SidebarInset>
     </SidebarProvider>

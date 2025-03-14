@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
@@ -6,14 +7,15 @@ import hash from 'stable-hash'
 
 import { useTRPC } from '@/trpc/client'
 
-const workspaceAtom = atomWithStorage<Workspace | undefined>(
-  'currentWorkspace',
+const lastWorkspaceAtom = atomWithStorage<string | undefined>(
+  'lastWorkspace',
   undefined,
   undefined,
   {
     getOnInit: true,
   },
 )
+
 const workspacesAtom = atomWithStorage<Workspace[] | undefined>(
   'workspaces',
   undefined,
@@ -28,19 +30,36 @@ export function useWorkspaces() {
   return workspaces
 }
 
+export function useWorkspaceId() {
+  const pathname = usePathname()
+  const matched = /\/(workspace_[^/]+)/.exec(pathname)
+  return matched?.length && matched[1] ? matched[1] : ''
+}
+
 export function useWorkspace() {
-  const [workspace, setWorkspace] = useAtom(workspaceAtom)
+  const router = useRouter()
+
+  const workspaces = useWorkspaces()
+  const id = useWorkspaceId()
+  const [workspace, setWorkspace] = useState<Workspace>()
+
+  useEffect(() => {
+    const found = workspaces?.find((w) => w.id === id)
+    if (found) {
+      setWorkspace(found)
+    }
+  }, [id, workspaces])
 
   const trpc = useTRPC()
-  const { data, error, status } = useQuery({
+  const { status, data } = useQuery({
     ...trpc.workspace.get.queryOptions({
-      id: workspace?.id ?? '',
+      id,
     }),
-    enabled: !!workspace,
+    enabled: !!id,
   })
 
   useEffect(() => {
-    if (workspace && status === 'success') {
+    if (status === 'success') {
       const queried = {
         ...data.workspace,
         role: data.role,
@@ -48,12 +67,18 @@ export function useWorkspace() {
       if (hash(workspace) !== hash(queried)) {
         setWorkspace(queried)
       }
-    } else if (status === 'error' && error.data?.code === 'NOT_FOUND') {
-      setWorkspace(undefined)
+    } else if (!id || status === 'error') {
+      router.replace('/')
     }
-  }, [data, error, status, setWorkspace, workspace])
+  }, [id, status, data, workspace, router])
 
-  return [workspace, setWorkspace] as const
+  return workspace
+}
+
+export function useLastWorkspace() {
+  const [lastWorkspace, setLastWorkspace] = useAtom(lastWorkspaceAtom)
+
+  return [lastWorkspace, setLastWorkspace] as const
 }
 
 export type Workspace = ReturnType<typeof useQueryWorkspaces>[number]
@@ -73,11 +98,11 @@ export function useQueryWorkspaces() {
     setWorkspaces(workspaces)
   }, [workspaces, setWorkspaces])
 
-  const [workspace, setWorkspace] = useWorkspace()
+  const [workspace, setWorkspace] = useLastWorkspace()
   useEffect(() => {
     // Only set current workspace if it's not already set
     if (!workspace) {
-      setWorkspace(workspaces.at(0))
+      setWorkspace(workspaces.at(0)?.id)
     }
   }, [workspaces, workspace, setWorkspace])
 

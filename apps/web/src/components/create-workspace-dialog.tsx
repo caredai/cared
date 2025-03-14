@@ -31,7 +31,6 @@ import { Input } from '@mindworld/ui/components/input'
 import { log } from '@mindworld/utils'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useWorkspace } from '@/hooks/use-workspace'
 import { useTRPC } from '@/trpc/client'
 
 interface CreateWorkspaceDialogProps {
@@ -44,8 +43,6 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
   const router = useRouter()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-
-  const [, setWorkspace] = useWorkspace()
 
   const form = useForm({
     resolver: zodResolver(CreateWorkspaceSchema),
@@ -68,25 +65,13 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
 
         toast.success('Workspace created successfully')
 
-        setWorkspace({
-          ...workspace.workspace,
-          role: workspace.role,
-        })
-        // optimistic update
-        queryClient.setQueryData(
-          trpc.workspace.get.queryOptions({
-            id: workspace.workspace.id,
-          }).queryKey,
-          workspace,
-        )
-
         await queryClient.invalidateQueries(trpc.workspace.queryFilter())
 
-        // Refresh route or call success callback
+        // Redirect to new workspace or call success callback
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push('/apps')
+          router.push(`/${workspace.workspace.id}`)
         }
       },
       onError: (error) => {

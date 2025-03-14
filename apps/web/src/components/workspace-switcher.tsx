@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { Blocks, ChevronsUpDown, Plus } from 'lucide-react'
 
 import {
@@ -23,7 +24,9 @@ export function WorkspaceSwitcherInner({
 }: {
   trigger?: (props: { children: ReactNode }) => ReactNode
 }) {
-  const [workspace, setWorkspace] = useWorkspace()
+  const workspace = useWorkspace()
+  const router = useRouter()
+  const pathname = usePathname()
   const workspaces = useWorkspaces()
 
   const isMobile = useIsMobile()
@@ -61,18 +64,21 @@ export function WorkspaceSwitcherInner({
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
         <ClientOnly>
-          {workspaces?.map((workspace) => (
-            <DropdownMenuItem
-              key={workspace.id}
-              onClick={() => setWorkspace(workspace)}
-              className="gap-2 p-2 cursor-pointer"
-            >
-              <div className="flex size-6 items-center justify-center rounded-sm border">
-                <Blocks />
-              </div>
-              {workspace.name}
-            </DropdownMenuItem>
-          ))}
+          {workspaces?.map((workspace) => {
+            const route = pathname.replace(/\/workspace_[^/]+/, `/${workspace.id}`)
+            return (
+              <DropdownMenuItem
+                key={workspace.id}
+                onClick={() => router.push(route)}
+                className="gap-2 p-2 cursor-pointer"
+              >
+                <div className="flex size-6 items-center justify-center rounded-sm border">
+                  <Blocks />
+                </div>
+                {workspace.name}
+              </DropdownMenuItem>
+            )
+          })}
         </ClientOnly>
         <DropdownMenuSeparator />
         {Trigger ? <Trigger>{addWorkspaceMenuItem}</Trigger> : addWorkspaceMenuItem}

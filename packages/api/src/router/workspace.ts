@@ -220,7 +220,7 @@ export const workspaceRouter = {
 
       return {
         workspace,
-        role: 'owner',
+        role: 'owner' as const,
       }
     }),
 
