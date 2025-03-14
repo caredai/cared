@@ -63,7 +63,7 @@ export function WorkspaceSwitcherInner({
         <ClientOnly>
           {workspaces?.map((workspace) => (
             <DropdownMenuItem
-              key={workspace.name}
+              key={workspace.id}
               onClick={() => setWorkspace(workspace)}
               className="gap-2 p-2 cursor-pointer"
             >

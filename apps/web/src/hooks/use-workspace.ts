@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import hash from 'stable-hash'
@@ -31,35 +31,29 @@ export function useWorkspaces() {
 export function useWorkspace() {
   const [workspace, setWorkspace] = useAtom(workspaceAtom)
 
-  return [workspace, setWorkspace] as const
-}
-
-function useSetWorkspace(workspaces: Workspace[]) {
-  const [_workspace, setWorkspace] = useAtom(workspaceAtom)
+  const trpc = useTRPC()
+  const { data, error, status } = useQuery({
+    ...trpc.workspace.get.queryOptions({
+      id: workspace?.id ?? '',
+    }),
+    enabled: !!workspace,
+  })
 
   useEffect(() => {
-    if (!workspaces.length) {
-      setWorkspace(undefined)
-      return
-    }
-
-    let workspace = _workspace
-    if (workspace) {
-      // Find the workspace by ID
-      const found = workspaces.find((w) => w.id === workspace!.id)
-      if (!found) {
-        workspace = undefined
-      } else if (hash(found) !== hash(workspace)) {
-        workspace = found
+    if (workspace && status === 'success') {
+      const queried = {
+        ...data.workspace,
+        role: data.role,
       }
+      if (hash(workspace) !== hash(queried)) {
+        setWorkspace(queried)
+      }
+    } else if (status === 'error' && error.data?.code === 'NOT_FOUND') {
+      setWorkspace(undefined)
     }
-    if (!workspace) {
-      // Fallback to the first workspace
-      workspace = workspaces.at(0)!
-    }
+  }, [data, error, status, setWorkspace, workspace])
 
-    setWorkspace(workspace)
-  }, [workspaces, _workspace, setWorkspace])
+  return [workspace, setWorkspace] as const
 }
 
 export type Workspace = ReturnType<typeof useQueryWorkspaces>[number]
@@ -74,12 +68,18 @@ export function useQueryWorkspaces() {
     [data],
   )
 
-  useSetWorkspace(workspaces)
-
   const [, setWorkspaces] = useAtom(workspacesAtom)
   useEffect(() => {
     setWorkspaces(workspaces)
   }, [workspaces, setWorkspaces])
+
+  const [workspace, setWorkspace] = useWorkspace()
+  useEffect(() => {
+    // Only set current workspace if it's not already set
+    if (!workspace) {
+      setWorkspace(workspaces.at(0))
+    }
+  }, [workspaces, workspace, setWorkspace])
 
   return workspaces
 }

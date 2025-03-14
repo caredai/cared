@@ -1,7 +1,7 @@
 'use client'
 
 import type { LucideIcon } from 'lucide-react'
-import { AudioWaveform, ChevronRight, Command, GalleryVerticalEnd } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 import {
   Collapsible,

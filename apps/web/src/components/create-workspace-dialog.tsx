@@ -1,14 +1,14 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
-import { z } from 'zod'
 
+import { CreateWorkspaceSchema } from '@mindworld/db/schema'
 import { Button } from '@mindworld/ui/components/button'
 import {
   Dialog,
@@ -28,17 +28,11 @@ import {
   FormMessage,
 } from '@mindworld/ui/components/form'
 import { Input } from '@mindworld/ui/components/input'
+import { log } from '@mindworld/utils'
 
+import { CircleSpinner } from '@/components/spinner'
+import { useWorkspace } from '@/hooks/use-workspace'
 import { useTRPC } from '@/trpc/client'
-
-// Define form validation schema
-const formSchema = z.object({
-  name: z.string().min(1, {
-    message: 'Workspace name cannot be empty',
-  }),
-})
-
-type FormValues = z.infer<typeof formSchema>
 
 interface CreateWorkspaceDialogProps {
   menu?: (props: { trigger: (props: { children: ReactNode }) => ReactNode }) => ReactNode
@@ -47,66 +41,96 @@ interface CreateWorkspaceDialogProps {
 }
 
 export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorkspaceDialogProps) {
-  const [open, setOpen] = useState(false)
   const router = useRouter()
   const trpc = useTRPC()
+  const queryClient = useQueryClient()
 
-  // Get the mutation function
-  const createWorkspaceMutation = useMutation(trpc.workspace.create.mutationOptions())
+  const [, setWorkspace] = useWorkspace()
 
-  // Initialize form
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm({
+    resolver: zodResolver(CreateWorkspaceSchema),
     defaultValues: {
       name: '',
     },
   })
 
-  // Handle form submission
-  const onSubmit = async (values: FormValues) => {
-    try {
-      // Call TRPC API to create workspace
-      await createWorkspaceMutation.mutateAsync({
-        name: values.name,
-      })
-
-      // Close dialog and reset form
-      setOpen(false)
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (open) {
       form.reset()
-
-      // Show success message
-      toast.success('Workspace created successfully')
-
-      // Refresh route or call success callback
-      if (onSuccess) {
-        onSuccess()
-      } else {
-        router.refresh()
-      }
-    } catch (error) {
-      // Show error message
-      toast.error('Failed to create workspace')
-      console.error('Failed to create workspace:', error)
     }
-  }
+  }, [open, form])
+
+  const createWorkspace = useMutation(
+    trpc.workspace.create.mutationOptions({
+      onSuccess: async (workspace) => {
+        setOpen(false)
+
+        toast.success('Workspace created successfully')
+
+        setWorkspace({
+          ...workspace.workspace,
+          role: workspace.role,
+        })
+        // optimistic update
+        queryClient.setQueryData(
+          trpc.workspace.get.queryOptions({
+            id: workspace.workspace.id,
+          }).queryKey,
+          workspace,
+        )
+
+        await queryClient.invalidateQueries(trpc.workspace.queryFilter())
+
+        // Refresh route or call success callback
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push('/apps')
+        }
+      },
+      onError: (error) => {
+        log.error('Failed to create workspace:', error)
+        toast.error(
+          error.data?.code === 'UNAUTHORIZED'
+            ? 'You must be logged in to create workspace'
+            : 'Failed to create workspace',
+        )
+      },
+    }),
+  )
 
   const Menu = menu
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        if (form.formState.isSubmitting && !newOpen) {
+          return
+        }
+        setOpen(newOpen)
+      }}
+    >
       {Menu && (
         <Menu trigger={({ children }) => <DialogTrigger asChild>{children}</DialogTrigger>} />
       )}
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Workspace</DialogTitle>
+          <DialogTitle>Create workspace</DialogTitle>
           <DialogDescription>
-            Create a new workspace to organize your projects and team members.
+            Create a new workspace to organize your applications and agents, and collaborate with
+            team members.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit((data) => {
+              return createWorkspace.mutateAsync(data)
+            })}
+            className="grid gap-8 mt-4"
+          >
             <FormField
               control={form.control}
               name="name"
@@ -114,18 +138,34 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
                 <FormItem>
                   <FormLabel>Workspace Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter workspace name" {...field} />
+                    <Input
+                      placeholder="Enter workspace name"
+                      {...field}
+                      disabled={form.formState.isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={form.formState.isSubmitting}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Creating...' : 'Create'}
+                {form.formState.isSubmitting ? (
+                  <>
+                    <CircleSpinner />
+                    Creating...
+                  </>
+                ) : (
+                  'Create'
+                )}
               </Button>
             </DialogFooter>
           </form>
