@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
@@ -6,7 +6,7 @@ import hash from 'stable-hash'
 
 import { useTRPC } from '@/trpc/client'
 
-const workspaceAtom = atomWithStorage<Workspaces[number] | undefined>(
+const workspaceAtom = atomWithStorage<Workspace | undefined>(
   'currentWorkspace',
   undefined,
   undefined,
@@ -14,9 +14,14 @@ const workspaceAtom = atomWithStorage<Workspaces[number] | undefined>(
     getOnInit: true,
   },
 )
-const workspacesAtom = atomWithStorage<Workspaces | undefined>('workspaces', undefined, undefined, {
-  getOnInit: true,
-})
+const workspacesAtom = atomWithStorage<Workspace[] | undefined>(
+  'workspaces',
+  undefined,
+  undefined,
+  {
+    getOnInit: true,
+  },
+)
 
 export function useWorkspaces() {
   const [workspaces] = useAtom(workspacesAtom)
@@ -26,10 +31,10 @@ export function useWorkspaces() {
 export function useWorkspace() {
   const [workspace, setWorkspace] = useAtom(workspaceAtom)
 
-  return [workspace, setWorkspace]
+  return [workspace, setWorkspace] as const
 }
 
-function useSetWorkspace(workspaces: Workspaces) {
+function useSetWorkspace(workspaces: Workspace[]) {
   const [_workspace, setWorkspace] = useAtom(workspaceAtom)
 
   useEffect(() => {
@@ -41,7 +46,7 @@ function useSetWorkspace(workspaces: Workspaces) {
     let workspace = _workspace
     if (workspace) {
       // Find the workspace by ID
-      const found = workspaces.find((w) => w.workspace.id === workspace!.workspace.id)
+      const found = workspaces.find((w) => w.id === workspace!.id)
       if (!found) {
         workspace = undefined
       } else if (hash(found) !== hash(workspace)) {
@@ -57,14 +62,17 @@ function useSetWorkspace(workspaces: Workspaces) {
   }, [workspaces, _workspace, setWorkspace])
 }
 
-type Workspaces = ReturnType<typeof useQueryWorkspaces>
+export type Workspace = ReturnType<typeof useQueryWorkspaces>[number]
 
 export function useQueryWorkspaces() {
   const trpc = useTRPC()
 
-  const {
-    data: { workspaces },
-  } = useSuspenseQuery(trpc.workspace.list.queryOptions())
+  const { data } = useSuspenseQuery(trpc.workspace.list.queryOptions())
+
+  const workspaces = useMemo(
+    () => data.workspaces.map(({ workspace, role }) => ({ ...workspace, role })),
+    [data],
+  )
 
   useSetWorkspace(workspaces)
 

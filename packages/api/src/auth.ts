@@ -71,7 +71,7 @@ export const authForApi = cache(async (): Promise<Auth | Response | undefined> =
       if (!app) {
         return new Response('Unauthorized', { status: 401 })
       }
-      // TODO: cache
+      // TODO: get from database
       const oauthApp = await getClerkOAuthApp(app.oauthAppId)
       if (!oauthApp?.clientSecret) {
         return new Response('Unauthorized', { status: 401 })

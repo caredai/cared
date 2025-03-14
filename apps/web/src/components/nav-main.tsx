@@ -1,7 +1,7 @@
 'use client'
 
 import type { LucideIcon } from 'lucide-react'
-import { ChevronRight } from 'lucide-react'
+import { AudioWaveform, ChevronRight, Command, GalleryVerticalEnd } from 'lucide-react'
 
 import {
   Collapsible,
@@ -20,7 +20,7 @@ import {
   SidebarMenuSubItem,
 } from '@mindworld/ui/components/sidebar'
 
-import { useWorkspaces } from '@/hooks/use-workspace'
+import { WorkspaceSwitcher } from '@/components/workspace-switcher'
 
 export function NavMain({
   items,
@@ -36,13 +36,14 @@ export function NavMain({
     }[]
   }[]
 }) {
-  const workspaces = useWorkspaces()
-  console.log('workspaces:', workspaces)
-
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
+        <SidebarMenuItem>
+          <WorkspaceSwitcher />
+        </SidebarMenuItem>
+
         {items.map((item) => (
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
             <SidebarMenuItem>
