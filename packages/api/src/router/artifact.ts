@@ -88,10 +88,15 @@ export const artifactRouter = {
         artifacts.pop()
       }
 
+      // Get first and last artifact IDs
+      const first = artifacts[0]?.id
+      const last = artifacts[artifacts.length - 1]?.id
+
       return {
         artifacts,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -246,10 +251,15 @@ export const artifactRouter = {
         suggestions.pop()
       }
 
+      // Get first and last suggestion IDs
+      const first = suggestions[0]?.id
+      const last = suggestions[suggestions.length - 1]?.id
+
       return {
         suggestions,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 }

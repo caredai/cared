@@ -149,7 +149,7 @@ export function Members({ workspace }: { workspace: Workspace }) {
             <Dialog open={isAddMemberDialogOpen} onOpenChange={setIsAddMemberDialogOpen}>
               <DialogTrigger asChild>
                 <Button disabled={!isOwner}>
-                  <UserPlus className="mr-2 h-4 w-4" />
+                  <UserPlus className="h-4 w-4" />
                   Add Member
                 </Button>
               </DialogTrigger>

@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@mindworld/db'
-import { and, asc, desc, eq, gt, inArray, lt } from '@mindworld/db'
+import { and, asc, count, desc, eq, gt, inArray, lt } from '@mindworld/db'
 import {
   Agent,
   AgentVersion,
@@ -13,6 +13,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
+import { config } from '../config'
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 
@@ -131,10 +132,15 @@ export const agentRouter = {
         agents.pop()
       }
 
+      // Get first and last agent IDs
+      const first = agents[0]?.id
+      const last = agents[agents.length - 1]?.id
+
       return {
         agents,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -230,10 +236,15 @@ export const agentRouter = {
         versions.pop()
       }
 
+      // Get first and last version numbers
+      const first = versions[0]?.version
+      const last = versions[versions.length - 1]?.version
+
       return {
         versions,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -281,6 +292,20 @@ export const agentRouter = {
     .mutation(async ({ ctx, input }) => {
       // Verify app exists
       await getAppById(ctx, input.appId)
+
+      // Check if the app has reached its agent limit
+      const agentCount = await ctx.db
+        .select({ count: count() })
+        .from(Agent)
+        .where(eq(Agent.appId, input.appId))
+        .then((r) => r[0]!.count)
+
+      if (agentCount >= config.perApp.maxAgents) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: `App has reached the maximum limit of ${config.perApp.maxAgents} agents`,
+        })
+      }
 
       return ctx.db.transaction(async (tx) => {
         const [agent] = await tx.insert(Agent).values(input).returning()

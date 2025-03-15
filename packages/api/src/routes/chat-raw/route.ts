@@ -2,8 +2,8 @@ import type { Message } from 'ai'
 import { createDataStreamResponse, smoothStream, streamText } from 'ai'
 
 import { generateMessageId } from '@mindworld/db/schema'
+import { log } from '@mindworld/log'
 import { getModel } from '@mindworld/providers'
-import { log } from '@mindworld/utils'
 
 import { auth } from '../../auth'
 

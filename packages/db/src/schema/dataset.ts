@@ -18,6 +18,13 @@ export interface DatasetMetadata {
   topK?: number
   scoreThreshold?: number
 
+  stats?: {
+    /**
+     * Total size of all documents in bytes
+     */
+    totalSizeBytes?: number
+  }
+
   [key: string]: unknown
 }
 
@@ -28,6 +35,11 @@ const datasetMetadataZod = z.object({
   retrievalMode: z.enum(retrievalModes).optional(),
   topK: z.number().int().min(1).max(10).optional(),
   scoreThreshold: z.number().min(0).max(1).step(0.01).optional(),
+  stats: z
+    .object({
+      totalSizeBytes: z.number().int().optional(),
+    })
+    .optional(),
 })
 
 export const Dataset = pgTable(

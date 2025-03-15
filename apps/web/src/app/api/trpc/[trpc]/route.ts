@@ -2,7 +2,6 @@ import type { NextRequest } from 'next/server'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 
 import { appRouter, createTRPCContext } from '@mindworld/api'
-import { log } from '@mindworld/utils'
 
 /**
  * Configure CORS headers
@@ -43,7 +42,7 @@ const handler = async (req: NextRequest) => {
         headers: req.headers,
       }),
     onError({ error, path }) {
-      log.error(`>>> tRPC Error on '${path}'`, error)
+      console.error(`>>> tRPC Error on '${path}'`, error)
     },
   })
 

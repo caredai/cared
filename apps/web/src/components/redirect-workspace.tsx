@@ -14,7 +14,7 @@ export function RedirectWorkspace() {
 
   useEffect(() => {
     if (workspace) {
-      router.replace(`/${workspace}`)
+      router.replace(`/${workspace}/apps`)
     }
   }, [router, workspace])
 

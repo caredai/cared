@@ -5,9 +5,9 @@ import { convertToCoreMessages, createDataStreamResponse, smoothStream, streamTe
 import type { Agent, App, Chat, MessageContent } from '@mindworld/db/schema'
 import { db } from '@mindworld/db/client'
 import { generateMessageId } from '@mindworld/db/schema'
+import { log } from '@mindworld/log'
 import { getModel } from '@mindworld/providers'
 import { buildTools, knowledgeTools, memoryTools } from '@mindworld/tools'
-import { log } from '@mindworld/utils'
 
 import { createCaller } from '../..'
 import { auth } from '../../auth'

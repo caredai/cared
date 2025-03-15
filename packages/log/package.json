@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/utils",
+  "name": "@mindworld/log",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -25,8 +25,7 @@
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
-    "drizzle-orm": "^0.38.4",
-    "uuid": "11.1.0",
-    "zod": "3.24.2"
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0"
   }
 }

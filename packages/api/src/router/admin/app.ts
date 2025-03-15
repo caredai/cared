@@ -38,7 +38,8 @@ export const appRouter = {
       return {
         apps: result.apps,
         hasMore: result.hasMore,
-        limit: input.limit,
+        first: result.first,
+        last: result.last,
       }
     }),
 
@@ -68,7 +69,8 @@ export const appRouter = {
       return {
         apps: result.apps,
         hasMore: result.hasMore,
-        limit: input.limit,
+        first: result.first,
+        last: result.last,
       }
     }),
 
@@ -98,7 +100,8 @@ export const appRouter = {
       return {
         apps: result.apps,
         hasMore: result.hasMore,
-        limit: input.limit,
+        first: result.first,
+        last: result.last,
       }
     }),
 
@@ -142,10 +145,15 @@ export const appRouter = {
         versions.pop()
       }
 
+      // Get first and last version numbers
+      const first = versions[0]?.version
+      const last = versions[versions.length - 1]?.version
+
       return {
         versions,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 

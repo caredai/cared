@@ -28,7 +28,6 @@ import {
   FormMessage,
 } from '@mindworld/ui/components/form'
 import { Input } from '@mindworld/ui/components/input'
-import { log } from '@mindworld/utils'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'
@@ -75,7 +74,7 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
         }
       },
       onError: (error) => {
-        log.error('Failed to create workspace:', error)
+        console.error('Failed to create workspace:', error)
         toast.error(
           error.data?.code === 'UNAUTHORIZED'
             ? 'You must be logged in to create workspace'

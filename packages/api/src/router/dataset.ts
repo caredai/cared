@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, DeleteObjectsCommand, HeadObjectCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
@@ -19,8 +19,9 @@ import {
   UpdateDocumentSchema,
   UpdateDocumentSegmentSchema,
 } from '@mindworld/db/schema'
+import { log } from '@mindworld/log'
 import { defaultModels } from '@mindworld/providers'
-import { log, mergeWithoutUndefined } from '@mindworld/utils'
+import { mergeWithoutUndefined } from '@mindworld/utils'
 
 import type { Context } from '../trpc'
 import { env } from '../env'
@@ -99,10 +100,15 @@ export const datasetRouter = {
         datasets.pop()
       }
 
+      // Get first and last dataset IDs
+      const first = datasets[0]?.id
+      const last = datasets[datasets.length - 1]?.id
+
       return {
         datasets,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -250,6 +256,13 @@ export const datasetRouter = {
         .where(eq(Document.datasetId, input))
         .then((docs) => docs.map((doc) => doc.metadata.url))
 
+      if (dataset.metadata.stats) {
+        log.info('Deleting dataset', {
+          datasetId: dataset.id,
+          stats: dataset.metadata.stats,
+        })
+      }
+
       await ctx.db.transaction(async (tx) => {
         // Delete all document chunks
         await tx.delete(DocumentChunk).where(eq(DocumentChunk.datasetId, input))
@@ -310,16 +323,60 @@ export const datasetRouter = {
     .input(CreateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
-      await getDatasetById(ctx, input.datasetId, input.workspaceId)
+      const dataset = await getDatasetById(ctx, input.datasetId, input.workspaceId)
 
-      const [document] = await ctx.db.insert(Document).values(input).returning()
+      // If document has S3 URL, get file size and update dataset metadata
+      let fileSize: number | undefined
+      if (input.metadata?.url?.startsWith(env.S3_ENDPOINT)) {
+        const s3Client = getClient()
+        const url = new URL(input.metadata.url)
+        const key = url.pathname.slice(1) // Remove leading slash
 
-      if (!document) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create document',
-        })
+        // Get file size
+        const headObjectResponse = await s3Client.send(
+          new HeadObjectCommand({
+            Bucket: env.S3_BUCKET,
+            Key: key,
+          }),
+        )
+
+        fileSize = headObjectResponse.ContentLength ?? 0
       }
+
+      const document = await ctx.db.transaction(async (tx) => {
+        const [document] = await tx.insert(Document).values(input).returning()
+        if (!document) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create document',
+          })
+        }
+
+        if (fileSize) {
+          // Update total size in dataset metadata
+          const updatedMetadata = {
+            ...dataset.metadata,
+            stats: {
+              ...dataset.metadata.stats,
+              totalSizeBytes: (dataset.metadata.stats?.totalSizeBytes ?? 0) + fileSize,
+            },
+          }
+
+          await tx
+            .update(Dataset)
+            .set({ metadata: updatedMetadata })
+            .where(eq(Dataset.id, dataset.id))
+
+          log.debug('Update dataset stats after document insertion', {
+            datasetId: dataset.id,
+            documentId: document.id,
+            fileSize,
+            totalSizeBytes: updatedMetadata.stats.totalSizeBytes,
+          })
+        }
+
+        return document
+      })
 
       await taskTrigger.processDocument(document)
 
@@ -347,7 +404,6 @@ export const datasetRouter = {
       const document = await ctx.db.query.Document.findFirst({
         where: eq(Document.id, id),
       })
-
       if (!document) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -405,7 +461,59 @@ export const datasetRouter = {
 
       await verifyWorkspaceMembership(ctx, document.workspaceId)
 
+      const dataset = await ctx.db.query.Dataset.findFirst({
+        where: eq(Dataset.id, document.datasetId),
+      })
+      if (!dataset) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Dataset with id ${document.datasetId} not found`,
+        })
+      }
+
+      // If document has S3 URL, get file size and subtract from dataset metadata
+      let fileSize: number | undefined
+      if (document.metadata.url?.startsWith(env.S3_ENDPOINT)) {
+        const s3Client = getClient()
+        const url = new URL(document.metadata.url)
+        const key = url.pathname.slice(1) // Remove leading slash
+
+        // Get file size
+        const headObjectResponse = await s3Client.send(
+          new HeadObjectCommand({
+            Bucket: env.S3_BUCKET,
+            Key: key,
+          }),
+        )
+
+        fileSize = headObjectResponse.ContentLength ?? 0
+      }
+
       await ctx.db.transaction(async (tx) => {
+        if (fileSize) {
+          // Update total size in dataset metadata
+          const updatedMetadata = {
+            ...dataset.metadata,
+            stats: {
+              ...dataset.metadata.stats,
+              totalSizeBytes: Math.max(0, (dataset.metadata.stats?.totalSizeBytes ?? 0) - fileSize),
+            },
+          }
+
+          log.debug('Update dataset stats after document deletion', {
+            datasetId: dataset.id,
+            documentId: document.id,
+            fileSize,
+            totalSizeBytes: updatedMetadata.stats.totalSizeBytes,
+          })
+
+          // Update dataset metadata
+          await tx
+            .update(Dataset)
+            .set({ metadata: updatedMetadata })
+            .where(eq(Dataset.id, dataset.id))
+        }
+
         // Delete all chunks
         await tx.delete(DocumentChunk).where(eq(DocumentChunk.documentId, input))
 
@@ -487,10 +595,15 @@ export const datasetRouter = {
         documents.pop()
       }
 
+      // Get first and last document IDs
+      const first = documents[0]?.id
+      const last = documents[documents.length - 1]?.id
+
       return {
         documents,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -720,10 +833,15 @@ export const datasetRouter = {
         segments.pop()
       }
 
+      // Get first and last segment IDs
+      const first = segments[0]?.id
+      const last = segments[segments.length - 1]?.id
+
       return {
         segments,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -923,10 +1041,15 @@ export const datasetRouter = {
         chunks.pop()
       }
 
+      // Get first and last chunk IDs
+      const first = chunks[0]?.id
+      const last = chunks[chunks.length - 1]?.id
+
       return {
         chunks,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 }

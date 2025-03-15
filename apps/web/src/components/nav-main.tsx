@@ -1,7 +1,6 @@
 'use client'
 
-import type { LucideIcon } from 'lucide-react'
-import { ChevronRight } from 'lucide-react'
+import { Bot, Brain, ChevronRight, Database, Puzzle, Settings2, Wrench } from 'lucide-react'
 
 import {
   Collapsible,
@@ -10,7 +9,6 @@ import {
 } from '@mindworld/ui/components/collapsible'
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuButton,
@@ -18,37 +16,69 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarSeparator,
 } from '@mindworld/ui/components/sidebar'
 
 import { WorkspaceSwitcher } from '@/components/workspace-switcher'
 
-export function NavMain({
-  items,
-}: {
-  items: {
+const items: {
+  title: string
+  url: string
+  icon: any
+  isActive?: boolean
+  items?: {
     title: string
     url: string
-    icon: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-    }[]
   }[]
-}) {
+}[] = [
+  {
+    title: 'Apps',
+    url: '/apps',
+    icon: Bot,
+    isActive: true,
+  },
+  {
+    title: 'Knowledge',
+    url: '/datasets',
+    icon: Database,
+  },
+  {
+    title: 'Tools',
+    url: '/tools',
+    icon: Wrench,
+  },
+  {
+    title: 'Models',
+    url: '/models',
+    icon: Brain,
+  },
+  {
+    title: 'Extensions',
+    url: '/extensions',
+    icon: Puzzle,
+  },
+  {
+    title: 'Settings',
+    url: '/settings',
+    icon: Settings2,
+  },
+]
+
+export function NavMain({ workspaceId }: { workspaceId: string }) {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
         <SidebarMenuItem>
           <WorkspaceSwitcher />
         </SidebarMenuItem>
 
+        <SidebarSeparator className="my-4" />
+
         {items.map((item) => (
-          <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
+          <Collapsible key={item.title} asChild defaultOpen={item.isActive} className="my-1">
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={item.url}>
+                <a href={`/${workspaceId}${item.url}`}>
                   <item.icon />
                   <span>{item.title}</span>
                 </a>
@@ -66,7 +96,7 @@ export function NavMain({
                       {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={subItem.url}>
+                            <a href={`/${workspaceId}${subItem.url}`}>
                               <span>{subItem.title}</span>
                             </a>
                           </SidebarMenuSubButton>

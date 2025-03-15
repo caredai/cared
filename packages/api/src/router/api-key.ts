@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { Unkey } from '@unkey/api'
 import { z } from 'zod'
 
-import { log } from '@mindworld/utils'
+import { log } from '@mindworld/log'
 
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'

@@ -47,10 +47,15 @@ export const workspaceRouter = {
         workspaces.pop()
       }
 
+      // Get first and last workspace IDs
+      const first = workspaces[0]?.id
+      const last = workspaces[workspaces.length - 1]?.id
+
       return {
         workspaces,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -120,10 +125,15 @@ export const workspaceRouter = {
         members.pop()
       }
 
+      // Get first and last member IDs
+      const first = members[0]?.user?.id
+      const last = members[members.length - 1]?.user?.id
+
       return {
         members,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 

@@ -36,13 +36,13 @@ export function Settings() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList>
+        <TabsList className="w-full max-w-md">
           <TabsTrigger value="general">
-            <SettingsIcon className="mr-2 h-4 w-4" />
+            <SettingsIcon className="h-4 w-4" />
             General
           </TabsTrigger>
           <TabsTrigger value="members">
-            <Users className="mr-2 h-4 w-4" />
+            <Users className="h-4 w-4" />
             Members
           </TabsTrigger>
         </TabsList>

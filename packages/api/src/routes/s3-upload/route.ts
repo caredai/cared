@@ -7,7 +7,7 @@ import { v7 as uuid } from 'uuid'
 import { and, eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
 import { Dataset, Membership } from '@mindworld/db/schema'
-import { log } from '@mindworld/utils'
+import { log } from '@mindworld/log'
 
 import { auth } from '../../auth'
 import { env } from '../../env'

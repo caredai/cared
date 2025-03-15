@@ -6,6 +6,7 @@ export const siteConfig = {
     'Discover a new era of AI Agents in the Web3 on-chain world. It equips you with user-friendly tools to effortlessly explore and utilize Web3 AI Agents, whether for decentralized finance, data management, or digital identity. Harness the combined might of AI and blockchain, enabling seamless interactions and unlocking innovative possibilities in the decentralized ecosystem.',
   links: {
     twitter: 'https://x.com/mind_ai',
+    discord: 'https://discord.gg/mindworld',
     github: 'https://github.com/mindplatform/mind',
   },
 }

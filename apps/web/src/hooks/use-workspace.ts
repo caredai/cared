@@ -5,8 +5,6 @@ import { atom, useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { toast } from 'sonner'
 
-import { log } from '@mindworld/utils'
-
 import { useTRPC } from '@/trpc/client'
 
 export function useWorkspaceId() {
@@ -46,7 +44,7 @@ export function useWorkspace() {
 
   useEffect(() => {
     if (!id || error?.data?.code === 'NOT_FOUND') {
-      log.error('Workspace not found', { id, error })
+      console.error('Workspace not found', { id, error })
       toast.error('Workspace not found')
       router.replace('/')
     }

@@ -1,6 +1,6 @@
 import type { SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
-import { and, asc, desc, eq, gt, lt } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { Transaction } from '@mindworld/db/client'
@@ -14,6 +14,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
+import { config } from '../config'
 import { userProtectedProcedure } from '../trpc'
 
 /**
@@ -58,6 +59,20 @@ async function createWorkspace(
   tx: Transaction,
   input: z.infer<typeof CreateWorkspaceSchema>,
 ) {
+  // Check if user has reached the maximum number of workspaces
+  const userWorkspacesCount = await tx
+    .select({ count: count() })
+    .from(Membership)
+    .where(eq(Membership.userId, ctx.auth.userId!))
+    .then((r) => r[0]!.count)
+
+  if (userWorkspacesCount >= config.perUser.maxWorkspaces) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: `You have reached the maximum limit of ${config.perUser.maxWorkspaces} workspaces`,
+    })
+  }
+
   const [workspace] = await tx.insert(Workspace).values(input).returning()
   if (!workspace) {
     throw new TRPCError({
@@ -130,15 +145,20 @@ export const workspaceRouter = {
         if (!input.after && !input.before && !workspaces.length) {
           workspaces.push(
             await createWorkspace(ctx, tx, {
-              name: 'Personal',
+              name: 'My workspace',
             }),
           )
         }
 
+        // Get first and last workspace IDs
+        const first = workspaces.at(0)?.workspace.id
+        const last = workspaces.at(workspaces.length - 1)?.workspace.id
+
         return {
           workspaces,
           hasMore,
-          limit: input.limit,
+          first,
+          last,
         }
       })
     }),
@@ -325,10 +345,15 @@ export const workspaceRouter = {
         members.pop()
       }
 
+      // Get first and last member IDs
+      const first = members.length > 0 ? members[0]?.user?.id : undefined
+      const last = members.length > 0 ? members[members.length - 1]?.user?.id : undefined
+
       return {
         members,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -408,6 +433,34 @@ export const workspaceRouter = {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only owner can add members',
+        })
+      }
+
+      // Check if workspace has reached the maximum number of members
+      const membersCount = await ctx.db
+        .select({ count: count() })
+        .from(Membership)
+        .where(eq(Membership.workspaceId, input.workspaceId))
+        .then((r) => r[0]!.count)
+
+      if (membersCount >= config.perWorkspace.maxMembers) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: `Workspace has reached the maximum limit of ${config.perWorkspace.maxMembers} members`,
+        })
+      }
+
+      // Check if the user being added has reached their maximum number of workspaces
+      const userWorkspacesCount = await ctx.db
+        .select({ count: count() })
+        .from(Membership)
+        .where(eq(Membership.userId, input.userId))
+        .then((r) => r[0]!.count)
+
+      if (userWorkspacesCount >= config.perUser.maxWorkspaces) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: `User has reached the maximum limit of ${config.perUser.maxWorkspaces} workspaces`,
         })
       }
 

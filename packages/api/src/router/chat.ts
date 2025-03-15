@@ -110,10 +110,15 @@ export const chatRouter = {
         chats.pop()
       }
 
+      // Get first and last chat IDs
+      const first = chats[0]?.id
+      const last = chats[chats.length - 1]?.id
+
       return {
         chats,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -317,10 +322,15 @@ export const chatRouter = {
         messages.pop()
       }
 
+      // Get first and last message IDs
+      const first = messages[0]?.id
+      const last = messages[messages.length - 1]?.id
+
       return {
         messages,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 

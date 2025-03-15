@@ -56,10 +56,15 @@ export const userRouter = {
         users.pop()
       }
 
+      // Get first and last user IDs
+      const first = users[0]?.id
+      const last = users[users.length - 1]?.id
+
       return {
         users,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 

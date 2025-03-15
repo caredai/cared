@@ -90,6 +90,9 @@ importers:
       '@clerk/themes':
         specifier: ^2.2.21
         version: 2.2.21
+      '@icons-pack/react-simple-icons':
+        specifier: ^12.2.0
+        version: 12.2.0(react@19.0.0)
       '@mindworld/api':
         specifier: workspace:*
         version: link:../../packages/api
@@ -217,6 +220,9 @@ importers:
       '@mindworld/etl':
         specifier: workspace:*
         version: link:../etl
+      '@mindworld/log':
+        specifier: workspace:*
+        version: link:../log
       '@mindworld/providers':
         specifier: workspace:*
         version: link:../providers
@@ -643,6 +649,34 @@ importers:
         specifier: 'catalog:'
         version: 5.7.3
 
+  packages/log:
+    dependencies:
+      pino:
+        specifier: ^9.6.0
+        version: 9.6.0
+      pino-pretty:
+        specifier: ^13.0.0
+        version: 13.0.0
+    devDependencies:
+      '@mindworld/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@mindworld/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@mindworld/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      eslint:
+        specifier: 'catalog:'
+        version: 9.18.0(jiti@2.4.2)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.4.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+
   packages/providers:
     dependencies:
       '@ai-sdk/amazon-bedrock':
@@ -994,12 +1028,6 @@ importers:
       drizzle-orm:
         specifier: ^0.38.4
         version: 0.38.4(@neondatabase/serverless@0.10.0)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.11.10)(@types/react@19.0.7)(@vercel/postgres@0.10.0(utf-8-validate@6.0.4))(mysql2@3.11.3)(postgres@3.4.4)(react@19.0.0)
-      pino:
-        specifier: ^9.6.0
-        version: 9.6.0
-      pino-pretty:
-        specifier: ^13.0.0
-        version: 13.0.0
       uuid:
         specifier: 11.1.0
         version: 11.1.0
@@ -2692,6 +2720,11 @@ packages:
   '@ibm-cloud/watsonx-ai@1.5.0':
     resolution: {integrity: sha512-jhZrpktR27xTHnCRw4agWsg1HnaIEvdrE1+3t40BzLCjqVgoLEdZh4Rw7/i6U9R/31VjqsD/UZMohNK21vBJmw==}
     engines: {node: '>=18.0.0'}
+
+  '@icons-pack/react-simple-icons@12.2.0':
+    resolution: {integrity: sha512-fhTX7hlMJzAmolYvqmE28qf+LEkzc79aqiM8GI251eLAdLmSPnN8v25wYxCHXoQGBJmlLvm34GA+SkX1I64VqQ==}
+    peerDependencies:
+      react: ^16.13 || ^17 || ^18 || ^19
 
   '@img/sharp-darwin-arm64@0.33.5':
     resolution: {integrity: sha512-UT4p+iz/2H4twwAoLCqfA9UH5pI6DggwKEGuaPy7nCVQ8ZsiY5PIcrRvD1DzuY3qYL07NtIQcWnBSY/heikIFQ==}
@@ -12894,6 +12927,10 @@ snapshots:
       - '@langchain/core'
       - supports-color
 
+  '@icons-pack/react-simple-icons@12.2.0(react@19.0.0)':
+    dependencies:
+      react: 19.0.0
+
   '@img/sharp-darwin-arm64@0.33.5':
     optionalDependencies:
       '@img/sharp-libvips-darwin-arm64': 1.0.4
@@ -17929,7 +17966,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.7.9(debug@4.4.0))
+      retry-axios: 2.6.0(axios@1.7.9)
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -20356,7 +20393,7 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  retry-axios@2.6.0(axios@1.7.9(debug@4.4.0)):
+  retry-axios@2.6.0(axios@1.7.9):
     dependencies:
       axios: 1.7.9(debug@4.4.0)
 

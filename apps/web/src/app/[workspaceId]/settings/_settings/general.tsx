@@ -167,7 +167,7 @@ export function General({ workspace }: { workspace: Workspace }) {
                 )}
               />
               <Button type="submit" disabled={!isOwner || updateWorkspaceMutation.isPending}>
-                {updateWorkspaceMutation.isPending ? 'Saving...' : 'Save Changes'}
+                {updateWorkspaceMutation.isPending ? 'Saving...' : 'Save'}
               </Button>
               {!isOwner && (
                 <p className="text-sm text-muted-foreground mt-2">
@@ -177,6 +177,82 @@ export function General({ workspace }: { workspace: Workspace }) {
             </form>
           </Form>
         </CardContent>
+      </Card>
+
+      {/* Transfer Ownership */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">Transfer Ownership</CardTitle>
+          <CardDescription>
+            Transfer ownership of this workspace to another member. You will become a regular
+            member.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Select a member to transfer ownership to. This action cannot be undone.
+          </p>
+          <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={!isOwner}>
+                <UserPlus className="h-4 w-4" />
+                Transfer
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Transfer Workspace Ownership</DialogTitle>
+                <DialogDescription>
+                  Select a member to transfer ownership to. This action cannot be undone. You will
+                  become a regular member of the workspace.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Select
+                  value={selectedUserId}
+                  onValueChange={setSelectedUserId}
+                  disabled={transferOwnershipMutation.isPending}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {membersData?.members
+                      .filter((member) => member.user.id !== workspace.id)
+                      .map((member) => (
+                        <SelectItem key={member.user.id} value={member.user.id}>
+                          {member.user.info.firstName} {member.user.info.lastName} (
+                          {member.user.info.username})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsTransferDialogOpen(false)}
+                  disabled={transferOwnershipMutation.isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleTransferOwnership}
+                  disabled={!selectedUserId || transferOwnershipMutation.isPending}
+                >
+                  {transferOwnershipMutation.isPending ? 'Transferring...' : 'Transfer Ownership'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+        <CardFooter>
+          {!isOwner && (
+            <p className="text-sm text-muted-foreground">
+              Only workspace owners can transfer ownership.
+            </p>
+          )}
+        </CardFooter>
       </Card>
 
       {/* Danger Zone */}
@@ -191,70 +267,6 @@ export function General({ workspace }: { workspace: Workspace }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Transfer Ownership */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div>
-              <h3 className="font-medium">Transfer Ownership</h3>
-              <p className="text-sm text-muted-foreground">
-                Transfer ownership of this workspace to another member. You will become a regular
-                member.
-              </p>
-            </div>
-            <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" disabled={!isOwner}>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Transfer
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Transfer Workspace Ownership</DialogTitle>
-                  <DialogDescription>
-                    Select a member to transfer ownership to. This action cannot be undone. You will
-                    become a regular member of the workspace.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  <Select
-                    value={selectedUserId}
-                    onValueChange={setSelectedUserId}
-                    disabled={transferOwnershipMutation.isPending}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a member" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {membersData?.members
-                        .filter((member) => member.user.id !== workspace.id)
-                        .map((member) => (
-                          <SelectItem key={member.user.id} value={member.user.id}>
-                            {member.user.info.firstName} {member.user.info.lastName} (
-                            {member.user.info.username})
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsTransferDialogOpen(false)}
-                    disabled={transferOwnershipMutation.isPending}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleTransferOwnership}
-                    disabled={!selectedUserId || transferOwnershipMutation.isPending}
-                  >
-                    {transferOwnershipMutation.isPending ? 'Transferring...' : 'Transfer Ownership'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
           {/* Delete Workspace */}
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
@@ -266,7 +278,7 @@ export function General({ workspace }: { workspace: Workspace }) {
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" disabled={!isOwner}>
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                   Delete
                 </Button>
               </AlertDialogTrigger>

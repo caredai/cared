@@ -22,6 +22,7 @@ import { defaultModels } from '@mindworld/providers'
 import { mergeWithoutUndefined } from '@mindworld/utils'
 
 import type { Context } from '../trpc'
+import { config } from '../config'
 import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
@@ -51,7 +52,7 @@ export async function getAppById(ctx: Context, id: string) {
  * Get apps with their categories and tags.
  * @param ctx - The context object
  * @param baseQuery - Query parameters including where clause and limit
- * @returns Array of apps with their associated categories and tags, and hasMore flag
+ * @returns Array of apps with their associated categories and tags, hasMore flag, and first/last IDs
  */
 export async function getApps(
   ctx: Context,
@@ -95,8 +96,14 @@ export async function getApps(
     return {
       apps: [],
       hasMore: false,
+      first: undefined,
+      last: undefined,
     }
   }
+
+  // Get first and last IDs
+  const first = apps[0]?.id
+  const last = apps[apps.length - 1]?.id
 
   // Get top 5 latest categories for each app
   const categories = await ctx.db
@@ -164,6 +171,8 @@ export async function getApps(
   return {
     apps: Array.from(appsMap.values()),
     hasMore,
+    first,
+    last,
   }
 }
 
@@ -245,7 +254,8 @@ export const appRouter = {
       return {
         apps: result.apps,
         hasMore: result.hasMore,
-        limit: input.limit,
+        first: result.first,
+        last: result.last,
       }
     }),
 
@@ -283,7 +293,8 @@ export const appRouter = {
       return {
         apps: result.apps,
         hasMore: result.hasMore,
-        limit: input.limit,
+        first: result.first,
+        last: result.last,
       }
     }),
 
@@ -318,7 +329,8 @@ export const appRouter = {
       return {
         apps: result.apps,
         hasMore: result.hasMore,
-        limit: input.limit,
+        first: result.first,
+        last: result.last,
       }
     }),
 
@@ -364,10 +376,15 @@ export const appRouter = {
         versions.pop()
       }
 
+      // Get first and last version numbers
+      const first = versions[0]?.version
+      const last = versions[versions.length - 1]?.version
+
       return {
         versions,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -443,6 +460,20 @@ export const appRouter = {
       }
 
       return ctx.db.transaction(async (tx) => {
+        // Check if workspace has reached the maximum app limit
+        const appsCount = await tx
+          .select({ count: count() })
+          .from(App)
+          .where(eq(App.workspaceId, input.workspaceId))
+          .then((r) => r[0]!.count)
+
+        if (appsCount >= config.perWorkspace.maxApps) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: `Workspace has reached the maximum limit of ${config.perWorkspace.maxApps} applications`,
+          })
+        }
+
         const [app] = await tx.insert(App).values(appValues).returning()
 
         if (!app) {
@@ -805,10 +836,15 @@ export const appRouter = {
         categories.pop()
       }
 
+      // Get first and last category IDs
+      const first = categories[0]?.id
+      const last = categories[categories.length - 1]?.id
+
       return {
         categories,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
