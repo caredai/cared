@@ -9,13 +9,14 @@ import { Settings } from './settings'
 export default async function Page({ params }: { params: Promise<{ workspaceId: string }> }) {
   const { workspaceId } = await params
 
-  prefetch(trpc.workspace.list.queryOptions())
-
-  prefetch(
-    trpc.workspace.get.queryOptions({
-      id: workspaceId,
-    }),
-  )
+  await Promise.all([
+    prefetch(trpc.workspace.list.queryOptions()),
+    prefetch(
+      trpc.workspace.get.queryOptions({
+        id: workspaceId,
+      }),
+    ),
+  ])
 
   return (
     <>

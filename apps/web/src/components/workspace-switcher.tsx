@@ -15,7 +15,6 @@ import {
 import { SidebarMenuButton } from '@mindworld/ui/components/sidebar'
 import { useIsMobile } from '@mindworld/ui/hooks/use-mobile'
 
-import { ClientOnly } from '@/components/client-only'
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
 import { useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
 
@@ -24,10 +23,10 @@ export function WorkspaceSwitcherInner({
 }: {
   trigger?: (props: { children: ReactNode }) => ReactNode
 }) {
+  const workspaces = useWorkspaces()
   const workspace = useWorkspace()
   const router = useRouter()
   const pathname = usePathname()
-  const workspaces = useWorkspaces()
 
   const isMobile = useIsMobile()
 
@@ -50,9 +49,7 @@ export function WorkspaceSwitcherInner({
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
         >
           <Blocks />
-          <ClientOnly>
-            <span className="truncate">{workspace?.name}</span>
-          </ClientOnly>
+          <span className="truncate">{workspace?.name}</span>
           <ChevronsUpDown className="ml-auto" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
@@ -63,23 +60,21 @@ export function WorkspaceSwitcherInner({
         sideOffset={4}
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
-        <ClientOnly>
-          {workspaces?.map((workspace) => {
-            const route = pathname.replace(/\/workspace_[^/]+/, `/${workspace.id}`)
-            return (
-              <DropdownMenuItem
-                key={workspace.id}
-                onClick={() => router.push(route)}
-                className="gap-2 p-2 cursor-pointer"
-              >
-                <div className="flex size-6 items-center justify-center rounded-sm border">
-                  <Blocks />
-                </div>
-                {workspace.name}
-              </DropdownMenuItem>
-            )
-          })}
-        </ClientOnly>
+        {workspaces?.map((workspace) => {
+          const route = pathname.replace(/\/workspace_[^/]+/, `/${workspace.id}`)
+          return (
+            <DropdownMenuItem
+              key={workspace.id}
+              onClick={() => router.push(route)}
+              className="gap-2 p-2 cursor-pointer"
+            >
+              <div className="flex size-6 items-center justify-center rounded-sm border">
+                <Blocks />
+              </div>
+              {workspace.name}
+            </DropdownMenuItem>
+          )
+        })}
         <DropdownMenuSeparator />
         {Trigger ? <Trigger>{addWorkspaceMenuItem}</Trigger> : addWorkspaceMenuItem}
       </DropdownMenuContent>

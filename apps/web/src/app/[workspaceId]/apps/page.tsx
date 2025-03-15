@@ -1,9 +1,11 @@
 import { QueryWorkspacesHydration } from '@/components/query-workspaces-hydration'
 import { prefetch, trpc } from '@/trpc/server'
 
-export default function Page() {
-  prefetch(trpc.user.me.queryOptions())
-  prefetch(trpc.workspace.list.queryOptions())
+export default async function Page() {
+  await Promise.all([
+    prefetch(trpc.user.me.queryOptions()),
+    prefetch(trpc.workspace.list.queryOptions()),
+  ])
 
   return (
     <>
