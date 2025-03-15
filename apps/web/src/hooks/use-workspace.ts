@@ -94,8 +94,11 @@ export function useQueryWorkspaces() {
 
   const [workspace, setWorkspace] = useLastWorkspace()
   useEffect(() => {
-    // Only set current workspace if it's not already set
     if (!workspace) {
+      // Set last workspace if it's not already set
+      setWorkspace(workspaces.at(0)?.id)
+    } else if (!workspaces.some((w) => w.id === workspace)) {
+      // If last workspace is not in the list of workspaces, reset it
       setWorkspace(workspaces.at(0)?.id)
     }
   }, [workspaces, workspace, setWorkspace])
