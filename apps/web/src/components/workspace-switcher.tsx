@@ -14,9 +14,10 @@ import {
 } from '@mindworld/ui/components/dropdown-menu'
 import { SidebarMenuButton } from '@mindworld/ui/components/sidebar'
 import { useIsMobile } from '@mindworld/ui/hooks/use-mobile'
+import { cn } from '@mindworld/ui/lib/utils'
 
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
-import { useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
+import { replaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
 
 export function WorkspaceSwitcherInner({
   trigger,
@@ -60,18 +61,24 @@ export function WorkspaceSwitcherInner({
         sideOffset={4}
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
-        {workspaces.map((workspace) => {
-          const route = pathname.replace(/\/workspace_[^/]+/, `/${workspace.id}`)
+        {workspaces.map((space) => {
+          const route = replaceRouteWithWorkspaceId(pathname, space.id)
           return (
             <DropdownMenuItem
-              key={workspace.id}
+              key={space.id}
+              disabled={space.id === workspace.id}
               onClick={() => router.push(route)}
-              className="gap-2 p-2 cursor-pointer"
+              className={cn('gap-2 p-2', space.id !== workspace.id && 'cursor-pointer')}
             >
               <div className="flex size-6 items-center justify-center rounded-sm border">
                 <Blocks />
               </div>
-              {workspace.name}
+              <span className="truncate">{space.name}</span>
+              {space.id === workspace.id && (
+                <div className="ml-2 flex items-center">
+                  <div className="size-2 rounded-full bg-primary" aria-hidden="true" />
+                </div>
+              )}
             </DropdownMenuItem>
           )
         })}

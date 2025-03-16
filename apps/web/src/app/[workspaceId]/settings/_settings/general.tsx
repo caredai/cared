@@ -3,10 +3,13 @@
 import type { Workspace } from '@/hooks/use-workspace'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Trash2, UserPlus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
 
+import { UpdateWorkspaceSchema } from '@mindworld/db/schema'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +57,7 @@ import {
   SelectValue,
 } from '@mindworld/ui/components/select'
 
+import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'
 
 /**
@@ -72,6 +76,7 @@ export function General({ workspace }: { workspace: Workspace }) {
 
   // Form for updating workspace name
   const form = useForm({
+    resolver: zodResolver(UpdateWorkspaceSchema.omit({ id: true })),
     defaultValues: {
       name: workspace.name,
     },
@@ -82,6 +87,12 @@ export function General({ workspace }: { workspace: Workspace }) {
     trpc.workspace.update.mutationOptions({
       onSuccess: (data) => {
         form.reset({ name: data.workspace.name })
+        void queryClient.invalidateQueries(trpc.workspace.get.queryOptions({ id: workspace.id }))
+        toast.success('Workspace name updated successfully')
+      },
+      onError: (error) => {
+        console.error('Failed to update workspace:', error)
+        toast.error('Failed to update workspace name')
       },
     }),
   )
@@ -90,7 +101,12 @@ export function General({ workspace }: { workspace: Workspace }) {
   const deleteWorkspaceMutation = useMutation(
     trpc.workspace.delete.mutationOptions({
       onSuccess: () => {
+        toast.success('Workspace deleted successfully')
         router.push('/')
+      },
+      onError: (error) => {
+        console.error('Failed to delete workspace:', error)
+        toast.error('Failed to delete workspace')
       },
     }),
   )
@@ -110,32 +126,17 @@ export function General({ workspace }: { workspace: Workspace }) {
       onSuccess: () => {
         setIsTransferDialogOpen(false)
         setSelectedUserId('')
+        toast.success('Workspace ownership transferred successfully')
 
         // Refresh workspace data to update role
-        void queryClient.invalidateQueries({
-          queryKey: trpc.workspace.get.queryOptions({ id: workspace.id }).queryKey,
-        })
+        void queryClient.invalidateQueries(trpc.workspace.get.queryOptions({ id: workspace.id }))
+      },
+      onError: (error) => {
+        console.error('Failed to transfer ownership:', error)
+        toast.error('Failed to transfer workspace ownership')
       },
     }),
   )
-
-  // Handle form submission
-  const onSubmit = (values: { name: string }) => {
-    updateWorkspaceMutation.mutate({
-      id: workspace.id,
-      name: values.name,
-    })
-  }
-
-  // Handle transfer ownership
-  const handleTransferOwnership = () => {
-    if (selectedUserId) {
-      transferOwnershipMutation.mutate({
-        workspaceId: workspace.id,
-        userId: selectedUserId,
-      })
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -149,7 +150,15 @@ export function General({ workspace }: { workspace: Workspace }) {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit((data) => {
+                return updateWorkspaceMutation.mutateAsync({
+                  id: workspace.id,
+                  name: data.name,
+                })
+              })}
+              className="space-y-4"
+            >
               <FormField
                 control={form.control}
                 name="name"
@@ -157,7 +166,11 @@ export function General({ workspace }: { workspace: Workspace }) {
                   <FormItem>
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Workspace name" {...field} />
+                      <Input
+                        placeholder="Workspace name"
+                        {...field}
+                        disabled={!isOwner || form.formState.isSubmitting}
+                      />
                     </FormControl>
                     <FormDescription>
                       This is the name that will be displayed to all members.
@@ -166,8 +179,15 @@ export function General({ workspace }: { workspace: Workspace }) {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={!isOwner || updateWorkspaceMutation.isPending}>
-                {updateWorkspaceMutation.isPending ? 'Saving...' : 'Save'}
+              <Button type="submit" disabled={!isOwner || form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? (
+                  <>
+                    <CircleSpinner />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
               </Button>
               {!isOwner && (
                 <p className="text-sm text-muted-foreground mt-2">
@@ -237,10 +257,24 @@ export function General({ workspace }: { workspace: Workspace }) {
                   Cancel
                 </Button>
                 <Button
-                  onClick={handleTransferOwnership}
+                  onClick={() => {
+                    if (selectedUserId) {
+                      return transferOwnershipMutation.mutateAsync({
+                        workspaceId: workspace.id,
+                        userId: selectedUserId,
+                      })
+                    }
+                  }}
                   disabled={!selectedUserId || transferOwnershipMutation.isPending}
                 >
-                  {transferOwnershipMutation.isPending ? 'Transferring...' : 'Transfer Ownership'}
+                  {transferOwnershipMutation.isPending ? (
+                    <>
+                      <CircleSpinner />
+                      Transferring...
+                    </>
+                  ) : (
+                    'Transfer Ownership'
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -293,10 +327,17 @@ export function General({ workspace }: { workspace: Workspace }) {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => deleteWorkspaceMutation.mutate({ id: workspace.id })}
+                    onClick={() => deleteWorkspaceMutation.mutateAsync({ id: workspace.id })}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    {deleteWorkspaceMutation.isPending ? 'Deleting...' : 'Delete'}
+                    {deleteWorkspaceMutation.isPending ? (
+                      <>
+                        <CircleSpinner />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

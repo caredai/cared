@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
@@ -30,6 +30,7 @@ import {
 import { Input } from '@mindworld/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
+import { replaceRouteWithWorkspaceId } from '@/hooks/use-workspace'
 import { useTRPC } from '@/trpc/client'
 
 interface CreateWorkspaceDialogProps {
@@ -40,6 +41,8 @@ interface CreateWorkspaceDialogProps {
 
 export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorkspaceDialogProps) {
   const router = useRouter()
+  const pathname = usePathname()
+
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -70,7 +73,7 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push(`/${workspace.workspace.id}`)
+          router.push(replaceRouteWithWorkspaceId(pathname, workspace.workspace.id))
         }
       },
       onError: (error) => {

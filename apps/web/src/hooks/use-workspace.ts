@@ -87,3 +87,12 @@ export function useWorkspaces() {
 
   return workspaces
 }
+
+export function replaceRouteWithWorkspaceId(route: string, id: string) {
+  return route.replace(/^\/workspace_[^/]+/, `/${id}`)
+}
+
+export function useRouteWithWorkspaceId(id: string) {
+  const pathname = usePathname()
+  return replaceRouteWithWorkspaceId(pathname, id)
+}
