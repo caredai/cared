@@ -1,5 +1,4 @@
-'use client'
-
+import Link from 'next/link'
 import { Bot, Brain, ChevronRight, Database, Puzzle, Settings2, Wrench } from 'lucide-react'
 
 import {
@@ -20,6 +19,7 @@ import {
 } from '@mindworld/ui/components/sidebar'
 
 import { WorkspaceSwitcher } from '@/components/workspace-switcher'
+import { HydrateClient } from '@/trpc/server'
 
 const items: {
   title: string
@@ -69,7 +69,9 @@ export function NavMain({ workspaceId }: { workspaceId: string }) {
     <SidebarGroup>
       <SidebarMenu>
         <SidebarMenuItem>
-          <WorkspaceSwitcher />
+          <HydrateClient>
+            <WorkspaceSwitcher />
+          </HydrateClient>
         </SidebarMenuItem>
 
         <SidebarSeparator className="my-4" />
@@ -78,10 +80,10 @@ export function NavMain({ workspaceId }: { workspaceId: string }) {
           <Collapsible key={item.title} asChild defaultOpen={item.isActive} className="my-1">
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
-                <a href={`/${workspaceId}${item.url}`}>
+                <Link href={`/${workspaceId}${item.url}`}>
                   <item.icon />
                   <span>{item.title}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
               {item.items?.length ? (
                 <>
@@ -96,9 +98,9 @@ export function NavMain({ workspaceId }: { workspaceId: string }) {
                       {item.items.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
                           <SidebarMenuSubButton asChild>
-                            <a href={`/${workspaceId}${subItem.url}`}>
+                            <Link href={`/${workspaceId}${subItem.url}`}>
                               <span>{subItem.title}</span>
-                            </a>
+                            </Link>
                           </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                       ))}

@@ -36,6 +36,7 @@
     "next-image-export-optimizer": "^1.18.0",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",
+    "react-error-boundary": "^5.0.0",
     "react-icons": "^5.5.0",
     "react-use": "^17.6.0",
     "stable-hash": "^0.0.4",

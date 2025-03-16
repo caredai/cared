@@ -13,7 +13,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
-import { config } from '../config'
+import { cfg } from '../config'
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 
@@ -300,10 +300,10 @@ export const agentRouter = {
         .where(eq(Agent.appId, input.appId))
         .then((r) => r[0]!.count)
 
-      if (agentCount >= config.perApp.maxAgents) {
+      if (agentCount >= cfg.perApp.maxAgents) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: `App has reached the maximum limit of ${config.perApp.maxAgents} agents`,
+          message: `App has reached the maximum limit of ${cfg.perApp.maxAgents} agents`,
         })
       }
 

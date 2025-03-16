@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef } from 'react'
+import Link from 'next/link'
 import { SiDiscord, SiGithub, SiX } from '@icons-pack/react-simple-icons'
 import { GraduationCap } from 'lucide-react'
 
@@ -11,7 +12,7 @@ export function NavSecondary({ ...props }: ComponentPropsWithoutRef<typeof Sideb
     <SidebarGroup {...props}>
       <SidebarGroupContent>
         <div className="mt-4 flex items-center justify-center gap-4">
-          <a
+          <Link
             href="/docs"
             target="_blank"
             rel="noopener noreferrer"
@@ -19,8 +20,8 @@ export function NavSecondary({ ...props }: ComponentPropsWithoutRef<typeof Sideb
           >
             <GraduationCap size={24} />
             <span className="sr-only">Docs</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href={siteConfig.links.twitter}
             target="_blank"
             rel="noopener noreferrer"
@@ -28,8 +29,8 @@ export function NavSecondary({ ...props }: ComponentPropsWithoutRef<typeof Sideb
           >
             <SiX size={20} />
             <span className="sr-only">X (Twitter)</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href={siteConfig.links.discord}
             target="_blank"
             rel="noopener noreferrer"
@@ -37,8 +38,8 @@ export function NavSecondary({ ...props }: ComponentPropsWithoutRef<typeof Sideb
           >
             <SiDiscord size={20} />
             <span className="sr-only">Discord</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href={siteConfig.links.github}
             target="_blank"
             rel="noopener noreferrer"
@@ -46,7 +47,7 @@ export function NavSecondary({ ...props }: ComponentPropsWithoutRef<typeof Sideb
           >
             <SiGithub size={20} />
             <span className="sr-only">GitHub</span>
-          </a>
+          </Link>
         </div>
       </SidebarGroupContent>
     </SidebarGroup>

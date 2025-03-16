@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { atom, useAtom } from 'jotai'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { toast } from 'sonner'
 
@@ -19,31 +19,25 @@ export function useWorkspace() {
   const id = useWorkspaceId()
 
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
-  const { data, error } = useQuery({
+  const { data, error } = useSuspenseQuery({
     ...trpc.workspace.get.queryOptions({
       id,
     }),
-    enabled: !!id,
-    initialData: () =>
-      queryClient
-        .getQueryData(trpc.workspace.list.queryOptions().queryKey)
-        ?.workspaces.find((w) => w.workspace.id === id),
-    initialDataUpdatedAt: () =>
-      queryClient.getQueryState(trpc.workspace.list.queryOptions().queryKey)?.dataUpdatedAt,
+    retry: (failureCount, error) => {
+      return !(id.length < 32 || error.data?.code === 'NOT_FOUND')
+    },
   })
 
   const workspace = useMemo(
-    () =>
-      data && {
-        ...data.workspace,
-        role: data.role,
-      },
+    () => ({
+      ...data.workspace,
+      role: data.role,
+    }),
     [data],
   )
 
   useEffect(() => {
-    if (!id || error?.data?.code === 'NOT_FOUND') {
+    if (id.length < 32 || error?.data?.code === 'NOT_FOUND') {
       console.error('Workspace not found', { id, error })
       toast.error('Workspace not found')
       router.replace('/')
@@ -68,16 +62,9 @@ export function useLastWorkspace() {
   return [lastWorkspace, setLastWorkspace] as const
 }
 
-export type Workspace = ReturnType<typeof useQueryWorkspaces>[number]
-
-const workspacesAtom = atom<Workspace[]>()
+export type Workspace = ReturnType<typeof useWorkspaces>[number]
 
 export function useWorkspaces() {
-  const [workspaces] = useAtom(workspacesAtom)
-  return workspaces
-}
-
-export function useQueryWorkspaces() {
   const trpc = useTRPC()
 
   const { data } = useSuspenseQuery(trpc.workspace.list.queryOptions())
@@ -86,11 +73,6 @@ export function useQueryWorkspaces() {
     () => data.workspaces.map(({ workspace, role }) => ({ ...workspace, role })),
     [data],
   )
-
-  const [, setWorkspaces] = useAtom(workspacesAtom)
-  useEffect(() => {
-    setWorkspaces(workspaces)
-  }, [workspaces, setWorkspaces])
 
   const [workspace, setWorkspace] = useLastWorkspace()
   useEffect(() => {

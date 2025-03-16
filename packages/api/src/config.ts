@@ -1,4 +1,4 @@
-export const config = {
+export const cfg = {
   /**
    * User-level resource limitations
    * Defines the maximum resources allocated to each user

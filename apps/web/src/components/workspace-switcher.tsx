@@ -49,7 +49,7 @@ export function WorkspaceSwitcherInner({
           className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
         >
           <Blocks />
-          <span className="truncate">{workspace?.name}</span>
+          <span className="truncate">{workspace.name}</span>
           <ChevronsUpDown className="ml-auto" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
@@ -60,7 +60,7 @@ export function WorkspaceSwitcherInner({
         sideOffset={4}
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
-        {workspaces?.map((workspace) => {
+        {workspaces.map((workspace) => {
           const route = pathname.replace(/\/workspace_[^/]+/, `/${workspace.id}`)
           return (
             <DropdownMenuItem

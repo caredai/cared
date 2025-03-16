@@ -22,7 +22,7 @@ import { defaultModels } from '@mindworld/providers'
 import { mergeWithoutUndefined } from '@mindworld/utils'
 
 import type { Context } from '../trpc'
-import { config } from '../config'
+import { cfg } from '../config'
 import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
@@ -467,10 +467,10 @@ export const appRouter = {
           .where(eq(App.workspaceId, input.workspaceId))
           .then((r) => r[0]!.count)
 
-        if (appsCount >= config.perWorkspace.maxApps) {
+        if (appsCount >= cfg.perWorkspace.maxApps) {
           throw new TRPCError({
             code: 'FORBIDDEN',
-            message: `Workspace has reached the maximum limit of ${config.perWorkspace.maxApps} applications`,
+            message: `Workspace has reached the maximum limit of ${cfg.perWorkspace.maxApps} applications`,
           })
         }
 

@@ -14,7 +14,7 @@ import {
 } from '@mindworld/db/schema'
 
 import type { Context } from '../trpc'
-import { config } from '../config'
+import { cfg } from '../config'
 import { userProtectedProcedure } from '../trpc'
 
 /**
@@ -66,10 +66,10 @@ async function createWorkspace(
     .where(eq(Membership.userId, ctx.auth.userId!))
     .then((r) => r[0]!.count)
 
-  if (userWorkspacesCount >= config.perUser.maxWorkspaces) {
+  if (userWorkspacesCount >= cfg.perUser.maxWorkspaces) {
     throw new TRPCError({
       code: 'FORBIDDEN',
-      message: `You have reached the maximum limit of ${config.perUser.maxWorkspaces} workspaces`,
+      message: `You have reached the maximum limit of ${cfg.perUser.maxWorkspaces} workspaces`,
     })
   }
 
@@ -443,10 +443,10 @@ export const workspaceRouter = {
         .where(eq(Membership.workspaceId, input.workspaceId))
         .then((r) => r[0]!.count)
 
-      if (membersCount >= config.perWorkspace.maxMembers) {
+      if (membersCount >= cfg.perWorkspace.maxMembers) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: `Workspace has reached the maximum limit of ${config.perWorkspace.maxMembers} members`,
+          message: `Workspace has reached the maximum limit of ${cfg.perWorkspace.maxMembers} members`,
         })
       }
 
@@ -457,10 +457,10 @@ export const workspaceRouter = {
         .where(eq(Membership.userId, input.userId))
         .then((r) => r[0]!.count)
 
-      if (userWorkspacesCount >= config.perUser.maxWorkspaces) {
+      if (userWorkspacesCount >= cfg.perUser.maxWorkspaces) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: `User has reached the maximum limit of ${config.perUser.maxWorkspaces} workspaces`,
+          message: `User has reached the maximum limit of ${cfg.perUser.maxWorkspaces} workspaces`,
         })
       }
 
