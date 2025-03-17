@@ -1,3 +1,4 @@
+import type { EmbeddingModelV1, ImageModelV1, LanguageModelV1 } from '@ai-sdk/provider'
 import { bedrock, createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
 import { azure, createAzure } from '@ai-sdk/azure'
@@ -18,7 +19,8 @@ import { createTogetherAI, togetherai } from '@ai-sdk/togetherai'
 import { createXai, xai } from '@ai-sdk/xai'
 import { createOpenRouter, openrouter } from '@openrouter/ai-sdk-provider'
 
-import type { Provider, ProviderId } from './types'
+import type { ModelType, Provider, ProviderId } from './types'
+import { splitModelFullId } from './index'
 
 export const providers: Record<ProviderId, Provider> = {
   openai: openai,
@@ -62,4 +64,35 @@ export {
   createPerplexity,
   createLuma,
   createOpenRouter,
+}
+
+/**
+ * Get model instance by model full ID and type
+ * @param fullId Full model ID in format 'providerId:modelId'
+ * @param modelType Type of model to get (language/text-embedding/image)
+ * @returns Model instance of specified type, or undefined if not found
+ */
+export function getModel<T extends ModelType>(
+  fullId: string,
+  modelType: T,
+): T extends 'language'
+  ? LanguageModelV1 | undefined
+  : T extends 'text-embedding'
+    ? EmbeddingModelV1<string> | undefined
+    : T extends 'image'
+      ? ImageModelV1 | undefined
+      : never {
+  const { providerId, modelId } = splitModelFullId(fullId)
+  const provider = providers[providerId]
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!provider) {
+    return undefined as any
+  }
+  if (modelType === 'language') {
+    return provider.languageModel?.(modelId) as any
+  } else if (modelType === 'text-embedding') {
+    return provider.textEmbeddingModel?.(modelId) as any
+  } else {
+    return provider.image?.(modelId) as any
+  }
 }

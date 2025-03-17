@@ -35,6 +35,8 @@ export type ProviderId =
 export interface ProviderInfo {
   id: ProviderId
   name: string
+  icon: string
+  description: string
   languageModels?: ModelInfo[]
   textEmbeddingModels?: (ModelInfo & { dimensions?: number })[]
   imageModels?: ModelInfo[]

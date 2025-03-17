@@ -33,7 +33,12 @@ export const modelRouter = {
     .query(async () => {
       const providerInfos = await getProviderInfos()
       return {
-        providers: providerInfos.map(({ id, name }) => ({ id, name })),
+        providers: providerInfos.map(({ id, name, description, icon }) => ({
+          id,
+          name,
+          description,
+          icon,
+        })),
       }
     }),
 
@@ -53,9 +58,11 @@ export const modelRouter = {
       },
     })
     .input(
-      z.object({
-        type: z.enum(modelTypes).optional(),
-      }),
+      z
+        .object({
+          type: z.enum(modelTypes).optional(),
+        })
+        .default({}),
     )
     .query(async ({ input }) => {
       const languageModelInfos = await getLanguageModelInfos()

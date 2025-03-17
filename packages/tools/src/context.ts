@@ -1,7 +1,7 @@
 import type { DataStreamWriter, Tool } from 'ai'
 
 import type { Agent, App, Chat } from '@mindworld/db/schema'
-import { getModel } from '@mindworld/providers'
+import { getModel } from '@mindworld/providers/providers'
 
 export interface Context {
   userId: string

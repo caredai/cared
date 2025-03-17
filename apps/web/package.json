@@ -21,6 +21,7 @@
     "@mindworld/chatbot": "workspace:*",
     "@mindworld/db": "workspace:*",
     "@mindworld/i18n": "workspace:*",
+    "@mindworld/providers": "workspace:*",
     "@mindworld/ui": "workspace:*",
     "@mindworld/utils": "workspace:*",
     "@privy-io/react-auth": "^2.6.2",

@@ -102,8 +102,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
                         workspaceId: string;
+                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
                     categories: string[];
@@ -128,8 +128,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
                         workspaceId: string;
+                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
                     categories: string[];
@@ -154,8 +154,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
                         workspaceId: string;
+                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
                     categories: string[];
@@ -198,8 +198,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     workspaceId: string;
+                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
             };
@@ -498,8 +498,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
                         workspaceId: string;
+                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
                     categories: string[];
@@ -525,8 +525,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
                         workspaceId: string;
+                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
                     categories: string[];
@@ -552,8 +552,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
                         workspaceId: string;
+                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
                     categories: string[];
@@ -596,8 +596,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     workspaceId: string;
+                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
             };
@@ -644,8 +644,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     workspaceId: string;
+                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
                 draft: {
@@ -685,8 +685,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     workspaceId: string;
+                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
                 draft: {
@@ -931,8 +931,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    version: number;
                     agentId: string;
+                    version: number;
                 }[];
             };
         }>;
@@ -949,8 +949,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    version: number;
                     agentId: string;
+                    version: number;
                 }[];
                 hasMore: boolean;
                 first: number | undefined;
@@ -1006,8 +1006,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    version: number;
                     agentId: string;
+                    version: number;
                 };
             };
         }>;
@@ -1387,13 +1387,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 providers: {
                     id: ProviderId;
                     name: string;
+                    description: string;
+                    icon: string;
                 }[];
             };
         }>;
         listModels: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 type?: "image" | "language" | "text-embedding" | undefined;
-            };
+            } | undefined;
             output: {
                 models: {
                     image?: {
@@ -1473,9 +1475,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
                     appId: string;
+                    userId: string;
                     debug: boolean;
                 }[];
                 hasMore: boolean;
@@ -1492,16 +1494,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
                     appId: string;
+                    userId: string;
                     debug: boolean;
                 };
             };
         }>;
         create: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                userId: string;
                 metadata: {
                     title: string;
                     visibility: "public" | "private";
@@ -1513,6 +1514,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     [k: string]: unknown;
                 };
                 appId: string;
+                userId: string;
                 id?: string | undefined;
                 debug?: boolean | undefined;
             };
@@ -1521,9 +1523,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
                     appId: string;
+                    userId: string;
                     debug: boolean;
                 };
             };
@@ -1562,9 +1564,9 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
                     appId: string;
+                    userId: string;
                     debug: boolean;
                 };
             };
@@ -1581,10 +1583,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    role: "user" | "system" | "assistant" | "tool";
                     agentId: string | null;
-                    content: unknown;
+                    role: "user" | "system" | "assistant" | "tool";
                     chatId: string;
+                    content: unknown;
                 }[];
                 hasMore: boolean;
                 first: string | undefined;
@@ -1600,10 +1602,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    role: "user" | "system" | "assistant" | "tool";
                     agentId: string | null;
-                    content: unknown;
+                    role: "user" | "system" | "assistant" | "tool";
                     chatId: string;
+                    content: unknown;
                 };
             };
         }>;
@@ -1618,10 +1620,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    role: "user" | "system" | "assistant" | "tool";
                     agentId: string | null;
-                    content: unknown;
+                    role: "user" | "system" | "assistant" | "tool";
                     chatId: string;
+                    content: unknown;
                 };
             };
         }>;
@@ -1636,10 +1638,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    role: "user" | "system" | "assistant" | "tool";
                     agentId: string | null;
-                    content: unknown;
+                    role: "user" | "system" | "assistant" | "tool";
                     chatId: string;
+                    content: unknown;
                 }[];
             };
         }>;
@@ -1652,10 +1654,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    role: "user" | "system" | "assistant" | "tool";
                     agentId: string | null;
-                    content: unknown;
+                    role: "user" | "system" | "assistant" | "tool";
                     chatId: string;
+                    content: unknown;
                 }[];
             };
         }>;
@@ -1689,11 +1691,11 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     version: number;
+                    userId: string;
                     title: string;
-                    content: unknown;
                     chatId: string;
+                    content: unknown;
                     kind: "code" | "text" | "image" | "sheet";
                 }[];
                 hasMore: boolean;
@@ -1713,11 +1715,11 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     version: number;
+                    userId: string;
                     title: string;
-                    content: unknown;
                     chatId: string;
+                    content: unknown;
                     kind: "code" | "text" | "image" | "sheet";
                 }[];
                 hasMore: boolean;

@@ -1,5 +1,3 @@
-import { unstable_cache } from 'next/cache'
-
 import type { ModelInfo } from './types'
 
 export const OPENROUTER_AUTO_ID = 'openrouter/auto'
@@ -26,15 +24,16 @@ export interface OpenRouterModelInfo extends ModelInfo {
   per_request_limits?: null
 }
 
-const getModels = unstable_cache(
-  async () => {
-    return await (await fetch('https://openrouter.ai/api/v1/models')).json()
-  },
-  ['openrouter-models'],
-  { revalidate: 7200, tags: ['openrouter-models'] },
-)
-
 export async function getOpenRouterModels() {
-  const r = await getModels()
+  const r = await (
+    await fetch('https://openrouter.ai/api/v1/models', {
+      // @ts-ignore
+      cache: 'force-cache',
+      next: {
+        revalidate: 7200,
+        tags: ['openrouter-models'],
+      },
+    })
+  ).json()
   return (r as any).data as OpenRouterModelInfo[]
 }

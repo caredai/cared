@@ -11,9 +11,11 @@ const config = {
   transpilePackages: [
     'next-image-export-optimizer',
     '@mindworld/api',
-    '@mindworld/ui',
     '@mindworld/chatbot',
+    '@mindworld/db',
     '@mindworld/i18n',
+    '@mindworld/providers',
+    '@mindworld/ui',
     '@mindworld/utils',
   ],
 

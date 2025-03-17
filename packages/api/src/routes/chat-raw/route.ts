@@ -3,7 +3,7 @@ import { createDataStreamResponse, smoothStream, streamText } from 'ai'
 
 import { generateMessageId } from '@mindworld/db/schema'
 import { log } from '@mindworld/log'
-import { getModel } from '@mindworld/providers'
+import { getModel } from '@mindworld/providers/providers'
 
 import { auth } from '../../auth'
 

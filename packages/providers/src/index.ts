@@ -1,12 +1,8 @@
-import type { EmbeddingModelV1, ImageModelV1, LanguageModelV1 } from '@ai-sdk/provider'
-
-import type { ModelType, ProviderId } from './types'
+import type { ProviderId } from './types'
 import { getProviderInfos } from './provider-infos'
-import { providers } from './providers'
 
 export * from './default'
 export * from './types'
-export * from './providers'
 export * from './provider-infos'
 export * from './openrouter'
 
@@ -65,35 +61,4 @@ export function modelFullId(providerId: string, modelId: string) {
 export function splitModelFullId(fullId: string) {
   const [providerId, modelId] = fullId.split(':', 2)
   return { providerId, modelId } as { providerId: ProviderId; modelId: string }
-}
-
-/**
- * Get model instance by model full ID and type
- * @param fullId Full model ID in format 'providerId:modelId'
- * @param modelType Type of model to get (language/text-embedding/image)
- * @returns Model instance of specified type, or undefined if not found
- */
-export function getModel<T extends ModelType>(
-  fullId: string,
-  modelType: T,
-): T extends 'language'
-  ? LanguageModelV1 | undefined
-  : T extends 'text-embedding'
-    ? EmbeddingModelV1<string> | undefined
-    : T extends 'image'
-      ? ImageModelV1 | undefined
-      : never {
-  const { providerId, modelId } = splitModelFullId(fullId)
-  const provider = providers[providerId]
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!provider) {
-    return undefined as any
-  }
-  if (modelType === 'language') {
-    return provider.languageModel?.(modelId) as any
-  } else if (modelType === 'text-embedding') {
-    return provider.textEmbeddingModel?.(modelId) as any
-  } else {
-    return provider.image?.(modelId) as any
-  }
 }

@@ -1,6 +1,6 @@
 import { embedMany } from 'ai'
 
-import { getModel } from '.'
+import { getModel } from './providers'
 
 export async function embed(texts: string[], modelFullId: string): Promise<number[][]> {
   const embeddingModel = getModel(modelFullId, 'text-embedding')
