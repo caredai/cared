@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Settings as SettingsIcon, Users } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@mindworld/ui/components/tabs'
@@ -12,14 +12,9 @@ import { Members } from './_settings/members'
 /**
  * Workspace settings component with tabs for different settings categories
  */
-export function Settings() {
+export function Settings({ kind }: { kind: string }) {
+  const router = useRouter()
   const workspace = useWorkspace()
-
-  const [activeTab, setActiveTab] = useState<string>('general')
-
-  if (!workspace) {
-    return null
-  }
 
   return (
     <div className="container mx-auto py-6">
@@ -32,8 +27,10 @@ export function Settings() {
 
       <Tabs
         defaultValue="general"
-        value={activeTab}
-        onValueChange={setActiveTab}
+        value={kind}
+        onValueChange={(value) => {
+          router.push(`./${value}`)
+        }}
         className="space-y-4"
       >
         <TabsList className="w-full max-w-md">

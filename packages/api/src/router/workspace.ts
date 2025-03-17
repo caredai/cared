@@ -1,6 +1,6 @@
 import type { SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
-import { and, asc, count, desc, eq, gt, lt } from 'drizzle-orm'
+import { and, asc, count, eq, gt, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { Transaction } from '@mindworld/db/client'
