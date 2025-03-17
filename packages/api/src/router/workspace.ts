@@ -334,8 +334,8 @@ export const workspaceRouter = {
           .innerJoin(User, eq(User.id, Membership.userId))
           .where(and(...conditions))
           .orderBy(
-            desc(Membership.role), // Sort 'owner' first since it's alphabetically greater than 'member' when using desc
-            desc(Membership.createdAt),
+            asc(Membership.role), // sort 'owner' first
+            asc(Membership.createdAt),
           )
           .limit(input.limit + 1)
       ).map((member) => ({ ...member, user: filteredUser(member.user) }))
@@ -615,7 +615,6 @@ function filteredUser(user: User) {
       firstName: info.firstName,
       lastName: info.lastName,
       imageUrl: info.imageUrl,
-      hasImage: info.hasImage,
     },
   }
 }

@@ -1,6 +1,5 @@
 'use client'
 
-import type { User } from '@clerk/nextjs/server'
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from 'lucide-react'
 
 import {
@@ -15,7 +14,7 @@ import { useIsMobile } from '@mindworld/ui/hooks/use-mobile'
 import { ThemeSwitcher } from '@/components/theme'
 import { UserInfo } from './user-info'
 
-export function NavUserContent({ user }: { user: User }) {
+export function NavUserContent() {
   const isMobile = useIsMobile()
 
   return (
@@ -27,7 +26,7 @@ export function NavUserContent({ user }: { user: User }) {
     >
       <DropdownMenuLabel className="p-0 font-normal">
         <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-          <UserInfo user={user} />
+          <UserInfo />
           <ThemeSwitcher />
         </div>
       </DropdownMenuLabel>

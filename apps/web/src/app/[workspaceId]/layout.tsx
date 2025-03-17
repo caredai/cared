@@ -8,6 +8,7 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { RememberWorkspace } from '@/components/remember-workspace'
 import { WorkspaceBreadcrumb } from '@/components/workspace-breadcrumb'
+import { WorkspaceNavMain } from '@/components/workspace-nav-main'
 import { prefetch, trpc } from '@/trpc/server'
 
 export default async function WorkspaceLayout({
@@ -31,7 +32,9 @@ export default async function WorkspaceLayout({
     <ErrorBoundary fallback={<ErrorFallback />}>
       {/*<Suspense fallback={<Loading />}>*/}
       <SidebarProvider>
-        <AppSidebar workspaceId={workspaceId} />
+        <AppSidebar mainRoute={'./apps'}>
+          <WorkspaceNavMain workspaceId={workspaceId} />
+        </AppSidebar>
 
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2">

@@ -30,7 +30,7 @@ export interface ChatMetadata {
   [key: string]: unknown
 }
 
-const chatMetadataZod = z
+const chatMetadataSchema = z
   .object({
     title: z.string(),
     visibility: z.enum(visibilityEnumValues),
@@ -75,14 +75,14 @@ export const CreateChatSchema = createInsertSchema(Chat, {
   appId: z.string(),
   userId: z.string(),
   debug: z.boolean().optional(),
-  metadata: chatMetadataZod,
+  metadata: chatMetadataSchema,
 }).omit({
   ...timestampsOmits,
 })
 
 export const UpdateChatSchema = createUpdateSchema(Chat, {
   id: z.string(),
-  metadata: makeObjectNonempty(chatMetadataZod).optional(),
+  metadata: makeObjectNonempty(chatMetadataSchema).optional(),
 }).omit({
   appId: true,
   userId: true,

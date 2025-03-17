@@ -1,4 +1,4 @@
-import * as React from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import Link from 'next/link'
 
 import {
@@ -12,21 +12,24 @@ import {
 } from '@mindworld/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
-import { NavMain } from '@/components/nav-main'
 import { NavSecondary } from '@/components/nav-secondary'
 import { NavUser } from '@/components/nav-user'
 
 export function AppSidebar({
-  workspaceId,
+  mainRoute,
+  children,
   ...props
-}: { workspaceId: string } & React.ComponentProps<typeof Sidebar>) {
+}: {
+  mainRoute: string
+  children: ReactNode
+} & ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/apps" className="mr-4 flex items-center gap-2 lg:mr-6">
+              <Link href={mainRoute} className="mr-4 flex items-center gap-2 lg:mr-6">
                 <Logo />
               </Link>
             </SidebarMenuButton>
@@ -34,7 +37,7 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain workspaceId={workspaceId} />
+        {children}
         <NavSecondary className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

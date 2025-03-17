@@ -1,13 +1,23 @@
+import { NextResponse } from 'next/server'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-import { authForApi, authForUser } from '@mindworld/api/auth'
+import { authForAdmin, authForApi, authForUser } from '@mindworld/api/auth'
 
 const isPublicRoute = createRouteMatcher(['/', '/landing'])
+const isAdminRoute = createRouteMatcher(['/admin'])
 const isApiRoute = createRouteMatcher(['/api/(.*)'])
 
 export default clerkMiddleware(async (auth, request) => {
   if (isPublicRoute(request)) {
     await auth()
+    return
+  }
+
+  if (isAdminRoute(request)) {
+    const { isAdmin } = authForAdmin(await auth.protect())
+    if (!isAdmin) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
     return
   }
 

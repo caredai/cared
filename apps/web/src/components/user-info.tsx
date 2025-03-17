@@ -1,8 +1,12 @@
-import type { User } from '@clerk/nextjs/server'
+'use client'
 
 import { Avatar, AvatarImage } from '@mindworld/ui/components/avatar'
 
-export function UserInfo({ user }: { user: User }) {
+import { useUser } from '@/hooks/use-user'
+
+export function UserInfo() {
+  const { info: user } = useUser()
+
   return (
     <>
       <Avatar className="h-8 w-8 rounded-lg">

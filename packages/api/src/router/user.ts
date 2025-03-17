@@ -22,8 +22,8 @@ export const userRouter = {
       const users = await ctx.db.select().from(User).where(eq(User.id, ctx.auth.userId)).limit(1)
       let user = users[0]
 
-      // If user doesn't exist or info is outdated (>1h), fetch latest info from Clerk
-      if (!user || user.updatedAt < new Date(Date.now() - 1000 * 60 * 60)) {
+      // If user doesn't exist or info is outdated (>24h), fetch latest info from Clerk
+      if (!user || user.updatedAt < new Date(Date.now() - 1000 * 60 * 60 * 24)) {
         // Get current user info from Clerk
         const info = await currentUser()
         if (!info) {

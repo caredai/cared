@@ -24,7 +24,7 @@ export interface AgentMetadata {
   [key: string]: unknown
 }
 
-const agentMetadataZod = z
+const agentMetadataSchema = z
   .object({
     description: z.string().optional(),
     imageUrl: z.string().optional(),
@@ -66,7 +66,7 @@ export type Agent = InferSelectModel<typeof Agent>
 export const CreateAgentSchema = createInsertSchema(Agent, {
   appId: z.string(),
   name: z.string().max(255),
-  metadata: agentMetadataZod.optional(),
+  metadata: agentMetadataSchema.optional(),
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -75,7 +75,7 @@ export const CreateAgentSchema = createInsertSchema(Agent, {
 export const UpdateAgentSchema = createUpdateSchema(Agent, {
   id: z.string(),
   name: z.string().max(255).optional(),
-  metadata: agentMetadataZod.optional(),
+  metadata: agentMetadataSchema.optional(),
 }).omit({
   appId: true,
   ...timestampsOmits,
@@ -107,7 +107,7 @@ export const CreateAgentVersionSchema = createInsertSchema(AgentVersion, {
   agentId: z.string(),
   version: z.number().int().optional(),
   name: z.string().max(255),
-  metadata: agentMetadataZod.optional(),
+  metadata: agentMetadataSchema.optional(),
 }).omit({
   ...timestampsOmits,
 })
@@ -116,7 +116,7 @@ export const UpdateAgentVersionSchema = createUpdateSchema(AgentVersion, {
   agentId: z.string(),
   version: z.number().int().optional(),
   name: z.string().max(255).optional(),
-  metadata: agentMetadataZod.optional(),
+  metadata: agentMetadataSchema.optional(),
 }).omit({
   ...timestampsOmits,
 })

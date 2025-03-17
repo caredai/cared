@@ -101,10 +101,12 @@ export function General({ workspace }: { workspace: Workspace }) {
   const deleteWorkspaceMutation = useMutation(
     trpc.workspace.delete.mutationOptions({
       onSuccess: () => {
+        setIsDeleteDialogOpen(false)
         toast.success('Workspace deleted successfully')
         router.push('/')
       },
       onError: (error) => {
+        setIsDeleteDialogOpen(false)
         console.error('Failed to delete workspace:', error)
         toast.error('Failed to delete workspace')
       },
@@ -154,7 +156,7 @@ export function General({ workspace }: { workspace: Workspace }) {
               onSubmit={form.handleSubmit((data) => {
                 return updateWorkspaceMutation.mutateAsync({
                   id: workspace.id,
-                  name: data.name,
+                  name: data.name.trim(),
                 })
               })}
               className="space-y-4"
@@ -179,7 +181,14 @@ export function General({ workspace }: { workspace: Workspace }) {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={!isOwner || form.formState.isSubmitting}>
+              <Button
+                type="submit"
+                disabled={
+                  !isOwner ||
+                  form.formState.isSubmitting ||
+                  form.watch('name').trim() === workspace.name
+                }
+              >
                 {form.formState.isSubmitting ? (
                   <>
                     <CircleSpinner />
@@ -325,9 +334,14 @@ export function General({ workspace }: { workspace: Workspace }) {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel disabled={deleteWorkspaceMutation.isPending}>
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={() => deleteWorkspaceMutation.mutateAsync({ id: workspace.id })}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      return deleteWorkspaceMutation.mutateAsync({ id: workspace.id })
+                    }}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
                     {deleteWorkspaceMutation.isPending ? (

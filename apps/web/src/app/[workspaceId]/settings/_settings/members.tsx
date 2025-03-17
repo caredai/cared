@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@mindworld/ui/components/alert-dialog'
+import { Avatar, AvatarImage } from '@mindworld/ui/components/avatar'
 import { Badge } from '@mindworld/ui/components/badge'
 import { Button } from '@mindworld/ui/components/button'
 import {
@@ -236,16 +237,17 @@ export function Members({ workspace }: { workspace: Workspace }) {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                            {member.user.info.hasImage ? (
-                              <img
-                                src={member.user.info.imageUrl}
-                                alt={member.user.info.username || ''}
-                                className="h-full w-full object-cover"
-                              />
+                            {member.user.info.imageUrl ? (
+                              <Avatar className="h-8 w-8 rounded-lg">
+                                <AvatarImage
+                                  src={member.user.info.imageUrl}
+                                  alt={member.user.info.username}
+                                />
+                              </Avatar>
                             ) : (
                               <span className="text-xs font-medium">
-                                {member.user.info.firstName?.[0] || ''}
-                                {member.user.info.lastName?.[0] || ''}
+                                {member.user.info.firstName?.[0] ?? ''}
+                                {member.user.info.lastName?.[0] ?? ''}
                               </span>
                             )}
                           </div>

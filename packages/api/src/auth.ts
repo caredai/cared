@@ -130,19 +130,27 @@ export async function auth(): Promise<Auth> {
   const heads = await headers()
   const appId = heads.get('X-APP-ID')
 
-  const { userId: _userId, orgId, orgRole } = await clerkAuth()
-  // the middleware has already checked the user
-  const userId = _userId!
-
-  const isAdmin = orgId === env.CLERK_ADMIN_ORGANIZATION_ID && orgRole === 'org:admin'
+  const auth = authForAdmin(await clerkAuth())
 
   if (appId) {
     // appId has been checked in `authForUser`
     return {
-      userId,
+      userId: auth.userId,
       appId,
     }
   }
+
+  return auth
+}
+
+export function authForAdmin(
+  auth: Omit<Awaited<ReturnType<typeof clerkAuth>>, 'redirectToSignIn'>,
+): Auth {
+  const { userId: _userId, orgId, orgRole } = auth
+  // the middleware has already checked the user
+  const userId = _userId!
+
+  const isAdmin = orgId === env.CLERK_ADMIN_ORGANIZATION_ID && orgRole === 'org:admin'
 
   return !isAdmin
     ? {

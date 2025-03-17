@@ -36,7 +36,7 @@ export interface AppMetadata {
   [key: string]: unknown
 }
 
-const appMetadataZod = z
+const appMetadataSchema = z
   .object({
     description: z.string().optional(),
     imageUrl: z.string().optional(),
@@ -83,7 +83,7 @@ export const CreateAppSchema = createInsertSchema(App, {
   workspaceId: z.string(),
   type: z.enum(appTypeEnumValues).optional(),
   name: z.string().max(255),
-  metadata: appMetadataZod,
+  metadata: appMetadataSchema,
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -92,7 +92,7 @@ export const CreateAppSchema = createInsertSchema(App, {
 export const UpdateAppSchema = createUpdateSchema(App, {
   id: z.string(),
   name: z.string().max(255).optional(),
-  metadata: appMetadataZod.optional(),
+  metadata: appMetadataSchema.optional(),
 }).omit({
   workspaceId: true,
   type: true,
@@ -130,7 +130,7 @@ export const CreateAppVersionSchema = createInsertSchema(AppVersion, {
   version: z.number().int().optional(),
   type: z.enum(appTypeEnumValues).optional(),
   name: z.string().max(255),
-  metadata: appMetadataZod,
+  metadata: appMetadataSchema,
 }).omit({
   ...timestampsOmits,
 })
@@ -139,7 +139,7 @@ export const UpdateAppVersionSchema = createUpdateSchema(AppVersion, {
   appId: z.string(),
   version: z.number().int().optional(),
   name: z.string().max(255).optional(),
-  metadata: appMetadataZod.optional(),
+  metadata: appMetadataSchema.optional(),
 }).omit({
   type: true,
   ...timestampsOmits,

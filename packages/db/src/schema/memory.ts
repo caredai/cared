@@ -10,7 +10,7 @@ import { User } from './workspace'
 
 export type MemoryMetadata = Record<string, unknown>
 
-const memoryMetadataZod = z.object({}).catchall(z.unknown())
+const memoryMetadataSchema = z.object({}).catchall(z.unknown())
 
 export const Memory = pgTable(
   'memory',
@@ -48,7 +48,7 @@ export const CreateMemorySchema = createInsertSchema(Memory, {
   userId: z.string(),
   appId: z.string(),
   chatId: z.string().optional(),
-  metadata: memoryMetadataZod.optional(),
+  metadata: memoryMetadataSchema.optional(),
 }).omit({
   id: true,
   ...timestampsOmits,

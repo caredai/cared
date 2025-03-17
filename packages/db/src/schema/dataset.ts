@@ -28,7 +28,7 @@ export interface DatasetMetadata {
   [key: string]: unknown
 }
 
-const datasetMetadataZod = z.object({
+const datasetMetadataSchema = z.object({
   languageModel: z.string().min(1).optional(),
   embeddingModel: z.string().min(1).optional(),
   rerankModel: z.string().min(1).optional(),
@@ -68,7 +68,7 @@ export type Dataset = InferSelectModel<typeof Dataset>
 export const CreateDatasetSchema = createInsertSchema(Dataset, {
   workspaceId: z.string(),
   name: z.string().max(255),
-  metadata: datasetMetadataZod,
+  metadata: datasetMetadataSchema,
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -77,7 +77,7 @@ export const CreateDatasetSchema = createInsertSchema(Dataset, {
 export const UpdateDatasetSchema = createUpdateSchema(Dataset, {
   id: z.string(),
   name: z.string().max(255).optional(),
-  metadata: datasetMetadataZod.optional(),
+  metadata: datasetMetadataSchema.optional(),
 }).omit({
   workspaceId: true,
   ...timestampsOmits,
@@ -91,7 +91,7 @@ export interface DocumentMetadata {
   [key: string]: unknown
 }
 
-const documentMetadataZod = z.object({
+const documentMetadataSchema = z.object({
   url: z.string().optional(),
   processed: z.boolean().optional(),
   taskId: z.string().min(1).optional(),
@@ -127,7 +127,7 @@ export const CreateDocumentSchema = createInsertSchema(Document, {
   workspaceId: z.string(),
   datasetId: z.string(),
   name: z.string().max(255),
-  metadata: documentMetadataZod.optional(),
+  metadata: documentMetadataSchema.optional(),
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -136,7 +136,7 @@ export const CreateDocumentSchema = createInsertSchema(Document, {
 export const UpdateDocumentSchema = createUpdateSchema(Document, {
   id: z.string(),
   name: z.string().max(255).optional(),
-  metadata: documentMetadataZod.optional(),
+  metadata: documentMetadataSchema.optional(),
 }).omit({
   workspaceId: true,
   datasetId: true,
