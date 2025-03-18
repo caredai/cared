@@ -310,7 +310,7 @@ export const appRouter = {
     .input(
       z.object({
         workspaceId: z.string().min(32),
-        tags: z.array(z.string()).min(1).max(10),
+        tags: z.array(z.string()).min(1).max(20),
         after: z.string().optional(),
         before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
@@ -746,6 +746,79 @@ export const appRouter = {
     }),
 
   /**
+   * List all tags.
+   * Accessible by any user.
+   * @param input - Pagination parameters
+   * @returns List of tags
+   * @throws {TRPCError} If tag retrieval fails
+   */
+  listTags: publicProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/tags' } })
+    .input(
+      z
+        .object({
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        )
+        .default({ limit: 50 }),
+    )
+    .query(async ({ ctx, input }) => {
+      const conditions: SQL<unknown>[] = []
+
+      // Add cursor conditions based on pagination direction
+      if (input.after) {
+        conditions.push(gt(Tag.name, input.after))
+      } else if (input.before) {
+        conditions.push(lt(Tag.name, input.before))
+      }
+
+      const query = conditions.length > 0 ? and(...conditions) : undefined
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+      // Fetch tags with appropriate ordering
+      let tags
+      if (isBackwardPagination) {
+        tags = await ctx.db.query.Tag.findMany({
+          where: query,
+          orderBy: Tag.name, // Ascending order
+          limit: input.limit + 1,
+        })
+      } else {
+        tags = await ctx.db.query.Tag.findMany({
+          where: query,
+          orderBy: desc(Tag.name), // Descending order
+          limit: input.limit + 1,
+        })
+      }
+
+      const hasMore = tags.length > input.limit
+      if (hasMore) {
+        tags.pop()
+      }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      // For example: if forward pagination shows A->B->C, backward pagination should also return results in A->B->C order
+      tags = isBackwardPagination ? tags.reverse() : tags
+
+      // Get first and last tag names from the result
+      const first = tags[0]?.name
+      const last = tags[tags.length - 1]?.name
+
+      return {
+        tags,
+        hasMore,
+        first,
+        last,
+      }
+    }),
+
+  /**
    * Update tags for an app.
    * Replaces all existing tags with the new ones.
    * Only accessible by workspace members.
@@ -758,7 +831,7 @@ export const appRouter = {
     .input(
       z.object({
         id: z.string(),
-        tags: z.array(z.string()).max(10),
+        tags: z.array(z.string()).max(20, 'Maximum 20 tags allowed'),
       }),
     )
     .mutation(async ({ ctx, input }) => {

@@ -7,7 +7,8 @@ const perplexityProvider: ProviderInfo = {
   id: 'perplexity',
   name: 'Perplexity',
   icon: 'perplexity.png',
-  description: 'Perplexity AI platform offering specialized language models for search and information retrieval',
+  description:
+    'Perplexity AI platform offering specialized language models for search and information retrieval',
   languageModels: [
     {
       id: 'pplx-70b-online',

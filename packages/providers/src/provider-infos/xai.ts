@@ -22,4 +22,4 @@ const xaiProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default xaiProvider 
+export default xaiProvider

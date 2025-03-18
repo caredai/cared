@@ -1,13 +1,16 @@
+import type { ComponentProps } from 'react'
 import { LoaderCircle, LoaderIcon, LoaderPinwheel } from 'lucide-react'
 
-export function Spinner() {
-  return <LoaderIcon className="animate-spin" />
+import { cn } from '@mindworld/ui/lib/utils'
+
+export function Spinner({ className, ...props }: ComponentProps<typeof LoaderIcon>) {
+  return <LoaderIcon className={cn('animate-spin', className)} {...props} />
 }
 
-export function CircleSpinner() {
-  return <LoaderCircle className="animate-spin" />
+export function CircleSpinner({ className, ...props }: ComponentProps<typeof LoaderCircle>) {
+  return <LoaderCircle className={cn('animate-spin', className)} {...props} />
 }
 
-export function PinwheelSpinner() {
-  return <LoaderPinwheel className="animate-spin" />
+export function PinwheelSpinner({ className, ...props }: ComponentProps<typeof LoaderPinwheel>) {
+  return <LoaderPinwheel className={cn('animate-spin', className)} {...props} />
 }

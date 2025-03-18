@@ -16,11 +16,11 @@ import { NavSecondary } from '@/components/nav-secondary'
 import { NavUser } from '@/components/nav-user'
 
 export function AppSidebar({
-  mainRoute,
+  baseUrl,
   children,
   ...props
 }: {
-  mainRoute: string
+  baseUrl: string
   children: ReactNode
 } & ComponentProps<typeof Sidebar>) {
   return (
@@ -29,7 +29,7 @@ export function AppSidebar({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href={mainRoute} className="mr-4 flex items-center gap-2 lg:mr-6">
+              <Link href={baseUrl} className="mr-4 flex items-center gap-2 lg:mr-6">
                 <Logo />
               </Link>
             </SidebarMenuButton>

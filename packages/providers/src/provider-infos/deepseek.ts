@@ -20,4 +20,4 @@ const deepseekProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default deepseekProvider 
+export default deepseekProvider

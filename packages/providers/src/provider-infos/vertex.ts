@@ -128,4 +128,4 @@ const vertexProvider: ProviderInfo = {
   ],
 }
 
-export default vertexProvider 
+export default vertexProvider

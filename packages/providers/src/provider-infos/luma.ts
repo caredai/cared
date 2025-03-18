@@ -44,4 +44,4 @@ const lumaProvider: ProviderInfo = {
   ],
 }
 
-export default lumaProvider 
+export default lumaProvider

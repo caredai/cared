@@ -185,4 +185,4 @@ const replicateProvider: ProviderInfo = {
   ],
 }
 
-export default replicateProvider 
+export default replicateProvider

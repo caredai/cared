@@ -59,4 +59,4 @@ const anthropicProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default anthropicProvider 
+export default anthropicProvider

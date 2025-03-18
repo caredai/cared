@@ -42,4 +42,4 @@ const mistralProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default mistralProvider 
+export default mistralProvider

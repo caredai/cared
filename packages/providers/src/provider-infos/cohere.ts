@@ -77,4 +77,4 @@ const cohereProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default cohereProvider 
+export default cohereProvider

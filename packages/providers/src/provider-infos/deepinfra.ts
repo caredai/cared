@@ -7,7 +7,8 @@ const deepinfraProvider: ProviderInfo = {
   id: 'deepinfra',
   name: 'DeepInfra',
   icon: 'deepinfra.png',
-  description: 'DeepInfra platform offering a variety of open source models with optimized inference',
+  description:
+    'DeepInfra platform offering a variety of open source models with optimized inference',
   languageModels: [
     {
       id: 'meta-llama/Meta-Llama-3.1-405B-Instruct',

@@ -103,4 +103,4 @@ const googleProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default googleProvider 
+export default googleProvider

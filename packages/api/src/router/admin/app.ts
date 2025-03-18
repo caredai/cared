@@ -1,3 +1,4 @@
+import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@mindworld/db'
@@ -8,6 +9,8 @@ import {
   AppVersion,
   Category,
   CreateCategorySchema,
+  Tag,
+  UpdateCategorySchema,
 } from '@mindworld/db/schema'
 
 import { adminProcedure } from '../../trpc'
@@ -187,4 +190,109 @@ export const appRouter = {
       category,
     }
   }),
+
+  /**
+   * Update an existing category.
+   * Only accessible by admin users.
+   * @param input - The category data following the {@link UpdateCategorySchema}
+   * @returns The updated category
+   * @throws {TRPCError} If category not found
+   */
+  updateCategory: adminProcedure.input(UpdateCategorySchema).mutation(async ({ ctx, input }) => {
+    const { id, ...updates } = input
+    // Find category by ID to ensure it exists
+    const [existing] = await ctx.db.select().from(Category).where(eq(Category.id, id)).limit(1)
+
+    if (!existing) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `Category with ID ${id} not found`,
+      })
+    }
+
+    // Update the category
+    const updatedCategory = await ctx.db
+      .update(Category)
+      .set(updates)
+      .where(eq(Category.id, id))
+      .returning()
+
+    return {
+      category: updatedCategory[0],
+    }
+  }),
+
+  /**
+   * Delete a category by ID.
+   * Only accessible by admin users.
+   * @param input - Object containing the category ID
+   * @throws {TRPCError} If category not found or delete fails
+   */
+  deleteCategory: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Find category by ID to ensure it exists
+      const [existing] = await ctx.db
+        .select()
+        .from(Category)
+        .where(eq(Category.id, input.id))
+        .limit(1)
+
+      if (!existing) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Category with ID ${input.id} not found`,
+        })
+      }
+
+      // Delete the category
+      // Note: This will fail if there are apps associated with this category due to foreign key constraints
+      return ctx.db.transaction(async (tx) => {
+        // First delete any associations in AppsToCategories table
+        await tx.delete(AppsToCategories).where(eq(AppsToCategories.categoryId, input.id))
+
+        // Then delete the category itself
+        await tx.delete(Category).where(eq(Category.id, input.id))
+      })
+    }),
+
+  /**
+   * Delete one or more tags and remove all associations with apps.
+   * Only accessible by admin users.
+   * @param input - Object containing array of tag names to delete
+   * @returns The number of tags deleted
+   */
+  deleteTags: adminProcedure
+    .input(
+      z.object({
+        tags: z.array(z.string()).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify that all tags exist before attempting to delete
+      const existingTags = await ctx.db.select().from(Tag).where(inArray(Tag.name, input.tags))
+
+      if (existingTags.length !== input.tags.length) {
+        const foundTagNames = existingTags.map((tag) => tag.name)
+        const missingTags = input.tags.filter((tag) => !foundTagNames.includes(tag))
+
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `The following tags were not found: ${missingTags.join(', ')}`,
+        })
+      }
+
+      // Delete the tags and their associations in a transaction
+      return ctx.db.transaction(async (tx) => {
+        // First delete associations in AppsToTags table
+        await tx.delete(AppsToTags).where(inArray(AppsToTags.tag, input.tags))
+
+        // Then delete the tags themselves
+        await tx.delete(Tag).where(inArray(Tag.name, input.tags))
+      })
+    }),
 }

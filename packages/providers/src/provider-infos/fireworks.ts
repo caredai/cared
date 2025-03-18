@@ -122,4 +122,4 @@ const fireworksProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default fireworksProvider 
+export default fireworksProvider

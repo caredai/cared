@@ -13,4 +13,4 @@ const azureProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default azureProvider 
+export default azureProvider

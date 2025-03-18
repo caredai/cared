@@ -132,4 +132,4 @@ const openaiProvider: ProviderInfo = {
   ],
 }
 
-export default openaiProvider 
+export default openaiProvider

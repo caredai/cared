@@ -67,7 +67,7 @@ export function Models() {
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight truncate">Model Management</h1>
+        <h1 className="text-3xl font-bold tracking-tight truncate">Models</h1>
         <p className="text-muted-foreground mt-2">View and manage available providers and models</p>
       </div>
 
@@ -80,8 +80,8 @@ export function Models() {
           >
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="relative h-10 w-10 overflow-hidden rounded-sm">
+                <CardTitle className="flex items-center gap-4">
+                  <div className="relative h-10 w-10 overflow-hidden rounded-sm flex items-center">
                     <NextImage
                       src={`/images/providers/${provider.icon}`}
                       alt={`${provider.name} logo`}
@@ -101,7 +101,9 @@ export function Models() {
                   {provider.name}
                 </CardTitle>
                 <CardDescription>
-                  <p>Provider ID: {provider.id}</p>
+                  <p>
+                    Provider ID: <span className="font-mono">{provider.id}</span>
+                  </p>
                   <p className="mt-4 lg:min-h-16 xl:min-h-10">{provider.description}</p>
                 </CardDescription>
               </CardHeader>
@@ -206,7 +208,7 @@ function ModelsByType({
             <li key={model.id} className="text-sm p-2 bg-muted rounded-md">
               <div className="font-medium">{model.name}</div>
               <div className="flex items-center text-xs text-muted-foreground">
-                <span>{modelId}</span>
+                <span className="font-mono">{modelId}</span>
                 <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
               </div>
               {model.description && (

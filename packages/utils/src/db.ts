@@ -64,3 +64,7 @@ export const timestampsIndices = (table: any) => [
   index().on(table.updatedAt),
 ]
 export const timestampsOmits = { createdAt: true as const, updatedAt: true as const }
+
+export function hasWhitespace(s: string) {
+  return /\s/.test(s)
+}

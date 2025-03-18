@@ -12,6 +12,8 @@ import {
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
+import { hasWhitespace } from '@mindworld/utils'
+
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { Workspace } from './workspace'
 
@@ -163,8 +165,13 @@ export const Category = pgTable(
 
 export type Category = InferSelectModel<typeof Category>
 
+const categoryNameSchema = z
+  .string()
+  .min(1, 'Category name is required')
+  .max(50, 'Category name cannot exceed 50 characters')
+
 export const CreateCategorySchema = createInsertSchema(Category, {
-  name: z.string().max(255),
+  name: categoryNameSchema,
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -172,7 +179,7 @@ export const CreateCategorySchema = createInsertSchema(Category, {
 
 export const UpdateCategorySchema = createUpdateSchema(Category, {
   id: z.string(),
-  name: z.string().max(255).optional(),
+  name: categoryNameSchema,
 }).omit({
   ...timestampsOmits,
 })
@@ -218,7 +225,13 @@ export const Tag = pgTable(
 export type Tag = InferSelectModel<typeof Tag>
 
 export const CreateTagSchema = createInsertSchema(Tag, {
-  name: z.string().max(255),
+  // See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics
+  name: z
+    .string()
+    .min(1, 'Tag name must be at least 1 character long')
+    .max(50, 'Tag name cannot exceed 50 characters')
+    .refine((name) => !hasWhitespace(name), 'Tag name cannot contain whitespace')
+    .refine((name) => name.toLowerCase() === name, 'Tag name must be lowercase'),
 }).omit({
   ...timestampsOmits,
 })

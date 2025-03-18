@@ -64,4 +64,4 @@ const groqProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default groqProvider 
+export default groqProvider
