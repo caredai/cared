@@ -134,11 +134,6 @@ const bedrockProvider: ProviderInfo = {
       description: 'Small Mistral model',
     },
     {
-      id: 'amazon.titan-text-express-v1',
-      name: 'Titan Text Express',
-      description: 'Fast Titan model',
-    },
-    {
       id: 'amazon.titan-text-lite-v1',
       name: 'Titan Text Lite',
       description: 'Lightweight Titan model',
@@ -173,4 +168,4 @@ const bedrockProvider: ProviderInfo = {
   imageModels: [],
 }
 
-export default bedrockProvider 
+export default bedrockProvider

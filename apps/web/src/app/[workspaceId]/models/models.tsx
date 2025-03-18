@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@mindworld/ui/components/card'
@@ -23,6 +22,16 @@ import {
 } from '@mindworld/ui/components/collapsible'
 
 import { useTRPC } from '@/trpc/client'
+
+// Model type definition
+type ModelType = 'language' | 'text-embedding' | 'image'
+
+// Model type display configuration
+const MODEL_TYPE_CONFIG: Record<ModelType, { title: string }> = {
+  language: { title: 'Language Models' },
+  'text-embedding': { title: 'Text Embedding Models' },
+  image: { title: 'Image Models' },
+}
 
 export function Models() {
   const trpc = useTRPC()
@@ -45,25 +54,15 @@ export function Models() {
     }))
   }
 
-  // Safely check if models of a specific type exist for a provider
-  const hasModelsForProvider = (
-    providerId: string,
-    modelType: 'language' | 'text-embedding' | 'image',
-  ) => {
-    return (
-      modelsData.models[modelType]?.some((model) => model.id.startsWith(`${providerId}:`)) ?? false
-    )
-  }
-
   // Get models of a specific type for a provider
-  const getModelsForProvider = (
-    providerId: string,
-    modelType: 'language' | 'text-embedding' | 'image',
-  ) => {
+  const getModelsForProvider = (providerId: string, modelType: ModelType) => {
     return (
       modelsData.models[modelType]?.filter((model) => model.id.startsWith(`${providerId}:`)) ?? []
     )
   }
+
+  // All model types to display
+  const allModelTypes: ModelType[] = ['language', 'text-embedding', 'image']
 
   return (
     <div className="container mx-auto py-6">
@@ -101,12 +100,12 @@ export function Models() {
                   </div>
                   {provider.name}
                 </CardTitle>
-                <CardDescription>Provider ID: {provider.id}</CardDescription>
+                <CardDescription>
+                  <p>Provider ID: {provider.id}</p>
+                  <p className="mt-4 lg:min-h-16 xl:min-h-10">{provider.description}</p>
+                </CardDescription>
               </CardHeader>
-              <CardContent className="min-h-10">
-                <p className="text-sm text-muted-foreground">{provider.description}</p>
-              </CardContent>
-              <CardFooter>
+              <CardContent>
                 <CollapsibleTrigger asChild>
                   <Button variant="outline" className="w-full">
                     {expandedProviders[provider.id] ? (
@@ -117,105 +116,50 @@ export function Models() {
                     ) : (
                       <>
                         <ChevronDown className="mr-2 h-4 w-4" />
-                        {getModelsForProvider(provider.id, 'language').length +
-                          getModelsForProvider(provider.id, 'text-embedding').length +
-                          getModelsForProvider(provider.id, 'image').length}{' '}
+                        {allModelTypes.reduce(
+                          (total, type) => total + getModelsForProvider(provider.id, type).length,
+                          0,
+                        )}{' '}
                         Models
                       </>
                     )}
                   </Button>
                 </CollapsibleTrigger>
-              </CardFooter>
-              <CollapsibleContent>
-                <div className="px-6 pb-6 pt-2">
-                  {/* Language Models */}
-                  {hasModelsForProvider(provider.id, 'language') && (
-                    <div className="mb-4">
-                      <h3 className="font-medium mb-2">Language Models</h3>
-                      <ul className="space-y-2">
-                        {getModelsForProvider(provider.id, 'language').map((model) => {
-                          const { modelId } = splitModelFullId(model.id)
-                          return (
-                            <li key={model.id} className="text-sm p-2 bg-muted rounded-md">
-                              <div className="font-medium">{model.name}</div>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <span>{modelId}</span>
-                                <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
-                              </div>
-                              {model.description && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {model.description}
-                                </div>
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Text Embedding Models */}
-                  {hasModelsForProvider(provider.id, 'text-embedding') && (
-                    <div className="mb-4">
-                      <h3 className="font-medium mb-2">Text Embedding Models</h3>
-                      <ul className="space-y-2">
-                        {getModelsForProvider(provider.id, 'text-embedding').map((model) => {
-                          const { modelId } = splitModelFullId(model.id)
-                          return (
-                            <li key={model.id} className="text-sm p-2 bg-muted rounded-md">
-                              <div className="font-medium">{model.name}</div>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <span>{modelId}</span>
-                                <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
-                              </div>
-                              {model.description && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {model.description}
-                                </div>
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Image Models */}
-                  {hasModelsForProvider(provider.id, 'image') && (
-                    <div>
-                      <h3 className="font-medium mb-2">Image Models</h3>
-                      <ul className="space-y-2">
-                        {getModelsForProvider(provider.id, 'image').map((model) => {
-                          const { modelId } = splitModelFullId(model.id)
-                          return (
-                            <li key={model.id} className="text-sm p-2 bg-muted rounded-md">
-                              <div className="font-medium">{model.name}</div>
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <span>{modelId}</span>
-                                <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
-                              </div>
-                              {model.description && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {model.description}
-                                </div>
-                              )}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* No models available */}
-                  {!hasModelsForProvider(provider.id, 'language') &&
-                    !hasModelsForProvider(provider.id, 'text-embedding') &&
-                    !hasModelsForProvider(provider.id, 'image') && (
-                      <p className="text-sm text-muted-foreground">
-                        No models available for this provider
-                      </p>
-                    )}
-                </div>
-              </CollapsibleContent>
+                <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
+                  <div className="pt-6 pb-2">
+                    {(() => {
+                      const modelsByType = allModelTypes.map((modelType) =>
+                        getModelsForProvider(provider.id, modelType),
+                      )
+                      return (
+                        <>
+                          {/* Render model sections for each type */}
+                          {modelsByType.map((models, index) => {
+                            const modelType = allModelTypes[index]!
+                            return (
+                              <ModelsByType
+                                key={modelType}
+                                modelType={modelType}
+                                models={models}
+                                isLast={
+                                  !modelsByType.slice(index + 1).some((models) => models.length)
+                                }
+                                copyToClipboard={copyToClipboard}
+                              />
+                            )
+                          })}
+                          {/* No models available */}
+                          {modelsByType.every((models) => !models.length) && (
+                            <p className="text-sm text-muted-foreground">
+                              No models available for this provider
+                            </p>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </div>
+                </CollapsibleContent>
+              </CardContent>
             </Card>
           </Collapsible>
         ))}
@@ -234,6 +178,44 @@ export function Models() {
           </Card>
         )}
       </div>
+    </div>
+  )
+}
+
+// Component to render a section of models by type
+function ModelsByType({
+  modelType,
+  models,
+  isLast,
+  copyToClipboard,
+}: {
+  modelType: ModelType
+  models: { id: string; name: string; description?: string }[]
+  isLast: boolean
+  copyToClipboard: (value: string) => void
+}) {
+  if (!models.length) return null
+
+  return (
+    <div className={isLast ? '' : 'mb-4'}>
+      <h3 className="font-medium mb-2">{MODEL_TYPE_CONFIG[modelType].title}</h3>
+      <ul className="space-y-2">
+        {models.map((model) => {
+          const { modelId } = splitModelFullId(model.id)
+          return (
+            <li key={model.id} className="text-sm p-2 bg-muted rounded-md">
+              <div className="font-medium">{model.name}</div>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <span>{modelId}</span>
+                <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
+              </div>
+              {model.description && (
+                <div className="text-xs text-muted-foreground mt-1">{model.description}</div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

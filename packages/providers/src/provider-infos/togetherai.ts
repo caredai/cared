@@ -159,11 +159,6 @@ const togetheraiProvider: ProviderInfo = {
       name: 'CodeLlama 34B',
       description: 'Code generation model',
     },
-    {
-      id: 'Qwen/Qwen2.5-Coder-32B-Instruct',
-      name: 'Qwen 2.5 Coder',
-      description: 'Latest Qwen coding model',
-    },
   ],
   textEmbeddingModels: [
     {
@@ -265,4 +260,4 @@ const togetheraiProvider: ProviderInfo = {
   ],
 }
 
-export default togetheraiProvider 
+export default togetheraiProvider
