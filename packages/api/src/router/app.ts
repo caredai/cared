@@ -69,28 +69,43 @@ export async function getApps(
     conditions.push(baseQuery.where)
   }
 
-  // Add cursor conditions
+  // Add cursor conditions based on pagination direction
   if (baseQuery.after) {
     conditions.push(gt(App.id, baseQuery.after))
-  }
-  if (baseQuery.before) {
+  } else if (baseQuery.before) {
     conditions.push(lt(App.id, baseQuery.before))
   }
 
   const query = conditions.length > 0 ? and(...conditions) : undefined
 
-  // Get paginated apps first
-  const apps = await ctx.db
-    .select()
-    .from(App)
-    .where(query)
-    .orderBy(desc(App.id))
-    .limit(baseQuery.limit + 1) // Get one extra to determine hasMore
+  // Determine if this is backward pagination
+  const isBackwardPagination = !!baseQuery.before
+
+  // Get paginated apps with appropriate ordering
+  let apps
+  if (isBackwardPagination) {
+    apps = await ctx.db
+      .select()
+      .from(App)
+      .where(query)
+      .orderBy(App.id) // Ascending order
+      .limit(baseQuery.limit + 1) // Get one extra to determine hasMore
+  } else {
+    apps = await ctx.db
+      .select()
+      .from(App)
+      .where(query)
+      .orderBy(desc(App.id)) // Descending order
+      .limit(baseQuery.limit + 1) // Get one extra to determine hasMore
+  }
 
   const hasMore = apps.length > baseQuery.limit
   if (hasMore) {
     apps.pop() // Remove the extra item
   }
+
+  // Reverse results for backward pagination to maintain consistent ordering
+  apps = isBackwardPagination ? apps.reverse() : apps
 
   if (apps.length === 0) {
     return {
@@ -879,35 +894,55 @@ export const appRouter = {
   listCategories: publicProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/categories' } })
     .input(
-      z.object({
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        )
+        .default({ limit: 50 }),
     )
     .query(async ({ ctx, input }) => {
       const conditions: SQL<unknown>[] = []
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Category.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(Category.id, input.before))
       }
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      const categories = await ctx.db.query.Category.findMany({
-        where: query,
-        orderBy: desc(Category.id),
-        limit: input.limit + 1,
-      })
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+      // Fetch categories with appropriate ordering
+      let categories
+      if (isBackwardPagination) {
+        categories = await ctx.db.query.Category.findMany({
+          where: query,
+          orderBy: Category.id, // Ascending order
+          limit: input.limit + 1,
+        })
+      } else {
+        categories = await ctx.db.query.Category.findMany({
+          where: query,
+          orderBy: desc(Category.id), // Descending order
+          limit: input.limit + 1,
+        })
+      }
 
       const hasMore = categories.length > input.limit
       if (hasMore) {
         categories.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      categories = isBackwardPagination ? categories.reverse() : categories
 
       // Get first and last category IDs
       const first = categories[0]?.id

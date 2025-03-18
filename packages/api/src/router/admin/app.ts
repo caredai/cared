@@ -25,11 +25,16 @@ export const appRouter = {
    */
   list: adminProcedure
     .input(
-      z.object({
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const result = await getApps(ctx, {
@@ -54,12 +59,17 @@ export const appRouter = {
    */
   listByCategory: adminProcedure
     .input(
-      z.object({
-        categoryId: z.string(),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          categoryId: z.string(),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const result = await getApps(ctx, {
@@ -85,12 +95,17 @@ export const appRouter = {
    */
   listByTags: adminProcedure
     .input(
-      z.object({
-        tags: z.array(z.string()).min(1).max(10),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          tags: z.array(z.string()).min(1).max(10),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const result = await getApps(ctx, {
@@ -117,36 +132,60 @@ export const appRouter = {
    */
   listVersions: adminProcedure
     .input(
-      z.object({
-        id: z.string(),
-        after: z.number().optional(),
-        before: z.number().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          id: z.string(),
+          after: z.number().optional(),
+          before: z.number().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       await getAppById(ctx, input.id)
 
       const conditions: SQL<unknown>[] = [eq(AppVersion.appId, input.id)]
 
+      // Add cursor conditions based on pagination direction
       if (typeof input.after === 'number') {
         conditions.push(gt(AppVersion.version, input.after))
-      }
-      if (typeof input.before === 'number') {
+      } else if (typeof input.before === 'number') {
         conditions.push(lt(AppVersion.version, input.before))
       }
 
-      const versions = await ctx.db
-        .select()
-        .from(AppVersion)
-        .where(and(...conditions))
-        .orderBy(desc(AppVersion.version))
-        .limit(input.limit + 1)
+      const query = and(...conditions)
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch versions with appropriate ordering
+      let versions
+      if (isBackwardPagination) {
+        versions = await ctx.db
+          .select()
+          .from(AppVersion)
+          .where(query)
+          .orderBy(AppVersion.version) // Ascending order
+          .limit(input.limit + 1)
+      } else {
+        versions = await ctx.db
+          .select()
+          .from(AppVersion)
+          .where(query)
+          .orderBy(desc(AppVersion.version)) // Descending order
+          .limit(input.limit + 1)
+      }
 
       const hasMore = versions.length > input.limit
       if (hasMore) {
         versions.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      versions = isBackwardPagination ? versions.reverse() : versions
 
       // Get first and last version numbers
       const first = versions[0]?.version

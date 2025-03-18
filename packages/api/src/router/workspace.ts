@@ -1,6 +1,6 @@
 import type { SQL } from 'drizzle-orm'
 import { TRPCError } from '@trpc/server'
-import { and, asc, count, eq, gt, lt } from 'drizzle-orm'
+import { and, count, desc, eq, gt, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
 import type { Transaction } from '@mindworld/db/client'
@@ -109,6 +109,10 @@ export const workspaceRouter = {
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
         })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        )
         .default({
           limit: 50,
         }),
@@ -116,30 +120,50 @@ export const workspaceRouter = {
     .query(async ({ input, ctx }) => {
       const conditions: SQL<unknown>[] = [eq(Membership.userId, ctx.auth.userId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Workspace.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(Workspace.id, input.before))
       }
 
       return await ctx.db.transaction(async (tx) => {
-        const workspaces = await tx
-          .select({
-            workspace: Workspace,
-            role: Membership.role,
-          })
-          .from(Membership)
-          .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
-          .where(and(...conditions))
-          .orderBy(asc(Workspace.id))
-          .limit(input.limit + 1)
+        // Determine if this is backward pagination
+        const isBackwardPagination = !!input.before
+
+        // Fetch workspaces with appropriate ordering
+        let workspaces
+        if (isBackwardPagination) {
+          workspaces = await tx
+            .select({
+              workspace: Workspace,
+              role: Membership.role,
+            })
+            .from(Membership)
+            .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
+            .where(and(...conditions))
+            .orderBy(Workspace.id) // Ascending order
+            .limit(input.limit + 1)
+        } else {
+          workspaces = await tx
+            .select({
+              workspace: Workspace,
+              role: Membership.role,
+            })
+            .from(Membership)
+            .innerJoin(Workspace, eq(Workspace.id, Membership.workspaceId))
+            .where(and(...conditions))
+            .orderBy(desc(Workspace.id)) // Descending order
+            .limit(input.limit + 1)
+        }
 
         const hasMore = workspaces.length > input.limit
         if (hasMore) {
           workspaces.pop()
         }
+
+        // Reverse results for backward pagination to maintain consistent ordering
+        workspaces = isBackwardPagination ? workspaces.reverse() : workspaces
 
         // If no workspaces are found, create a personal workspace
         if (!input.after && !input.before && !workspaces.length) {
@@ -290,12 +314,17 @@ export const workspaceRouter = {
   listMembers: userProtectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/workspaces/{workspaceId}/members' } })
     .input(
-      z.object({
-        workspaceId: z.string().min(32),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          workspaceId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ input, ctx }) => {
       // Check if the current user is a member of the workspace
@@ -316,34 +345,53 @@ export const workspaceRouter = {
 
       const conditions: SQL<unknown>[] = [eq(Membership.workspaceId, input.workspaceId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(User.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(User.id, input.before))
       }
 
-      const members = (
-        await ctx.db
-          .select({
-            user: User,
-            role: Membership.role,
-          })
-          .from(Membership)
-          .innerJoin(User, eq(User.id, Membership.userId))
-          .where(and(...conditions))
-          .orderBy(
-            asc(Membership.role), // sort 'owner' first
-            asc(Membership.createdAt),
-          )
-          .limit(input.limit + 1)
-      ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch members with appropriate ordering
+      let members
+      if (isBackwardPagination) {
+        members = (
+          await ctx.db
+            .select({
+              user: User,
+              role: Membership.role,
+            })
+            .from(Membership)
+            .innerJoin(User, eq(User.id, Membership.userId))
+            .where(and(...conditions))
+            .orderBy(User.id) // Ascending order by User ID
+            .limit(input.limit + 1)
+        ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+      } else {
+        members = (
+          await ctx.db
+            .select({
+              user: User,
+              role: Membership.role,
+            })
+            .from(Membership)
+            .innerJoin(User, eq(User.id, Membership.userId))
+            .where(and(...conditions))
+            .orderBy(desc(User.id)) // Descending order by User ID
+            .limit(input.limit + 1)
+        ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+      }
 
       const hasMore = members.length > input.limit
       if (hasMore) {
         members.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      members = isBackwardPagination ? members.reverse() : members
 
       // Get first and last member IDs
       const first = members.length > 0 ? members[0]?.user?.id : undefined

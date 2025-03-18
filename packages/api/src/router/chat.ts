@@ -79,19 +79,27 @@ export const chatRouter = {
       },
     })
     .input(
-      z.object({
-        appId: z.string().min(32),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          appId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine((data) => !(data.after && data.before), {
+          message: "Cannot use 'after' and 'before' simultaneously",
+          path: ['after', 'before'],
+        }),
     )
     .query(async ({ ctx, input }) => {
       await getAppById(ctx, input.appId)
 
       const conditions: SQL<unknown>[] = [eq(Chat.appId, input.appId)]
 
-      // Add cursor conditions
+      // Determine pagination direction
+      const isBackward = !!input.before
+
+      // Add cursor conditions based on direction
       if (input.after) {
         conditions.push(gt(Chat.id, input.after))
       }
@@ -108,6 +116,11 @@ export const chatRouter = {
       const hasMore = chats.length > input.limit
       if (hasMore) {
         chats.pop()
+      }
+
+      // For backward pagination, reverse the results to maintain consistent order
+      if (isBackward) {
+        chats.reverse()
       }
 
       // Get first and last chat IDs
@@ -278,7 +291,7 @@ export const chatRouter = {
    * List all messages in a chat.
    * Only accessible by authenticated users.
    * @param input - Object containing chat ID and pagination parameters
-   * @returns List of messages with hasMore flag
+   * @returns List of messages with hasMore flag and pagination metadata
    */
   listMessages: userProtectedProcedure
     .meta({
@@ -291,19 +304,27 @@ export const chatRouter = {
       },
     })
     .input(
-      z.object({
-        chatId: z.string().min(32),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          chatId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine((data) => !(data.after && data.before), {
+          message: "Cannot use 'after' and 'before' simultaneously",
+          path: ['after', 'before'],
+        }),
     )
     .query(async ({ ctx, input }) => {
       await getChatById(ctx, input.chatId)
 
       const conditions: SQL<unknown>[] = [eq(Message.chatId, input.chatId)]
 
-      // Add cursor conditions
+      // Determine pagination direction
+      const isBackward = !!input.before
+
+      // Add cursor conditions based on direction
       if (input.after) {
         conditions.push(gt(Message.id, input.after))
       }
@@ -320,6 +341,11 @@ export const chatRouter = {
       const hasMore = messages.length > input.limit
       if (hasMore) {
         messages.pop()
+      }
+
+      // For backward pagination, reverse the results to maintain consistent order
+      if (isBackward) {
+        messages.reverse()
       }
 
       // Get first and last message IDs

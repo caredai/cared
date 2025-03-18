@@ -68,37 +68,60 @@ export const datasetRouter = {
       },
     })
     .input(
-      z.object({
-        workspaceId: z.string().min(32),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          workspaceId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
 
       const conditions: SQL<unknown>[] = [eq(Dataset.workspaceId, input.workspaceId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Dataset.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(Dataset.id, input.before))
       }
 
-      const datasets = await ctx.db
-        .select()
-        .from(Dataset)
-        .where(and(...conditions))
-        .orderBy(desc(Dataset.id))
-        .limit(input.limit + 1)
+      const query = and(...conditions)
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch datasets with appropriate ordering
+      let datasets
+      if (isBackwardPagination) {
+        datasets = await ctx.db
+          .select()
+          .from(Dataset)
+          .where(query)
+          .orderBy(Dataset.id) // Ascending order
+          .limit(input.limit + 1)
+      } else {
+        datasets = await ctx.db
+          .select()
+          .from(Dataset)
+          .where(query)
+          .orderBy(desc(Dataset.id)) // Descending order
+          .limit(input.limit + 1)
+      }
 
       const hasMore = datasets.length > input.limit
       if (hasMore) {
         datasets.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      datasets = isBackwardPagination ? datasets.reverse() : datasets
 
       // Get first and last dataset IDs
       const first = datasets[0]?.id
@@ -552,12 +575,17 @@ export const datasetRouter = {
    */
   listDocuments: userProtectedProcedure
     .input(
-      z.object({
-        datasetId: z.string(),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          datasetId: z.string(),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const dataset = await ctx.db.query.Dataset.findFirst({
@@ -575,25 +603,43 @@ export const datasetRouter = {
 
       const conditions: SQL<unknown>[] = [eq(Document.datasetId, input.datasetId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Document.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(Document.id, input.before))
       }
 
-      const documents = await ctx.db
-        .select()
-        .from(Document)
-        .where(and(...conditions))
-        .orderBy(desc(Document.id))
-        .limit(input.limit + 1)
+      const query = and(...conditions)
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch documents with appropriate ordering
+      let documents
+      if (isBackwardPagination) {
+        documents = await ctx.db
+          .select()
+          .from(Document)
+          .where(query)
+          .orderBy(Document.id) // Ascending order
+          .limit(input.limit + 1)
+      } else {
+        documents = await ctx.db
+          .select()
+          .from(Document)
+          .where(query)
+          .orderBy(desc(Document.id)) // Descending order
+          .limit(input.limit + 1)
+      }
 
       const hasMore = documents.length > input.limit
       if (hasMore) {
         documents.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      documents = isBackwardPagination ? documents.reverse() : documents
 
       // Get first and last document IDs
       const first = documents[0]?.id
@@ -790,12 +836,17 @@ export const datasetRouter = {
       },
     })
     .input(
-      z.object({
-        documentId: z.string(),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          documentId: z.string(),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const document = await ctx.db.query.Document.findFirst({
@@ -813,25 +864,43 @@ export const datasetRouter = {
 
       const conditions: SQL<unknown>[] = [eq(DocumentSegment.documentId, input.documentId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(DocumentSegment.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(DocumentSegment.id, input.before))
       }
 
-      const segments = await ctx.db
-        .select()
-        .from(DocumentSegment)
-        .where(and(...conditions))
-        .orderBy(desc(DocumentSegment.id))
-        .limit(input.limit + 1)
+      const query = and(...conditions)
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch segments with appropriate ordering
+      let segments
+      if (isBackwardPagination) {
+        segments = await ctx.db
+          .select()
+          .from(DocumentSegment)
+          .where(query)
+          .orderBy(DocumentSegment.id) // Ascending order
+          .limit(input.limit + 1)
+      } else {
+        segments = await ctx.db
+          .select()
+          .from(DocumentSegment)
+          .where(query)
+          .orderBy(desc(DocumentSegment.id)) // Descending order
+          .limit(input.limit + 1)
+      }
 
       const hasMore = segments.length > input.limit
       if (hasMore) {
         segments.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      segments = isBackwardPagination ? segments.reverse() : segments
 
       // Get first and last segment IDs
       const first = segments[0]?.id
@@ -998,12 +1067,17 @@ export const datasetRouter = {
       },
     })
     .input(
-      z.object({
-        segmentId: z.string(),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          segmentId: z.string(),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const segment = await ctx.db.query.DocumentSegment.findFirst({
@@ -1021,25 +1095,43 @@ export const datasetRouter = {
 
       const conditions: SQL<unknown>[] = [eq(DocumentChunk.segmentId, input.segmentId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(DocumentChunk.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(DocumentChunk.id, input.before))
       }
 
-      const chunks = await ctx.db
-        .select()
-        .from(DocumentChunk)
-        .where(and(...conditions))
-        .orderBy(desc(DocumentChunk.id))
-        .limit(input.limit + 1)
+      const query = and(...conditions)
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch chunks with appropriate ordering
+      let chunks
+      if (isBackwardPagination) {
+        chunks = await ctx.db
+          .select()
+          .from(DocumentChunk)
+          .where(query)
+          .orderBy(DocumentChunk.id) // Ascending order
+          .limit(input.limit + 1)
+      } else {
+        chunks = await ctx.db
+          .select()
+          .from(DocumentChunk)
+          .where(query)
+          .orderBy(desc(DocumentChunk.id)) // Descending order
+          .limit(input.limit + 1)
+      }
 
       const hasMore = chunks.length > input.limit
       if (hasMore) {
         chunks.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      chunks = isBackwardPagination ? chunks.reverse() : chunks
 
       // Get first and last chunk IDs
       const first = chunks[0]?.id

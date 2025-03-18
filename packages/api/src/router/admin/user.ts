@@ -17,12 +17,17 @@ export const userRouter = {
    */
   listUsers: adminProcedure
     .input(
-      z.object({
-        search: z.string().optional(),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().int().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          search: z.string().optional(),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().int().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const conditions: (SQL<unknown> | undefined)[] = []
@@ -34,27 +39,43 @@ export const userRouter = {
         )
       }
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(User.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(User.id, input.before))
       }
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      const users = await ctx.db
-        .select()
-        .from(User)
-        .where(query)
-        .orderBy(desc(User.id))
-        .limit(input.limit + 1)
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch users with appropriate ordering
+      let users
+      if (isBackwardPagination) {
+        users = await ctx.db
+          .select()
+          .from(User)
+          .where(query)
+          .orderBy(User.id) // Ascending order
+          .limit(input.limit + 1)
+      } else {
+        users = await ctx.db
+          .select()
+          .from(User)
+          .where(query)
+          .orderBy(desc(User.id)) // Descending order
+          .limit(input.limit + 1)
+      }
 
       const hasMore = users.length > input.limit
       if (hasMore) {
         users.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      users = isBackwardPagination ? users.reverse() : users
 
       // Get first and last user IDs
       const first = users[0]?.id

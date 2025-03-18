@@ -57,30 +57,42 @@ export const artifactRouter = {
       },
     })
     .input(
-      z.object({
-        chatId: z.string().min(32),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          chatId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       await verifyUserChat(ctx, input.chatId)
 
       const conditions: SQL<unknown>[] = [eq(Artifact.chatId, input.chatId)]
 
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Artifact.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(Artifact.id, input.before))
       }
 
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch artifacts with appropriate ordering
       const artifacts = await ctx.db
         .selectDistinctOn([Artifact.id])
         .from(Artifact)
         .where(and(...conditions))
-        .orderBy(asc(Artifact.id), desc(Artifact.version))
+        .orderBy(
+          isBackwardPagination ? asc(Artifact.id) : desc(Artifact.id),
+          desc(Artifact.version),
+        )
         .limit(input.limit + 1)
 
       const hasMore = artifacts.length > input.limit
@@ -88,12 +100,15 @@ export const artifactRouter = {
         artifacts.pop()
       }
 
+      // Reverse results for backward pagination to maintain consistent ordering
+      const result = isBackwardPagination ? artifacts.reverse() : artifacts
+
       // Get first and last artifact IDs
-      const first = artifacts[0]?.id
-      const last = artifacts[artifacts.length - 1]?.id
+      const first = result[0]?.id
+      const last = result[result.length - 1]?.id
 
       return {
-        artifacts,
+        artifacts: result,
         hasMore,
         first,
         last,
@@ -115,35 +130,56 @@ export const artifactRouter = {
       },
     })
     .input(
-      z.object({
-        id: z.string(),
-        after: z.number().optional(),
-        before: z.number().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          id: z.string(),
+          after: z.number().optional(),
+          before: z.number().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       await verifyUserArtifact(ctx, input.id)
 
       const conditions: SQL<unknown>[] = [eq(Artifact.id, input.id)]
 
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Artifact.version, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(Artifact.version, input.before))
       }
 
-      const versions = await ctx.db.query.Artifact.findMany({
-        where: and(...conditions),
-        orderBy: desc(Artifact.version),
-        limit: input.limit + 1,
-      })
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch versions with appropriate ordering
+      let versions
+      if (isBackwardPagination) {
+        versions = await ctx.db.query.Artifact.findMany({
+          where: and(...conditions),
+          orderBy: asc(Artifact.version),
+          limit: input.limit + 1,
+        })
+      } else {
+        versions = await ctx.db.query.Artifact.findMany({
+          where: and(...conditions),
+          orderBy: desc(Artifact.version),
+          limit: input.limit + 1,
+        })
+      }
 
       const hasMore = versions.length > input.limit
       if (hasMore) {
         versions.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      versions = isBackwardPagination ? versions.reverse() : versions
 
       if (!versions.length) {
         throw new TRPCError({
@@ -152,10 +188,15 @@ export const artifactRouter = {
         })
       }
 
+      // Get first and last version numbers
+      const first = versions[0]?.version
+      const last = versions[versions.length - 1]?.version
+
       return {
         versions,
         hasMore,
-        limit: input.limit,
+        first,
+        last,
       }
     }),
 
@@ -215,13 +256,18 @@ export const artifactRouter = {
       },
     })
     .input(
-      z.object({
-        artifactId: z.string(),
-        artifactVersion: z.number().optional(),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          artifactId: z.string(),
+          artifactVersion: z.number().optional(),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       await verifyUserArtifact(ctx, input.artifactId)
@@ -233,23 +279,39 @@ export const artifactRouter = {
         conditions.push(eq(ArtifactSuggestion.artifactVersion, input.artifactVersion))
       }
 
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(ArtifactSuggestion.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(ArtifactSuggestion.id, input.before))
       }
 
-      const suggestions = await ctx.db.query.ArtifactSuggestion.findMany({
-        where: and(...conditions),
-        orderBy: asc(ArtifactSuggestion.id),
-        limit: input.limit + 1,
-      })
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch suggestions with appropriate ordering
+      let suggestions
+      if (isBackwardPagination) {
+        suggestions = await ctx.db.query.ArtifactSuggestion.findMany({
+          where: and(...conditions),
+          orderBy: asc(ArtifactSuggestion.id),
+          limit: input.limit + 1,
+        })
+      } else {
+        suggestions = await ctx.db.query.ArtifactSuggestion.findMany({
+          where: and(...conditions),
+          orderBy: desc(ArtifactSuggestion.id),
+          limit: input.limit + 1,
+        })
+      }
 
       const hasMore = suggestions.length > input.limit
       if (hasMore) {
         suggestions.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      suggestions = isBackwardPagination ? suggestions.reverse() : suggestions
 
       // Get first and last suggestion IDs
       const first = suggestions[0]?.id

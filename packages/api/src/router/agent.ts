@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@mindworld/db'
-import { and, asc, count, desc, eq, gt, inArray, lt } from '@mindworld/db'
+import { and, count, desc, eq, gt, inArray, lt } from '@mindworld/db'
 import {
   Agent,
   AgentVersion,
@@ -103,34 +103,56 @@ export const agentRouter = {
       },
     })
     .input(
-      z.object({
-        appId: z.string().min(32),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          appId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       const conditions: SQL<unknown>[] = [eq(Agent.appId, input.appId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Agent.id, input.after))
-      }
-      if (input.before) {
+      } else if (input.before) {
         conditions.push(lt(Agent.id, input.before))
       }
 
-      const agents = await ctx.db.query.Agent.findMany({
-        where: and(...conditions),
-        orderBy: asc(Agent.id),
-        limit: input.limit + 1,
-      })
+      const query = and(...conditions)
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch agents with appropriate ordering
+      let agents
+      if (isBackwardPagination) {
+        agents = await ctx.db.query.Agent.findMany({
+          where: query,
+          orderBy: Agent.id, // Ascending order
+          limit: input.limit + 1,
+        })
+      } else {
+        agents = await ctx.db.query.Agent.findMany({
+          where: query,
+          orderBy: desc(Agent.id), // Descending order
+          limit: input.limit + 1,
+        })
+      }
 
       const hasMore = agents.length > input.limit
       if (hasMore) {
         agents.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      agents = isBackwardPagination ? agents.reverse() : agents
 
       // Get first and last agent IDs
       const first = agents[0]?.id
@@ -204,37 +226,60 @@ export const agentRouter = {
       },
     })
     .input(
-      z.object({
-        agentId: z.string().min(32),
-        after: z.number().optional(),
-        before: z.number().optional(),
-        limit: z.number().min(1).max(100).default(50),
-      }),
+      z
+        .object({
+          agentId: z.string().min(32),
+          after: z.number().optional(),
+          before: z.number().optional(),
+          limit: z.number().min(1).max(100).default(50),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
     )
     .query(async ({ ctx, input }) => {
       await getAgentById(ctx, input.agentId)
 
       const conditions: SQL<unknown>[] = [eq(AgentVersion.agentId, input.agentId)]
 
-      // Add cursor conditions
+      // Add cursor conditions based on pagination direction
       if (typeof input.after === 'number') {
         conditions.push(gt(AgentVersion.version, input.after))
-      }
-      if (typeof input.before === 'number') {
+      } else if (typeof input.before === 'number') {
         conditions.push(lt(AgentVersion.version, input.before))
       }
 
-      const versions = await ctx.db
-        .select()
-        .from(AgentVersion)
-        .where(and(...conditions))
-        .orderBy(desc(AgentVersion.version))
-        .limit(input.limit + 1)
+      const query = and(...conditions)
+
+      // Determine if this is backward pagination
+      const isBackwardPagination = !!input.before
+
+      // Fetch versions with appropriate ordering
+      let versions
+      if (isBackwardPagination) {
+        versions = await ctx.db
+          .select()
+          .from(AgentVersion)
+          .where(query)
+          .orderBy(AgentVersion.version) // Ascending order
+          .limit(input.limit + 1)
+      } else {
+        versions = await ctx.db
+          .select()
+          .from(AgentVersion)
+          .where(query)
+          .orderBy(desc(AgentVersion.version)) // Descending order
+          .limit(input.limit + 1)
+      }
 
       const hasMore = versions.length > input.limit
       if (hasMore) {
         versions.pop()
       }
+
+      // Reverse results for backward pagination to maintain consistent ordering
+      versions = isBackwardPagination ? versions.reverse() : versions
 
       // Get first and last version numbers
       const first = versions[0]?.version
