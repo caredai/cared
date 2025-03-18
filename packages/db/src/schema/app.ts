@@ -51,6 +51,7 @@ const appMetadataSchema = z
         systemPrompt: z.string().optional(),
       })
       .optional(),
+    datasetBindings: z.array(z.string()).optional(),
   })
   .catchall(z.unknown())
 
