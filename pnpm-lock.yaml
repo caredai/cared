@@ -108,12 +108,12 @@ importers:
       '@mindworld/providers':
         specifier: workspace:*
         version: link:../../packages/providers
+      '@mindworld/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@mindworld/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      '@mindworld/utils':
-        specifier: workspace:*
-        version: link:../../packages/utils
       '@privy-io/react-auth':
         specifier: ^2.6.2
         version: 2.6.2(@planetscale/database@1.19.0)(@solana/web3.js@1.98.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@types/react@19.0.7)(aws4fetch@1.0.20)(bs58@5.0.0)(bufferutil@4.0.9)(db0@0.2.1(drizzle-orm@0.38.4(@neondatabase/serverless@0.10.0)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.11.10)(@types/react@19.0.7)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(mysql2@3.11.3)(postgres@3.4.4)(react@19.0.0))(mysql2@3.11.3))(ioredis@5.4.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)(use-sync-external-store@1.4.0(react@19.0.0))(utf-8-validate@5.0.10)(zod@3.24.2)
@@ -232,12 +232,12 @@ importers:
       '@mindworld/providers':
         specifier: workspace:*
         version: link:../providers
+      '@mindworld/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@mindworld/tools':
         specifier: workspace:*
         version: link:../tools
-      '@mindworld/utils':
-        specifier: workspace:*
-        version: link:../utils
       '@mindworld/validators':
         specifier: workspace:*
         version: link:../validators
@@ -510,9 +510,9 @@ importers:
 
   packages/db:
     dependencies:
-      '@mindworld/utils':
+      '@mindworld/shared':
         specifier: workspace:*
-        version: link:../utils
+        version: link:../shared
       '@vercel/postgres':
         specifier: ^0.10.0
         version: 0.10.0(utf-8-validate@6.0.4)
@@ -779,9 +779,9 @@ importers:
 
   packages/sdk:
     dependencies:
-      '@mindworld/utils':
+      '@mindworld/shared':
         specifier: workspace:*
-        version: link:../utils
+        version: link:../shared
       '@tanstack/react-query':
         specifier: 'catalog:'
         version: 5.66.7(react@19.0.0)
@@ -825,6 +825,40 @@ importers:
       tsup:
         specifier: ^8.3.6
         version: 8.3.6(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.7.3)(yaml@2.7.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+
+  packages/shared:
+    dependencies:
+      base-x:
+        specifier: ^5.0.1
+        version: 5.0.1
+      drizzle-orm:
+        specifier: ^0.38.4
+        version: 0.38.4(@neondatabase/serverless@0.10.0)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.11.10)(@types/react@19.0.7)(@vercel/postgres@0.10.0(utf-8-validate@6.0.4))(mysql2@3.11.3)(postgres@3.4.4)(react@19.0.0)
+      uuid:
+        specifier: 11.1.0
+        version: 11.1.0
+      zod:
+        specifier: 3.24.2
+        version: 3.24.2
+    devDependencies:
+      '@mindworld/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@mindworld/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@mindworld/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      eslint:
+        specifier: 'catalog:'
+        version: 9.18.0(jiti@2.4.2)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.4.2
       typescript:
         specifier: 'catalog:'
         version: 5.7.3
@@ -1028,37 +1062,6 @@ importers:
       zod:
         specifier: 3.24.2
         version: 3.24.2
-
-  packages/utils:
-    dependencies:
-      drizzle-orm:
-        specifier: ^0.38.4
-        version: 0.38.4(@neondatabase/serverless@0.10.0)(@opentelemetry/api@1.9.0)(@planetscale/database@1.19.0)(@types/pg@8.11.10)(@types/react@19.0.7)(@vercel/postgres@0.10.0(utf-8-validate@6.0.4))(mysql2@3.11.3)(postgres@3.4.4)(react@19.0.0)
-      uuid:
-        specifier: 11.1.0
-        version: 11.1.0
-      zod:
-        specifier: 3.24.2
-        version: 3.24.2
-    devDependencies:
-      '@mindworld/eslint-config':
-        specifier: workspace:*
-        version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
-        specifier: workspace:*
-        version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/typescript
-      eslint:
-        specifier: 'catalog:'
-        version: 9.18.0(jiti@2.4.2)
-      prettier:
-        specifier: 'catalog:'
-        version: 3.4.2
-      typescript:
-        specifier: 'catalog:'
-        version: 5.7.3
 
   packages/validators:
     dependencies:
@@ -5500,6 +5503,9 @@ packages:
 
   base-x@4.0.1:
     resolution: {integrity: sha512-uAZ8x6r6S3aUM9rbHGVOIsR15U/ZSc82b3ymnCPsT45Gk1DDvhDPdIgB5MrhirZWt+5K0EEPQH985kNqZgNPFw==}
+
+  base-x@5.0.1:
+    resolution: {integrity: sha512-M7uio8Zt++eg3jPj+rHMfCC+IuygQHHCOU+IYsVtik6FWjuYpVt/+MRKcgsAMHh8mMFAwnB+Bs+mTrFiXjMzKg==}
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -16019,6 +16025,8 @@ snapshots:
       safe-buffer: 5.2.1
 
   base-x@4.0.1: {}
+
+  base-x@5.0.1: {}
 
   base64-js@1.5.1: {}
 

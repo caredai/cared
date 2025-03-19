@@ -4,7 +4,7 @@ import reactConfig from '@mindworld/eslint-config/react'
 /** @type {import('typescript-eslint').Config} */
 export default [
   {
-    ignores: [],
+    ignores: ['types/*'],
   },
   ...baseConfig,
   ...reactConfig,

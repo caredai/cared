@@ -21,7 +21,7 @@ import {
 } from '@mindworld/db/schema'
 import { log } from '@mindworld/log'
 import { defaultModels } from '@mindworld/providers'
-import { mergeWithoutUndefined } from '@mindworld/utils'
+import { mergeWithoutUndefined } from '@mindworld/shared'
 
 import type { Context } from '../trpc'
 import { env } from '../env'

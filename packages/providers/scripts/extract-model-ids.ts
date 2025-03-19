@@ -148,7 +148,7 @@ async function main() {
     }
   }
 
-  fs.writeFileSync(path.join(__dirname, '../src/model-ids.json'), JSON.stringify(results, null, 2))
+  fs.writeFileSync(path.join(__dirname, '../data/model-ids.json'), JSON.stringify(results, null, 2))
 }
 
 main().catch(console.error)

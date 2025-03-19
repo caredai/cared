@@ -3,7 +3,7 @@ import baseConfig from '@mindworld/eslint-config/base'
 /** @type {import('typescript-eslint').Config} */
 export default [
   {
-    ignores: ['scripts/*'],
+    ignores: ['scripts/*', 'data/*'],
   },
   ...baseConfig,
 ]

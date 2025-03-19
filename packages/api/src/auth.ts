@@ -9,6 +9,7 @@ import { db } from '@mindworld/db/client'
 import { App, OAuthApp } from '@mindworld/db/schema'
 
 import { env } from './env'
+import { getAppIdByApiKey } from './router/api-key'
 
 export type Auth =
   // for user auth
@@ -44,21 +45,19 @@ export const authForApi = cache(async (): Promise<Auth | Response | undefined> =
 
   if (authScheme === 'Bearer' && token) {
     if (!authType || authType.toUpperCase() === 'API-KEY') {
-      // TODO: get app by api key
-      const app: App | undefined = {} as App
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (!app) {
+      const gotAppId = await getAppIdByApiKey({ db } as any, token)
+      if (!gotAppId) {
         if (authType) {
           return new Response('Unauthorized', { status: 401 })
         } else {
           // pass through
         }
       } else {
-        if (appId && appId !== app.id) {
+        if (appId && appId !== gotAppId) {
           return new Response('Unauthorized', { status: 401 })
         }
         return {
-          appId: app.id,
+          appId: gotAppId,
         }
       }
     } else if (authType.toUpperCase() === 'OAUTH') {

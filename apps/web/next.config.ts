@@ -15,8 +15,8 @@ const config = {
     '@mindworld/db',
     '@mindworld/i18n',
     '@mindworld/providers',
+    '@mindworld/shared',
     '@mindworld/ui',
-    '@mindworld/utils',
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

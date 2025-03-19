@@ -57,7 +57,7 @@
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
-    "@mindworld/utils": "workspace:*",
+    "@mindworld/shared": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",

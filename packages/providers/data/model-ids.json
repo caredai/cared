@@ -25,6 +25,8 @@
       "gpt-4-1106-preview",
       "gpt-4",
       "gpt-4-0613",
+      "gpt-4.5-preview",
+      "gpt-4.5-preview-2025-02-27",
       "gpt-3.5-turbo-0125",
       "gpt-3.5-turbo",
       "gpt-3.5-turbo-1106",
@@ -42,6 +44,7 @@
   },
   "anthropic": {
     "languageModels": [
+      "claude-3-7-sonnet-20250219",
       "claude-3-5-sonnet-latest",
       "claude-3-5-sonnet-20241022",
       "claude-3-5-sonnet-20240620",
@@ -75,6 +78,7 @@
       "anthropic.claude-v2",
       "anthropic.claude-v2:1",
       "anthropic.claude-instant-v1",
+      "anthropic.claude-3-7-sonnet-20250219-v1:0",
       "anthropic.claude-3-5-sonnet-20240620-v1:0",
       "anthropic.claude-3-5-sonnet-20241022-v2:0",
       "anthropic.claude-3-5-haiku-20241022-v1:0",
@@ -107,7 +111,9 @@
       "cohere.embed-english-v3",
       "cohere.embed-multilingual-v3"
     ],
-    "imageModels": []
+    "imageModels": [
+      "amazon.nova-canvas-v1:0"
+    ]
   },
   "google": {
     "languageModels": [
@@ -128,6 +134,7 @@
       "gemini-2.0-flash-thinking-exp-01-21",
       "gemini-2.0-flash-exp",
       "gemini-exp-1206",
+      "gemma-3-27b-it",
       "learnlm-1.5-pro-experimental"
     ],
     "embeddingModels": [
@@ -262,6 +269,7 @@
   },
   "cohere": {
     "languageModels": [
+      "command-a-03-2025",
       "command-r-plus",
       "command-r-plus-08-2024",
       "command-r",
@@ -298,6 +306,7 @@
       "accounts/fireworks/models/qwen-qwq-32b-preview",
       "accounts/fireworks/models/qwen2-vl-72b-instruct",
       "accounts/fireworks/models/llama-v3p2-11b-vision-instruct",
+      "accounts/fireworks/models/qwq-32b",
       "accounts/fireworks/models/yi-large",
       "accounts/fireworks/models/llama-v3-8b-instruct",
       "accounts/fireworks/models/llama-v2-34b-code"
@@ -469,6 +478,8 @@
   },
   "perplexity": {
     "languageModels": [
+      "sonar-reasoning-pro",
+      "sonar-reasoning",
       "sonar-pro",
       "sonar"
     ],

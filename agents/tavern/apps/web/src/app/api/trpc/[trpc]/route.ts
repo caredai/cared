@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server'
 import { appRouter, createTRPCContext } from '@tavern/api'
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
 
-import { log } from '@mindworld/utils'
+import { log } from '@mindworld/shared'
 
 /**
  * Configure basic CORS headers

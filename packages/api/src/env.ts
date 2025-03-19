@@ -4,8 +4,12 @@ import { z } from 'zod'
 export const env = createEnv({
   server: {
     CLERK_ADMIN_ORGANIZATION_ID: z.string().min(1),
-    UNKEY_ROOT_KEY: z.string().min(1),
-    UNKEY_API_ID: z.string().min(1),
+    ENCRYPTION_KEY: z
+      .string()
+      .length(
+        64,
+        'ENCRYPTION_KEY must be 256 bits, 64 string characters in hex format, generate via: openssl rand -hex 32',
+      ),
     S3_BUCKET: z.string().min(1),
     S3_ENDPOINT: z.string().min(1),
     S3_REGION: z.string().min(1),

@@ -8,4 +8,4 @@ export {
   timestampsIndices,
   timestampsOmits,
   timestamps,
-} from '@mindworld/utils'
+} from '@mindworld/shared'

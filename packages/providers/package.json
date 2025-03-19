@@ -14,9 +14,11 @@
     "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
-    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "extract-model-ids": "tsx ./scripts/extract-model-ids.ts",
+    "fetch-model-prices": "curl -L https://github.com/BerriAI/litellm/raw/refs/heads/main/model_prices_and_context_window.json -o ./data/model_prices_and_context_window.json"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^2.1.4",

@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/utils",
+  "name": "@mindworld/shared",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -25,6 +25,7 @@
   },
   "prettier": "@mindworld/prettier-config",
   "dependencies": {
+    "base-x": "^5.0.1",
     "drizzle-orm": "^0.38.4",
     "uuid": "11.1.0",
     "zod": "3.24.2"

@@ -19,7 +19,7 @@ import {
   UpdateAppSchema,
 } from '@mindworld/db/schema'
 import { defaultModels } from '@mindworld/providers'
-import { mergeWithoutUndefined } from '@mindworld/utils'
+import { mergeWithoutUndefined } from '@mindworld/shared'
 
 import type { Context } from '../trpc'
 import { cfg } from '../config'
