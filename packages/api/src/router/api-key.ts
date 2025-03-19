@@ -8,6 +8,7 @@ import { log } from '@mindworld/log'
 import { decrypt, encrypt, KEY_SEPARATOR, KeyV1 } from '@mindworld/shared'
 
 import type { Context } from '../trpc'
+import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
@@ -27,7 +28,7 @@ async function getApiKey(ctx: Context, appId: string) {
     return undefined
   }
 
-  const decryptedKey = decrypt(key.key)
+  const decryptedKey = await decrypt(env.ENCRYPTION_KEY, key.key)
   const [prefix] = decryptedKey.split(KEY_SEPARATOR)
 
   return {
@@ -179,7 +180,7 @@ export const apiKeyRouter = {
       const rawKey = new KeyV1({ byteLength: 16, prefix: 'sk' }).toString()
 
       // Encrypt the key for storage
-      const encryptedKey = encrypt(rawKey)
+      const encryptedKey = await encrypt(env.ENCRYPTION_KEY, rawKey)
 
       // Hash the key for verification
       const hash = sha256(new TextEncoder().encode(rawKey))
@@ -249,7 +250,7 @@ export const apiKeyRouter = {
       const rawKey = new KeyV1({ byteLength: 16, prefix: 'sk' }).toString()
 
       // Encrypt the key for storage
-      const encryptedKey = encrypt(rawKey)
+      const encryptedKey = await encrypt(env.ENCRYPTION_KEY, rawKey)
 
       // Hash the key for verification
       const hash = sha256(new TextEncoder().encode(rawKey))

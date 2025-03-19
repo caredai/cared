@@ -8,6 +8,7 @@ import { UserSecret, WorkspaceSecret } from '@mindworld/db/schema'
 import { providers } from '@mindworld/providers/providers'
 import { decrypt, encrypt } from '@mindworld/shared'
 
+import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
 import { verifyWorkspaceOwner } from './workspace'
 
@@ -127,7 +128,7 @@ export const secretRouter = {
       }
 
       return {
-        apiKeyStart: decrypt(key).slice(0, 4),
+        apiKeyStart: (await decrypt(env.ENCRYPTION_KEY, key)).slice(0, 4),
       }
     }),
 
@@ -155,7 +156,7 @@ export const secretRouter = {
       const userId = ctx.auth.userId
 
       // Encrypt API key
-      const encryptedKey = encrypt(apiKey)
+      const encryptedKey = await encrypt(env.ENCRYPTION_KEY, apiKey)
 
       if (!workspaceId) {
         // Check if user secret exists
