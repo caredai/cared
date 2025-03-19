@@ -1463,7 +1463,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         }>;
         listModels: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                type?: "image" | "language" | "text-embedding" | undefined;
+                type?: "language" | "text-embedding" | "image" | undefined;
             } | undefined;
             output: {
                 models: {
@@ -1471,18 +1471,30 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         name: string;
                         description: string;
+                        maxInputTokens?: number;
+                        maxOutputTokens?: number;
+                        inputTokenPrice?: string;
+                        outputTokenPrice?: string;
                         dimensions?: number;
                     }[] | undefined;
                     'text-embedding'?: {
                         id: string;
                         name: string;
                         description: string;
+                        maxInputTokens?: number;
+                        maxOutputTokens?: number;
+                        inputTokenPrice?: string;
+                        outputTokenPrice?: string;
                         dimensions?: number;
                     }[] | undefined;
                     language?: {
                         id: string;
                         name: string;
                         description: string;
+                        maxInputTokens?: number;
+                        maxOutputTokens?: number;
+                        inputTokenPrice?: string;
+                        outputTokenPrice?: string;
                         dimensions?: number;
                     }[] | undefined;
                 };
@@ -1491,7 +1503,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         listModelsByProvider: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 providerId: string;
-                type?: "image" | "language" | "text-embedding" | undefined;
+                type?: "language" | "text-embedding" | "image" | undefined;
             };
             output: {
                 models: {
@@ -1499,18 +1511,30 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                         id: string;
                         name: string;
                         description: string;
+                        maxInputTokens?: number;
+                        maxOutputTokens?: number;
+                        inputTokenPrice?: string;
+                        outputTokenPrice?: string;
                         dimensions?: number;
                     }[] | undefined;
                     'text-embedding'?: {
                         id: string;
                         name: string;
                         description: string;
+                        maxInputTokens?: number;
+                        maxOutputTokens?: number;
+                        inputTokenPrice?: string;
+                        outputTokenPrice?: string;
                         dimensions?: number;
                     }[] | undefined;
                     language?: {
                         id: string;
                         name: string;
                         description: string;
+                        maxInputTokens?: number;
+                        maxOutputTokens?: number;
+                        inputTokenPrice?: string;
+                        outputTokenPrice?: string;
                         dimensions?: number;
                     }[] | undefined;
                 };
@@ -1519,13 +1543,17 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         getModel: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 id: string;
-                type: "image" | "language" | "text-embedding";
+                type: "language" | "text-embedding" | "image";
             };
             output: {
                 model: {
                     id: string;
                     name: string;
                     description: string;
+                    maxInputTokens?: number;
+                    maxOutputTokens?: number;
+                    inputTokenPrice?: string;
+                    outputTokenPrice?: string;
                     dimensions?: number;
                 };
             };
@@ -1760,12 +1788,12 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    version: number;
                     userId: string;
+                    version: number;
                     title: string;
                     chatId: string;
                     content: unknown;
-                    kind: "code" | "text" | "image" | "sheet";
+                    kind: "image" | "code" | "text" | "sheet";
                 }[];
                 hasMore: boolean;
                 first: string | undefined;
@@ -1784,12 +1812,12 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    version: number;
                     userId: string;
+                    version: number;
                     title: string;
                     chatId: string;
                     content: unknown;
-                    kind: "code" | "text" | "image" | "sheet";
+                    kind: "image" | "code" | "text" | "sheet";
                 }[];
                 hasMore: boolean;
                 first: number | undefined;

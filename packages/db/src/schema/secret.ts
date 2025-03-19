@@ -4,7 +4,7 @@ import { jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core'
 import { User, Workspace } from './workspace'
 
 export interface Secret {
-  providerKeys: Record<string, string>
+  providerKeys?: Record<string, string>
 }
 
 export const UserSecret = pgTable('user_secret', {

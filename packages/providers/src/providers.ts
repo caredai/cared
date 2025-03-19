@@ -66,6 +66,28 @@ export {
   createOpenRouter,
 }
 
+const creators = {
+  openai: createOpenAI,
+  anthropic: createAnthropic,
+  deepseek: createDeepSeek,
+  azure: createAzure,
+  bedrock: createAmazonBedrock,
+  google: createGoogleGenerativeAI,
+  vertex: createVertex,
+  mistral: createMistral,
+  xai: createXai,
+  togetherai: createTogetherAI,
+  cohere: createCohere,
+  fireworks: createFireworks,
+  deepinfra: createDeepInfra,
+  cerebras: createCerebras,
+  groq: createGroq,
+  replicate: createReplicate,
+  perplexity: createPerplexity,
+  luma: createLuma,
+  openrouter: createOpenRouter,
+}
+
 /**
  * Get model instance by model full ID and type
  * @param fullId Full model ID in format 'providerId:modelId'
@@ -75,6 +97,7 @@ export {
 export function getModel<T extends ModelType>(
   fullId: string,
   modelType: T,
+  keys?: Record<string, string>,
 ): T extends 'language'
   ? LanguageModelV1 | undefined
   : T extends 'text-embedding'
@@ -83,7 +106,15 @@ export function getModel<T extends ModelType>(
       ? ImageModelV1 | undefined
       : never {
   const { providerId, modelId } = splitModelFullId(fullId)
-  const provider = providers[providerId]
+  let provider = providers[providerId]
+  const key = keys?.[providerId]
+  if (key) {
+    const creator = creators[providerId]
+    provider = creator({
+      apiKey: key,
+    })
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!provider) {
     return undefined as any

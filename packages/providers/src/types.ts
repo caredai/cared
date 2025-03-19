@@ -46,5 +46,9 @@ export interface ModelInfo {
   id: string
   name: string
   description: string
+  maxInputTokens?: number
+  maxOutputTokens?: number
+  inputTokenPrice?: string // decimal string, in $USD/input token; * 1e6 = $USD/M input tokens
+  outputTokenPrice?: string // decimal string, in $USD/input token; * 1e6 = $USD/M input tokens
   dimensions?: number // for embedding models
 }
