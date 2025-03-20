@@ -18,6 +18,7 @@ export const db: DB = [
       },
       schema,
       casing: 'camelCase',
+      logger: true,
     })
   : drizzleVercel({
       client: sql,

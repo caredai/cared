@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, integer, jsonb, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
+import { bigint, index, jsonb, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -91,7 +91,7 @@ export const AgentVersion = pgTable(
     // Must be Unix timestamp of the publishing time.
     // DRAFT_VERSION indicates an unpublished draft.
     // The version always corresponds to an app version of the app that the agent belongs to.
-    version: integer().notNull().default(DRAFT_VERSION),
+    version: bigint({ mode: 'number' }).notNull().default(DRAFT_VERSION),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<AgentMetadata>().notNull().default({}),
     ...timestamps,

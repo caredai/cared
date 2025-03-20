@@ -1,10 +1,8 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import { index, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
-import { createInsertSchema } from 'drizzle-zod'
-import { z } from 'zod'
 
 import { App } from './app'
-import { timestamps, timestampsIndices, timestampsOmits } from './utils'
+import { timestamps, timestampsIndices } from './utils'
 
 export const ApiKey = pgTable(
   'api_key',

@@ -1,7 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import {
+  bigint,
   index,
-  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -114,7 +114,7 @@ export const AppVersion = pgTable(
       .references(() => App.id),
     // Must be Unix timestamp of the publishing time.
     // DRAFT_VERSION indicates an unpublished draft.
-    version: integer().notNull().default(DRAFT_VERSION),
+    version: bigint({ mode: 'number' }).notNull().default(DRAFT_VERSION),
     type: appTypeEnum().notNull().default('single-agent'),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<AppMetadata>().notNull(),

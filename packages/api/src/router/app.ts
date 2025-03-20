@@ -120,7 +120,7 @@ export async function getApps(
   const first = apps[0]?.id
   const last = apps[apps.length - 1]?.id
 
-  // Get top 5 latest categories for each app
+  // Get categories for each app
   const categories = await ctx.db
     .select({
       appId: AppsToCategories.appId,
@@ -132,16 +132,13 @@ export async function getApps(
     .from(AppsToCategories)
     .innerJoin(Category, eq(Category.id, AppsToCategories.categoryId))
     .where(
-      and(
-        inArray(
-          AppsToCategories.appId,
-          apps.map((app) => app.id),
-        ),
-        sql`row_number() over (partition by ${AppsToCategories.appId} order by ${Category.createdAt} asc) <= 5`,
+      inArray(
+        AppsToCategories.appId,
+        apps.map((app) => app.id),
       ),
     )
 
-  // Get top 5 latest tags for each app
+  // Get tags for each app
   const tags = await ctx.db
     .select({
       appId: AppsToTags.appId,
@@ -152,12 +149,9 @@ export async function getApps(
     .from(AppsToTags)
     .innerJoin(Tag, eq(Tag.name, AppsToTags.tag))
     .where(
-      and(
-        inArray(
-          AppsToTags.appId,
-          apps.map((app) => app.id),
-        ),
-        sql`row_number() over (partition by ${AppsToTags.appId} order by ${Tag.createdAt} asc) <= 5`,
+      inArray(
+        AppsToTags.appId,
+        apps.map((app) => app.id),
       ),
     )
 
@@ -167,7 +161,7 @@ export async function getApps(
       app.id,
       {
         app,
-        categories: [] as string[],
+        categories: [] as Omit<Category, 'createdAt' | 'updatedAt'>[],
         tags: [] as string[],
       },
     ]),
@@ -175,7 +169,7 @@ export async function getApps(
 
   // Add categories to their respective apps
   categories.forEach(({ appId, category }) => {
-    appsMap.get(appId)?.categories.push(category.name)
+    appsMap.get(appId)?.categories.push(category)
   })
 
   // Add tags to their respective apps
@@ -977,7 +971,69 @@ export const appRouter = {
       const app = await getAppById(ctx, input.id)
       await verifyWorkspaceMembership(ctx, app.workspaceId)
 
+      // Check for same category IDs in both add and remove arrays
+      if (input.add?.length && input.remove?.length) {
+        const intersection = input.add.filter((id) => input.remove?.includes(id))
+        if (intersection.length > 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Cannot add and remove the same categories: ${intersection.join(', ')}`,
+          })
+        }
+      }
+
       return ctx.db.transaction(async (tx) => {
+        // Get current categories count
+        const currentCategories = await tx
+          .select({ categoryId: AppsToCategories.categoryId })
+          .from(AppsToCategories)
+          .where(eq(AppsToCategories.appId, input.id))
+
+        // Get existing category IDs
+        const existingCategoryIds = currentCategories.map((c) => c.categoryId)
+
+        // Ensure categories to remove exist
+        if (input.remove?.length) {
+          const nonExistingCategories = input.remove.filter(
+            (id) => !existingCategoryIds.includes(id),
+          )
+          if (nonExistingCategories.length > 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `The following categories do not exist: ${nonExistingCategories.join(', ')}`,
+            })
+          }
+        }
+
+        // Ensure categories to add don't already exist
+        if (input.add?.length) {
+          const alreadyExistingCategories = input.add.filter((id) =>
+            existingCategoryIds.includes(id),
+          )
+          if (alreadyExistingCategories.length > 0) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: `The following categories already exist: ${alreadyExistingCategories.join(', ')}`,
+            })
+          }
+        }
+
+        // Calculate potential new count
+        const removeCategoryIds = input.remove ?? []
+        const addCategoryIds = input.add ?? []
+
+        // Calculate new count after removing and adding
+        const newCategoryCount =
+          currentCategories.length - removeCategoryIds.length + addCategoryIds.length
+
+        // Check if new count exceeds the maximum limit
+        if (newCategoryCount > 20) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Maximum 20 categories allowed per app',
+          })
+        }
+
         // Remove categories if specified
         if (input.remove?.length) {
           await tx
@@ -1001,6 +1057,22 @@ export const appRouter = {
               })),
             )
             .onConflictDoNothing()
+        }
+
+        // Return updated categories
+        const updatedCategories = await tx
+          .select({
+            category: {
+              id: Category.id,
+              name: Category.name,
+            },
+          })
+          .from(AppsToCategories)
+          .innerJoin(Category, eq(Category.id, AppsToCategories.categoryId))
+          .where(eq(AppsToCategories.appId, input.id))
+
+        return {
+          categories: updatedCategories.map((r) => r.category),
         }
       })
     }),

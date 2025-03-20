@@ -2,6 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import {
+  defaultModels,
   getImageModelInfo,
   getImageModelInfos,
   getLanguageModelInfo,
@@ -16,6 +17,24 @@ import {
 import { publicProcedure } from '../trpc'
 
 export const modelRouter = {
+  /**
+   * List default models used by the platform.
+   * Accessible by anyone.
+   * @returns Default models
+   */
+  listDefaultModels: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/default-models',
+        tags: ['models'],
+        summary: 'Get default models used by the platform',
+      },
+    })
+    .query(() => {
+      return { defaultModels }
+    }),
+
   /**
    * List all available model providers.
    * Accessible by anyone.
@@ -40,6 +59,93 @@ export const modelRouter = {
           icon,
         })),
       }
+    }),
+
+  /**
+   * List all providers with their models, grouped by model type.
+   * Accessible by anyone.
+   * @param input - Object containing optional model type filter
+   * @returns Models organized by type, each containing providers with their models
+   */
+  listProvidersModels: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/providers-models',
+        tags: ['models'],
+        summary: 'List all providers with their models, grouped by model type',
+      },
+    })
+    .input(
+      z
+        .object({
+          type: z.enum(modelTypes).optional(),
+        })
+        .default({}),
+    )
+    .query(async ({ input }) => {
+      const providerInfos = await getProviderInfos()
+
+      const models: Record<
+        string,
+        {
+          id: string
+          name: string
+          description?: string
+          icon?: string
+          models: any[]
+        }[]
+      > = {}
+
+      // Process language models if type is not specified or type is 'language'
+      if (!input.type || input.type === 'language') {
+        models.language = providerInfos
+          .filter((provider) => provider.languageModels?.length)
+          .map((provider) => ({
+            id: provider.id,
+            name: provider.name,
+            description: provider.description,
+            icon: provider.icon,
+            models: (provider.languageModels ?? []).map((model) => ({
+              ...model,
+              id: modelFullId(provider.id, model.id),
+            })),
+          }))
+      }
+
+      // Process text-embedding models if type is not specified or type is 'text-embedding'
+      if (!input.type || input.type === 'text-embedding') {
+        models['text-embedding'] = providerInfos
+          .filter((provider) => provider.textEmbeddingModels?.length)
+          .map((provider) => ({
+            id: provider.id,
+            name: provider.name,
+            description: provider.description,
+            icon: provider.icon,
+            models: (provider.textEmbeddingModels ?? []).map((model) => ({
+              ...model,
+              id: modelFullId(provider.id, model.id),
+            })),
+          }))
+      }
+
+      // Process image models if type is not specified or type is 'image'
+      if (!input.type || input.type === 'image') {
+        models.image = providerInfos
+          .filter((provider) => provider.imageModels?.length)
+          .map((provider) => ({
+            id: provider.id,
+            name: provider.name,
+            description: provider.description,
+            icon: provider.icon,
+            models: (provider.imageModels ?? []).map((model) => ({
+              ...model,
+              id: modelFullId(provider.id, model.id),
+            })),
+          }))
+      }
+
+      return { models }
     }),
 
   /**
@@ -84,68 +190,6 @@ export const modelRouter = {
           ...(input.type === 'language' ? { language: languageModelInfos } : {}),
           ...(input.type === 'text-embedding' ? { 'text-embedding': textEmbeddingModelInfos } : {}),
           ...(input.type === 'image' ? { image: imageModelInfos } : {}),
-        },
-      }
-    }),
-
-  /**
-   * List all models from a specific provider.
-   * Accessible by anyone.
-   * @param input - Object containing provider ID and optional model type filter
-   * @returns List of models from the provider
-   */
-  listModelsByProvider: publicProcedure
-    .meta({
-      openapi: {
-        method: 'GET',
-        path: '/v1/providers/{providerId}/models',
-        tags: ['models'],
-        summary: 'List all models from a specific provider',
-      },
-    })
-    .input(
-      z.object({
-        providerId: z.string(),
-        type: z.enum(modelTypes).optional(),
-      }),
-    )
-    .query(async ({ input }) => {
-      const providerInfos = await getProviderInfos()
-      const provider = providerInfos.find((p) => p.id === input.providerId)
-      if (!provider) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-
-          message: `Provider ${input.providerId} not found`,
-        })
-      }
-
-      const models = {
-        language: (provider.languageModels ?? []).map((model) => ({
-          ...model,
-          id: modelFullId(provider.id, model.id),
-        })),
-        'text-embedding': (provider.textEmbeddingModels ?? []).map((model) => ({
-          ...model,
-          id: modelFullId(provider.id, model.id),
-        })),
-        image: (provider.imageModels ?? []).map((model) => ({
-          ...model,
-          id: modelFullId(provider.id, model.id),
-        })),
-      }
-
-      if (!input.type) {
-        return { models }
-      }
-
-      return {
-        models: {
-          ...(input.type === 'language' ? { language: models.language } : {}),
-          ...(input.type === 'text-embedding'
-            ? { 'text-embedding': models['text-embedding'] }
-            : {}),
-          ...(input.type === 'image' ? { image: models.image } : {}),
         },
       }
     }),

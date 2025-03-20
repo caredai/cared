@@ -15,7 +15,8 @@ export default async function Page({ params }: { params: Promise<{ workspaceId: 
     }),
   )
   prefetch(trpc.app.listCategories.queryOptions({ limit: 100 }))
-  prefetch(trpc.model.listModels.queryOptions())
+  prefetch(trpc.model.listProvidersModels.queryOptions())
+  prefetch(trpc.model.listDefaultModels.queryOptions())
 
   return (
     <HydrateClient>

@@ -509,6 +509,41 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
         }>;
     };
+    secret: {
+        hasProviderKey: import("@trpc/server").TRPCQueryProcedure<{
+            input: {
+                providerId: ProviderId;
+                workspaceId?: string | undefined;
+            };
+            output: {
+                exists: boolean;
+            };
+        }>;
+        getProviderKey: import("@trpc/server").TRPCQueryProcedure<{
+            input: {
+                providerId: ProviderId;
+                workspaceId?: string | undefined;
+            };
+            output: {
+                apiKeyStart: string;
+            };
+        }>;
+        setProviderKey: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                providerId: ProviderId;
+                apiKey: string;
+                workspaceId?: string | undefined;
+            };
+            output: void;
+        }>;
+        deleteProviderKey: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                providerId: ProviderId;
+                workspaceId?: string | undefined;
+            };
+            output: void;
+        }>;
+    };
     app: {
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
@@ -1450,6 +1485,24 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         }>;
     };
     model: {
+        listDefaultModels: import("@trpc/server").TRPCQueryProcedure<{
+            input: void;
+            output: {
+                defaultModels: {
+                    app: {
+                        languageModel: string;
+                        embeddingModel: string;
+                        rerankModel: string;
+                        imageModel: string;
+                    };
+                    dataset: {
+                        languageModel: string;
+                        embeddingModel: string;
+                        rerankModel: string;
+                    };
+                };
+            };
+        }>;
         listProviders: import("@trpc/server").TRPCQueryProcedure<{
             input: void;
             output: {
@@ -1461,50 +1514,24 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 }[];
             };
         }>;
-        listModels: import("@trpc/server").TRPCQueryProcedure<{
+        listProvidersModels: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                type?: "language" | "text-embedding" | "image" | undefined;
+                type?: "image" | "language" | "text-embedding" | undefined;
             } | undefined;
             output: {
-                models: {
-                    image?: {
-                        id: string;
-                        name: string;
-                        description: string;
-                        maxInputTokens?: number;
-                        maxOutputTokens?: number;
-                        inputTokenPrice?: string;
-                        outputTokenPrice?: string;
-                        dimensions?: number;
-                    }[] | undefined;
-                    'text-embedding'?: {
-                        id: string;
-                        name: string;
-                        description: string;
-                        maxInputTokens?: number;
-                        maxOutputTokens?: number;
-                        inputTokenPrice?: string;
-                        outputTokenPrice?: string;
-                        dimensions?: number;
-                    }[] | undefined;
-                    language?: {
-                        id: string;
-                        name: string;
-                        description: string;
-                        maxInputTokens?: number;
-                        maxOutputTokens?: number;
-                        inputTokenPrice?: string;
-                        outputTokenPrice?: string;
-                        dimensions?: number;
-                    }[] | undefined;
-                };
+                models: Record<string, {
+                    id: string;
+                    name: string;
+                    description?: string;
+                    icon?: string;
+                    models: any[];
+                }[]>;
             };
         }>;
-        listModelsByProvider: import("@trpc/server").TRPCQueryProcedure<{
+        listModels: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                providerId: string;
-                type?: "language" | "text-embedding" | "image" | undefined;
-            };
+                type?: "image" | "language" | "text-embedding" | undefined;
+            } | undefined;
             output: {
                 models: {
                     image?: {
@@ -1543,7 +1570,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         getModel: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 id: string;
-                type: "language" | "text-embedding" | "image";
+                type: "image" | "language" | "text-embedding";
             };
             output: {
                 model: {
@@ -1793,7 +1820,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     title: string;
                     chatId: string;
                     content: unknown;
-                    kind: "image" | "code" | "text" | "sheet";
+                    kind: "code" | "text" | "image" | "sheet";
                 }[];
                 hasMore: boolean;
                 first: string | undefined;
@@ -1817,7 +1844,7 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     title: string;
                     chatId: string;
                     content: unknown;
-                    kind: "image" | "code" | "text" | "sheet";
+                    kind: "code" | "text" | "image" | "sheet";
                 }[];
                 hasMore: boolean;
                 first: number | undefined;

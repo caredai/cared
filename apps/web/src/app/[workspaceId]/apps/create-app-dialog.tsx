@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import type { Item } from '@/components/virtualized-select-content'
+import type { UseControllerProps } from 'react-hook-form'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
@@ -38,6 +40,7 @@ import {
 } from '@mindworld/ui/components/select'
 import { Textarea } from '@mindworld/ui/components/textarea'
 
+import { VirtualizedSelectContent } from '@/components/virtualized-select-content'
 import { useTRPC } from '@/trpc/client'
 
 // Form schema for creating a new app
@@ -47,11 +50,51 @@ const createAppSchema = z.object({
   type: z.enum(['single-agent', 'multiple-agents']),
   languageModel: z.string().min(1, 'Language model is required'),
   embeddingModel: z.string().min(1, 'Embedding model is required'),
-  rerankModel: z.string().min(1, 'Rerank model is required'),
   imageModel: z.string().min(1, 'Image model is required'),
 })
 
 type CreateAppFormValues = z.infer<typeof createAppSchema>
+
+interface ModelSelectProps {
+  name: keyof Pick<CreateAppFormValues, 'languageModel' | 'embeddingModel' | 'imageModel'>
+  label: string
+  description: string
+  items: Item[]
+  control: UseControllerProps<CreateAppFormValues>['control']
+}
+
+function ModelSelect({ name, label, description, items, control }: ModelSelectProps) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <FormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <Select
+            onValueChange={field.onChange}
+            defaultValue={field.value}
+            open={open}
+            onOpenChange={setOpen}
+          >
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
+              </SelectTrigger>
+            </FormControl>
+            {(field.value || items.length > 0) && (
+              <VirtualizedSelectContent items={items} value={field.value} open={open} />
+            )}
+          </Select>
+          <FormDescription>{description}</FormDescription>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  )
+}
 
 interface CreateAppDialogProps {
   workspaceId: string
@@ -64,21 +107,86 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
   const queryClient = useQueryClient()
 
   // Get models data for selection
-  const { data: modelsData } = useSuspenseQuery(trpc.model.listModels.queryOptions())
+  const { data: modelsData } = useSuspenseQuery(trpc.model.listProvidersModels.queryOptions())
+
+  // Get default models data
+  const { data: defaultModelsData } = useSuspenseQuery(trpc.model.listDefaultModels.queryOptions())
+
+  // Process model data with memoization to improve performance
+  const { languageModelItems, embeddingModelItems, imageModelItems } = useMemo(() => {
+    // Process language models data by provider
+    const languageModelItems: Item[] = modelsData.models.language
+      ? modelsData.models.language.flatMap((provider) => [
+          // Add provider as a group label (no value)
+          { label: provider.name },
+          // Add all models from this provider with their original names
+          ...provider.models.map((model) => ({
+            label: model.name,
+            value: model.id,
+          })),
+        ])
+      : []
+
+    // Process embedding models data by provider
+    const embeddingModelItems: Item[] = modelsData.models['text-embedding']
+      ? modelsData.models['text-embedding'].flatMap((provider) => [
+          // Add provider as a group label (no value)
+          { label: provider.name },
+          // Add all models from this provider with their original names
+          ...provider.models.map((model) => ({
+            label: model.name,
+            value: model.id,
+          })),
+        ])
+      : []
+
+    // Process image models data by provider
+    const imageModelItems: Item[] = modelsData.models.image
+      ? modelsData.models.image.flatMap((provider) => [
+          // Add provider as a group label (no value)
+          { label: provider.name },
+          // Add all models from this provider with their original names
+          ...provider.models.map((model) => ({
+            label: model.name,
+            value: model.id,
+          })),
+        ])
+      : []
+
+    return {
+      languageModelItems,
+      embeddingModelItems,
+      imageModelItems,
+    }
+  }, [modelsData.models])
+
+  // Compute default model values with memoization
+  const defaultValues = useMemo(() => {
+    // Get first available model as fallback
+    const firstLanguageModel = languageModelItems.find((item) => item.value)?.value || ''
+    const firstEmbeddingModel = embeddingModelItems.find((item) => item.value)?.value || ''
+    const firstImageModel = imageModelItems.find((item) => item.value)?.value || ''
+
+    // Use default models from API if available, otherwise use first available model
+    return {
+      name: '',
+      description: '',
+      type: 'single-agent' as const,
+      languageModel: defaultModelsData.defaultModels.app.languageModel || firstLanguageModel,
+      embeddingModel: defaultModelsData.defaultModels.app.embeddingModel || firstEmbeddingModel,
+      imageModel: defaultModelsData.defaultModels.app.imageModel || firstImageModel,
+    }
+  }, [
+    defaultModelsData.defaultModels.app,
+    languageModelItems,
+    embeddingModelItems,
+    imageModelItems,
+  ])
 
   // Set up form with validation
   const form = useForm<CreateAppFormValues>({
     resolver: zodResolver(createAppSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      type: 'single-agent',
-      // Default to the first available model of each type
-      languageModel: modelsData.models.language?.[0]?.id || '',
-      embeddingModel: modelsData.models['text-embedding']?.[0]?.id || '',
-      rerankModel: modelsData.models['text-embedding']?.[0]?.id || '', // Using embedding for rerank as fallback
-      imageModel: modelsData.models.image?.[0]?.id || '',
-    },
+    defaultValues,
   })
 
   // Create app mutation
@@ -104,17 +212,43 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
   )
 
   // Handle form submission
-  function onSubmit(values: CreateAppFormValues) {
-    createAppMutation.mutate({
-      workspaceId,
-      name: values.name,
-      metadata: {
-        description: values.description,
-        languageModel: values.languageModel,
-        embeddingModel: values.embeddingModel,
-        rerankModel: values.rerankModel,
-        imageModel: values.imageModel,
-      },
+  async function onSubmit(values: CreateAppFormValues) {
+    // Trim name and description and update form values
+    const trimmedName = values.name.trim()
+    const trimmedDescription = values.description?.trim() ?? ''
+
+    // Update form with trimmed values
+    form.setValue('name', trimmedName)
+    form.setValue('description', trimmedDescription)
+
+    // Validate form after updating values
+    return await form.trigger().then((isValid) => {
+      if (!isValid) return
+
+      // Continue with form submission if valid
+      // Create metadata object, only including models that differ from defaults
+      const metadata: Record<string, any> = {
+        description: trimmedDescription,
+      }
+
+      // Only add models to metadata when they differ from default models
+      if (values.languageModel !== defaultModelsData.defaultModels.app.languageModel) {
+        metadata.languageModel = values.languageModel
+      }
+
+      if (values.embeddingModel !== defaultModelsData.defaultModels.app.embeddingModel) {
+        metadata.embeddingModel = values.embeddingModel
+      }
+
+      if (values.imageModel !== defaultModelsData.defaultModels.app.imageModel) {
+        metadata.imageModel = values.imageModel
+      }
+
+      createAppMutation.mutate({
+        workspaceId,
+        name: trimmedName,
+        metadata,
+      })
     })
   }
 
@@ -225,110 +359,28 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
                 <div className="space-y-4">
                   <div className="mb-2 text-sm font-medium">Model Selection</div>
 
-                  <FormField
-                    control={form.control}
+                  <ModelSelect
                     name="languageModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Language Model</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select language model" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {modelsData.models.language?.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                {model.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>The language model for text generation</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    label="Language Model"
+                    description="The language model for text generation"
+                    items={languageModelItems}
+                    control={form.control}
                   />
 
-                  <FormField
-                    control={form.control}
+                  <ModelSelect
                     name="embeddingModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Embedding Model</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select embedding model" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {modelsData.models['text-embedding']?.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                {model.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>Used for embedding memories and knowledge</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    label="Embedding Model"
+                    description="Used for embedding memories and knowledge"
+                    items={embeddingModelItems}
+                    control={form.control}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="rerankModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Rerank Model</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select rerank model" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {modelsData.models['text-embedding']?.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                {model.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>Used for reranking search results</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
+                  <ModelSelect
                     name="imageModel"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Image Model</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select image model" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {modelsData.models.image?.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                {model.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Used for image generation and understanding
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    label="Image Model"
+                    description="Used for image generation and understanding"
+                    items={imageModelItems}
+                    control={form.control}
                   />
                 </div>
               </div>
@@ -343,7 +395,11 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createAppMutation.isPending} className="ml-2">
+              <Button
+                type="submit"
+                disabled={createAppMutation.isPending || !form.formState.isValid}
+                className="ml-2"
+              >
                 {createAppMutation.isPending ? 'Creating...' : 'Create App'}
               </Button>
             </DialogFooter>

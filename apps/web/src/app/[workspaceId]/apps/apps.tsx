@@ -33,25 +33,6 @@ import { Separator } from '@mindworld/ui/components/separator'
 import { useTRPC } from '@/trpc/client'
 import { CreateAppDialog } from './create-app-dialog'
 
-// Define App interface based on schema
-interface App {
-  app: {
-    id: string
-    name: string
-    type: 'single-agent' | 'multiple-agents'
-    metadata: {
-      description?: string
-      imageUrl?: string
-      languageModel: string
-      embeddingModel: string
-      rerankModel: string
-      imageModel: string
-    }
-  }
-  categories: string[]
-  tags: string[]
-}
-
 // Constant for all categories filter value
 const ALL_CATEGORIES = 'all'
 
@@ -91,7 +72,7 @@ export function Apps() {
   )
 
   // Search and filter functionality
-  const filteredApps = data.apps.filter((appData: App) => {
+  const filteredApps = data.apps.filter((appData) => {
     const matchesSearch =
       searchTerm === '' ||
       appData.app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,7 +80,8 @@ export function Apps() {
       appData.tags.some((tag) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
 
     const matchesCategory =
-      selectedCategory === ALL_CATEGORIES || appData.categories.includes(selectedCategory)
+      selectedCategory === ALL_CATEGORIES ||
+      appData.categories.some((category) => category.id === selectedCategory)
 
     return matchesSearch && matchesCategory
   })
@@ -146,7 +128,7 @@ export function Apps() {
                 <Separator className="my-1" />
                 <SelectLabel className="text-muted-foreground">Categories</SelectLabel>
                 {categoriesData.categories.map((category) => (
-                  <SelectItem key={category.id} value={category.name}>
+                  <SelectItem key={category.id} value={category.id}>
                     {category.name}
                   </SelectItem>
                 ))}
@@ -188,8 +170,8 @@ export function Apps() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredApps.map((appData: App) => (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {filteredApps.map((appData) => (
             <Card key={appData.app.id} className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start gap-2">
@@ -221,7 +203,7 @@ export function Apps() {
               </CardHeader>
               <CardContent className="pb-3">
                 {appData.app.metadata.imageUrl ? (
-                  <div className="relative h-40 w-full mb-3 rounded-md overflow-hidden">
+                  <div className="relative h-30 w-full mb-3 rounded-md overflow-hidden">
                     <NextImage
                       src={appData.app.metadata.imageUrl}
                       alt={appData.app.name}
@@ -234,8 +216,8 @@ export function Apps() {
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-40 w-full mb-3 rounded-md bg-muted">
-                    <BotIcon className="h-16 w-16 text-muted-foreground" />
+                  <div className="flex items-center justify-center h-30 w-full mb-3 rounded-md bg-muted">
+                    <BotIcon className="h-16 w-16 text-primary" />
                   </div>
                 )}
 
@@ -257,12 +239,12 @@ export function Apps() {
                     <div className="flex flex-wrap gap-2">
                       {appData.categories.map((category) => (
                         <Badge
-                          key={category}
+                          key={category.id}
                           variant="secondary"
                           className="cursor-pointer"
-                          onClick={() => setSelectedCategory(category)}
+                          onClick={() => setSelectedCategory(category.id)}
                         >
-                          {category}
+                          {category.name}
                         </Badge>
                       ))}
                       {appData.tags.map((tag) => (
