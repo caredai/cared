@@ -6,8 +6,8 @@ import type { ProviderInfo } from '../types'
 import { getLiteLLMModels } from '../litellm'
 import { getOpenRouterModels } from '../openrouter'
 import anthropicProvider from './anthropic'
-import azureProvider from './azure'
-import bedrockProvider from './bedrock'
+// import azureProvider from './azure'
+// import bedrockProvider from './bedrock'
 import cerebrasProvider from './cerebras'
 import cohereProvider from './cohere'
 import deepinfraProvider from './deepinfra'
@@ -48,8 +48,8 @@ export async function getProviderInfos(): Promise<ProviderInfo[]> {
       openaiProvider,
       anthropicProvider,
       deepseekProvider,
-      azureProvider,
-      bedrockProvider,
+      // azureProvider,
+      // bedrockProvider,
       googleProvider,
       vertexProvider,
       mistralProvider,

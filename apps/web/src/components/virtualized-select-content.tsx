@@ -92,7 +92,7 @@ export function VirtualizedSelectContent({
   )
 }
 
-const SelectLabel = React.forwardRef<
+export const SelectLabel = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Label>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
 >(({ className, ...props }, ref) => (

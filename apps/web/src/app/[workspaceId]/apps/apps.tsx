@@ -172,7 +172,7 @@ export function Apps() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {filteredApps.map((appData) => (
-            <Card key={appData.app.id} className="overflow-hidden">
+            <Card key={appData.app.id} className="relative overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start gap-2">
                   <CardTitle className="truncate">

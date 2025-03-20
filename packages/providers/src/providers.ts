@@ -1,7 +1,7 @@
 import type { EmbeddingModelV1, ImageModelV1, LanguageModelV1 } from '@ai-sdk/provider'
-import { bedrock, createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
+// import { bedrock, createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
-import { azure, createAzure } from '@ai-sdk/azure'
+// import { azure, createAzure } from '@ai-sdk/azure'
 import { cerebras, createCerebras } from '@ai-sdk/cerebras'
 import { cohere, createCohere } from '@ai-sdk/cohere'
 import { createDeepInfra, deepinfra } from '@ai-sdk/deepinfra'
@@ -26,8 +26,8 @@ export const providers: Record<ProviderId, Provider> = {
   openai: openai,
   anthropic: anthropic,
   deepseek: deepseek,
-  azure: azure,
-  bedrock: bedrock,
+  // azure: azure,
+  // bedrock: bedrock,
   google: google,
   vertex: vertex,
   mistral: mistral,
@@ -48,8 +48,8 @@ export {
   createOpenAI,
   createAnthropic,
   createDeepSeek,
-  createAzure,
-  createAmazonBedrock,
+  // createAzure,
+  // createAmazonBedrock,
   createGoogleGenerativeAI,
   createVertex,
   createMistral,
@@ -70,8 +70,8 @@ const creators = {
   openai: createOpenAI,
   anthropic: createAnthropic,
   deepseek: createDeepSeek,
-  azure: createAzure,
-  bedrock: createAmazonBedrock,
+  // azure: createAzure,
+  // bedrock: createAmazonBedrock,
   google: createGoogleGenerativeAI,
   vertex: createVertex,
   mistral: createMistral,

@@ -1,7 +1,5 @@
 'use client'
 
-import type { Item } from '@/components/virtualized-select-content'
-import type { UseControllerProps } from 'react-hook-form'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -40,10 +38,10 @@ import {
 } from '@mindworld/ui/components/select'
 import { Textarea } from '@mindworld/ui/components/textarea'
 
-import { VirtualizedSelectContent } from '@/components/virtualized-select-content'
+import { ModelSelect } from '@/components/model-select'
 import { useTRPC } from '@/trpc/client'
 
-// Form schema for creating a new app
+// Schema for app form values
 const createAppSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name cannot exceed 255 characters'),
   description: z.string().max(1000, 'Description cannot exceed 1000 characters').optional(),
@@ -54,47 +52,6 @@ const createAppSchema = z.object({
 })
 
 type CreateAppFormValues = z.infer<typeof createAppSchema>
-
-interface ModelSelectProps {
-  name: keyof Pick<CreateAppFormValues, 'languageModel' | 'embeddingModel' | 'imageModel'>
-  label: string
-  description: string
-  items: Item[]
-  control: UseControllerProps<CreateAppFormValues>['control']
-}
-
-function ModelSelect({ name, label, description, items, control }: ModelSelectProps) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <FormField
-      control={control}
-      name={name}
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{label}</FormLabel>
-          <Select
-            onValueChange={field.onChange}
-            defaultValue={field.value}
-            open={open}
-            onOpenChange={setOpen}
-          >
-            <FormControl>
-              <SelectTrigger>
-                <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
-              </SelectTrigger>
-            </FormControl>
-            {(field.value || items.length > 0) && (
-              <VirtualizedSelectContent items={items} value={field.value} open={open} />
-            )}
-          </Select>
-          <FormDescription>{description}</FormDescription>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  )
-}
 
 interface CreateAppDialogProps {
   workspaceId: string
@@ -114,44 +71,24 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
 
   // Process model data with memoization to improve performance
   const { languageModelItems, embeddingModelItems, imageModelItems } = useMemo(() => {
-    // Process language models data by provider
-    const languageModelItems: Item[] = modelsData.models.language
-      ? modelsData.models.language.flatMap((provider) => [
-          // Add provider as a group label (no value)
-          { label: provider.name },
-          // Add all models from this provider with their original names
-          ...provider.models.map((model) => ({
-            label: model.name,
-            value: model.id,
-          })),
-        ])
-      : []
+    // Transform model data structure to match the required group[] type
+    const processModelsToGroups = (models: any[] | undefined) => {
+      if (!models) return []
 
-    // Process embedding models data by provider
-    const embeddingModelItems: Item[] = modelsData.models['text-embedding']
-      ? modelsData.models['text-embedding'].flatMap((provider) => [
-          // Add provider as a group label (no value)
-          { label: provider.name },
-          // Add all models from this provider with their original names
-          ...provider.models.map((model) => ({
-            label: model.name,
-            value: model.id,
-          })),
-        ])
-      : []
+      // Convert each provider into a group object
+      return models.map((provider) => ({
+        label: provider.name,
+        items: provider.models.map((model: { name: string; id: string }) => ({
+          label: model.name,
+          value: model.id,
+        })),
+      }))
+    }
 
-    // Process image models data by provider
-    const imageModelItems: Item[] = modelsData.models.image
-      ? modelsData.models.image.flatMap((provider) => [
-          // Add provider as a group label (no value)
-          { label: provider.name },
-          // Add all models from this provider with their original names
-          ...provider.models.map((model) => ({
-            label: model.name,
-            value: model.id,
-          })),
-        ])
-      : []
+    // Process different types of model data
+    const languageModelItems = processModelsToGroups(modelsData.models.language)
+    const embeddingModelItems = processModelsToGroups(modelsData.models['text-embedding'])
+    const imageModelItems = processModelsToGroups(modelsData.models.image)
 
     return {
       languageModelItems,
@@ -162,22 +99,40 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
 
   // Compute default model values with memoization
   const defaultValues = useMemo(() => {
-    // Get first available model as fallback
-    const firstLanguageModel = languageModelItems.find((item) => item.value)?.value || ''
-    const firstEmbeddingModel = embeddingModelItems.find((item) => item.value)?.value || ''
-    const firstImageModel = imageModelItems.find((item) => item.value)?.value || ''
+    // Find the first available model value from the processed groups
+    const getFirstModelValue = (
+      groups: { label: string; items: { label: string; value: string }[] }[],
+    ) => {
+      for (const group of groups) {
+        if (group.items.length > 0) {
+          return group.items[0]!.value
+        }
+      }
+      return ''
+    }
 
-    // Use default models from API if available, otherwise use first available model
+    // Get first available model from each type
+    const firstLanguageModel = getFirstModelValue(languageModelItems)
+    const firstEmbeddingModel = getFirstModelValue(embeddingModelItems)
+    const firstImageModel = getFirstModelValue(imageModelItems)
+
+    // Use API-provided default models or fallback to first available models
+    const defaultLanguageModel =
+      defaultModelsData.defaultModels.app.languageModel || firstLanguageModel
+    const defaultEmbeddingModel =
+      defaultModelsData.defaultModels.app.embeddingModel || firstEmbeddingModel
+    const defaultImageModel = defaultModelsData.defaultModels.app.imageModel || firstImageModel
+
     return {
       name: '',
       description: '',
       type: 'single-agent' as const,
-      languageModel: defaultModelsData.defaultModels.app.languageModel || firstLanguageModel,
-      embeddingModel: defaultModelsData.defaultModels.app.embeddingModel || firstEmbeddingModel,
-      imageModel: defaultModelsData.defaultModels.app.imageModel || firstImageModel,
+      languageModel: defaultLanguageModel,
+      embeddingModel: defaultEmbeddingModel,
+      imageModel: defaultImageModel,
     }
   }, [
-    defaultModelsData.defaultModels.app,
+    defaultModelsData.defaultModels,
     languageModelItems,
     embeddingModelItems,
     imageModelItems,
@@ -256,7 +211,7 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <PlusIcon className="h-4 w-4 mr-2" />
+          <PlusIcon className="h-4 w-4" />
           New App
         </Button>
       </DialogTrigger>
@@ -363,7 +318,7 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
                     name="languageModel"
                     label="Language Model"
                     description="The language model for text generation"
-                    items={languageModelItems}
+                    groups={languageModelItems}
                     control={form.control}
                   />
 
@@ -371,7 +326,7 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
                     name="embeddingModel"
                     label="Embedding Model"
                     description="Used for embedding memories and knowledge"
-                    items={embeddingModelItems}
+                    groups={embeddingModelItems}
                     control={form.control}
                   />
 
@@ -379,7 +334,7 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
                     name="imageModel"
                     label="Image Model"
                     description="Used for image generation and understanding"
-                    items={imageModelItems}
+                    groups={imageModelItems}
                     control={form.control}
                   />
                 </div>
