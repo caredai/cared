@@ -1,5 +1,5 @@
 import type { Attachment } from 'ai'
-import NextImage from 'next-image-export-optimizer'
+import NextImage from 'next/image'
 
 import { LoaderIcon } from './icons'
 

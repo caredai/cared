@@ -1,12 +1,11 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { BotIcon, CheckIcon, CopyIcon, FilterIcon, SearchIcon, TagIcon, XIcon } from 'lucide-react'
-import NextImage from 'next-image-export-optimizer'
-import { useCopyToClipboard } from 'react-use'
+import { BotIcon, FilterIcon, SearchIcon, TagIcon, XIcon } from 'lucide-react'
 
 import { Badge } from '@mindworld/ui/components/badge'
 import { Button } from '@mindworld/ui/components/button'
@@ -30,6 +29,8 @@ import {
 } from '@mindworld/ui/components/select'
 import { Separator } from '@mindworld/ui/components/separator'
 
+import { RemoteImage } from '@/components/image'
+import defaultLogo from '@/public/images/agent.png'
 import { useTRPC } from '@/trpc/client'
 import { CreateAppDialog } from './create-app-dialog'
 
@@ -39,8 +40,6 @@ const ALL_CATEGORIES = 'all'
 export function Apps() {
   const trpc = useTRPC()
   const params = useParams<{ workspaceId: string }>()
-  const [_, copyToClipboard] = useCopyToClipboard()
-  const [copiedId, setCopiedId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES)
 
@@ -57,18 +56,6 @@ export function Apps() {
     trpc.app.listCategories.queryOptions({
       limit: 100,
     }),
-  )
-
-  // Copy ID functionality
-  const handleCopyId = useCallback(
-    (id: string) => {
-      copyToClipboard(id)
-      setCopiedId(id)
-      setTimeout(() => {
-        setCopiedId(null)
-      }, 2000)
-    },
-    [copyToClipboard],
   )
 
   // Search and filter functionality
@@ -183,44 +170,26 @@ export function Apps() {
                       {appData.app.name}
                     </Link>
                   </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 flex-shrink-0"
-                    title="Copy App ID"
-                    onClick={() => handleCopyId(appData.app.id)}
-                  >
-                    {copiedId === appData.app.id ? (
-                      <CheckIcon className="h-4 w-4" />
-                    ) : (
-                      <CopyIcon className="h-4 w-4" />
-                    )}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="relative h-16 w-16 rounded-md overflow-hidden">
+                      {appData.app.metadata.imageUrl ? (
+                        <RemoteImage
+                          src={appData.app.metadata.imageUrl}
+                          alt={appData.app.name}
+                          fill
+                          className="object-contain"
+                        />
+                      ) : (
+                        <Image src={defaultLogo} alt="App Logo" fill className="object-contain" />
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <CardDescription className="line-clamp-2">
                   {appData.app.metadata.description || 'No description'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pb-3">
-                {appData.app.metadata.imageUrl ? (
-                  <div className="relative h-30 w-full mb-3 rounded-md overflow-hidden">
-                    <NextImage
-                      src={appData.app.metadata.imageUrl}
-                      alt={appData.app.name}
-                      fill
-                      className="object-cover"
-                      onError={(e) => {
-                        // Fallback to default image if error
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-30 w-full mb-3 rounded-md bg-muted">
-                    <BotIcon className="h-16 w-16 text-primary" />
-                  </div>
-                )}
-
                 <div className="flex items-center text-xs text-muted-foreground">
                   <span className="font-medium mr-2">Type:</span>
                   <span>

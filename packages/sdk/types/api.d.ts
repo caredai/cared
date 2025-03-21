@@ -20,6 +20,8 @@ export interface AppMetadata {
   [key: string]: unknown
 }
 
+export type Category = InferSelectModel<typeof Category>
+
 export interface AgentMetadata {
   description?: string
   imageUrl?: string
@@ -98,15 +100,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             output: {
                 apps: {
                     app: {
+                        type: "single-agent" | "multiple-agents";
                         name: string;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         workspaceId: string;
-                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
-                    categories: string[];
+                    categories: Omit<Category, "createdAt" | "updatedAt">[];
                     tags: string[];
                 }[];
                 hasMore: boolean;
@@ -124,15 +126,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             output: {
                 apps: {
                     app: {
+                        type: "single-agent" | "multiple-agents";
                         name: string;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         workspaceId: string;
-                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
-                    categories: string[];
+                    categories: Omit<Category, "createdAt" | "updatedAt">[];
                     tags: string[];
                 }[];
                 hasMore: boolean;
@@ -150,15 +152,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             output: {
                 apps: {
                     app: {
+                        type: "single-agent" | "multiple-agents";
                         name: string;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         workspaceId: string;
-                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
-                    categories: string[];
+                    categories: Omit<Category, "createdAt" | "updatedAt">[];
                     tags: string[];
                 }[];
                 hasMore: boolean;
@@ -175,10 +177,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 versions: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                     appId: string;
                     version: number;
@@ -194,12 +196,12 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 app: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     workspaceId: string;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
             };
@@ -555,15 +557,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             output: {
                 apps: {
                     app: {
+                        type: "single-agent" | "multiple-agents";
                         name: string;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         workspaceId: string;
-                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
-                    categories: string[];
+                    categories: Omit<Category, "createdAt" | "updatedAt">[];
                     tags: string[];
                 }[];
                 hasMore: boolean;
@@ -582,15 +584,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             output: {
                 apps: {
                     app: {
+                        type: "single-agent" | "multiple-agents";
                         name: string;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         workspaceId: string;
-                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
-                    categories: string[];
+                    categories: Omit<Category, "createdAt" | "updatedAt">[];
                     tags: string[];
                 }[];
                 hasMore: boolean;
@@ -609,15 +611,15 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             output: {
                 apps: {
                     app: {
+                        type: "single-agent" | "multiple-agents";
                         name: string;
                         id: string;
                         createdAt: Date;
                         updatedAt: Date;
                         workspaceId: string;
-                        type: "single-agent" | "multiple-agents";
                         metadata: AppMetadata;
                     };
-                    categories: string[];
+                    categories: Omit<Category, "createdAt" | "updatedAt">[];
                     tags: string[];
                 }[];
                 hasMore: boolean;
@@ -634,10 +636,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 versions: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                     appId: string;
                     version: number;
@@ -653,12 +655,12 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 app: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     workspaceId: string;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
             };
@@ -670,10 +672,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 version: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                     appId: string;
                     version: number;
@@ -702,19 +704,19 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 app: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     workspaceId: string;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
                 draft: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                     appId: string;
                     version: number;
@@ -744,12 +746,12 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 app: {
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
                     workspaceId: string;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
                 };
                 draft: {
@@ -842,7 +844,12 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                 add?: string[] | undefined;
                 remove?: string[] | undefined;
             };
-            output: void;
+            output: {
+                categories: {
+                    name: string;
+                    id: string;
+                }[];
+            };
         }>;
     };
     apiKey: {
@@ -1033,8 +1040,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    agentId: string;
                     version: number;
+                    agentId: string;
                 }[];
             };
         }>;
@@ -1051,8 +1058,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    agentId: string;
                     version: number;
+                    agentId: string;
                 }[];
                 hasMore: boolean;
                 first: number | undefined;
@@ -1109,8 +1116,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    agentId: string;
                     version: number;
+                    agentId: string;
                 };
             };
         }>;
@@ -1569,8 +1576,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
         }>;
         getModel: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                id: string;
                 type: "image" | "language" | "text-embedding";
+                id: string;
             };
             output: {
                 model: {
@@ -1815,8 +1822,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     version: number;
+                    userId: string;
                     title: string;
                     chatId: string;
                     content: unknown;
@@ -1839,8 +1846,8 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     version: number;
+                    userId: string;
                     title: string;
                     chatId: string;
                     content: unknown;
@@ -1868,10 +1875,10 @@ export declare const appRouter: import("@trpc/server/unstable-core-do-not-import
             };
             output: {
                 suggestions: {
+                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    description: string | null;
                     artifactId: string;
                     artifactVersion: number;
                     originalText: string;

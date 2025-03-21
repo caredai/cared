@@ -1,9 +1,9 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
+import Image from 'next/image'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { CheckIcon, ChevronDown, ChevronUp, CopyIcon, Server } from 'lucide-react'
-import NextImage from 'next-image-export-optimizer'
 import { useCopyToClipboard } from 'react-use'
 
 import { splitModelFullId } from '@mindworld/providers'
@@ -82,7 +82,7 @@ export function Models() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-4">
                   <div className="relative h-10 w-10 overflow-hidden rounded-sm flex items-center">
-                    <NextImage
+                    <Image
                       src={`/images/providers/${provider.icon}`}
                       alt={`${provider.name} logo`}
                       unoptimized={true}

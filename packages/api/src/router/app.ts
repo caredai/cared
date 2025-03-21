@@ -1,4 +1,5 @@
 import type { SQL } from 'drizzle-orm'
+import { HeadObjectCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
@@ -18,11 +19,15 @@ import {
   Tag,
   UpdateAppSchema,
 } from '@mindworld/db/schema'
+import log from '@mindworld/log'
 import { defaultModels } from '@mindworld/providers'
 import { mergeWithoutUndefined } from '@mindworld/shared'
 
 import type { Context } from '../trpc'
 import { cfg } from '../config'
+import { env } from '../env'
+import { getClient } from '../routes/s3-upload/client'
+import { parseS3Url } from '../routes/s3-upload/route'
 import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 
@@ -463,6 +468,37 @@ export const appRouter = {
     .mutation(async ({ ctx, input }) => {
       await verifyWorkspaceMembership(ctx, input.workspaceId)
 
+      // Validate imageUrl if provided
+      if (input.metadata.imageUrl) {
+        const parsedUrl = parseS3Url(input.metadata.imageUrl)
+        if (!parsedUrl) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Invalid S3 image URL format',
+          })
+        }
+
+        // Check if file exists in S3 storage
+        try {
+          const s3Client = getClient()
+          const url = new URL(input.metadata.imageUrl)
+          const key = url.pathname.slice(1) // Remove leading slash
+
+          await s3Client.send(
+            new HeadObjectCommand({
+              Bucket: env.S3_BUCKET,
+              Key: key,
+            }),
+          )
+        } catch (error) {
+          log.error('Image file not found or cannot be accessed', error)
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Image file not found or cannot be accessed',
+          })
+        }
+      }
+
       const appValues = {
         ...input,
         metadata: mergeWithoutUndefined<AppMetadata>(defaultModels.app, input.metadata),
@@ -535,6 +571,37 @@ export const appRouter = {
       const draft = await getAppVersion(ctx, id, 'draft')
       // Check if there's any published version
       const publishedVersion = await getAppVersion(ctx, id, 'latest').catch(() => undefined)
+
+      // Validate imageUrl if it was updated
+      if (update.metadata?.imageUrl && update.metadata.imageUrl !== draft.metadata.imageUrl) {
+        const parsedUrl = parseS3Url(update.metadata.imageUrl)
+        if (!parsedUrl) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Invalid S3 image URL format',
+          })
+        }
+
+        // Check if file exists in S3 storage
+        try {
+          const s3Client = getClient()
+          const url = new URL(update.metadata.imageUrl)
+          const key = url.pathname.slice(1) // Remove leading slash
+
+          await s3Client.send(
+            new HeadObjectCommand({
+              Bucket: env.S3_BUCKET,
+              Key: key,
+            }),
+          )
+        } catch (error) {
+          log.error('Image file not found or cannot be accessed', error)
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Image file not found or cannot be accessed',
+          })
+        }
+      }
 
       const updateValues = {
         ...update,
@@ -724,15 +791,27 @@ export const appRouter = {
           metadataCaseChunks.push(sql`(case`)
 
           for (const item of agentsWithDrafts) {
-            nameCaseChunks.push(sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.name}`)
+            nameCaseChunks.push(sql`when
+            ${Agent.id}
+            =
+            ${item.agent.id}
+            then
+            ${item.draft.name}`)
             metadataCaseChunks.push(
-              sql`when ${Agent.id} = ${item.agent.id} then ${item.draft.metadata}`,
+              sql`when
+              ${Agent.id}
+              =
+              ${item.agent.id}
+              then
+              ${item.draft.metadata}`,
             )
             agentIds.push(item.agent.id)
           }
 
-          nameCaseChunks.push(sql`end)`)
-          metadataCaseChunks.push(sql`end)`)
+          nameCaseChunks.push(sql`end
+          )`)
+          metadataCaseChunks.push(sql`end
+          )`)
 
           const nameCase = sql.join(nameCaseChunks, sql.raw(' '))
           const metadataCase = sql.join(metadataCaseChunks, sql.raw(' '))

@@ -22,7 +22,12 @@ export const env = createEnv({
     UPSTASH_WORKFLOW_URL: z.string().min(1),
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
-  client: {},
-  experimental__runtimeEnv: {},
+  client: {
+    NEXT_PUBLIC_MIND_URL: z.string().url(),
+  },
+  experimental__runtimeEnv: {
+    // eslint-disable-next-line turbo/no-undeclared-env-vars
+    NEXT_PUBLIC_MIND_URL: process.env.NEXT_PUBLIC_MIND_URL,
+  },
   skipValidation: !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
 })

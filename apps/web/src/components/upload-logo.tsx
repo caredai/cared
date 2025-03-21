@@ -1,0 +1,200 @@
+'use client'
+
+import type { ChangeEvent, ComponentProps } from 'react'
+import { useCallback, useState } from 'react'
+import Image from 'next/image'
+import { PencilIcon, UploadIcon, XIcon } from 'lucide-react'
+import { usePresignedUpload } from 'next-s3-upload'
+import { toast } from 'sonner'
+
+import type { s3Upload } from '@mindworld/api/routes'
+import { Button } from '@mindworld/ui/components/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@mindworld/ui/components/dropdown-menu'
+import { cn } from '@mindworld/ui/lib/utils'
+
+import { RemoteImage } from '@/components/image'
+import { Spinner } from '@/components/spinner'
+import { env } from '@/env'
+
+export interface UploadLogoProps {
+  /**
+   * Upload location
+   */
+  location: s3Upload.StorageLocation
+  /**
+   * Current logo URL
+   */
+  logoUrl?: string
+  /**
+   * Callback function when logo changes
+   */
+  onLogoUrlChange?: (url: string) => void | Promise<void>
+  defaultLogo: ComponentProps<typeof Image>['src']
+  /**
+   * Logo container width
+   */
+  width?: number
+  /**
+   * Logo container height
+   */
+  height?: number
+  /**
+   * Additional CSS class name
+   */
+  className?: string
+}
+
+/**
+ * Logo upload component
+ */
+export function UploadLogo({
+  location,
+  logoUrl,
+  onLogoUrlChange,
+  defaultLogo,
+  width = 120,
+  height = 120,
+  className,
+}: UploadLogoProps) {
+  const [isUploading, setIsUploading] = useState(false)
+  const { uploadToS3 } = usePresignedUpload()
+
+  const params = Object.entries(location)
+    .map((entry) => entry.join('='))
+    .join('&')
+
+  // Handle file upload
+  const handleFileUpload = useCallback(
+    async (file: File) => {
+      // Validate image file
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Only image files are allowed')
+      }
+
+      // Start uploading
+      setIsUploading(true)
+
+      let key = ''
+      try {
+        // Upload to S3
+        key = (
+          await uploadToS3(file, {
+            endpoint: {
+              request: {
+                url: `/api/v1/s3-upload/?${params}`,
+              },
+            },
+          })
+        ).key
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Upload failed, please try again')
+        setIsUploading(false)
+        return
+      }
+
+      try {
+        await onLogoUrlChange?.(`${env.NEXT_PUBLIC_MIND_URL}/${key}`)
+      } finally {
+        setIsUploading(false)
+      }
+    },
+    [params, onLogoUrlChange, uploadToS3],
+  )
+
+  // File input change handler
+  const handleFileInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (file) {
+        void handleFileUpload(file)
+        // Reset file input value to ensure the same file can be selected again
+        event.target.value = ''
+      }
+    },
+    [handleFileUpload],
+  )
+
+  return (
+    <div
+      className={cn(
+        `relative overflow-hidden flex items-center justify-center bg-muted/50 rounded-lg`,
+        isUploading && 'opacity-70',
+        className,
+      )}
+      style={{ width, height }}
+    >
+      {logoUrl ? (
+        // Show remote image if available
+        <RemoteImage
+          src={logoUrl}
+          alt="App Logo"
+          width={width}
+          height={height}
+          className="object-contain max-w-full max-h-full"
+        />
+      ) : (
+        // Show default logo if nothing else
+        <Image
+          src={defaultLogo}
+          alt="App Logo"
+          width={width}
+          height={height}
+          className="object-contain max-w-full max-h-full"
+        />
+      )}
+
+      {isUploading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+          <Spinner className="text-primary" />
+        </div>
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute bottom-1 right-1 rounded-full w-8 h-8 bg-background shadow-md hover:bg-muted border border-border"
+            disabled={isUploading}
+          >
+            <PencilIcon className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => document.getElementById('logo-file-input')?.click()}>
+            <UploadIcon className="h-4 w-4" />
+            Upload image
+          </DropdownMenuItem>
+          {logoUrl && (
+            <DropdownMenuItem
+              onClick={async () => {
+                setIsUploading(true)
+                try {
+                  await onLogoUrlChange?.('')
+                } finally {
+                  setIsUploading(false)
+                }
+              }}
+            >
+              <XIcon className="h-4 w-4" />
+              Use default image
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <input
+        id="logo-file-input"
+        type="file"
+        accept="image/*"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+    </div>
+  )
+}

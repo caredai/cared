@@ -31,6 +31,7 @@
     "@trpc/server": "catalog:",
     "@upstash/qstash": "^2.7.21",
     "@upstash/workflow": "^0.2.7",
+    "mime": "^4.0.6",
     "next-s3-upload": "^0.3.4",
     "superjson": "2.2.2",
     "trpc-to-openapi": "^2.1.3",

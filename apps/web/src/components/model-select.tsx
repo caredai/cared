@@ -114,9 +114,15 @@ export function ModelSelect<
                   <ComboboxGroup>
                     <VirtualizedVirtualizer startMargin={32}>
                       {filtered.flatMap((group) => [
-                        <SelectLabel key={group.label}>{group.label}</SelectLabel>,
+                        <SelectLabel key={group.label} className="text-muted-foreground">
+                          {group.label}
+                        </SelectLabel>,
                         ...group.items.map((item) => (
-                          <ComboboxItem key={item.value} value={item.value}>
+                          <ComboboxItem
+                            key={item.value}
+                            value={item.value}
+                            className="cursor-pointer"
+                          >
                             {item.label}
                           </ComboboxItem>
                         )),

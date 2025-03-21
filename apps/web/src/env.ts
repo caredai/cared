@@ -18,6 +18,7 @@ export const env = createEnv({
    * For them to be exposed to the client, prefix them with `NEXT_PUBLIC_`.
    */
   client: {
+    NEXT_PUBLIC_MIND_URL: z.string().url(),
     NEXT_PUBLIC_PRIVY_APP_ID: z.string(),
     NEXT_PUBLIC_REOWN_PROJECT_ID: z.string(),
   },
@@ -26,6 +27,7 @@ export const env = createEnv({
    */
   experimental__runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_MIND_URL: process.env.NEXT_PUBLIC_MIND_URL,
     NEXT_PUBLIC_PRIVY_APP_ID: process.env.NEXT_PUBLIC_PRIVY_APP_ID,
     NEXT_PUBLIC_REOWN_PROJECT_ID: process.env.NEXT_PUBLIC_REOWN_PROJECT_ID,
   },

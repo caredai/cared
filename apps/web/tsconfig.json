@@ -5,6 +5,7 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
+      "@/public/*": ["./public/*"],
       "@/*": ["./src/*"]
     },
     "plugins": [{ "name": "next" }],
