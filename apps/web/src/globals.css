@@ -4,6 +4,8 @@
 
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
+@source "../../../node_modules/@daveyplate/better-auth-ui";
+
 @custom-variant dark (&:is(.dark *));
 
 :root {

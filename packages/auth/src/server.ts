@@ -22,12 +22,27 @@ import { db } from '@mindworld/db/client'
 import { redis } from '@mindworld/db/redis'
 import { generateId } from '@mindworld/shared'
 
+import { getBaseUrl } from './client'
 import { env } from './env'
 
 export const auth = betterAuth({
   appName: 'Mind',
   baseURL: getBaseUrl(),
   basePath: '/api/auth',
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+    github: {
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
+    },
+    discord: {
+      clientId: env.DISCORD_CLIENT_ID,
+      clientSecret: env.DISCORD_CLIENT_SECRET,
+    },
+  },
   database: drizzleAdapter(db, {
     provider: 'pg',
   }),
@@ -87,12 +102,6 @@ export const auth = betterAuth({
     emailHarmony(),
   ],
 })
-
-export function getBaseUrl() {
-  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`
-  // eslint-disable-next-line no-restricted-properties
-  return `http://localhost:${process.env.PORT ?? 3000}`
-}
 
 function modelPrefix(model: LiteralUnion<Models, string>) {
   switch (model) {

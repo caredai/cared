@@ -16,7 +16,7 @@ export function SiteHeader() {
             <div className="w-full flex-1 md:w-auto md:flex-none">
               <CommandMenu />
             </div>
-            <TopRightNav showThemeSwitcher />
+            {/*<TopRightNav showThemeSwitcher />*/}
           </div>
         </div>
       </div>

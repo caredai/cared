@@ -42,7 +42,7 @@ export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
     headers,
   }))!
   const apiKey = await db.query.ApiKey.findFirst({
-    where: eq(ApiKey.id, session.id),
+    where: eq(ApiKey.id, session.userId),
   })
   if (apiKey?.metadata) {
     const appId = JSON.parse(apiKey.metadata).appId! as string

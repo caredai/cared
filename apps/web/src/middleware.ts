@@ -9,7 +9,10 @@ type Session = typeof auth.$Infer.Session
 export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
-  if (pathname === '/api/auth/get-session') {
+  if (
+    pathname.startsWith('/api/auth') ||
+    (pathname.startsWith('/auth') && !pathname.startsWith('/auth/settings'))
+  ) {
     return NextResponse.next() // Skip the middleware for the get-session endpoint
   }
 
@@ -21,7 +24,8 @@ export default async function middleware(request: NextRequest) {
   })
 
   if (!session) {
-    return NextResponse.redirect(new URL('/sign-in', request.url))
+    const redirectTo = request.nextUrl.pathname + request.nextUrl.search
+    return NextResponse.redirect(new URL(`/auth/sign-in?redirectTo=${redirectTo}`, request.url))
   }
 
   // Redirect to the homepage if the user is not an admin but tries

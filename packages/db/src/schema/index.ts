@@ -16,6 +16,7 @@ import {
   verification,
 } from './auth'
 
+export * from './auth'
 export * from './agent'
 export * from './workspace'
 export * from './chat'
