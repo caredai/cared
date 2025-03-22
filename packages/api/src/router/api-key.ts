@@ -1,79 +1,22 @@
+import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
-import { sha256 } from 'viem'
 import { z } from 'zod'
 
-import { ApiKey } from '@mindworld/db/schema'
-import { log } from '@mindworld/log'
-import { decrypt, encrypt, KEY_SEPARATOR, KeyV1 } from '@mindworld/shared'
+import { auth } from '@mindworld/auth'
+import { App } from '@mindworld/db/schema'
 
-import type { Context } from '../trpc'
-import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
 
-/**
- * Get the API key for an app from the database.
- * @param ctx - The context object containing database connection
- * @param appId - The app ID
- * @returns The API key if found, undefined if not found
- */
-async function getApiKey(ctx: Context, appId: string) {
-  const key = await ctx.db.query.ApiKey.findFirst({
-    where: eq(ApiKey.appId, appId),
-  })
-
-  if (!key) {
-    return undefined
-  }
-
-  const decryptedKey = await decrypt(env.ENCRYPTION_KEY, key.key)
-  const [prefix] = decryptedKey.split(KEY_SEPARATOR)
-
-  return {
-    appId: key.appId,
-    keyStart: decryptedKey.slice(0, (prefix?.length ?? 0) + 5),
-    createdAt: key.createdAt,
-    updatedAt: key.updatedAt,
-  }
-}
-
-/**
- * Verify if a provided key matches the stored hash for an app.
- * @param ctx - The context object containing database connection
- * @param appId - The app ID
- * @param key - The key to verify
- * @returns Boolean indicating if the key is valid
- */
-export async function verifyApiKey(ctx: Context, appId: string, key: string): Promise<boolean> {
-  const apiKey = await ctx.db.query.ApiKey.findFirst({
-    where: eq(ApiKey.appId, appId),
-  })
-  if (!apiKey) return false
-
-  // Hash the provided key for comparison
-  const hash = sha256(new TextEncoder().encode(key))
-
-  // Compare the hashes
-  return apiKey.hash === hash
-}
-
-export async function getAppIdByApiKey(ctx: Context, key: string): Promise<string | undefined> {
-  const hash = sha256(new TextEncoder().encode(key))
-  const apiKey = await ctx.db.query.ApiKey.findFirst({
-    where: eq(ApiKey.hash, hash),
-  })
-  return apiKey?.appId
-}
-
 export const apiKeyRouter = {
   /**
-   * List API keys for all apps in a workspace.
-   * Only accessible by workspace owner.
-   * @param input - Object containing app ID
+   * List API keys for all apps for all workspaces or for a specific workspace.
+   * Only accessible by workspace owner if workspace ID is provided.
+   * @param input - Object containing optional workspace ID
    * @returns List of API keys
-   * @throws {TRPCError} If user is not workspace owner
+   * @throws {TRPCError} If user is not workspace owner when workspace ID is provided
    */
   list: userProtectedProcedure
     .meta({
@@ -87,20 +30,33 @@ export const apiKeyRouter = {
     })
     .input(
       z.object({
-        appId: z.string(),
+        workspaceId: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const app = await getAppById(ctx, input.appId)
-      await verifyWorkspaceOwner(ctx, app.workspaceId)
-
-      const key = await getApiKey(ctx, app.id)
-      if (!key) {
-        return { keys: [] }
+      let appIds: string[] = []
+      if (input.workspaceId) {
+        await verifyWorkspaceOwner(ctx, input.workspaceId)
+        const apps = await ctx.db.query.App.findMany({
+          where: eq(App.workspaceId, input.workspaceId),
+        })
+        appIds = apps.map((app) => app.id)
       }
 
+      const allApiKeys = await auth.api.listApiKeys({
+        headers: await headers(),
+      })
+      const apiKeys = input.workspaceId
+        ? allApiKeys.filter((key) => appIds.includes(key.metadata?.appId))
+        : allApiKeys
+
       return {
-        keys: [key],
+        keys: apiKeys.map((key) => ({
+          appId: key.metadata?.appId,
+          start: key.start,
+          createdAt: key.createdAt,
+          updatedAt: key.updatedAt,
+        })),
       }
     }),
 
@@ -127,18 +83,30 @@ export const apiKeyRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const app = await getAppById(ctx, input.appId)
+      const { appId } = input
+      const app = await getAppById(ctx, appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      const key = await getApiKey(ctx, app.id)
-      if (!key) {
+      const allApiKeys = await auth.api.listApiKeys({
+        headers: await headers(),
+      })
+      const apiKey = allApiKeys.find((key) => key.metadata?.appId === appId)
+      if (!apiKey) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'API key not found',
         })
       }
 
-      return { key }
+      const { start, createdAt, updatedAt } = apiKey
+      return {
+        key: {
+          appId,
+          start,
+          createdAt,
+          updatedAt,
+        },
+      }
     }),
 
   /**
@@ -164,49 +132,38 @@ export const apiKeyRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const app = await getAppById(ctx, input.appId)
+      const { appId } = input
+      const app = await getAppById(ctx, appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
       // Check if app already has a key
-      const existingKey = await getApiKey(ctx, app.id)
-      if (existingKey) {
+      const allApiKeys = await auth.api.listApiKeys({
+        headers: await headers(),
+      })
+      if (allApiKeys.filter((key) => key.metadata?.appId === appId).length > 0) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'App already has an API key',
         })
       }
 
-      // Generate new API key
-      const rawKey = new KeyV1({ byteLength: 16, prefix: 'sk' }).toString()
+      const apiKey = await auth.api.createApiKey({
+        body: {
+          metadata: {
+            appId,
+          },
+          userId: ctx.auth.userId, // the user id to create the API key for
+        },
+      })
 
-      // Encrypt the key for storage
-      const encryptedKey = await encrypt(env.ENCRYPTION_KEY, rawKey)
-
-      // Hash the key for verification
-      const hash = sha256(new TextEncoder().encode(rawKey))
-
-      // Store key hash and encrypted key in database
-      const [key] = await ctx.db
-        .insert(ApiKey)
-        .values({
-          appId: app.id,
-          hash,
-          key: encryptedKey,
-        })
-        .returning()
-      if (!key) {
-        log.error('Failed to create API key')
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create API key',
-        })
-      }
-
-      delete (key as any).hash
+      const { key, start, createdAt, updatedAt } = apiKey
       return {
         key: {
-          ...(key as Omit<ApiKey, 'hash'>),
-          key: rawKey,
+          appId,
+          key,
+          start,
+          createdAt,
+          updatedAt,
         },
       }
     }),
@@ -234,11 +191,15 @@ export const apiKeyRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const app = await getAppById(ctx, input.appId)
+      const { appId } = input
+      const app = await getAppById(ctx, appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
       // Check if app has an existing key
-      const existingKey = await getApiKey(ctx, app.id)
+      const allApiKeys = await auth.api.listApiKeys({
+        headers: await headers(),
+      })
+      const existingKey = allApiKeys.find((key) => key.metadata?.appId === appId)
       if (!existingKey) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -246,37 +207,32 @@ export const apiKeyRouter = {
         })
       }
 
-      // Generate new API key
-      const rawKey = new KeyV1({ byteLength: 16, prefix: 'sk' }).toString()
+      // Delete existing key
+      await auth.api.deleteApiKey({
+        body: {
+          keyId: existingKey.id,
+        },
+        headers: await headers(),
+      })
 
-      // Encrypt the key for storage
-      const encryptedKey = await encrypt(env.ENCRYPTION_KEY, rawKey)
+      // Create new API key
+      const apiKey = await auth.api.createApiKey({
+        body: {
+          metadata: {
+            appId,
+          },
+          userId: ctx.auth.userId,
+        },
+      })
 
-      // Hash the key for verification
-      const hash = sha256(new TextEncoder().encode(rawKey))
-
-      // Update key in database
-      const [key] = await ctx.db
-        .update(ApiKey)
-        .set({
-          hash,
-          key: encryptedKey,
-        })
-        .where(eq(ApiKey.appId, app.id))
-        .returning()
-      if (!key) {
-        log.error('Failed to rotate API key')
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to rotate API key',
-        })
-      }
-
-      delete (key as any).hash
+      const { key, start, createdAt, updatedAt } = apiKey
       return {
         key: {
-          ...(key as Omit<ApiKey, 'hash'>),
-          key: rawKey,
+          appId,
+          key,
+          start,
+          createdAt,
+          updatedAt,
         },
       }
     }),
@@ -305,8 +261,17 @@ export const apiKeyRouter = {
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
-      const valid = await verifyApiKey(ctx, input.appId, input.key)
-      return { valid }
+
+      const result = await auth.api.verifyApiKey({
+        body: {
+          key: input.key,
+        },
+      })
+
+      const isValid = result.valid && result.key?.metadata?.appId === input.appId
+      return {
+        isValid,
+      }
     }),
 
   /**
@@ -335,16 +300,23 @@ export const apiKeyRouter = {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      // Get the key to delete
-      const key = await getApiKey(ctx, app.id)
-      if (!key) {
+      // Find the API key for the app
+      const allApiKeys = await auth.api.listApiKeys({
+        headers: await headers(),
+      })
+      const apiKey = allApiKeys.find((key) => key.metadata?.appId === input.appId)
+      if (!apiKey) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'API key not found',
         })
       }
 
-      // Delete the key from database
-      await ctx.db.delete(ApiKey).where(eq(ApiKey.appId, app.id))
+      await auth.api.deleteApiKey({
+        body: {
+          keyId: apiKey.id,
+        },
+        headers: await headers(),
+      })
     }),
 }

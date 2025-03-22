@@ -7,7 +7,7 @@ import type { DB } from '@mindworld/db/client'
 import { db } from '@mindworld/db/client'
 
 import type { Auth } from './auth'
-import { auth as authenticate } from './auth'
+import { authenticate } from './auth'
 
 /**
  * 1. CONTEXT
@@ -26,7 +26,7 @@ export const createTRPCContext = async ({
 }: {
   headers: Headers
 }): Promise<{ auth: Auth; db: DB }> => {
-  const auth = await authenticate()
+  const auth = await authenticate(headers)
 
   console.log(
     '>>> tRPC Request from',

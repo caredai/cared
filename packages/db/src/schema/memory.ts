@@ -3,10 +3,10 @@ import { index, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
+import { User } from '.'
 import { App } from './app'
 import { Chat } from './chat'
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
-import { User } from './workspace'
 
 export type MemoryMetadata = Record<string, unknown>
 

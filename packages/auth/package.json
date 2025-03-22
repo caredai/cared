@@ -1,0 +1,35 @@
+{
+  "name": "@mindworld/auth",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "with-env": "dotenv -e ../../.env --",
+    "generate-schema": "pnpm with-env pnpm dlx @better-auth/cli generate -y --config ./src/server.ts --output ../db/src/schema/auth.ts"
+  },
+  "devDependencies": {
+    "@mindworld/eslint-config": "workspace:*",
+    "@mindworld/prettier-config": "workspace:*",
+    "@mindworld/tsconfig": "workspace:*",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "prettier": "@mindworld/prettier-config",
+  "dependencies": {
+    "@better-auth/utils": "^0.2.4",
+    "@mindworld/db": "workspace:*",
+    "@mindworld/shared": "workspace:*",
+    "better-auth": "^1.2.4",
+    "better-auth-harmony": "^1.2.4",
+    "validation-better-auth": "^1.1.1"
+  }
+}

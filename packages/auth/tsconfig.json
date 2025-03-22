@@ -1,0 +1,6 @@
+{
+  "extends": "@mindworld/tsconfig/base.json",
+  "compilerOptions": {},
+  "include": ["*.ts", "src"],
+  "exclude": ["node_modules"]
+}

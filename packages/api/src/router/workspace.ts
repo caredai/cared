@@ -369,7 +369,7 @@ export const workspaceRouter = {
             .where(and(...conditions))
             .orderBy(User.id) // Ascending order by User ID
             .limit(input.limit + 1)
-        ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+        ).map((member) => ({ ...member, user: member.user }))
       } else {
         members = (
           await ctx.db
@@ -382,7 +382,7 @@ export const workspaceRouter = {
             .where(and(...conditions))
             .orderBy(desc(User.id)) // Descending order by User ID
             .limit(input.limit + 1)
-        ).map((member) => ({ ...member, user: filteredUser(member.user) }))
+        ).map((member) => ({ ...member, user: member.user }))
       }
 
       const hasMore = members.length > input.limit
@@ -458,7 +458,6 @@ export const workspaceRouter = {
 
       return {
         ...member,
-        user: filteredUser(member.user),
       }
     }),
 
@@ -540,7 +539,7 @@ export const workspaceRouter = {
       }
 
       return {
-        user: filteredUser(user),
+        user,
         role: membership.role,
       }
     }),
@@ -652,17 +651,4 @@ export const workspaceRouter = {
           )
       })
     }),
-}
-
-function filteredUser(user: User) {
-  const info = user.info
-  return {
-    ...user,
-    info: {
-      username: info.username!, // this requires enabling "Users can set usernames to their account" in Clerk
-      firstName: info.firstName,
-      lastName: info.lastName,
-      imageUrl: info.imageUrl,
-    },
-  }
 }

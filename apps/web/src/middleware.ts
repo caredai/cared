@@ -1,44 +1,39 @@
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { betterFetch } from '@better-fetch/fetch'
 
-import { authForAdmin, authForApi, authForUser } from '@mindworld/api/auth'
+import type { auth } from '@mindworld/auth'
 
-const isPublicRoute = createRouteMatcher(['/', '/landing'])
-const isAdminRoute = createRouteMatcher(['/admin'])
-const isApiRoute = createRouteMatcher(['/api/(.*)'])
+type Session = typeof auth.$Infer.Session
 
-export default clerkMiddleware(async (auth, request) => {
-  if (isPublicRoute(request)) {
-    await auth()
-    return
+export default async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+
+  if (pathname === '/api/auth/get-session') {
+    return NextResponse.next() // Skip the middleware for the get-session endpoint
   }
 
-  if (isAdminRoute(request)) {
-    const { isAdmin } = authForAdmin(await auth.protect())
-    if (!isAdmin) {
+  const { data: session } = await betterFetch<Session>('/api/auth/get-session', {
+    baseURL: request.nextUrl.origin,
+    headers: {
+      cookie: request.headers.get('cookie') ?? '', // Forward the cookies from the request
+    },
+  })
+
+  if (!session) {
+    return NextResponse.redirect(new URL('/sign-in', request.url))
+  }
+
+  // Redirect to the homepage if the user is not an admin but tries
+  // to access the admin page or auth api
+  if (pathname === '/admin' || pathname.startsWith('/api/auth')) {
+    if (session.user.role !== 'admin') {
       return NextResponse.redirect(new URL('/', request.url))
     }
-    return
   }
 
-  if (isApiRoute(request)) {
-    // auth for api
-    const r = await authForApi()
-    if (r instanceof Response) {
-      return r
-    } else if (r) {
-      return
-    }
-  }
-
-  // auth for user
-  await auth.protect()
-
-  const r = await authForUser()
-  if (r instanceof Response) {
-    return r
-  }
-})
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: [

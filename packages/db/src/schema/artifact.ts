@@ -13,9 +13,9 @@ import {
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
+import { User } from '.'
 import { Chat } from './chat'
 import { generateId, makeIdValid, timestamps, timestampsIndices, timestampsOmits } from './utils'
-import { User } from './workspace'
 
 export const artifactKinds = ['text', 'code', 'image', 'sheet'] as const
 export type ArtifactKind = (typeof artifactKinds)[number]

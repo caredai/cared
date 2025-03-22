@@ -24,6 +24,8 @@ export interface AppMetadata {
   description?: string
   imageUrl?: string
 
+  clientId?: string
+
   languageModel: string
   embeddingModel: string // used for embedding memories
   rerankModel: string // used for reranking memories
@@ -42,6 +44,7 @@ const appMetadataSchema = z
   .object({
     description: z.string().optional(),
     imageUrl: z.string().optional(),
+    clientId: z.string().optional(),
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),

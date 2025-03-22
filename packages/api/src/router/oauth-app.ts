@@ -1,28 +1,29 @@
-import type { OAuthApplication } from '@clerk/backend'
-import { clerkClient } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
+import { auth, generateRandomString } from '@mindworld/auth'
 import { eq } from '@mindworld/db'
-import { OAuthApp } from '@mindworld/db/schema'
+import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@mindworld/db/schema'
 
-import { getClerkOAuthApp } from '../auth'
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
 
-function filteredOauthApp(oauthApp: OAuthApp, clerkOAuthApp: OAuthApplication) {
+// Helper function: Format OAuth application
+function formatOAuthApp(app: OAuthApplication) {
   return {
-    ...oauthApp,
-    redirectUris: clerkOAuthApp.redirectUris,
-    clientId: clerkOAuthApp.clientId,
-    ...(clerkOAuthApp.clientSecret ? { clientSecret: clerkOAuthApp.clientSecret } : {}),
-    discoveryUrl: clerkOAuthApp.discoveryUrl,
+    clientId: app.clientId,
+    clientSecret: app.clientSecret,
+    redirectUris: app.redirectURLs?.split(',') ?? [],
+    metadata: app.metadata ? JSON.parse(app.metadata) : {},
+    createdAt: app.createdAt,
+    updatedAt: app.updatedAt,
   }
 }
 
 export const oauthAppRouter = {
-  // Check if app has OAuth app
+  // Check if the application has OAuth app
   has: userProtectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/{appId}/exists' } })
     .input(z.object({ appId: z.string().min(32) }))
@@ -30,16 +31,21 @@ export const oauthAppRouter = {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-        where: eq(OAuthApp.appId, input.appId),
+      // Check if clientId exists in application metadata
+      const clientId = app.metadata.clientId
+
+      if (!clientId) {
+        return { exists: false }
+      }
+
+      const oauthApp = await ctx.db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.clientId, clientId),
       })
 
-      return {
-        exists: !!oauthApp && !!(await getClerkOAuthApp(oauthApp.oauthAppId)),
-      }
+      return { exists: !!oauthApp }
     }),
 
-  // Get OAuth app
+  // Get OAuth application
   get: userProtectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/{appId}' } })
     .input(z.object({ appId: z.string().min(32) }))
@@ -47,10 +53,18 @@ export const oauthAppRouter = {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-        where: eq(OAuthApp.appId, input.appId),
-      })
+      // Get clientId from application metadata
+      const clientId = app.metadata.clientId
+      if (!clientId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'OAuth app not found',
+        })
+      }
 
+      const oauthApp = await ctx.db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.clientId, clientId),
+      })
       if (!oauthApp) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -58,19 +72,8 @@ export const oauthAppRouter = {
         })
       }
 
-      const clerkOAuthApp = await getClerkOAuthApp(oauthApp.oauthAppId)
-      if (!clerkOAuthApp) {
-        // Delete the OAuth app record from our database since it no longer exists in Clerk
-        await ctx.db.delete(OAuthApp).where(eq(OAuthApp.appId, input.appId))
-
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'OAuth app not found',
-        })
-      }
-
       return {
-        oauthApp: filteredOauthApp(oauthApp, clerkOAuthApp),
+        oauthApp: formatOAuthApp(oauthApp),
       }
     }),
 
@@ -88,41 +91,45 @@ export const oauthAppRouter = {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      // Create OAuth app in Clerk
-      const client = await clerkClient()
-      const clerkOAuthApp = await client.oauthApplications.createOAuthApplication({
-        name: input.appId,
-        redirect_uris: input.redirectUris,
-        public: false, // always private
-        scopes: 'profile email',
+      const _oauthApp = await auth.api.registerOAuthApplication({
+        headers: await headers(),
+        body: {
+          name: input.appId,
+          redirect_uris: input.redirectUris ?? [],
+          scope: 'profile email',
+          metadata: { appId: input.appId },
+        },
       })
 
-      try {
-        // Store the mapping in our database
-        const [oauthApp] = await ctx.db
-          .insert(OAuthApp)
-          .values({
-            appId: input.appId,
-            oauthAppId: clerkOAuthApp.id,
-            clientId: clerkOAuthApp.clientId,
+      return await ctx.db.transaction(async (tx) => {
+        await tx
+          .update(App)
+          .set({
+            metadata: {
+              ...app.metadata,
+              clientId: _oauthApp.client_id,
+            },
           })
+          .where(eq(App.id, app.id))
           .returning()
 
-        return {
-          oauthApp: filteredOauthApp(oauthApp!, clerkOAuthApp),
-        }
-      } catch {
-        // Delete the OAuth app from Clerk if we failed to store the record in our database
-        await client.oauthApplications.deleteOAuthApplication(clerkOAuthApp.id)
-
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create OAuth app',
+        const oauthApp = await tx.query.OAuthApplication.findFirst({
+          where: eq(OAuthApplication.clientId, _oauthApp.client_id),
         })
-      }
+        if (!oauthApp) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create OAuth app',
+          })
+        }
+
+        return {
+          oauthApp: formatOAuthApp(oauthApp),
+        }
+      })
     }),
 
-  // Update OAuth app
+  // Update OAuth application
   update: userProtectedProcedure
     .meta({ openapi: { method: 'PATCH', path: '/v1/oauth-apps/{appId}' } })
     .input(
@@ -136,10 +143,18 @@ export const oauthAppRouter = {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-        where: eq(OAuthApp.appId, input.appId),
-      })
+      // Get clientId from application metadata
+      const clientId = app.metadata.clientId
+      if (!clientId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'OAuth app not found',
+        })
+      }
 
+      const oauthApp = await ctx.db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.clientId, clientId),
+      })
       if (!oauthApp) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -147,22 +162,28 @@ export const oauthAppRouter = {
         })
       }
 
-      // Update OAuth app in Clerk
-      const client = await clerkClient()
-      const clerkOAuthApp = await client.oauthApplications.updateOAuthApplication(
-        oauthApp.oauthAppId,
-        {
-          redirect_uris: input.redirectUris,
-          // scopes: input.scopes,
-        },
-      )
+      const [updatedOauthApp] = await ctx.db
+        .update(OAuthApplication)
+        .set({
+          redirectURLs: input.redirectUris?.join(','),
+          updatedAt: new Date(),
+        })
+        .where(eq(OAuthApplication.clientId, clientId))
+        .returning()
+
+      if (!updatedOauthApp) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update OAuth app',
+        })
+      }
 
       return {
-        oauthApp: filteredOauthApp(oauthApp, clerkOAuthApp),
+        oauthApp: formatOAuthApp(updatedOauthApp),
       }
     }),
 
-  // Delete OAuth app
+  // Delete OAuth application
   delete: userProtectedProcedure
     .meta({ openapi: { method: 'DELETE', path: '/v1/oauth-apps/{appId}' } })
     .input(z.object({ appId: z.string().min(32) }))
@@ -170,11 +191,9 @@ export const oauthAppRouter = {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-        where: eq(OAuthApp.appId, input.appId),
-      })
-
-      if (!oauthApp) {
+      // Get clientId from application metadata
+      const clientId = app.metadata.clientId
+      if (!clientId) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'OAuth app not found',
@@ -182,12 +201,19 @@ export const oauthAppRouter = {
       }
 
       await ctx.db.transaction(async (tx) => {
-        // Delete from our database first
-        await tx.delete(OAuthApp).where(eq(OAuthApp.appId, input.appId))
+        // Delete related records
+        await tx.delete(OAuthConsent).where(eq(OAuthConsent.clientId, clientId))
+        await tx.delete(OAuthAccessToken).where(eq(OAuthAccessToken.clientId, clientId))
+        await tx.delete(OAuthApplication).where(eq(OAuthApplication.clientId, clientId))
 
-        // Then delete from Clerk
-        const client = await clerkClient()
-        await client.oauthApplications.deleteOAuthApplication(oauthApp.oauthAppId)
+        // Update application metadata, remove clientId
+        const { clientId: _, ...restMetadata } = app.metadata
+        await tx
+          .update(App)
+          .set({
+            metadata: restMetadata,
+          })
+          .where(eq(App.id, app.id))
       })
     }),
 
@@ -199,8 +225,18 @@ export const oauthAppRouter = {
       const app = await getAppById(ctx, input.appId)
       await verifyWorkspaceOwner(ctx, app.workspaceId)
 
-      const oauthApp = await ctx.db.query.OAuthApp.findFirst({
-        where: eq(OAuthApp.appId, input.appId),
+      // Get clientId from application metadata
+      const clientId = app.metadata.clientId
+
+      if (!clientId) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'OAuth app not found',
+        })
+      }
+
+      const oauthApp = await ctx.db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.clientId, clientId),
       })
 
       if (!oauthApp) {
@@ -210,14 +246,28 @@ export const oauthAppRouter = {
         })
       }
 
-      // Rotate client secret in Clerk
-      const client = await clerkClient()
-      const clerkOAuthApp = await client.oauthApplications.rotateOAuthApplicationSecret(
-        oauthApp.oauthAppId,
-      )
+      // Generate new client secret
+      const newClientSecret = generateRandomString(32, 'a-z', 'A-Z')
+
+      // Update client secret of OAuth application
+      const [updatedOauthApp] = await ctx.db
+        .update(OAuthApplication)
+        .set({
+          clientSecret: newClientSecret,
+          updatedAt: new Date(),
+        })
+        .where(eq(OAuthApplication.clientId, clientId))
+        .returning()
+
+      if (!updatedOauthApp) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to rotate client secret',
+        })
+      }
 
       return {
-        oauthApp: filteredOauthApp(oauthApp, clerkOAuthApp),
+        oauthApp: formatOAuthApp(updatedOauthApp),
       }
     }),
 }

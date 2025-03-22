@@ -5,6 +5,7 @@ import { boolean, index, jsonb, pgEnum, pgTable, primaryKey, text } from 'drizzl
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
+import { User } from '.'
 import { Agent } from './agent'
 import { App } from './app'
 import {
@@ -16,7 +17,6 @@ import {
   timestampsOmits,
   visibilityEnumValues,
 } from './utils'
-import { User } from './workspace'
 
 export interface ChatMetadata {
   title: string

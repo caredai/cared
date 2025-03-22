@@ -10,6 +10,7 @@ const config = {
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: [
     '@mindworld/api',
+    '@mindworld/auth',
     '@mindworld/chatbot',
     '@mindworld/db',
     '@mindworld/i18n',

@@ -1,10 +1,11 @@
-import { clerkClient } from '@clerk/nextjs/server'
+import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@mindworld/db'
+import { auth } from '@mindworld/auth'
 import { and, desc, eq, gt, lt, sql } from '@mindworld/db'
-import { User } from '@mindworld/db/schema'
+import { user as User } from '@mindworld/db/schema/auth'
 
 import { adminProcedure } from '../../trpc'
 
@@ -34,8 +35,12 @@ export const userRouter = {
 
       // Add search conditions
       if (input.search) {
+        const searchTerm = `%${input.search}%`
         conditions.push(
-          sql`to_tsvector('english', ${User.info}::jsonb) @@ to_tsquery('english', ${input.search})`,
+          sql`(${User.name} ILIKE ${searchTerm} OR
+                  ${User.email} ILIKE ${searchTerm} OR
+                  ${User.username} ILIKE ${searchTerm} OR
+                  ${User.displayUsername} ILIKE ${searchTerm})`,
         )
       }
 
@@ -100,7 +105,6 @@ export const userRouter = {
     const user = await ctx.db.query.User.findFirst({
       where: eq(User.id, input),
     })
-
     if (!user) {
       throw new TRPCError({
         code: 'NOT_FOUND',
@@ -116,40 +120,17 @@ export const userRouter = {
   /**
    * Delete a user and their associated data.
    * Only accessible by admin users.
-   * Deletes user from both database and Clerk.
+   * Deletes user from both database and auth system.
    * @param input - The user ID
    * @throws {TRPCError} If user not found or deletion fails
    */
-  deleteUser: adminProcedure.input(z.string()).mutation(async ({ ctx, input }) => {
-    // Check if user exists
-    const user = await ctx.db.query.User.findFirst({
-      where: eq(User.id, input),
+  deleteUser: adminProcedure.input(z.string()).mutation(async ({ input }) => {
+    // Delete user from auth system
+    await auth.api.removeUser({
+      body: {
+        userId: input,
+      },
+      headers: await headers(),
     })
-
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'User not found',
-      })
-    }
-
-    // TODO: check resources associated with the user
-
-    try {
-      return await ctx.db.transaction(async (tx) => {
-        // Delete user from database
-        await tx.delete(User).where(eq(User.id, input))
-
-        // Delete user from Clerk
-        const client = await clerkClient()
-        await client.users.deleteUser(input)
-      })
-    } catch (error) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to delete user',
-        cause: error,
-      })
-    }
   }),
 }

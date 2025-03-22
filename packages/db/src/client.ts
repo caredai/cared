@@ -8,22 +8,24 @@ import * as schema from './schema'
 
 export type DB = PostgresJsDatabase<typeof schema> | VercelPgDatabase<typeof schema>
 
-export const db: DB = [
-  '127.0.0.1',
-  'localhost',
-].includes(new URL(process.env.POSTGRES_URL!).hostname)
-  ? drizzle({
-      connection: {
-        url: process.env.POSTGRES_URL!,
-      },
-      schema,
-      casing: 'camelCase',
-      logger: true,
-    })
-  : drizzleVercel({
-      client: sql,
-      schema,
-      casing: 'camelCase',
-    })
+export const db: DB =
+  process.env.POSTGRES_URL &&
+  [
+    '127.0.0.1',
+    'localhost',
+  ].includes(new URL(process.env.POSTGRES_URL).hostname)
+    ? drizzle({
+        connection: {
+          url: process.env.POSTGRES_URL,
+        },
+        schema,
+        casing: 'camelCase',
+        logger: true,
+      })
+    : drizzleVercel({
+        client: sql,
+        schema,
+        casing: 'camelCase',
+      })
 
 export type Transaction = Parameters<Parameters<DB['transaction']>[0]>[0]

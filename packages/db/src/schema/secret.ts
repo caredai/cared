@@ -1,7 +1,8 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import { jsonb, pgTable, text, varchar } from 'drizzle-orm/pg-core'
 
-import { User, Workspace } from './workspace'
+import { User } from '.'
+import { Workspace } from './workspace'
 
 export interface Secret {
   providerKeys?: Record<string, string>

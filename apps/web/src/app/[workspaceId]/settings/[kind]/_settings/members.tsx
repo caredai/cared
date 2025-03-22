@@ -127,8 +127,8 @@ export function Members({ workspace }: { workspace: Workspace }) {
   const filteredMembers = membersData?.members.filter((member) => {
     if (!searchQuery) return true
 
-    const fullName = `${member.user.info.firstName || ''} ${member.user.info.lastName || ''}`.trim()
-    const username = member.user.info.username || ''
+    const fullName = member.user.name
+    const username = member.user.username ?? ''
 
     return (
       fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -237,26 +237,23 @@ export function Members({ workspace }: { workspace: Workspace }) {
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                            {member.user.info.imageUrl ? (
+                            {member.user.image ? (
                               <Avatar className="h-8 w-8 rounded-lg">
                                 <AvatarImage
-                                  src={member.user.info.imageUrl}
-                                  alt={member.user.info.username}
+                                  src={member.user.image}
+                                  alt={member.user.username ?? ''}
                                 />
                               </Avatar>
                             ) : (
                               <span className="text-xs font-medium">
-                                {member.user.info.firstName?.[0] ?? ''}
-                                {member.user.info.lastName?.[0] ?? ''}
+                                {member.user.name.slice(0, 2)}
                               </span>
                             )}
                           </div>
                           <div>
-                            <div>
-                              {member.user.info.firstName} {member.user.info.lastName}
-                            </div>
+                            <div>{member.user.name}</div>
                             <div className="text-xs text-muted-foreground">
-                              @{member.user.info.username}
+                              @{member.user.username}
                             </div>
                           </div>
                         </div>
@@ -287,9 +284,8 @@ export function Members({ workspace }: { workspace: Workspace }) {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Remove Member</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Are you sure you want to remove {member.user.info.firstName}{' '}
-                                  {member.user.info.lastName} from this workspace? This action
-                                  cannot be undone.
+                                  Are you sure you want to remove {member.user.name} from this
+                                  workspace? This action cannot be undone.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>

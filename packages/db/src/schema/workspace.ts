@@ -1,10 +1,9 @@
-import type { User as ClerkUser } from '@clerk/nextjs/server'
 import type { InferSelectModel } from 'drizzle-orm'
-import { sql } from 'drizzle-orm'
-import { index, jsonb, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
+import { index, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
+import { User } from '.'
 import {
   generateId,
   roleEnum,
@@ -43,21 +42,6 @@ export const UpdateWorkspaceSchema = createUpdateSchema(Workspace, {
 }).omit({
   ...timestampsOmits,
 })
-
-export const User = pgTable(
-  'user',
-  {
-    id: varchar({ length: 127 }).primaryKey().notNull(),
-    info: jsonb().$type<ClerkUser>().notNull(),
-    ...timestamps,
-  },
-  (table) => [
-    index('user_search_index').using('gin', sql`to_tsvector('english', ${table.info}::jsonb)`),
-    ...timestampsIndices(table),
-  ],
-)
-
-export type User = InferSelectModel<typeof User>
 
 export const Membership = pgTable(
   'membership',
