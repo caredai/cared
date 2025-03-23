@@ -250,8 +250,7 @@ export function General({ workspace }: { workspace: Workspace }) {
                       .filter((member) => member.user.id !== workspace.id)
                       .map((member) => (
                         <SelectItem key={member.user.id} value={member.user.id}>
-                          {member.user.info.firstName} {member.user.info.lastName} (
-                          {member.user.info.username})
+                          {member.user.name} ({member.user.email})
                         </SelectItem>
                       ))}
                   </SelectContent>

@@ -42,9 +42,8 @@ function InnerProviders({ children }: { children: ReactNode }) {
       onSessionChange={() => router.refresh()}
       LinkComponent={Link}
       signUp={false}
-      username={true}
       credentials={false}
-      providers={['google', 'github', 'discord']}
+      providers={['google', 'twitter', 'discord', 'github']}
     >
       <TRPCReactProvider>
         <JotaiProvider>

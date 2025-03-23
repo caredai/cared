@@ -127,12 +127,9 @@ export function Members({ workspace }: { workspace: Workspace }) {
   const filteredMembers = membersData?.members.filter((member) => {
     if (!searchQuery) return true
 
-    const fullName = member.user.name
-    const username = member.user.username ?? ''
-
     return (
-      fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      username.toLowerCase().includes(searchQuery.toLowerCase())
+      member.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.user.email.toLowerCase().includes(searchQuery.toLowerCase())
     )
   })
 
@@ -241,7 +238,7 @@ export function Members({ workspace }: { workspace: Workspace }) {
                               <Avatar className="h-8 w-8 rounded-lg">
                                 <AvatarImage
                                   src={member.user.image}
-                                  alt={member.user.username ?? ''}
+                                  alt={member.user.name}
                                 />
                               </Avatar>
                             ) : (
@@ -253,7 +250,7 @@ export function Members({ workspace }: { workspace: Workspace }) {
                           <div>
                             <div>{member.user.name}</div>
                             <div className="text-xs text-muted-foreground">
-                              @{member.user.username}
+                              {member.user.email}
                             </div>
                           </div>
                         </div>

@@ -133,7 +133,7 @@ export default function Page() {
             <div>
               <h3 className="font-medium mb-1">User Data</h3>
               <p className="text-sm text-muted-foreground">
-                Multiple test users will be added, including usernames, emails, and profile
+                Multiple test users will be added, including names, emails, and profile
                 information.
               </p>
             </div>

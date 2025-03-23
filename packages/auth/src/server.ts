@@ -14,7 +14,6 @@ import {
   openAPI,
   organization,
   twoFactor,
-  username,
 } from 'better-auth/plugins'
 import { passkey } from 'better-auth/plugins/passkey'
 
@@ -34,13 +33,17 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
-    github: {
-      clientId: env.GITHUB_CLIENT_ID,
-      clientSecret: env.GITHUB_CLIENT_SECRET,
+    twitter: {
+      clientId: env.TWITTER_CLIENT_ID,
+      clientSecret: env.TWITTER_CLIENT_SECRET,
     },
     discord: {
       clientId: env.DISCORD_CLIENT_ID,
       clientSecret: env.DISCORD_CLIENT_SECRET,
+    },
+    github: {
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
     },
   },
   database: drizzleAdapter(db, {
@@ -69,20 +72,25 @@ export const auth = betterAuth({
     jwt(),
     passkey(),
     twoFactor(),
-    username(),
     admin(),
     organization(),
     genericOAuth({
       config: [],
     }),
     oidcProvider({
-      loginPage: '/sign-in',
-      consentPage: '/path/to/consent/page',
+      accessTokenExpiresIn: 7200, // 2 hours
+      refreshTokenExpiresIn: 604800, // 1 week
+      codeExpiresIn: 600, // 10 minutes
+      allowDynamicClientRegistration: false,
+      requirePKCE: true,
+      loginPage: '/auth/sign-in',
+      consentPage: '/auth/oauth2/consent',
       metadata: {
-        issuer: 'https://your-domain.com',
-        authorization_endpoint: '/custom/oauth2/authorize',
-        token_endpoint: '/custom/oauth2/token',
-        // ...other custom metadata
+        issuer: env.NEXT_PUBLIC_MIND_URL,
+        authorization_endpoint: '/oauth2/authorize',
+        token_endpoint: '/oauth2/token',
+        userinfo_endpoint: '/oauth2/userinfo',
+        jwks_uri: '/jwks'
       },
     }),
     apiKey({
