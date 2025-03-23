@@ -44,6 +44,7 @@
     "react-use": "^17.6.0",
     "stable-hash": "^0.0.4",
     "superjson": "2.2.2",
+    "undici": "^7.5.0",
     "zod": "catalog:"
   },
   "devDependencies": {

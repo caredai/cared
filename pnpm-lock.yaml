@@ -18,9 +18,6 @@ catalogs:
     '@trpc/tanstack-react-query':
       specifier: ^11.0.0-rc.795
       version: 11.0.0-rc.795
-    ai:
-      specifier: 4.1.62
-      version: 4.1.62
     eslint:
       specifier: ^9.18.0
       version: 9.18.0
@@ -174,6 +171,9 @@ importers:
       superjson:
         specifier: 2.2.2
         version: 2.2.2
+      undici:
+        specifier: ^7.5.0
+        version: 7.5.0
       zod:
         specifier: 3.24.2
         version: 3.24.2
@@ -8913,9 +8913,6 @@ packages:
     resolution: {integrity: sha512-BM/Thnrw5jm2kKLE5uJkXqqExRUY/toLHda65XgFTBTFYZyopbKjBe29Ii3RbkvlsMoFwD+tHeGaCjjv0gHlyw==}
     engines: {node: '>=4'}
 
-  pg-protocol@1.7.0:
-    resolution: {integrity: sha512-hTK/mE36i8fDDhgDFjy6xNOG+LCorxLG3WO17tku+ij6sVHXh1jQUJ8hYAnRhNla4QVD2H8er/FOjc/+EgC6yQ==}
-
   pg-protocol@1.8.0:
     resolution: {integrity: sha512-jvuYlEkL03NRvOoyoRktBK7+qU5kOvlAwvmrH8sr3wbLrOdVWsRxQfz8mMy9sZFsqJ1hEWNfdWKI4SAmoL+j7g==}
 
@@ -10401,6 +10398,10 @@ packages:
 
   undici@7.3.0:
     resolution: {integrity: sha512-Qy96NND4Dou5jKoSJ2gm8ax8AJM/Ey9o9mz7KN1bb9GP+G0l20Zw8afxTnY2f4b7hmhn/z8aC2kfArVQlAhFBw==}
+    engines: {node: '>=20.18.1'}
+
+  undici@7.5.0:
+    resolution: {integrity: sha512-NFQG741e8mJ0fLQk90xKxFdaSM7z4+IQpAgsFI36bCDY9Z2+aXXZjVy2uUksMouWfMI9+w5ejOq5zYYTBCQJDQ==}
     engines: {node: '>=20.18.1'}
 
   unenv@1.10.0:
@@ -15781,7 +15782,7 @@ snapshots:
   '@types/pg@8.11.6':
     dependencies:
       '@types/node': 22.13.10
-      pg-protocol: 1.7.0
+      pg-protocol: 1.8.0
       pg-types: 4.0.2
 
   '@types/prompts@2.4.9':
@@ -15948,7 +15949,7 @@ snapshots:
     dependencies:
       '@neondatabase/serverless': 0.9.5
       bufferutil: 4.0.9
-      ws: 8.18.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.18.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - utf-8-validate
     optional: true
@@ -18528,7 +18529,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.7.9(debug@4.4.0))
+      retry-axios: 2.6.0(axios@1.7.9)
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -20299,10 +20300,7 @@ snapshots:
 
   pg-numeric@1.0.2: {}
 
-  pg-protocol@1.7.0: {}
-
-  pg-protocol@1.8.0:
-    optional: true
+  pg-protocol@1.8.0: {}
 
   pg-types@4.0.2:
     dependencies:
@@ -20430,7 +20428,7 @@ snapshots:
 
   postcss@8.4.31:
     dependencies:
-      nanoid: 3.3.9
+      nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -21004,7 +21002,7 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  retry-axios@2.6.0(axios@1.7.9(debug@4.4.0)):
+  retry-axios@2.6.0(axios@1.7.9):
     dependencies:
       axios: 1.7.9(debug@4.4.0)
 
@@ -21931,6 +21929,8 @@ snapshots:
     optional: true
 
   undici@7.3.0: {}
+
+  undici@7.5.0: {}
 
   unenv@1.10.0:
     dependencies:
