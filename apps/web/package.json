@@ -16,6 +16,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.12.5",
     "@clerk/themes": "^2.2.21",
+    "@daveyplate/better-auth-tanstack": "^1.2.31",
     "@daveyplate/better-auth-ui": "^1.2.37",
     "@icons-pack/react-simple-icons": "^12.2.0",
     "@mindworld/api": "workspace:*",

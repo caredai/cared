@@ -9,6 +9,8 @@ export const authClient = createAuthClient({
   ],
 })
 
+export const allowedProviders = ['google', 'twitter', 'discord', 'github'] as const
+
 export function getBaseUrl() {
   // eslint-disable-next-line no-restricted-properties
   return `http://localhost:${process.env.PORT ?? 3000}`

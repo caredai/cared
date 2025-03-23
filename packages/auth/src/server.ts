@@ -46,6 +46,10 @@ export const auth = betterAuth({
       clientSecret: env.GITHUB_CLIENT_SECRET,
     },
   },
+  accountLinking: {
+    enabled: true,
+    allowDifferentEmails: false,
+  },
   database: drizzleAdapter(db, {
     provider: 'pg',
   }),
@@ -90,7 +94,7 @@ export const auth = betterAuth({
         authorization_endpoint: '/oauth2/authorize',
         token_endpoint: '/oauth2/token',
         userinfo_endpoint: '/oauth2/userinfo',
-        jwks_uri: '/jwks'
+        jwks_uri: '/jwks',
       },
     }),
     apiKey({

@@ -1,8 +1,8 @@
 'use client'
 
+import type { Provider } from '@/hooks/use-auth-hooks'
 import * as React from 'react'
 import { useState } from 'react'
-import { socialProviders } from '@daveyplate/better-auth-ui'
 import { toast } from 'sonner'
 
 import { authClient } from '@mindworld/auth/client'
@@ -18,6 +18,7 @@ import {
 import { Separator } from '@mindworld/ui/components/separator'
 
 import { CircleSpinner } from '@/components/spinner'
+import { allowedProviders } from '@/hooks/use-auth-hooks'
 
 /**
  * Sign-in page component with social login options
@@ -25,13 +26,14 @@ import { CircleSpinner } from '@/components/spinner'
 export default function Page() {
   const [isLoading, setIsLoading] = useState<string>()
 
-  const getRedirectTo = new URLSearchParams(window.location.search).get('redirectTo') ?? '/'
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  const getRedirectTo = new URLSearchParams(globalThis.location?.search).get('redirectTo') ?? '/'
 
   /**
    * Handles social provider authentication
    * @param provider - The social provider to authenticate with
    */
-  const handleSocialSignIn = async (provider: (typeof socialProviders)[number]['provider']) => {
+  const handleSocialSignIn = async (provider: Provider) => {
     setIsLoading(provider)
     const { error } = await authClient.signIn.social({
       provider,
@@ -42,9 +44,6 @@ export default function Page() {
       setIsLoading(undefined)
     }
   }
-
-  // Filter only the providers we want to use
-  const allowedProviders = ['google', 'twitter', 'discord', 'github'] as const
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4 bg-gradient-to-b from-background to-muted/20">
@@ -58,9 +57,7 @@ export default function Page() {
           </CardHeader>
           <CardContent className="space-y-6 px-6">
             <div className="grid gap-4">
-              {allowedProviders.map((provider) => {
-                const { icon: Icon, name } = socialProviders.find((p) => p.provider === provider)!
-
+              {allowedProviders.map(({ icon: Icon, name, provider }) => {
                 return (
                   <Button
                     key={provider}
@@ -77,7 +74,7 @@ export default function Page() {
                         <Icon color />
                       )}
                     </div>
-                    <span className="font-normal text-base">{name === 'X' ? 'Twitter' : name}</span>
+                    <span className="font-normal text-base">{name}</span>
                   </Button>
                 )
               })}
