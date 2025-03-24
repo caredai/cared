@@ -1,6 +1,6 @@
 import type { LiteralUnion, Models } from 'better-auth'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
-import { betterAuth } from 'better-auth'
+import { betterAuth, BetterAuthOptions } from 'better-auth'
 import { emailHarmony } from 'better-auth-harmony'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
@@ -8,6 +8,7 @@ import {
   admin,
   apiKey,
   bearer,
+  customSession,
   genericOAuth,
   jwt,
   oidcProvider,
@@ -24,10 +25,16 @@ import { generateId } from '@mindworld/shared'
 import { getBaseUrl } from './client'
 import { env } from './env'
 
-export const auth = betterAuth({
+const options = {
   appName: 'Mind',
   baseURL: getBaseUrl(),
   basePath: '/api/auth',
+  session: {
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 60, // 1 hour
+    },
+  },
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
@@ -46,9 +53,11 @@ export const auth = betterAuth({
       clientSecret: env.GITHUB_CLIENT_SECRET,
     },
   },
-  accountLinking: {
-    enabled: true,
-    allowDifferentEmails: false,
+  account: {
+    accountLinking: {
+      enabled: true,
+      allowDifferentEmails: false,
+    },
   },
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -67,11 +76,11 @@ export const auth = betterAuth({
     },
   },
   advanced: {
+    cookiePrefix: 'mind',
     generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
       generateId(modelPrefix(model)),
   },
   plugins: [
-    nextCookies(),
     bearer(),
     jwt(),
     passkey(),
@@ -112,6 +121,24 @@ export const auth = betterAuth({
     }),
     openAPI(),
     emailHarmony(),
+    // Make sure this is the last plugin in the array
+    // https://www.better-auth.com/docs/integrations/next#server-action-cookies
+    nextCookies(),
+  ],
+} satisfies BetterAuthOptions
+
+export const auth = betterAuth({
+  ...options,
+  plugins: [
+    ...options.plugins,
+    // eslint-disable-next-line @typescript-eslint/require-await
+    customSession(async ({ user, session }) => {
+      // now both user and session will infer the fields added by plugins and your custom fields
+      return {
+        user,
+        session,
+      }
+    }, options), // pass options here
   ],
 })
 

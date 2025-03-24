@@ -236,10 +236,7 @@ export function Members({ workspace }: { workspace: Workspace }) {
                           <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                             {member.user.image ? (
                               <Avatar className="h-8 w-8 rounded-lg">
-                                <AvatarImage
-                                  src={member.user.image}
-                                  alt={member.user.name}
-                                />
+                                <AvatarImage src={member.user.image} alt={member.user.name} />
                               </Avatar>
                             ) : (
                               <span className="text-xs font-medium">
@@ -249,9 +246,7 @@ export function Members({ workspace }: { workspace: Workspace }) {
                           </div>
                           <div>
                             <div>{member.user.name}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {member.user.email}
-                            </div>
+                            <div className="text-xs text-muted-foreground">{member.user.email}</div>
                           </div>
                         </div>
                       </TableCell>

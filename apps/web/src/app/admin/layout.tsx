@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
+import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
+import { auth } from '@mindworld/api'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@mindworld/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
@@ -33,11 +35,16 @@ const items = [
   },
 ]
 
-export default function WorkspaceLayout({
+export default async function WorkspaceLayout({
   children,
 }: Readonly<{
   children: ReactNode
 }>) {
+  const { isAdmin } = await auth()
+  if (!isAdmin) {
+    redirect('/')
+  }
+
   prefetch(trpc.user.me.queryOptions())
 
   return (

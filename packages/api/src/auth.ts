@@ -38,9 +38,18 @@ export async function auth() {
 }
 
 export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
-  const { user, session } = (await authApi.api.getSession({
-    headers,
-  }))!
+  // real authentication logic is here
+  const { user, session } =
+    (await authApi.api.getSession({
+      headers,
+    })) ?? {}
+  if (!user || !session) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Unauthorized',
+    })
+  }
+
   const apiKey = await db.query.ApiKey.findFirst({
     where: eq(ApiKey.id, session.userId),
   })
@@ -79,7 +88,7 @@ export function checkAppUser(auth: Auth, appId: string) {
   if (auth.appId && auth.appId !== appId) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
-      message: `Accessing the app is not authorized by the user`,
+      message: 'Accessing the app is not authorized by the user',
     })
   }
 }
