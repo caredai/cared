@@ -59,7 +59,7 @@ export const timestamps = {
   createdAt,
   updatedAt,
 }
-export const timestampsIndices = (table: any) => [
+export const timestampsIndices = (table: { createdAt: any; updatedAt: any }) => [
   index().on(table.createdAt),
   index().on(table.updatedAt),
 ]

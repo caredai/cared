@@ -1,5 +1,7 @@
 import { cache } from 'react'
 import { headers } from 'next/headers'
+import { base64Url } from '@better-auth/utils/base64'
+import { createHash } from '@better-auth/utils/hash'
 import { TRPCError } from '@trpc/server'
 
 import { auth as authApi } from '@mindworld/auth'
@@ -50,21 +52,29 @@ export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
     })
   }
 
-  const apiKey = await db.query.ApiKey.findFirst({
-    where: eq(ApiKey.id, session.userId),
-  })
-  if (apiKey?.metadata) {
-    const appId = JSON.parse(apiKey.metadata).appId! as string
-    return { appId }
+  const key = headers.get('X-API-KEY')
+  if (key) {
+    // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
+    const hash = await createHash('SHA-256').digest(new TextEncoder().encode(key))
+    const hashed = base64Url.encode(new Uint8Array(hash), {
+      padding: false,
+    })
+
+    const apiKey = await db.query.ApiKey.findFirst({
+      where: eq(ApiKey.key, hashed),
+    })
+    if (apiKey?.metadata) {
+      const appId = JSON.parse(apiKey.metadata).appId! as string
+      return { appId }
+    }
   }
 
-  const authorization = headers.get('authorization')
+  const authorization = headers.get('Authorization')
   if (authorization) {
     const token = authorization.replace('Bearer ', '')
     const accessToken = await db.query.OAuthAccessToken.findFirst({
       where: eq(OAuthAccessToken.accessToken, token),
     })
-    await authApi.api.oAuth2userInfo({})
     if (accessToken) {
       const oauthApp = await db.query.OAuthApplication.findFirst({
         where: eq(OAuthApplication.clientId, accessToken.clientId!),

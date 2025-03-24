@@ -14,6 +14,7 @@ export default async function Page() {
 
   if (userId) {
     prefetch(trpc.user.me.queryOptions())
+    prefetch(trpc.user.accounts.queryOptions())
     prefetch(trpc.workspace.list.queryOptions())
   }
 

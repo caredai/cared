@@ -46,6 +46,7 @@ export default async function WorkspaceLayout({
   }
 
   prefetch(trpc.user.me.queryOptions())
+  prefetch(trpc.user.accounts.queryOptions())
 
   return (
     <ErrorBoundary fallback={<ErrorFallback />}>

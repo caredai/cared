@@ -1,6 +1,6 @@
 'use client'
 
-import type { Provider } from '@/hooks/use-auth-hooks'
+import type { Provider } from '@/lib/auth-providers'
 import * as React from 'react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -18,7 +18,7 @@ import {
 import { Separator } from '@mindworld/ui/components/separator'
 
 import { CircleSpinner } from '@/components/spinner'
-import { allowedProviders } from '@/hooks/use-auth-hooks'
+import { allowedProviders } from '@/lib/auth-providers'
 
 /**
  * Sign-in page component with social login options

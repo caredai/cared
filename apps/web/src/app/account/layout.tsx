@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
-import { headers } from 'next/headers'
-import { prefetchSession } from '@daveyplate/better-auth-tanstack/server'
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
+import { headers as getHeaders } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
 import { auth } from '@mindworld/auth'
@@ -10,7 +9,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@mindworld/ui/com
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { NavMain } from '@/components/nav-main'
-import { prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 const items = [
   {
@@ -30,18 +29,20 @@ export default async function AccountLayout({
 }: Readonly<{
   children: ReactNode
 }>) {
-  prefetch(trpc.user.me.queryOptions())
-
-  const queryClient = new QueryClient()
-
-  void prefetchSession(auth, queryClient, {
-    headers: await headers(),
+  const session = await auth.api.getSession({
+    headers: await getHeaders(),
   })
+  if (!session) {
+    redirect('/auth/sign-in')
+  }
+
+  prefetch(trpc.user.me.queryOptions())
+  prefetch(trpc.user.accounts.queryOptions())
 
   return (
     <ErrorBoundary fallback={<ErrorFallback />}>
       <SidebarProvider>
-        <AppSidebar baseUrl="/account">
+        <AppSidebar baseUrl="/">
           <NavMain items={items} baseUrl="/account" />
         </AppSidebar>
 
@@ -52,7 +53,7 @@ export default async function AccountLayout({
             </div>
           </header>
 
-          <HydrationBoundary state={dehydrate(queryClient)}>{children}</HydrationBoundary>
+          <HydrateClient>{children}</HydrateClient>
         </SidebarInset>
       </SidebarProvider>
     </ErrorBoundary>

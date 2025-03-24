@@ -15,7 +15,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "with-env": "dotenv -e ../../.env --",
-    "generate-schema": "pnpm with-env pnpm dlx @better-auth/cli generate -y --config ./src/server.ts --output ../db/src/schema/auth.ts"
+    "generate-schema": "pnpm with-env pnpm dlx @better-auth/cli generate -y --config ./src/server.ts --output ../db/src/schema/auth-generated.ts && pnpm prettier --check --write ../db/src/schema/auth-generated.ts"
   },
   "devDependencies": {
     "@mindworld/eslint-config": "workspace:*",

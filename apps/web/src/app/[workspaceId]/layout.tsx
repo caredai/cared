@@ -54,6 +54,7 @@ export default async function WorkspaceLayout({
   const { workspaceId } = await params
 
   prefetch(trpc.user.me.queryOptions())
+  prefetch(trpc.user.accounts.queryOptions())
   prefetch(
     trpc.workspace.get.queryOptions({
       id: workspaceId,

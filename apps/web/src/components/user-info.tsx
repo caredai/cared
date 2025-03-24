@@ -4,8 +4,8 @@ import { Avatar, AvatarImage } from '@mindworld/ui/components/avatar'
 
 import { useUser } from '@/hooks/use-user'
 
-export function UserInfo() {
-  const user = useUser()
+export function UserInfo({ showEmail }: { showEmail?: boolean }) {
+  const { user } = useUser()
 
   return (
     <>
@@ -14,7 +14,7 @@ export function UserInfo() {
       </Avatar>
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-medium">{user.name}</span>
-        <span className="truncate text-xs">{user.email}</span>
+        {showEmail && <span className="truncate text-xs">{user.email}</span>}
       </div>
     </>
   )

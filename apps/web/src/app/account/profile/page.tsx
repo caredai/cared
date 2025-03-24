@@ -1,10 +1,11 @@
 'use client'
 
+import type { Provider } from '@/lib/auth-providers'
 import { useRef, useState } from 'react'
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
 import { LucideCheck, LucidePencil, LucidePlus, LucideX } from 'lucide-react'
 import { toast } from 'sonner'
+import { z } from 'zod'
 
 import { authClient } from '@mindworld/auth/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@mindworld/ui/components/avatar'
@@ -26,17 +27,16 @@ import {
 import { Input } from '@mindworld/ui/components/input'
 import { Label } from '@mindworld/ui/components/label'
 
-import { CircleSpinner, Spinner } from '@/components/spinner'
-import { allowedProviders, Provider, useListAccounts, useSession } from '@/hooks/use-auth-hooks'
+import { CircleSpinner } from '@/components/spinner'
+import { useUser } from '@/hooks/use-user'
+import { allowedProviders, getAccountInfo } from '@/lib/auth-providers'
 
 /**
  * User profile page component
  * Allows users to manage their profile information and connected accounts
  */
 export default function ProfilePage() {
-  const router = useRouter()
-  const { user, isError: isUserEror, refetch: refetchUser } = useSession()
-  const { accounts, isError: isAccountsError, refetch: refetchAccounts } = useListAccounts()
+  const { user, accounts, refetchUser, refetchAccounts } = useUser()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -51,8 +51,6 @@ export default function ProfilePage() {
    * Handle updating user's name
    */
   const handleUpdateName = async () => {
-    if (!user) return
-
     try {
       // Note: Properties should match your API requirements
       await authClient.updateUser({
@@ -72,7 +70,7 @@ export default function ProfilePage() {
    */
   const handleProfileImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !user) return
+    if (!file) return
 
     try {
       // Since updateUserProfileImage may not exist, disable this functionality for now
@@ -133,17 +131,8 @@ export default function ProfilePage() {
     }
   }
 
-  if (isUserEror || isAccountsError) {
-    router.push('/')
-  }
-
-  if (!user || !accounts) {
-    return (
-      <div className="flex items-center justify-center">
-        <Spinner />
-      </div>
-    )
-  }
+  // Some social provider (e.g., twitter) does not return email, so we need to check if the email is valid.
+  const { success: hasEmail } = z.string().email().safeParse(user.email)
 
   return (
     <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 space-y-8">
@@ -236,10 +225,12 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                   <div>
-                    <Label className="block text-sm font-medium text-gray-500">Email</Label>
+                    <Label className="block text-sm font-medium text-gray-500">
+                      {hasEmail ? 'Email' : 'User ID'}
+                    </Label>
                     <div className="flex items-center gap-2">
                       <p className="text-gray-700">{user.email}</p>
-                      {user.email && (
+                      {user.emailVerified && (
                         <Badge variant="outline" className="text-xs">
                           Verified
                         </Badge>
@@ -265,8 +256,9 @@ export default function ProfilePage() {
             {accounts.length > 0 ? (
               accounts.map((account) => {
                 const { icon: Icon, name } = allowedProviders.find(
-                  (provider) => provider.provider === account.provider,
+                  (provider) => provider.provider === account.providerId,
                 )!
+                const displayUsername = getAccountInfo(account).displayUsername
 
                 return (
                   <div
@@ -277,13 +269,16 @@ export default function ProfilePage() {
                       <div className="w-5 h-5 flex items-center justify-center">
                         <Icon color />
                       </div>
-                      <p className="font-normal">{name}</p>
+                      <span className="font-normal">{name}</span>
+                      {displayUsername && (
+                        <span className="text-sm font-mono">{displayUsername}</span>
+                      )}
                     </div>
                     <Button
                       variant="destructive"
                       size="sm"
                       disabled={isDisconnecting === account.accountId || accounts.length <= 1}
-                      onClick={() => handleDisconnectAccount(account.accountId, account.provider)}
+                      onClick={() => handleDisconnectAccount(account.accountId, account.providerId)}
                     >
                       {isDisconnecting === account.id && <CircleSpinner className="h-4 w-4" />}
                       Disconnect
@@ -308,26 +303,27 @@ export default function ProfilePage() {
               <DropdownMenuContent align="end">
                 {allowedProviders
                   .filter(
-                    (provider) =>
-                      !accounts.some((account) => account.provider === provider.provider),
+                    (provider) => !accounts.some((acc) => acc.providerId === provider.provider),
                   )
-                  .map(({ icon: Icon, name, provider }) => (
-                    <DropdownMenuItem
-                      key={provider}
-                      disabled={isConnecting === provider}
-                      onClick={() => handleConnectAccount(provider)}
-                      className="cursor-pointer"
-                    >
-                      <div className="w-4 h-4 flex items-center justify-center">
-                        {isConnecting === provider ? (
-                          <CircleSpinner className="h-4 w-4" />
-                        ) : (
-                          <Icon color />
-                        )}
-                      </div>
-                      <span>{name}</span>
-                    </DropdownMenuItem>
-                  ))}
+                  .map(({ icon: Icon, name, provider }) => {
+                    return (
+                      <DropdownMenuItem
+                        key={provider}
+                        disabled={isConnecting === provider}
+                        onClick={() => handleConnectAccount(provider)}
+                        className="cursor-pointer"
+                      >
+                        <div className="w-4 h-4 flex items-center justify-center">
+                          {isConnecting === provider ? (
+                            <CircleSpinner className="h-4 w-4" />
+                          ) : (
+                            <Icon color />
+                          )}
+                        </div>
+                        <span>{name}</span>
+                      </DropdownMenuItem>
+                    )
+                  })}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

@@ -12,7 +12,9 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next() // Skip the middleware for the get-session endpoint
   }
 
-  const sessionCookie = getSessionCookie(request)
+  const sessionCookie = getSessionCookie(request, {
+    cookiePrefix: 'mind',
+  })
   if (!sessionCookie) {
     const redirectTo = request.nextUrl.pathname + request.nextUrl.search
     return NextResponse.redirect(new URL(`/auth/sign-in?redirectTo=${redirectTo}`, request.url))
