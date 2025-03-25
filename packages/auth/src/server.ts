@@ -1,4 +1,5 @@
 import type { Account as AuthAccount, BetterAuthOptions, LiteralUnion, Models } from 'better-auth'
+import { headers as nextHeaders } from 'next/headers'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
 import { betterAuth } from 'better-auth'
 import { emailHarmony } from 'better-auth-harmony'
@@ -18,6 +19,7 @@ import {
   twoFactor,
 } from 'better-auth/plugins'
 import { passkey } from 'better-auth/plugins/passkey'
+import { sha256 } from 'viem'
 
 import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
@@ -28,10 +30,20 @@ import { generateId } from '@mindworld/shared'
 import { getBaseUrl } from './client'
 import { env } from './env'
 
+const serverIdName = 'x-server-call-mark'
+const serverId = sha256(new TextEncoder().encode(env.BETTER_AUTH_SECRET), 'hex')
+
+export async function headers() {
+  const headers = new Headers(await nextHeaders())
+  headers.set(serverIdName, serverId)
+  return headers
+}
+
 const options = {
   appName: 'Mind',
   baseURL: getBaseUrl(),
   basePath: '/api/auth',
+  secret: env.BETTER_AUTH_SECRET,
   session: {
     cookieCache: {
       enabled: true,
@@ -188,12 +200,16 @@ const options = {
   hooks: {
     // eslint-disable-next-line @typescript-eslint/require-await
     before: createAuthMiddleware(async (ctx) => {
+      // Always OK for the server call itself
+      if (ctx.headers?.get(serverIdName) === serverId) {
+        ctx.headers.delete(serverIdName)
+        return
+      }
+
       const allowedPaths = [
         '/sign-in/social',
-        '/get-session',
         '/sign-out',
         '/update-user',
-        '/list-sessions',
         '/revoke-session',
         '/revoke-sessions',
         '/revoke-other-sessions',
@@ -264,6 +280,22 @@ export const auth = betterAuth({
       }
     }, options), // pass options here
   ],
+})
+
+Object.entries(auth.api).forEach(([key, _endpoint]) => {
+  const endpoint = async (args: any) => {
+    // @ts-ignore
+    return _endpoint({
+      ...args,
+      headers: await headers(),
+    })
+  }
+  Object.entries(_endpoint).forEach(([k, v]) => {
+    // @ts-ignore
+    endpoint[k] = v
+  })
+  // @ts-ignore
+  auth.api[key] = endpoint
 })
 
 async function cacheProfileForAccount(id: string, profile: Record<string, any>) {
