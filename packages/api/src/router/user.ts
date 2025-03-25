@@ -1,4 +1,5 @@
 import { headers } from 'next/headers'
+import { TRPCError } from '@trpc/server'
 
 import { auth } from '@mindworld/auth'
 import { eq } from '@mindworld/db'
@@ -13,11 +14,18 @@ export const userRouter = {
         method: 'GET',
         path: '/v1/me',
         protect: true,
-        tags: ['users'],
+        tags: ['me'],
         summary: 'Get current user information',
       },
     })
-    .query(async () => {
+    .query(async ({ ctx }) => {
+      if (!ctx.auth.userId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This api is only available for authenticated users',
+        })
+      }
+
       const { user } = (await auth.api.getSession({
         headers: await headers(),
       }))!
@@ -33,15 +41,83 @@ export const userRouter = {
         method: 'GET',
         path: '/v1/me/accounts',
         protect: true,
-        tags: ['users'],
+        tags: ['me'],
         summary: 'Get linked accounts of current user',
       },
     })
     .query(async ({ ctx }) => {
+      if (!ctx.auth.userId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This api is only available for authenticated users',
+        })
+      }
+
       const accounts = await ctx.db.query.Account.findMany({
         where: eq(Account.userId, ctx.auth.userId),
       })
 
       return { accounts }
+    }),
+
+  session: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/me/session',
+        protect: true,
+        tags: ['me'],
+        summary: 'Get current session of current user',
+      },
+    })
+    .query(async ({ ctx }) => {
+      if (!ctx.auth.userId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This api is only available for authenticated users',
+        })
+      }
+
+      const { user, session } = (await auth.api.getSession({
+        headers: await headers(),
+      }))!
+
+      return { user, session }
+    }),
+
+  sessions: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/me/sessions',
+        protect: true,
+        tags: ['me'],
+        summary: 'Get sessions of current user',
+      },
+    })
+    .query(async ({ ctx }) => {
+      if (!ctx.auth.userId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'This api is only available for authenticated users',
+        })
+      }
+
+      const sessions = await auth.api.listSessions({
+        headers: await headers(),
+      })
+
+      return {
+        sessions: sessions.map((session) => ({
+          ...session,
+          geolocation: session.geolocation
+            ? (JSON.parse(session.geolocation) as {
+                city?: string
+                region?: string
+                country?: string
+              })
+            : undefined,
+        })),
+      }
     }),
 }

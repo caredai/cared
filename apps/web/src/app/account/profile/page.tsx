@@ -31,11 +31,7 @@ import { CircleSpinner } from '@/components/spinner'
 import { useUser } from '@/hooks/use-user'
 import { allowedProviders, getAccountInfo } from '@/lib/auth-providers'
 
-/**
- * User profile page component
- * Allows users to manage their profile information and connected accounts
- */
-export default function ProfilePage() {
+export default function Page() {
   const { user, accounts, refetchUser, refetchAccounts } = useUser()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -265,13 +261,13 @@ export default function ProfilePage() {
                     key={account.id}
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-3 truncate">
                       <div className="w-5 h-5 flex items-center justify-center">
                         <Icon color />
                       </div>
                       <span className="font-normal">{name}</span>
                       {displayUsername && (
-                        <span className="text-sm font-mono">{displayUsername}</span>
+                        <span className="text-sm font-mono truncate">{displayUsername}</span>
                       )}
                     </div>
                     <Button

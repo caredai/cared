@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from 'lucide-react'
 
+import { authClient } from '@mindworld/auth/client'
 import {
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -16,7 +18,18 @@ import { ThemeSwitcher } from '@/components/theme'
 import { UserInfo } from './user-info'
 
 export function NavUserContent() {
+  const router = useRouter()
   const isMobile = useIsMobile()
+
+  const signOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push('/')
+        },
+      },
+    })
+  }
 
   return (
     <DropdownMenuContent
@@ -54,7 +67,7 @@ export function NavUserContent() {
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
-      <DropdownMenuItem>
+      <DropdownMenuItem onSelect={signOut}>
         <LogOut />
         Log out
       </DropdownMenuItem>

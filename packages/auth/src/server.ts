@@ -37,6 +37,11 @@ const options = {
       enabled: true,
       maxAge: 60 * 60, // 1 hour
     },
+    additionalFields: {
+      geolocation: {
+        type: 'string',
+      },
+    },
   },
   socialProviders: {
     google: {
@@ -208,6 +213,39 @@ const options = {
       ]
       if (!allowedPaths.includes(ctx.path) && !ctx.path.startsWith('/callback')) {
         throw new APIError('NOT_FOUND')
+      }
+    }),
+    after: createAuthMiddleware(async (ctx) => {
+      // https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-visitor-location-headers
+      if (ctx.path === '/sign-in/social') {
+        const headers = ctx.headers
+        if (!headers) {
+          return
+        }
+        const session = ctx.context.session
+        if (!session) {
+          return
+        }
+        const city = headers.get('cf-ipcity')
+        const region = headers.get('cf-region')
+        const country = headers.get('cf-ipcountry')
+        if (!city && !region && !country) {
+          return
+        }
+        await ctx.context.secondaryStorage?.set(
+          session.session.token,
+          JSON.stringify({
+            user: session.user,
+            session: {
+              ...session.session,
+              geolocation: JSON.stringify({
+                city,
+                region,
+                country,
+              }),
+            },
+          }),
+        )
       }
     }),
   },

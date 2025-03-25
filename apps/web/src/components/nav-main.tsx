@@ -12,6 +12,8 @@ import {
   DatabaseZap,
   Puzzle,
   Settings2,
+  ShieldCheck,
+  UserRound,
   Wrench,
 } from 'lucide-react'
 
@@ -40,6 +42,8 @@ const icons: Record<string, LucideIcon> = {
   Settings2,
   Wrench,
   DatabaseZap,
+  UserRound,
+  ShieldCheck,
 }
 
 export interface NavItem {

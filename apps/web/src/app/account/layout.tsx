@@ -15,12 +15,12 @@ const items = [
   {
     title: 'Profile',
     url: '/profile',
-    icon: 'Bot',
+    icon: 'UserRound',
   },
   {
     title: 'Security',
     url: '/security',
-    icon: 'DatabaseZap',
+    icon: 'ShieldCheck',
   },
 ]
 
