@@ -4,6 +4,7 @@ import type { ProviderInfo } from '../types'
  * Amazon Bedrock provider information including all available models
  */
 const bedrockProvider: ProviderInfo = {
+  // @ts-ignore
   id: 'bedrock',
   name: 'Amazon Bedrock',
   icon: 'bedrock.svg',

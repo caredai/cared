@@ -19,7 +19,6 @@
     "generate-api-types": "tsx ./scripts/generate-api-types.ts"
   },
   "dependencies": {
-    "@clerk/backend": "^1.25.2",
     "@mindworld/auth": "workspace:*",
     "@mindworld/db": "workspace:*",
     "@mindworld/etl": "workspace:*",

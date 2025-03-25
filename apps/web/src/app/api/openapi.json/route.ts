@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import { generateOpenApiDocument } from '@mindworld/api'
-
-import { getBaseUrl } from '@/trpc/client'
+import { getBaseUrl } from '@mindworld/auth/client'
 
 export const GET = () => {
   const baseUrl = getBaseUrl()

@@ -38,9 +38,7 @@ export const userRouter = {
         const searchTerm = `%${input.search}%`
         conditions.push(
           sql`(${User.name} ILIKE ${searchTerm} OR
-                  ${User.email} ILIKE ${searchTerm} OR
-                  ${User.username} ILIKE ${searchTerm} OR
-                  ${User.displayUsername} ILIKE ${searchTerm})`,
+                  ${User.email} ILIKE ${searchTerm}`,
         )
       }
 

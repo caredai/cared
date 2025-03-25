@@ -7,6 +7,8 @@
     "build": "pnpm with-env next build",
     "clean": "git clean -xdf .cache .next .turbo node_modules",
     "dev": "pnpm with-env next dev --turbopack",
+    "//": "add `--experimental-https` to avoid privy error: embedded wallet is only available over https",
+    "dev:https": "pnpm with-env next dev --turbopack --experimental-https",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "start": "pnpm with-env next start",
@@ -15,7 +17,6 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.12.5",
-    "@clerk/themes": "^2.2.21",
     "@daveyplate/better-auth-tanstack": "^1.2.31",
     "@daveyplate/better-auth-ui": "^1.2.37",
     "@icons-pack/react-simple-icons": "^12.2.0",

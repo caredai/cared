@@ -30,9 +30,14 @@ export const authClient = createAuthClient({
 export const allowedProviders = ['google', 'twitter', 'discord', 'github'] as const
 
 export function getBaseUrl() {
+  if (env.NEXT_PUBLIC_BASE_URL) return env.NEXT_PUBLIC_BASE_URL
   // @ts-ignore
   if (globalThis.location?.origin) return globalThis.location.origin
-  if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`
+  // @ts-ignore
+  if (!globalThis.window) {
+    if (env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${env.VERCEL_PROJECT_PRODUCTION_URL}`
+    if (env.VERCEL_URL) return `https://${env.VERCEL_URL}`
+  }
   // eslint-disable-next-line no-restricted-properties
   return `http://localhost:${process.env.PORT ?? 3000}`
 }

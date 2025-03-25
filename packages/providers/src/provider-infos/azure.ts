@@ -4,6 +4,7 @@ import type { ProviderInfo } from '../types'
  * Azure OpenAI Service provider information
  */
 const azureProvider: ProviderInfo = {
+  // @ts-ignore
   id: 'azure',
   name: 'Azure OpenAI Service',
   icon: 'azure_openai.svg',

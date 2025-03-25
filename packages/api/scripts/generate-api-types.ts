@@ -153,7 +153,6 @@ for (const [fullType, replacement] of typeReplacements) {
 
 // Replace external imports with our predefined types
 output = output
-  .replace(/import\("@clerk\/backend"\)\.User/g, 'UserInfo')
   .replace(/ctx: \{[^}]+\}/g, 'ctx: any')
   .replace(/export type AppRouter/g, 'export type API')
   .replace(

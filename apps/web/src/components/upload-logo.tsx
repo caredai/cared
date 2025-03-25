@@ -76,6 +76,10 @@ export function UploadLogo({
         throw new Error('Only image files are allowed')
       }
 
+      if (!env.NEXT_PUBLIC_IMAGE_URL) {
+        throw new Error('Environment variable NEXT_PUBLIC_IMAGE_URL is not set')
+      }
+
       // Start uploading
       setIsUploading(true)
 
@@ -98,7 +102,7 @@ export function UploadLogo({
       }
 
       try {
-        await onLogoUrlChange?.(`${env.NEXT_PUBLIC_MIND_URL}/${key}`)
+        await onLogoUrlChange?.(`${env.NEXT_PUBLIC_IMAGE_URL}/${key}`)
       } finally {
         setIsUploading(false)
       }

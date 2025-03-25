@@ -3,6 +3,7 @@ import { createRandomStringGenerator } from '@better-auth/utils/random'
 import { betterAuth } from 'better-auth'
 import { emailHarmony } from 'better-auth-harmony'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { nextCookies } from 'better-auth/next-js'
 import {
   admin,
@@ -111,7 +112,22 @@ const options = {
       await redis.del(key)
     },
   },
+  trustedOrigins: env.BETTER_AUTH_TRUSTED_ORIGINS,
+  rateLimit: {
+    enabled: true,
+    window: 10,
+    max: 100,
+    storage: 'secondary-storage',
+  },
   advanced: {
+    // better-auth will use secure cookies in production (https site) by default
+    // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/Cookies#secure
+    useSecureCookies: undefined,
+    // Allow adding domain to the cookie
+    // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/Cookies#domain
+    crossSubDomainCookies: {
+      enabled: true,
+    },
     cookiePrefix: 'mind',
     generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
       generateId(modelPrefix(model)),
@@ -135,7 +151,7 @@ const options = {
       loginPage: '/auth/sign-in',
       consentPage: '/auth/oauth2/consent',
       metadata: {
-        issuer: env.NEXT_PUBLIC_MIND_URL,
+        issuer: getBaseUrl(),
         authorization_endpoint: '/oauth2/authorize',
         token_endpoint: '/oauth2/token',
         userinfo_endpoint: '/oauth2/userinfo',
@@ -161,6 +177,40 @@ const options = {
     // https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),
   ],
+  onAPIError: {
+    errorURL: undefined, // TODO
+  },
+  hooks: {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    before: createAuthMiddleware(async (ctx) => {
+      const allowedPaths = [
+        '/sign-in/social',
+        '/get-session',
+        '/sign-out',
+        '/update-user',
+        '/list-sessions',
+        '/revoke-session',
+        '/revoke-sessions',
+        '/revoke-other-sessions',
+        '/link-social',
+        '/unlink-account',
+        '/error', // TODO
+        '/.well-known/openid-configuration',
+        '/oauth2/authorize',
+        '/oauth2/consent',
+        '/oauth2/token',
+        '/oauth2/userinfo',
+        ...(env.NODE_ENV === 'development'
+          ? [
+              '/reference',
+            ]
+          : []),
+      ]
+      if (!allowedPaths.includes(ctx.path) && !ctx.path.startsWith('/callback')) {
+        throw new APIError('NOT_FOUND')
+      }
+    }),
+  },
 } satisfies BetterAuthOptions
 
 export const auth = betterAuth({

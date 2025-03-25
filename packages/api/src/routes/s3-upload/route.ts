@@ -236,7 +236,7 @@ export function parseS3Url(url: string):
       filename: string
     }
   | undefined {
-  if (!url.startsWith(env.NEXT_PUBLIC_MIND_URL)) {
+  if (!env.NEXT_PUBLIC_IMAGE_URL || !url.startsWith(env.NEXT_PUBLIC_IMAGE_URL)) {
     return
   }
 

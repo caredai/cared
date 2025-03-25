@@ -5,6 +5,15 @@ import { z } from 'zod'
 export const env = createEnv({
   extends: [vercel()],
   server: {
+    BETTER_AUTH_TRUSTED_ORIGINS: z
+      .string()
+      .transform((s) =>
+        s
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      )
+      .optional(),
     GOOGLE_CLIENT_ID: z.string().min(1),
     GOOGLE_CLIENT_SECRET: z.string().min(1),
     TWITTER_CLIENT_ID: z.string().min(1),
@@ -17,10 +26,10 @@ export const env = createEnv({
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
   client: {
-    NEXT_PUBLIC_MIND_URL: z.string().url(),
+    NEXT_PUBLIC_BASE_URL: z.string().optional(),
   },
   experimental__runtimeEnv: {
-    NEXT_PUBLIC_MIND_URL: process.env.NEXT_PUBLIC_MIND_URL,
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
   skipValidation: !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
 })
