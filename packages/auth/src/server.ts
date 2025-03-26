@@ -23,12 +23,12 @@ import { sha256 } from 'viem'
 
 import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
-import { redis } from '@mindworld/db/redis'
 import { Account } from '@mindworld/db/schema'
 import { generateId } from '@mindworld/shared'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
+import { KVClient } from './kv'
 
 const serverIdName = 'x-server-call-mark'
 const serverId = sha256(new TextEncoder().encode(env.BETTER_AUTH_SECRET), 'hex')
@@ -116,19 +116,20 @@ const options = {
       },
     },
   },
-  secondaryStorage: {
-    get: async (key) => {
-      const value = await redis.get<string>(key)
-      return value ? value : null
+  ...(KVClient.getInstance() && {
+    secondaryStorage: {
+      get: async (key) => {
+        const value = await KVClient.getInstance()!.get(key)
+        return value ? value : null
+      },
+      set: async (key, value, ttl) => {
+        await KVClient.getInstance()!.set(key, value, ttl)
+      },
+      delete: async (key) => {
+        await KVClient.getInstance()!.delete(key)
+      },
     },
-    set: async (key, value, ttl) => {
-      if (ttl) await redis.set(key, value, { ex: ttl })
-      else await redis.set(key, value)
-    },
-    delete: async (key) => {
-      await redis.del(key)
-    },
-  },
+  }),
   trustedOrigins: env.BETTER_AUTH_TRUSTED_ORIGINS,
   rateLimit: {
     enabled: true,
@@ -312,11 +313,11 @@ Object.entries(auth.api).forEach(([key, _endpoint]) => {
 })
 
 async function cacheProfileForAccount(id: string, profile: Record<string, any>) {
-  await redis.set(`profile:${id}`, JSON.stringify(profile), { ex: 20 })
+  await KVClient.getInstance()?.set(`profile:${id}`, JSON.stringify(profile), 60)
 }
 
-async function getProfileForAccount(id: string): Promise<string | null> {
-  return await redis.get(`profile:${id}`)
+async function getProfileForAccount(id: string): Promise<string | null | undefined> {
+  return KVClient.getInstance()?.get(`profile:${id}`)
 }
 
 async function updateProfileForAccount(account: AuthAccount) {
