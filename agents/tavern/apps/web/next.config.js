@@ -13,6 +13,7 @@ const config = {
     '@tavern/api',
     '@tavern/core',
     '@tavern/db',
+    '@mindworld/log',
     '@mindworld/shared',
     '@mindworld/ui',
   ],

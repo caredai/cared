@@ -6,7 +6,7 @@ import { composeRefs } from '@radix-ui/react-compose-refs'
 import { Primitive } from '@radix-ui/react-primitive'
 import { Slot } from '@radix-ui/react-slot'
 
-import { cn } from '@/lib/utils'
+import { cn } from '../lib/utils'
 import { Button } from './button'
 
 export type InputBaseContextProps = Pick<InputBaseProps, 'autoFocus' | 'disabled'> & {

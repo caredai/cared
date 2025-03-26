@@ -2,9 +2,10 @@ packages:
   - apps/*
   - packages/*
   - ../../tooling/*
+  - ../../packages/log
   - ../../packages/sdk
   - ../../packages/ui
-  - ../../packages/utils
+  - ../../packages/shared
 
 catalog:
   "@tanstack/react-query": ^5.66.7
@@ -19,7 +20,7 @@ catalog:
   # Otherwise, you may get the following error:
   #   Type instantiation is excessively deep and possibly infinite
   zod: ^3.24.2
-  ai: ^4.1.46
+  ai: 4.1.62
 
 catalogs:
   react19:

@@ -60,6 +60,7 @@ export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
       padding: false,
     })
 
+    // TODO: cache
     const apiKey = await db.query.ApiKey.findFirst({
       where: eq(ApiKey.key, hashed),
     })
@@ -72,10 +73,12 @@ export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
   const authorization = headers.get('Authorization')
   if (authorization) {
     const token = authorization.replace('Bearer ', '')
+    // TODO: cache
     const accessToken = await db.query.OAuthAccessToken.findFirst({
       where: eq(OAuthAccessToken.accessToken, token),
     })
     if (accessToken) {
+      // TODO: cache
       const oauthApp = await db.query.OAuthApplication.findFirst({
         where: eq(OAuthApplication.clientId, accessToken.clientId!),
       })

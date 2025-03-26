@@ -7,9 +7,10 @@
  * The pieces you will need to use are documented accordingly near the end
  */
 import type { DB } from '@tavern/db/client'
+import type { inferAsyncReturnType } from '@trpc/server'
 import { auth } from '@clerk/nextjs/server'
 import { db } from '@tavern/db/client'
-import { inferAsyncReturnType, initTRPC, TRPCError } from '@trpc/server'
+import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 
