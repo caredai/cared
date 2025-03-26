@@ -148,6 +148,19 @@ const options = {
     cookiePrefix: 'mind',
     generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
       generateId(modelPrefix(model)),
+    ipAddress: {
+      ipAddressHeaders: [
+        'cf-connecting-ip', // get real client ip from Cloudflare
+        'x-client-ip',
+        'x-forwarded-for',
+        'fastly-client-ip',
+        'x-real-ip',
+        'x-cluster-client-ip',
+        'x-forwarded',
+        'forwarded-for',
+        'forwarded',
+      ],
+    },
   },
   plugins: [
     bearer(),
@@ -233,12 +246,12 @@ const options = {
     }),
     after: createAuthMiddleware(async (ctx) => {
       // https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-visitor-location-headers
-      if (ctx.path === '/sign-in/social') {
+      if (ctx.path.startsWith('/callback')) {
         const headers = ctx.headers
         if (!headers) {
           return
         }
-        const session = ctx.context.session
+        const session = ctx.context.newSession
         if (!session) {
           return
         }

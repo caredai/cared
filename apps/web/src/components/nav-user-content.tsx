@@ -46,28 +46,30 @@ export function NavUserContent() {
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
           <Sparkles />
           Upgrade to Pro
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem>
-          <BadgeCheck />
-          <Link href="/account/profile">Account</Link>
+        <DropdownMenuItem asChild>
+          <Link href="/account/profile" className="cursor-pointer">
+            <BadgeCheck />
+            Account
+          </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
           <CreditCard />
           Billing
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem className="cursor-pointer">
           <Bell />
           Notifications
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onSelect={signOut}>
+      <DropdownMenuItem onSelect={signOut} className="cursor-pointer">
         <LogOut />
         Log out
       </DropdownMenuItem>
