@@ -30,6 +30,7 @@ import { generateId } from '@mindworld/shared'
 import { getBaseUrl } from './client'
 import { env } from './env'
 import { KVClient } from './kv'
+import { customPlugin } from './plugin'
 
 const serverIdName = 'x-server-call-mark'
 const serverId = sha256(new TextEncoder().encode(env.BETTER_AUTH_SECRET), 'hex')
@@ -48,7 +49,7 @@ const options = {
   session: {
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 60, // 1 hour
+      maxAge: 60 * 60 * 12, // 12 hours
     },
     additionalFields: {
       geolocation: {
@@ -205,6 +206,7 @@ const options = {
     }),
     openAPI(),
     emailHarmony(),
+    customPlugin(),
     // Make sure this is the last plugin in the array
     // https://www.better-auth.com/docs/integrations/next#server-action-cookies
     nextCookies(),

@@ -65,7 +65,7 @@ export default async function WorkspaceLayout({
   prefetch(trpc.workspace.list.queryOptions())
 
   return (
-    <ErrorBoundary fallback={<ErrorFallback />}>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
       {/*<Suspense fallback={<Loading />}>*/}
       <SidebarProvider>
         <AppSidebar baseUrl={`/workspace/${workspaceIdNoPrefix}`}>

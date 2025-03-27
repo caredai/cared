@@ -179,10 +179,10 @@ export function Apps() {
                           src={appData.app.metadata.imageUrl}
                           alt={appData.app.name}
                           fill
-                          className="object-contain"
+                          className="object-cover"
                         />
                       ) : (
-                        <Image src={defaultLogo} alt="App Logo" fill className="object-contain" />
+                        <Image src={defaultLogo} alt="App Logo" fill className="object-cover" />
                       )}
                     </div>
                   </div>

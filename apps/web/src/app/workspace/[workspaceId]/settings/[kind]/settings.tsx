@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Settings as SettingsIcon, Users } from 'lucide-react'
+import { SettingsIcon, UsersIcon } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@mindworld/ui/components/tabs'
 
@@ -39,7 +39,7 @@ export function Settings({ kind }: { kind: string }) {
             General
           </TabsTrigger>
           <TabsTrigger value="members">
-            <Users className="h-4 w-4" />
+            <UsersIcon className="h-4 w-4" />
             Members
           </TabsTrigger>
         </TabsList>

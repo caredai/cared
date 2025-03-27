@@ -1,6 +1,6 @@
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient } from '@/trpc/server'
-import { App } from './app'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { OAuthApp } from './oauth-app'
 
 export default async function Page({
   params,
@@ -12,9 +12,15 @@ export default async function Page({
   const { appId: appIdNoPrefix } = await params
   const appId = addIdPrefix(appIdNoPrefix, 'app')
 
+  prefetch(
+    trpc.oauthApp.list.queryOptions({
+      appId,
+    }),
+  )
+
   return (
     <HydrateClient>
-      <App appId={appId} />
+      <OAuthApp appId={appId} />
     </HydrateClient>
   )
 }

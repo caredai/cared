@@ -61,7 +61,7 @@ function UpdateAppLogo({ app }: { app: AppType }) {
   )
 
   return (
-    <div>
+    <div className="container mx-auto px-4 sm:px-0">
       <UploadLogo
         location={{
           type: 'app',

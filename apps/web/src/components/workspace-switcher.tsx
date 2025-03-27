@@ -45,10 +45,7 @@ export function WorkspaceSwitcherInner({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuButton
-          size="lg"
-          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-        >
+        <SidebarMenuButton>
           <Blocks />
           <span className="truncate">{workspace.name}</span>
           <ChevronsUpDown className="ml-auto" />

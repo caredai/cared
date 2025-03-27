@@ -139,7 +139,7 @@ export function UploadLogo({
           alt="App Logo"
           width={width}
           height={height}
-          className="object-contain max-w-full max-h-full"
+          className="object-cover max-w-full max-h-full"
         />
       ) : (
         // Show default logo if nothing else
@@ -148,7 +148,7 @@ export function UploadLogo({
           alt="App Logo"
           width={width}
           height={height}
-          className="object-contain max-w-full max-h-full"
+          className="object-cover max-w-full max-h-full"
         />
       )}
 

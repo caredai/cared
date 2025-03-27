@@ -10,10 +10,12 @@ import {
   ChevronRight,
   Database,
   DatabaseZap,
+  FerrisWheel,
   Puzzle,
   Settings2,
   ShieldCheck,
   UserRound,
+  WandSparkles,
   Wrench,
 } from 'lucide-react'
 
@@ -44,6 +46,8 @@ const icons: Record<string, LucideIcon> = {
   DatabaseZap,
   UserRound,
   ShieldCheck,
+  FerrisWheel,
+  WandSparkles,
 }
 
 export interface NavItem {

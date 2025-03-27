@@ -35,7 +35,7 @@ const items = [
   },
 ]
 
-export default async function WorkspaceLayout({
+export default async function Layout({
   children,
 }: Readonly<{
   children: ReactNode
@@ -49,7 +49,7 @@ export default async function WorkspaceLayout({
   prefetch(trpc.user.accounts.queryOptions())
 
   return (
-    <ErrorBoundary fallback={<ErrorFallback />}>
+    <ErrorBoundary FallbackComponent={ErrorFallback}>
       <SidebarProvider>
         <AppSidebar baseUrl="/admin">
           <NavMain items={items} baseUrl="/admin" />

@@ -9,14 +9,21 @@ export function useUser() {
     data: { user },
     refetch: refetchUser,
   } = useSuspenseQuery(trpc.user.me.queryOptions())
+  return {
+    user,
+    refetchUser,
+  }
+}
+
+export function useAccounts() {
+  const trpc = useTRPC()
+
   const {
     data: { accounts },
     refetch: refetchAccounts,
   } = useSuspenseQuery(trpc.user.accounts.queryOptions())
   return {
-    user,
     accounts,
-    refetchUser,
     refetchAccounts,
   }
 }

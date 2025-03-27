@@ -88,7 +88,7 @@ export function Models() {
                       unoptimized={true}
                       width={40}
                       height={40}
-                      className="object-contain"
+                      className="object-cover"
                       onError={(e) => {
                         // Fallback to Server icon if image fails to load
                         e.currentTarget.style.display = 'none'

@@ -103,9 +103,9 @@ export const userRouter = {
         })
       }
 
-      const sessions = await auth.api.listSessions({
+      const sessions = (await auth.api.customListSessions({
         headers: await headers(),
-      })
+      })) as (typeof auth.$Infer.Session)['session'][]
 
       return {
         sessions: sessions.map((session) => ({

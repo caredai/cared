@@ -26,6 +26,7 @@ export const db: DB =
         client: sql,
         schema,
         casing: 'camelCase',
+        logger: process.env.NODE_ENV === 'development',
       })
 
 export type Transaction = Parameters<Parameters<DB['transaction']>[0]>[0]

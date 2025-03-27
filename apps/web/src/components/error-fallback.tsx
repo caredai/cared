@@ -1,15 +1,20 @@
 'use client'
 
+import type { FallbackProps } from 'react-error-boundary'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Home } from 'lucide-react'
 
 import { Button } from '@mindworld/ui/components/button'
 
-export function ErrorFallback() {
+export function ErrorFallback({ error }: FallbackProps) {
   const router = useRouter()
   const [countdown, setCountdown] = useState(3)
   const [dots, setDots] = useState('.')
+
+  useEffect(() => {
+    console.error('error:', error)
+  }, [error]);
 
   // Handle click event for returning to homepage
   const handleGoHome = () => {

@@ -28,11 +28,12 @@ import { Input } from '@mindworld/ui/components/input'
 import { Label } from '@mindworld/ui/components/label'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useUser } from '@/hooks/use-user'
+import { useAccounts, useUser } from '@/hooks/use-user'
 import { allowedProviders, getAccountInfo } from '@/lib/auth-providers'
 
 export default function Page() {
-  const { user, accounts, refetchUser, refetchAccounts } = useUser()
+  const { user, refetchUser } = useUser()
+  const { accounts, refetchAccounts } = useAccounts()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 

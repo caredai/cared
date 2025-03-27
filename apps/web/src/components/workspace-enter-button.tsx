@@ -11,7 +11,6 @@ export function WorkspaceEnterButton() {
 
   return (
     <SidebarMenuButton
-      size="lg"
       className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
       onClick={redirect}
     >

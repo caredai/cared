@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import { auth, generateRandomString } from '@mindworld/auth'
-import { eq } from '@mindworld/db'
+import { desc, eq } from '@mindworld/db'
 import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@mindworld/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
@@ -11,11 +11,15 @@ import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
 
 // Helper function: Format OAuth application
-function formatOAuthApp(app: OAuthApplication) {
+function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
   return {
     clientId: app.clientId,
-    clientSecret: app.clientSecret,
+    ...(includeSecret && { clientSecret: app.clientSecret }),
+    ...(!includeSecret && {
+      clientSecretStart: app.clientSecret!.substring(0, 6),
+    }),
     redirectUris: app.redirectURLs?.split(',') ?? [],
+    disabled: app.disabled,
     metadata: app.metadata ? JSON.parse(app.metadata) : {},
     createdAt: app.createdAt,
     updatedAt: app.updatedAt,
@@ -23,6 +27,89 @@ function formatOAuthApp(app: OAuthApplication) {
 }
 
 export const oauthAppRouter = {
+  // List all OAuth apps in a workspace or for a specific app
+  list: userProtectedProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps' } })
+    .input(
+      z
+        .object({
+          workspaceId: z.string().min(32).optional(),
+          appId: z.string().min(32).optional(),
+        })
+        .refine((data) => data.workspaceId || data.appId, {
+          message: 'Either workspaceId or appId must be provided',
+        }),
+    )
+    .query(async ({ ctx, input }) => {
+      // If appId is provided, verify app ownership
+      if (input.appId) {
+        const app = await getAppById(ctx, input.appId)
+        await verifyWorkspaceOwner(ctx, app.workspaceId)
+
+        const clientId = app.metadata.clientId
+        if (!clientId) {
+          return { oauthApps: [] }
+        }
+
+        const oauthApp = await ctx.db.query.OAuthApplication.findFirst({
+          where: eq(OAuthApplication.clientId, clientId),
+        })
+
+        if (!oauthApp) {
+          return { oauthApps: [] }
+        }
+
+        return {
+          oauthApps: [
+            {
+              appId: app.id,
+              oauthApp: formatOAuthApp(oauthApp),
+            },
+          ],
+        }
+      }
+
+      // If workspaceId is provided, verify workspace ownership and list all OAuth apps
+      if (input.workspaceId) {
+        await verifyWorkspaceOwner(ctx, input.workspaceId)
+
+        // Get all apps in the workspace
+        const apps = await ctx.db.query.App.findMany({
+          where: eq(App.workspaceId, input.workspaceId),
+          orderBy: desc(App.createdAt),
+        })
+
+        // Get OAuth apps for each app
+        const oauthApps = await Promise.all(
+          apps.map(async (app) => {
+            const clientId = app.metadata.clientId
+            if (!clientId) return null
+
+            const oauthApp = await ctx.db.query.OAuthApplication.findFirst({
+              where: eq(OAuthApplication.clientId, clientId),
+            })
+
+            if (!oauthApp) return null
+
+            return {
+              appId: app.id,
+              oauthApp: formatOAuthApp(oauthApp),
+            }
+          }),
+        )
+
+        // Filter out null values
+        const validOauthApps = oauthApps.filter((item): item is NonNullable<typeof item> => !!item)
+
+        return {
+          oauthApps: validOauthApps,
+        }
+      }
+
+      // This case should never happen due to the input validation
+      return { oauthApps: [] }
+    }),
+
   // Check if the application has OAuth app
   has: userProtectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/{appId}/exists' } })
@@ -124,7 +211,7 @@ export const oauthAppRouter = {
         }
 
         return {
-          oauthApp: formatOAuthApp(oauthApp),
+          oauthApp: formatOAuthApp(oauthApp, true),
         }
       })
     }),
@@ -136,6 +223,7 @@ export const oauthAppRouter = {
       z.object({
         appId: z.string().min(32),
         redirectUris: z.array(z.string()).optional(),
+        disabled: z.boolean().optional(),
         // scopes: z.string().optional(),
       }),
     )
@@ -166,6 +254,7 @@ export const oauthAppRouter = {
         .update(OAuthApplication)
         .set({
           redirectURLs: input.redirectUris?.join(','),
+          disabled: input.disabled,
           updatedAt: new Date(),
         })
         .where(eq(OAuthApplication.clientId, clientId))
@@ -267,7 +356,7 @@ export const oauthAppRouter = {
       }
 
       return {
-        oauthApp: formatOAuthApp(updatedOauthApp),
+        oauthApp: formatOAuthApp(updatedOauthApp, true),
       }
     }),
 }
