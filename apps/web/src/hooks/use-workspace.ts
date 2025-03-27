@@ -1,16 +1,17 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useAtom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 import { toast } from 'sonner'
 
+import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 
 export function useWorkspaceId() {
   const pathname = usePathname()
-  const matched = /\/(workspace_[^/]+)/.exec(pathname)
-  return matched?.length && matched[1] ? matched[1] : ''
+  const matched = /\/workspace\/([^/]+)/.exec(pathname)
+  return matched?.length && matched[1] ? addIdPrefix(matched[1], 'workspace') : ''
 }
 
 export function useWorkspace() {
@@ -89,10 +90,24 @@ export function useWorkspaces() {
 }
 
 export function replaceRouteWithWorkspaceId(route: string, id: string) {
-  return route.replace(/^\/workspace_[^/]+/, `/${id}`)
+  return route.replace(/^\/workspace\/[^/]+/, `/workspace/${id}`)
 }
 
 export function useRouteWithWorkspaceId(id: string) {
   const pathname = usePathname()
   return replaceRouteWithWorkspaceId(pathname, id)
+}
+
+export function useRedirectWorkspace() {
+  const router = useRouter()
+
+  useWorkspaces()
+
+  const [workspace] = useLastWorkspace()
+
+  return useCallback(() => {
+    if (workspace) {
+      router.replace(`/workspace/${stripIdPrefix(workspace)}/apps`)
+    }
+  }, [router, workspace])
 }

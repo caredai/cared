@@ -1,3 +1,4 @@
+import { addIdPrefix } from '@/lib/utils'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { Apps } from './apps'
 
@@ -6,7 +7,8 @@ import { Apps } from './apps'
  * Renders the Apps component with client-side hydration
  */
 export default async function Page({ params }: { params: Promise<{ workspaceId: string }> }) {
-  const { workspaceId } = await params
+  const { workspaceId: workspaceIdNoPrefix } = await params
+  const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
 
   prefetch(
     trpc.app.list.queryOptions({

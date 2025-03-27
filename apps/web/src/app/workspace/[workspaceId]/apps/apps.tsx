@@ -30,6 +30,7 @@ import {
 import { Separator } from '@mindworld/ui/components/separator'
 
 import { RemoteImage } from '@/components/image'
+import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 import defaultLogo from '@/public/images/agent.png'
 import { useTRPC } from '@/trpc/client'
 import { CreateAppDialog } from './create-app-dialog'
@@ -39,14 +40,15 @@ const ALL_CATEGORIES = 'all'
 
 export function Apps() {
   const trpc = useTRPC()
-  const params = useParams<{ workspaceId: string }>()
+  const { workspaceId: workspaceIdNoPrefix } = useParams<{ workspaceId: string }>()
+  const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES)
 
   // Get workspace apps list
   const { data } = useSuspenseQuery(
     trpc.app.list.queryOptions({
-      workspaceId: params.workspaceId,
+      workspaceId,
       limit: 100,
     }),
   )
@@ -74,13 +76,13 @@ export function Apps() {
   })
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 px-4 sm:px-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12">
         <div>
           <h1 className="text-3xl font-bold tracking-tight truncate">Apps</h1>
           <p className="text-muted-foreground mt-2">Manage and deploy your AI agent applications</p>
         </div>
-        <CreateAppDialog workspaceId={params.workspaceId} />
+        <CreateAppDialog workspaceId={workspaceId} />
       </div>
 
       {/* Search and filter section */}
@@ -135,7 +137,7 @@ export function Apps() {
                 <p className="text-sm text-muted-foreground mt-2 mb-6">
                   You haven't created any apps yet. Click the button below to get started.
                 </p>
-                <CreateAppDialog workspaceId={params.workspaceId} />
+                <CreateAppDialog workspaceId={workspaceId} />
               </>
             ) : (
               <>
@@ -164,7 +166,7 @@ export function Apps() {
                 <div className="flex justify-between items-start gap-2">
                   <CardTitle className="truncate">
                     <Link
-                      href={`/${params.workspaceId}/apps/${appData.app.id}`}
+                      href={`/app/${stripIdPrefix(appData.app.id)}`}
                       className="hover:underline"
                     >
                       {appData.app.name}

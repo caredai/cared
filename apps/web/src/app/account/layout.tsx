@@ -10,6 +10,7 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { NavMain } from '@/components/nav-main'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import {WorkspaceEnterButton} from '@/components/workspace-enter-button'
 
 const items = [
   {
@@ -43,7 +44,11 @@ export default async function AccountLayout({
     <ErrorBoundary fallback={<ErrorFallback />}>
       <SidebarProvider>
         <AppSidebar baseUrl="/">
-          <NavMain items={items} baseUrl="/account" />
+          <NavMain items={items} baseUrl="/account">
+            <HydrateClient>
+              <WorkspaceEnterButton/>
+            </HydrateClient>
+          </NavMain>
         </AppSidebar>
 
         <SidebarInset>

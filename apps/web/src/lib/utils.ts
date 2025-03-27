@@ -1,3 +1,11 @@
+export function stripIdPrefix(id: string) {
+  return id.split('_', 2)[1] ?? ''
+}
+
+export function addIdPrefix(id: string, prefix: string) {
+  return `${prefix}_${id}`
+}
+
 // shorten the input string
 export function shortenString(
   str?: string,

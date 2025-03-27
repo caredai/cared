@@ -5,6 +5,7 @@ import { betterAuth } from 'better-auth'
 import { emailHarmony } from 'better-auth-harmony'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware } from 'better-auth/api'
+import { setSessionCookie } from 'better-auth/cookies'
 import { nextCookies } from 'better-auth/next-js'
 import {
   admin,
@@ -23,7 +24,7 @@ import { sha256 } from 'viem'
 
 import { eq } from '@mindworld/db'
 import { db } from '@mindworld/db/client'
-import { Account } from '@mindworld/db/schema'
+import { Account, User } from '@mindworld/db/schema'
 import { generateId } from '@mindworld/shared'
 
 import { getBaseUrl } from './client'
@@ -256,26 +257,40 @@ const options = {
         if (!session) {
           return
         }
+
+        let update = false
+
+        if (
+          env.ADMIN_USER_EMAIL &&
+          session.user.email === env.ADMIN_USER_EMAIL &&
+          session.user.role !== 'admin'
+        ) {
+          update = true
+          session.user.role = 'admin'
+
+          await db
+            .update(User)
+            .set({
+              role: 'admin',
+            })
+            .where(eq(User.id, session.user.id))
+        }
+
         const city = headers.get('cf-ipcity')
         const region = headers.get('cf-region')
         const country = headers.get('cf-ipcountry')
-        if (!city && !region && !country) {
-          return
+        if (city || region || country) {
+          update = true
+          session.session.geolocation = JSON.stringify({
+            city,
+            region,
+            country,
+          })
         }
-        await ctx.context.secondaryStorage?.set(
-          session.session.token,
-          JSON.stringify({
-            user: session.user,
-            session: {
-              ...session.session,
-              geolocation: JSON.stringify({
-                city,
-                region,
-                country,
-              }),
-            },
-          }),
-        )
+
+        if (update) {
+          await setSessionCookie(ctx, session)
+        }
       }
     }),
   },

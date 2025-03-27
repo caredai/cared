@@ -1,22 +1,15 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
-import { useLastWorkspace, useWorkspaces } from '@/hooks/use-workspace'
+import { useRedirectWorkspace } from '@/hooks/use-workspace'
 
 export function RedirectWorkspace() {
-  const router = useRouter()
-
-  useWorkspaces()
-
-  const [workspace] = useLastWorkspace()
+  const redirect = useRedirectWorkspace()
 
   useEffect(() => {
-    if (workspace) {
-      router.replace(`/${workspace}/apps`)
-    }
-  }, [router, workspace])
+    redirect()
+  }, [redirect])
 
   return <></>
 }

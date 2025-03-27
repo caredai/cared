@@ -39,6 +39,7 @@ import {
 import { Textarea } from '@mindworld/ui/components/textarea'
 
 import { ModelSelect } from '@/components/model-select'
+import { stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 
 // Schema for app form values
@@ -157,7 +158,7 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
           }),
         )
         // Navigate to the new app page
-        router.push(`/${workspaceId}/apps/${data.app.id}`)
+        router.push(`/app/${stripIdPrefix(data.app.id)}`)
       },
       onError: (error) => {
         console.error('Failed to create app:', error)

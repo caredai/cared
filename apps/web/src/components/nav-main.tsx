@@ -69,7 +69,8 @@ export function NavMain({
   const pathname = usePathname()
 
   const isItemActive = (url: string) => {
-    const [, routeKey] = pathname.split('/').filter(Boolean)
+    const baseRouteKeys = baseUrl.split('/').filter(Boolean)
+    const routeKey = pathname.split('/').filter(Boolean).at(baseRouteKeys.length)
     const [urlKey] = url.split('/').filter(Boolean)
     return routeKey === urlKey
   }

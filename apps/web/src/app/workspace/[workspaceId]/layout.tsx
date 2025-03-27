@@ -9,6 +9,7 @@ import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
 import { NavMain } from '@/components/nav-main'
 import { RememberWorkspace } from '@/components/remember-workspace'
 import { WorkspaceSwitcher } from '@/components/workspace-switcher'
+import { addIdPrefix } from '@/lib/utils'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 const items = [
@@ -51,7 +52,8 @@ export default async function WorkspaceLayout({
   children: ReactNode
   params: Promise<{ workspaceId: string }>
 }>) {
-  const { workspaceId } = await params
+  const { workspaceId: workspaceIdNoPrefix } = await params
+  const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
 
   prefetch(trpc.user.me.queryOptions())
   prefetch(trpc.user.accounts.queryOptions())
@@ -66,8 +68,8 @@ export default async function WorkspaceLayout({
     <ErrorBoundary fallback={<ErrorFallback />}>
       {/*<Suspense fallback={<Loading />}>*/}
       <SidebarProvider>
-        <AppSidebar baseUrl={`/${workspaceId}`}>
-          <NavMain items={items} baseUrl={`/${workspaceId}`}>
+        <AppSidebar baseUrl={`/workspace/${workspaceIdNoPrefix}`}>
+          <NavMain items={items} baseUrl={`/workspace/${workspaceIdNoPrefix}`}>
             <HydrateClient>
               <WorkspaceSwitcher />
             </HydrateClient>
@@ -78,7 +80,7 @@ export default async function WorkspaceLayout({
           <header className="flex h-16 shrink-0 items-center gap-2">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
-              <MenuBreadcrumb items={items} baseUrl={`/${workspaceId}`} />
+              <MenuBreadcrumb items={items} baseUrl={`/workspace/${workspaceIdNoPrefix}`} />
             </div>
           </header>
           <RememberWorkspace id={workspaceId} />

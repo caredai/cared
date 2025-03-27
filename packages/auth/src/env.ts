@@ -5,6 +5,7 @@ import { z } from 'zod'
 export const env = createEnv({
   extends: [vercel()],
   server: {
+    BETTER_AUTH_SECRET: z.string().min(1),
     BETTER_AUTH_TRUSTED_ORIGINS: z
       .string()
       .transform((s) =>
@@ -24,7 +25,7 @@ export const env = createEnv({
     DISCORD_CLIENT_SECRET: z.string().min(1),
     GITHUB_CLIENT_ID: z.string().min(1),
     GITHUB_CLIENT_SECRET: z.string().min(1),
-    BETTER_AUTH_SECRET: z.string().min(1),
+    ADMIN_USER_EMAIL: z.string().email().optional(),
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
   client: {
