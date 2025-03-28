@@ -18,7 +18,7 @@ function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
     ...(!includeSecret && {
       clientSecretStart: app.clientSecret!.substring(0, 6),
     }),
-    redirectUris: app.redirectURLs?.split(',') ?? [],
+    redirectUris: app.redirectURLs?.split(',').filter(Boolean) ?? [],
     disabled: app.disabled,
     metadata: app.metadata ? JSON.parse(app.metadata) : {},
     createdAt: app.createdAt,
@@ -170,7 +170,19 @@ export const oauthAppRouter = {
     .input(
       z.object({
         appId: z.string().min(32),
-        redirectUris: z.array(z.string()).optional(),
+        redirectUris: z
+          .array(
+            z
+              .string()
+              .url()
+              .refine((uri) => uri.startsWith('http://') || uri.startsWith('https://'), {
+                message: 'Redirect URI must start with http:// or https://',
+              }),
+          )
+          .refine((uris) => new Set(uris).size === uris.length, {
+            message: 'Redirect URIs must be unique',
+          })
+          .optional(),
         // scopes: z.string().optional(),
       }),
     )
@@ -182,7 +194,7 @@ export const oauthAppRouter = {
         headers: await headers(),
         body: {
           name: input.appId,
-          redirect_uris: input.redirectUris ?? [],
+          redirect_uris: input.redirectUris?.map((u) => u.trim()) ?? [],
           scope: 'profile email',
           metadata: { appId: input.appId },
         },
@@ -222,7 +234,19 @@ export const oauthAppRouter = {
     .input(
       z.object({
         appId: z.string().min(32),
-        redirectUris: z.array(z.string()).optional(),
+        redirectUris: z
+          .array(
+            z
+              .string()
+              .url()
+              .refine((uri) => uri.startsWith('http://') || uri.startsWith('https://'), {
+                message: 'Redirect URI must start with http:// or https://',
+              }),
+          )
+          .refine((uris) => new Set(uris).size === uris.length, {
+            message: 'Redirect URIs must be unique',
+          })
+          .optional(),
         disabled: z.boolean().optional(),
         // scopes: z.string().optional(),
       }),
@@ -253,7 +277,7 @@ export const oauthAppRouter = {
       const [updatedOauthApp] = await ctx.db
         .update(OAuthApplication)
         .set({
-          redirectURLs: input.redirectUris?.join(','),
+          redirectURLs: input.redirectUris?.map((u) => u.trim()).join(','),
           disabled: input.disabled,
           updatedAt: new Date(),
         })

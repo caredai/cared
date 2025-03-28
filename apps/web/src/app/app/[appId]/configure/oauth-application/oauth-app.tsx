@@ -1,13 +1,16 @@
 'use client'
 
+import type { ComponentProps } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import * as React from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { CheckIcon, CopyIcon, PlusIcon, TrashIcon } from 'lucide-react'
+import { CheckIcon, CopyIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
+import type { RouterOutputs } from '@mindworld/api'
 import { Button } from '@mindworld/ui/components/button'
 import {
   Card,
@@ -41,8 +44,50 @@ import { Switch } from '@mindworld/ui/components/switch'
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'
 
-// Form schema for OAuth app configuration
-const oauthAppSchema = z.object({
+export function OAuthApp({ appId }: { appId: string }) {
+  const trpc = useTRPC()
+  const {
+    data: { oauthApps },
+  } = useSuspenseQuery({
+    ...trpc.oauthApp.list.queryOptions({
+      appId,
+    }),
+  })
+  const oauthApp = oauthApps.at(0)?.oauthApp
+
+  const [showSecretDialog, setShowSecretDialog] = useState(false)
+  const [secretToShow, setSecretToShow] = useState<string>()
+
+  useEffect(() => {
+    if (!showSecretDialog) {
+      setSecretToShow(undefined)
+    }
+  }, [showSecretDialog])
+
+  if (!oauthApp) {
+    return (
+      <CreateOAuthApp
+        appId={appId}
+        setShowSecretDialog={setShowSecretDialog}
+        setSecretToShow={setSecretToShow}
+      />
+    )
+  }
+
+  return (
+    <UpdateOAuthApp
+      appId={appId}
+      oauthApp={oauthApp}
+      showSecretDialog={showSecretDialog}
+      setShowSecretDialog={setShowSecretDialog}
+      secretToShow={secretToShow}
+      setSecretToShow={setSecretToShow}
+    />
+  )
+}
+
+// Form schema for creating OAuth app
+const createOAuthAppSchema = z.object({
   redirectUris: z
     .array(
       z.object({
@@ -59,14 +104,17 @@ const oauthAppSchema = z.object({
           }, 'URL must use HTTP or HTTPS protocol'),
       }),
     )
-    .min(1, 'At least one redirect URI is required'),
-  disabled: z.boolean().default(false),
+    .min(1, 'At least one redirect URI is required')
+    .refine((items) => {
+      const uris = items.map((item) => item.uri)
+      return new Set(uris).size === uris.length
+    }, 'Duplicate redirect URIs are not allowed'),
 })
 
-type OAuthAppFormValues = z.infer<typeof oauthAppSchema>
+type CreateOAuthAppFormValues = z.infer<typeof createOAuthAppSchema>
 
 // Copy button component with state management
-function CopyButton({ value }: { value: string }) {
+function CopyButton({ value, ...props }: { value: string } & ComponentProps<typeof Button>) {
   const timeoutHandle = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [copied, setCopied] = useState(false)
   const copy = useCallback(() => {
@@ -79,35 +127,30 @@ function CopyButton({ value }: { value: string }) {
   }, [value])
 
   return (
-    <Button variant="outline" size="icon" onClick={copy}>
+    <Button variant="outline" size="icon" onClick={copy} {...props}>
       {copied ? <CheckIcon className="h-4 w-4" /> : <CopyIcon className="h-4 w-4" />}
       <span className="sr-only">Copy to clipboard</span>
     </Button>
   )
 }
 
-export function OAuthApp({ appId }: { appId: string }) {
+function CreateOAuthApp({
+  appId,
+  setShowSecretDialog,
+  setSecretToShow,
+}: {
+  appId: string
+  setShowSecretDialog: (show: boolean) => void
+  setSecretToShow: (secret: string) => void
+}) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
-  const [showSecretDialog, setShowSecretDialog] = useState(false)
-  const [showRotateDialog, setShowRotateDialog] = useState(false)
-  const [secretToShow, setSecretToShow] = useState<string | null>(null)
-
-  const {
-    data: { oauthApps },
-  } = useSuspenseQuery({
-    ...trpc.oauthApp.list.queryOptions({
-      appId,
-    }),
-  })
-  const oauthApp = oauthApps.at(0)?.oauthApp
 
   // Form setup
-  const form = useForm<OAuthAppFormValues>({
-    resolver: zodResolver(oauthAppSchema),
+  const form = useForm<CreateOAuthAppFormValues>({
+    resolver: zodResolver(createOAuthAppSchema),
     defaultValues: {
       redirectUris: [{ uri: '' }],
-      disabled: false,
     },
   })
 
@@ -117,30 +160,14 @@ export function OAuthApp({ appId }: { appId: string }) {
     name: 'redirectUris',
   })
 
-  // Update form values when OAuth app data is loaded
-  useEffect(() => {
-    form.reset({
-      redirectUris: oauthApp?.redirectUris.length
-        ? oauthApp.redirectUris.map((uri) => ({ uri }))
-        : [{ uri: '' }],
-      disabled: oauthApp?.disabled ?? false,
-    })
-  }, [oauthApp, form])
-
   // Create OAuth app mutation
   const createMutation = useMutation({
     ...trpc.oauthApp.create.mutationOptions({
       onSuccess: (data) => {
+        setShowSecretDialog(true)
+        setSecretToShow(data.oauthApp.clientSecret!)
         void queryClient.invalidateQueries({
           queryKey: trpc.oauthApp.list.queryKey({ appId }),
-        })
-        // Show secret dialog after successful creation
-        setSecretToShow(data.oauthApp.clientSecret!)
-        setShowSecretDialog(true)
-        // Reset form state after successful creation
-        form.reset({
-          redirectUris: [{ uri: '' }],
-          disabled: false,
         })
       },
       onError: (error) => {
@@ -149,74 +176,30 @@ export function OAuthApp({ appId }: { appId: string }) {
     }),
   })
 
-  // Update OAuth app mutation
-  const updateMutation = useMutation({
-    ...trpc.oauthApp.update.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: trpc.oauthApp.list.queryKey({ appId }),
-        })
-        // Reset form state after successful update
-        form.reset({
-          redirectUris: oauthApp?.redirectUris.length
-            ? oauthApp.redirectUris.map((uri) => ({ uri }))
-            : [{ uri: '' }],
-          disabled: oauthApp?.disabled ?? false,
-        })
-      },
-      onError: (error) => {
-        toast.error(`Failed to update OAuth app: ${error.message}`)
-      },
-    }),
-  })
-
-  const rotateSecretMutation = useMutation({
-    ...trpc.oauthApp.rotateSecret.mutationOptions({
-      onSuccess: (data) => {
-        void queryClient.invalidateQueries({
-          queryKey: trpc.oauthApp.list.queryKey({ appId }),
-        })
-        // Show secret dialog after successful rotation
-        setSecretToShow(data.oauthApp.clientSecret!)
-        setShowSecretDialog(true)
-        setShowRotateDialog(false)
-      },
-      onError: (error) => {
-        toast.error(`Failed to rotate OAuth app client secret: ${error.message}`)
-      },
-    }),
-  })
-
   // Handle form submission
   const onSubmit = useCallback(
-    async (data: OAuthAppFormValues) => {
+    async (data: CreateOAuthAppFormValues) => {
       const submitData = {
-        ...data,
         redirectUris: data.redirectUris.map((item) => item.uri),
       }
 
-      if (oauthApp) {
-        await updateMutation.mutateAsync({
-          appId,
-          ...submitData,
-        })
-      } else {
-        await createMutation.mutateAsync({
-          appId,
-          ...submitData,
-        })
-      }
+      await createMutation.mutateAsync({
+        appId,
+        ...submitData,
+      })
     },
-    [appId, createMutation, oauthApp, updateMutation],
+    [appId, createMutation],
   )
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>OAuth Application Configuration</CardTitle>
+          <CardTitle>Setup OAuth Application</CardTitle>
           <CardDescription>
-            Configure your OAuth application settings for authentication and authorization.
+            Set up your OAuth application by providing the redirect URIs where users will be
+            redirected after authentication. You can add multiple URIs to support different
+            environments or use cases.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -227,7 +210,9 @@ export function OAuthApp({ appId }: { appId: string }) {
                   <div>
                     <FormLabel>Redirect URIs</FormLabel>
                     <FormDescription>
-                      These are the URLs where users will be redirected after authentication.
+                      Add the URLs where users will be redirected after successful authentication.
+                      Each URI should be a complete URL including the protocol (http:// or
+                      https://).
                     </FormDescription>
                   </div>
                   <Button
@@ -251,7 +236,6 @@ export function OAuthApp({ appId }: { appId: string }) {
                           <FormItem className="flex-1">
                             <FormControl>
                               <Input
-                                placeholder="https://example.com/callback"
                                 {...field}
                                 className="font-mono"
                                 onBlur={() => {
@@ -276,27 +260,15 @@ export function OAuthApp({ appId }: { appId: string }) {
                       </Button>
                     </div>
                   ))}
+
+                  {!form.formState.isValid &&
+                    hasDuplicate(form.getValues('redirectUris').map((u) => u.uri)) && (
+                      <p className="text-[0.8rem] font-medium text-destructive">
+                        Duplicate redirect URIs are not allowed
+                      </p>
+                    )}
                 </div>
               </div>
-
-              <FormField
-                control={form.control}
-                name="disabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Disable Application</FormLabel>
-                      <FormDescription>
-                        When disabled, the OAuth application will not accept any new authentication
-                        requests.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
 
               <CardFooter className="px-0">
                 <Button
@@ -307,12 +279,10 @@ export function OAuthApp({ appId }: { appId: string }) {
                   {form.formState.isSubmitting ? (
                     <>
                       <CircleSpinner className="h-4 w-4" />
-                      {oauthApp ? 'Updating...' : 'Creating...'}
+                      Setup...
                     </>
-                  ) : oauthApp ? (
-                    'Update OAuth App'
                   ) : (
-                    'Create OAuth App'
+                    'Setup'
                   )}
                 </Button>
               </CardFooter>
@@ -320,52 +290,243 @@ export function OAuthApp({ appId }: { appId: string }) {
           </Form>
         </CardContent>
       </Card>
+    </div>
+  )
+}
 
-      {oauthApp && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Application Credentials</CardTitle>
-            <CardDescription>
-              Your OAuth application credentials. Keep these secure and never share them publicly.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            <div className="space-y-2">
-              <Label>Client ID</Label>
-              <div className="flex items-center gap-2">
-                <Input value={oauthApp.clientId!} readOnly className="font-mono" />
-                <CopyButton value={oauthApp.clientId!} />
-              </div>
+function UpdateOAuthApp({
+  appId,
+  oauthApp,
+  showSecretDialog,
+  setShowSecretDialog,
+  secretToShow,
+  setSecretToShow,
+}: {
+  appId: string
+  oauthApp: NonNullable<RouterOutputs['oauthApp']['list']['oauthApps'][number]['oauthApp']>
+  showSecretDialog: boolean
+  setShowSecretDialog: (show: boolean) => void
+  secretToShow?: string
+  setSecretToShow: (secret: string) => void
+}) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+  const [showRotateDialog, setShowRotateDialog] = useState(false)
+  const [redirectUris, setRedirectUris] = useState<string[]>(oauthApp.redirectUris)
+  const [newRedirectUri, setNewRedirectUri] = useState('')
+  const [isDisabled, setIsDisabled] = useState(!!oauthApp.disabled)
+
+  // Update OAuth app mutation
+  const updateMutation = useMutation({
+    ...trpc.oauthApp.update.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: trpc.oauthApp.list.queryKey({ appId }),
+        })
+        setNewRedirectUri('')
+      },
+      onError: (error) => {
+        toast.error(`Failed to update OAuth app: ${error.message}`)
+      },
+    }),
+  })
+
+  const rotateSecretMutation = useMutation({
+    ...trpc.oauthApp.rotateSecret.mutationOptions({
+      onSuccess: (data) => {
+        void queryClient.invalidateQueries({
+          queryKey: trpc.oauthApp.list.queryKey({ appId }),
+        })
+        setSecretToShow(data.oauthApp.clientSecret!)
+        setShowSecretDialog(true)
+        setShowRotateDialog(false)
+      },
+      onError: (error) => {
+        toast.error(`Failed to rotate OAuth app client secret: ${error.message}`)
+      },
+    }),
+  })
+
+  // Handle adding new redirect URI
+  const handleAddRedirectUri = useCallback(() => {
+    if (!newRedirectUri) return
+
+    try {
+      // Validate URL format
+      const url = new URL(newRedirectUri)
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        toast.error('URL must use HTTP or HTTPS protocol')
+        return
+      }
+
+      // Check for duplicates
+      if (redirectUris.includes(newRedirectUri)) {
+        toast.error('This redirect URI already exists')
+        return
+      }
+
+      // Update redirect URIs and trigger mutation
+      const updatedUris = [...redirectUris, newRedirectUri]
+      setRedirectUris(updatedUris)
+      void updateMutation.mutateAsync({
+        appId,
+        redirectUris: updatedUris,
+        disabled: isDisabled,
+      })
+      setNewRedirectUri('')
+    } catch {
+      toast.error('Please enter a valid URL')
+    }
+  }, [appId, newRedirectUri, redirectUris, isDisabled, updateMutation])
+
+  // Handle removing redirect URI
+  const handleRemoveRedirectUri = useCallback(
+    (uriToRemove: string) => {
+      const updatedUris = redirectUris.filter((uri) => uri !== uriToRemove)
+      setRedirectUris(updatedUris)
+      void updateMutation.mutateAsync({
+        appId,
+        redirectUris: updatedUris,
+        disabled: isDisabled,
+      })
+    },
+    [appId, redirectUris, isDisabled, updateMutation],
+  )
+
+  // Handle toggle disabled state
+  const handleToggleDisabled = useCallback(() => {
+    const newDisabledState = !isDisabled
+    setIsDisabled(newDisabledState)
+    void updateMutation.mutateAsync({
+      appId,
+      redirectUris,
+      disabled: newDisabledState,
+    })
+  }, [appId, redirectUris, isDisabled, updateMutation])
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Redirect URIs</CardTitle>
+          <CardDescription>
+            For OAuth requests, the provided URI must exactly match one of the listed URIs. Specify
+            at least one URI for authentication to work.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="relative max-w-192">
+              <Input
+                value={newRedirectUri}
+                onChange={(e) => setNewRedirectUri(e.target.value)}
+                className="font-mono"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddRedirectUri()
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 text-primary"
+                onClick={handleAddRedirectUri}
+                disabled={!newRedirectUri}
+              >
+                Add
+              </Button>
             </div>
 
-            <div className="space-y-2">
-              <Label>Client Secret</Label>
-              <div className="relative">
-                <Input
-                  value={`${oauthApp.clientSecretStart ?? ''}••••••••••••••••••••••••••`}
-                  readOnly
-                  className="font-mono pr-32"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  onClick={() => setShowRotateDialog(true)}
-                >
-                  Regenerate
-                </Button>
+            {redirectUris.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {redirectUris.map((uri) => (
+                  <div
+                    key={uri}
+                    className="flex items-center gap-1 rounded-full bg-secondary px-3 py-1 text-sm"
+                  >
+                    <span className="font-mono">{uri}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 hover:text-primary"
+                      onClick={() => handleRemoveRedirectUri(uri)}
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
               </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Application Credentials</CardTitle>
+          <CardDescription>Manage your OAuth 2.0 credentials.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label>Client ID</Label>
+            <div className="relative max-w-192">
+              <Input value={oauthApp.clientId!} readOnly className="font-mono" />
+              <CopyButton
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6"
+                value={oauthApp.clientId!}
+              />
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Client Secret</Label>
+            <div className="relative max-w-192">
+              <Input
+                value={`${oauthApp.clientSecretStart ?? ''}••••••••••••••••••••••••••`}
+                readOnly
+                className="font-mono"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 text-primary"
+                onClick={() => setShowRotateDialog(true)}
+              >
+                Regenerate
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent>
+          <div className="flex items-center justify-between max-w-192">
+            <div className="space-y-0.5">
+              <Label className="text-base">Disable Application</Label>
+              <p className="text-sm text-muted-foreground">
+                When disabled, the OAuth application will not accept any new authentication
+                requests.
+              </p>
+            </div>
+            <Switch checked={isDisabled} onCheckedChange={handleToggleDisabled} />
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={showSecretDialog} onOpenChange={setShowSecretDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Client Secret</DialogTitle>
             <DialogDescription>
-              This is your client secret. Make sure to copy it now. You won't be able to see it again!
+              This is your client secret. Make sure to copy it now. You won't be able to see it
+              again!
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2">
@@ -383,7 +544,8 @@ export function OAuthApp({ appId }: { appId: string }) {
           <DialogHeader>
             <DialogTitle>Regenerate Client Secret</DialogTitle>
             <DialogDescription>
-              Are you sure you want to rotate the client secret? This will invalidate the current secret and generate a new one.
+              Are you sure you want to rotate the client secret? This will invalidate the current
+              secret and generate a new one.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -401,7 +563,7 @@ export function OAuthApp({ appId }: { appId: string }) {
             >
               {rotateSecretMutation.isPending ? (
                 <>
-                  <CircleSpinner className="h-4 w-4 mr-2" />
+                  <CircleSpinner className="h-4 w-4" />
                   Regenerate...
                 </>
               ) : (
@@ -413,4 +575,8 @@ export function OAuthApp({ appId }: { appId: string }) {
       </Dialog>
     </div>
   )
+}
+
+function hasDuplicate(items: string[]) {
+  return new Set(items).size !== items.length
 }

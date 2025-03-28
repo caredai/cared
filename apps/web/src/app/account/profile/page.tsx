@@ -226,7 +226,7 @@ export default function Page() {
                       {hasEmail ? 'Email' : 'User ID'}
                     </Label>
                     <div className="flex items-center gap-2">
-                      <p className="text-gray-700">{user.email}</p>
+                      <p>{user.email}</p>
                       {user.emailVerified && (
                         <Badge variant="outline" className="text-xs">
                           Verified
