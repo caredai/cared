@@ -5,9 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useWindowSize } from 'usehooks-ts'
 
-import { Button } from '@mindworld/ui/components/button'
-import { useSidebar } from '@mindworld/ui/components/sidebar'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
+import { Button } from '@ownxai/ui/components/button'
+import { useSidebar } from '@ownxai/ui/components/sidebar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ownxai/ui/components/tooltip'
 
 import type { VisibilityType } from './visibility-selector'
 import { ModelSelector } from '@/components/model-selector'

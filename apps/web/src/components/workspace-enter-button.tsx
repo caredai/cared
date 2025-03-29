@@ -2,7 +2,7 @@
 
 import { LogIn } from 'lucide-react'
 
-import { SidebarMenuButton } from '@mindworld/ui/components/sidebar'
+import { SidebarMenuButton } from '@ownxai/ui/components/sidebar'
 
 import { useRedirectWorkspace } from '@/hooks/use-workspace'
 

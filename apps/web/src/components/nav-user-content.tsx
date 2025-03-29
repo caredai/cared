@@ -4,15 +4,15 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from 'lucide-react'
 
-import { authClient } from '@mindworld/auth/client'
+import { authClient } from '@ownxai/auth/client'
 import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from '@mindworld/ui/components/dropdown-menu'
-import { useIsMobile } from '@mindworld/ui/hooks/use-mobile'
+} from '@ownxai/ui/components/dropdown-menu'
+import { useIsMobile } from '@ownxai/ui/hooks/use-mobile'
 
 import { ThemeSwitcher } from '@/components/theme'
 import { UserInfo } from './user-info'

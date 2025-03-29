@@ -8,8 +8,8 @@ import { createTRPCClient, loggerLink, unstable_httpBatchStreamLink } from '@trp
 import { createTRPCContext } from '@trpc/tanstack-react-query'
 import SuperJSON from 'superjson'
 
-import type { AppRouter } from '@mindworld/api'
-import { getBaseUrl } from '@mindworld/auth/client'
+import type { AppRouter } from '@ownxai/api'
+import { getBaseUrl } from '@ownxai/auth/client'
 
 import { env } from '../env'
 import { createQueryClient } from './query-client'

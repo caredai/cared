@@ -3,12 +3,12 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { BotIcon, FilterIcon, SearchIcon, TagIcon, XIcon } from 'lucide-react'
 
-import { Badge } from '@mindworld/ui/components/badge'
-import { Button } from '@mindworld/ui/components/button'
+import { Badge } from '@ownxai/ui/components/badge'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
@@ -16,8 +16,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
-import { Input } from '@mindworld/ui/components/input'
+} from '@ownxai/ui/components/card'
+import { Input } from '@ownxai/ui/components/input'
 import {
   Select,
   SelectContent,
@@ -26,8 +26,8 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@mindworld/ui/components/select'
-import { Separator } from '@mindworld/ui/components/separator'
+} from '@ownxai/ui/components/select'
+import { Separator } from '@ownxai/ui/components/separator'
 
 import { RemoteImage } from '@/components/image'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
@@ -39,6 +39,7 @@ import { CreateAppDialog } from './create-app-dialog'
 const ALL_CATEGORIES = 'all'
 
 export function Apps() {
+  const router = useRouter()
   const trpc = useTRPC()
   const { workspaceId: workspaceIdNoPrefix } = useParams<{ workspaceId: string }>()
   const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
@@ -161,17 +162,16 @@ export function Apps() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {filteredApps.map((appData) => (
-            <Card key={appData.app.id} className="relative overflow-hidden">
+            <Card
+              key={appData.app.id}
+              className="relative overflow-hidden cursor-pointer"
+              onClick={() => {
+                router.push(`/app/${stripIdPrefix(appData.app.id)}`)
+              }}
+            >
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start gap-2">
-                  <CardTitle className="truncate">
-                    <Link
-                      href={`/app/${stripIdPrefix(appData.app.id)}`}
-                      className="hover:underline"
-                    >
-                      {appData.app.name}
-                    </Link>
-                  </CardTitle>
+                  <CardTitle className="truncate">{appData.app.name}</CardTitle>
                   <div className="flex items-center gap-2">
                     <div className="relative h-16 w-16 rounded-md overflow-hidden">
                       {appData.app.metadata.imageUrl ? (

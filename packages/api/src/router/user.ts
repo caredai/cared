@@ -1,9 +1,9 @@
 import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 
-import { auth } from '@mindworld/auth'
-import { eq } from '@mindworld/db'
-import { Account } from '@mindworld/db/schema'
+import { auth } from '@ownxai/auth'
+import { eq } from '@ownxai/db'
+import { Account } from '@ownxai/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
 

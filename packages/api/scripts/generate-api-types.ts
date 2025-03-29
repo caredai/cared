@@ -25,13 +25,13 @@ const EXTERNAL_TYPE_DEFINITIONS = `export interface UserInfo {
 `
 
 /**
- * Maps a @mindworld import path to actual file path in monorepo
- * Example: @mindworld/db/schema/app -> packages/db/src/schema/app.ts
- *          @mindworld/db/schema -> packages/db/src/schema/index.ts
+ * Maps a @ownxai import path to actual file path in monorepo
+ * Example: @ownxai/db/schema/app -> packages/db/src/schema/app.ts
+ *          @ownxai/db/schema -> packages/db/src/schema/index.ts
  */
 function resolveMonorepoPath(importPath: string): string {
-  // Remove quotes and @mindworld prefix
-  const cleanPath = importPath.replace(/["']/g, '').replace('@mindworld/', '')
+  // Remove quotes and @ownxai prefix
+  const cleanPath = importPath.replace(/["']/g, '').replace('@ownxai/', '')
 
   // Split into package name and subpath
   const [pkgName, ...subPaths] = cleanPath.split('/')
@@ -82,7 +82,7 @@ async function extractTypeDefinition(importPath: string): Promise<string | null>
       const typeName = node.name.getText(parsedSourceFile)
 
       // Only extract the type if it matches one we're looking for
-      if (mindworldImports.get(importPath)?.has(typeName)) {
+      if (ownxaiImports.get(importPath)?.has(typeName)) {
         typeDefinition +=
           sourceContent.slice(node.getStart(parsedSourceFile), node.getEnd()) + '\n\n'
       }
@@ -98,26 +98,26 @@ async function extractTypeDefinition(importPath: string): Promise<string | null>
 const content = fs.readFileSync(ROOT_DTS_PATH, 'utf-8')
 const rootSourceFile = ts.createSourceFile('root.d.ts', content, ts.ScriptTarget.Latest, true)
 
-// Find all @mindworld imports and their type references
-const mindworldImports = new Map<string, Set<string>>()
+// Find all @ownxai imports and their type references
+const ownxaiImports = new Map<string, Set<string>>()
 const typeReplacements = new Map<string, string>()
 
 function visitNode(node: ts.Node) {
   if (ts.isImportTypeNode(node)) {
     const importPath = node.argument.getText(rootSourceFile)
-    if (importPath.includes('@mindworld')) {
+    if (importPath.includes('@ownxai')) {
       // Skip DB client type
-      if (importPath.includes('@mindworld/db/client')) {
+      if (importPath.includes('@ownxai/db/client')) {
         return
       }
 
       const qualifier = node.qualifier?.getText(rootSourceFile)
       if (qualifier) {
         const importKey = importPath
-        if (!mindworldImports.has(importKey)) {
-          mindworldImports.set(importKey, new Set())
+        if (!ownxaiImports.has(importKey)) {
+          ownxaiImports.set(importKey, new Set())
         }
-        mindworldImports.get(importKey)!.add(qualifier)
+        ownxaiImports.get(importKey)!.add(qualifier)
 
         // Create replacement mapping
         const fullType = `import(${importPath}).${qualifier}`
@@ -133,7 +133,7 @@ visitNode(rootSourceFile)
 // Extract type definitions for all found imports
 let typeDefinitions = EXTERNAL_TYPE_DEFINITIONS + '\n'
 // @ts-ignore
-for (const [importPath, types] of mindworldImports) {
+for (const [importPath, types] of ownxaiImports) {
   // @ts-ignore
   const typeDef = await extractTypeDefinition(importPath)
   if (typeDef) {
@@ -141,7 +141,7 @@ for (const [importPath, types] of mindworldImports) {
   }
 }
 
-// Replace all @mindworld imports with our local type definitions
+// Replace all @ownxai imports with our local type definitions
 let output = content
 // @ts-ignore
 for (const [fullType, replacement] of typeReplacements) {

@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@mindworld/ui/components/tooltip'
+} from '@ownxai/ui/components/tooltip'
 
 import type { ArtifactToolbarItem } from './create-artifact'
 import { artifactDefinitions } from '@/artifacts'

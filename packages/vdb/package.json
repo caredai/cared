@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/vdb",
+  "name": "@ownxai/vdb",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -16,14 +16,14 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config",
+  "prettier": "@ownxai/prettier-config",
   "dependencies": {
     "@qdrant/js-client-rest": "^1.13.0",
     "async-mutex": "^0.5.0"

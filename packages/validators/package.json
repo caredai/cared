@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/validators",
+  "name": "@ownxai/validators",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -22,12 +22,12 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config"
+  "prettier": "@ownxai/prettier-config"
 }

@@ -5,8 +5,8 @@ import * as React from 'react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-import { authClient } from '@mindworld/auth/client'
-import { Button } from '@mindworld/ui/components/button'
+import { authClient } from '@ownxai/auth/client'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
@@ -14,8 +14,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
-import { Separator } from '@mindworld/ui/components/separator'
+} from '@ownxai/ui/components/card'
+import { Separator } from '@ownxai/ui/components/separator'
 
 import { CircleSpinner } from '@/components/spinner'
 import { allowedProviders } from '@/lib/auth-providers'
@@ -50,7 +50,7 @@ export default function Page() {
       <div className="w-full max-w-sm">
         <Card className="border-1 shadow-lg rounded-3xl gap-2">
           <CardHeader className="space-y-2 text-center pb-6">
-            <CardTitle className="text-2xl">🎉 Sign in to Mind</CardTitle>
+            <CardTitle className="text-2xl">🎉 Sign in to ownx</CardTitle>
             <CardDescription className="text-lg">
               Welcome back! Please sign in to continue
             </CardDescription>
@@ -82,7 +82,7 @@ export default function Page() {
           </CardContent>
           <CardFooter className="flex flex-col">
             <Separator className="my-6" />
-            <p className="text-center text-sm text-muted-foreground">Secured by Mind 🛡️</p>
+            <p className="text-center text-sm text-muted-foreground">Secured by ownx 🛡️</p>
           </CardFooter>
         </Card>
       </div>

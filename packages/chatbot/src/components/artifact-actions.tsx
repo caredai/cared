@@ -2,8 +2,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import { memo, useState } from 'react'
 import { toast } from 'sonner'
 
-import { Button } from '@mindworld/ui/components/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
+import { Button } from '@ownxai/ui/components/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ownxai/ui/components/tooltip'
 
 import type { UIArtifact } from './artifact'
 import type { ArtifactActionContext } from './create-artifact'

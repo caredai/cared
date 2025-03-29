@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/i18n",
+  "name": "@ownxai/i18n",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -17,15 +17,15 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "@types/negotiator": "^0.6.3",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config",
+  "prettier": "@ownxai/prettier-config",
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.5.10",
     "i18next": "^24.2.2",

@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/tools",
+  "name": "@ownxai/tools",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -17,18 +17,18 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config",
+  "prettier": "@ownxai/prettier-config",
   "dependencies": {
-    "@mindworld/db": "workspace:*",
-    "@mindworld/providers": "workspace:*",
-    "@mindworld/vdb": "workspace:*",
+    "@ownxai/db": "workspace:*",
+    "@ownxai/providers": "workspace:*",
+    "@ownxai/vdb": "workspace:*",
     "agent-twitter-client": "^0.0.18",
     "ai": "catalog:"
   }

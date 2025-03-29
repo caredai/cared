@@ -1,7 +1,7 @@
 import { ChevronsUpDown } from 'lucide-react'
 
-import { DropdownMenu, DropdownMenuTrigger } from '@mindworld/ui/components/dropdown-menu'
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@mindworld/ui/components/sidebar'
+import { DropdownMenu, DropdownMenuTrigger } from '@ownxai/ui/components/dropdown-menu'
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@ownxai/ui/components/sidebar'
 
 import { NavUserContent } from '@/components/nav-user-content'
 import { HydrateClient } from '@/trpc/server'

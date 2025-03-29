@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "kv",
+  "name": "ownx-kv",
   "main": "src/index.ts",
   "compatibility_date": "2025-03-26",
   // "compatibility_flags": [
@@ -11,8 +11,8 @@
   // },
    "kv_namespaces": [
      {
-       "binding": "MIND",
-       "id": "45cdb184a15c4ba7836e072d43eb0cb7"
+       "binding": "OWNX",
+       "id": "97c9fe2e939c49ceb2bbe4ff2ee1d714"
      }
    ]
   // "r2_buckets": [

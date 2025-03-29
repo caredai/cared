@@ -4,10 +4,10 @@ import { base64Url } from '@better-auth/utils/base64'
 import { createHash } from '@better-auth/utils/hash'
 import { TRPCError } from '@trpc/server'
 
-import { auth as authApi } from '@mindworld/auth'
-import { eq } from '@mindworld/db'
-import { db } from '@mindworld/db/client'
-import { ApiKey, OAuthAccessToken, OAuthApplication } from '@mindworld/db/schema'
+import { auth as authApi } from '@ownxai/auth'
+import { eq } from '@ownxai/db'
+import { db } from '@ownxai/db/client'
+import { ApiKey, OAuthAccessToken, OAuthApplication } from '@ownxai/db/schema'
 
 export type Auth =
   // for user auth

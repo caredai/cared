@@ -1,6 +1,6 @@
 import { memo } from 'react'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 
 import { initialArtifactData, useArtifact } from '@/hooks/use-artifact'
 import { CrossIcon } from './icons'

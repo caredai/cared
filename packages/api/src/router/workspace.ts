@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server'
 import { and, count, desc, eq, gt, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
-import type { Transaction } from '@mindworld/db/client'
+import type { Transaction } from '@ownxai/db/client'
 import {
   CreateMembershipSchema,
   CreateWorkspaceSchema,
@@ -11,7 +11,7 @@ import {
   UpdateWorkspaceSchema,
   User,
   Workspace,
-} from '@mindworld/db/schema'
+} from '@ownxai/db/schema'
 
 import type { Context } from '../trpc'
 import { cfg } from '../config'

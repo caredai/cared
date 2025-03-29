@@ -23,7 +23,7 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@mindworld/ui/components/collapsible'
+} from '@ownxai/ui/components/collapsible'
 import {
   SidebarGroup,
   SidebarMenu,
@@ -34,7 +34,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarSeparator,
-} from '@mindworld/ui/components/sidebar'
+} from '@ownxai/ui/components/sidebar'
 
 const icons: Record<string, LucideIcon> = {
   Bot,

@@ -13,7 +13,7 @@ export default function middleware(request: NextRequest) {
   }
 
   const sessionCookie = getSessionCookie(request, {
-    cookiePrefix: 'mind',
+    cookiePrefix: 'ownx',
   })
   if (!sessionCookie) {
     const redirectTo = request.nextUrl.pathname + request.nextUrl.search

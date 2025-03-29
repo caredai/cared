@@ -6,7 +6,7 @@ import { useChat } from 'ai/react'
 import { toast } from 'sonner'
 import useSWR, { useSWRConfig } from 'swr'
 
-import type { MessageVote } from '@mindworld/db/schema'
+import type { MessageVote } from '@ownxai/db/schema'
 
 import type { VisibilityType } from './visibility-selector'
 import { ChatHeader } from '@/components/chat-header'

@@ -2,7 +2,7 @@ import type { ChatRequestOptions, Message } from 'ai'
 import { memo } from 'react'
 import equal from 'fast-deep-equal'
 
-import type { MessageVote } from '@mindworld/db/schema'
+import type { MessageVote } from '@ownxai/db/schema'
 
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom'
 import { PreviewMessage, ThinkingMessage } from './message'

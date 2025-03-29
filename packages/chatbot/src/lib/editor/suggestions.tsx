@@ -5,7 +5,7 @@ import { Plugin, PluginKey } from 'prosemirror-state'
 import { DecorationSet } from 'prosemirror-view'
 import { createRoot } from 'react-dom/client'
 
-import type { ArtifactSuggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@ownxai/db/schema'
 
 import { Suggestion as PreviewSuggestion } from '@/components/suggestion'
 

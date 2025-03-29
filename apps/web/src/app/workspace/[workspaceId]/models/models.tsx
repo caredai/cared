@@ -6,20 +6,20 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { CheckIcon, ChevronDown, ChevronUp, CopyIcon, Server } from 'lucide-react'
 import { useCopyToClipboard } from 'react-use'
 
-import { splitModelFullId } from '@mindworld/providers'
-import { Button } from '@mindworld/ui/components/button'
+import { splitModelFullId } from '@ownxai/providers'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
+} from '@ownxai/ui/components/card'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@mindworld/ui/components/collapsible'
+} from '@ownxai/ui/components/collapsible'
 
 import { useTRPC } from '@/trpc/client'
 

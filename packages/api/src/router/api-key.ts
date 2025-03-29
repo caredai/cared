@@ -3,8 +3,8 @@ import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
-import { auth } from '@mindworld/auth'
-import { App } from '@mindworld/db/schema'
+import { auth } from '@ownxai/auth'
+import { App } from '@ownxai/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'

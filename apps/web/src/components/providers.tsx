@@ -9,7 +9,7 @@ import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana'
 import { Provider as JotaiProvider } from 'jotai'
 import { useTheme } from 'next-themes'
 
-import { authClient } from '@mindworld/auth/client'
+import { authClient } from '@ownxai/auth/client'
 
 import { Logo } from '@/components/logo'
 import { ThemeProvider } from '@/components/theme'

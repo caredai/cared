@@ -6,8 +6,8 @@ import { motion } from 'framer-motion'
 import { useSWRConfig } from 'swr'
 import { useWindowSize } from 'usehooks-ts'
 
-import type { Artifact } from '@mindworld/db/schema'
-import { Button } from '@mindworld/ui/components/button'
+import type { Artifact } from '@ownxai/db/schema'
+import { Button } from '@ownxai/ui/components/button'
 
 import { useArtifact } from '@/hooks/use-artifact'
 import { getDocumentTimestampByIndex } from '@/lib/utils'

@@ -1,8 +1,8 @@
 import assert from 'assert'
 import { experimental_generateImage } from 'ai'
 
-import { getImageModelFromContext } from '@mindworld/tools'
-import { createArtifactHandler } from '@mindworld/tools/artifact'
+import { getImageModelFromContext } from '@ownxai/tools'
+import { createArtifactHandler } from '@ownxai/tools/artifact'
 
 export const imageArtifactHandler = createArtifactHandler<'image'>({
   kind: 'image',

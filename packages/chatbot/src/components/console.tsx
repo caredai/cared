@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 
 import { useArtifactSelector } from '@/hooks/use-artifact'
 import { cn } from '@/lib/utils'

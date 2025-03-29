@@ -1,9 +1,9 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import type { SQL } from '@mindworld/db'
-import { and, desc, eq, gt, lt } from '@mindworld/db'
-import { Membership, User, Workspace } from '@mindworld/db/schema'
+import type { SQL } from '@ownxai/db'
+import { and, desc, eq, gt, lt } from '@ownxai/db'
+import { Membership, User, Workspace } from '@ownxai/db/schema'
 
 import { adminProcedure } from '../../trpc'
 

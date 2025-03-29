@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/sdk",
+  "name": "@ownxai/sdk",
   "private": true,
   "version": "0.1.0",
   "main": "./dist/index.js",
@@ -46,18 +46,18 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "@trpc/server": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "tsup": "^8.3.6",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config",
+  "prettier": "@ownxai/prettier-config",
   "dependencies": {
-    "@mindworld/shared": "workspace:*",
+    "@ownxai/shared": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",

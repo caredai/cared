@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/prettier-config",
+  "name": "@ownxai/prettier-config",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -17,10 +17,10 @@
     "prettier-plugin-tailwindcss": "^0.6.10"
   },
   "devDependencies": {
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "prettier-plugin-multiline-arrays": "^4.0.2",
     "prettier-plugin-sort-json": "^4.1.1",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config"
+  "prettier": "@ownxai/prettier-config"
 }

@@ -4,7 +4,7 @@ import type { ArtifactKind } from '@/artifacts'
 import { useEffect, useRef } from 'react'
 import { useChat } from 'ai/react'
 
-import type { ArtifactSuggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@ownxai/db/schema'
 
 import { artifactDefinitions } from '@/artifacts'
 import { initialArtifactData, useArtifact } from '@/hooks/use-artifact'

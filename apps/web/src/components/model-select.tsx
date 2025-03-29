@@ -8,7 +8,7 @@ import {
   ComboboxGroup,
   ComboboxInput,
   ComboboxItem,
-} from '@mindworld/ui/components/combobox'
+} from '@ownxai/ui/components/combobox'
 import {
   FormControl,
   FormDescription,
@@ -16,8 +16,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@mindworld/ui/components/form'
-import { Virtualized, VirtualizedVirtualizer } from '@mindworld/ui/components/virtualized'
+} from '@ownxai/ui/components/form'
+import { Virtualized, VirtualizedVirtualizer } from '@ownxai/ui/components/virtualized'
 
 import { SelectLabel } from '@/components/virtualized-select-content'
 

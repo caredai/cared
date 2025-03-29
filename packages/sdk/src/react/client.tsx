@@ -48,11 +48,11 @@ export function createTrpcClient() {
       unstable_httpBatchStreamLink({
         transformer: SuperJSON,
         // eslint-disable-next-line turbo/no-undeclared-env-vars
-        url: process.env.MIND_API_URL ?? 'https://mindai.world/api/trpc',
+        url: process.env.OWNX_API_URL ?? 'https://ownx.ai/api/trpc',
         headers() {
           const headers = new Headers()
           // eslint-disable-next-line turbo/no-undeclared-env-vars
-          headers.set('Authorization', 'Bearer ' + process.env.MIND_API_KEY)
+          headers.set('Authorization', 'Bearer ' + process.env.OWNX_API_KEY)
           headers.set('X-AUTH-TYPE', 'API-KEY') // optional
           headers.set('x-trpc-source', 'react')
           return headers

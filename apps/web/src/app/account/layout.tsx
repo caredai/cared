@@ -3,8 +3,8 @@ import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { auth } from '@mindworld/auth'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@mindworld/ui/components/sidebar'
+import { auth } from '@ownxai/auth'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@ownxai/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'

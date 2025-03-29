@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 
-import I18nServer from '@mindworld/i18n/i18n-server'
+import I18nServer from '@ownxai/i18n/i18n-server'
 
 import '../globals.css'
 
-import { Toaster } from '@mindworld/ui/components/sonner'
+import { Toaster } from '@ownxai/ui/components/sonner'
 
 import { Providers } from '@/components/providers'
 

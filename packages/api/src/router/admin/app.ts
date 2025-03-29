@@ -1,8 +1,8 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import type { SQL } from '@mindworld/db'
-import { and, desc, eq, gt, inArray, lt } from '@mindworld/db'
+import type { SQL } from '@ownxai/db'
+import { and, desc, eq, gt, inArray, lt } from '@ownxai/db'
 import {
   AppsToCategories,
   AppsToTags,
@@ -11,7 +11,7 @@ import {
   CreateCategorySchema,
   Tag,
   UpdateCategorySchema,
-} from '@mindworld/db/schema'
+} from '@ownxai/db/schema'
 
 import { adminProcedure } from '../../trpc'
 import { getAppById, getApps } from '../app'

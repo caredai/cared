@@ -6,7 +6,7 @@ import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import equal from 'fast-deep-equal'
 import useSWR from 'swr'
 
-import type { Artifact } from '@mindworld/db/schema'
+import type { Artifact } from '@ownxai/db/schema'
 
 import type { UIArtifact } from './artifact'
 import { useArtifact } from '@/hooks/use-artifact'

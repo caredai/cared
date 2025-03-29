@@ -7,25 +7,25 @@ import { LucideCheck, LucidePencil, LucidePlus, LucideX } from 'lucide-react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import { authClient } from '@mindworld/auth/client'
-import { Avatar, AvatarFallback, AvatarImage } from '@mindworld/ui/components/avatar'
-import { Badge } from '@mindworld/ui/components/badge'
-import { Button } from '@mindworld/ui/components/button'
+import { authClient } from '@ownxai/auth/client'
+import { Avatar, AvatarFallback, AvatarImage } from '@ownxai/ui/components/avatar'
+import { Badge } from '@ownxai/ui/components/badge'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
+} from '@ownxai/ui/components/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
-import { Input } from '@mindworld/ui/components/input'
-import { Label } from '@mindworld/ui/components/label'
+} from '@ownxai/ui/components/dropdown-menu'
+import { Input } from '@ownxai/ui/components/input'
+import { Label } from '@ownxai/ui/components/label'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useAccounts, useUser } from '@/hooks/use-user'

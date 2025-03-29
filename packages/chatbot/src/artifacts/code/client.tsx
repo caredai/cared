@@ -1,7 +1,7 @@
 import type { ConsoleOutput, ConsoleOutputContent } from '@/components/console'
 import { toast } from 'sonner'
 
-import { generateId } from '@mindworld/db/schema'
+import { generateId } from '@ownxai/db/schema'
 
 import { CodeEditor } from '@/components/code-editor'
 import { Console } from '@/components/console'

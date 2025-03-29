@@ -10,7 +10,7 @@ import {
   timestamps,
   timestampsIndices,
   timestampsOmits,
-} from '@mindworld/sdk/utils'
+} from '@ownxai/sdk/utils'
 
 export interface GroupMetadata {
   custom?: unknown

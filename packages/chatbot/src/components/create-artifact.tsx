@@ -1,7 +1,7 @@
 import type { UseChatHelpers } from 'ai/react'
 import type { ComponentType, Dispatch, ReactNode, SetStateAction } from 'react'
 
-import type { ArtifactSuggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@ownxai/db/schema'
 
 import type { UIArtifact } from './artifact'
 import type { DataStreamDelta } from './data-stream-handler'

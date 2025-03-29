@@ -1,5 +1,5 @@
 {
-  "extends": "@mindworld/tsconfig/base.json",
+  "extends": "@ownxai/tsconfig/base.json",
   "include": ["."],
   "exclude": ["templates"]
 }

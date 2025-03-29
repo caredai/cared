@@ -1,7 +1,7 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 
-import { generateArtifactId } from '@mindworld/db/schema'
+import { generateArtifactId } from '@ownxai/db/schema'
 
 import type { Context } from '../context'
 import { artifactKinds, getArtifactHandler } from './server'

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { generateOpenApiDocument } from '@mindworld/api'
-import { getBaseUrl } from '@mindworld/auth/client'
+import { generateOpenApiDocument } from '@ownxai/api'
+import { getBaseUrl } from '@ownxai/auth/client'
 
 export const GET = () => {
   const baseUrl = getBaseUrl()

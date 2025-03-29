@@ -6,7 +6,7 @@ import { inputRules } from 'prosemirror-inputrules'
 import { EditorState } from 'prosemirror-state'
 import { EditorView } from 'prosemirror-view'
 
-import type { ArtifactSuggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@ownxai/db/schema'
 
 import { documentSchema, handleTransaction, headingRule } from '@/lib/editor/config'
 import {

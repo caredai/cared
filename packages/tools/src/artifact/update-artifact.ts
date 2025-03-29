@@ -1,9 +1,9 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 
-import { eq } from '@mindworld/db'
-import { db } from '@mindworld/db/client'
-import { Artifact } from '@mindworld/db/schema'
+import { eq } from '@ownxai/db'
+import { db } from '@ownxai/db/client'
+import { Artifact } from '@ownxai/db/schema'
 
 import type { Context } from '../context'
 import { getArtifactHandler } from './server'

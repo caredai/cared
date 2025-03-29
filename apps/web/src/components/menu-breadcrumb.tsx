@@ -10,8 +10,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@mindworld/ui/components/breadcrumb'
-import { Separator } from '@mindworld/ui/components/separator'
+} from '@ownxai/ui/components/breadcrumb'
+import { Separator } from '@ownxai/ui/components/separator'
 
 import type { NavItem } from './nav-main'
 

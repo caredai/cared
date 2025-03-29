@@ -8,7 +8,7 @@ import { isToday, isYesterday, subMonths, subWeeks } from 'date-fns'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 
-import type { Chat } from '@mindworld/db/schema'
+import type { Chat } from '@ownxai/db/schema'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@mindworld/ui/components/alert-dialog'
+} from '@ownxai/ui/components/alert-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +28,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
+} from '@ownxai/ui/components/dropdown-menu'
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -37,7 +37,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@mindworld/ui/components/sidebar'
+} from '@ownxai/ui/components/sidebar'
 
 import {
   CheckCircleFillIcon,

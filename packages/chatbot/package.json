@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/chatbot",
+  "name": "@ownxai/chatbot",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -17,9 +17,9 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "@types/node": "^22.13.10",
     "@types/papaparse": "^5.3.15",
     "@types/react": "catalog:react19",
@@ -33,11 +33,11 @@
     "@codemirror/state": "^6.5.1",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.36.2",
-    "@mindworld/db": "workspace:*",
-    "@mindworld/providers": "workspace:*",
-    "@mindworld/sdk": "workspace:*",
-    "@mindworld/tools": "workspace:*",
-    "@mindworld/ui": "workspace:*",
+    "@ownxai/db": "workspace:*",
+    "@ownxai/providers": "workspace:*",
+    "@ownxai/sdk": "workspace:*",
+    "@ownxai/tools": "workspace:*",
+    "@ownxai/ui": "workspace:*",
     "ai": "catalog:",
     "classnames": "^2.5.1",
     "codemirror": "^6.0.1",
@@ -63,5 +63,5 @@
     "sonner": "^2.0.1",
     "usehooks-ts": "^3.1.0"
   },
-  "prettier": "@mindworld/prettier-config"
+  "prettier": "@ownxai/prettier-config"
 }

@@ -3,8 +3,8 @@ import { HeadObjectCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import type { AppMetadata } from '@mindworld/db/schema'
-import { and, count, desc, eq, gt, inArray, lt, sql } from '@mindworld/db'
+import type { AppMetadata } from '@ownxai/db/schema'
+import { and, count, desc, eq, gt, inArray, lt, sql } from '@ownxai/db'
 import {
   Agent,
   AgentVersion,
@@ -18,10 +18,10 @@ import {
   DRAFT_VERSION,
   Tag,
   UpdateAppSchema,
-} from '@mindworld/db/schema'
-import log from '@mindworld/log'
-import { defaultModels } from '@mindworld/providers'
-import { mergeWithoutUndefined } from '@mindworld/shared'
+} from '@ownxai/db/schema'
+import log from '@ownxai/log'
+import { defaultModels } from '@ownxai/providers'
+import { mergeWithoutUndefined } from '@ownxai/shared'
 
 import type { Context } from '../trpc'
 import { cfg } from '../config'

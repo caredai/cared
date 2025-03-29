@@ -1,11 +1,11 @@
-import type { ArtifactKind } from '@mindworld/db/schema'
-import { eq } from '@mindworld/db'
-import { db } from '@mindworld/db/client'
-import { Artifact } from '@mindworld/db/schema'
+import type { ArtifactKind } from '@ownxai/db/schema'
+import { eq } from '@ownxai/db'
+import { db } from '@ownxai/db/client'
+import { Artifact } from '@ownxai/db/schema'
 
 import type { Context } from '../context'
 
-export { artifactKinds } from '@mindworld/db/schema'
+export { artifactKinds } from '@ownxai/db/schema'
 
 export interface CreateArtifactCallbackProps {
   id: string

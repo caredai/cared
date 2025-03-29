@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { UsersIcon } from 'lucide-react'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@mindworld/ui/components/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ownxai/ui/components/tabs'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

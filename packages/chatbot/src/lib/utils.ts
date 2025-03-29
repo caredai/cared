@@ -3,7 +3,7 @@ import type { ClassValue } from 'clsx'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-import type { Artifact, Message as DBMessage } from '@mindworld/db/schema'
+import type { Artifact, Message as DBMessage } from '@ownxai/db/schema'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

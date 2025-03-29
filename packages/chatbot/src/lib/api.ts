@@ -1,7 +1,7 @@
 import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query'
 
-import type { API } from '@mindworld/sdk'
-import { useTRPC as useSdkTRPC } from '@mindworld/sdk/react/client'
+import type { API } from '@ownxai/sdk'
+import { useTRPC as useSdkTRPC } from '@ownxai/sdk/react/client'
 
 type UseTRPC = () => TRPCOptionsProxy<API>
 

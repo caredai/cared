@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/auth",
+  "name": "@ownxai/auth",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -18,18 +18,18 @@
     "generate-schema": "pnpm with-env pnpm dlx @better-auth/cli generate -y --config ./src/server.ts --output ../db/src/schema/auth-generated.ts && pnpm prettier --check --write ../db/src/schema/auth-generated.ts"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config",
+  "prettier": "@ownxai/prettier-config",
   "dependencies": {
     "@better-auth/utils": "^0.2.4",
-    "@mindworld/db": "workspace:*",
-    "@mindworld/shared": "workspace:*",
+    "@ownxai/db": "workspace:*",
+    "@ownxai/shared": "workspace:*",
     "better-auth": "1.2.5-beta.8",
     "better-auth-harmony": "^1.2.4",
     "validation-better-auth": "^1.1.1"

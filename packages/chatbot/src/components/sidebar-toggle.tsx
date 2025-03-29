@@ -1,9 +1,9 @@
 import type { ComponentProps } from 'react'
 
-import type { SidebarTrigger } from '@mindworld/ui/components/sidebar'
-import { Button } from '@mindworld/ui/components/button'
-import { useSidebar } from '@mindworld/ui/components/sidebar'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
+import type { SidebarTrigger } from '@ownxai/ui/components/sidebar'
+import { Button } from '@ownxai/ui/components/button'
+import { useSidebar } from '@ownxai/ui/components/sidebar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ownxai/ui/components/tooltip'
 
 import { SidebarLeftIcon } from './icons'
 

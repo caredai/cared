@@ -8,8 +8,8 @@ import equal from 'fast-deep-equal'
 import { toast } from 'sonner'
 import { useLocalStorage, useWindowSize } from 'usehooks-ts'
 
-import { Button } from '@mindworld/ui/components/button'
-import { Textarea } from '@mindworld/ui/components/textarea'
+import { Button } from '@ownxai/ui/components/button'
+import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { sanitizeUIMessages } from '@/lib/utils'
 import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons'

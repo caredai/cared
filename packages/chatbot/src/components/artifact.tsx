@@ -8,8 +8,8 @@ import { AnimatePresence, motion } from 'framer-motion'
 import useSWR, { useSWRConfig } from 'swr'
 import { useDebounceCallback, useWindowSize } from 'usehooks-ts'
 
-import type { Artifact as Document, MessageVote } from '@mindworld/db/schema'
-import { useSidebar } from '@mindworld/ui/components/sidebar'
+import type { Artifact as Document, MessageVote } from '@ownxai/db/schema'
+import { useSidebar } from '@ownxai/ui/components/sidebar'
 
 import { artifactDefinitions } from '@/artifacts'
 import { useArtifact } from '@/hooks/use-artifact'

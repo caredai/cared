@@ -6,9 +6,9 @@ import cx from 'classnames'
 import equal from 'fast-deep-equal'
 import { AnimatePresence, motion } from 'framer-motion'
 
-import type { MessageVote } from '@mindworld/db/schema'
-import { Button } from '@mindworld/ui/components/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
+import type { MessageVote } from '@ownxai/db/schema'
+import { Button } from '@ownxai/ui/components/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ownxai/ui/components/tooltip'
 
 import { cn } from '@/lib/utils'
 import { DocumentToolCall, DocumentToolResult } from './document'

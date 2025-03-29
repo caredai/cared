@@ -24,11 +24,11 @@
     "ui-add": "turbo run ui-add"
   },
   "devDependencies": {
-    "@mindworld/prettier-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
     "@turbo/gen": "^2.3.4",
     "prettier": "catalog:",
     "turbo": "^2.3.4",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config"
+  "prettier": "@ownxai/prettier-config"
 }

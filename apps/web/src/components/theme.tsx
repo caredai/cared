@@ -5,13 +5,13 @@ import { useEffect } from 'react'
 import { MoonIcon, SunIcon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
+} from '@ownxai/ui/components/dropdown-menu'
 
 import { META_THEME_COLORS } from '@/config/site'
 import { useMetaColor } from '@/hooks/use-meta-color'

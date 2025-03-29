@@ -1,8 +1,8 @@
 import assert from 'assert'
 import { smoothStream, streamText } from 'ai'
 
-import { getLanguageModelFromContext } from '@mindworld/tools'
-import { createArtifactHandler } from '@mindworld/tools/artifact'
+import { getLanguageModelFromContext } from '@ownxai/tools'
+import { createArtifactHandler } from '@ownxai/tools/artifact'
 
 export const textArtifactHandler = createArtifactHandler<'text'>({
   kind: 'text',

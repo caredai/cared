@@ -2,10 +2,10 @@ import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import type { SQL } from '@mindworld/db'
-import { auth } from '@mindworld/auth'
-import { and, desc, eq, gt, lt, sql } from '@mindworld/db'
-import { user as User } from '@mindworld/db/schema/auth'
+import type { SQL } from '@ownxai/db'
+import { auth } from '@ownxai/auth'
+import { and, desc, eq, gt, lt, sql } from '@ownxai/db'
+import { user as User } from '@ownxai/db/schema/auth'
 
 import { adminProcedure } from '../../trpc'
 

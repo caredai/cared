@@ -2,7 +2,7 @@
 
 import { useFormStatus } from 'react-dom'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 
 import { LoaderIcon } from '@/components/icons'
 

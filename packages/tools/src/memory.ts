@@ -1,8 +1,8 @@
 import { tool } from 'ai'
 import { z } from 'zod'
 
-import { and, eq } from '@mindworld/db'
-import { db } from '@mindworld/db/client'
+import { and, eq } from '@ownxai/db'
+import { db } from '@ownxai/db/client'
 import {
   Agent,
   AgentVersion,
@@ -11,11 +11,11 @@ import {
   Chat,
   DRAFT_VERSION,
   Memory,
-} from '@mindworld/db/schema'
-import { getTextEmbeddingModelInfo } from '@mindworld/providers'
-import { embed } from '@mindworld/providers/embed'
-import { CohereReranker } from '@mindworld/providers/rerank'
-import { QdrantVector } from '@mindworld/vdb'
+} from '@ownxai/db/schema'
+import { getTextEmbeddingModelInfo } from '@ownxai/providers'
+import { embed } from '@ownxai/providers/embed'
+import { CohereReranker } from '@ownxai/providers/rerank'
+import { QdrantVector } from '@ownxai/vdb'
 
 import type { Context } from './context'
 

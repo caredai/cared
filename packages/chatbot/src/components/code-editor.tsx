@@ -7,7 +7,7 @@ import { oneDark } from '@codemirror/theme-one-dark'
 import { EditorView } from '@codemirror/view'
 import { basicSetup } from 'codemirror'
 
-import type { ArtifactSuggestion } from '@mindworld/db/schema'
+import type { ArtifactSuggestion } from '@ownxai/db/schema'
 
 interface EditorProps {
   content: string

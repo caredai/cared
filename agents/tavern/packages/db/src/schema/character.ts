@@ -10,7 +10,7 @@ import {
   timestamps,
   timestampsIndices,
   timestampsOmits,
-} from '@mindworld/sdk/utils'
+} from '@ownxai/sdk/utils'
 
 export const characterSourceEnumValues = [
   'create', // the character is created by the user

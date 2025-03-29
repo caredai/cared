@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 
-import { auth } from '@mindworld/auth'
+import { auth } from '@ownxai/auth'
 
 import { RedirectWorkspace } from '@/components/redirect-workspace'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'

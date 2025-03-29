@@ -10,8 +10,8 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import type { RouterOutputs } from '@mindworld/api'
-import { Button } from '@mindworld/ui/components/button'
+import type { RouterOutputs } from '@ownxai/api'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
+} from '@ownxai/ui/components/card'
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@mindworld/ui/components/dialog'
+} from '@ownxai/ui/components/dialog'
 import {
   Form,
   FormControl,
@@ -36,10 +36,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@mindworld/ui/components/form'
-import { Input } from '@mindworld/ui/components/input'
-import { Label } from '@mindworld/ui/components/label'
-import { Switch } from '@mindworld/ui/components/switch'
+} from '@ownxai/ui/components/form'
+import { Input } from '@ownxai/ui/components/input'
+import { Label } from '@ownxai/ui/components/label'
+import { Switch } from '@ownxai/ui/components/switch'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'
@@ -94,14 +94,7 @@ const createOAuthAppSchema = z.object({
         uri: z
           .string()
           .url('Please enter a valid URL')
-          .refine((url) => {
-            try {
-              const parsedUrl = new URL(url)
-              return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
-            } catch {
-              return false
-            }
-          }, 'URL must use HTTP or HTTPS protocol'),
+          .refine(isURL, 'URL must use HTTP or HTTPS protocol'),
       }),
     )
     .min(1, 'At least one redirect URI is required')
@@ -314,6 +307,7 @@ function UpdateOAuthApp({
   const [showRotateDialog, setShowRotateDialog] = useState(false)
   const [redirectUris, setRedirectUris] = useState<string[]>(oauthApp.redirectUris)
   const [newRedirectUri, setNewRedirectUri] = useState('')
+  const [redirectUrisError, setRedirectUrisError] = useState<string>()
   const [isDisabled, setIsDisabled] = useState(!!oauthApp.disabled)
 
   // Update OAuth app mutation
@@ -347,37 +341,49 @@ function UpdateOAuthApp({
     }),
   })
 
+  const checkNewRedirectUri = useCallback(() => {
+    if (!newRedirectUri.trim()) {
+      setRedirectUrisError(undefined)
+      return true
+    }
+
+    // Validate URL format
+    if (!isURL(newRedirectUri)) {
+      setRedirectUrisError('URL must use HTTP or HTTPS protocol')
+      return false
+    }
+
+    // Check for duplicates
+    if (redirectUris.includes(newRedirectUri)) {
+      setRedirectUrisError('Duplicate redirect URIs are not allowed')
+      return false
+    }
+
+    setRedirectUrisError(undefined)
+    return true
+  }, [
+    redirectUris,
+    newRedirectUri,
+  ])
+
   // Handle adding new redirect URI
   const handleAddRedirectUri = useCallback(() => {
-    if (!newRedirectUri) return
+    if (!newRedirectUri.trim()) return
 
-    try {
-      // Validate URL format
-      const url = new URL(newRedirectUri)
-      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-        toast.error('URL must use HTTP or HTTPS protocol')
-        return
-      }
-
-      // Check for duplicates
-      if (redirectUris.includes(newRedirectUri)) {
-        toast.error('This redirect URI already exists')
-        return
-      }
-
-      // Update redirect URIs and trigger mutation
-      const updatedUris = [...redirectUris, newRedirectUri]
-      setRedirectUris(updatedUris)
-      void updateMutation.mutateAsync({
-        appId,
-        redirectUris: updatedUris,
-        disabled: isDisabled,
-      })
-      setNewRedirectUri('')
-    } catch {
-      toast.error('Please enter a valid URL')
+    if (!checkNewRedirectUri()) {
+      return
     }
-  }, [appId, newRedirectUri, redirectUris, isDisabled, updateMutation])
+
+    // Update redirect URIs and trigger mutation
+    const updatedUris = [...redirectUris, newRedirectUri.trim()]
+    setRedirectUris(updatedUris)
+    void updateMutation.mutateAsync({
+      appId,
+      redirectUris: updatedUris,
+      disabled: isDisabled,
+    })
+    setNewRedirectUri('')
+  }, [redirectUris, updateMutation, appId, isDisabled, newRedirectUri, checkNewRedirectUri])
 
   // Handle removing redirect URI
   const handleRemoveRedirectUri = useCallback(
@@ -416,28 +422,35 @@ function UpdateOAuthApp({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="relative max-w-192">
-              <Input
-                value={newRedirectUri}
-                onChange={(e) => setNewRedirectUri(e.target.value)}
-                className="font-mono"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddRedirectUri()
-                  }
-                }}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 text-primary"
-                onClick={handleAddRedirectUri}
-                disabled={!newRedirectUri}
-              >
-                Add
-              </Button>
+            <div className="space-y-2">
+              <div className="relative max-w-192">
+                <Input
+                  value={newRedirectUri}
+                  onChange={(e) => setNewRedirectUri(e.target.value)}
+                  className="font-mono"
+                  onBlur={checkNewRedirectUri}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      handleAddRedirectUri()
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-6 text-primary"
+                  onClick={handleAddRedirectUri}
+                  disabled={!newRedirectUri}
+                >
+                  Add
+                </Button>
+              </div>
+
+              {redirectUrisError && (
+                <p className="text-[0.8rem] font-medium text-destructive">{redirectUrisError}</p>
+              )}
             </div>
 
             {redirectUris.length > 0 && (
@@ -579,4 +592,13 @@ function UpdateOAuthApp({
 
 function hasDuplicate(items: string[]) {
   return new Set(items).size !== items.length
+}
+
+function isURL(url: string) {
+  try {
+    const parsedUrl = new URL(url)
+    return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
+  } catch {
+    return false
+  }
 }

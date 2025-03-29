@@ -55,7 +55,7 @@ importers:
 
   .:
     devDependencies:
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:tooling/prettier
       '@turbo/gen':
@@ -104,28 +104,28 @@ importers:
       '@icons-pack/react-simple-icons':
         specifier: ^12.2.0
         version: 12.2.0(react@19.0.0)
-      '@mindworld/api':
+      '@ownxai/api':
         specifier: workspace:*
         version: link:../../packages/api
-      '@mindworld/auth':
+      '@ownxai/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@mindworld/chatbot':
+      '@ownxai/chatbot':
         specifier: workspace:*
         version: link:../../packages/chatbot
-      '@mindworld/db':
+      '@ownxai/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@mindworld/i18n':
+      '@ownxai/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n
-      '@mindworld/providers':
+      '@ownxai/providers':
         specifier: workspace:*
         version: link:../../packages/providers
-      '@mindworld/shared':
+      '@ownxai/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@mindworld/ui':
+      '@ownxai/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       '@privy-io/react-auth':
@@ -195,13 +195,13 @@ importers:
         specifier: 3.24.2
         version: 3.24.2
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@tailwindcss/postcss':
@@ -240,31 +240,31 @@ importers:
 
   packages/api:
     dependencies:
-      '@mindworld/auth':
+      '@ownxai/auth':
         specifier: workspace:*
         version: link:../auth
-      '@mindworld/db':
+      '@ownxai/db':
         specifier: workspace:*
         version: link:../db
-      '@mindworld/etl':
+      '@ownxai/etl':
         specifier: workspace:*
         version: link:../etl
-      '@mindworld/log':
+      '@ownxai/log':
         specifier: workspace:*
         version: link:../log
-      '@mindworld/providers':
+      '@ownxai/providers':
         specifier: workspace:*
         version: link:../providers
-      '@mindworld/shared':
+      '@ownxai/shared':
         specifier: workspace:*
         version: link:../shared
-      '@mindworld/tools':
+      '@ownxai/tools':
         specifier: workspace:*
         version: link:../tools
-      '@mindworld/validators':
+      '@ownxai/validators':
         specifier: workspace:*
         version: link:../validators
-      '@mindworld/vdb':
+      '@ownxai/vdb':
         specifier: workspace:*
         version: link:../vdb
       '@trpc/server':
@@ -292,13 +292,13 @@ importers:
         specifier: 3.24.2
         version: 3.24.2
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@upstash/qstash-cli':
@@ -319,10 +319,10 @@ importers:
       '@better-auth/utils':
         specifier: ^0.2.4
         version: 0.2.4
-      '@mindworld/db':
+      '@ownxai/db':
         specifier: workspace:*
         version: link:../db
-      '@mindworld/shared':
+      '@ownxai/shared':
         specifier: workspace:*
         version: link:../shared
       better-auth:
@@ -335,13 +335,13 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(typescript@5.7.3)
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -368,19 +368,19 @@ importers:
       '@codemirror/view':
         specifier: ^6.36.2
         version: 6.36.3
-      '@mindworld/db':
+      '@ownxai/db':
         specifier: workspace:*
         version: link:../db
-      '@mindworld/providers':
+      '@ownxai/providers':
         specifier: workspace:*
         version: link:../providers
-      '@mindworld/sdk':
+      '@ownxai/sdk':
         specifier: workspace:*
         version: link:../sdk
-      '@mindworld/tools':
+      '@ownxai/tools':
         specifier: workspace:*
         version: link:../tools
-      '@mindworld/ui':
+      '@ownxai/ui':
         specifier: workspace:*
         version: link:../ui
       ai:
@@ -456,13 +456,13 @@ importers:
         specifier: ^3.1.0
         version: 3.1.1(react@19.0.0)
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/node':
@@ -489,13 +489,13 @@ importers:
 
   packages/cli:
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/async-retry':
@@ -570,7 +570,7 @@ importers:
 
   packages/db:
     dependencies:
-      '@mindworld/shared':
+      '@ownxai/shared':
         specifier: workspace:*
         version: link:../shared
       '@upstash/redis':
@@ -592,13 +592,13 @@ importers:
         specifier: 3.24.2
         version: 3.24.2
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       dotenv-cli:
@@ -659,13 +659,13 @@ importers:
         specifier: ^1.0.4
         version: 1.0.4
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -696,13 +696,13 @@ importers:
         specifier: ^15.4.0
         version: 15.4.0(i18next@24.2.2(typescript@5.7.3))(react@19.0.0)
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/negotiator':
@@ -727,13 +727,13 @@ importers:
         specifier: ^13.0.0
         version: 13.0.0
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -818,13 +818,13 @@ importers:
         specifier: ^7.16.0
         version: 7.16.0(encoding@0.1.13)
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -842,7 +842,7 @@ importers:
 
   packages/sdk:
     dependencies:
-      '@mindworld/shared':
+      '@ownxai/shared':
         specifier: workspace:*
         version: link:../shared
       '@tanstack/react-query':
@@ -867,13 +867,13 @@ importers:
         specifier: 2.2.2
         version: 2.2.2
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@trpc/server':
@@ -907,13 +907,13 @@ importers:
         specifier: 3.24.2
         version: 3.24.2
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -928,13 +928,13 @@ importers:
 
   packages/tools:
     dependencies:
-      '@mindworld/db':
+      '@ownxai/db':
         specifier: workspace:*
         version: link:../db
-      '@mindworld/providers':
+      '@ownxai/providers':
         specifier: workspace:*
         version: link:../providers
-      '@mindworld/vdb':
+      '@ownxai/vdb':
         specifier: workspace:*
         version: link:../vdb
       agent-twitter-client:
@@ -944,13 +944,13 @@ importers:
         specifier: 'catalog:'
         version: 4.1.62(react@19.0.0)(zod@3.24.2)
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -1110,13 +1110,13 @@ importers:
         specifier: ^0.40.3
         version: 0.40.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       '@types/react':
@@ -1141,13 +1141,13 @@ importers:
         specifier: 3.24.2
         version: 3.24.2
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -1169,13 +1169,13 @@ importers:
         specifier: ^0.5.0
         version: 0.5.0
     devDependencies:
-      '@mindworld/eslint-config':
+      '@ownxai/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../../tooling/prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/typescript
       eslint:
@@ -1215,10 +1215,10 @@ importers:
         specifier: ^8.21.0
         version: 8.21.0(eslint@9.18.0(jiti@2.4.2))(typescript@5.7.3)
     devDependencies:
-      '@mindworld/prettier-config':
+      '@ownxai/prettier-config':
         specifier: workspace:*
         version: link:../prettier
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../typescript
       '@types/eslint__js':
@@ -1248,7 +1248,7 @@ importers:
         specifier: ^0.6.10
         version: 0.6.10(@ianvs/prettier-plugin-sort-imports@4.4.1(prettier@3.4.2))(prettier-plugin-multiline-arrays@4.0.2(prettier@3.4.2))(prettier@3.4.2)
     devDependencies:
-      '@mindworld/tsconfig':
+      '@ownxai/tsconfig':
         specifier: workspace:*
         version: link:../typescript
       prettier-plugin-multiline-arrays:

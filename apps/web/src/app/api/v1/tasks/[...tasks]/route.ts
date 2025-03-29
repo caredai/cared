@@ -1,4 +1,4 @@
-import { tasks } from '@mindworld/api/routes'
+import { tasks } from '@ownxai/api/routes'
 
 export const POST = tasks.POST
 

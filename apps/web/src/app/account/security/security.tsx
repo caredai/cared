@@ -5,28 +5,28 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { LucideKey, LucideLogOut, LucideTrash2 } from 'lucide-react'
 import { UAParser } from 'ua-parser-js'
 
-import { authClient } from '@mindworld/auth/client'
-import { Badge } from '@mindworld/ui/components/badge'
-import { Button } from '@mindworld/ui/components/button'
+import { authClient } from '@ownxai/auth/client'
+import { Badge } from '@ownxai/ui/components/badge'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
+} from '@ownxai/ui/components/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
+} from '@ownxai/ui/components/dropdown-menu'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@mindworld/ui/components/tooltip'
+} from '@ownxai/ui/components/tooltip'
 
 import { useTRPC } from '@/trpc/client'
 

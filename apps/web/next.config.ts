@@ -9,14 +9,14 @@ const config = {
 
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: [
-    '@mindworld/api',
-    '@mindworld/auth',
-    '@mindworld/chatbot',
-    '@mindworld/db',
-    '@mindworld/i18n',
-    '@mindworld/providers',
-    '@mindworld/shared',
-    '@mindworld/ui',
+    '@ownxai/api',
+    '@ownxai/auth',
+    '@ownxai/chatbot',
+    '@ownxai/db',
+    '@ownxai/i18n',
+    '@ownxai/providers',
+    '@ownxai/shared',
+    '@ownxai/ui',
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

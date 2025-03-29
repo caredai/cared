@@ -12,7 +12,7 @@ import {
   getTextEmbeddingModelInfos,
   modelFullId,
   modelTypes,
-} from '@mindworld/providers'
+} from '@ownxai/providers'
 
 import { publicProcedure } from '../trpc'
 

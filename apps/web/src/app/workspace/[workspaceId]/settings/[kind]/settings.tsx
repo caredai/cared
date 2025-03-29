@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { SettingsIcon, UsersIcon } from 'lucide-react'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@mindworld/ui/components/tabs'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ownxai/ui/components/tabs'
 
 import { useWorkspace } from '@/hooks/use-workspace'
 import { General } from './_settings/general'

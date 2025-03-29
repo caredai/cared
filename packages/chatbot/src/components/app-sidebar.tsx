@@ -4,7 +4,7 @@ import type { User } from 'next-auth'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Sidebar,
   SidebarContent,
@@ -12,8 +12,8 @@ import {
   SidebarHeader,
   SidebarMenu,
   useSidebar,
-} from '@mindworld/ui/components/sidebar'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@mindworld/ui/components/tooltip'
+} from '@ownxai/ui/components/sidebar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@ownxai/ui/components/tooltip'
 
 import { PlusIcon } from '@/components/icons'
 import { SidebarHistory } from '@/components/sidebar-history'

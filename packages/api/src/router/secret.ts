@@ -1,12 +1,12 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import type { ProviderId } from '@mindworld/providers'
-import { eq } from '@mindworld/db'
-import { db } from '@mindworld/db/client'
-import { UserSecret, WorkspaceSecret } from '@mindworld/db/schema'
-import { providers } from '@mindworld/providers/providers'
-import { decrypt, encrypt } from '@mindworld/shared'
+import type { ProviderId } from '@ownxai/providers'
+import { eq } from '@ownxai/db'
+import { db } from '@ownxai/db/client'
+import { UserSecret, WorkspaceSecret } from '@ownxai/db/schema'
+import { providers } from '@ownxai/providers/providers'
+import { decrypt, encrypt } from '@ownxai/shared'
 
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'

@@ -1,7 +1,7 @@
 import { SignOutButton } from '@clerk/nextjs'
 import { clerkClient, currentUser } from '@clerk/nextjs/server'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 
 import { SignInButton } from '@/components/SignInButton'
 

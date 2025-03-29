@@ -15,10 +15,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@mindworld/ui/components/alert-dialog'
-import { Avatar, AvatarImage } from '@mindworld/ui/components/avatar'
-import { Badge } from '@mindworld/ui/components/badge'
-import { Button } from '@mindworld/ui/components/button'
+} from '@ownxai/ui/components/alert-dialog'
+import { Avatar, AvatarImage } from '@ownxai/ui/components/avatar'
+import { Badge } from '@ownxai/ui/components/badge'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
@@ -26,7 +26,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
+} from '@ownxai/ui/components/card'
 import {
   Dialog,
   DialogContent,
@@ -35,8 +35,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@mindworld/ui/components/dialog'
-import { Input } from '@mindworld/ui/components/input'
+} from '@ownxai/ui/components/dialog'
+import { Input } from '@ownxai/ui/components/input'
 import {
   Table,
   TableBody,
@@ -44,7 +44,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@mindworld/ui/components/table'
+} from '@ownxai/ui/components/table'
 
 import { useTRPC } from '@/trpc/client'
 

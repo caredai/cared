@@ -1,6 +1,6 @@
 'use client'
 
-import { Avatar, AvatarImage } from '@mindworld/ui/components/avatar'
+import { Avatar, AvatarImage } from '@ownxai/ui/components/avatar'
 
 import { useUser } from '@/hooks/use-user'
 

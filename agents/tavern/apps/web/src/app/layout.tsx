@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 
-import { cn } from '@mindworld/ui/lib/utils'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import '@/globals.css'
 

@@ -4,8 +4,8 @@ import { headers } from 'next/headers'
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query'
 
-import type { AppRouter } from '@mindworld/api'
-import { appRouter, createTRPCContext } from '@mindworld/api'
+import type { AppRouter } from '@ownxai/api'
+import { appRouter, createTRPCContext } from '@ownxai/api'
 
 import { createQueryClient } from './query-client'
 

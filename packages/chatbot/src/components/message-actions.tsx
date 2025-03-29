@@ -5,14 +5,14 @@ import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
 import { useCopyToClipboard } from 'usehooks-ts'
 
-import type { MessageVote } from '@mindworld/db/schema'
-import { Button } from '@mindworld/ui/components/button'
+import type { MessageVote } from '@ownxai/db/schema'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@mindworld/ui/components/tooltip'
+} from '@ownxai/ui/components/tooltip'
 
 import { CopyIcon, ThumbDownIcon, ThumbUpIcon } from './icons'
 

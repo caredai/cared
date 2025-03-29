@@ -6,8 +6,8 @@ import { usePrivy, useSolanaWallets, useWallets } from '@privy-io/react-auth'
 import { CheckIcon, CopyIcon } from '@radix-ui/react-icons'
 import { useCopyToClipboard } from 'react-use'
 
-import { Badge } from '@mindworld/ui/components/badge'
-import { Button } from '@mindworld/ui/components/button'
+import { Badge } from '@ownxai/ui/components/badge'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -15,15 +15,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@mindworld/ui/components/dialog'
-import { Label } from '@mindworld/ui/components/label'
-import { Separator } from '@mindworld/ui/components/separator'
+} from '@ownxai/ui/components/dialog'
+import { Label } from '@ownxai/ui/components/label'
+import { Separator } from '@ownxai/ui/components/separator'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '@mindworld/ui/components/tooltip'
+} from '@ownxai/ui/components/tooltip'
 
 import { shortenString } from '@/lib/utils'
 

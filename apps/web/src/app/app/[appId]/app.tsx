@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import type { App as AppType } from '@mindworld/db/schema'
+import type { App as AppType } from '@ownxai/db/schema'
 
 import { UploadLogo } from '@/components/upload-logo'
 import defaultLogo from '@/public/images/agent.png'

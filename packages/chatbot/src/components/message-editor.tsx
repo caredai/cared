@@ -5,8 +5,8 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
-import { Button } from '@mindworld/ui/components/button'
-import { Textarea } from '@mindworld/ui/components/textarea'
+import { Button } from '@ownxai/ui/components/button'
+import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { useTRPC } from '@/lib/api'
 

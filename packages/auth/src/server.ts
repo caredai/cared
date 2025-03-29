@@ -22,10 +22,10 @@ import {
 import { passkey } from 'better-auth/plugins/passkey'
 import { sha256 } from 'viem'
 
-import { eq } from '@mindworld/db'
-import { db } from '@mindworld/db/client'
-import { Account, User } from '@mindworld/db/schema'
-import { generateId } from '@mindworld/shared'
+import { eq } from '@ownxai/db'
+import { db } from '@ownxai/db/client'
+import { Account, User } from '@ownxai/db/schema'
+import { generateId } from '@ownxai/shared'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
@@ -42,7 +42,7 @@ export async function headers() {
 }
 
 const options = {
-  appName: 'Mind',
+  appName: 'ownx',
   baseURL: getBaseUrl(),
   basePath: '/api/auth',
   secret: env.BETTER_AUTH_SECRET,
@@ -148,7 +148,7 @@ const options = {
     crossSubDomainCookies: {
       enabled: true,
     },
-    cookiePrefix: 'mind',
+    cookiePrefix: 'ownx',
     generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
       generateId(modelPrefix(model)),
     ipAddress: {

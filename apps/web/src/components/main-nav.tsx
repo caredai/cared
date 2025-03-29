@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-import { cn } from '@mindworld/ui/lib/utils'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { Logo } from '@/components/logo'
 

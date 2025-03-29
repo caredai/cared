@@ -11,10 +11,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
-import { SidebarMenuButton } from '@mindworld/ui/components/sidebar'
-import { useIsMobile } from '@mindworld/ui/hooks/use-mobile'
-import { cn } from '@mindworld/ui/lib/utils'
+} from '@ownxai/ui/components/dropdown-menu'
+import { SidebarMenuButton } from '@ownxai/ui/components/sidebar'
+import { useIsMobile } from '@ownxai/ui/hooks/use-mobile'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
 import { replaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'

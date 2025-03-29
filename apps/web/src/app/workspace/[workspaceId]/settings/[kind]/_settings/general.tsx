@@ -9,7 +9,7 @@ import { AlertTriangle, Trash2, UserPlus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { UpdateWorkspaceSchema } from '@mindworld/db/schema'
+import { UpdateWorkspaceSchema } from '@ownxai/db/schema'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,8 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@mindworld/ui/components/alert-dialog'
-import { Button } from '@mindworld/ui/components/button'
+} from '@ownxai/ui/components/alert-dialog'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Card,
   CardContent,
@@ -29,7 +29,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@mindworld/ui/components/card'
+} from '@ownxai/ui/components/card'
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@mindworld/ui/components/dialog'
+} from '@ownxai/ui/components/dialog'
 import {
   Form,
   FormControl,
@@ -47,15 +47,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@mindworld/ui/components/form'
-import { Input } from '@mindworld/ui/components/input'
+} from '@ownxai/ui/components/form'
+import { Input } from '@ownxai/ui/components/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@mindworld/ui/components/select'
+} from '@ownxai/ui/components/select'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'

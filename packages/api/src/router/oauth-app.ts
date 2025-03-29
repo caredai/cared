@@ -2,9 +2,9 @@ import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import { auth, generateRandomString } from '@mindworld/auth'
-import { desc, eq } from '@mindworld/db'
-import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@mindworld/db/schema'
+import { auth, generateRandomString } from '@ownxai/auth'
+import { desc, eq } from '@ownxai/db'
+import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@ownxai/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'

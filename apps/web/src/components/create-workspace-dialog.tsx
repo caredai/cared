@@ -8,8 +8,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { CreateWorkspaceSchema } from '@mindworld/db/schema'
-import { Button } from '@mindworld/ui/components/button'
+import { CreateWorkspaceSchema } from '@ownxai/db/schema'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@mindworld/ui/components/dialog'
+} from '@ownxai/ui/components/dialog'
 import {
   Form,
   FormControl,
@@ -26,8 +26,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@mindworld/ui/components/form'
-import { Input } from '@mindworld/ui/components/input'
+} from '@ownxai/ui/components/form'
+import { Input } from '@ownxai/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
 import { replaceRouteWithWorkspaceId } from '@/hooks/use-workspace'

@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useWindowSize } from 'usehooks-ts'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 
 import { cn } from '@/lib/utils'
 import { CrossIcon, MessageIcon } from './icons'

@@ -4,7 +4,7 @@ import type { ChatRequestOptions, CreateMessage, Message } from 'ai'
 import { memo } from 'react'
 import { motion } from 'framer-motion'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 
 interface SuggestedActionsProps {
   chatId: string

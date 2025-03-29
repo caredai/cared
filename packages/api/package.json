@@ -1,5 +1,5 @@
 {
-  "name": "@mindworld/api",
+  "name": "@ownxai/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,15 +19,15 @@
     "generate-api-types": "tsx ./scripts/generate-api-types.ts"
   },
   "dependencies": {
-    "@mindworld/auth": "workspace:*",
-    "@mindworld/db": "workspace:*",
-    "@mindworld/etl": "workspace:*",
-    "@mindworld/log": "workspace:*",
-    "@mindworld/providers": "workspace:*",
-    "@mindworld/shared": "workspace:*",
-    "@mindworld/tools": "workspace:*",
-    "@mindworld/validators": "workspace:*",
-    "@mindworld/vdb": "workspace:*",
+    "@ownxai/auth": "workspace:*",
+    "@ownxai/db": "workspace:*",
+    "@ownxai/etl": "workspace:*",
+    "@ownxai/log": "workspace:*",
+    "@ownxai/providers": "workspace:*",
+    "@ownxai/shared": "workspace:*",
+    "@ownxai/tools": "workspace:*",
+    "@ownxai/validators": "workspace:*",
+    "@ownxai/vdb": "workspace:*",
     "@trpc/server": "catalog:",
     "@upstash/qstash": "^2.7.21",
     "@upstash/workflow": "^0.2.7",
@@ -38,13 +38,13 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "@upstash/qstash-cli": "^2.21.1",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config"
+  "prettier": "@ownxai/prettier-config"
 }

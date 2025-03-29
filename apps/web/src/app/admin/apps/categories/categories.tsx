@@ -7,9 +7,9 @@ import { PencilIcon, PlusCircle, TrashIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import type { Category } from '@mindworld/db/schema'
-import { CreateCategorySchema, UpdateCategorySchema } from '@mindworld/db/schema'
-import { Button } from '@mindworld/ui/components/button'
+import type { Category } from '@ownxai/db/schema'
+import { CreateCategorySchema, UpdateCategorySchema } from '@ownxai/db/schema'
+import { Button } from '@ownxai/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@mindworld/ui/components/dialog'
+} from '@ownxai/ui/components/dialog'
 import {
   Form,
   FormControl,
@@ -25,8 +25,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@mindworld/ui/components/form'
-import { Input } from '@mindworld/ui/components/input'
+} from '@ownxai/ui/components/form'
+import { Input } from '@ownxai/ui/components/input'
 import {
   Table,
   TableBody,
@@ -34,7 +34,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@mindworld/ui/components/table'
+} from '@ownxai/ui/components/table'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'

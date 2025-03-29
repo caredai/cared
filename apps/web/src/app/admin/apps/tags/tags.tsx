@@ -5,8 +5,8 @@ import { keepPreviousData, useMutation, useQuery } from '@tanstack/react-query'
 import { CheckIcon, ChevronLeftIcon, ChevronRightIcon, TrashIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { Button } from '@mindworld/ui/components/button'
-import { Checkbox } from '@mindworld/ui/components/checkbox'
+import { Button } from '@ownxai/ui/components/button'
+import { Checkbox } from '@ownxai/ui/components/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@mindworld/ui/components/dialog'
+} from '@ownxai/ui/components/dialog'
 import {
   Table,
   TableBody,
@@ -22,7 +22,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@mindworld/ui/components/table'
+} from '@ownxai/ui/components/table'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'

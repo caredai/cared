@@ -3,7 +3,7 @@
 import type { OAuthStrategy } from '@clerk/types'
 import { useSignIn } from '@clerk/nextjs'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 
 export function SignInButton() {
   const { signIn } = useSignIn()

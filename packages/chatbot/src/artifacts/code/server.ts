@@ -2,8 +2,8 @@ import assert from 'assert'
 import { streamObject } from 'ai'
 import { z } from 'zod'
 
-import { getLanguageModelFromContext } from '@mindworld/tools'
-import { createArtifactHandler } from '@mindworld/tools/artifact'
+import { getLanguageModelFromContext } from '@ownxai/tools'
+import { createArtifactHandler } from '@ownxai/tools/artifact'
 
 export const codeArtifactHandler = createArtifactHandler<'code'>({
   kind: 'code',

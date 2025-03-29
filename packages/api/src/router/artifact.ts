@@ -1,9 +1,9 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import type { SQL } from '@mindworld/db'
-import { and, asc, desc, eq, gt, lt } from '@mindworld/db'
-import { Artifact, ArtifactSuggestion, Chat } from '@mindworld/db/schema'
+import type { SQL } from '@ownxai/db'
+import { and, asc, desc, eq, gt, lt } from '@ownxai/db'
+import { Artifact, ArtifactSuggestion, Chat } from '@ownxai/db/schema'
 
 import type { Context } from '../trpc'
 import { userProtectedProcedure } from '../trpc'

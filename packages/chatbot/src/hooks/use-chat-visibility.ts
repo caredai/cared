@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import useSWR, { useSWRConfig } from 'swr'
 
-import type { Chat } from '@mindworld/db/schema'
+import type { Chat } from '@ownxai/db/schema'
 
 import { useTRPC } from '@/lib/api'
 

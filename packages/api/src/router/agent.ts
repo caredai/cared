@@ -1,8 +1,8 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
-import type { SQL } from '@mindworld/db'
-import { and, count, desc, eq, gt, inArray, lt } from '@mindworld/db'
+import type { SQL } from '@ownxai/db'
+import { and, count, desc, eq, gt, inArray, lt } from '@ownxai/db'
 import {
   Agent,
   AgentVersion,
@@ -10,7 +10,7 @@ import {
   CreateAgentVersionSchema,
   DRAFT_VERSION,
   UpdateAgentSchema,
-} from '@mindworld/db/schema'
+} from '@ownxai/db/schema'
 
 import type { Context } from '../trpc'
 import { cfg } from '../config'

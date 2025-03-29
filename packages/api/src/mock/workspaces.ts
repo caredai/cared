@@ -1,6 +1,6 @@
 import type { z } from 'zod'
 
-import type { CreateWorkspaceSchema } from '@mindworld/db/schema'
+import type { CreateWorkspaceSchema } from '@ownxai/db/schema'
 
 export const workspaces: z.infer<typeof CreateWorkspaceSchema>[] = [
   {

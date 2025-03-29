@@ -13,9 +13,9 @@ const config = {
     '@tavern/api',
     '@tavern/core',
     '@tavern/db',
-    '@mindworld/log',
-    '@mindworld/shared',
-    '@mindworld/ui',
+    '@ownxai/log',
+    '@ownxai/shared',
+    '@ownxai/ui',
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

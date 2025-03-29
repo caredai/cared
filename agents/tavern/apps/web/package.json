@@ -16,9 +16,9 @@
   "dependencies": {
     "@clerk/nextjs": "^6.12.4",
     "@clerk/themes": "^2.2.20",
-    "@mindworld/log": "workspace:*",
-    "@mindworld/shared": "workspace:*",
-    "@mindworld/ui": "workspace:*",
+    "@ownxai/log": "workspace:*",
+    "@ownxai/shared": "workspace:*",
+    "@ownxai/ui": "workspace:*",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "catalog:",
     "@tavern/api": "workspace:*",
@@ -35,9 +35,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@mindworld/eslint-config": "workspace:*",
-    "@mindworld/prettier-config": "workspace:*",
-    "@mindworld/tsconfig": "workspace:*",
+    "@ownxai/eslint-config": "workspace:*",
+    "@ownxai/prettier-config": "workspace:*",
+    "@ownxai/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "^4.0.10",
     "@types/node": "^22.10.10",
     "@types/react": "catalog:react19",
@@ -50,5 +50,5 @@
     "tailwindcss": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@mindworld/prettier-config"
+  "prettier": "@ownxai/prettier-config"
 }

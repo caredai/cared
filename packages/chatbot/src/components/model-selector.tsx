@@ -3,14 +3,14 @@
 import { startTransition, useMemo, useOptimistic, useState } from 'react'
 import { useAsync } from 'react-use'
 
-import { getLanguageModelInfos } from '@mindworld/providers'
-import { Button } from '@mindworld/ui/components/button'
+import { getLanguageModelInfos } from '@ownxai/providers'
+import { Button } from '@ownxai/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
+} from '@ownxai/ui/components/dropdown-menu'
 
 import { cn } from '@/lib/utils'
 import { CheckCircleFillIcon, ChevronDownIcon } from './icons'

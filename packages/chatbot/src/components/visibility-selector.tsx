@@ -3,14 +3,14 @@
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 
-import { Button } from '@mindworld/ui/components/button'
+import { Button } from '@ownxai/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
-import { cn } from '@mindworld/ui/lib/utils'
+} from '@ownxai/ui/components/dropdown-menu'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { useChatVisibility } from '@/hooks/use-chat-visibility'
 import { CheckCircleFillIcon, ChevronDownIcon, GlobeIcon, LockIcon } from './icons'

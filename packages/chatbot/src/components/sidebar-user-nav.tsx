@@ -12,8 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@mindworld/ui/components/dropdown-menu'
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@mindworld/ui/components/sidebar'
+} from '@ownxai/ui/components/dropdown-menu'
+import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@ownxai/ui/components/sidebar'
 
 export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, theme } = useTheme()
