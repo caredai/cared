@@ -1,6 +1,7 @@
 {
   "name": "@ownxai/cli",
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "description": "CLI for the ownx AI platform",
   "repository": {

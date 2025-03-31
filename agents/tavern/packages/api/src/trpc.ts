@@ -8,11 +8,23 @@
  */
 import type { DB } from '@tavern/db/client'
 import type { inferAsyncReturnType } from '@trpc/server'
-import { auth } from '@clerk/nextjs/server'
+import { auth as authApi } from '@tavern/auth'
 import { db } from '@tavern/db/client'
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
+
+export type Auth =
+  // for user auth
+  | {
+      userId: string
+      isAdmin?: never
+    }
+  // for admin user auth
+  | {
+      userId: string
+      isAdmin: true
+    }
 
 /**
  * 1. CONTEXT
@@ -30,8 +42,19 @@ export const createTRPCContext = async ({
   headers,
 }: {
   headers: Headers
-}): Promise<{ auth: Awaited<ReturnType<typeof auth>>; db: DB }> => {
-  const _auth = await auth()
+}): Promise<{ auth: Auth; db: DB }> => {
+  const { user, session } =
+    (await authApi.api.getSession({
+      headers,
+    })) ?? {}
+  if (!user || !session) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Unauthorized',
+    })
+  }
+
+  const _auth = { userId: session.userId }
 
   console.log(
     '>>> tRPC Request from',
@@ -124,7 +147,7 @@ export const publicProcedure = t.procedure.use(timingMiddleware)
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+export const userProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
   if (!ctx.auth.userId) {
     throw new TRPCError({ code: 'UNAUTHORIZED' })
   }

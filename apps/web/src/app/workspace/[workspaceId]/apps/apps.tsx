@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { BotIcon, FilterIcon, SearchIcon, TagIcon, XIcon } from 'lucide-react'

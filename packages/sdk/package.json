@@ -1,7 +1,6 @@
 {
   "name": "@ownxai/sdk",
-  "private": true,
-  "version": "0.1.0",
+  "version": "0.1.2",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -12,17 +11,11 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
-    "./react/client": {
-      "types": "./dist/react/client.d.ts",
-      "import": "./dist/react/client.mjs",
-      "require": "./dist/react/client.js",
-      "default": "./dist/react/client.js"
-    },
-    "./react/server": {
-      "types": "./dist/react/server.d.ts",
-      "import": "./dist/react/server.mjs",
-      "require": "./dist/react/server.js",
-      "default": "./dist/react/server.js"
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js",
+      "default": "./dist/react/index.js"
     },
     "./utils": {
       "types": "./dist/utils/index.d.ts",

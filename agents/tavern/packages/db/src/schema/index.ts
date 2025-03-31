@@ -1,2 +1,13 @@
+import type { InferSelectModel } from 'drizzle-orm'
+
+import { account, user, verification } from './auth'
+
 export * from './character'
 export * from './group'
+
+export const User = user
+export type User = InferSelectModel<typeof User>
+export const Account = account
+export type Account = InferSelectModel<typeof Account>
+export const Verification = verification
+export type Verification = InferSelectModel<typeof Verification>

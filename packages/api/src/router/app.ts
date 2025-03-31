@@ -166,7 +166,7 @@ export async function getApps(
       app.id,
       {
         app,
-        categories: [] as Omit<Category, 'createdAt' | 'updatedAt'>[],
+        categories: [] as { id: string; name: string }[],
         tags: [] as string[],
       },
     ]),

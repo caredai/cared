@@ -1,16 +1,22 @@
 {
   "name": "@ownxai/log",
-  "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "version": "0.1.1",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup ./src/index.ts --format cjs,esm --dts",
+    "dev": "tsup ./src/index.ts --format cjs,esm --dts --watch",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"

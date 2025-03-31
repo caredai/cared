@@ -378,7 +378,7 @@ importers:
         specifier: workspace:*
         version: link:../providers
       '@ownxai/sdk':
-        specifier: workspace:*
+        specifier: ^0.1.1
         version: link:../sdk
       '@ownxai/tools':
         specifier: workspace:*

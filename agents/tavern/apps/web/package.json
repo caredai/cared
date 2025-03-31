@@ -14,14 +14,13 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.12.4",
-    "@clerk/themes": "^2.2.20",
-    "@ownxai/log": "workspace:*",
-    "@ownxai/shared": "workspace:*",
+    "@ownxai/log": "^0.1.1",
+    "@ownxai/shared": "^0.1.1",
     "@ownxai/ui": "workspace:*",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "catalog:",
     "@tavern/api": "workspace:*",
+    "@tavern/auth": "workspace:*",
     "@tavern/core": "workspace:*",
     "@tavern/db": "workspace:*",
     "@trpc/client": "catalog:",

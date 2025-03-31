@@ -15,13 +15,11 @@ const __dirname = path.dirname(__filename)
 
 // Define paths
 const ROOT_DTS_PATH = path.resolve(__dirname, '../dist/root.d.ts')
-const OUTPUT_PATH = path.resolve(__dirname, '../../sdk/types/api.d.ts')
+const OUTPUT_PATH = path.resolve(__dirname, '../../sdk/src/api.d.ts')
 const PACKAGES_ROOT = path.resolve(__dirname, '../../')
 
 // Define special type definitions for external dependencies
-const EXTERNAL_TYPE_DEFINITIONS = `export interface UserInfo {
-  [key: string]: unknown
-}
+const EXTERNAL_TYPE_DEFINITIONS = `export type ProviderId = string
 `
 
 /**
@@ -153,8 +151,9 @@ for (const [fullType, replacement] of typeReplacements) {
 
 // Replace external imports with our predefined types
 output = output
+  .replace(/export declare const appRouter/g, 'declare const appRouter')
   .replace(/ctx: \{[^}]+\}/g, 'ctx: any')
-  .replace(/export type AppRouter/g, 'export type API')
+  .replace(/export type AppRouter/g, 'export type OwnxTrpcRouter')
   .replace(
     /errorShape: \{[\s\S]*?data: \{[\s\S]*?\};[\s\S]*?\}/g,
     'errorShape: import("@trpc/server/unstable-core-do-not-import").DefaultErrorShape',

@@ -13,6 +13,9 @@ export const env = createEnv({
    */
   server: {
     POSTGRES_URL: z.string().url(),
+    OWNX_CLIENT_ID: z.string().min(1),
+    OWNX_API_URL: z.string().url(),
+    OWNX_API_KEY: z.string().min(1),
   },
 
   /**

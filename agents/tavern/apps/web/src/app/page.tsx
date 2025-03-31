@@ -1,7 +1,10 @@
-import { HydrateClient } from '@/trpc/server'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AuthShowcase } from './_components/auth-showcase'
 
 export default function HomePage() {
+  prefetch(trpc.user.me.queryOptions())
+  prefetch(trpc.user.session.queryOptions())
+
   return (
     <HydrateClient>
       <main className="container h-screen py-16">

@@ -15,7 +15,6 @@ const config = {
     '@ownxai/db',
     '@ownxai/i18n',
     '@ownxai/providers',
-    '@ownxai/shared',
     '@ownxai/ui',
   ],
 

@@ -1,32 +1,31 @@
-import { SignOutButton } from '@clerk/nextjs'
-import { clerkClient, currentUser } from '@clerk/nextjs/server'
+'use client'
+
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { authClient } from '@tavern/auth/client'
 
 import { Button } from '@ownxai/ui/components/button'
 
-import { SignInButton } from '@/components/SignInButton'
+import { useTRPC } from '@/trpc/client'
 
-export async function AuthShowcase() {
-  const user = await currentUser()
-
-  if (!user) {
-    return <SignInButton />
-  }
-
-  const client = await clerkClient()
-  const { data } = await client.users.getUserOauthAccessToken(user.id, 'oauth_custom_mind')
-  data.forEach((token) => {
-    console.log(token)
-  })
+export function AuthShowcase() {
+  const trpc = useTRPC()
+  const {
+    data: { user },
+  } = useSuspenseQuery(trpc.user.me.queryOptions())
 
   return (
     <div className="flex flex-col items-center justify-center gap-4">
       <p className="text-center text-2xl">
-        <span>Logged in as {user.firstName}</span>
+        <span>Logged in as {user.name}</span>
       </p>
 
-      <SignOutButton>
-        <Button>sign out</Button>
-      </SignOutButton>
+      <Button
+        onClick={() => {
+          void authClient.signOut()
+        }}
+      >
+        Sign out
+      </Button>
     </div>
   )
 }

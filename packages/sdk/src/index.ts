@@ -2,23 +2,24 @@ import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 import { createTRPCClient, loggerLink, unstable_httpBatchStreamLink } from '@trpc/client'
 import SuperJSON from 'superjson'
 
-import type { API } from '../types/api'
+import type { OwnxTrpcRouter } from './api'
+import { env } from './env'
 
-export { API }
-export type RouterInputs = inferRouterInputs<API>
-export type RouterOutputs = inferRouterOutputs<API>
+export type * from './api'
 
-export function createTrpcClient(
+export type OwnxTrpcRouterInputs = inferRouterInputs<OwnxTrpcRouter>
+export type OwnxTrpcRouterOutputs = inferRouterOutputs<OwnxTrpcRouter>
+
+export function createOwnxTrpcClient(
   opts:
     | {
         apiKey: string
       }
     | {
         userToken: string | (() => string | Promise<string>) // user access token
-        appId: string
       },
 ) {
-  return createTRPCClient<API>({
+  return createTRPCClient<OwnxTrpcRouter>({
     links: [
       loggerLink({
         enabled: (op) =>
@@ -27,28 +28,36 @@ export function createTrpcClient(
       }),
       unstable_httpBatchStreamLink({
         transformer: SuperJSON,
-        // eslint-disable-next-line turbo/no-undeclared-env-vars
-        url: process.env.OWNX_API_URL ?? 'https://ownx.ai/api/trpc',
+
+        url: env.OWNX_API_URL
+          ? new URL(env.OWNX_API_URL).origin + '/api/trpc'
+          : 'https://ownx.ai/api/trpc',
         async headers() {
           const headers = new Headers()
           const apiKey = (opts as { apiKey?: string }).apiKey
           if (apiKey) {
-            headers.set('Authorization', 'Bearer ' + apiKey)
-            headers.set('X-AUTH-TYPE', 'API-KEY') // optional
+            headers.set('X-API-KEY', apiKey)
           } else {
             opts = opts as {
               userToken: string | (() => string | Promise<string>)
-              appId: string
             }
             const userToken =
               typeof opts.userToken === 'string' ? opts.userToken : await opts.userToken()
             headers.set('Authorization', 'Bearer ' + userToken)
-            headers.set('X-APP-ID', opts.appId)
-            headers.set('X-AUTH-TYPE', 'OAUTH')
           }
           return headers
         },
       }),
     ],
   })
+}
+
+export function createOwnxTrpcClientWithApiKey(apiKey: string) {
+  return createOwnxTrpcClient({ apiKey })
+}
+
+export function createOwnxTrpcClientWithUserToken(
+  userToken: string | (() => string | Promise<string>),
+) {
+  return createOwnxTrpcClient({ userToken })
 }

@@ -13,8 +13,6 @@ const config = {
     '@tavern/api',
     '@tavern/core',
     '@tavern/db',
-    '@ownxai/log',
-    '@ownxai/shared',
     '@ownxai/ui',
   ],
 

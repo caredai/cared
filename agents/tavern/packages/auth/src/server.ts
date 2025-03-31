@@ -5,16 +5,12 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
 import { customSession, genericOAuth, openAPI } from 'better-auth/plugins'
-import { v7 } from 'uuid'
+
+import { generateId } from '@ownxai/shared'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
 import { KVClient } from './kv'
-
-function generateId(prefix: string) {
-  const uuid = v7() // time based, monotonically increasing order
-  return `${prefix}_${uuid.replaceAll('-', '')}`
-}
 
 const options = {
   appName: 'CryptoTavern',

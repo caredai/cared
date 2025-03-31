@@ -1,16 +1,15 @@
 import type { TRPCOptionsProxy } from '@trpc/tanstack-react-query'
 
-import type { API } from '@ownxai/sdk'
-import { useTRPC as useSdkTRPC } from '@ownxai/sdk/react/client'
+import type { OwnxTrpcRouter } from '@ownxai/sdk'
 
-type UseTRPC = () => TRPCOptionsProxy<API>
+type UseTRPC = () => TRPCOptionsProxy<OwnxTrpcRouter>
 
-let useTRPC_: UseTRPC = useSdkTRPC
+let useTRPC_: UseTRPC
 
 export function setUseTRPC(useTRPC: UseTRPC) {
   useTRPC_ = useTRPC
 }
 
-export function useTRPC(): TRPCOptionsProxy<API> {
+export function useTRPC(): TRPCOptionsProxy<OwnxTrpcRouter> {
   return useTRPC_()
 }

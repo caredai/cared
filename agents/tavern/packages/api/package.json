@@ -19,7 +19,9 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.12.4",
+    "@better-auth/utils": "^0.2.4",
+    "@ownxai/sdk": "^0.1.1",
+    "@tavern/auth": "workspace:*",
     "@tavern/db": "workspace:*",
     "@trpc/server": "catalog:",
     "superjson": "2.2.2",

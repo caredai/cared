@@ -14,7 +14,7 @@ export function ErrorFallback({ error }: FallbackProps) {
 
   useEffect(() => {
     console.error('error:', error)
-  }, [error]);
+  }, [error])
 
   // Handle click event for returning to homepage
   const handleGoHome = () => {
