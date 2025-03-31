@@ -23,7 +23,7 @@ const items = [
   },
   {
     title: 'Configure',
-    url: '/configure/oauth-application',
+    url: '/configure/api-key',
     icon: 'Settings2',
   },
 ]

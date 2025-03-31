@@ -61,6 +61,43 @@ export const apiKeyRouter = {
     }),
 
   /**
+   * Check if an app has an API key.
+   * Only accessible by workspace owner.
+   * @param input - Object containing app ID
+   * @returns Boolean indicating if the app has an API key
+   * @throws {TRPCError} If user is not workspace owner or app not found
+   */
+  has: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/api-keys/{appId}/has',
+        protect: true,
+        tags: ['keys'],
+        summary: 'Check if an app has an API key',
+      },
+    })
+    .input(
+      z.object({
+        appId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { appId } = input
+      const app = await getAppById(ctx, appId)
+      await verifyWorkspaceOwner(ctx, app.workspaceId)
+
+      const allApiKeys = await auth.api.listApiKeys({
+        headers: await headers(),
+      })
+      const exists = allApiKeys.some((key) => key.metadata?.appId === appId)
+
+      return {
+        exists,
+      }
+    }),
+
+  /**
    * Get API key for an app.
    * Only accessible by workspace owner.
    * @param input - Object containing app ID
