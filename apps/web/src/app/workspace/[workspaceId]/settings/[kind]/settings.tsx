@@ -26,7 +26,6 @@ export function Settings({ kind }: { kind: string }) {
       </div>
 
       <Tabs
-        defaultValue="general"
         value={kind}
         onValueChange={(value) => {
           router.push(`./${value}`)

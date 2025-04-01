@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { KeyIcon, UsersIcon } from 'lucide-react'
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@ownxai/ui/components/tabs'
+import { TabsContent, TabsList, TabsTrigger } from '@ownxai/ui/components/tabs'
+
+import NavTabs from './nav-tabs'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +13,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <p className="text-muted-foreground mt-2">Manage your app configuration</p>
       </div>
 
-      <Tabs defaultValue="./api-key" className="space-y-4">
+      <NavTabs>
         <TabsList className="w-full max-w-md">
           <TabsLinkTrigger href="./api-key">
             <KeyIcon className="h-4 w-4" />
@@ -29,7 +31,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <TabsContent value="./oauth-application" className="space-y-4">
           {children}
         </TabsContent>
-      </Tabs>
+      </NavTabs>
     </div>
   )
 }

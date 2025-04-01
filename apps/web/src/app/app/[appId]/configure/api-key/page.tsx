@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 
-import { CircleSpinner } from '@/components/spinner'
+import { SkeletonCard } from '@/components/skeleton'
 import { addIdPrefix } from '@/lib/utils'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { ApiKey } from './api-key'
@@ -15,7 +15,7 @@ export default async function ApiKeyPage({ params }: { params: Promise<{ appId: 
 
   return (
     <HydrateClient>
-      <Suspense fallback={<CircleSpinner className="h-4 w-4" />}>
+      <Suspense fallback={<SkeletonCard />}>
         <ApiKey appId={appId} />
       </Suspense>
     </HydrateClient>

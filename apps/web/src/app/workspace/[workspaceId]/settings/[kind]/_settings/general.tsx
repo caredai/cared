@@ -117,7 +117,6 @@ export function General({ workspace }: { workspace: Workspace }) {
   const { data: membersData } = useQuery({
     ...trpc.workspace.listMembers.queryOptions({
       workspaceId: workspace.id,
-      limit: 100,
     }),
     enabled: isOwner && isTransferDialogOpen,
   })

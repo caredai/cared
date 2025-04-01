@@ -5,6 +5,8 @@ import I18nServer from '@ownxai/i18n/i18n-server'
 
 import '../globals.css'
 
+import { Suspense } from 'react'
+
 import { Toaster } from '@ownxai/ui/components/sonner'
 
 import { Providers } from '@/components/providers'
@@ -32,9 +34,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <I18nServer>
-          <Providers>{children}</Providers>
-        </I18nServer>
+        <Suspense fallback={<></>}>
+          <I18nServer>
+            <Providers>{children}</Providers>
+          </I18nServer>
+        </Suspense>
         <Toaster />
       </body>
     </html>

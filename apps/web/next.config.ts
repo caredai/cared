@@ -23,6 +23,8 @@ const config = {
   typescript: { ignoreBuildErrors: true },
 
   experimental: {
+    useCache: true,
+    dynamicIO: true,
     // https://nextjs.org/docs/app/building-your-application/data-fetching/fetching#preventing-sensitive-data-from-being-exposed-to-the-client
     taint: true,
   },

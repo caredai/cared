@@ -65,7 +65,6 @@ export function Members({ workspace }: { workspace: Workspace }) {
   const { data: membersData, isLoading } = useQuery({
     ...trpc.workspace.listMembers.queryOptions({
       workspaceId: workspace.id,
-      limit: 100,
     }),
   })
 
