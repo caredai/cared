@@ -101,6 +101,7 @@ export const workspaceRouter = {
    */
   list: userProtectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/workspaces' } })
+    .input(z.void())
     .query(async ({ ctx }) => {
       return await ctx.db.transaction(async (tx) => {
         const workspaces = await tx

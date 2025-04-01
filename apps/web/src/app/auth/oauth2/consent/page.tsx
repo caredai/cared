@@ -49,6 +49,7 @@ export default function Page() {
       window.location.href = result.data.redirectURI
     } else {
       console.error(result)
+      // @ts-ignore
       toast.error(result.error.error_description ?? 'An error occurred')
     }
   }
