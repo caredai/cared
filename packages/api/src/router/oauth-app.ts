@@ -3,10 +3,10 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import { auth, generateRandomString } from '@ownxai/auth'
-import { desc, eq } from '@ownxai/db'
+import { desc, eq, sql } from '@ownxai/db'
 import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@ownxai/db/schema'
 
-import { userProtectedProcedure } from '../trpc'
+import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
 
@@ -161,6 +161,41 @@ export const oauthAppRouter = {
 
       return {
         oauthApp: formatOAuthApp(oauthApp),
+      }
+    }),
+
+  info: publicProcedure
+    .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/client/{clientId}' } })
+    .input(z.object({ clientId: z.string().min(32) }))
+    .query(async ({ ctx, input }) => {
+      // Find OAuth application by clientId
+      const _oauthApp = await ctx.db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.clientId, input.clientId),
+      })
+      if (!_oauthApp) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'OAuth app not found',
+        })
+      }
+      const oauthApp = formatOAuthApp(_oauthApp)
+
+      const app = await ctx.db.query.App.findFirst({
+        where: eq(App.id, oauthApp.metadata.appId),
+      })
+      if (!app) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Associated app not found',
+        })
+      }
+
+      return {
+        name: app.name,
+        imageUrl: app.metadata.imageUrl,
+        clientId: oauthApp.clientId,
+        redirectUris: oauthApp.redirectUris,
+        disabled: oauthApp.disabled,
       }
     }),
 

@@ -6,10 +6,12 @@ export default function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   if (
+    pathname === '/' ||
+    // Skip the middleware for the get-session endpoint
     pathname.startsWith('/api/auth') ||
     (pathname.startsWith('/auth') && !pathname.startsWith('/auth/settings'))
   ) {
-    return NextResponse.next() // Skip the middleware for the get-session endpoint
+    return NextResponse.next()
   }
 
   const sessionCookie = getSessionCookie(request, {

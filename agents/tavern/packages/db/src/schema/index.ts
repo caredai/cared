@@ -2,6 +2,7 @@ import type { InferSelectModel } from 'drizzle-orm'
 
 import { account, user, verification } from './auth'
 
+export * from './auth'
 export * from './character'
 export * from './group'
 

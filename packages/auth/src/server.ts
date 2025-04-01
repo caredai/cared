@@ -183,6 +183,7 @@ const options = {
       requirePKCE: true,
       loginPage: '/auth/sign-in',
       consentPage: '/auth/oauth2/consent',
+      /*
       metadata: {
         issuer: getBaseUrl(),
         authorization_endpoint: '/oauth2/authorize',
@@ -190,6 +191,7 @@ const options = {
         userinfo_endpoint: '/oauth2/userinfo',
         jwks_uri: '/jwks',
       },
+      */
     }),
     apiKey({
       apiKeyHeaders: 'X-API-KEY',

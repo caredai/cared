@@ -24,6 +24,7 @@
     "@tavern/auth": "workspace:*",
     "@tavern/db": "workspace:*",
     "@trpc/server": "catalog:",
+    "async-lock": "^1.4.1",
     "superjson": "2.2.2",
     "zod": "catalog:"
   },
@@ -31,6 +32,7 @@
     "@ownxai/eslint-config": "workspace:*",
     "@ownxai/prettier-config": "workspace:*",
     "@ownxai/tsconfig": "workspace:*",
+    "@types/async-lock": "^1.4.2",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"

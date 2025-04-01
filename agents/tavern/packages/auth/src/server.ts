@@ -5,6 +5,7 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
 import { customSession, genericOAuth, openAPI } from 'better-auth/plugins'
+import { decodeJwt } from 'jose'
 
 import { generateId } from '@ownxai/shared'
 
@@ -68,6 +69,31 @@ const options = {
           clientId: env.OWNX_CLIENT_ID,
           clientSecret: env.OWNX_CLIENT_SECRET,
           discoveryUrl: env.OWNX_DISCOVERY_URL,
+          pkce: true,
+          accessType: 'offline',
+          scopes: ['openid', 'email', 'profile', 'offline_access'],
+          prompt: 'consent',
+          // @ts-ignore
+          getUserInfo: (tokens) => {
+            if (tokens.idToken) {
+              const decoded = decodeJwt(tokens.idToken) as {
+                sub: string
+                email_verified: boolean
+                email: string
+                name: string
+                profile: string
+              }
+              if (decoded.sub && decoded.email) {
+                return {
+                  id: decoded.sub,
+                  emailVerified: decoded.email_verified,
+                  image: decoded.profile,
+                  ...decoded,
+                }
+              }
+            }
+            return null
+          },
         },
       ],
     }),
