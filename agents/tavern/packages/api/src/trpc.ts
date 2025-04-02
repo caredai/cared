@@ -42,19 +42,13 @@ export const createTRPCContext = async ({
   headers,
 }: {
   headers: Headers
-}): Promise<{ auth: Auth; db: DB }> => {
-  const { user, session } =
+}): Promise<{ auth: Partial<Auth>; db: DB }> => {
+  const { session } =
     (await authApi.api.getSession({
       headers,
     })) ?? {}
-  if (!user || !session) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'Unauthorized',
-    })
-  }
 
-  const _auth = { userId: session.userId }
+  const _auth = { userId: session?.userId }
 
   console.log(
     '>>> tRPC Request from',

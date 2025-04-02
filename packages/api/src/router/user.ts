@@ -5,9 +5,25 @@ import { auth } from '@ownxai/auth'
 import { eq } from '@ownxai/db'
 import { Account } from '@ownxai/db/schema'
 
-import { userProtectedProcedure } from '../trpc'
+import { publicProcedure, userProtectedProcedure } from '../trpc'
 
 export const userRouter = {
+  session: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/me/session',
+        protect: true,
+        tags: ['me'],
+        summary: 'Get current session of current user',
+      },
+    })
+    .query(async () => {
+      return await auth.api.getSession({
+        headers: await headers(),
+      })
+    }),
+
   me: userProtectedProcedure
     .meta({
       openapi: {
@@ -58,31 +74,6 @@ export const userRouter = {
       })
 
       return { accounts }
-    }),
-
-  session: userProtectedProcedure
-    .meta({
-      openapi: {
-        method: 'GET',
-        path: '/v1/me/session',
-        protect: true,
-        tags: ['me'],
-        summary: 'Get current session of current user',
-      },
-    })
-    .query(async ({ ctx }) => {
-      if (!ctx.auth.userId) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'This api is only available for authenticated users',
-        })
-      }
-
-      const { user, session } = (await auth.api.getSession({
-        headers: await headers(),
-      }))!
-
-      return { user, session }
     }),
 
   sessions: userProtectedProcedure

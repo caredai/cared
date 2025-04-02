@@ -1,15 +1,9 @@
-import { headers } from 'next/headers'
-
-import { auth } from '@ownxai/auth'
-
 import { RedirectWorkspace } from '@/components/redirect-workspace'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import {fetch, HydrateClient, prefetch, trpc} from '@/trpc/server'
 import Landing from './landing/page'
 
 export default async function Page() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  })
+  const session = await fetch(trpc.user.session.queryOptions())
   const userId = session?.user.id
 
   if (userId) {

@@ -1,18 +1,27 @@
 'use client'
 
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { authClient } from '@tavern/auth/client'
 
 import { Button } from '@ownxai/ui/components/button'
 
-export function AuthShowcase({ session }: { session?: typeof authClient.$Infer.Session }) {
+import { useTRPC } from '@/trpc/client'
+
+export function AuthShowcase() {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const { data: session } = useQuery(trpc.user.session.queryOptions())
+
   if (!session?.user) {
     return (
       <Button
-        onClick={() => {
-          void authClient.signIn.oauth2({
+        onClick={async () => {
+          const r = await authClient.signIn.oauth2({
             providerId: 'ownx',
             callbackURL: '/', // the path to redirect to after the user is authenticated
           })
+          console.log(r.data, r.error)
         }}
       >
         Sign in
@@ -27,8 +36,10 @@ export function AuthShowcase({ session }: { session?: typeof authClient.$Infer.S
       </p>
 
       <Button
-        onClick={() => {
-          void authClient.signOut()
+        onClick={async () => {
+          await authClient.signOut()
+
+          void queryClient.invalidateQueries(trpc.user.session.queryOptions())
         }}
       >
         Sign out

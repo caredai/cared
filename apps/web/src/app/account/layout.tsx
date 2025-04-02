@@ -1,16 +1,14 @@
 import type { ReactNode } from 'react'
-import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { auth } from '@ownxai/auth'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@ownxai/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { NavMain } from '@/components/nav-main'
 import { WorkspaceEnterButton } from '@/components/workspace-enter-button'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 const items = [
   {
@@ -30,9 +28,7 @@ export default async function Layout({
 }: Readonly<{
   children: ReactNode
 }>) {
-  const session = await auth.api.getSession({
-    headers: await getHeaders(),
-  })
+  const session = await fetch(trpc.user.session.queryOptions())
   if (!session) {
     redirect('/auth/sign-in')
   }

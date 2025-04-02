@@ -35,7 +35,7 @@ export function Security() {
   const [isRevoking, setIsRevoking] = useState(false)
 
   const {
-    data: { session: currentSession },
+    data: currentSession,
   } = useSuspenseQuery({
     ...trpc.user.session.queryOptions(),
   })
@@ -51,7 +51,8 @@ export function Security() {
       return {
         ...s,
         ua: s.userAgent ? UAParser(s.userAgent) : undefined,
-        isCurrent: s.token === currentSession.token,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        isCurrent: s.token === currentSession?.session.token,
       }
     })
     .reverse()

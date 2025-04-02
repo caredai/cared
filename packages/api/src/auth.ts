@@ -36,20 +36,17 @@ export type Auth =
     }
 
 export async function auth() {
-  return authenticate(await headers())
+  return authWithHeaders(await headers())
 }
 
-export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
+export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<Auth>> => {
   // real authentication logic is here
   const { user, session } =
     (await authApi.api.getSession({
       headers,
     })) ?? {}
   if (!user || !session) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'Unauthorized',
-    })
+    return {}
   }
 
   const key = headers.get('X-API-KEY')

@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { auth } from '@tavern/auth'
 
-import { userProtectedProcedure } from '../trpc'
+import { publicProcedure, userProtectedProcedure } from '../trpc'
 
 export const userRouter = {
   me: userProtectedProcedure
@@ -24,7 +24,7 @@ export const userRouter = {
       }
     }),
 
-  session: userProtectedProcedure
+  session: publicProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -35,10 +35,8 @@ export const userRouter = {
       },
     })
     .query(async () => {
-      const { user, session } = (await auth.api.getSession({
+      return await auth.api.getSession({
         headers: await headers(),
-      }))!
-
-      return { user, session }
+      })
     }),
 }

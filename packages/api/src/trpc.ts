@@ -7,7 +7,7 @@ import type { DB } from '@ownxai/db/client'
 import { db } from '@ownxai/db/client'
 
 import type { Auth } from './auth'
-import { authenticate } from './auth'
+import { authWithHeaders } from './auth'
 
 /**
  * 1. CONTEXT
@@ -25,8 +25,8 @@ export const createTRPCContext = async ({
   headers,
 }: {
   headers: Headers
-}): Promise<{ auth: Auth; db: DB }> => {
-  const auth = await authenticate(headers)
+}): Promise<{ auth: Partial<Auth>; db: DB }> => {
+  const auth = await authWithHeaders(headers)
 
   console.log(
     '>>> tRPC Request from',
