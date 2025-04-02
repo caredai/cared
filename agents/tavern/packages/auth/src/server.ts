@@ -103,7 +103,7 @@ const options = {
     nextCookies(),
   ],
   onAPIError: {
-    errorURL: undefined, // TODO
+    errorURL: '/auth/error'
   },
 } satisfies BetterAuthOptions
 

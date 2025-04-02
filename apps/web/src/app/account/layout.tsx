@@ -21,6 +21,11 @@ const items = [
     url: '/security',
     icon: 'ShieldCheck',
   },
+  {
+    title: 'Applications',
+    url: '/applications',
+    icon: 'Bot',
+  },
 ]
 
 export default async function Layout({

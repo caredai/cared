@@ -1,11 +1,54 @@
 import type { BetterAuthPlugin, InferSession, Prettify } from 'better-auth'
-import { sessionMiddleware } from 'better-auth/api'
+import { createAuthMiddleware, sessionMiddleware } from 'better-auth/api'
+import { parseSetCookieHeader } from 'better-auth/cookies'
 import { parseSessionOutput } from 'better-auth/db'
 import { createAuthEndpoint } from 'better-auth/plugins'
 
 export const customPlugin = () => {
   return {
     id: 'custom',
+    hooks: {
+      after: [
+        {
+          matcher() {
+            return true
+          },
+          handler: createAuthMiddleware(async (ctx) => {
+            const checkOidcCookie = async (cookieName: string) => {
+              const parsedSetCookieHeader = parseSetCookieHeader(
+                ctx.context.responseHeaders?.get('set-cookie') ?? '',
+              )
+              const cookieAttributes = parsedSetCookieHeader.get(cookieName)
+              if (!cookieAttributes?.value) {
+                return
+              }
+              const value = decodeURIComponent(cookieAttributes.value)
+              // Clear the original cookie
+              ctx.setCookie(cookieName, '', {
+                maxAge: 0,
+              })
+
+              // Remove the signature part
+              const signatureStartPos = value.lastIndexOf('.')
+              if (signatureStartPos < 1) {
+                return
+              }
+              const signedValue = value.substring(0, signatureStartPos)
+
+              // Set the new cookie
+              await ctx.setSignedCookie(cookieName, signedValue, ctx.context.secret, {
+                ...cookieAttributes,
+                // The original cookie path doesn't work for the '/api/auth/*' post-processing from the oidc plugin. So we use '/api/auth' here.
+                path: '/api/auth',
+              })
+            }
+
+            await checkOidcCookie('oidc_login_prompt')
+            await checkOidcCookie('oidc_consent_prompt')
+          }),
+        },
+      ],
+    },
     endpoints: {
       customListSessions: createAuthEndpoint(
         '/custom/list-sessions',

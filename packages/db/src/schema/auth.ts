@@ -223,7 +223,7 @@ export const oauthAccessToken = pgTable(
     index().on(table.accessToken),
     index().on(table.refreshToken),
     index().on(table.clientId),
-    index().on(table.userId),
+    index().on(table.userId, table.clientId),
     ...timestampsIndices(table),
   ],
 )

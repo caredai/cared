@@ -1,6 +1,8 @@
 'use client'
 
+import type { PrivyClientConfig } from '@privy-io/react-auth'
 import type { ReactNode } from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { AuthUIProvider } from '@daveyplate/better-auth-ui'
@@ -28,9 +30,41 @@ function InnerProviders({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { resolvedTheme } = useTheme()
 
-  const solanaConnectors = toSolanaWalletConnectors({
-    shouldAutoConnect: true,
-  })
+  const privyConfig = useMemo(() => {
+    return {
+      appearance: {
+        theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+        accentColor: '#676FFF',
+        logo: <Logo />,
+        landingHeader: 'Connect wallet',
+        walletChainType: 'ethereum-and-solana',
+        walletList: [
+          'phantom',
+          'metamask',
+          'okx_wallet',
+          'wallet_connect',
+          'coinbase_wallet',
+          'uniswap',
+          'rainbow',
+          'zerion',
+          'rabby_wallet',
+          'safe',
+        ],
+      },
+      loginMethods: ['wallet'],
+      walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,
+      externalWallets: {
+        solana: {
+          connectors: toSolanaWalletConnectors({
+            shouldAutoConnect: true,
+          }),
+        },
+        coinbaseWallet: {
+          connectionOptions: 'all',
+        },
+      },
+    } as PrivyClientConfig
+  }, [resolvedTheme])
 
   return (
     <AuthUIProvider
@@ -48,40 +82,7 @@ function InnerProviders({ children }: { children: ReactNode }) {
     >
       <TRPCReactProvider>
         <JotaiProvider>
-          <PrivyProvider
-            appId={env.NEXT_PUBLIC_PRIVY_APP_ID}
-            config={{
-              appearance: {
-                theme: resolvedTheme === 'dark' ? 'dark' : 'light',
-                accentColor: '#676FFF',
-                logo: <Logo />,
-                landingHeader: 'Connect wallet',
-                walletChainType: 'ethereum-and-solana',
-                walletList: [
-                  'phantom',
-                  'metamask',
-                  'okx_wallet',
-                  'wallet_connect',
-                  'coinbase_wallet',
-                  'uniswap',
-                  'rainbow',
-                  'zerion',
-                  'rabby_wallet',
-                  'safe',
-                ],
-              },
-              loginMethods: ['wallet'],
-              walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,
-              externalWallets: {
-                solana: {
-                  connectors: solanaConnectors,
-                },
-                coinbaseWallet: {
-                  connectionOptions: 'all',
-                },
-              },
-            }}
-          >
+          <PrivyProvider appId={env.NEXT_PUBLIC_PRIVY_APP_ID} config={privyConfig}>
             {children}
           </PrivyProvider>
         </JotaiProvider>

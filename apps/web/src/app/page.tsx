@@ -1,5 +1,5 @@
 import { RedirectWorkspace } from '@/components/redirect-workspace'
-import {fetch, HydrateClient, prefetch, trpc} from '@/trpc/server'
+import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import Landing from './landing/page'
 
 export default async function Page() {
@@ -7,8 +7,6 @@ export default async function Page() {
   const userId = session?.user.id
 
   if (userId) {
-    prefetch(trpc.user.me.queryOptions())
-    prefetch(trpc.user.accounts.queryOptions())
     prefetch(trpc.workspace.list.queryOptions())
   }
 

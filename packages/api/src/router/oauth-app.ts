@@ -11,7 +11,7 @@ import { getAppById } from './app'
 import { verifyWorkspaceOwner } from './workspace'
 
 // Helper function: Format OAuth application
-function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
+export function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
   return {
     clientId: app.clientId,
     ...(includeSecret && { clientSecret: app.clientSecret }),

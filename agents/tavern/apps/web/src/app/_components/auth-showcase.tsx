@@ -5,6 +5,7 @@ import { authClient } from '@tavern/auth/client'
 
 import { Button } from '@ownxai/ui/components/button'
 
+import { signIn } from '@/lib/sign-in'
 import { useTRPC } from '@/trpc/client'
 
 export function AuthShowcase() {
@@ -14,19 +15,7 @@ export function AuthShowcase() {
   const { data: session } = useQuery(trpc.user.session.queryOptions())
 
   if (!session?.user) {
-    return (
-      <Button
-        onClick={async () => {
-          const r = await authClient.signIn.oauth2({
-            providerId: 'ownx',
-            callbackURL: '/', // the path to redirect to after the user is authenticated
-          })
-          console.log(r.data, r.error)
-        }}
-      >
-        Sign in
-      </Button>
-    )
+    return <Button onClick={signIn}>Sign in</Button>
   }
 
   return (

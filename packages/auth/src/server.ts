@@ -5,7 +5,7 @@ import { betterAuth } from 'better-auth'
 import { emailHarmony } from 'better-auth-harmony'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware } from 'better-auth/api'
-import { parseSetCookieHeader, setSessionCookie } from 'better-auth/cookies'
+import { setSessionCookie } from 'better-auth/cookies'
 import { nextCookies } from 'better-auth/next-js'
 import {
   admin,
@@ -251,38 +251,6 @@ const options = {
       }
     }),
     after: createAuthMiddleware(async (ctx) => {
-      const checkOidcCookie = async (cookieName: string) => {
-        const parsedSetCookieHeader = parseSetCookieHeader(
-          ctx.context.responseHeaders?.get('set-cookie') ?? '',
-        )
-        const cookieAttributes = parsedSetCookieHeader.get(cookieName)
-        if (!cookieAttributes?.value) {
-          return
-        }
-        const value = decodeURIComponent(cookieAttributes.value)
-        // Clear the original cookie
-        ctx.setCookie(cookieName, '', {
-          maxAge: 0,
-        })
-
-        // Remove the signature part
-        const signatureStartPos = value.lastIndexOf('.')
-        if (signatureStartPos < 1) {
-          return
-        }
-        const signedValue = value.substring(0, signatureStartPos)
-
-        // Set the new cookie
-        await ctx.setSignedCookie(cookieName, signedValue, ctx.context.secret, {
-          ...cookieAttributes,
-          // The original cookie path doesn't work for the '/api/auth/*' post-processing from the oidc plugin. So we use '/api/auth' here.
-          path: '/api/auth',
-        })
-      }
-
-      await checkOidcCookie('oidc_login_prompt')
-      await checkOidcCookie('oidc_consent_prompt')
-
       // https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-visitor-location-headers
       if (ctx.path.startsWith('/callback')) {
         const headers = ctx.headers

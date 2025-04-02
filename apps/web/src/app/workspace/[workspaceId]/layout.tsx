@@ -68,7 +68,7 @@ export default async function WorkspaceLayout({
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       {/*<Suspense fallback={<Loading />}>*/}
       <SidebarProvider>
-        <AppSidebar baseUrl={`/workspace/${workspaceIdNoPrefix}`}>
+        <AppSidebar baseUrl={`/workspace/${workspaceIdNoPrefix}/apps`}>
           <NavMain items={items} baseUrl={`/workspace/${workspaceIdNoPrefix}`}>
             <HydrateClient>
               <WorkspaceSwitcher />

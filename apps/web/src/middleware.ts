@@ -6,6 +6,7 @@ export default function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   if (
+    pathname === '/' ||
     pathname.startsWith('/api/auth') ||
     pathname === '/api/trpc/user.session' ||
     (pathname.startsWith('/auth') && !pathname.startsWith('/auth/settings'))

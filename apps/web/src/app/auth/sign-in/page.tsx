@@ -3,6 +3,7 @@
 import type { Provider } from '@/lib/auth-providers'
 import * as React from 'react'
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { authClient } from '@ownxai/auth/client'
@@ -19,6 +20,7 @@ import { Separator } from '@ownxai/ui/components/separator'
 
 import { CircleSpinner } from '@/components/spinner'
 import { allowedProviders } from '@/lib/auth-providers'
+import { useTRPC } from '@/trpc/client'
 
 /**
  * Sign-in page component with social login options
@@ -26,8 +28,15 @@ import { allowedProviders } from '@/lib/auth-providers'
 export default function Page() {
   const [isLoading, setIsLoading] = useState<string>()
 
+  const trpc = useTRPC()
+  const { data: session } = useQuery(trpc.user.session.queryOptions())
+
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const getRedirectTo = new URLSearchParams(globalThis.location?.search).get('redirectTo') ?? '/'
+
+  if (session?.user) {
+    window.location.href = getRedirectTo
+  }
 
   /**
    * Handles social provider authentication
