@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { useAtom } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
+import Cookies from 'js-cookie'
 import { toast } from 'sonner'
 
+import { siteConfig } from '@/config/site'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 
@@ -48,17 +48,16 @@ export function useWorkspace() {
   return workspace
 }
 
-const lastWorkspaceAtom = atomWithStorage<string | undefined>(
-  'lastWorkspace',
-  undefined,
-  undefined,
-  {
-    getOnInit: true,
-  },
-)
+const cookieName = `${siteConfig.name}.lastWorkspace`
 
 export function useLastWorkspace() {
-  const [lastWorkspace, setLastWorkspace] = useAtom(lastWorkspaceAtom)
+  const lastWorkspace = Cookies.get(cookieName)
+
+  const setLastWorkspace = useCallback(
+    (id?: string) =>
+      id ? Cookies.set(cookieName, id, { expires: 30, secure: true }) : Cookies.remove(cookieName),
+    [],
+  )
 
   return [lastWorkspace, setLastWorkspace] as const
 }
@@ -90,7 +89,7 @@ export function useWorkspaces() {
 }
 
 export function replaceRouteWithWorkspaceId(route: string, id: string) {
-  return route.replace(/^\/workspace\/[^/]+/, `/workspace/${id}`)
+  return route.replace(/^\/workspace\/[^/]+/, `/workspace/${stripIdPrefix(id)}`)
 }
 
 export function useRouteWithWorkspaceId(id: string) {

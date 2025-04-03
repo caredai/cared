@@ -15,11 +15,14 @@ import {
 import { useIsMobile } from '@ownxai/ui/hooks/use-mobile'
 
 import { ThemeSwitcher } from '@/components/theme'
+import { useLastWorkspace } from '@/hooks/use-workspace'
 import { UserInfo } from './user-info'
 
 export function NavUserContent() {
   const router = useRouter()
   const isMobile = useIsMobile()
+
+  const [, setLastWorkspace] = useLastWorkspace()
 
   const signOut = async () => {
     await authClient.signOut({
@@ -29,6 +32,7 @@ export function NavUserContent() {
         },
       },
     })
+    setLastWorkspace(undefined)
   }
 
   return (
