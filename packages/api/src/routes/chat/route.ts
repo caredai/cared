@@ -24,6 +24,7 @@ import { generateChatTitleFromUserMessage } from './actions'
  *
  * 2. Input messages handling:
  *    - Only the last message in input messages array is processed
+ *    - Previous messages in input array are ignored
  *    - For last message being a user message:
  *      - If last historical message is not user message: combine historical messages + input user message
  *      - If last historical message is user message:
@@ -32,7 +33,6 @@ import { generateChatTitleFromUserMessage } from './actions'
  *    - For last message being non-user or empty input:
  *      - If last historical message is user message or tool message (with tool results): use historical messages
  *      - Otherwise error
- *    - Previous messages in input array are ignored
  *
  * 3. Tool execution:
  *    - Currently only supports server-side tools
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       limit: 1,
     })
   ).messages.at(-1)
-  if (inputMessage?.role === 'user') {
+  if (inputMessage?.role === 'user') { // input user message
     if (lastMessage?.role === 'user') {
       if (lastMessage.id !== inputMessage.id) {
         return new Response('The last historical message is also another user message', {
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
       chatId: chat.id,
       ...convertToCoreMessages([inputMessage]).at(0)!,
     })
-  } else {
+  } else { // input assistant message
     if (lastMessage?.role !== 'user' && lastMessage?.role !== 'tool') {
       await deleteChat?.()
       return new Response(`The last historical message is neither user's nor tool's`, {

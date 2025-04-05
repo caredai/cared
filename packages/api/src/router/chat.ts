@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@ownxai/db'
-import { and, desc, eq, gt, gte, lt } from '@ownxai/db'
+import { and, desc, eq, gt, inArray, lt } from '@ownxai/db'
 import {
   Chat,
   CreateChatSchema,
@@ -402,18 +402,31 @@ export const chatRouter = {
     .mutation(async ({ ctx, input }) => {
       await getChatById(ctx, input.chatId)
 
-      if (input.id) {
-        const lastMsg = await ctx.db.query.Message.findFirst({
+      let parent: Message | undefined
+      if (input.parentId) {
+        parent = await ctx.db.query.Message.findFirst({
+          where: and(eq(Message.chatId, input.chatId), eq(Message.id, input.parentId)),
+        })
+        if (!parent) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Parent message not found',
+          })
+        }
+      } else {
+        // If no parentId is provided, get the last (newest) message in the chat.
+        // Only empty for the first message to be created.
+        parent = await ctx.db.query.Message.findFirst({
           where: eq(Message.chatId, input.chatId),
           orderBy: desc(Message.id),
         })
+      }
 
-        if (lastMsg && input.id <= lastMsg.id) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Message ID must be greater than the last message ID in the chat',
-          })
-        }
+      if (input.id && parent && input.id <= parent.id) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Message ID must be greater than the parent message ID in the chat',
+        })
       }
 
       const [message] = await ctx.db.insert(Message).values(input).returning()
@@ -538,9 +551,37 @@ export const chatRouter = {
     .mutation(async ({ ctx, input }) => {
       const message = await getMessageById(ctx, input.messageId)
 
+      // First, find all messages that are descendants of the specified message
+      const descendantMessages = await ctx.db.query.Message.findMany({
+        where: and(eq(Message.chatId, message.chatId), gt(Message.id, message.id)),
+      })
+
+      // Create a map of parentId to children for efficient lookup
+      const parentToChildren = new Map<string, string[]>()
+      descendantMessages.forEach((msg) => {
+        if (msg.parentId) {
+          if (!parentToChildren.has(msg.parentId)) {
+            parentToChildren.set(msg.parentId, [])
+          }
+          parentToChildren.get(msg.parentId)!.push(msg.id)
+        }
+      })
+
+      // Recursively collect all descendant message IDs
+      const descendantIds = new Set<string>()
+      const collectDescendants = (msgId: string) => {
+        descendantIds.add(msgId)
+        const children = parentToChildren.get(msgId) ?? []
+        children.forEach((childId) => collectDescendants(childId))
+      }
+      collectDescendants(message.id)
+
+      // Delete all descendant messages
       const messages = await ctx.db
         .delete(Message)
-        .where(and(eq(Message.chatId, message.chatId), gte(Message.id, message.id)))
+        .where(
+          and(eq(Message.chatId, message.chatId), inArray(Message.id, Array.from(descendantIds))),
+        )
         .returning()
 
       return { messages }

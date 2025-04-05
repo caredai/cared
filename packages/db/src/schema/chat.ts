@@ -1,7 +1,17 @@
 import type { CoreMessage } from 'ai'
 import type { InferSelectModel } from 'drizzle-orm'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import { coreMessageSchema } from 'ai'
-import { boolean, index, jsonb, pgEnum, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  foreignKey,
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+} from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -102,6 +112,7 @@ export const Message = pgTable(
   'message',
   {
     id: text().primaryKey().notNull().$defaultFn(generateMessageId),
+    parentId: text().references((): AnyPgColumn => Message.id),
     chatId: text()
       .notNull()
       .references(() => Chat.id),
@@ -111,6 +122,11 @@ export const Message = pgTable(
     ...timestamps,
   },
   (table) => [
+    foreignKey({
+      columns: [table.parentId],
+      foreignColumns: [table.id],
+    }),
+    index().on(table.parentId),
     index().on(table.chatId, table.role),
     index().on(table.chatId, table.agentId),
     ...timestampsIndices(table),
@@ -122,6 +138,7 @@ export type Message = InferSelectModel<typeof Message>
 export const CreateMessageSchema = z
   .object({
     id: makeIdValid('msg').optional(),
+    parentId: z.string().optional(),
     chatId: z.string(),
     agentId: z.string().optional(),
   })
