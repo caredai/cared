@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -71,8 +72,13 @@ export function NavMain({
   children?: ReactNode
 }) {
   const pathname = usePathname()
+  const [activeUrl, setActiveUrl] = useState<string>()
 
   const isItemActive = (url: string) => {
+    // If we have an activeUrl from click, use that
+    if (activeUrl === url) return true
+
+    // Otherwise fall back to pathname matching
     const baseRouteKeys = baseUrl.split('/').filter(Boolean)
     const routeKey = pathname.split('/').filter(Boolean).at(baseRouteKeys.length)
     const [urlKey] = url.split('/').filter(Boolean)
@@ -95,7 +101,15 @@ export function NavMain({
           return (
             <Collapsible key={item.title} asChild defaultOpen={active} className="my-1">
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip={item.title} isActive={active}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  isActive={active}
+                  onClick={() => {
+                    // Set active state immediately on click
+                    setActiveUrl(item.url)
+                  }}
+                >
                   <Link href={`${baseUrl}${item.url}`}>
                     <Icon />
                     <span>{item.title}</span>
@@ -114,6 +128,7 @@ export function NavMain({
                         {item.items.map((subItem) => {
                           const url = `${item.url}${subItem.url}`
                           const subActive = pathname.endsWith(url)
+                          // TODO: setActiveUrl
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton asChild isActive={subActive}>
