@@ -3,7 +3,6 @@
 import { CommandMenu } from '@/components/command-menu'
 import { MainNav } from '@/components/main-nav'
 import { MobileNav } from '@/components/mobile-nav'
-import { TopRightNav } from '@/components/top-right-nav'
 
 export function SiteHeader() {
   return (

@@ -33,19 +33,7 @@ export function createOwnxTrpcClient(
           ? new URL(env.OWNX_API_URL).origin + '/api/trpc'
           : 'https://ownx.ai/api/trpc',
         async headers() {
-          const headers = new Headers()
-          const apiKey = (opts as { apiKey?: string }).apiKey
-          if (apiKey) {
-            headers.set('X-API-KEY', apiKey)
-          } else {
-            opts = opts as {
-              userToken: string | (() => string | Promise<string>)
-            }
-            const userToken =
-              typeof opts.userToken === 'string' ? opts.userToken : await opts.userToken()
-            headers.set('Authorization', 'Bearer ' + userToken)
-          }
-          return headers
+          return makeHeaders(opts)
         },
       }),
     ],
@@ -60,4 +48,27 @@ export function createOwnxTrpcClientWithUserToken(
   userToken: string | (() => string | Promise<string>),
 ) {
   return createOwnxTrpcClient({ userToken })
+}
+
+export async function makeHeaders(
+  opts:
+    | {
+        apiKey: string
+      }
+    | {
+        userToken: string | (() => string | Promise<string>) // user access token
+      },
+) {
+  const headers = new Headers()
+  const apiKey = (opts as { apiKey?: string }).apiKey
+  if (apiKey) {
+    headers.set('X-API-KEY', apiKey)
+  } else {
+    opts = opts as {
+      userToken: string | (() => string | Promise<string>)
+    }
+    const userToken = typeof opts.userToken === 'string' ? opts.userToken : await opts.userToken()
+    headers.set('Authorization', 'Bearer ' + userToken)
+  }
+  return headers
 }

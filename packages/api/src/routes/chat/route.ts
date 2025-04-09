@@ -126,7 +126,8 @@ export async function POST(request: Request) {
       limit: 1,
     })
   ).messages.at(-1)
-  if (inputMessage?.role === 'user') { // input user message
+  if (inputMessage?.role === 'user') {
+    // input user message
     if (lastMessage?.role === 'user') {
       if (lastMessage.id !== inputMessage.id) {
         return new Response('The last historical message is also another user message', {
@@ -145,7 +146,8 @@ export async function POST(request: Request) {
       chatId: chat.id,
       ...convertToCoreMessages([inputMessage]).at(0)!,
     })
-  } else { // input assistant message
+  } else {
+    // input assistant message
     if (lastMessage?.role !== 'user' && lastMessage?.role !== 'tool') {
       await deleteChat?.()
       return new Response(`The last historical message is neither user's nor tool's`, {

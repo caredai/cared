@@ -255,8 +255,8 @@ export function UpdateApiKey({ appId }: { appId: string }) {
       </Dialog>
 
       {/* Delete Key Dialog */}
-      <Dialog 
-        open={showDeleteDialog} 
+      <Dialog
+        open={showDeleteDialog}
         onOpenChange={(open) => {
           if (!deleteMutation.isPending) {
             setShowDeleteDialog(open)
@@ -271,8 +271,8 @@ export function UpdateApiKey({ appId }: { appId: string }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setShowDeleteDialog(false)}
               disabled={deleteMutation.isPending}
             >

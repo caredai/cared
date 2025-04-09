@@ -11,6 +11,12 @@
       "require": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./model": {
+      "types": "./dist/model/index.d.ts",
+      "import": "./dist/model/index.mjs",
+      "require": "./dist/model/index.js",
+      "default": "./dist/model/index.js"
+    },
     "./react": {
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.mjs",

@@ -553,7 +553,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     emailVerified: boolean;
                     createdAt: Date;
                     updatedAt: Date;
-                    image?: string | null | undefined | undefined;
+                    image?: string | null | undefined  ;
                     twoFactorEnabled: boolean | null | undefined;
                     banned: boolean | null | undefined;
                     role?: string | null | undefined;
@@ -593,7 +593,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     emailVerified: boolean;
                     createdAt: Date;
                     updatedAt: Date;
-                    image?: string | null | undefined | undefined;
+                    image?: string | null | undefined  ;
                     twoFactorEnabled: boolean | null | undefined;
                     banned: boolean | null | undefined;
                     role?: string | null | undefined;
@@ -607,8 +607,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     userId: string;
                     expiresAt: Date;
                     token: string;
-                    ipAddress?: string | null | undefined | undefined;
-                    userAgent?: string | null | undefined | undefined;
+                    ipAddress?: string | null | undefined  ;
+                    userAgent?: string | null | undefined  ;
                     geolocation: string;
                     impersonatedBy?: string | null | undefined;
                     activeOrganizationId?: string | null | undefined;
@@ -630,8 +630,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     userId: string;
                     expiresAt: Date;
                     token: string;
-                    ipAddress?: string | null | undefined | undefined;
-                    userAgent?: string | null | undefined | undefined;
+                    ipAddress?: string | null | undefined  ;
+                    userAgent?: string | null | undefined  ;
                     impersonatedBy?: string | null | undefined;
                     activeOrganizationId?: string | null | undefined;
                 }[];
@@ -833,9 +833,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                         systemPrompt?: string | undefined;
                     } | undefined;
                     datasetBindings?: string[] | undefined;
-                } & {
-                    [k: string]: unknown;
-                };
+                } & Record<string, unknown>;
                 workspaceId: string;
                 type?: "single-agent" | "multiple-agents" | undefined;
             };
@@ -1824,9 +1822,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
                     imageModel?: string | undefined;
-                } & {
-                    [k: string]: unknown;
-                };
+                } & Record<string, unknown>;
                 appId: string;
                 id?: string | undefined;
                 debug?: boolean | undefined;

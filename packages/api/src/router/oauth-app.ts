@@ -3,7 +3,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import { auth, generateRandomString } from '@ownxai/auth'
-import { desc, eq, sql } from '@ownxai/db'
+import { desc, eq } from '@ownxai/db'
 import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@ownxai/db/schema'
 
 import { publicProcedure, userProtectedProcedure } from '../trpc'
