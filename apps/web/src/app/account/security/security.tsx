@@ -49,7 +49,7 @@ export function Security() {
       return {
         ...s,
         ua: s.userAgent ? UAParser(s.userAgent) : undefined,
-         
+
         isCurrent: s.token === currentSession?.session.token,
       }
     })
