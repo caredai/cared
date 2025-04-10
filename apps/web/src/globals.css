@@ -203,6 +203,8 @@
   /* Custom scrollbar styling. */
   ::-webkit-scrollbar {
     width: 5px;
+    height: 5px;
+    scrollbar-gutter: stable;
   }
 
   ::-webkit-scrollbar-track {
@@ -210,13 +212,19 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+    background: var(--border);
     border-radius: 5px;
   }
 
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
   }
 
   [role='button'],

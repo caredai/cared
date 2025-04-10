@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
+import { config } from '@fortawesome/fontawesome-svg-core'
+import '@fortawesome/fontawesome-svg-core/styles.css'
 
 import { cn } from '@ownxai/ui/lib/utils'
 
@@ -8,6 +10,8 @@ import '@/globals.css'
 
 import { Providers } from '@/components/providers'
 import { env } from '@/env'
+
+config.autoAddCss = false
 
 export const metadata: Metadata = {
   metadataBase: new URL(
