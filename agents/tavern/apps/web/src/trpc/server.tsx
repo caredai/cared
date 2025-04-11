@@ -1,3 +1,4 @@
+import type { DefaultError, FetchQueryOptions, QueryKey } from '@tanstack/react-query'
 import type { AppRouter } from '@tavern/api'
 import type { TRPCQueryOptions } from '@trpc/tanstack-react-query'
 import { cache } from 'react'
@@ -43,4 +44,17 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(queryOptio
   } else {
     void queryClient.prefetchQuery(queryOptions)
   }
+}
+
+export function fetch<
+  TQueryFnData,
+  TError = DefaultError,
+  TData = TQueryFnData,
+  TQueryKey extends QueryKey = QueryKey,
+  TPageParam = never,
+>(
+  queryOptions: FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey, TPageParam>,
+): Promise<TData> {
+  const queryClient = getQueryClient()
+  return queryClient.fetchQuery(queryOptions)
 }

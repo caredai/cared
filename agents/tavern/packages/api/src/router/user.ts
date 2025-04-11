@@ -4,6 +4,22 @@ import { auth } from '@tavern/auth'
 import { publicProcedure, userProtectedProcedure } from '../trpc'
 
 export const userRouter = {
+  session: publicProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/v1/me/session',
+        protect: true,
+        tags: ['me'],
+        summary: 'Get current session of current user',
+      },
+    })
+    .query(async () => {
+      return await auth.api.getSession({
+        headers: await headers(),
+      })
+    }),
+
   me: userProtectedProcedure
     .meta({
       openapi: {
@@ -22,21 +38,5 @@ export const userRouter = {
       return {
         user,
       }
-    }),
-
-  session: publicProcedure
-    .meta({
-      openapi: {
-        method: 'GET',
-        path: '/v1/me/session',
-        protect: true,
-        tags: ['me'],
-        summary: 'Get current session of current user',
-      },
-    })
-    .query(async () => {
-      return await auth.api.getSession({
-        headers: await headers(),
-      })
     }),
 }

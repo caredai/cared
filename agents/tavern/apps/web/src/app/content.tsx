@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   faAddressCard,
   faBars,
@@ -17,6 +17,7 @@ import {
   faUserCog,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { useSuspenseQuery } from '@tanstack/react-query'
 
 import {
   Collapsible,
@@ -26,86 +27,118 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
+import { FaButton } from '@/components/fa-button'
+import { useTRPC } from '@/trpc/client'
+import { backgroundFittings, BackgroundImagePanel } from './_panels/background-image'
+import { CharacterManagementPanel } from './_panels/character-management'
+import { ExtensionsPanel } from './_panels/extensions'
+import { PersonaManagementPanel } from './_panels/persona-management'
+import { ProviderModelPanel } from './_panels/provider-model'
+// Import panel components
+import { ResponseConfigurationPanel } from './_panels/response-configuration'
+import { ResponseFormattingPanel } from './_panels/response-formatting'
+import { UserSettingsPanel } from './_panels/user-settings'
+import { WorldInfoPanel } from './_panels/world-info'
 
 export function Content() {
+  const trpc = useTRPC()
+  const {
+    data: { settings },
+  } = useSuspenseQuery(trpc.settings.get.queryOptions())
+
   const [openItem, setOpenItem] = useState<string | null>(null)
+
+  // Create refs object to store all panel refs
+  const panelRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!openItem) return
+
+      const panel = panelRefs.current[openItem]
+      const trigger = triggerRefs.current[openItem]
+
+      if (panel && trigger) {
+        const target = event.target as Node
+        if (!panel.contains(target) && !trigger.contains(target)) {
+          setOpenItem(null)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openItem])
 
   const toggleItem = (itemName: string) => {
     setOpenItem((prev) => (prev === itemName ? null : itemName))
   }
 
-  const navSettings = [
-    { icon: faSliders, name: 'settings' },
-    { icon: faPlug, name: 'plugins' },
-    { icon: faFont, name: 'fonts' },
-    { icon: faBookAtlas, name: 'library' },
-    { icon: faUserCog, name: 'profile' },
-    { icon: faPanorama, name: 'gallery' },
-    { icon: faCubes, name: 'blocks' },
-    { icon: faFaceSmile, name: 'emojis' },
-    { icon: faAddressCard, name: 'contacts' },
+  const navPanels = [
+    { icon: faSliders, name: 'response-configuration', panel: ResponseConfigurationPanel },
+    { icon: faPlug, name: 'provider-model', panel: ProviderModelPanel },
+    { icon: faFont, name: 'response-formatting', panel: ResponseFormattingPanel },
+    { icon: faBookAtlas, name: 'world-info', panel: WorldInfoPanel },
+    { icon: faUserCog, name: 'user-settings', panel: UserSettingsPanel },
+    { icon: faPanorama, name: 'background-image', panel: BackgroundImagePanel },
+    { icon: faCubes, name: 'extensions', panel: ExtensionsPanel },
+    { icon: faFaceSmile, name: 'persona-management', panel: PersonaManagementPanel },
+    { icon: faAddressCard, name: 'character-management', panel: CharacterManagementPanel },
   ]
 
   return (
     <div
-      className="h-screen w-full flex justify-center bg-cover bg-no-repeat"
+      className={cn(
+        'h-screen w-full flex justify-center bg-no-repeat',
+        backgroundFittings[settings.background.fitting],
+      )}
       style={{
-        backgroundImage: 'url("/images/bedroom cyberpunk.jpg")',
+        backgroundImage: `url("${settings.background.active.url}")`,
       }}
     >
       <div className="w-full lg:w-1/2 h-full flex flex-col relative">
         <header className="bg-zinc-800 text-white flex flex-col shadow-[0_2px_20px_rgba(0,0,0,0.7)] z-3000">
           <nav className="w-full flex flex-row items-center justify-between px-4 h-[35px] relative">
-            {navSettings.map(({ icon, name }, index) => (
+            {navPanels.map(({ icon, name, panel: Panel }, index) => (
               <Collapsible
                 key={name}
                 open={openItem === name}
                 onOpenChange={() => toggleItem(name)}
+                className="size-8"
               >
                 <CollapsibleTrigger asChild>
-                  <button>
-                    <FontAwesomeIcon
-                      icon={icon}
-                      size="2x"
-                      className="fa-fw text-ring hover:text-foreground transition-colors duration-200"
-                    />
-                  </button>
+                  <FaButton
+                    ref={(el) => {
+                      triggerRefs.current[name] = el
+                    }}
+                    icon={icon}
+                    isActive={openItem === name}
+                  />
                 </CollapsibleTrigger>
                 <CollapsibleContent
+                  ref={(el) => {
+                    panelRefs.current[name] = el
+                  }}
                   className={cn(
-                    'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden bg-zinc-800 rounded-lg shadow-lg',
+                    'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
+                    'bg-zinc-800 border border-background rounded-lg shadow-lg',
                     'absolute top-[35px] left-0 right-0 w-full',
-                    (index === 0 || index === navSettings.length - 1) &&
+                    'max-h-[calc(100dvh-calc(35px+42px))] overflow-y-auto',
+                    (index === 0 || index === navPanels.length - 1) &&
                       'lg:fixed lg:top-0 lg:w-[calc(25%-1px)]',
                     index === 0
                       ? 'lg:right-auto'
-                      : index === navSettings.length - 1
+                      : index === navPanels.length - 1
                         ? 'lg:left-auto'
                         : undefined,
                   )}
                 >
                   <div className="p-4 text-white">
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
-                    {name.charAt(0).toUpperCase() + name.slice(1)} Panel Content
+                    <Panel />
                   </div>
                 </CollapsibleContent>
               </Collapsible>

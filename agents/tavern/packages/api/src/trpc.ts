@@ -147,7 +147,9 @@ export const userProtectedProcedure = t.procedure.use(timingMiddleware).use(({ c
   }
   return next({
     ctx: {
-      auth: ctx.auth,
+      auth: {
+        userId: ctx.auth.userId,
+      },
     },
   })
 })

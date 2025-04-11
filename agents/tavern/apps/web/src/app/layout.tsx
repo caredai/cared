@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from 'next'
+import { config } from '@fortawesome/fontawesome-svg-core'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
-import { config } from '@fortawesome/fontawesome-svg-core'
+
 import '@fortawesome/fontawesome-svg-core/styles.css'
 
 import { cn } from '@ownxai/ui/lib/utils'

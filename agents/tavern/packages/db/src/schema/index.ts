@@ -5,6 +5,7 @@ import { account, user, verification } from './auth'
 export * from './auth'
 export * from './character'
 export * from './group'
+export * from './settings'
 
 export const User = user
 export type User = InferSelectModel<typeof User>
