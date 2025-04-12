@@ -2,12 +2,18 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import classNames from 'classnames'
-import { toast } from 'sonner'
+
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ownxai/ui/components/select'
 
 import { useBackgroundSettings, useUpdateSettingsMutation } from '@/lib/settings'
-import { useTRPC } from '@/trpc/client'
 
 export const backgroundFittings = {
   classic: 'bg-cover',
@@ -31,7 +37,7 @@ const BackgroundItem = ({
   return (
     <div
       className={classNames(
-        'relative h-[108px] rounded-lg overflow-hidden cursor-pointer transition-all',
+        'relative aspect-3/2 rounded-lg overflow-hidden cursor-pointer transition-all',
         'hover:ring-2 hover:ring-ring',
         selected && 'ring-2 ring-ring',
       )}
@@ -59,7 +65,7 @@ export function BackgroundImagePanel() {
   )
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Background Image</h2>
@@ -71,17 +77,42 @@ export function BackgroundImagePanel() {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           />
-          <select className="px-3 py-1 rounded border">
-            <option>Classic</option>
-          </select>
+
+          <Select
+            value={backgroundSettings.fitting}
+            onValueChange={async (value) => {
+              await updateSettingsMutation.mutateAsync({
+                settings: {
+                  background: {
+                    ...backgroundSettings,
+                    fitting: value as keyof typeof backgroundFittings,
+                  },
+                },
+              })
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="z-5000">
+              <SelectGroup>
+                {Object.keys(backgroundFittings).map((fitting) => (
+                  <SelectItem key={fitting} value={fitting}>
+                    {fitting.charAt(0).toUpperCase() + fitting.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
           <button className="px-3 py-1 rounded border">Auto-select</button>
         </div>
       </div>
 
       {/* System Backgrounds */}
-      <div>
+      <div className="@container">
         <h3 className="text-md font-medium mb-2">System Backgrounds</h3>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 @xs:grid-cols-3 @3xl:grid-cols-4 gap-6">
           {filteredBackgrounds.map((bg) => (
             <BackgroundItem
               key={bg.name}

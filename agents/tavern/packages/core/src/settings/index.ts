@@ -8,7 +8,7 @@ export interface Settings {
 }
 
 export interface BackgroundSettings {
-  fitting: z.infer<typeof backgroundSettingsSchema>['fitting']
+  fitting: (typeof backgroundFittings)[number]
   active: BackgroundImage
   available: BackgroundImage[]
 }
@@ -23,8 +23,10 @@ const backgroundImageSchema = z.object({
   url: z.string(),
 })
 
+export const backgroundFittings = ['classic', 'cover', 'contain', 'stretch', 'center'] as const
+
 const backgroundSettingsSchema = z.object({
-  fitting: z.enum(['classic', 'cover', 'contain', 'stretch', 'center']),
+  fitting: z.enum(backgroundFittings),
   active: backgroundImageSchema,
   available: z.array(backgroundImageSchema),
 })

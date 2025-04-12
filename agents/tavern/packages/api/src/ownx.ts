@@ -12,14 +12,14 @@ export const ownx = createOwnxTrpcClientWithApiKey(env.OWNX_API_KEY)
 const lock = new AsyncLock()
 
 export async function ownxForUser(ctx: Context) {
-  const token = await lock.acquire(ctx.auth.userId, () => getTokenForOwnx(ctx))
+  const token = await lock.acquire(ctx.auth.userId!, () => getTokenForOwnx(ctx))
   return createOwnxTrpcClientWithUserToken(token)
 }
 
 // TODO: locking and cache
 async function getTokenForOwnx(ctx: Context) {
   const account = await ctx.db.query.Account.findFirst({
-    where: eq(Account.userId, ctx.auth.userId),
+    where: eq(Account.userId, ctx.auth.userId!),
   })
   if (!account || account.providerId !== 'ownx') {
     throw new Error('Account not found')

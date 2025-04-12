@@ -17,7 +17,6 @@ import {
   faUserCog,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { useSuspenseQuery } from '@tanstack/react-query'
 
 import {
   Collapsible,
@@ -28,7 +27,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
 import { FaButton } from '@/components/fa-button'
-import { useTRPC } from '@/trpc/client'
+import { useBackgroundSettings } from '@/lib/settings'
 import { backgroundFittings, BackgroundImagePanel } from './_panels/background-image'
 import { CharacterManagementPanel } from './_panels/character-management'
 import { ExtensionsPanel } from './_panels/extensions'
@@ -41,10 +40,7 @@ import { UserSettingsPanel } from './_panels/user-settings'
 import { WorldInfoPanel } from './_panels/world-info'
 
 export function Content() {
-  const trpc = useTRPC()
-  const {
-    data: { settings },
-  } = useSuspenseQuery(trpc.settings.get.queryOptions())
+  const backgroundSettings = useBackgroundSettings()
 
   const [openItem, setOpenItem] = useState<string | null>(null)
 
@@ -61,8 +57,29 @@ export function Content() {
       const trigger = triggerRefs.current[openItem]
 
       if (panel && trigger) {
-        const target = event.target as Node
-        if (!panel.contains(target) && !trigger.contains(target)) {
+        // Get click coordinates
+        const { clientX, clientY } = event
+
+        // Get panel and trigger boundaries
+        const panelRect = panel.getBoundingClientRect()
+        const triggerRect = trigger.getBoundingClientRect()
+
+        // Check if click is within panel boundaries
+        const isWithinPanel =
+          clientX >= panelRect.left &&
+          clientX <= panelRect.right &&
+          clientY >= panelRect.top &&
+          clientY <= panelRect.bottom
+
+        // Check if click is within trigger boundaries
+        const isWithinTrigger =
+          clientX >= triggerRect.left &&
+          clientX <= triggerRect.right &&
+          clientY >= triggerRect.top &&
+          clientY <= triggerRect.bottom
+
+        // Close panel only if click is outside both panel and trigger
+        if (!isWithinPanel && !isWithinTrigger) {
           setOpenItem(null)
         }
       }
@@ -90,15 +107,29 @@ export function Content() {
     { icon: faAddressCard, name: 'character-management', panel: CharacterManagementPanel },
   ]
 
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const image = new Image()
+    image.src = `${backgroundSettings.active.url}`
+
+    image.onload = () => {
+      if (ref.current) {
+        ref.current.style.backgroundImage = `url("${backgroundSettings.active.url}")`
+      }
+    }
+
+    return () => {
+      image.src = ''
+    }
+  }, [backgroundSettings.active.url])
+
   return (
     <div
+      ref={ref}
       className={cn(
-        'h-screen w-full flex justify-center bg-no-repeat',
-        backgroundFittings[settings.background.fitting],
+        'h-screen w-full flex justify-center bg-no-repeat transition-[background-image] duration-500',
+        backgroundFittings[backgroundSettings.fitting],
       )}
-      style={{
-        backgroundImage: `url("${settings.background.active.url}")`,
-      }}
     >
       <div className="w-full lg:w-1/2 h-full flex flex-col relative">
         <header className="bg-zinc-800 text-white flex flex-col shadow-[0_2px_20px_rgba(0,0,0,0.7)] z-3000">
