@@ -221,7 +221,7 @@ const requestArgsSchema = z.object({
   providerMetadata: providerMetadataSchema.optional(),
 })
 
-export function GET(req: NextRequest) {
+export function GET(req: NextRequest): Response {
   const searchParams = req.nextUrl.searchParams
   const modelId = searchParams.get('modelId')
   if (!modelId) {
@@ -255,7 +255,7 @@ export function GET(req: NextRequest) {
   return NextResponse.json(modelConfig)
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: NextRequest): Promise<Response> {
   try {
     const validatedArgs = requestArgsSchema.safeParse(await req.json())
     if (!validatedArgs.success) {

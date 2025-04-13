@@ -210,11 +210,7 @@ function searchKnowledge(_ctx: Context) {
       }
 
       // Get embeddings for the query
-      const embeddings = await embed([query], dataset.metadata.embeddingModel)
-      const embedding = embeddings.at(0)
-      if (!embedding) {
-        return []
-      }
+      const embedding = await embed(query, dataset.metadata.embeddingModel)
 
       // Initialize vector database with correct dimensions
       const modelInfo = await getTextEmbeddingModelInfo(dataset.metadata.embeddingModel)

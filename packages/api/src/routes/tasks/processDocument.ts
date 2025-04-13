@@ -9,7 +9,7 @@ import { Dataset, Document, DocumentChunk, DocumentSegment } from '@ownxai/db/sc
 import { loadFile } from '@ownxai/etl'
 import { log } from '@ownxai/log'
 import { getTextEmbeddingModelInfo } from '@ownxai/providers'
-import { embed } from '@ownxai/providers/embed'
+import { embedMany } from '@ownxai/providers/embed'
 import { getModel } from '@ownxai/providers/providers'
 import { QdrantVector } from '@ownxai/vdb'
 
@@ -172,7 +172,7 @@ Clean up the text by:
     const embeddings = await Promise.all(
       childrenBatchesForEmbedding.map(async (batch, batchIndex) => {
         return await context.run(`generate-embeddings-${batchIndex}-${batch.length}`, async () => {
-          return await embed(batch, dataset.metadata.embeddingModel)
+          return await embedMany(batch, dataset.metadata.embeddingModel)
         })
       }),
     ).then((results) => results.flat())

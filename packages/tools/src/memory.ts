@@ -100,11 +100,7 @@ function storeMemory(ctx: Context) {
         return
       }
 
-      const embeddings = await embed([content], embeddingModel)
-      const embedding = embeddings.at(0)
-      if (!embedding) {
-        return
-      }
+      const embedding = await embed(content, embeddingModel)
 
       const vdb = new QdrantVector(modelInfo.dimensions)
       await vdb.insertMemories({
@@ -145,11 +141,7 @@ function retrieveMemory(ctx: Context) {
         return []
       }
 
-      const embeddings = await embed([query], embeddingModel)
-      const embedding = embeddings.at(0)
-      if (!embedding) {
-        return []
-      }
+      const embedding = await embed(query, embeddingModel)
 
       const vdb = new QdrantVector(modelInfo.dimensions)
 

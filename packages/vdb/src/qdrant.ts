@@ -18,7 +18,7 @@ export class QdrantVector extends BaseVector {
   private static singleton?: QdrantClient
   private static mutex = new Mutex()
 
-  private client: QdrantClient
+  public client: QdrantClient
   private initialized = false
 
   private static getCollectionName(prefix: string, size: number) {

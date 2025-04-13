@@ -26,6 +26,7 @@ export * from './app'
 export * from './utils'
 export * from './artifact'
 export * from './secret'
+export * from './mem0'
 
 export const User = user
 export type User = InferSelectModel<typeof User>
