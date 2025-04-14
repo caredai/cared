@@ -7,7 +7,7 @@ import { getModel } from '@ownxai/providers/providers'
 
 import { auth } from '../../auth'
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   const { messages, chatModel } = (await request.json()) as {
     messages: Message[]
     chatModel: string // model full id

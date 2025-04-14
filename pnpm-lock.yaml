@@ -80,11 +80,33 @@ importers:
         specifier: 'catalog:'
         version: 5.7.3
 
+  apps/api:
+    dependencies:
+      '@hono/trpc-server':
+        specifier: ^0.3.4
+        version: 0.3.4(@trpc/server@11.0.0-rc.795(typescript@5.8.2))(hono@4.7.6)
+      '@ownxai/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@ownxai/tokenizer':
+        specifier: workspace:*
+        version: link:../../packages/tokenizer
+      hono:
+        specifier: ^4.7.6
+        version: 4.7.6
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: ^4.20250214.0
+        version: 4.20250321.0
+      wrangler:
+        specifier: ^4.4.0
+        version: 4.4.0(@cloudflare/workers-types@4.20250321.0)(bufferutil@4.0.9)(utf-8-validate@6.0.4)
+
   apps/kv:
     dependencies:
       hono:
-        specifier: ^4.7.5
-        version: 4.7.5
+        specifier: ^4.7.6
+        version: 4.7.6
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20250214.0
@@ -949,6 +971,37 @@ importers:
       zod:
         specifier: 3.24.2
         version: 3.24.2
+    devDependencies:
+      '@ownxai/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@ownxai/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@ownxai/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      eslint:
+        specifier: 'catalog:'
+        version: 9.18.0(jiti@2.4.2)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.4.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.7.3
+
+  packages/tokenizer:
+    dependencies:
+      '@mlc-ai/web-tokenizers':
+        specifier: ^0.1.5
+        version: 0.1.5
+      '@ownxai/providers':
+        specifier: workspace:*
+        version: link:../providers
+      tiktoken:
+        specifier: ^1.0.20
+        version: 1.0.20
     devDependencies:
       '@ownxai/eslint-config':
         specifier: workspace:*
@@ -2944,6 +2997,13 @@ packages:
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
 
+  '@hono/trpc-server@0.3.4':
+    resolution: {integrity: sha512-xFOPjUPnII70FgicDzOJy1ufIoBTu8eF578zGiDOrYOrYN8CJe140s9buzuPkX+SwJRYK8LjEBHywqZtxdm8aA==}
+    engines: {node: '>=16.0.0'}
+    peerDependencies:
+      '@trpc/server': ^10.10.0 || >11.0.0-rc
+      hono: '>=4.*'
+
   '@hookform/resolvers@4.1.3':
     resolution: {integrity: sha512-Jsv6UOWYTrEFJ/01ZrnwVXs7KDvP8XIo115i++5PWvNkNvkrsTfGiLS6w+eJ57CYtUtDQalUWovCZDHFJ8u1VQ==}
     peerDependencies:
@@ -3579,6 +3639,9 @@ packages:
     resolution: {integrity: sha512-mBTIDQmuAX9RowMYteZFHJIYlEwDcHzzaxgXzrFtlvH9CkKXK7R1VnZ1sZSe+uLMg0dIXUVdPRUh1SwyFeSqXw==}
     peerDependencies:
       zod: 3.24.2
+
+  '@mlc-ai/web-tokenizers@0.1.5':
+    resolution: {integrity: sha512-G7vjJzZyOFJvAfx42kPEU7Z2hkAAGWvKJHfMTLdvY8QDLFvvvVOwmEk89Mh+7PBVPpcfh3PW0npTTupFnLMwHw==}
 
   '@motionone/animation@10.18.0':
     resolution: {integrity: sha512-9z2p5GFGCm0gBsZbi8rVMOAJCtw1WqBTIPw3ozk06gDvZInBPIsQcHgYogEJ4yuHJ+akuW8g1SEIOpTOvYs8hw==}
@@ -7886,8 +7949,8 @@ packages:
   hmac-drbg@1.0.1:
     resolution: {integrity: sha512-Tti3gMqLdZfhOQY1Mzf/AanLiqh1WTiJgEj26ZuYQ9fbkLomzGchCws4FyrSd4VkpBfiNhaE1On+lOz894jvXg==}
 
-  hono@4.7.5:
-    resolution: {integrity: sha512-fDOK5W2C1vZACsgLONigdZTRZxuBqFtcKh7bUQ5cVSbwI2RWjloJDcgFOVzbQrlI6pCmhlTsVYZ7zpLj4m4qMQ==}
+  hono@4.7.6:
+    resolution: {integrity: sha512-564rVzELU+9BRqqx5k8sT2NFwGD3I3Vifdb6P7CmM6FiarOSY+fDC+6B+k9wcCb86ReoayteZP2ki0cRLN1jbw==}
     engines: {node: '>=16.9.0'}
 
   html-parse-stringify@3.0.1:
@@ -11013,6 +11076,9 @@ packages:
 
   through@2.3.8:
     resolution: {integrity: sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==}
+
+  tiktoken@1.0.20:
+    resolution: {integrity: sha512-zVIpXp84kth/Ni2me1uYlJgl2RZ2EjxwDaWLeDY/s6fZiyO9n1QoTOM5P7ZSYfToPvAvwYNMbg5LETVYVKyzfQ==}
 
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
@@ -14447,6 +14513,11 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
+  '@hono/trpc-server@0.3.4(@trpc/server@11.0.0-rc.795(typescript@5.8.2))(hono@4.7.6)':
+    dependencies:
+      '@trpc/server': 11.0.0-rc.795(typescript@5.8.2)
+      hono: 4.7.6
+
   '@hookform/resolvers@4.1.3(react-hook-form@7.54.2(react@19.0.0))':
     dependencies:
       '@standard-schema/utils': 0.3.0
@@ -14812,6 +14883,8 @@ snapshots:
     dependencies:
       zod: 3.24.2
       zod-to-json-schema: 3.24.5(zod@3.24.2)
+
+  '@mlc-ai/web-tokenizers@0.1.5': {}
 
   '@motionone/animation@10.18.0':
     dependencies:
@@ -17090,6 +17163,10 @@ snapshots:
   '@trpc/server@11.0.0-rc.795(typescript@5.7.3)':
     dependencies:
       typescript: 5.7.3
+
+  '@trpc/server@11.0.0-rc.795(typescript@5.8.2)':
+    dependencies:
+      typescript: 5.8.2
 
   '@trpc/tanstack-react-query@11.0.0-rc.795(@tanstack/react-query@5.66.7(react@19.0.0))(@trpc/client@11.0.0-rc.795(@trpc/server@11.0.0-rc.795(typescript@5.7.3))(typescript@5.7.3))(@trpc/server@11.0.0-rc.795(typescript@5.7.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)':
     dependencies:
@@ -20168,7 +20245,7 @@ snapshots:
       minimalistic-assert: 1.0.1
       minimalistic-crypto-utils: 1.0.1
 
-  hono@4.7.5: {}
+  hono@4.7.6: {}
 
   html-parse-stringify@3.0.1:
     dependencies:
@@ -23394,7 +23471,7 @@ snapshots:
   snake-case@3.0.4:
     dependencies:
       dot-case: 3.0.4
-      tslib: 2.4.1
+      tslib: 2.8.1
 
   snakecase-keys@8.0.1:
     dependencies:
@@ -23812,6 +23889,8 @@ snapshots:
   throttleit@2.1.0: {}
 
   through@2.3.8: {}
+
+  tiktoken@1.0.20: {}
 
   tiny-invariant@1.3.3: {}
 
