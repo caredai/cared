@@ -1,6 +1,8 @@
 // Import env files to validate at build time.
 import '@/env'
 
+import path from 'path'
+
 const preview = process.env.DEPLOYMENT_PREVIEW === 'true'
 
 /** @type {import("next").NextConfig} */
@@ -14,7 +16,9 @@ const config = {
     '@ownxai/chatbot',
     '@ownxai/db',
     '@ownxai/i18n',
+    '@ownxai/kv',
     '@ownxai/providers',
+    '@ownxai/tokenizer',
     '@ownxai/ui',
   ],
 
@@ -34,6 +38,13 @@ const config = {
       fullUrl: true,
     },
   },
+
+  outputFileTracingIncludes: {
+    '/api/trpc/\\[trpc\\]': ['../../packages/tokenizer/assets/tokenizers/*'],
+  },
+  outputFileTracingRoot: path.join(__dirname, '../../'),
+
+  serverExternalPackages: ['@agnai/web-tokenizers'],
 }
 
 export default config

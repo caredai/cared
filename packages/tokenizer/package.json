@@ -26,8 +26,8 @@
   },
   "prettier": "@ownxai/prettier-config",
   "dependencies": {
-    "@mlc-ai/web-tokenizers": "^0.1.5",
+    "@agnai/web-tokenizers": "^0.1.3",
     "@ownxai/providers": "workspace:*",
-    "tiktoken": "^1.0.20"
+    "js-tiktoken": "^1.0.19"
   }
 }

@@ -25,6 +25,7 @@
     "@ownxai/log": "workspace:*",
     "@ownxai/providers": "workspace:*",
     "@ownxai/shared": "workspace:*",
+    "@ownxai/tokenizer": "workspace:*",
     "@ownxai/tools": "workspace:*",
     "@ownxai/validators": "workspace:*",
     "@ownxai/vdb": "workspace:*",

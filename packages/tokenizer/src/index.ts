@@ -1,6 +1,6 @@
-import type { TiktokenModel } from 'tiktoken'
-import { Tokenizer as WebTokenizer } from '@mlc-ai/web-tokenizers'
-import { encoding_for_model, Tiktoken } from 'tiktoken'
+import type { TiktokenModel } from 'js-tiktoken'
+import { Tokenizer as WebTokenizer } from '@agnai/web-tokenizers'
+import { encodingForModel, Tiktoken } from 'js-tiktoken'
 
 const tokenizersCache: Record<string, Tiktoken> = {}
 
@@ -9,7 +9,7 @@ export function getTiktokenTokenizer(model: TiktokenModel): Tiktoken {
     return tokenizersCache[model]
   }
 
-  const tokenizer = encoding_for_model(model)
+  const tokenizer = encodingForModel(model)
   console.info('Instantiated the tokenizer for', model)
   tokenizersCache[model] = tokenizer
   return tokenizer
@@ -24,12 +24,10 @@ export async function getWebTokenizer(model: ArrayBuffer, isJson: boolean): Prom
 }
 
 export function getTiktokenChunks(tokenizer: Tiktoken, ids: number[]): string[] {
-  const decoder = new TextDecoder()
   const chunks = []
 
   for (const id of ids) {
-    const chunkTextBytes = tokenizer.decode(new Uint32Array([id]))
-    const chunkText = decoder.decode(chunkTextBytes)
+    const chunkText = tokenizer.decode([id])
     chunks.push(chunkText)
   }
 
@@ -163,7 +161,7 @@ export async function tokenizerDecode(
 ): Promise<string> {
   const tokenizer = await getTokenizer(modelId, fetchModel)
   return tokenizer instanceof Tiktoken
-    ? new TextDecoder().decode(tokenizer.decode(new Uint32Array(tokens)))
+    ? tokenizer.decode(tokens)
     : tokenizer.decode(new Int32Array(tokens))
 }
 
