@@ -1,33 +1,26 @@
+import { KV } from './base'
 import { env } from './env'
 
 /**
- * Client for interacting with Cloudflare Workers KV API
+ * KV Client for interacting with Cloudflare Workers KV API
  */
-export class KVClient {
-  private static instance?: KVClient
+export class CloudflareKV extends KV {
+  private baseUrl = env.CLOUDFLARE_WORKERS_KV_URL ?? ''
+  private apiToken = env.CLOUDFLARE_WORKERS_KV_API_TOKEN ?? ''
 
-  static getInstance() {
-    if (!this.instance) {
-      const baseURL = env.CLOUDFLARE_WORKERS_KV_URL
-      const apiToken = env.CLOUDFLARE_WORKERS_KV_API_TOKEN
-      if (!baseURL || !apiToken) {
-        return undefined
-      }
-      this.instance = new KVClient(baseURL, apiToken)
+  constructor(namespace: string) {
+    super(namespace)
+
+    if (!this.baseUrl || !this.apiToken) {
+      throw new Error('Cloudflare Workers KV URL and API token are required')
     }
-    return this.instance
   }
-
-  private constructor(
-    private baseUrl: string,
-    private apiToken: string,
-  ) {}
 
   /**
    * Get value by key
    */
   async get(key: string): Promise<string | null> {
-    const response = await fetch(`${this.baseUrl}/api/kv/${encodeURIComponent(key)}`, {
+    const response = await fetch(`${this.baseUrl}/api/kv/${encodeURIComponent(this.key(key))}`, {
       headers: {
         Authorization: `Bearer ${this.apiToken}`,
       },
@@ -49,7 +42,7 @@ export class KVClient {
    * Set key-value pair
    */
   async set(key: string, value: string, expirationTtl?: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/api/kv/${encodeURIComponent(key)}`, {
+    const response = await fetch(`${this.baseUrl}/api/kv/${encodeURIComponent(this.key(key))}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.apiToken}`,
@@ -67,7 +60,7 @@ export class KVClient {
    * Delete key
    */
   async delete(key: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/api/kv/${encodeURIComponent(key)}`, {
+    const response = await fetch(`${this.baseUrl}/api/kv/${encodeURIComponent(this.key(key))}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${this.apiToken}`,
@@ -82,9 +75,9 @@ export class KVClient {
   /**
    * List all keys with optional prefix
    */
-  async list(options: any): Promise<any> {
+  async list(options: { prefix?: string; limit?: number; cursor?: string }): Promise<any> {
     const params = new URLSearchParams()
-    if (options.prefix) params.append('prefix', options.prefix)
+    params.append('prefix', this.key(options.prefix ?? ''))
     if (options.limit) params.append('limit', options.limit.toString())
     if (options.cursor) params.append('cursor', options.cursor)
 

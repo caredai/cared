@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@ownxai/shared": "workspace:*",
-    "@upstash/redis": "^1.34.6",
     "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "^0.38.4",
     "drizzle-zod": "^0.6.1",

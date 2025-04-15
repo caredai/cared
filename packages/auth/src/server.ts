@@ -25,12 +25,14 @@ import { sha256 } from 'viem'
 import { eq } from '@ownxai/db'
 import { db } from '@ownxai/db/client'
 import { Account, User } from '@ownxai/db/schema'
+import { getKV } from '@ownxai/kv'
 import { generateId } from '@ownxai/shared'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
-import { KVClient } from './kv'
 import { customPlugin } from './plugin'
+
+const kv = getKV('auth', 'upstash')
 
 const serverIdName = 'x-server-call-mark'
 const serverId = sha256(new TextEncoder().encode(env.BETTER_AUTH_SECRET), 'hex')
@@ -118,20 +120,7 @@ const options = {
       },
     },
   },
-  ...(KVClient.getInstance() && {
-    secondaryStorage: {
-      get: async (key) => {
-        const value = await KVClient.getInstance()!.get(key)
-        return value ? value : null
-      },
-      set: async (key, value, ttl) => {
-        await KVClient.getInstance()!.set(key, value, ttl)
-      },
-      delete: async (key) => {
-        await KVClient.getInstance()!.delete(key)
-      },
-    },
-  }),
+  secondaryStorage: kv,
   trustedOrigins: env.BETTER_AUTH_TRUSTED_ORIGINS,
   rateLimit: {
     enabled: true,
@@ -332,11 +321,11 @@ Object.entries(auth.api).forEach(([key, _endpoint]) => {
 })
 
 async function cacheProfileForAccount(id: string, profile: Record<string, any>) {
-  await KVClient.getInstance()?.set(`profile:${id}`, JSON.stringify(profile), 60)
+  await kv.set(`profile:${id}`, JSON.stringify(profile), 60)
 }
 
 async function getProfileForAccount(id: string): Promise<string | null | undefined> {
-  return KVClient.getInstance()?.get(`profile:${id}`)
+  return await kv.get(`profile:${id}`)
 }
 
 async function updateProfileForAccount(account: AuthAccount) {
