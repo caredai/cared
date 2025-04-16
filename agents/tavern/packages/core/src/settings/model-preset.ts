@@ -1,4 +1,14 @@
-export interface ModelSettings {
+import { z } from 'zod'
+
+export interface ModelPresetSettings {
+  // Active model preset label; if conflicted, use the first one.
+  preset: string
+  // Customizations for the active model preset.
+  // If key is `[model preset label]`, its value will customize the corresponding model preset.
+  customizations: Partial<ModelPreset> & Record<`[${string}]`, Partial<ModelPreset>>
+}
+
+export interface ModelPreset {
   /**
    The maximum number of tokens that will be sent as the prompt.
    */
@@ -107,3 +117,48 @@ export interface ModelSettings {
     }
   }
 }
+
+export const modelPresetSchema = z.object({
+  maxContext: z.number().optional(),
+  maxTokens: z.number().optional(),
+  temperature: z.number().optional(),
+  topP: z.number().optional(),
+  topK: z.number().optional(),
+  presencePenalty: z.number().optional(),
+  frequencyPenalty: z.number().optional(),
+  stopSequences: z.array(z.string()).optional(),
+  seed: z.number().optional(),
+  disableSendingAttachments: z.boolean().optional(),
+  disableTools: z.boolean().optional(),
+  disableSendingReasoning: z.boolean().optional(),
+
+  characterNameBehavior: z.enum(['none', 'default', 'completion', 'content']).optional(),
+  continuePostfix: z.enum(['none', 'space', 'newline', 'double-newline']).optional(),
+  wrapInQuotes: z.boolean().optional(),
+  continuePrefill: z.boolean().optional(),
+  squashSystemMessages: z.boolean().optional(),
+
+  utilityPrompts: z.object({
+    impersonationPrompt: z.string(),
+    newChatPrompt: z.string(),
+    newGroupChatPrompt: z.string(),
+    newExampleChatPrompt: z.string(),
+    continueNudgePrompt: z.string(),
+    groupNudgePrompt: z.string(),
+    worldInfoFormat: z.string(),
+    scenarioFormat: z.string(),
+    personalityFormat: z.string(),
+    sendIfEmpty: z.string(),
+  }),
+
+  vendor: z.object({
+    openrouter: z.object({
+      middleout: z.enum(['on', 'off', 'auto']).optional(),
+    }),
+    claude: z.object({
+      assistantPrefill: z.string(),
+      assistantImpersonation: z.string(),
+      useSysPrompt: z.string(),
+    }),
+  }),
+})

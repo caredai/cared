@@ -12,7 +12,7 @@ export const UserSettings = pgTable(
     userId: text()
       .primaryKey()
       .references(() => user.id, { onDelete: 'cascade' }),
-    settings: jsonb().$type<Settings>().notNull(), // Array of character references
+    settings: jsonb().$type<Settings>().notNull(),
     ...timestamps,
   },
   (table) => [

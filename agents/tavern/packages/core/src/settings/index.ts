@@ -1,35 +1,16 @@
 import { z } from 'zod'
 
-import { defaultBackgroundImages } from './defaults'
+import type { BackgroundSettings } from './background'
+import { backgroundSettingsSchema, fillInBackgroundSettingsWithDefaults } from './background'
+
+export * from './background'
+export * from './theme'
+export * from './model-preset'
 
 export interface Settings {
   firstRun: boolean
   background: BackgroundSettings
 }
-
-export interface BackgroundSettings {
-  fitting: (typeof backgroundFittings)[number]
-  active: BackgroundImage
-  available: BackgroundImage[]
-}
-
-export interface BackgroundImage {
-  name: string
-  url: string
-}
-
-const backgroundImageSchema = z.object({
-  name: z.string().min(1).max(64),
-  url: z.string(),
-})
-
-export const backgroundFittings = ['classic', 'cover', 'contain', 'stretch', 'center'] as const
-
-const backgroundSettingsSchema = z.object({
-  fitting: z.enum(backgroundFittings),
-  active: backgroundImageSchema,
-  available: z.array(backgroundImageSchema),
-})
 
 export const settingsSchema = z.object({
   firstRun: z.boolean(),
@@ -39,10 +20,6 @@ export const settingsSchema = z.object({
 export function fillInSettingsWithDefaults(settings: Partial<Settings>): Settings {
   return {
     firstRun: settings.firstRun ?? true,
-    background: settings.background ?? {
-      fitting: 'classic',
-      active: defaultBackgroundImages[0]!,
-      available: defaultBackgroundImages,
-    },
+    background: fillInBackgroundSettingsWithDefaults(settings.background),
   }
 }

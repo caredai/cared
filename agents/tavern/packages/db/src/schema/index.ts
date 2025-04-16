@@ -6,6 +6,8 @@ export * from './auth'
 export * from './character'
 export * from './group'
 export * from './settings'
+export * from './model-preset'
+export * from './theme'
 
 export const User = user
 export type User = InferSelectModel<typeof User>
