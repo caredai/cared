@@ -1,8 +1,9 @@
 import assert from 'assert'
-import type { CoreMessage, Message } from 'ai'
-import { convertToCoreMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
+import type { Message, UIMessage } from 'ai'
+import { appendResponseMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
+import hash from 'stable-hash'
 
-import type { Agent, App, Chat, MessageContent } from '@ownxai/db/schema'
+import type { Agent, App, Chat, Message as DBMessage } from '@ownxai/db/schema'
 import { db } from '@ownxai/db/client'
 import { generateMessageId } from '@ownxai/db/schema'
 import { log } from '@ownxai/log'
@@ -25,14 +26,6 @@ import { generateChatTitleFromUserMessage } from './actions'
  * 2. Input messages handling:
  *    - Only the last message in input messages array is processed
  *    - Previous messages in input array are ignored
- *    - For last message being a user message:
- *      - If last historical message is not user message: combine historical messages + input user message
- *      - If last historical message is user message:
- *        - Error if message IDs conflict
- *        - If IDs match, use input message content instead, combine historical messages - last historical message + input user message
- *    - For last message being non-user or empty input:
- *      - If last historical message is user message or tool message (with tool results): use historical messages
- *      - Otherwise error
  *
  * 3. Tool execution:
  *    - Currently only supports server-side tools
@@ -46,21 +39,27 @@ import { generateChatTitleFromUserMessage } from './actions'
  *   - appId?: string - Optional app ID
  *   - agentId?: string - Optional agent ID
  *   - messages: Message[] - Input messages array, only last message used
+ *   - parentMessageId?: string - Optional parent message ID
+ *   - retainBranch?: boolean - Whether retain message branch
  *   - preview?: boolean - Preview mode flag
  * @returns Streaming response with LLM generated content
  */
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<Response> {
   const {
     id,
     appId,
     agentId,
     messages: inputMessages,
+    parentMessageId,
+    retainBranch,
     preview,
   } = (await request.json()) as {
     id?: string
     appId?: string
     agentId?: string
     messages: Message[]
+    parentMessageId?: string
+    retainBranch?: boolean
     preview?: boolean
   }
 
@@ -119,41 +118,47 @@ export async function POST(request: Request) {
     }
   }
 
+  // const revokable = false // TODO
+
   const inputMessage = inputMessages.at(-1)
-  const lastMessage = (
-    await caller.chat.listMessages({
-      chatId: chat.id,
-      limit: 1,
+  if (!inputMessage) {
+    await deleteChat?.()
+    return new Response('No input message provided', { status: 400 })
+  }
+
+  let inputDBMessage = (
+    await caller.message.find({
+      id: inputMessage.id,
     })
-  ).messages.at(-1)
-  if (inputMessage?.role === 'user') {
-    // input user message
-    if (lastMessage?.role === 'user') {
-      if (lastMessage.id !== inputMessage.id) {
-        return new Response('The last historical message is also another user message', {
-          status: 400,
-        })
-      }
-      // replace the last user message with the new user message
-      await caller.chat.deleteTrailingMessages({
-        messageId: lastMessage.id,
+  ).message
+
+  if (inputDBMessage) {
+    if (parentMessageId && inputDBMessage.parentId !== parentMessageId) {
+      await deleteChat?.()
+      return new Response('Invalid parent message id', { status: 400 })
+    }
+
+    if (!retainBranch) {
+      await caller.message.deleteTrailing({
+        messageId: inputMessage.id,
+      })
+    }
+  } else {
+    if (!retainBranch && parentMessageId) {
+      await caller.message.deleteTrailing({
+        messageId: parentMessageId,
       })
     }
 
-    // save the new user message
-    await caller.chat.createMessage({
-      id: inputMessage.id,
-      chatId: chat.id,
-      ...convertToCoreMessages([inputMessage]).at(0)!,
-    })
-  } else {
-    // input assistant message
-    if (lastMessage?.role !== 'user' && lastMessage?.role !== 'tool') {
-      await deleteChat?.()
-      return new Response(`The last historical message is neither user's nor tool's`, {
-        status: 400,
+    inputDBMessage = (
+      await caller.message.create({
+        id: inputMessage.id,
+        parentId: parentMessageId, // will be checked there
+        chatId: chat.id,
+        role: inputMessage.role as any,
+        content: inputMessage as UIMessage,
       })
-    }
+    ).message
   }
 
   const app = (await caller.app.byId({ id: chat.appId })).app
@@ -185,7 +190,7 @@ export async function POST(request: Request) {
     throw new Error(`Invalid language model configuration for app ${app.id}`)
   }
 
-  if (!chat.metadata.title && inputMessage) {
+  if (!chat.metadata.title) {
     const title = preview
       ? 'Preview & debug' // no need to generate a title for debug chats
       : await generateChatTitleFromUserMessage({
@@ -203,7 +208,7 @@ export async function POST(request: Request) {
     ).chat
   }
 
-  const messages = await getMessages(caller, chat, agent, app, agents)
+  const messages = await getMessages(caller, chat, agent, app, agents, inputDBMessage)
 
   return createDataStreamResponse({
     execute: (dataStream) => {
@@ -238,13 +243,34 @@ export async function POST(request: Request) {
         experimental_generateMessageId: generateMessageId,
         tools,
         onFinish: async ({ response }) => {
-          await caller.chat.createMessages(
-            response.messages.map((msg) => ({
-              ...msg,
+          const lastMessage = messages.at(-1)!
+          const responseMessages = appendResponseMessages({
+            // `appendResponseMessages` only use the last message in the input messages
+            messages: [lastMessage],
+            responseMessages: response.messages,
+          })
+
+          const newLastMessage = responseMessages.at(0)!
+          assert(newLastMessage.id === lastMessage.id)
+
+          if (hash(newLastMessage) !== hash(lastMessage)) {
+            assert(responseMessages.length === 1)
+            await caller.message.update({
+              id: newLastMessage.id,
+              content: newLastMessage as UIMessage,
+            })
+          } else {
+            assert(responseMessages.length === 2)
+            const msg = responseMessages.at(-1)!
+            await caller.message.create({
+              id: msg.id,
+              parentId: lastMessage.id,
               chatId: chat.id,
+              role: msg.role as any,
               agentId: agent.id,
-            })),
-          )
+              content: msg as UIMessage,
+            })
+          }
         },
         experimental_telemetry: {
           isEnabled: true,
@@ -272,19 +298,24 @@ async function getMessages(
   currentAgent: Agent,
   app: App,
   agents_: Agent[],
-): Promise<CoreMessage[]> {
+  lastMsg: DBMessage,
+): Promise<UIMessage[]> {
   const dbMesssages = (
-    await caller.chat.listMessages({
+    await caller.message.list({
       chatId: chat.id,
-      limit: 100, // TODO: truncate
+      before: lastMsg.id,
+      limit: 10000, // TODO: truncate
     })
   ).messages
 
-  const messages = dbMesssages.map((msg) => {
+  const messageBranch = buildMessageBranchFromDescendant(dbMesssages, lastMsg)
+
+  const messages = messageBranch.map((msg) => {
     return {
+      id: msg.id,
       role: msg.role,
-      content: msg.content as MessageContent,
-    } as CoreMessage
+      ...msg.content,
+    }
   })
 
   if (app.type === 'single-agent') {
@@ -293,8 +324,6 @@ async function getMessages(
     const agents = new Map(agents_.map((agent) => [agent.id, agent]))
 
     return messages.map((msg, i) => {
-      let content = msg.content
-
       // Add agent name prefix for messages from other agents in multi-agent chat
       const agentId = dbMesssages[i]?.agentId
       const agent = agentId ? agents.get(agentId) : undefined
@@ -306,30 +335,47 @@ async function getMessages(
       ) {
         const prefix = agent.name ? `${agent.name}: ` : ''
 
-        const assistantContent = msg.content
-
         // For string content, directly prepend prefix
-        if (typeof assistantContent === 'string') {
-          content = prefix + assistantContent
+        if (msg.content) {
+          msg.content = prefix + msg.content
         }
-        // For structured content, add prefix to first text part
+        // For structured parts, add prefix to first text part
         else {
-          // Clone to preserve original content
-          const assistantContent_ = structuredClone(assistantContent)
-          // Locate first text part
-          const firstTextPart = assistantContent_.find((item) => item.type === 'text')
+          // Locate the first text part
+          const firstTextPart = msg.parts.find((item) => item.type === 'text')
           // Prepend prefix if text part exists
           if (firstTextPart) {
             firstTextPart.text = prefix + firstTextPart.text
           }
-          content = assistantContent_
         }
       }
 
-      return {
-        role: msg.role,
-        content,
-      } as CoreMessage
+      return msg
     })
   }
+}
+
+function buildMessageBranchFromDescendant(
+  messages: DBMessage[],
+  descendant: DBMessage,
+): DBMessage[] {
+  // Create a map for quick lookup of messages by their ID.
+  const messageMap = new Map<string, DBMessage>(messages.map((msg) => [msg.id, msg]))
+
+  // Initialize the branch array with the descendant message.
+  const branch: DBMessage[] = []
+  let currentMessage: DBMessage | undefined = descendant
+
+  // Traverse up the message tree using parentId until the root is reached,
+  // or a message is not found in the map.
+  while (currentMessage) {
+    branch.push(currentMessage) // Add the current message to the beginning of the array.
+    const parentId = currentMessage.parentId
+    if (!parentId) {
+      break // Reached the root of the branch.
+    }
+    currentMessage = messageMap.get(parentId) // Get the parent message from the map.
+  }
+
+  return branch.reverse()
 }

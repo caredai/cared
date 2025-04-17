@@ -1,4 +1,4 @@
-import type { JSONValue, ToolCallPart, ToolResultPart } from 'ai'
+import type { ToolCallPart, ToolResultPart } from 'ai'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { convertBase64ToUint8Array } from '@ai-sdk/provider-utils'
@@ -7,6 +7,7 @@ import { z } from 'zod'
 
 import log from '@ownxai/log'
 import { getModel } from '@ownxai/providers/providers'
+import { jsonValueSchema, providerMetadataSchema } from '@ownxai/shared'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -39,19 +40,6 @@ const languageModelV1ToolChoiceSchema = z.union([
     toolName: z.string(),
   }),
 ])
-
-const jsonValueSchema: z.ZodType<JSONValue> = z.lazy(() =>
-  z.union([
-    z.null(),
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.record(z.string(), jsonValueSchema),
-    z.array(jsonValueSchema),
-  ]),
-)
-
-const providerMetadataSchema = z.record(z.string(), z.record(z.string(), jsonValueSchema))
 
 const textPartSchema = z.object({
   type: z.literal('text'),

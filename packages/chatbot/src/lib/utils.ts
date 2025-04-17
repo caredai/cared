@@ -1,9 +1,9 @@
-import type { CoreToolMessage, Message, ToolInvocation } from 'ai'
+import type { Message } from 'ai'
 import type { ClassValue } from 'clsx'
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-import type { Artifact, Message as DBMessage } from '@ownxai/db/schema'
+import type { Artifact } from '@ownxai/db/schema'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -42,83 +42,6 @@ export function generateUUID(): string {
     const v = c === 'x' ? r : (r & 0x3) | 0x8
     return v.toString(16)
   })
-}
-
-function addToolMessageToChat({
-  toolMessage,
-  messages,
-}: {
-  toolMessage: CoreToolMessage
-  messages: Message[]
-}): Message[] {
-  return messages.map((message) => {
-    if (message.toolInvocations) {
-      return {
-        ...message,
-        toolInvocations: message.toolInvocations.map((toolInvocation) => {
-          const toolResult = toolMessage.content.find(
-            (tool) => tool.toolCallId === toolInvocation.toolCallId,
-          )
-
-          if (toolResult) {
-            return {
-              ...toolInvocation,
-              state: 'result',
-              result: toolResult.result,
-            }
-          }
-
-          return toolInvocation
-        }),
-      }
-    }
-
-    return message
-  })
-}
-
-export function convertToUIMessages(messages: DBMessage[]): Message[] {
-  return messages.reduce((chatMessages: Message[], message) => {
-    if (message.role === 'tool') {
-      return addToolMessageToChat({
-        toolMessage: message as CoreToolMessage,
-        messages: chatMessages,
-      })
-    }
-
-    let textContent = ''
-    let reasoning: string | undefined = undefined
-    const toolInvocations: ToolInvocation[] = []
-
-    if (typeof message.content === 'string') {
-      textContent = message.content
-    } else if (Array.isArray(message.content)) {
-      for (const content of message.content) {
-        if (content.type === 'text') {
-          textContent += content.text
-        } else if (content.type === 'tool-call') {
-          toolInvocations.push({
-            state: 'call',
-            toolCallId: content.toolCallId,
-            toolName: content.toolName,
-            args: content.args,
-          })
-        } else if (content.type === 'reasoning') {
-          reasoning = content.reasoning
-        }
-      }
-    }
-
-    chatMessages.push({
-      id: message.id,
-      role: message.role as Message['role'],
-      content: textContent,
-      reasoning,
-      toolInvocations,
-    })
-
-    return chatMessages
-  }, [])
 }
 
 export function sanitizeUIMessages(messages: Message[]): Message[] {

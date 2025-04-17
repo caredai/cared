@@ -5,6 +5,7 @@ import { appRouter as _appRouter } from './router/app'
 import { artifactRouter } from './router/artifact'
 import { chatRouter } from './router/chat'
 import { datasetRouter } from './router/dataset'
+import { messageRouter } from './router/message'
 import { modelRouter } from './router/model'
 import { oauthAppRouter } from './router/oauth-app'
 import { secretRouter } from './router/secret'
@@ -26,6 +27,7 @@ export const appRouter = createTRPCRouter({
   model: modelRouter,
   tokenizer: tokenizerRouter,
   chat: chatRouter,
+  message: messageRouter,
   artifact: artifactRouter,
 })
 

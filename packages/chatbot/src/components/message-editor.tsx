@@ -44,7 +44,7 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
   const trpc = useTRPC()
   const queryClient = useQueryClient()
   const deleteTrailingMessages = useMutation(
-    trpc.chat.deleteTrailingMessages.mutationOptions({
+    trpc.message.deleteTrailing.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
           queryKey: trpc.chat.queryKey(),

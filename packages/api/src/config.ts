@@ -53,4 +53,14 @@ export const cfg = {
      */
     maxAgents: 10,
   },
+
+  /**
+   * Chat-level resource limitations
+   */
+  perChat: {
+    /**
+     * Maximum number of messages that can be stored in a chat
+     */
+    maxMessages: 10000,
+  },
 }
