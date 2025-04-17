@@ -6,7 +6,7 @@ import { and, desc, eq, gt, lt } from '@ownxai/db'
 import { Chat, CreateChatSchema, UpdateChatSchema } from '@ownxai/db/schema'
 
 import type { Context } from '../trpc'
-import { userProtectedProcedure } from '../trpc'
+import { appProtectedProcedure, appUserProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 
 /**
@@ -21,7 +21,7 @@ export async function getChatById(ctx: Context, id: string) {
     where: eq(Chat.id, id),
   })
 
-  if (!chat) {
+  if (!(chat && chat.appId === ctx.auth.appId && chat.userId === ctx.auth.userId)) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: `Chat with id ${id} not found`,
@@ -38,7 +38,7 @@ export const chatRouter = {
    * @param input - Object containing app ID and pagination parameters
    * @returns List of chats with hasMore flag
    */
-  listByApp: userProtectedProcedure
+  listByApp: appProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -51,7 +51,6 @@ export const chatRouter = {
     .input(
       z
         .object({
-          appId: z.string().min(32),
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
@@ -62,9 +61,9 @@ export const chatRouter = {
         }),
     )
     .query(async ({ ctx, input }) => {
-      await getAppById(ctx, input.appId)
+      await getAppById(ctx, ctx.auth.appId)
 
-      const conditions: SQL<unknown>[] = [eq(Chat.appId, input.appId)]
+      const conditions: SQL<unknown>[] = [eq(Chat.appId, ctx.auth.appId)]
 
       // Determine pagination direction
       const isBackward = !!input.before
@@ -111,7 +110,7 @@ export const chatRouter = {
    * @param input - The chat ID
    * @returns The chat if found
    */
-  byId: userProtectedProcedure
+  byId: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -133,7 +132,7 @@ export const chatRouter = {
    * @param input - The chat data following the {@link CreateChatSchema}
    * @returns The created chat
    */
-  create: userProtectedProcedure
+  create: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -143,16 +142,21 @@ export const chatRouter = {
         summary: 'Create a new chat',
       },
     })
-    .input(CreateChatSchema)
+    .input(
+      CreateChatSchema.omit({
+        appId: true,
+        userId: true,
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
-      await getAppById(ctx, input.appId)
+      await getAppById(ctx, ctx.auth.appId)
 
       if (input.debug) {
         // TODO: check rbac
 
         const existingDebugChat = await ctx.db.query.Chat.findFirst({
           where: and(
-            eq(Chat.appId, input.appId),
+            eq(Chat.appId, ctx.auth.appId),
             eq(Chat.userId, ctx.auth.userId),
             eq(Chat.debug, true),
           ),
@@ -166,7 +170,14 @@ export const chatRouter = {
         }
       }
 
-      const [chat] = await ctx.db.insert(Chat).values(input).returning()
+      const [chat] = await ctx.db
+        .insert(Chat)
+        .values({
+          ...input,
+          appId: ctx.auth.appId,
+          userId: ctx.auth.userId,
+        })
+        .returning()
 
       if (!chat) {
         throw new TRPCError({
@@ -184,7 +195,7 @@ export const chatRouter = {
    * @param input - The chat data following the {@link UpdateChatSchema}
    * @returns The updated chat
    */
-  update: userProtectedProcedure
+  update: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -231,7 +242,7 @@ export const chatRouter = {
    * @param input - Object containing the chat ID to delete
    * @returns The deleted chat
    */
-  delete: userProtectedProcedure
+  delete: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',

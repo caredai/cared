@@ -2,22 +2,28 @@ import { eq } from '@tavern/db'
 import { Account } from '@tavern/db/schema'
 import AsyncLock from 'async-lock'
 
-import { createOwnxTrpcClientWithApiKey, createOwnxTrpcClientWithUserToken } from '@ownxai/sdk'
+import { OwnxClient } from '@ownxai/sdk'
 
 import type { Context } from './trpc'
 import { env } from './env'
 
-export const ownx = createOwnxTrpcClientWithApiKey(env.OWNX_API_KEY)
-
 const lock = new AsyncLock()
 
-export async function ownxForUser(ctx: Context) {
-  const token = await lock.acquire(ctx.auth.userId!, () => getTokenForOwnx(ctx))
-  return createOwnxTrpcClientWithUserToken(token)
+export function createOwnxClient(ctx: Context, useApiKey?: boolean) {
+  return new OwnxClient(
+    useApiKey
+      ? {
+          apiKey: env.OWNX_API_KEY,
+          userId: ctx.auth.userId!,
+        }
+      : {
+          accessToken: () => lock.acquire(ctx.auth.userId!, () => getOwnxUserToken(ctx)),
+        },
+  )
 }
 
-// TODO: locking and cache
-async function getTokenForOwnx(ctx: Context) {
+// TODO: cache
+async function getOwnxUserToken(ctx: Context) {
   const account = await ctx.db.query.Account.findFirst({
     where: eq(Account.userId, ctx.auth.userId!),
   })

@@ -7,7 +7,7 @@ import { TRPCError } from '@trpc/server'
 import { auth as authApi } from '@ownxai/auth'
 import { eq } from '@ownxai/db'
 import { db } from '@ownxai/db/client'
-import { ApiKey, OAuthAccessToken, OAuthApplication } from '@ownxai/db/schema'
+import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@ownxai/db/schema'
 
 export type Auth =
   // for user auth
@@ -40,15 +40,6 @@ export async function auth() {
 }
 
 export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<Auth>> => {
-  // real authentication logic is here
-  const { user, session } =
-    (await authApi.api.getSession({
-      headers,
-    })) ?? {}
-  if (!user || !session) {
-    return {}
-  }
-
   const key = headers.get('X-API-KEY')
   if (key) {
     // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
@@ -61,9 +52,22 @@ export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<A
     const apiKey = await db.query.ApiKey.findFirst({
       where: eq(ApiKey.key, hashed),
     })
+
     if (apiKey?.metadata) {
       const appId = JSON.parse(apiKey.metadata).appId! as string
-      return { appId }
+
+      const userId = headers.get('X-USER-ID')
+      if (userId) {
+        const user = await db.query.user.findFirst({
+          where: eq(User.id, userId),
+        })
+        if (!user) {
+          return {}
+        }
+        return { appId, userId }
+      } else {
+        return { appId }
+      }
     }
   }
 
@@ -81,8 +85,29 @@ export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<A
       })
       if (oauthApp?.metadata) {
         const appId = JSON.parse(oauthApp.metadata).appId! as string
-        return { appId, userId: session.userId }
+        return { appId, userId: accessToken.userId! }
       }
+    }
+  }
+
+  const { user, session } =
+    (await authApi.api.getSession({
+      headers,
+    })) ?? {}
+  if (!user || !session) {
+    return {}
+  }
+
+  {
+    const appId = headers.get('X-APP-ID')
+    if (appId) {
+      const app = await db.query.App.findFirst({
+        where: eq(App.id, appId),
+      })
+      if (!app) {
+        return {}
+      }
+      return { appId, userId: session.userId }
     }
   }
 

@@ -27,6 +27,7 @@
     "@ownxai/prettier-config": "workspace:*",
     "@turbo/gen": "^2.3.4",
     "prettier": "catalog:",
+    "taze": "^19.0.4",
     "turbo": "^2.3.4",
     "typescript": "catalog:"
   },

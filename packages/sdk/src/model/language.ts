@@ -1,7 +1,6 @@
 import type { LanguageModelV1, LanguageModelV1CallOptions, LanguageModelV1StreamPart } from 'ai'
 
-import { makeHeaders } from '..'
-import { env } from '../env'
+import { makeHeaders, OwnxClientOptions } from '../client'
 
 const NEWLINE = '\n'.charCodeAt(0)
 
@@ -59,17 +58,9 @@ async function* processStream(
 
 export async function createLanguageModel(
   modelId: string,
-  opts:
-    | {
-        apiKey: string
-      }
-    | {
-        userToken: string | (() => string | Promise<string>) // user access token
-      },
+  opts: OwnxClientOptions,
 ): Promise<LanguageModelV1> {
-  const url = env.OWNX_API_URL
-    ? new URL(env.OWNX_API_URL).origin + '/api/v1/model/language'
-    : 'https://ownx.ai/api/v1/model/language'
+  const url = opts.apiUrl + '/api/v1/model/language'
 
   const getUrl = new URL(url)
   getUrl.searchParams.set('modelId', modelId)
@@ -103,9 +94,12 @@ export async function createLanguageModel(
     },
 
     doGenerate: async (options: LanguageModelV1CallOptions) => {
+      const headers = await makeHeaders(opts)
+      headers.set('Content-Type', 'application/json')
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           modelId,
           stream: false,
@@ -120,9 +114,12 @@ export async function createLanguageModel(
     },
 
     doStream: async (options: LanguageModelV1CallOptions) => {
+      const headers = await makeHeaders(opts)
+      headers.set('Content-Type', 'application/json')
+
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           modelId,
           stream: true,

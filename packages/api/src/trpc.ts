@@ -162,6 +162,20 @@ export const appUserProtectedProcedure = t.procedure.use(timingMiddleware).use((
   })
 })
 
+export const appOrUserProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+  if (!ctx.auth.appId && !ctx.auth.userId) {
+    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next({
+    ctx: {
+      auth: {
+        appId: ctx.auth.appId,
+        userId: ctx.auth.userId,
+      },
+    },
+  })
+})
+
 export const adminProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
   if (!ctx.auth.userId) {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })

@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 import log from '@ownxai/log'
 import { getModel } from '@ownxai/providers/providers'
-import { jsonValueSchema, providerMetadataSchema } from '@ownxai/shared'
+import { providerMetadataSchema } from '@ownxai/shared'
 
 const ajv = new Ajv({ allErrors: true })
 

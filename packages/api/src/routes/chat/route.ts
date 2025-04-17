@@ -47,7 +47,6 @@ import { generateChatTitleFromUserMessage } from './actions'
 export async function POST(request: Request): Promise<Response> {
   const {
     id,
-    appId,
     agentId,
     messages: inputMessages,
     parentMessageId,
@@ -55,7 +54,6 @@ export async function POST(request: Request): Promise<Response> {
     preview,
   } = (await request.json()) as {
     id?: string
-    appId?: string
     agentId?: string
     messages: Message[]
     parentMessageId?: string
@@ -63,13 +61,14 @@ export async function POST(request: Request): Promise<Response> {
     preview?: boolean
   }
 
-  const { userId } = await auth()
-  if (!userId) {
+  const { appId, userId } = await auth()
+  if (!appId || !userId) {
     return new Response('Unauthorized', { status: 401 })
   }
 
   const caller = createCaller({
     auth: {
+      appId,
       userId,
     },
     db,
@@ -80,14 +79,6 @@ export async function POST(request: Request): Promise<Response> {
   if (id) {
     chat = (await caller.chat.byId({ id })).chat
 
-    // if chat found, check if user is authorized to access it
-
-    if (chat.userId !== userId) {
-      return new Response('Unauthorized', { status: 401 })
-    }
-    if (appId && chat.appId !== appId) {
-      return new Response('Unauthorized', { status: 401 })
-    }
     if (preview && !chat.debug) {
       return new Response('Chat is not in preview mode', { status: 400 })
     } else if (!preview && chat.debug) {
@@ -95,16 +86,9 @@ export async function POST(request: Request): Promise<Response> {
     }
   } else {
     // if no chat found, create a new one
-
-    if (!appId) {
-      return new Response('Missing app id', { status: 400 })
-    }
-
     chat = (
       await caller.chat.create({
         id, // if id is provided, it will be used; otherwise, a new id will be generated
-        appId,
-        userId,
         debug: preview,
         metadata: {
           title: '',

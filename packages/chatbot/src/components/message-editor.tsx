@@ -47,7 +47,7 @@ export function MessageEditor({ message, setMode, setMessages, reload }: Message
     trpc.message.deleteTrailing.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.chat.queryKey(),
+          queryKey: trpc.message.list.queryKey(),
         })
       },
       onError: (err) => {
