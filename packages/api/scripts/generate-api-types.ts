@@ -19,7 +19,10 @@ const OUTPUT_PATH = path.resolve(__dirname, '../../sdk/src/api.d.ts')
 const PACKAGES_ROOT = path.resolve(__dirname, '../../')
 
 // Define special type definitions for external dependencies
-const EXTERNAL_TYPE_DEFINITIONS = `export type ProviderId = string
+const EXTERNAL_TYPE_DEFINITIONS = `import { MessageContent } from '@ownxai/shared'
+
+export * from '@ownxai/shared'
+export type ProviderId = string
 `
 
 /**

@@ -1,13 +1,13 @@
 import assert from 'assert'
-import type { Message, UIMessage } from 'ai'
 import { appendResponseMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
 import hash from 'stable-hash'
 
-import type { Agent, App, Chat, Message as DBMessage } from '@ownxai/db/schema'
+import type { Agent, App, Chat, Message } from '@ownxai/db/schema'
 import { db } from '@ownxai/db/client'
 import { generateMessageId } from '@ownxai/db/schema'
 import { log } from '@ownxai/log'
 import { getModel } from '@ownxai/providers/providers'
+import { UIMessage, uiMessageSchema } from '@ownxai/shared'
 import { buildTools, knowledgeTools, memoryTools } from '@ownxai/tools'
 
 import { createCaller } from '../..'
@@ -55,11 +55,18 @@ export async function POST(request: Request): Promise<Response> {
   } = (await request.json()) as {
     id?: string
     agentId?: string
-    messages: Message[]
+    messages: UIMessage[]
     parentMessageId?: string
     retainBranch?: boolean
     preview?: boolean
   }
+
+  let inputMessage = inputMessages.at(-1)
+  if (!inputMessage) {
+    return new Response('No input message provided', { status: 400 })
+  }
+
+  inputMessage = uiMessageSchema.parse(inputMessage)
 
   const { appId, userId } = await auth()
   if (!appId || !userId) {
@@ -104,20 +111,14 @@ export async function POST(request: Request): Promise<Response> {
 
   // const revokable = false // TODO
 
-  const inputMessage = inputMessages.at(-1)
-  if (!inputMessage) {
-    await deleteChat?.()
-    return new Response('No input message provided', { status: 400 })
-  }
-
-  let inputDBMessage = (
+  let lastMessage = (
     await caller.message.find({
       id: inputMessage.id,
     })
   ).message
 
-  if (inputDBMessage) {
-    if (parentMessageId && inputDBMessage.parentId !== parentMessageId) {
+  if (lastMessage) {
+    if (parentMessageId && lastMessage.parentId !== parentMessageId) {
       await deleteChat?.()
       return new Response('Invalid parent message id', { status: 400 })
     }
@@ -134,13 +135,13 @@ export async function POST(request: Request): Promise<Response> {
       })
     }
 
-    inputDBMessage = (
+    lastMessage = (
       await caller.message.create({
         id: inputMessage.id,
         parentId: parentMessageId, // will be checked there
         chatId: chat.id,
-        role: inputMessage.role as any,
-        content: inputMessage as UIMessage,
+        role: inputMessage.role,
+        content: inputMessage,
       })
     ).message
   }
@@ -192,7 +193,7 @@ export async function POST(request: Request): Promise<Response> {
     ).chat
   }
 
-  const messages = await getMessages(caller, chat, agent, app, agents, inputDBMessage)
+  const messages = await getMessages(caller, chat, agent, app, agents, lastMessage)
 
   return createDataStreamResponse({
     execute: (dataStream) => {
@@ -282,9 +283,9 @@ async function getMessages(
   currentAgent: Agent,
   app: App,
   agents_: Agent[],
-  lastMsg: DBMessage,
+  lastMsg: Message,
 ): Promise<UIMessage[]> {
-  const dbMesssages = (
+  const allMesssages = (
     await caller.message.list({
       chatId: chat.id,
       before: lastMsg.id,
@@ -292,7 +293,7 @@ async function getMessages(
     })
   ).messages
 
-  const messageBranch = buildMessageBranchFromDescendant(dbMesssages, lastMsg)
+  const messageBranch = buildMessageBranchFromDescendant(allMesssages, lastMsg)
 
   const messages = messageBranch.map((msg) => {
     return {
@@ -309,7 +310,7 @@ async function getMessages(
 
     return messages.map((msg, i) => {
       // Add agent name prefix for messages from other agents in multi-agent chat
-      const agentId = dbMesssages[i]?.agentId
+      const agentId = allMesssages[i]?.agentId
       const agent = agentId ? agents.get(agentId) : undefined
       if (
         msg.role === 'assistant' &&
@@ -339,16 +340,13 @@ async function getMessages(
   }
 }
 
-function buildMessageBranchFromDescendant(
-  messages: DBMessage[],
-  descendant: DBMessage,
-): DBMessage[] {
+function buildMessageBranchFromDescendant(messages: Message[], descendant: Message): Message[] {
   // Create a map for quick lookup of messages by their ID.
-  const messageMap = new Map<string, DBMessage>(messages.map((msg) => [msg.id, msg]))
+  const messageMap = new Map<string, Message>(messages.map((msg) => [msg.id, msg]))
 
   // Initialize the branch array with the descendant message.
-  const branch: DBMessage[] = []
-  let currentMessage: DBMessage | undefined = descendant
+  const branch: Message[] = []
+  let currentMessage: Message | undefined = descendant
 
   // Traverse up the message tree using parentId until the root is reached,
   // or a message is not found in the map.

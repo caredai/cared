@@ -1,4 +1,3 @@
-import type { ToolCall, ToolResult, UIMessage } from 'ai'
 import type { InferSelectModel } from 'drizzle-orm'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import {
@@ -14,7 +13,8 @@ import {
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
-import { jsonValueSchema, providerMetadataSchema } from '@ownxai/shared'
+import type { MessageContent } from '@ownxai/shared'
+import { messageContentSchema, messageRoleEnumValues, uiMessageSchema } from '@ownxai/shared'
 
 import { User } from '.'
 import { Agent } from './agent'
@@ -28,6 +28,9 @@ import {
   timestampsOmits,
   visibilityEnumValues,
 } from './utils'
+
+export { messageContentSchema }
+export type { MessageContent }
 
 export interface ChatMetadata {
   title: string
@@ -44,7 +47,7 @@ export interface ChatMetadata {
 const chatMetadataSchema = z
   .object({
     title: z.string(),
-    visibility: z.enum(visibilityEnumValues),
+    visibility: z.enum(visibilityEnumValues).default('public'),
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),
@@ -100,94 +103,7 @@ export const UpdateChatSchema = createUpdateSchema(Chat, {
   ...timestampsOmits,
 })
 
-export const messageRoleEnumValues = ['system', 'user', 'assistant'] as const
 export const messageRoleEnum = pgEnum('role', messageRoleEnumValues)
-
-export type MessageContent = Pick<UIMessage, 'content' | 'parts' | 'experimental_attachments' | 'annotations'>
-
-const toolCallSchema = z.object({
-  toolCallId: z.string(),
-  toolName: z.string(),
-  args: z.any(),
-}) as z.ZodType<ToolCall<string, any>>
-
-const toolResultSchema = toolCallSchema.and(
-  z.object({
-    result: z.any(),
-  }),
-) as z.ZodType<ToolResult<string, any, any>>
-
-export const messageContentSchema = z.object({
-  content: z.string().default(''),
-  parts: z.array(
-    z.union([
-      z.object({ type: z.literal('text'), text: z.string() }),
-      z.object({
-        type: z.literal('reasoning'),
-        reasoning: z.string(),
-        details: z.array(
-          z.union([
-            z.object({
-              type: z.literal('text'),
-              text: z.string(),
-              signature: z.string().optional(),
-            }),
-            z.object({ type: z.literal('redacted'), data: z.string() }),
-          ]),
-        ),
-      }),
-      z.object({
-        type: z.literal('tool-invocation'),
-        toolInvocation: z.union([
-          z
-            .object({
-              state: z.literal('partial-call'),
-              step: z.number().optional(),
-            })
-            .and(toolCallSchema),
-          z
-            .object({
-              state: z.literal('call'),
-              step: z.number().optional(),
-            })
-            .and(toolCallSchema),
-          z
-            .object({
-              state: z.literal('result'),
-              step: z.number().optional(),
-            })
-            .and(toolResultSchema),
-        ]),
-      }),
-      z.object({
-        type: z.literal('source'),
-        source: z.object({
-          sourceType: z.literal('url'),
-          id: z.string(),
-          url: z.string(),
-          title: z.string().optional(),
-          providerMetadata: providerMetadataSchema.optional(),
-        }),
-      }),
-      z.object({
-        type: z.literal('file'),
-        mimeType: z.string(),
-        data: z.string(),
-      }),
-      z.object({ type: z.literal('step-start') }),
-    ]),
-  ),
-  experimental_attachments: z
-    .array(
-      z.object({
-        name: z.string().optional(),
-        contentType: z.string().optional(),
-        url: z.string(),
-      }),
-    )
-    .optional(),
-  annotations: z.array(jsonValueSchema).optional(),
-})
 
 export function generateMessageId() {
   return generateId('msg')
@@ -227,7 +143,7 @@ export const CreateMessageSchema = z.object({
   id: makeIdValid('msg').optional(),
   parentId: z.string().optional(),
   chatId: z.string(),
-  role: z.enum(messageRoleEnumValues),
+  role: uiMessageSchema.shape.role,
   agentId: z.string().optional(),
   content: messageContentSchema,
   metadata: z.record(z.unknown()).optional(),

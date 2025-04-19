@@ -30,12 +30,14 @@ export class OwnxClient {
 
   private readonly opts: OwnxClientOptions & Required<Pick<OwnxClientOptions, 'apiUrl'>>
 
-  trpc: ReturnType<typeof createOwnxTrpcClient>
+  trpc: OwnxTrpcClient
 
   createLanguageModel(modelId: string) {
     return createLanguageModel(modelId, this.opts)
   }
 }
+
+export type OwnxTrpcClient = ReturnType<typeof createOwnxTrpcClient>
 
 export async function makeHeaders(opts: OwnxClientOptions) {
   const headers = new Headers()

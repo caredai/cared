@@ -2,7 +2,7 @@ import type { Theme as ThemeContent } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
 import { index, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 
-import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk/utils'
+import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
 
 import { user } from './auth'
 
