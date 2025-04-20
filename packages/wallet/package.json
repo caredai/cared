@@ -1,5 +1,5 @@
 {
-  "name": "@tavern/core",
+  "name": "@ownxai/wallet",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -19,19 +19,15 @@
     "@ownxai/eslint-config": "workspace:*",
     "@ownxai/prettier-config": "workspace:*",
     "@ownxai/tsconfig": "workspace:*",
-    "@types/png-chunk-text": "^1.0.3",
-    "@types/png-chunks-encode": "^1.0.2",
-    "@types/png-chunks-extract": "^1.0.2",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
   "prettier": "@ownxai/prettier-config",
   "dependencies": {
-    "@risuai/ccardlib": "^0.4.2",
-    "character-card-utils": "^2.0.3",
-    "png-chunk-text": "^1.0.0",
-    "png-chunks-encode": "^1.0.0",
-    "png-chunks-extract": "^1.0.0"
+    "@hpke/core": "^1.7.2",
+    "@phala/dstack-sdk": "^0.1.11",
+    "@privy-io/react-auth": "^2.10.0",
+    "@privy-io/server-auth": "^1.21.0"
   }
 }
