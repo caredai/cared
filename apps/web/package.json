@@ -30,6 +30,7 @@
     "@ownxai/ui": "workspace:*",
     "@privy-io/react-auth": "^2.10.0",
     "@privy-io/server-auth": "^1.21.0",
+    "@solana/spl-token": "^0.4.13",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",

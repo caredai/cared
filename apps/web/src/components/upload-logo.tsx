@@ -64,9 +64,7 @@ export function UploadLogo({
   const [isUploading, setIsUploading] = useState(false)
   const { uploadToS3 } = usePresignedUpload()
 
-  const params = Object.entries(location)
-    .map((entry) => entry.join('='))
-    .join('&')
+  const params = new URLSearchParams(location).toString()
 
   // Handle file upload
   const handleFileUpload = useCallback(

@@ -79,6 +79,7 @@ export async function POST(request: Request): Promise<Response> {
       userId,
     },
     db,
+    headers: new Headers(),
   })
 
   let chat: Chat | undefined

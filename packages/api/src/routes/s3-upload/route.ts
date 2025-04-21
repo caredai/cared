@@ -8,7 +8,6 @@ import { v7 as uuid } from 'uuid'
 import { and, eq } from '@ownxai/db'
 import { db } from '@ownxai/db/client'
 import { App, Chat, Dataset, Membership } from '@ownxai/db/schema'
-import { log } from '@ownxai/log'
 
 import { auth } from '../../auth'
 import { env } from '../../env'
@@ -64,9 +63,9 @@ const _APIRoute = APIRoute.configure({
       throw new TRPCError({ code: 'UNAUTHORIZED' })
     }
 
-    const url = req.url.split('?')[1]
-    const params = new URLSearchParams(url)
+    const params = new URL(req.url).searchParams
     const mimeType = params.get('mimeType')
+    params.delete('mimeType')
     const location = Object.fromEntries(params.entries()) as StorageLocation
     console.debug('location', location, 'mimeType', mimeType)
 
@@ -175,14 +174,7 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        const key = `${app.workspaceId}/${chat.appId}/${location.chatId}/${name}`
-
-        log.debug('S3 upload file', {
-          location,
-          key,
-        })
-
-        return key
+        return `${app.workspaceId}/${chat.appId}/${location.chatId}/${name}`
       }
 
       default:

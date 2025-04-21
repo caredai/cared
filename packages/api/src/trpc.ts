@@ -23,9 +23,16 @@ import { authWithHeaders } from './auth'
  */
 export const createTRPCContext = async ({
   headers,
+  resHeaders,
 }: {
   headers: Headers
-}): Promise<{ auth: Partial<Auth>; db: DB }> => {
+  resHeaders?: Headers
+}): Promise<{
+  auth: Partial<Auth>
+  db: DB
+  headers: Headers
+  resHeaders?: Headers
+}> => {
   const auth = await authWithHeaders(headers)
 
   console.log(
@@ -38,6 +45,8 @@ export const createTRPCContext = async ({
   return {
     auth,
     db,
+    headers,
+    resHeaders,
   }
 }
 
@@ -162,19 +171,21 @@ export const appUserProtectedProcedure = t.procedure.use(timingMiddleware).use((
   })
 })
 
-export const appOrUserProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.auth.appId && !ctx.auth.userId) {
-    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
-  }
-  return next({
-    ctx: {
-      auth: {
-        appId: ctx.auth.appId,
-        userId: ctx.auth.userId,
+export const appOrUserProtectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.auth.appId && !ctx.auth.userId) {
+      throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+    }
+    return next({
+      ctx: {
+        auth: {
+          appId: ctx.auth.appId,
+          userId: ctx.auth.userId,
+        },
       },
-    },
+    })
   })
-})
 
 export const adminProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
   if (!ctx.auth.userId) {

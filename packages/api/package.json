@@ -36,7 +36,8 @@
     "next-s3-upload": "^0.3.4",
     "superjson": "2.2.2",
     "trpc-to-openapi": "^2.1.4",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zod-form-data": "^2.0.7"
   },
   "devDependencies": {
     "@ownxai/eslint-config": "workspace:*",

@@ -9,6 +9,7 @@ import { messageRouter } from './router/message'
 import { modelRouter } from './router/model'
 import { oauthAppRouter } from './router/oauth-app'
 import { secretRouter } from './router/secret'
+import { storageRouter } from './router/storage'
 import { tokenizerRouter } from './router/tokenizer'
 import { userRouter } from './router/user'
 import { workspaceRouter } from './router/workspace'
@@ -24,6 +25,7 @@ export const appRouter = createTRPCRouter({
   oauthApp: oauthAppRouter,
   agent: agentRouter,
   dataset: datasetRouter,
+  storage: storageRouter,
   model: modelRouter,
   tokenizer: tokenizerRouter,
   chat: chatRouter,

@@ -1,5 +1,12 @@
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
-import { createTRPCClient, httpBatchStreamLink, loggerLink } from '@trpc/client'
+import {
+  createTRPCClient,
+  httpBatchStreamLink,
+  httpLink,
+  isNonJsonSerializable,
+  loggerLink,
+  splitLink,
+} from '@trpc/client'
 import SuperJSON from 'superjson'
 
 import type { OwnxTrpcRouter } from './api'
@@ -14,6 +21,12 @@ export type Message = OwnxTrpcRouterOutputs['message']['get']['message']
 export function createOwnxTrpcClient(
   opts: OwnxClientOptions & Required<Pick<OwnxClientOptions, 'apiUrl'>>,
 ) {
+  const url = opts.apiUrl + '/api/trpc'
+
+  const headers = async () => {
+    return makeHeaders(opts)
+  }
+
   return createTRPCClient<OwnxTrpcRouter>({
     links: [
       loggerLink({
@@ -21,13 +34,19 @@ export function createOwnxTrpcClient(
           process.env.NODE_ENV === 'development' ||
           (op.direction === 'down' && op.result instanceof Error),
       }),
-      httpBatchStreamLink({
-        transformer: SuperJSON,
-
-        url: opts.apiUrl + '/api/trpc',
-        async headers() {
-          return makeHeaders(opts)
-        },
+      splitLink({
+        condition: (op) => isNonJsonSerializable(op.input),
+        true: httpLink({
+          // @ts-ignore
+          transformer: undefined,
+          url,
+          headers,
+        }),
+        false: httpBatchStreamLink({
+          transformer: SuperJSON,
+          url,
+          headers,
+        }),
       }),
     ],
   })

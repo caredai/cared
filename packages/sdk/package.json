@@ -27,6 +27,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.787.0",
     "@ownxai/eslint-config": "workspace:*",
     "@ownxai/prettier-config": "workspace:*",
     "@ownxai/tsconfig": "workspace:*",
