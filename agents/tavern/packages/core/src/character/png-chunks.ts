@@ -6,7 +6,7 @@ import extract from 'png-chunks-extract'
  * Writes Character metadata to a PNG image buffer.
  * Writes only 'chara', 'ccv3'.
  */
-export function write(image: Uint8Array, data: string): Uint8Array {
+export function pngWrite(image: Uint8Array, data: string): Uint8Array {
   const chunks = extract(image)
   const tEXtChunks = chunks.filter((chunk) => chunk.name === 'tEXt')
 
@@ -42,7 +42,7 @@ export function write(image: Uint8Array, data: string): Uint8Array {
  * Reads Character metadata from a PNG image buffer.
  * Supports both V2 (chara) and V3 (ccv3). V3 (ccv3) takes precedence.
  */
-export function read(image: Uint8Array): string {
+export function pngRead(image: Uint8Array): string {
   const chunks = extract(image)
 
   const textChunks = chunks
@@ -68,14 +68,14 @@ export function read(image: Uint8Array): string {
   throw new Error('No PNG metadata')
 }
 
-export async function parse(url: string, format?: 'png') {
+export async function pngParse(url: string, format?: 'png') {
   const fileFormat = format ?? 'png'
 
   switch (fileFormat) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     case 'png': {
       const buffer = await (await fetch(url)).blob()
-      return read(await buffer.bytes())
+      return pngRead(await buffer.bytes())
     }
   }
 
