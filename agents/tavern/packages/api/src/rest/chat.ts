@@ -1,6 +1,4 @@
 import type { LanguageModelV1 } from 'ai'
-import { headers } from 'next/headers'
-import { auth } from '@tavern/auth'
 import { db } from '@tavern/db/client'
 import { createDataStreamResponse, generateText, smoothStream, streamText } from 'ai'
 
@@ -13,6 +11,7 @@ import {
   uiMessageSchema,
 } from '@ownxai/sdk'
 
+import { auth } from '../auth'
 import { createOwnxClient } from '../ownx'
 
 export async function POST(request: Request): Promise<Response> {
@@ -36,11 +35,7 @@ export async function POST(request: Request): Promise<Response> {
   }
   inputMessage = uiMessageSchema.parse(inputMessage)
 
-  const { session } =
-    (await auth.api.getSession({
-      headers: await headers(),
-    })) ?? {}
-  const userId = session?.userId
+  const { userId } = await auth()
   if (!userId) {
     return new Response('Unauthorized', { status: 401 })
   }

@@ -29,19 +29,6 @@ import { appProtectedProcedure } from '../trpc'
 function getKeyPrefixByApp(ctx: Context) {
   const appId = ctx.auth.appId!
   return `${appId}/`
-  /*
-  const app = await ctx.db.query.App.findFirst({
-    columns: { workspaceId: true },
-    where: eq(App.id, appId),
-  })
-  if (!app) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'App not found',
-    })
-  }
-  return `${app.workspaceId}/${appId}/`
-  */
 }
 
 function getKeyWithPrefix(prefix: string, inputKey?: string) {
@@ -59,19 +46,9 @@ function getKeyWithPrefix(prefix: string, inputKey?: string) {
   return key
 }
 
-async function getKeyByApp(ctx: Context, inputKey?: string) {
+function getKeyByApp(ctx: Context, inputKey?: string) {
   const prefix = getKeyPrefixByApp(ctx)
   return getKeyWithPrefix(prefix, inputKey)
-}
-
-function getCustomMetadataHeaders(ctx: Context) {
-  const metadata: Record<string, string> = {}
-  for (const [key, value] of ctx.headers) {
-    if (key.startsWith('x-amz-meta-')) {
-      metadata[key] = value
-    }
-  }
-  return metadata
 }
 
 function getQueryHeaders(ctx: Context) {
@@ -89,6 +66,13 @@ function getQueryHeaders(ctx: Context) {
 }
 
 function getMutateHeaders(ctx: Context) {
+  const metadata: Record<string, string> = {}
+  for (const [key, value] of ctx.headers) {
+    if (key.startsWith('x-amz-meta-')) {
+      metadata[key] = value
+    }
+  }
+
   return {
     ContentType: ctx.headers.get('Content-Type') ?? undefined,
     CacheControl: ctx.headers.get('Cache-Control') ?? undefined,
@@ -97,7 +81,7 @@ function getMutateHeaders(ctx: Context) {
     ContentLanguage: ctx.headers.get('Content-Language') ?? undefined,
     Expires: z.coerce.date().safeParse(ctx.headers.get('Expires') ?? undefined).data,
     ContentMD5: ctx.headers.get('Content-MD5') ?? undefined,
-    Metadata: getCustomMetadataHeaders(ctx),
+    Metadata: metadata,
     // TODO: SSE-C
   }
 }
@@ -136,28 +120,30 @@ function setResponseHeaders(
   if (response.LastModified) {
     ctx.resHeaders?.set('Last-Modified', response.LastModified.toUTCString())
   }
-}
-
-export interface MultipartUpload {
-  uploadId?: string
-  key?: string
-  initiated?: Date
-  storageClass?: string
+  if (response.ContentLength) {
+    ctx.resHeaders?.set('Content-Length', response.ContentLength.toString())
+  }
+  if (response.Metadata) {
+    for (const [key, value] of Object.entries(response.Metadata)) {
+      if (key.startsWith('x-amz-meta-')) {
+        ctx.resHeaders?.set(key, value)
+      }
+    }
+  }
 }
 
 export const storageRouter = {
   /**
-   * Lists objects in the bucket.list().
-   * Supports prefix, delimiter, limit, cursor (ContinuationToken), and startAfter.
+   * Lists objects.
    */
   list: appProtectedProcedure
     .input(
       z
         .object({
-          limit: z.number().int().positive().optional(),
           prefix: z.string().optional(),
-          cursor: z.string().optional(),
           delimiter: z.string().optional(),
+          cursor: z.string().optional(),
+          limit: z.number().int().positive().optional(),
           startAfter: z.string().optional(),
         })
         .optional(),
@@ -167,13 +153,32 @@ export const storageRouter = {
 
       const command = new ListObjectsV2Command({
         Bucket: env.S3_BUCKET,
-        MaxKeys: input?.limit,
-        Prefix: await getKeyByApp(ctx, input?.prefix),
-        ContinuationToken: input?.cursor,
+        Prefix: getKeyByApp(ctx, input?.prefix),
         Delimiter: input?.delimiter,
+        ContinuationToken: input?.cursor,
+        MaxKeys: input?.limit,
         StartAfter: input?.startAfter,
       })
-      return await s3.send(command)
+      const response = await s3.send(command)
+      return {
+        truncated: response.IsTruncated ?? false,
+        cursor: response.NextContinuationToken,
+        objects: (response.Contents ?? []).map((o) => ({
+          key: o.Key!,
+          size: o.Size!,
+          uploadedAt: o.LastModified!,
+          etag: o.ETag!,
+          storageClass: o.StorageClass! as string,
+        })),
+        prefix: response.Prefix,
+        delimiter: response.Delimiter,
+        delimitedPrefixes: response.CommonPrefixes?.map((p) => p.Prefix).filter(
+          (p): p is string => !p,
+        ),
+        count: response.KeyCount,
+        limit: response.MaxKeys,
+        startAfter: response.StartAfter,
+      }
     }),
 
   /**
@@ -191,14 +196,23 @@ export const storageRouter = {
       try {
         const command = new HeadObjectCommand({
           Bucket: env.S3_BUCKET,
-          Key: await getKeyByApp(ctx, input.key),
+          Key: getKeyByApp(ctx, input.key),
           ...getQueryHeaders(ctx),
         })
         const response = await s3.send(command)
 
         setResponseHeaders(ctx, response)
 
-        return response
+        return {
+          size: response.ContentLength!,
+          uploadedAt: response.LastModified!,
+          etag: response.ETag!,
+          storageClass: response.StorageClass! as string,
+          checksums: {
+            sha1: response.ChecksumSHA1,
+            sha256: response.ChecksumSHA256,
+          },
+        }
       } catch (error) {
         if (
           error instanceof S3ServiceException &&
@@ -225,7 +239,7 @@ export const storageRouter = {
       const s3 = getClient()
       const command = new GetObjectCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         ...getQueryHeaders(ctx),
       })
 
@@ -233,11 +247,18 @@ export const storageRouter = {
 
       setResponseHeaders(ctx, response)
 
-      const { Body: body, ...metadata } = response
+      yield {
+        size: response.ContentLength!,
+        uploadedAt: response.LastModified!,
+        etag: response.ETag!,
+        storageClass: response.StorageClass! as string,
+        checksums: {
+          sha1: response.ChecksumSHA1,
+          sha256: response.ChecksumSHA256,
+        },
+      }
 
-      yield metadata
-
-      const stream = body?.transformToWebStream()
+      const stream = response.Body?.transformToWebStream()
       if (stream) {
         for await (const chunk of stream) {
           yield chunk
@@ -260,7 +281,7 @@ export const storageRouter = {
       const s3 = getClient()
       const command = new GetObjectCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         ...getQueryHeaders(ctx),
       })
       const url = await getSignedUrl(s3, command, { expiresIn: input.expiresIn })
@@ -282,11 +303,19 @@ export const storageRouter = {
 
       const command = new PutObjectCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         Body: input.file,
         ...getMutateHeaders(ctx),
       })
-      return await s3.send(command)
+      const response = await s3.send(command)
+      return {
+        size: response.Size!,
+        etag: response.ETag!,
+        checksums: {
+          sha1: response.ChecksumSHA1,
+          sha256: response.ChecksumSHA256,
+        },
+      }
     }),
 
   /**
@@ -304,7 +333,7 @@ export const storageRouter = {
       const s3 = getClient()
       const command = new PutObjectCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         ...getMutateHeaders(ctx),
       })
       const url = await getSignedUrl(s3, command, { expiresIn: input.expiresIn })
@@ -386,7 +415,7 @@ export const storageRouter = {
 
       const command = new ListMultipartUploadsCommand({
         Bucket: env.S3_BUCKET,
-        Prefix: await getKeyByApp(ctx, input?.prefix),
+        Prefix: getKeyByApp(ctx, input?.prefix),
         Delimiter: input?.delimiter,
         MaxUploads: input?.limit,
         KeyMarker: input?.keyMarker,
@@ -402,13 +431,15 @@ export const storageRouter = {
         uploadIdMarker: response.UploadIdMarker,
         nextKeyMarker: response.NextKeyMarker,
         nextUploadIdMarker: response.NextUploadIdMarker,
-        isTruncated: response.IsTruncated,
-        commonPrefixes: response.CommonPrefixes?.map((p) => p.Prefix),
+        truncated: response.IsTruncated,
+        delimitedPrefixes: response.CommonPrefixes?.map((p) => p.Prefix).filter(
+          (p): p is string => !p,
+        ),
         uploads: response.Uploads?.map((u) => ({
           uploadId: u.UploadId,
           key: u.Key,
           initiated: u.Initiated,
-          storageClass: u.StorageClass,
+          storageClass: u.StorageClass as string,
         })),
       }
     }),
@@ -428,7 +459,7 @@ export const storageRouter = {
 
       const command = new CreateMultipartUploadCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         ...getMutateHeaders(ctx),
       })
       const response = await s3.send(command)
@@ -461,12 +492,19 @@ export const storageRouter = {
       const s3 = getClient()
       const command = new UploadPartCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         UploadId: input.uploadId,
         PartNumber: input.partNumber,
         Body: input.file,
       })
-      return await s3.send(command)
+      const response = await s3.send(command)
+      return {
+        etag: response.ETag!,
+        checksums: {
+          sha1: response.ChecksumSHA1,
+          sha256: response.ChecksumSHA256,
+        },
+      }
     }),
 
   /**
@@ -485,7 +523,7 @@ export const storageRouter = {
       const s3 = getClient()
       const command = new UploadPartCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         UploadId: input.uploadId,
         PartNumber: input.partNumber,
       })
@@ -517,13 +555,21 @@ export const storageRouter = {
 
       const command = new CompleteMultipartUploadCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key),
+        Key: getKeyByApp(ctx, input.key),
         UploadId: input.uploadId,
         MultipartUpload: {
           Parts: input.parts,
         },
       })
-      return await s3.send(command)
+      const response = await s3.send(command)
+      return {
+        key: response.Key!,
+        etag: response.ETag!,
+        checksums: {
+          sha1: response.ChecksumSHA1,
+          sha256: response.ChecksumSHA256,
+        },
+      }
     }),
 
   /**
@@ -541,7 +587,7 @@ export const storageRouter = {
 
       const command = new AbortMultipartUploadCommand({
         Bucket: env.S3_BUCKET,
-        Key: await getKeyByApp(ctx, input.key), // Key needs prefix
+        Key: getKeyByApp(ctx, input.key), // Key needs prefix
         UploadId: input.uploadId,
       })
       await s3.send(command)

@@ -7,7 +7,7 @@ import { nextCookies } from 'better-auth/next-js'
 import { customSession, genericOAuth, openAPI } from 'better-auth/plugins'
 import { decodeJwt } from 'jose'
 
-import { generateId } from '@ownxai/shared'
+import { generateId } from '@ownxai/sdk'
 
 import { getBaseUrl } from './client'
 import { env } from './env'

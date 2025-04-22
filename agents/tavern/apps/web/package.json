@@ -20,7 +20,6 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@ownxai/log": "^0.1.1",
-    "@ownxai/shared": "^0.1.1",
     "@ownxai/ui": "workspace:*",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "catalog:",

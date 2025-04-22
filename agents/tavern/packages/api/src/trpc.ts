@@ -8,23 +8,13 @@
  */
 import type { DB } from '@tavern/db/client'
 import type { inferAsyncReturnType } from '@trpc/server'
-import { auth as authApi } from '@tavern/auth'
 import { db } from '@tavern/db/client'
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 
-export type Auth =
-  // for user auth
-  | {
-      userId: string
-      isAdmin?: never
-    }
-  // for admin user auth
-  | {
-      userId: string
-      isAdmin: true
-    }
+import type { Auth } from './auth'
+import { authWithHeaders } from './auth'
 
 /**
  * 1. CONTEXT
@@ -43,22 +33,12 @@ export const createTRPCContext = async ({
 }: {
   headers: Headers
 }): Promise<{ auth: Partial<Auth>; db: DB }> => {
-  const { session } =
-    (await authApi.api.getSession({
-      headers,
-    })) ?? {}
+  const auth = await authWithHeaders(headers)
 
-  const _auth = { userId: session?.userId }
-
-  console.log(
-    '>>> tRPC Request from',
-    headers.get('x-trpc-source') ?? 'unknown',
-    'by',
-    _auth.userId,
-  )
+  console.log('>>> tRPC Request from', headers.get('x-trpc-source') ?? 'unknown', 'by', auth.userId)
 
   return {
-    auth: _auth,
+    auth,
     db,
   }
 }

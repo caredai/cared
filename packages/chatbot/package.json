@@ -1,7 +1,7 @@
 {
   "name": "@ownxai/chatbot",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "exports": {
     "./components/*": "./src/components/*.tsx",
@@ -35,7 +35,7 @@
     "@codemirror/view": "^6.36.2",
     "@ownxai/db": "workspace:*",
     "@ownxai/providers": "workspace:*",
-    "@ownxai/sdk": "^0.1.1",
+    "@ownxai/sdk": "^0.1.5",
     "@ownxai/tools": "workspace:*",
     "@ownxai/ui": "workspace:*",
     "ai": "catalog:",
