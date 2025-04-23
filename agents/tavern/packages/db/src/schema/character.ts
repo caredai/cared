@@ -12,13 +12,14 @@ import {
   timestampsOmits,
 } from '@ownxai/sdk'
 
+import { User } from '.'
+
 export const characterSourceEnumValues = [
   'create', // the character is created by the user
   'import-file', // the character is imported from a file
-  'import-url', // the character is imported from an url
-  'purchase', // the character is nft and purchased by the user
-  'link', // the character is linked from another character
-  'copy', // the character is copied from another character
+  'import-url', // the character is imported from a url
+  'nft-owned', // the character is nft and owned by the user
+  'nft-link', // the character is linked from another character nft
 ] as const
 
 export const characterSourceEnum = pgEnum('source', characterSourceEnumValues)
@@ -45,7 +46,9 @@ export const Character = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('char')),
-    userId: varchar({ length: 127 }).notNull(),
+    userId: text()
+      .notNull()
+      .references(() => User.id, { onDelete: 'cascade' }),
     source: characterSourceEnum().notNull().default('create'),
     // the nft token id of the character (if the character is nft)
     nftId: text(),

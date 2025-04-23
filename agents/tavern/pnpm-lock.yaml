@@ -495,6 +495,9 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.24.2
+      zod-form-data:
+        specifier: ^2.0.7
+        version: 2.0.7(zod@3.24.2)
     devDependencies:
       '@ownxai/eslint-config':
         specifier: workspace:*
@@ -566,6 +569,9 @@ importers:
       png-chunks-extract:
         specifier: ^1.0.0
         version: 1.0.0
+      unzipit:
+        specifier: ^1.4.3
+        version: 1.4.3
     devDependencies:
       '@ownxai/eslint-config':
         specifier: workspace:*
@@ -2423,6 +2429,9 @@ packages:
 
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
+
+  '@rvf/set-get@7.0.1':
+    resolution: {integrity: sha512-GkTSn9K1GrTYoTUqlUs36k6nJnzjQaFBTTEIqUYmzBcsGsoJM8xG7EAx2WLHWAA4QzFjcwWUSHQ3vM3Fbw50Tg==}
 
   '@simplewebauthn/browser@13.1.0':
     resolution: {integrity: sha512-WuHZ/PYvyPJ9nxSzgHtOEjogBhwJfC8xzYkPC+rR/+8chl/ft4ngjiK8kSU5HtRJfczupyOh33b25TjYbvwAcg==}
@@ -5740,6 +5749,10 @@ packages:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
     engines: {node: '>= 10.0.0'}
 
+  unzipit@1.4.3:
+    resolution: {integrity: sha512-gsq2PdJIWWGhx5kcdWStvNWit9FVdTewm4SEG7gFskWs+XCVaULt9+BwuoBtJiRE8eo3L1IPAOrbByNLtLtIlg==}
+    engines: {node: '>=12'}
+
   update-check@1.5.4:
     resolution: {integrity: sha512-5YHsflzHP4t1G+8WGPlvKbJEbAJGCgw+Em+dGR1KmBUbr1J36SJBqlHLjR7oob7sco5hWHGQVcr9B2poIVDDTQ==}
 
@@ -5795,6 +5808,9 @@ packages:
   uuid@9.0.1:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
+
+  uzip-module@1.0.3:
+    resolution: {integrity: sha512-AMqwWZaknLM77G+VPYNZLEruMGWGzyigPK3/Whg99B3S6vGHuqsyl5ZrOv1UUF3paGK1U6PM0cnayioaryg/fA==}
 
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
@@ -5924,6 +5940,11 @@ packages:
 
   youch@3.2.3:
     resolution: {integrity: sha512-ZBcWz/uzZaQVdCvfV4uk616Bbpf2ee+F/AvuKDR5EwX/Y4v06xWdtMluqTD7+KlZdM93lLm9gMZYo0sKBS0pgw==}
+
+  zod-form-data@2.0.7:
+    resolution: {integrity: sha512-O27uzKMx7qc7z51KXER326Fp966jqHGvZX3i18CbvElF/QqVsQQN6Q7BnzepkzeBzTJnU3golibVSagf4dp7RQ==}
+    peerDependencies:
+      zod: '>= 3.11.0'
 
   zod-to-json-schema@3.24.3:
     resolution: {integrity: sha512-HIAfWdYIt1sssHfYZFCXp4rU1w2r8hVVXYIlmoa0r0gABLs5di3RCqPU5DDROogVz1pAdYBaz7HK5n9pSUNs3A==}
@@ -8018,6 +8039,8 @@ snapshots:
   '@risuai/ccardlib@0.4.2': {}
 
   '@rtsao/scc@1.1.0': {}
+
+  '@rvf/set-get@7.0.1': {}
 
   '@simplewebauthn/browser@13.1.0': {}
 
@@ -11762,6 +11785,10 @@ snapshots:
 
   universalify@2.0.1: {}
 
+  unzipit@1.4.3:
+    dependencies:
+      uzip-module: 1.0.3
+
   update-check@1.5.4:
     dependencies:
       registry-auth-token: 3.3.2
@@ -11808,6 +11835,8 @@ snapshots:
   uuid@8.3.2: {}
 
   uuid@9.0.1: {}
+
+  uzip-module@1.0.3: {}
 
   v8-compile-cache-lib@3.0.1: {}
 
@@ -11953,6 +11982,11 @@ snapshots:
       cookie: 0.5.0
       mustache: 4.2.0
       stacktracey: 2.1.8
+
+  zod-form-data@2.0.7(zod@3.24.2):
+    dependencies:
+      '@rvf/set-get': 7.0.1
+      zod: 3.24.2
 
   zod-to-json-schema@3.24.3(zod@3.24.2):
     dependencies:

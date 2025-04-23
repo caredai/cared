@@ -1,14 +1,16 @@
-import { modelPresetRouter } from './router/model-preset'
-import { settingsRouter } from './router/settings'
-import { themeRouter } from './router/theme'
-import { userRouter } from './router/user'
 import { createTRPCRouter } from './trpc'
+import { characterRouter } from './trpc/character'
+import { modelPresetRouter } from './trpc/model-preset'
+import { settingsRouter } from './trpc/settings'
+import { themeRouter } from './trpc/theme'
+import { userRouter } from './trpc/user'
 
 export const appRouter = createTRPCRouter({
   user: userRouter,
   settings: settingsRouter,
   modelPreset: modelPresetRouter,
   theme: themeRouter,
+  character: characterRouter,
 })
 
 // export type definition of API
