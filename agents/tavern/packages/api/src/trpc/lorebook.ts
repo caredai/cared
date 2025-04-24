@@ -1,7 +1,7 @@
 import path from 'path'
-import type { LorebookContent, LorebookEntry } from '@tavern/core'
+import type { LorebookContent } from '@tavern/core'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
-import { lorebookContentSchema, lorebookEntrySchema } from '@tavern/core'
+import { lorebookEntrySchema, lorebookUpdatesSchema, updateLorebook } from '@tavern/core'
 import { and, eq } from '@tavern/db'
 import { Lorebook } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
@@ -30,6 +30,15 @@ export async function uploadLorebook(content: LorebookContent) {
 export const lorebookRouter = {
   list: userProtectedProcedure.query(async ({ ctx }) => {
     const lorebooks = await ctx.db.query.Lorebook.findMany({
+      // Omit `entries` field since it may be too big.
+      columns: {
+        id: true,
+        userId: true,
+        name: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       where: eq(Lorebook.userId, ctx.auth.userId),
     })
     return { lorebooks }
@@ -45,7 +54,9 @@ export const lorebookRouter = {
   create: userProtectedProcedure
     .input(
       z.object({
-        content: lorebookContentSchema,
+        name: z.string(),
+        description: z.string().optional(),
+        entries: z.array(lorebookEntrySchema).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -53,7 +64,9 @@ export const lorebookRouter = {
         .insert(Lorebook)
         .values({
           userId: ctx.auth.userId,
-          content: input.content,
+          name: input.name,
+          description: input.description,
+          entries: input.entries ?? [],
         })
         .returning()
       return { lorebook: lorebook! }
@@ -63,23 +76,7 @@ export const lorebookRouter = {
     .input(
       z.object({
         id: z.string(),
-        updateName: z.string().optional(),
-        updateDescription: z.string().optional(),
-        addEntries: z.array(lorebookEntrySchema).optional(),
-        updateEntries: z
-          .array(
-            lorebookEntrySchema.extend({
-              index: z.number().int().nonnegative(),
-            }),
-          )
-          .optional(),
-        removeEntries: z
-          .array(
-            z.object({
-              index: z.number().int().nonnegative(),
-            }),
-          )
-          .optional(),
+        updates: lorebookUpdatesSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -92,47 +89,18 @@ export const lorebookRouter = {
           message: 'Lorebook not found',
         })
       }
-      const content = lorebook.content
-      if (input.updateName) {
-        content.name = input.updateName
-      }
-      if (input.updateDescription) {
-        content.description = input.updateDescription || undefined
-      }
-      if (input.addEntries) {
-        content.entries.push(...input.addEntries)
-      }
-      if (input.updateEntries) {
-        for (const { index, ...entry } of input.updateEntries) {
-          if (index >= content.entries.length) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Index out of range: ${index}`,
-            })
-          }
-          content.entries[index] = entry
-        }
-      }
-      if (input.removeEntries) {
-        const removeEntries = new Set(input.removeEntries.map((entry) => entry.index))
-        const entries: LorebookEntry[] = []
-        for (let i = 0; i < content.entries.length; i++) {
-          if (!removeEntries.has(i)) {
-            entries.push(content.entries[i]!)
-          }
-        }
-        content.entries = entries
-      }
 
-      const [updatedLorebook] = await ctx.db
-        .update(Lorebook)
-        .set({
-          content: content,
+      const result = updateLorebook(lorebook, input.updates)
+      if (result.error || !result.updates) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: result.error,
         })
-        .where(eq(Lorebook.id, input.id))
-        .returning()
+      }
 
-      return { lorebook: updatedLorebook! }
+      await ctx.db.update(Lorebook).set(result.updates).where(eq(Lorebook.id, input.id))
+
+      // Do not return lorebook here
     }),
 
   delete: userProtectedProcedure
@@ -149,7 +117,5 @@ export const lorebookRouter = {
           message: 'Lorebook not found',
         })
       }
-
-      return { lorebook }
     }),
 }

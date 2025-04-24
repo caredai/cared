@@ -7,7 +7,7 @@ export interface LorebookContent {
   /** The name of the book */
   name: string
   /** The description of the book */
-  description?: string
+  description?: string | null
   /** The entries of the book */
   entries: LorebookEntry[]
 }
@@ -112,10 +112,4 @@ export const lorebookEntrySchema = z.object({
   sticky: z.number().optional(),
   cooldown: z.number().optional(),
   delay: z.number().optional(),
-})
-
-export const lorebookContentSchema = z.object({
-  name: z.string(),
-  description: z.string().optional(),
-  entries: z.array(lorebookEntrySchema),
 })

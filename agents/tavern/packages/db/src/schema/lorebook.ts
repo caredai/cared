@@ -1,4 +1,4 @@
-import type { LorebookContent } from '@tavern/core'
+import type { LorebookEntry } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
 import { index, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 
@@ -16,7 +16,9 @@ export const Lorebook = pgTable(
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
-    content: jsonb().$type<LorebookContent>().notNull(),
+    name: text().notNull(),
+    description: text(),
+    entries: jsonb().$type<LorebookEntry[]>().notNull(),
     metadata: jsonb(),
     ...timestamps,
   },

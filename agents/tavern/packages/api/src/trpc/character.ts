@@ -178,19 +178,19 @@ export const characterRouter = {
           })
       }
 
-      await uploadCharacterCard(input.blob, character.metadata.filename)
+      const url = await uploadCharacterCard(input.blob, character.metadata.filename)
+
+      if (url !== character.metadata.url) {
+        character.metadata.url = url
+        await ctx.db
+          .update(Character)
+          .set({
+            metadata: character.metadata,
+          })
+          .where(eq(Character.id, input.id))
+      }
 
       return { character }
-
-      /*
-      const [updated] = await ctx.db
-        .update(Character)
-        .set({})
-        .where(and(eq(Character.id, input.id), eq(Character.userId, ctx.auth.userId)))
-        .returning()
-
-      return { character: updated }
-      */
     }),
 
   delete: userProtectedProcedure
