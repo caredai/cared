@@ -37,6 +37,7 @@
     "p-debounce": "^4.0.0",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",
+    "react-easy-crop": "^5.4.1",
     "superjson": "2.2.2",
     "undici": "^7.6.0",
     "zod": "catalog:"

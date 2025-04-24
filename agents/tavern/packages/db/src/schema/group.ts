@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, jsonb, pgTable, text, unique, varchar } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -11,6 +11,8 @@ import {
   timestampsIndices,
   timestampsOmits,
 } from '@ownxai/sdk'
+
+import { User } from '.'
 
 export interface GroupMetadata {
   custom?: unknown
@@ -27,7 +29,9 @@ export const Group = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('group')),
-    userId: varchar({ length: 127 }).notNull(),
+    userId: text()
+      .notNull()
+      .references(() => User.id, { onDelete: 'cascade' }),
     characters: jsonb().$type<string[]>().notNull(), // Array of character references
     metadata: jsonb().$type<GroupMetadata>().notNull(),
     ...timestamps,
@@ -64,12 +68,14 @@ export const GroupToChat = pgTable(
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('groupchat')),
+      .$defaultFn(() => generateId('gc')),
     groupId: text()
       .notNull()
       .references(() => Group.id),
     chatId: text().notNull(),
-    userId: varchar({ length: 127 }).notNull(),
+    userId: text()
+      .notNull()
+      .references(() => User.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [

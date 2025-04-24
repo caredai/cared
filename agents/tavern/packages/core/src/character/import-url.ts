@@ -194,7 +194,7 @@ async function downloadChubLorebook(id: string): Promise<ImportUrlResult | undef
       format: 'SILLYTAVERN',
     }),
   })
-  if (!response.ok || response.headers.get('Content-Type') !== 'application/json') {
+  if (!response.ok || !response.headers.get('Content-Type')?.includes('application/json')) {
     return
   }
 

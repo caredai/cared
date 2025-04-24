@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, jsonb, pgEnum, pgTable, text, unique, varchar } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgEnum, pgTable, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -90,12 +90,14 @@ export const CharacterToChat = pgTable(
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('charchat')),
+      .$defaultFn(() => generateId('cc')),
     characterId: text()
       .notNull()
       .references(() => Character.id),
     chatId: text().notNull(),
-    userId: varchar({ length: 127 }).notNull(),
+    userId: text()
+      .notNull()
+      .references(() => User.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [

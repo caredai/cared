@@ -1,5 +1,6 @@
 import { createTRPCRouter } from './trpc'
 import { characterRouter } from './trpc/character'
+import { lorebookRouter } from './trpc/lorebook'
 import { modelPresetRouter } from './trpc/model-preset'
 import { settingsRouter } from './trpc/settings'
 import { themeRouter } from './trpc/theme'
@@ -11,6 +12,7 @@ export const appRouter = createTRPCRouter({
   modelPreset: modelPresetRouter,
   theme: themeRouter,
   character: characterRouter,
+  lorebook: lorebookRouter,
 })
 
 // export type definition of API

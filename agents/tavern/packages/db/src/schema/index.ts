@@ -8,6 +8,7 @@ export * from './group'
 export * from './settings'
 export * from './model-preset'
 export * from './theme'
+export * from './lorebook'
 
 export const User = user
 export type User = InferSelectModel<typeof User>
