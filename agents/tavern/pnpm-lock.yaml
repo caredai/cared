@@ -353,6 +353,9 @@ importers:
       '@fortawesome/react-fontawesome':
         specifier: ^0.2.2
         version: 0.2.2(@fortawesome/fontawesome-svg-core@6.7.2)(react@19.0.0)
+      '@lukemorales/query-key-factory':
+        specifier: ^1.3.4
+        version: 1.3.4(@tanstack/query-core@5.67.1)(@tanstack/react-query@5.67.1(react@19.0.0))
       '@ownxai/log':
         specifier: ^0.1.1
         version: 0.1.1
@@ -395,6 +398,9 @@ importers:
       jotai:
         specifier: ^2.12.2
         version: 2.12.2(@types/react@19.0.10)(react@19.0.0)
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       next:
         specifier: ^15.2.1
         version: 15.2.1(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -435,6 +441,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.1.3
         version: 4.1.3
+      '@types/lodash':
+        specifier: ^4.17.16
+        version: 4.17.16
       '@types/node':
         specifier: ^22.10.10
         version: 22.10.10
@@ -1681,6 +1690,13 @@ packages:
   '@levischuck/tiny-cbor@0.2.11':
     resolution: {integrity: sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow==}
 
+  '@lukemorales/query-key-factory@1.3.4':
+    resolution: {integrity: sha512-A3frRDdkmaNNQi6mxIshsDk4chRXWoXa05US8fBo4kci/H+lVmujS6QrwQLLGIkNIRFGjMqp2uKjC4XsLdydRw==}
+    engines: {node: '>=14'}
+    peerDependencies:
+      '@tanstack/query-core': '>= 4.0.0'
+      '@tanstack/react-query': '>= 4.0.0'
+
   '@neondatabase/serverless@0.10.0':
     resolution: {integrity: sha512-+0mjRGJFL2kGyTtWo60PxIcgv0a/X/vCu4DV2iS3tL+Rl/OrFocJoN3aNajugvgBQj624aOK7LowLijoQHWIXg==}
 
@@ -2916,6 +2932,9 @@ packages:
 
   '@types/json5@0.0.29':
     resolution: {integrity: sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==}
+
+  '@types/lodash@4.17.16':
+    resolution: {integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==}
 
   '@types/luxon@3.4.2':
     resolution: {integrity: sha512-TifLZlFudklWlMBfhubvgqTXRzLDI5pCbGa4P8a3wPyUQSW+1xQ5eDsreP9DWHX3tjq1ke96uYG/nwundroWcA==}
@@ -7245,6 +7264,11 @@ snapshots:
 
   '@levischuck/tiny-cbor@0.2.11': {}
 
+  '@lukemorales/query-key-factory@1.3.4(@tanstack/query-core@5.67.1)(@tanstack/react-query@5.67.1(react@19.0.0))':
+    dependencies:
+      '@tanstack/query-core': 5.67.1
+      '@tanstack/react-query': 5.67.1(react@19.0.0)
+
   '@neondatabase/serverless@0.10.0':
     dependencies:
       '@types/pg': 8.11.6
@@ -8764,6 +8788,8 @@ snapshots:
   '@types/json-schema@7.0.15': {}
 
   '@types/json5@0.0.29': {}
+
+  '@types/lodash@4.17.16': {}
 
   '@types/luxon@3.4.2': {}
 

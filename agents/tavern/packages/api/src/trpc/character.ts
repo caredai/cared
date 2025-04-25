@@ -1,6 +1,6 @@
 import * as path from 'path'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
-import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { importUrl } from '@tavern/core'
 import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
@@ -23,6 +23,18 @@ async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
   })
   await s3Client.send(command)
   return path.posix.join(env.S3_BUCKET, key)
+}
+
+async function deleteCharacterCard(url: string) {
+  if (!url.startsWith(env.S3_BUCKET)) {
+    return
+  }
+  const key = new URL(url).pathname.slice(1) // Remove leading slash
+  const command = new DeleteObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: key,
+  })
+  await s3Client.send(command)
 }
 
 export const characterRouter = {
@@ -210,6 +222,9 @@ export const characterRouter = {
           message: 'Character not found',
         })
       }
+
+      await deleteCharacterCard(character.metadata.url)
+
       return { character }
     }),
 }
