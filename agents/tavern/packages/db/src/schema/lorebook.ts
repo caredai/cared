@@ -4,7 +4,7 @@ import { index, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 
 import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
 
-import { Character, Group, User } from '.'
+import { Character, CharGroup, User } from '.'
 
 export const Lorebook = pgTable(
   'lorebook',
@@ -61,7 +61,7 @@ export const LorebookToCharacter = pgTable(
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('lc')),
+      .$defaultFn(() => generateId('lchar')),
     lorebookId: text()
       .notNull()
       .references(() => Lorebook.id),
@@ -84,7 +84,7 @@ export const LorebookToCharacter = pgTable(
 export type LorebookToCharacter = InferSelectModel<typeof LorebookToCharacter>
 
 export const LorebookToGroup = pgTable(
-  'lorebook_to_group',
+  'lorebook_to_char_group',
   {
     id: text()
       .primaryKey()
@@ -95,7 +95,7 @@ export const LorebookToGroup = pgTable(
       .references(() => Lorebook.id),
     groupId: text()
       .notNull()
-      .references(() => Group.id),
+      .references(() => CharGroup.id),
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),

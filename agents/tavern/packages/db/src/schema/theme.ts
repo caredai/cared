@@ -12,7 +12,7 @@ export const Theme = pgTable(
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('mp')),
+      .$defaultFn(() => generateId('theme')),
     userId: text()
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),

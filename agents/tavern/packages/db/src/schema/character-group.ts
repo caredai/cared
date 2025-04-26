@@ -1,11 +1,10 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
 import {
   generateId,
-  makeIdValid,
   makeObjectNonempty,
   timestamps,
   timestampsIndices,
@@ -14,26 +13,26 @@ import {
 
 import { User } from '.'
 
-export interface GroupMetadata {
+export interface CharGroupMetadata {
   custom?: unknown
 }
 
-export const groupMetadataSchema = z.object({
+export const charGroupMetadataSchema = z.object({
   custom: z.unknown().optional(),
 })
 
-export const Group = pgTable(
-  'group',
+export const CharGroup = pgTable(
+  'char_group',
   {
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('group')),
+      .$defaultFn(() => generateId('charg')),
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
     characters: jsonb().$type<string[]>().notNull(), // Array of character references
-    metadata: jsonb().$type<GroupMetadata>().notNull(),
+    metadata: jsonb().$type<CharGroupMetadata>(),
     ...timestamps,
   },
   (table) => [
@@ -42,36 +41,32 @@ export const Group = pgTable(
   ],
 )
 
-export type Group = InferSelectModel<typeof Group>
+export type CharGroup = InferSelectModel<typeof CharGroup>
 
-export const CreateGroupSchema = createInsertSchema(Group, {
-  id: makeIdValid('group').optional(),
+export const CreateCharGroupSchema = createInsertSchema(CharGroup, {
   userId: z.string(),
   characters: z.array(z.string()).min(1),
-  metadata: groupMetadataSchema,
+  metadata: charGroupMetadataSchema.optional(),
 }).omit({
+  id: true,
   ...timestampsOmits,
 })
 
-export const UpdateGroupSchema = createUpdateSchema(Group, {
+export const UpdateCharGroupSchema = createUpdateSchema(CharGroup, {
   id: z.string(),
   characters: z.array(z.any()).optional(),
-  metadata: makeObjectNonempty(groupMetadataSchema).optional(),
+  metadata: makeObjectNonempty(charGroupMetadataSchema).optional(),
 }).omit({
   userId: true,
   ...timestampsOmits,
 })
 
-export const GroupToChat = pgTable(
-  'group_to_chat',
+export const CharGroupChat = pgTable(
+  'char_group_chat',
   {
-    id: text()
-      .primaryKey()
-      .notNull()
-      .$defaultFn(() => generateId('gc')),
     groupId: text()
       .notNull()
-      .references(() => Group.id),
+      .references(() => CharGroup.id, { onDelete: 'cascade' }),
     chatId: text().notNull(),
     userId: text()
       .notNull()
@@ -79,10 +74,11 @@ export const GroupToChat = pgTable(
     ...timestamps,
   },
   (table) => [
-    unique().on(table.groupId, table.chatId),
+    primaryKey({ columns: [table.groupId, table.chatId] }),
+    unique().on(table.chatId),
     index().on(table.userId),
     ...timestampsIndices(table),
   ],
 )
 
-export type GroupToChat = InferSelectModel<typeof GroupToChat>
+export type CharGroupChat = InferSelectModel<typeof CharGroupChat>

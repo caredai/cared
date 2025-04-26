@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@ownxai/db'
-import { and, desc, eq, gt, lt } from '@ownxai/db'
+import { and, asc, desc, eq, gt, lt } from '@ownxai/db'
 import { Chat, CreateChatSchema, UpdateChatSchema } from '@ownxai/db/schema'
 
 import type { Context } from '../trpc'
@@ -54,6 +54,8 @@ export const chatRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
+          orderOn: z.enum(['createdAt', 'updatedAt']).default('updatedAt'),
         })
         .refine((data) => !(data.after && data.before), {
           message: "Cannot use 'after' and 'before' simultaneously",
@@ -65,20 +67,30 @@ export const chatRouter = {
 
       const conditions: SQL<unknown>[] = [eq(Chat.appId, ctx.auth.appId)]
 
-      // Determine pagination direction
-      const isBackward = !!input.before
+      const orderOnUpdatedAt = input.orderOn === 'updatedAt'
 
       // Add cursor conditions based on direction
       if (input.after) {
-        conditions.push(gt(Chat.id, input.after))
+        if (orderOnUpdatedAt) {
+          conditions.push(gt(Chat.updatedAt, z.coerce.date().parse(input.after)))
+        } else {
+          conditions.push(gt(Chat.id, input.after))
+        }
       }
       if (input.before) {
-        conditions.push(lt(Chat.id, input.before))
+        if (orderOnUpdatedAt) {
+          conditions.push(lt(Chat.updatedAt, z.coerce.date().parse(input.before)))
+        } else {
+          conditions.push(lt(Chat.id, input.before))
+        }
       }
 
       const chats = await ctx.db.query.Chat.findMany({
         where: and(...conditions),
-        orderBy: desc(Chat.id),
+        orderBy:
+          input.order === 'desc'
+            ? desc(orderOnUpdatedAt ? Chat.updatedAt : Chat.id)
+            : asc(orderOnUpdatedAt ? Chat.updatedAt : Chat.id),
         limit: input.limit + 1,
       })
 
@@ -87,14 +99,10 @@ export const chatRouter = {
         chats.pop()
       }
 
-      // For backward pagination, reverse the results to maintain consistent order
-      if (isBackward) {
-        chats.reverse()
-      }
-
-      // Get first and last chat IDs
-      const first = chats[0]?.id
-      const last = chats[chats.length - 1]?.id
+      const first = orderOnUpdatedAt ? chats[0]?.updatedAt.toISOString() : chats[0]?.id
+      const last = orderOnUpdatedAt
+        ? chats[chats.length - 1]?.updatedAt.toISOString()
+        : chats[chats.length - 1]?.id
 
       return {
         chats,
@@ -222,10 +230,10 @@ export const chatRouter = {
         .set({
           ...update,
           metadata,
+          ...(Object.keys(update).length === 0 && { updatedAt: new Date() }),
         })
         .where(eq(Chat.id, id))
         .returning()
-
       if (!updatedChat) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',

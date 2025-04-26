@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, jsonb, pgEnum, pgTable, text, unique } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgEnum, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
 
@@ -84,8 +84,8 @@ export const UpdateCharacterSchema = createUpdateSchema(Character, {
   ...timestampsOmits,
 })
 
-export const CharacterToChat = pgTable(
-  'character_to_chat',
+export const CharacterChat = pgTable(
+  'character_chat',
   {
     id: text()
       .primaryKey()
@@ -93,7 +93,7 @@ export const CharacterToChat = pgTable(
       .$defaultFn(() => generateId('cc')),
     characterId: text()
       .notNull()
-      .references(() => Character.id),
+      .references(() => Character.id, { onDelete: 'cascade' }),
     chatId: text().notNull(),
     userId: text()
       .notNull()
@@ -101,10 +101,11 @@ export const CharacterToChat = pgTable(
     ...timestamps,
   },
   (table) => [
-    unique().on(table.characterId, table.chatId),
+    primaryKey({ columns: [table.characterId, table.chatId] }),
+    unique().on(table.chatId),
     index().on(table.userId),
     ...timestampsIndices(table),
   ],
 )
 
-export type CharacterToChat = InferSelectModel<typeof CharacterToChat>
+export type CharacterChat = InferSelectModel<typeof CharacterChat>

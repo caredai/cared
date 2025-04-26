@@ -61,6 +61,7 @@ export const messageRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(cfg.perChat.maxMessages).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine((data) => !(data.after && data.before), {
           message: "Cannot use 'after' and 'before' simultaneously",
@@ -72,9 +73,6 @@ export const messageRouter = {
 
       const conditions: SQL<unknown>[] = [eq(Message.chatId, input.chatId)]
 
-      // Determine pagination direction
-      const isBackward = !!input.before
-
       // Add cursor conditions based on direction
       if (input.after) {
         conditions.push(gt(Message.id, input.after))
@@ -85,18 +83,13 @@ export const messageRouter = {
 
       const messages = await ctx.db.query.Message.findMany({
         where: and(...conditions),
-        orderBy: isBackward ? desc(Message.id) : asc(Message.id),
+        orderBy: input.order === 'desc' ? desc(Message.id) : asc(Message.id),
         limit: input.limit + 1,
       })
 
       const hasMore = messages.length > input.limit
       if (hasMore) {
         messages.pop()
-      }
-
-      // For backward pagination, reverse the results to maintain consistent order
-      if (isBackward) {
-        messages.reverse()
       }
 
       // Get first and last message IDs

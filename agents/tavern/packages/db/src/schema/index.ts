@@ -4,7 +4,7 @@ import { account, user, verification } from './auth'
 
 export * from './auth'
 export * from './character'
-export * from './group'
+export * from './character-group'
 export * from './settings'
 export * from './model-preset'
 export * from './theme'
