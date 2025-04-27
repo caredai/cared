@@ -21,6 +21,8 @@ export const chatRouter = {
       const { chats, hasMore, last } = await ownxTrpc.chat.listByApp.query({
         before: input.cursor,
         limit: input.limit,
+        orderBy: 'desc',
+        orderOn: 'updatedAt',
       })
 
       // Get all chat IDs

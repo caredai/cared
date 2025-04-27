@@ -1,6 +1,7 @@
 import type { LanguageModelV1, LanguageModelV1CallOptions, LanguageModelV1StreamPart } from 'ai'
 
-import { makeHeaders, OwnxClientOptions } from '../client'
+import type { OwnxClientOptions } from '../client';
+import { makeHeaders } from '../client'
 
 const NEWLINE = '\n'.charCodeAt(0)
 

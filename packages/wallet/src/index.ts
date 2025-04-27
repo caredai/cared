@@ -1,1 +1,1 @@
-export const name = 'wallet';
+export const name = 'wallet'

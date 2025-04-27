@@ -87,10 +87,6 @@ export const UpdateCharacterSchema = createUpdateSchema(Character, {
 export const CharacterChat = pgTable(
   'character_chat',
   {
-    id: text()
-      .primaryKey()
-      .notNull()
-      .$defaultFn(() => generateId('cc')),
     characterId: text()
       .notNull()
       .references(() => Character.id, { onDelete: 'cascade' }),

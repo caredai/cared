@@ -154,7 +154,7 @@ for (const [fullType, replacement] of typeReplacements) {
 
 // Replace external imports with our predefined types
 output = output
-  .replace(/export declare const appRouter/g, 'declare const appRouter')
+  .replace(/export declare const appRouter/g, '// eslint-disable-next-line @typescript-eslint/no-unused-vars\ndeclare const appRouter')
   .replace(/ctx: \{[^}]+\}/g, 'ctx: any')
   .replace(/export type AppRouter/g, 'export type OwnxTrpcRouter')
   .replace(

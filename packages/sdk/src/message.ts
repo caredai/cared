@@ -1,4 +1,5 @@
-import { generateId, UIMessage } from '@ownxai/shared'
+import type { UIMessage } from '@ownxai/shared';
+import { generateId } from '@ownxai/shared'
 
 import type { Message } from './trpc'
 

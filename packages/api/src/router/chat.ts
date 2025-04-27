@@ -54,7 +54,7 @@ export const chatRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
-          order: z.enum(['desc', 'asc']).default('desc'),
+          orderBy: z.enum(['desc', 'asc']).default('desc'),
           orderOn: z.enum(['createdAt', 'updatedAt']).default('updatedAt'),
         })
         .refine((data) => !(data.after && data.before), {
@@ -88,7 +88,7 @@ export const chatRouter = {
       const chats = await ctx.db.query.Chat.findMany({
         where: and(...conditions),
         orderBy:
-          input.order === 'desc'
+          input.orderBy === 'desc'
             ? desc(orderOnUpdatedAt ? Chat.updatedAt : Chat.id)
             : asc(orderOnUpdatedAt ? Chat.updatedAt : Chat.id),
         limit: input.limit + 1,

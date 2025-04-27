@@ -130,7 +130,7 @@ export const Combobox = React.forwardRef(
     })
     const [open = false, setOpen] = useControllableState({
       prop: openProp,
-      defaultProp: defaultOpen,
+      defaultProp: defaultOpen ?? false,
       onChange: onOpenChange,
     })
     const [currentTabStopId, setCurrentTabStopId] = React.useState<string | null>(null)

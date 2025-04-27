@@ -10,7 +10,8 @@ import {
 import SuperJSON from 'superjson'
 
 import type { OwnxTrpcRouter } from './api'
-import { makeHeaders, OwnxClientOptions } from './client'
+import type { OwnxClientOptions } from './client';
+import { makeHeaders } from './client'
 
 export type OwnxTrpcRouterInputs = inferRouterInputs<OwnxTrpcRouter>
 export type OwnxTrpcRouterOutputs = inferRouterOutputs<OwnxTrpcRouter>

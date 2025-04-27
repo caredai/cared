@@ -16,7 +16,6 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.12.5",
     "@daveyplate/better-auth-tanstack": "^1.2.31",
     "@daveyplate/better-auth-ui": "^1.2.37",
     "@icons-pack/react-simple-icons": "^12.2.0",

@@ -174,8 +174,8 @@ export const workspaceRouter = {
       members = isBackwardPagination ? members.reverse() : members
 
       // Get first and last member IDs
-      const first = members[0]?.user?.id
-      const last = members[members.length - 1]?.user?.id
+      const first = members[0]?.user.id
+      const last = members[members.length - 1]?.user.id
 
       return {
         members,

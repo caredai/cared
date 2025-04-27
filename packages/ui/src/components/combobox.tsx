@@ -86,6 +86,7 @@ export const ComboboxTag = React.forwardRef<
     )}
     {...props}
   >
+    {/* @ts-ignore */}
     <Slottable>{children}</Slottable>
     <ComboboxPrimitive.ComboboxTagGroupItemRemove className="group-data-[disabled]:pointer-events-none">
       <X className="size-4" />

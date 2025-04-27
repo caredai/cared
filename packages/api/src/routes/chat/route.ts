@@ -7,7 +7,8 @@ import { db } from '@ownxai/db/client'
 import { generateMessageId } from '@ownxai/db/schema'
 import { log } from '@ownxai/log'
 import { getModel } from '@ownxai/providers/providers'
-import { UIMessage, uiMessageSchema } from '@ownxai/shared'
+import type { UIMessage} from '@ownxai/shared';
+import { uiMessageSchema } from '@ownxai/shared'
 import { buildTools, knowledgeTools, memoryTools } from '@ownxai/tools'
 
 import { createCaller } from '../..'

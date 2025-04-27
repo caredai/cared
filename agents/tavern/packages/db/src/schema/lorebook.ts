@@ -1,6 +1,6 @@
 import type { LorebookEntry } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
+import { index, jsonb, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
 
 import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
 
@@ -33,10 +33,6 @@ export type Lorebook = InferSelectModel<typeof Lorebook>
 export const LorebookToChat = pgTable(
   'lorebook_to_chat',
   {
-    id: text()
-      .primaryKey()
-      .notNull()
-      .$defaultFn(() => generateId('lc')),
     lorebookId: text()
       .notNull()
       .references(() => Lorebook.id),
@@ -47,7 +43,8 @@ export const LorebookToChat = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.lorebookId, table.chatId),
+    primaryKey({ columns: [table.lorebookId, table.chatId] }),
+    index().on(table.chatId),
     index().on(table.userId),
     ...timestampsIndices(table),
   ],
@@ -58,10 +55,6 @@ export type LorebookToChat = InferSelectModel<typeof LorebookToChat>
 export const LorebookToCharacter = pgTable(
   'lorebook_to_character',
   {
-    id: text()
-      .primaryKey()
-      .notNull()
-      .$defaultFn(() => generateId('lchar')),
     lorebookId: text()
       .notNull()
       .references(() => Lorebook.id),
@@ -74,7 +67,7 @@ export const LorebookToCharacter = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.lorebookId, table.characterId),
+    primaryKey({ columns: [table.lorebookId, table.characterId] }),
     index().on(table.characterId),
     index().on(table.userId),
     ...timestampsIndices(table),
@@ -84,12 +77,8 @@ export const LorebookToCharacter = pgTable(
 export type LorebookToCharacter = InferSelectModel<typeof LorebookToCharacter>
 
 export const LorebookToGroup = pgTable(
-  'lorebook_to_char_group',
+  'lorebook_to_character_group',
   {
-    id: text()
-      .primaryKey()
-      .notNull()
-      .$defaultFn(() => generateId('lg')),
     lorebookId: text()
       .notNull()
       .references(() => Lorebook.id),
@@ -102,7 +91,7 @@ export const LorebookToGroup = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.lorebookId, table.groupId),
+    primaryKey({ columns: [table.lorebookId, table.groupId] }),
     index().on(table.groupId),
     index().on(table.userId),
     ...timestampsIndices(table),

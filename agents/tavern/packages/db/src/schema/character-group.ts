@@ -22,7 +22,7 @@ export const charGroupMetadataSchema = z.object({
 })
 
 export const CharGroup = pgTable(
-  'char_group',
+  'character_group',
   {
     id: text()
       .primaryKey()
@@ -62,7 +62,7 @@ export const UpdateCharGroupSchema = createUpdateSchema(CharGroup, {
 })
 
 export const CharGroupChat = pgTable(
-  'char_group_chat',
+  'character_group_chat',
   {
     groupId: text()
       .notNull()
