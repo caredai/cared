@@ -7,7 +7,7 @@
     "./components/*": "./src/components/*.tsx",
     "./hooks/use-mobile": "./src/hooks/use-mobile.ts",
     "./lib/*": "./src/lib/*.ts",
-    "./theming": "./src/theming/index.ts"
+    "./theming": "./src/theming/index.tsx"
   },
   "license": "MIT",
   "scripts": {

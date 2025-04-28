@@ -1,7 +1,7 @@
 import { default as Colorjs } from 'colorjs.io'
 import { z } from 'zod'
 
-const ColorSchema = z.string().refine(
+export const ColorSchema = z.string().refine(
   (color) => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition,no-constant-binary-expression

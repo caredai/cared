@@ -575,6 +575,9 @@ importers:
       character-card-utils:
         specifier: ^2.0.3
         version: 2.0.3
+      colorjs.io:
+        specifier: ^0.5.2
+        version: 0.5.2
       png-chunk-text:
         specifier: ^1.0.0
         version: 1.0.0
