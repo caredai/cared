@@ -1,11 +1,13 @@
 import * as path from 'path'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
-import { importUrl } from '@tavern/core'
+import { CCardLib } from '@risuai/ccardlib'
+import { importUrl, pngRead } from '@tavern/core'
 import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, eq } from 'drizzle-orm'
 import sanitize from 'sanitize-filename'
+import hash from 'stable-hash'
 import { v7 as uuid } from 'uuid'
 import { z } from 'zod'
 
@@ -14,15 +16,32 @@ import { s3Client } from '../s3'
 import { userProtectedProcedure } from '../trpc'
 
 async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
+  if (!env.NEXT_PUBLIC_IMAGE_URL) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Environment variable NEXT_PUBLIC_IMAGE_URL is not set',
+    })
+  }
+
+  const bytes = blob instanceof Blob ? await blob.bytes() : blob
+  const c = JSON.parse(pngRead(bytes))
+  const charV2 = CCardLib.character.convert(c, {
+    to: 'v2',
+  })
+
   const key = `characters/${uuid()}/${sanitize(filename)}`
   const command = new PutObjectCommand({
     Bucket: env.S3_BUCKET,
     Key: key,
-    Body: blob,
+    Body: bytes,
     ContentType: 'image/png',
   })
   await s3Client.send(command)
-  return path.posix.join(env.S3_BUCKET, key)
+
+  return {
+    content: charV2,
+    url: path.posix.join(env.NEXT_PUBLIC_IMAGE_URL, key),
+  }
 }
 
 async function deleteCharacterCard(url: string) {
@@ -88,18 +107,22 @@ export const characterRouter = {
 
       switch (input.source) {
         case 'create': // passthrough
-        case 'import-file':
+        case 'import-file': {
           if (!input.blob || !input.filename) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
               message: 'blob and filename are required for import-file source',
             })
           }
+          const { content, url } = await uploadCharacterCard(input.blob, input.filename)
+
+          values.content = content
           values.metadata = {
             filename: input.filename,
-            url: await uploadCharacterCard(input.blob, input.filename),
+            url,
           }
           break
+        }
         case 'import-url': {
           if (!input.fromUrl) {
             throw new TRPCError({
@@ -120,9 +143,13 @@ export const characterRouter = {
               message: 'Invalid character card',
             })
           }
+
+          const { content, url } = await uploadCharacterCard(result.bytes, result.filename)
+
+          values.content = content
           values.metadata = {
             filename: result.filename,
-            url: await uploadCharacterCard(result.bytes, result.filename),
+            url,
             fromUrl: input.fromUrl,
           }
           break
@@ -190,14 +217,17 @@ export const characterRouter = {
           })
       }
 
-      const url = await uploadCharacterCard(input.blob, character.metadata.filename)
+      const { content, url } = await uploadCharacterCard(input.blob, character.metadata.filename)
 
-      if (url !== character.metadata.url) {
-        character.metadata.url = url
+      if (hash(content) !== hash(character.content) || url !== character.metadata.url) {
         await ctx.db
           .update(Character)
           .set({
-            metadata: character.metadata,
+            content,
+            metadata: {
+              ...character.metadata,
+              url,
+            },
           })
           .where(eq(Character.id, input.id))
       }

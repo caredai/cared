@@ -56,8 +56,10 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
         splitLink({
           condition: (op) => isNonJsonSerializable(op.input),
           true: httpLink({
-            // @ts-ignore
-            transformer: undefined,
+            transformer: {
+              serialize: (data) => data as FormData,
+              deserialize: SuperJSON.deserialize,
+            },
             url,
             headers,
           }),

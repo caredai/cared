@@ -3,6 +3,8 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import { GeistMono } from 'geist/font/mono'
 import { GeistSans } from 'geist/font/sans'
 
+import { Toaster } from '@/components/sonner'
+
 import '@fortawesome/fontawesome-svg-core/styles.css'
 
 import { cn } from '@ownxai/ui/lib/utils'
@@ -51,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         )}
       >
         <Providers>{children}</Providers>
+        <Toaster />
       </body>
     </html>
   )

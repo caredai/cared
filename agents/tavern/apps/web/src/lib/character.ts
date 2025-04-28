@@ -12,10 +12,11 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query'
-import { pngRead, pngWrite } from '@tavern/core'
+import { importFile, pngRead, pngWrite } from '@tavern/core'
 import isEqual from 'lodash/isEqual'
 import { toast } from 'sonner'
 
+import defaultPng from '@/public/images/ai4.png'
 import { useTRPC } from '@/trpc/client'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
@@ -43,11 +44,63 @@ export const characterQueries = createQueryKeys('characters', {
   }),
 })
 
+export function useImportCharacters() {
+  const trpc = useTRPC()
+  const { refetchCharacters } = useCharacters()
+
+  const createMutation = useMutation(
+    trpc.character.create.mutationOptions({
+      onSuccess: () => {
+        void refetchCharacters()
+      },
+      onError: (error) => {
+        toast.error(`Failed to import character: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (files: FileList | null) => {
+      if (!files?.length) {
+        toast.error('No file selected')
+        return
+      }
+
+      const defaultPngBytes = await (await fetch(defaultPng.src)).bytes()
+
+      for (const file of files) {
+        // Check file type
+        const fileExtension = file.name.split('.').pop()?.toLowerCase()
+        if (!fileExtension || !['png', 'json', 'charx'].includes(fileExtension)) {
+          toast.error('Unsupported file type. Please select .png, .json, or .charx files')
+          return
+        }
+
+        const result = await importFile(file, defaultPngBytes)
+
+        if (typeof result !== 'object') {
+          toast.error(`Unable to parse character file: ${result}`)
+          return
+        }
+
+        // Create form data and submit
+        const formData = new FormData()
+        formData.set('source', 'import-file')
+        formData.set('blob', new Blob([result.bytes]))
+        formData.set('filename', result.filename)
+
+        await createMutation.mutateAsync(formData)
+      }
+    },
+    [createMutation],
+  )
+}
+
 export function useCharacterCard(char: Character) {
   return useQuery<CharacterData, DefaultError, CharacterData | undefined>({
     queryKey: characterQueries.data(char.metadata.url).queryKey,
     queryFn: async () => {
-      const blob = await (await (await fetch(char.metadata.url)).blob()).bytes()
+      const blob = await (await fetch(char.metadata.url)).bytes()
       const c = JSON.parse(pngRead(blob))
 
       const charV2 = CCardLib.character.convert(c, {

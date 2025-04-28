@@ -1,3 +1,4 @@
+import type { CharacterCardV2 } from '@risuai/ccardlib'
 import type { InferSelectModel } from 'drizzle-orm'
 import { index, jsonb, pgEnum, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
@@ -52,6 +53,7 @@ export const Character = pgTable(
     source: characterSourceEnum().notNull().default('create'),
     // the nft token id of the character (if the character is nft)
     nftId: text(),
+    content: jsonb().$type<CharacterCardV2>().notNull(),
     metadata: jsonb().$type<CharacterMetadata>().notNull(),
     ...timestamps,
   },
@@ -69,6 +71,7 @@ export const CreateCharacterSchema = createInsertSchema(Character, {
   userId: z.string(),
   source: z.enum(characterSourceEnumValues),
   nftId: z.string().optional(),
+  content: z.object({}),
   metadata: characterMetadataSchema,
 }).omit({
   ...timestampsOmits,
@@ -76,6 +79,7 @@ export const CreateCharacterSchema = createInsertSchema(Character, {
 
 export const UpdateCharacterSchema = createUpdateSchema(Character, {
   id: z.string(),
+  content: z.unknown().optional(),
   metadata: makeObjectNonempty(characterMetadataSchema),
 }).omit({
   userId: true,
