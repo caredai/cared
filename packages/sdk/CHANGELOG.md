@@ -1,5 +1,13 @@
 # @ownxai/sdk
 
+## 0.1.6
+
+### Patch Changes
+
+- Add peer dependencies
+- Updated dependencies
+  - @ownxai/shared@0.1.3
+
 ## 0.1.5
 
 ### Patch Changes

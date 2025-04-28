@@ -61,8 +61,9 @@ export function CharacterList() {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-row gap-1">
-        {createActions.map(({ action, icon, tooltip }) => (
+        {createActions.map(({ action, icon, tooltip }, index) => (
           <TooltipFaButton
+            key={index}
             icon={icon}
             btnSize="size-8"
             iconSize="lg"
@@ -73,8 +74,9 @@ export function CharacterList() {
       </div>
 
       <div className="flex flex-row gap-1">
-        {filterActions.map(({ action, icon, tooltip }) => (
+        {filterActions.map(({ action, icon, tooltip }, index) => (
           <TooltipFaButton
+            key={index}
             icon={icon}
             btnSize="size-8"
             iconSize="1x"

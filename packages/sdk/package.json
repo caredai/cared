@@ -1,6 +1,6 @@
 {
   "name": "@ownxai/sdk",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -43,9 +43,11 @@
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",
-    "ai": "catalog:",
-    "react": "^19.0.0",
     "server-only": "^0.0.1",
     "superjson": "2.2.2"
+  },
+  "peerDependencies": {
+    "ai": ">=4.3.4",
+    "react": ">=19.0.0"
   }
 }

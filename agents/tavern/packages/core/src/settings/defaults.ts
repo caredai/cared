@@ -1,4 +1,4 @@
-import type { BackgroundImage } from '.'
+import type { BackgroundImage } from './background'
 
 export const defaultBackgroundImages: BackgroundImage[] = [
   {

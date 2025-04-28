@@ -27,6 +27,7 @@ export const settingsRouter = {
 
       let settings = userSettings?.settings
       if (!settings) {
+        // If the settings not found, create it with defaults.
         settings = (
           await ctx.db
             .insert(UserSettings)
@@ -38,6 +39,7 @@ export const settingsRouter = {
         ).at(0)!.settings
       } else {
         const newSettings = fillInSettingsWithDefaults(settings)
+        // If the settings not up to date, update it.
         if (hash(settings) !== hash(newSettings)) {
           settings = (
             await ctx.db

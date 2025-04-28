@@ -27,85 +27,157 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
 import { FaButton } from '@/components/fa-button'
-import { useBackgroundSettings } from '@/lib/settings'
+import { useAppearanceSettings, useBackgroundSettings } from '@/lib/settings'
 import { backgroundFittings, BackgroundImagePanel } from './_panels/background-image'
 import { CharacterManagementPanel } from './_panels/character-management'
 import { ExtensionsPanel } from './_panels/extensions'
 import { PersonaManagementPanel } from './_panels/persona-management'
 import { ProviderModelPanel } from './_panels/provider-model'
-// Import panel components
 import { ResponseConfigurationPanel } from './_panels/response-configuration'
 import { ResponseFormattingPanel } from './_panels/response-formatting'
 import { UserSettingsPanel } from './_panels/user-settings'
 import { WorldInfoPanel } from './_panels/world-info'
 
+// Define navigation panel configuration
+const navPanels = [
+  { icon: faSliders, name: 'response-configuration', panel: ResponseConfigurationPanel },
+  { icon: faPlug, name: 'provider-model', panel: ProviderModelPanel },
+  { icon: faFont, name: 'response-formatting', panel: ResponseFormattingPanel },
+  { icon: faBookAtlas, name: 'world-info', panel: WorldInfoPanel },
+  { icon: faUserCog, name: 'user-settings', panel: UserSettingsPanel },
+  { icon: faPanorama, name: 'background-image', panel: BackgroundImagePanel },
+  { icon: faCubes, name: 'extensions', panel: ExtensionsPanel },
+  { icon: faFaceSmile, name: 'persona-management', panel: PersonaManagementPanel },
+  { icon: faAddressCard, name: 'character-management', panel: CharacterManagementPanel },
+] as const
+
 export function Content() {
   const backgroundSettings = useBackgroundSettings()
+  const appearanceSettings = useAppearanceSettings()
 
-  const [openItem, setOpenItem] = useState<string | null>(null)
+  // Use Set to track multiple open panels instead of a single openItem
+  const [openPanels, setOpenPanels] = useState<Set<string>>(new Set())
 
   // Create refs object to store all panel refs
   const panelRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
+  // Initialize panels - automatically open locked panels when component mounts
+  useEffect(() => {
+    const leftPanelName = navPanels[0].name
+    const rightPanelName = navPanels.at(-1)!.name
+
+    setOpenPanels((prev) => {
+      const newSet = new Set(prev)
+
+      // Open left panel if locked
+      if (appearanceSettings.leftNavPanelLocked) {
+        newSet.add(leftPanelName)
+      }
+
+      // Open right panel if locked
+      if (appearanceSettings.rightNavPanelLocked) {
+        newSet.add(rightPanelName)
+      }
+
+      return newSet
+    })
+  }, [appearanceSettings.leftNavPanelLocked, appearanceSettings.rightNavPanelLocked])
+
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!openItem) return
+      // Skip if no panels are open
+      if (openPanels.size === 0) return
 
-      const panel = panelRefs.current[openItem]
-      const trigger = triggerRefs.current[openItem]
+      // Check each open panel
+      openPanels.forEach((panelName) => {
+        const panel = panelRefs.current[panelName]
+        const trigger = triggerRefs.current[panelName]
 
-      if (panel && trigger) {
-        // Get click coordinates
-        const { clientX, clientY } = event
+        if (panel && trigger) {
+          // Get click coordinates
+          const { clientX, clientY } = event
 
-        // Get panel and trigger boundaries
-        const panelRect = panel.getBoundingClientRect()
-        const triggerRect = trigger.getBoundingClientRect()
+          // Get panel and trigger boundaries
+          const panelRect = panel.getBoundingClientRect()
+          const triggerRect = trigger.getBoundingClientRect()
 
-        // Check if click is within panel boundaries
-        const isWithinPanel =
-          clientX >= panelRect.left &&
-          clientX <= panelRect.right &&
-          clientY >= panelRect.top &&
-          clientY <= panelRect.bottom
+          // Check if click is within panel boundaries
+          const isWithinPanel =
+            clientX >= panelRect.left &&
+            clientX <= panelRect.right &&
+            clientY >= panelRect.top &&
+            clientY <= panelRect.bottom
 
-        // Check if click is within trigger boundaries
-        const isWithinTrigger =
-          clientX >= triggerRect.left &&
-          clientX <= triggerRect.right &&
-          clientY >= triggerRect.top &&
-          clientY <= triggerRect.bottom
+          // Check if click is within trigger boundaries
+          const isWithinTrigger =
+            clientX >= triggerRect.left &&
+            clientX <= triggerRect.right &&
+            clientY >= triggerRect.top &&
+            clientY <= triggerRect.bottom
 
-        // Close panel only if click is outside both panel and trigger
-        if (!isWithinPanel && !isWithinTrigger) {
-          setOpenItem(null)
+          // Check if it's left or right panel and determine closure based on lock status
+          const panelIndex = navPanels.findIndex((panel) => panel.name === panelName)
+          const isLeftPanel = panelIndex === 0
+          const isRightPanel = panelIndex === navPanels.length - 1
+
+          // Don't close the panel if it's locked
+          const isLocked =
+            (isLeftPanel && appearanceSettings.leftNavPanelLocked) ||
+            (isRightPanel && appearanceSettings.rightNavPanelLocked)
+
+          // Close panel only if click is outside both panel and trigger, and the panel is not locked
+          if (!isWithinPanel && !isWithinTrigger && !isLocked) {
+            setOpenPanels((prev) => {
+              const newSet = new Set(prev)
+              newSet.delete(panelName)
+              return newSet
+            })
+          }
         }
-      }
+      })
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [openItem])
+  }, [
+    openPanels,
+    appearanceSettings.leftNavPanelLocked,
+    appearanceSettings.rightNavPanelLocked,
+    navPanels,
+  ])
 
+  // Toggle panel open/close state
   const toggleItem = (itemName: string) => {
-    setOpenItem((prev) => (prev === itemName ? null : itemName))
-  }
+    setOpenPanels((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(itemName)) {
+        // Close this panel
+        newSet.delete(itemName)
+      } else {
+        // Close non-locked panels before opening a new one
+        Array.from(prev).forEach((panelName) => {
+          const idx = navPanels.findIndex((panel) => panel.name === panelName)
+          const isPanelLeft = idx === 0
+          const isPanelRight = idx === navPanels.length - 1
+          const isPanelLocked =
+            (isPanelLeft && appearanceSettings.leftNavPanelLocked) ||
+            (isPanelRight && appearanceSettings.rightNavPanelLocked)
 
-  const navPanels = [
-    { icon: faSliders, name: 'response-configuration', panel: ResponseConfigurationPanel },
-    { icon: faPlug, name: 'provider-model', panel: ProviderModelPanel },
-    { icon: faFont, name: 'response-formatting', panel: ResponseFormattingPanel },
-    { icon: faBookAtlas, name: 'world-info', panel: WorldInfoPanel },
-    { icon: faUserCog, name: 'user-settings', panel: UserSettingsPanel },
-    { icon: faPanorama, name: 'background-image', panel: BackgroundImagePanel },
-    { icon: faCubes, name: 'extensions', panel: ExtensionsPanel },
-    { icon: faFaceSmile, name: 'persona-management', panel: PersonaManagementPanel },
-    { icon: faAddressCard, name: 'character-management', panel: CharacterManagementPanel },
-  ]
+          if (!isPanelLocked) {
+            newSet.delete(panelName)
+          }
+        })
+
+        // Open the new panel
+        newSet.add(itemName)
+      }
+      return newSet
+    })
+  }
 
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -137,7 +209,7 @@ export function Content() {
             {navPanels.map(({ icon, name, panel: Panel }, index) => (
               <Collapsible
                 key={name}
-                open={openItem === name}
+                open={openPanels.has(name)}
                 onOpenChange={() => toggleItem(name)}
                 className="size-8"
               >
@@ -147,7 +219,7 @@ export function Content() {
                       triggerRefs.current[name] = el
                     }}
                     icon={icon}
-                    isActive={openItem === name}
+                    isActive={openPanels.has(name)}
                   />
                 </CollapsibleTrigger>
                 <CollapsibleContent
@@ -168,7 +240,7 @@ export function Content() {
                         : undefined,
                   )}
                 >
-                  <div className="p-4 text-white">
+                  <div className="p-1.5 text-white">
                     <Panel />
                   </div>
                 </CollapsibleContent>

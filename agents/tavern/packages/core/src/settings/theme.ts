@@ -26,26 +26,7 @@ export interface Theme {
   chatWidth: number // [25, 100]
   fontScale: number // [0.5, 1.5]
   shadowWidth: number // [0, 5]
-
-  movingUI?:
-    | { enabled: false }
-    | {
-        enabled: true
-        state: Record<
-          (typeof movingUIPanels)[number] | string,
-          {
-            top: number
-            left: number
-            right: number
-            bottom: number
-            width: number
-            height: number
-          }
-        >
-      }
 }
-
-const movingUIPanels = ['left-nav-panel', 'right-nav-panel'] as const
 
 export const themeSchema = z.object({
   mainTextColor: z.string(),
@@ -65,24 +46,4 @@ export const themeSchema = z.object({
   chatWidth: z.number().int().min(25).max(100),
   fontScale: z.number().min(0.5).max(1.5),
   shadowWidth: z.number().int().min(0).max(5),
-
-  movingUI: z
-    .discriminatedUnion('enabled', [
-      z.object({ enabled: z.literal(false) }),
-      z.object({
-        enabled: z.literal(true),
-        state: z.record(
-          z.enum(movingUIPanels),
-          z.object({
-            top: z.number(),
-            left: z.number(),
-            right: z.number(),
-            bottom: z.number(),
-            width: z.number(),
-            height: z.number(),
-          }),
-        ),
-      }),
-    ])
-    .optional(),
 })

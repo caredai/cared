@@ -80,3 +80,12 @@ export function useBackgroundSettings() {
   })
   return data
 }
+
+export function useAppearanceSettings() {
+  const trpc = useTRPC()
+  const { data } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+    select: useCallback(({ settings }: { settings: Settings }) => settings.appearance, []),
+  })
+  return data
+}

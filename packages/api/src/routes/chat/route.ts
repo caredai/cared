@@ -3,11 +3,11 @@ import { appendResponseMessages, createDataStreamResponse, smoothStream, streamT
 import hash from 'stable-hash'
 
 import type { Agent, App, Chat, Message } from '@ownxai/db/schema'
+import type { UIMessage } from '@ownxai/shared'
 import { db } from '@ownxai/db/client'
 import { generateMessageId } from '@ownxai/db/schema'
 import { log } from '@ownxai/log'
 import { getModel } from '@ownxai/providers/providers'
-import type { UIMessage} from '@ownxai/shared';
 import { uiMessageSchema } from '@ownxai/shared'
 import { buildTools, knowledgeTools, memoryTools } from '@ownxai/tools'
 

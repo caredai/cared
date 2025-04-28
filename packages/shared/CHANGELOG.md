@@ -1,5 +1,11 @@
 # @ownxai/shared
 
+## 0.1.3
+
+### Patch Changes
+
+- Add peer dependencies
+
 ## 0.1.2
 
 ### Patch Changes

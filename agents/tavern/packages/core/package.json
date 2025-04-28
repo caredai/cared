@@ -33,6 +33,7 @@
     "png-chunk-text": "^1.0.0",
     "png-chunks-encode": "^1.0.0",
     "png-chunks-extract": "^1.0.0",
+    "sanitize-filename": "^1.6.3",
     "unzipit": "^1.4.3"
   }
 }

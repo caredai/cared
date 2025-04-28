@@ -24,7 +24,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@ownxai/sdk": "^0.1.5",
+    "@ownxai/sdk": "^0.1.6",
     "@tavern/core": "workspace:*",
     "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "^0.38.4",

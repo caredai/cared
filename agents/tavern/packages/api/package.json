@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@better-auth/utils": "^0.2.4",
-    "@ownxai/sdk": "^0.1.5",
+    "@ownxai/sdk": "^0.1.6",
     "@tavern/auth": "workspace:*",
     "@tavern/core": "workspace:*",
     "@tavern/db": "workspace:*",
