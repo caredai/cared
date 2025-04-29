@@ -1,12 +1,11 @@
 import * as path from 'path'
 import type { CharacterCardV2 } from '@risuai/ccardlib'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
-import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
-import { CCardLib } from '@risuai/ccardlib'
-import { importUrl, pngRead } from '@tavern/core'
+import { DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import { convertToV2, importUrl, pngRead } from '@tavern/core'
 import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import sanitize from 'sanitize-filename'
 import hash from 'stable-hash'
 import { v7 as uuid } from 'uuid'
@@ -26,10 +25,7 @@ async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
 
   const bytes = blob instanceof Blob ? await blob.bytes() : blob
   const c = JSON.parse(pngRead(bytes))
-  const charV2 = CCardLib.character.convert(c, {
-    to: 'v2',
-  })
-
+  const charV2 = convertToV2(c)
   const key = `characters/${uuid()}/${sanitize(filename)}`
   const command = new PutObjectCommand({
     Bucket: env.S3_BUCKET,
@@ -55,6 +51,33 @@ async function deleteCharacterCard(url: string) {
     Key: key,
   })
   await s3Client.send(command)
+}
+
+async function deleteCharacterCards(urls: string[]) {
+  // Filter out invalid URLs and extract keys
+  const keys = urls
+    .filter((url) => url.startsWith(env.S3_BUCKET))
+    .map((url) => ({
+      Key: new URL(url).pathname.slice(1), // Remove leading slash
+    }))
+
+  if (keys.length === 0) {
+    return
+  }
+
+  // AWS S3 DeleteObjects has a limit of 1000 objects per request
+  const chunkSize = 1000
+  for (let i = 0; i < keys.length; i += chunkSize) {
+    const chunk = keys.slice(i, i + chunkSize)
+    const command = new DeleteObjectsCommand({
+      Bucket: env.S3_BUCKET,
+      Delete: {
+        Objects: chunk,
+        Quiet: true, // Don't return detailed errors for each object
+      },
+    })
+    await s3Client.send(command)
+  }
 }
 
 export const characterRouter = {
@@ -267,5 +290,35 @@ export const characterRouter = {
       await deleteCharacterCard(character.metadata.url)
 
       return { character }
+    }),
+
+  batchDelete: userProtectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Get all characters that belong to the user and match the provided IDs
+      const characters = await ctx.db
+        .select()
+        .from(Character)
+        .where(and(eq(Character.userId, ctx.auth.userId), inArray(Character.id, input.ids)))
+      if (characters.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No characters found',
+        })
+      }
+
+      // Delete all character cards from storage
+      await deleteCharacterCards(characters.map((character) => character.metadata.url))
+
+      // Delete all characters from database
+      await ctx.db
+        .delete(Character)
+        .where(and(eq(Character.userId, ctx.auth.userId), inArray(Character.id, input.ids)))
+
+      return { characters }
     }),
 }

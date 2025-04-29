@@ -12,7 +12,7 @@ export function CharacterAvatar(
     <div
       {...props}
       className={cn(
-        'relative flex h-15 w-15 shrink-0 overflow-hidden rounded-full cursor-pointer',
+        'relative flex h-13 w-13 shrink-0 overflow-hidden rounded-full cursor-pointer',
         props.className,
       )}
     >

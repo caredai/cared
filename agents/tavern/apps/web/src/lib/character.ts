@@ -1,9 +1,9 @@
 import type { DefaultError } from '@tanstack/react-query'
 import type { AppRouter } from '@tavern/api'
+import type { CharacterCardV2 } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback } from 'react'
 import { createQueryKeys } from '@lukemorales/query-key-factory'
-import { CCardLib } from '@risuai/ccardlib'
 import {
   replaceEqualDeep,
   useMutation,
@@ -11,7 +11,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query'
-import { CharacterCardV2, importFile, importUrl, pngRead, pngWrite } from '@tavern/core'
+import { convertToV2, importFile, importUrl, pngRead, pngWrite } from '@tavern/core'
 import isEqual from 'lodash/isEqual'
 import { toast } from 'sonner'
 
@@ -24,7 +24,11 @@ export type Character = RouterOutput['character']['get']['character']
 export function useCharacters() {
   const trpc = useTRPC()
 
-  const { data, refetch } = useSuspenseQuery(trpc.character.list.queryOptions())
+  const { data, refetch } = useSuspenseQuery({
+    ...trpc.character.list.queryOptions(),
+    staleTime: Infinity,
+    gcTime: Infinity,
+  })
 
   return {
     characters: data.characters,
@@ -125,7 +129,9 @@ export function useImportCharactersFromUrls() {
             blob = new Blob([result.bytes])
             filename = result.filename
           }
-        } catch {}
+        } catch {
+          /* empty */
+        }
 
         // Create form data and submit
         const formData = new FormData()
@@ -150,9 +156,7 @@ export function useCharacterCard(char: Character) {
       const blob = await (await fetch(char.metadata.url)).bytes()
       const c = JSON.parse(pngRead(blob))
 
-      const charV2 = CCardLib.character.convert(c, {
-        to: 'v2',
-      })
+      const charV2 = convertToV2(c)
 
       return {
         character: charV2,
@@ -264,4 +268,30 @@ export function useDeleteCharacter(char: Character) {
       id: char.id,
     })
   }, [deleteMutation, char.id])
+}
+
+export function useDeleteCharacters() {
+  const trpc = useTRPC()
+
+  const { refetchCharacters } = useCharacters()
+
+  const deleteMutation = useMutation(
+    trpc.character.batchDelete.mutationOptions({
+      onSuccess: () => {
+        void refetchCharacters()
+      },
+      onError: (error) => {
+        toast.error(`Failed to delete characters: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (ids: string[]) => {
+      await deleteMutation.mutateAsync({
+        ids,
+      })
+    },
+    [deleteMutation],
+  )
 }

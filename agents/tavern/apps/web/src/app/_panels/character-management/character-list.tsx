@@ -5,9 +5,14 @@ import {
   faGear,
   faStar,
   faTags,
+  faTrash,
+  faSquareCheck,
+  faCheckDouble,
+  faListSquares,
   faUserPlus,
   faUsers,
   faUsersGear,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { VList } from 'virtua'
 
@@ -15,11 +20,15 @@ import { FaButton } from '@/components/fa-button'
 import { useCharacters, useImportCharactersFromFiles } from '@/lib/character'
 import { CharacterItem } from './character-item'
 import { ImportUrlDialog } from './import-url-dialog'
+import { DeleteCharactersDialog } from './delete-characters-dialog'
 
 export function CharacterList() {
   const { characters } = useCharacters()
   const importCharacters = useImportCharactersFromFiles()
   const [isImportUrlDialogOpen, setIsImportUrlDialogOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isSelectMode, setIsSelectMode] = useState(false)
+  const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(new Set())
 
   // Create file input reference
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -53,6 +62,52 @@ export function CharacterList() {
     console.log('Create character group')
   }
 
+  const handleShowFavorites = () => {
+    console.log('Show only favorite characters')
+  }
+
+  const handleShowGroups = () => {
+    console.log('Show only groups')
+  }
+
+  const handleManageTags = () => {
+    console.log('Manage tags')
+  }
+
+  const handleShowTags = () => {
+    console.log('Show tags')
+  }
+
+  const handleSelectCharacters = () => {
+    setIsSelectMode(!isSelectMode)
+    if (!isSelectMode) {
+      setSelectedCharacters(new Set())
+    }
+  }
+
+  const handleSelectAll = () => {
+    const allIds = new Set(characters.map(char => char.id))
+    setSelectedCharacters(allIds)
+  }
+
+  const handleDeselectAll = () => {
+    setSelectedCharacters(new Set())
+  }
+
+  const handleDeleteSelected = () => {
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleCharacterSelect = (characterId: string, selected: boolean) => {
+    const newSelected = new Set(selectedCharacters)
+    if (selected) {
+      newSelected.add(characterId)
+    } else {
+      newSelected.delete(characterId)
+    }
+    setSelectedCharacters(newSelected)
+  }
+
   const createActions = [
     {
       action: handleCreateCharacter,
@@ -76,26 +131,31 @@ export function CharacterList() {
     },
   ]
 
-  const filterActions = [
-    {
-      action: 'show-favorites',
+  const operateActions = [{
+      action: handleShowFavorites,
       icon: faStar,
       tooltip: 'Show only favorite characters',
     },
     {
-      action: 'show-groups',
+      action: handleShowGroups,
       icon: faUsers,
       tooltip: 'Show only groups',
     },
     {
-      action: 'manage-tags',
+      action: handleManageTags,
       icon: faGear,
       tooltip: 'Manage tags',
     },
     {
-      action: 'show-tags',
+      action: handleShowTags,
       icon: faTags,
       tooltip: 'Show tags',
+    },
+    {
+      action: handleSelectCharacters,
+      icon: faListSquares,
+      tooltip: 'Select characters',
+      className: isSelectMode ? 'text-yellow-500' : '',
     },
   ]
 
@@ -126,28 +186,87 @@ export function CharacterList() {
       </div>
 
       <div className="flex flex-row gap-1">
-        {filterActions.map(({ action, icon, tooltip }, index) => (
+        {operateActions.map(({ action, icon, tooltip, className }, index) => (
           <FaButton
             key={index}
             icon={icon}
             btnSize="size-8"
             iconSize="1x"
             title={tooltip}
-            className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
+            className={`border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full ${className || ''}`}
             onClick={typeof action === 'function' ? action : undefined}
           />
         ))}
       </div>
 
-      <VList className="flex-1">
-        {characters.map((character) => (
-          <CharacterItem key={character.id} character={character} />
-        ))}
+      {isSelectMode && (
+        <div className="flex flex-row gap-2 items-center">
+          <span className="text-sm text-muted-foreground">
+            {selectedCharacters.size} selected
+          </span>
+          <div className="flex flex-row gap-1">
+            {selectedCharacters.size < characters.length && (
+              <FaButton
+                icon={faCheckDouble}
+                btnSize="size-8"
+                iconSize="1x"
+                title="Select All"
+                className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
+                onClick={handleSelectAll}
+              />
+            )}
+            {selectedCharacters.size > 0 && (
+              <>
+                <FaButton
+                  icon={faSquareCheck}
+                  btnSize="size-8"
+                  iconSize="1x"
+                  title="Deselect All"
+                  className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
+                  onClick={handleDeselectAll}
+                />
+                <FaButton
+                  icon={faTrash}
+                  btnSize="size-8"
+                  iconSize="1x"
+                  title="Delete Selected"
+                  className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
+                  onClick={handleDeleteSelected}
+                />
+              </>
+            )}
+            <FaButton
+              icon={faXmark}
+              btnSize="size-8"
+              iconSize="1x"
+              title="Exit Selection Mode"
+              className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
+              onClick={() => setIsSelectMode(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      <VList className="flex-1" count={characters.length}>
+        {(i) => {
+          const character = characters[i]!
+          return (
+            <CharacterItem
+              key={character.id}
+              character={character}
+              isSelectMode={isSelectMode}
+              isSelected={selectedCharacters.has(character.id)}
+              onSelect={handleCharacterSelect}
+            />
+          )
+        }}
       </VList>
 
-      <ImportUrlDialog
-        open={isImportUrlDialogOpen}
-        onOpenChange={setIsImportUrlDialogOpen}
+      <ImportUrlDialog open={isImportUrlDialogOpen} onOpenChange={setIsImportUrlDialogOpen} />
+      <DeleteCharactersDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        selectedCharacterIds={Array.from(selectedCharacters)}
       />
     </div>
   )

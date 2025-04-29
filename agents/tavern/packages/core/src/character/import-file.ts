@@ -1,10 +1,10 @@
 import type { CharacterCardV3 } from '@risuai/ccardlib'
-import { CCardLib } from '@risuai/ccardlib'
+import mime from 'mime'
 import sanitize from 'sanitize-filename'
 import { unzip } from 'unzipit'
-import mime from 'mime'
 
 import { pngRead, pngWrite } from './png-chunks'
+import { convertToV2 } from './types'
 
 export interface ImportFileResult {
   bytes: Uint8Array
@@ -29,10 +29,12 @@ export async function importFile(
 
 async function importPng(file: File) {
   const bytes = new Uint8Array(await file.arrayBuffer())
-  const version = CCardLib.character.check(JSON.parse(pngRead(bytes)))
-  if (version === 'unknown') {
-    return 'invalid character card'
-  }
+  const card = JSON.parse(pngRead(bytes))
+  const cardV2 = convertToV2(card)
+  console.log('importPng:', {
+    card,
+    cardV2,
+  })
   return {
     bytes,
     filename: file.name,
@@ -41,10 +43,7 @@ async function importPng(file: File) {
 
 async function importJson(file: File, defaultPngBytes: Uint8Array) {
   const data = await file.text()
-  const version = CCardLib.character.check(JSON.parse(data))
-  if (version === 'unknown') {
-    return 'invalid character card'
-  }
+  const _ = convertToV2(JSON.parse(data))
 
   return {
     bytes: pngWrite(defaultPngBytes, data),
@@ -62,14 +61,11 @@ async function importCharx(file: File, defaultPngBytes: Uint8Array) {
     return 'charx zip file does not contain card.json'
   }
 
-  const version = CCardLib.character.check(card)
-  if (version === 'unknown') {
-    return 'invalid character card'
-  }
+  const cardV2 = convertToV2(card)
 
-  const filename = `${sanitize(card.name)}.png`
+  const filename = `${sanitize(cardV2.data.name)}.png`
 
-  if (version === 'v3') {
+  if (card.spec === 'chara_card_v3') {
     const assets = (card as CharacterCardV3).data.assets ?? []
     for (const asset of assets.filter((x) => x.type === 'icon' && x.ext === 'png')) {
       const pathNoProtocol = String(asset.uri.replace(/^(?:\/\/|[^/]+)*\//, ''))
