@@ -425,6 +425,9 @@ importers:
       undici:
         specifier: ^7.6.0
         version: 7.8.0
+      virtua:
+        specifier: ^0.40.3
+        version: 0.40.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       zod:
         specifier: 'catalog:'
         version: 3.24.3

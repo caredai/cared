@@ -5,10 +5,10 @@ import { CharacterList } from './character-list'
 
 export function CharacterManagementPanel() {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1 h-full overflow-hidden">
       <CharacterManagementHeader />
 
-      <Tabs defaultValue="character" className="w-full">
+      <Tabs defaultValue="character" className="flex-1 w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="character">
             <p className="truncate">Character name</p>

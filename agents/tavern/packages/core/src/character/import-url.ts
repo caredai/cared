@@ -11,7 +11,7 @@ export interface ImportUrlResult {
   mimeType: string
 }
 
-export async function importUrl(url: string): Promise<ImportUrlResult | undefined> {
+export async function importUrl(url: string): Promise<ImportUrlResult | string> {
   if (!URL.canParse(url)) {
     return await importUuid(url)
   }
@@ -23,30 +23,30 @@ export async function importUrl(url: string): Promise<ImportUrlResult | undefine
   const isPygmalionContent = host.includes('pygmalion.chat')
   const isAICharacterCardsContent = host.includes('aicharactercards.com')
   const isRisu = host.includes('realm.risuai.net')
-  const isGeneric = env.WHITELIST_IMPORT_DOMAINS.includes(host)
+  const isGeneric = env.NEXT_PUBLIC_WHITELIST_IMPORT_DOMAINS.includes(host)
 
   if (isPygmalionContent) {
     const uuid = getUuidFromUrl(url)
     if (!uuid) {
-      return
+      return 'invalid Pygmalion URL'
     }
     return await downloadPygmalionCharacter(uuid)
   } else if (isJannnyContent) {
     const uuid = getUuidFromUrl(url)
     if (!uuid) {
-      return
+      return 'invalid Janny URL'
     }
     return await downloadJannyCharacter(uuid)
   } else if (isAICharacterCardsContent) {
     const aicc = parseAICC(url)
     if (!aicc) {
-      return
+      return 'invalid AICC URL'
     }
     return await downloadAICCCharacter(aicc)
   } else if (isChub) {
     const { id, type } = parseChubUrl(url) ?? {}
     if (!id || !type) {
-      return
+      return 'invalid Chub URL'
     }
     if (type === 'character') {
       return await downloadChubCharacter(id)
@@ -56,15 +56,17 @@ export async function importUrl(url: string): Promise<ImportUrlResult | undefine
   } else if (isRisu) {
     const uuid = parseRisuUrl(url)
     if (!uuid) {
-      return
+      return 'invalid RisuRealm URL'
     }
     return await downloadRisuCharacter(uuid)
   } else if (isGeneric) {
     return await downloadGenericPng(url)
   }
+
+  return 'unsupported URL'
 }
 
-async function importUuid(uuid: string): Promise<ImportUrlResult | undefined> {
+async function importUuid(uuid: string): Promise<ImportUrlResult | string> {
   const isJannny = uuid.includes('_character')
   const isPygmalion = !isJannny && uuid.length == 36
   const isAICC = uuid.startsWith('AICC/')
@@ -75,7 +77,7 @@ async function importUuid(uuid: string): Promise<ImportUrlResult | undefined> {
   } else if (isJannny) {
     uuid = uuid.split('_')[0] ?? ''
     if (!uuid) {
-      return
+      return 'invalid Janny UUID'
     }
     return await downloadJannyCharacter(uuid)
   } else if (isAICC) {
@@ -90,25 +92,25 @@ async function importUuid(uuid: string): Promise<ImportUrlResult | undefined> {
   }
 }
 
-async function downloadPygmalionCharacter(id: string): Promise<ImportUrlResult | undefined> {
+async function downloadPygmalionCharacter(id: string): Promise<ImportUrlResult | string> {
   const result = await fetch(`https://server.pygmalion.chat/api/export/character/${id}/v2`)
   if (!result.ok) {
-    return
+    return `failed to fetch Pygmalion character: ${result.statusText}`
   }
   const charData = (await result.json()) as any
   const version = CCardLib.character.check(charData)
   if (version === 'unknown') {
-    return
+    return `failed to parse Pygmalion character json`
   }
   const avatarUrl = charData?.data?.avatar as string | undefined
   if (!avatarUrl?.endsWith('.png')) {
-    return
+    return `no avatar found in Pygmalion character`
   }
   const avatarResult = await fetch(avatarUrl)
   if (!avatarResult.ok) {
-    return
+    return `failed to fetch Pygmalion character avatar: ${avatarResult.statusText}`
   }
-  const bytes = pngWrite(await (await avatarResult.blob()).bytes(), JSON.stringify(charData))
+  const bytes = pngWrite(await getBytes(avatarResult), JSON.stringify(charData))
   return {
     type: 'character',
     bytes,
@@ -117,7 +119,7 @@ async function downloadPygmalionCharacter(id: string): Promise<ImportUrlResult |
   }
 }
 
-async function downloadJannyCharacter(uuid: string): Promise<ImportUrlResult | undefined> {
+async function downloadJannyCharacter(uuid: string): Promise<ImportUrlResult | string> {
   // This endpoint is being guarded behind Bot Fight Mode of Cloudflare
   // Should work normally on client frontend
   const result = await fetch('https://api.jannyai.com/api/v1/download', {
@@ -128,17 +130,17 @@ async function downloadJannyCharacter(uuid: string): Promise<ImportUrlResult | u
     }),
   })
   if (!result.ok) {
-    return
+    return `failed to fetch Janny character: ${result.statusText}`
   }
   const data = (await result.json()) as any
   if (data.status !== 'ok' || !data.downloadUrl.endsWith('.png')) {
-    return
+    return `failed to parse Janny character json`
   }
   const imageResult = await fetch(data.downloadUrl)
   if (!imageResult.ok) {
-    return
+    return `failed to fetch Janny character image: ${imageResult.statusText}`
   }
-  const bytes = await (await imageResult.blob()).bytes()
+  const bytes = await getBytes(imageResult)
   return {
     type: 'character',
     bytes,
@@ -147,13 +149,13 @@ async function downloadJannyCharacter(uuid: string): Promise<ImportUrlResult | u
   }
 }
 
-async function downloadAICCCharacter(id: string): Promise<ImportUrlResult | undefined> {
+async function downloadAICCCharacter(id: string): Promise<ImportUrlResult | string> {
   const apiURL = `https://aicharactercards.com/wp-json/pngapi/v1/image/${id}`
   const response = await fetch(apiURL)
   if (!response.ok || response.headers.get('Content-Type') !== 'image/png') {
-    return
+    return `failed to fetch AICC character: ${response.statusText}`
   }
-  const bytes = await (await response.blob()).bytes()
+  const bytes = await getBytes(response)
   return {
     type: 'character',
     bytes,
@@ -162,7 +164,7 @@ async function downloadAICCCharacter(id: string): Promise<ImportUrlResult | unde
   }
 }
 
-async function downloadChubCharacter(id: string): Promise<ImportUrlResult | undefined> {
+async function downloadChubCharacter(id: string): Promise<ImportUrlResult | string> {
   const response = await fetch('https://api.chub.ai/api/characters/download', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -171,12 +173,13 @@ async function downloadChubCharacter(id: string): Promise<ImportUrlResult | unde
       fullPath: id,
     }),
   })
+
   if (!response.ok || response.headers.get('Content-Type') !== 'image/png') {
-    return
+    return `failed to fetch Chub character: ${response.statusText}`
   }
 
   const name = id.split('/').pop() ?? ''
-  const bytes = await (await response.blob()).bytes()
+  const bytes = new Uint8Array(await response.arrayBuffer())
   return {
     type: 'character',
     bytes,
@@ -185,7 +188,7 @@ async function downloadChubCharacter(id: string): Promise<ImportUrlResult | unde
   }
 }
 
-async function downloadChubLorebook(id: string): Promise<ImportUrlResult | undefined> {
+async function downloadChubLorebook(id: string): Promise<ImportUrlResult | string> {
   const response = await fetch('https://api.chub.ai/api/lorebooks/download', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -195,11 +198,11 @@ async function downloadChubLorebook(id: string): Promise<ImportUrlResult | undef
     }),
   })
   if (!response.ok || !response.headers.get('Content-Type')?.includes('application/json')) {
-    return
+    return `failed to fetch Chub lorebook: ${response.statusText}`
   }
 
   const name = id.split('/').pop() ?? ''
-  const bytes = await (await response.blob()).bytes()
+  const bytes = await getBytes(response)
   return {
     type: 'lorebook',
     bytes,
@@ -208,15 +211,15 @@ async function downloadChubLorebook(id: string): Promise<ImportUrlResult | undef
   }
 }
 
-async function downloadRisuCharacter(uuid: string): Promise<ImportUrlResult | undefined> {
+async function downloadRisuCharacter(uuid: string): Promise<ImportUrlResult | string> {
   const response = await fetch(
     `https://realm.risuai.net/api/v1/download/png-v3/${uuid}?non_commercial=true`,
   )
   if (!response.ok || response.headers.get('Content-Type') !== 'image/png') {
-    return
+    return `failed to fetch RisuRealm character: ${response.statusText}`
   }
 
-  const bytes = await (await response.blob()).bytes()
+  const bytes = await getBytes(response)
   return {
     type: 'character',
     bytes,
@@ -225,14 +228,14 @@ async function downloadRisuCharacter(uuid: string): Promise<ImportUrlResult | un
   }
 }
 
-async function downloadGenericPng(url: string): Promise<ImportUrlResult | undefined> {
+async function downloadGenericPng(url: string): Promise<ImportUrlResult | string> {
   const response = await fetch(url)
   if (!response.ok || response.headers.get('Content-Type') !== 'image/png') {
-    return
+    return `failed to fetch image: ${response.statusText}`
   }
 
   const filename = sanitize(response.url.split('?')[0]?.split('/').reverse()[0] ?? '')
-  const bytes = await (await response.blob()).bytes()
+  const bytes = await getBytes(response)
   return {
     type: 'character',
     bytes,
@@ -309,4 +312,8 @@ function parseRisuUrl(url: string) {
   const pattern = /^https?:\/\/realm\.risuai\.net\/character\/([a-f0-9-]+)\/?$/i
   const match = pattern.exec(url)
   return match?.at(1)
+}
+
+async function getBytes(response: Response) {
+  return new Uint8Array(await response.arrayBuffer())
 }

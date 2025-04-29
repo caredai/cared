@@ -1,5 +1,4 @@
-import type { Character } from '@tavern/db/schema'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import {
   faCloudArrowDown,
   faFileImport,
@@ -10,38 +9,17 @@ import {
   faUsers,
   faUsersGear,
 } from '@fortawesome/free-solid-svg-icons'
+import { VList } from 'virtua'
 
-import { TooltipFaButton } from '@/components/fa-button'
-import { RemoteImage } from '@/components/image'
-import { useCharacters, useImportCharacters } from '@/lib/character'
-
-function CharacterCard({ character }: { character: Character }) {
-  const data = character.content.data
-
-  return (
-    <div className="flex flex-col gap-2 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg">
-        <RemoteImage src={character.metadata.url} alt={data.name} fill className="object-cover" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <h3 className="font-medium">{data.name}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2">{data.description}</p>
-        <div className="flex flex-wrap gap-1">
-          {data.tags.map((tag: string) => (
-            <span key={tag} className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
-              {tag}
-            </span>
-          ))}
-        </div>
-        <div className="text-xs text-muted-foreground">Version: {data.character_version}</div>
-      </div>
-    </div>
-  )
-}
+import { FaButton } from '@/components/fa-button'
+import { useCharacters, useImportCharactersFromFiles } from '@/lib/character'
+import { CharacterItem } from './character-item'
+import { ImportUrlDialog } from './import-url-dialog'
 
 export function CharacterList() {
   const { characters } = useCharacters()
-  const importCharacters = useImportCharacters()
+  const importCharacters = useImportCharactersFromFiles()
+  const [isImportUrlDialogOpen, setIsImportUrlDialogOpen] = useState(false)
 
   // Create file input reference
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -67,8 +45,7 @@ export function CharacterList() {
   }
 
   const handleImportFromUrl = () => {
-    // Logic for importing character from URL
-    console.log('Import character from URL')
+    setIsImportUrlDialogOpen(true)
   }
 
   const handleCreateGroup = () => {
@@ -123,7 +100,7 @@ export function CharacterList() {
   ]
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 h-full">
       {/* Hidden file input */}
       <input
         type="file"
@@ -136,12 +113,12 @@ export function CharacterList() {
 
       <div className="flex flex-row gap-1">
         {createActions.map(({ action, icon, tooltip }, index) => (
-          <TooltipFaButton
+          <FaButton
             key={index}
             icon={icon}
             btnSize="size-8"
             iconSize="lg"
-            tooltip={tooltip}
+            title={tooltip}
             className="text-foreground border-1 border-background hover:bg-muted-foreground rounded-sm"
             onClick={action}
           />
@@ -150,24 +127,28 @@ export function CharacterList() {
 
       <div className="flex flex-row gap-1">
         {filterActions.map(({ action, icon, tooltip }, index) => (
-          <TooltipFaButton
+          <FaButton
             key={index}
             icon={icon}
             btnSize="size-8"
             iconSize="1x"
-            tooltip={tooltip}
+            title={tooltip}
             className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
             onClick={typeof action === 'function' ? action : undefined}
           />
         ))}
       </div>
 
-      {/* Character list grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <VList className="flex-1">
         {characters.map((character) => (
-          <CharacterCard key={character.id} character={character} />
+          <CharacterItem key={character.id} character={character} />
         ))}
-      </div>
+      </VList>
+
+      <ImportUrlDialog
+        open={isImportUrlDialogOpen}
+        onOpenChange={setIsImportUrlDialogOpen}
+      />
     </div>
   )
 }

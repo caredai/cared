@@ -1,6 +1,5 @@
 import type { DefaultError } from '@tanstack/react-query'
 import type { AppRouter } from '@tavern/api'
-import type { CharacterCardV2 } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback } from 'react'
 import { createQueryKeys } from '@lukemorales/query-key-factory'
@@ -12,7 +11,7 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query'
-import { importFile, pngRead, pngWrite } from '@tavern/core'
+import { CharacterCardV2, importFile, importUrl, pngRead, pngWrite } from '@tavern/core'
 import isEqual from 'lodash/isEqual'
 import { toast } from 'sonner'
 
@@ -44,11 +43,11 @@ export const characterQueries = createQueryKeys('characters', {
   }),
 })
 
-export function useImportCharacters() {
+function useCreateCharacter() {
   const trpc = useTRPC()
   const { refetchCharacters } = useCharacters()
 
-  const createMutation = useMutation(
+  return useMutation(
     trpc.character.create.mutationOptions({
       onSuccess: () => {
         void refetchCharacters()
@@ -58,6 +57,10 @@ export function useImportCharacters() {
       },
     }),
   )
+}
+
+export function useImportCharactersFromFiles() {
+  const createMutation = useCreateCharacter()
 
   return useCallback(
     async (files: FileList | null) => {
@@ -88,6 +91,50 @@ export function useImportCharacters() {
         formData.set('source', 'import-file')
         formData.set('blob', new Blob([result.bytes]))
         formData.set('filename', result.filename)
+
+        await createMutation.mutateAsync(formData)
+      }
+    },
+    [createMutation],
+  )
+}
+
+export function useImportCharactersFromUrls() {
+  const createMutation = useCreateCharacter()
+
+  return useCallback(
+    async (str: string) => {
+      const urls = str
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+      if (!urls.length) {
+        toast.error('No URL input')
+        return
+      }
+
+      for (const url of urls) {
+        let blob, filename
+        try {
+          const result = await importUrl(url)
+          if (
+            typeof result !== 'string' &&
+            result.type === 'character' &&
+            result.mimeType === 'image/png'
+          ) {
+            blob = new Blob([result.bytes])
+            filename = result.filename
+          }
+        } catch {}
+
+        // Create form data and submit
+        const formData = new FormData()
+        formData.set('source', 'import-url')
+        formData.set('fromUrl', url)
+        if (blob && filename) {
+          formData.set('blob', blob)
+          formData.set('filename', filename)
+        }
 
         await createMutation.mutateAsync(formData)
       }

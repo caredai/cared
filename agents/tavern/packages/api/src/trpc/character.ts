@@ -1,4 +1,5 @@
 import * as path from 'path'
+import type { CharacterCardV2 } from '@risuai/ccardlib'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
 import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { CCardLib } from '@risuai/ccardlib'
@@ -103,7 +104,9 @@ export const characterRouter = {
       const values = {
         userId: ctx.auth.userId,
         source: input.source,
-      } as z.infer<typeof CreateCharacterSchema>
+      } as z.infer<typeof CreateCharacterSchema> & {
+        content: CharacterCardV2
+      }
 
       switch (input.source) {
         case 'create': // passthrough
@@ -130,25 +133,33 @@ export const characterRouter = {
               message: 'fromUrl is required for import-url source',
             })
           }
-          const result = await importUrl(input.fromUrl)
-          if (!result) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: 'Failed to import character card from url',
-            })
-          }
-          if (result.type !== 'character' || result.mimeType !== 'image/png') {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: 'Invalid character card',
-            })
+
+          let blob: Blob | Uint8Array | undefined = input.blob
+          let filename = input.filename
+          if (!blob || !filename) {
+            const result = await importUrl(input.fromUrl)
+            if (typeof result === 'string') {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: `Failed to import character card from url: ${result}`,
+              })
+            }
+            if (result.type !== 'character' || result.mimeType !== 'image/png') {
+              throw new TRPCError({
+                code: 'BAD_REQUEST',
+                message: 'Invalid character card',
+              })
+            }
+
+            blob = result.bytes
+            filename = result.filename
           }
 
-          const { content, url } = await uploadCharacterCard(result.bytes, result.filename)
+          const { content, url } = await uploadCharacterCard(blob, filename)
 
           values.content = content
           values.metadata = {
-            filename: result.filename,
+            filename,
             url,
             fromUrl: input.fromUrl,
           }

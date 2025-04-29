@@ -229,10 +229,10 @@ export function Content() {
                   className={cn(
                     'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
                     'bg-zinc-800 border border-background rounded-lg shadow-lg',
-                    'absolute top-[35px] left-0 right-0 w-full',
-                    'max-h-[calc(100dvh-calc(35px+42px))] overflow-y-auto',
+                    'absolute top-[35px] left-0 right-0 w-full p-1.5',
+                    'max-h-[calc(100dvh-calc(35px))] overflow-y-auto',
                     (index === 0 || index === navPanels.length - 1) &&
-                      'lg:fixed lg:top-0 lg:w-[calc(25%-1px)]',
+                      'lg:fixed lg:top-0 lg:w-[calc(25%-1px)] h-full',
                     index === 0
                       ? 'lg:right-auto'
                       : index === navPanels.length - 1
@@ -240,9 +240,7 @@ export function Content() {
                         : undefined,
                   )}
                 >
-                  <div className="p-1.5 text-white">
-                    <Panel />
-                  </div>
+                  <Panel />
                 </CollapsibleContent>
               </Collapsible>
             ))}

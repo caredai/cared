@@ -13,19 +13,23 @@ export const env = createEnv({
    */
   server: {
     POSTGRES_URL: z.string().url(),
-    WHITELIST_IMPORT_DOMAINS: z.string().transform((s) => s.split(',').map((s) => s.trim())),
   },
 
   /**
    * Specify your client-side environment variables schema here.
    * For them to be exposed to the client, prefix them with `NEXT_PUBLIC_`.
    */
-  client: {},
+  client: {
+    NEXT_PUBLIC_WHITELIST_IMPORT_DOMAINS: z
+      .string()
+      .transform((s) => s.split(',').map((s) => s.trim())),
+  },
   /**
    * Destructure all variables from `process.env` to make sure they aren't tree-shaken away.
    */
   experimental__runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_WHITELIST_IMPORT_DOMAINS: process.env.NEXT_PUBLIC_WHITELIST_IMPORT_DOMAINS,
   },
   skipValidation: !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
 })
