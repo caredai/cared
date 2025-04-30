@@ -1,6 +1,6 @@
 import { CharGroup, charGroupMetadataSchema } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { makeObjectNonempty } from '@ownxai/sdk'
@@ -39,11 +39,7 @@ export const characterGroupRouter = {
     .input(
       z.object({
         characters: z.array(z.string()).min(1),
-        metadata: z
-          .object({
-            custom: z.unknown().optional(),
-          })
-          .optional(),
+        metadata: charGroupMetadataSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -126,5 +122,32 @@ export const characterGroupRouter = {
       }
 
       return { group }
+    }),
+
+  batchDelete: userProtectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Get all character groups that belong to the user and match the provided IDs
+      const groups = await ctx.db
+        .select()
+        .from(CharGroup)
+        .where(and(eq(CharGroup.userId, ctx.auth.userId), inArray(CharGroup.id, input.ids)))
+      if (groups.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No character groups found',
+        })
+      }
+
+      // Delete all character groups from database
+      await ctx.db
+        .delete(CharGroup)
+        .where(and(eq(CharGroup.userId, ctx.auth.userId), inArray(CharGroup.id, input.ids)))
+
+      return { groups }
     }),
 }

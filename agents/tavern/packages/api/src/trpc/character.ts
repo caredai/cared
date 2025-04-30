@@ -1,5 +1,5 @@
 import * as path from 'path'
-import type { CharacterCardV2 } from '@risuai/ccardlib'
+import type { CharacterCardV2 } from '@tavern/core'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
 import { DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { convertToV2, importUrl, pngRead } from '@tavern/core'

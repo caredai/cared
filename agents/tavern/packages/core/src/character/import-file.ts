@@ -1,8 +1,8 @@
-import type { CharacterCardV3 } from '@risuai/ccardlib'
 import mime from 'mime'
 import sanitize from 'sanitize-filename'
 import { unzip } from 'unzipit'
 
+import type { CharacterCardV3 } from './types'
 import { pngRead, pngWrite } from './png-chunks'
 import { convertToV2 } from './types'
 

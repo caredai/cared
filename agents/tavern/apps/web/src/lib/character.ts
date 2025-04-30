@@ -57,7 +57,7 @@ function useCreateCharacter() {
         void refetchCharacters()
       },
       onError: (error) => {
-        toast.error(`Failed to import character: ${error.message}`)
+        toast.error(`Failed to create character: ${error.message}`)
       },
     }),
   )

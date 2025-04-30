@@ -21,7 +21,7 @@ const mockProviders = [
       { id: 'claude-instant', name: 'Claude Instant', context: 100000, cost: 'Low' },
     ],
   },
-]
+] as const
 
 interface ProviderCardProps {
   id: string

@@ -1,3 +1,6 @@
+'use client'
+
+import type { Character } from '@/lib/character'
 import type { CheckedState } from '@radix-ui/react-checkbox'
 import { useRef, useState } from 'react'
 import {
@@ -7,17 +10,16 @@ import {
   faListSquares,
   faStar,
   faTags,
-  faTrash,
   faUserPlus,
   faUsers,
   faUsersGear,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { TrashIcon, XIcon } from 'lucide-react'
 import { VList } from 'virtua'
 
 import { Button } from '@ownxai/ui/components/button'
 import { CheckboxIndeterminate } from '@ownxai/ui/components/checkbox-indeterminate'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
 import { useCharacters } from '@/lib/character'
@@ -26,13 +28,21 @@ import { DeleteCharactersDialog } from './delete-characters-dialog'
 import { ImportFileInput } from './import-file-input'
 import { ImportUrlDialog } from './import-url-dialog'
 
-export function CharacterList() {
+export function CharacterList({
+  selectCharacter,
+}: {
+  selectCharacter: (character: Character | undefined) => void
+}) {
   const { characters } = useCharacters()
+
   const [isImportUrlDialogOpen, setIsImportUrlDialogOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(new Set())
   const [selectState, setSelectState] = useState<CheckedState>(false)
+  const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const importFileInputRef = useRef<HTMLInputElement>(null)
 
@@ -74,6 +84,7 @@ export function CharacterList() {
   const handleSelectCharacters = () => {
     setIsSelectMode(!isSelectMode)
     setSelectedCharacters(new Set())
+    setSelectState(false)
   }
 
   const handleSelectAll = () => {
@@ -91,14 +102,43 @@ export function CharacterList() {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleCharacterSelect = (characterId: string, selected: boolean) => {
-    const newSelected = new Set(selectedCharacters)
-    if (selected) {
-      newSelected.add(characterId)
-    } else {
-      newSelected.delete(characterId)
+  const handleCharacterSelect = (
+    characterId: string,
+    selected: boolean,
+    event?: React.MouseEvent,
+  ) => {
+    if (!isSelectMode) {
+      selectCharacter(characters.find((char) => char.id === characterId))
+      return
     }
+
+    const newSelected = new Set(selectedCharacters)
+
+    // Handle shift-click selection
+    if (event?.shiftKey && lastSelectedId && selectedCharacters.has(lastSelectedId)) {
+      const lastIndex = characters.findIndex((char) => char.id === lastSelectedId)
+      const currentIndex = characters.findIndex((char) => char.id === characterId)
+
+      if (lastIndex !== -1 && currentIndex !== -1) {
+        const start = Math.min(lastIndex, currentIndex)
+        const end = Math.max(lastIndex, currentIndex)
+
+        // Select all characters between last selected and current
+        for (let i = start; i <= end; i++) {
+          newSelected.add(characters[i]!.id)
+        }
+      }
+    } else {
+      // Normal selection
+      if (selected) {
+        newSelected.add(characterId)
+      } else {
+        newSelected.delete(characterId)
+      }
+    }
+
     setSelectedCharacters(newSelected)
+    setLastSelectedId(characterId)
 
     // Update select state based on selection
     if (newSelected.size === 0) {
@@ -186,7 +226,10 @@ export function CharacterList() {
             btnSize="size-8"
             iconSize="1x"
             title={tooltip}
-            className={`border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full ${className || ''}`}
+            className={cn(
+              'border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full',
+              className,
+            )}
             onClick={typeof action === 'function' ? action : undefined}
           />
         ))}
@@ -196,9 +239,13 @@ export function CharacterList() {
         <div className="flex flex-row gap-2 items-center">
           <span className="text-sm text-muted-foreground">{selectedCharacters.size} selected</span>
           <div className="flex flex-row gap-1">
-            <Button variant="outline" size="icon" className="size-6 text-muted-foreground"
-                    title="Select/deselect all characters"
-                    asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-6 text-muted-foreground"
+              title="Select/deselect all characters"
+              asChild
+            >
               <CheckboxIndeterminate
                 className="border-ring text-muted-foreground data-[state=checked]:bg-transparent data-[state=checked]:text-muted-foreground data-[state=checked]:border-ring data-[state=checked]:hover:bg-accent"
                 checked={selectState}

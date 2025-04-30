@@ -14,10 +14,15 @@ import {
 import { User } from '.'
 
 export interface CharGroupMetadata {
+  name?: string
+  disabledAutoReplyCharacters?: string[]
+
   custom?: unknown
 }
 
 export const charGroupMetadataSchema = z.object({
+  name: z.string().min(1).optional(),
+  disabledAutoReplyCharacters: z.array(z.string()).optional(),
   custom: z.unknown().optional(),
 })
 

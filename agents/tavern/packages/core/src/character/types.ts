@@ -279,3 +279,21 @@ export function convertToV2(
 
   throw new Error('unknown character card format')
 }
+
+export function getExtensions(card: CharacterCardV2) {
+  const extensions = card.data.extensions
+  const depthPrompt = extensions.depth_prompt
+
+  return {
+    talkativeness: !isNaN(Number(extensions.talkativeness))
+      ? Number(extensions.talkativeness)
+      : 0.5,
+    fav: !!extensions.fav,
+    world: String(extensions.world ?? ''), // TODO: parse world info
+    depth_prompt: {
+      prompt: String(depthPrompt.prompt ?? ''),
+      depth: !isNaN(Number(depthPrompt.depth)) ? Number(depthPrompt.depth) : 4,
+      role: String(extensions.role ?? 'system'),
+    },
+  }
+}

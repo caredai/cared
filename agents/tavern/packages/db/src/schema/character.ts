@@ -1,4 +1,4 @@
-import type { CharacterCardV2 } from '@risuai/ccardlib'
+import type { CharacterCardV2 } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
 import { index, jsonb, pgEnum, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'

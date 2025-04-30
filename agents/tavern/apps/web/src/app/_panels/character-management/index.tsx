@@ -1,29 +1,50 @@
+import type { Character } from '@/lib/character'
+import type { CharacterGroup } from '@/lib/character-group'
+import { useState } from 'react'
+
+import { Separator } from '@ownxai/ui/components/separator'
+
 import { CharacterManagementHeader } from '@/app/_panels/character-management/header'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
-import { Character } from './character'
+import { isCharacterGroup } from '@/lib/character-group'
+import { CharacterGroupView } from './character-group-view'
 import { CharacterList } from './character-list'
+import { CharacterView } from './character-view'
 
 export function CharacterManagementPanel() {
-  return (
-    <div className="flex flex-col gap-1 h-full overflow-hidden">
-      <CharacterManagementHeader />
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | CharacterGroup>()
+  const [showCharacterList, setShowCharacterList] = useState(true)
 
-      <Tabs defaultValue="character" className="flex-1 w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="character">
-            <p className="truncate">Character name</p>
-          </TabsTrigger>
-          <TabsTrigger value="character-list">
-            <p className="truncate">Characters</p>
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="character">
-          <Character />
-        </TabsContent>
-        <TabsContent value="character-list">
-          <CharacterList />
-        </TabsContent>
-      </Tabs>
+  return (
+    <div className="flex flex-col gap-2 h-full overflow-hidden">
+      <CharacterManagementHeader onShowCharacterList={() => setShowCharacterList(true)} />
+
+      <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
+
+      {selectedCharacter && (
+        <h1
+          className="font-semibold text-xl text-muted-foreground hover:text-primary-foreground cursor-pointer truncate"
+          onClick={() => setShowCharacterList(false)}
+        >
+          {isCharacterGroup(selectedCharacter)
+            ? (selectedCharacter.metadata?.name ?? 'Group')
+            : selectedCharacter.content.data.name}
+        </h1>
+      )}
+
+      {!showCharacterList && selectedCharacter ? (
+        isCharacterGroup(selectedCharacter) ? (
+          <CharacterGroupView group={selectedCharacter} />
+        ) : (
+          <CharacterView character={selectedCharacter} />
+        )
+      ) : (
+        <CharacterList
+          selectCharacter={(char) => {
+            setSelectedCharacter(char)
+            setShowCharacterList(false)
+          }}
+        />
+      )}
     </div>
   )
 }

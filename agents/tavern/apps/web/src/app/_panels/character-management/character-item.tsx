@@ -14,12 +14,13 @@ export function CharacterItem({
   character: Character
   isSelectMode?: boolean
   isSelected?: boolean
-  onSelect?: (characterId: string, selected: boolean) => void
+  onSelect: (characterId: string, selected: boolean, event?: React.MouseEvent) => void
 }) {
-  const handleClick = () => {
-    if (isSelectMode && onSelect) {
-      onSelect(character.id, !isSelected)
-    }
+  const handleClick = (event: React.MouseEvent) => {
+    onSelect(character.id, !isSelected, event)
+
+    // Clear any existing text selection
+    window.getSelection()?.removeAllRanges()
   }
 
   const data = character.content.data
@@ -32,7 +33,12 @@ export function CharacterItem({
       )}
       onClick={handleClick}
     >
-      {isSelectMode && <Checkbox checked={isSelected} className="border-ring data-[state=checked]:bg-transparent data-[state=checked]:text-orange-300 data-[state=checked]:border-orange-300" />}
+      {isSelectMode && (
+        <Checkbox
+          checked={isSelected}
+          className="border-ring data-[state=checked]:bg-transparent data-[state=checked]:text-orange-300 data-[state=checked]:border-orange-300"
+        />
+      )}
 
       <CharacterAvatar src={character.metadata.url} alt={data.name} />
 
@@ -51,7 +57,10 @@ export function CharacterItem({
         </p>
         <div className="flex flex-wrap gap-1">
           {data.tags.map((tag: string) => (
-            <span key={tag} className="px-2 py-0.5 text-xs bg-primary/10 text-primary-foreground rounded-full">
+            <span
+              key={tag}
+              className="px-2 py-0.5 text-xs bg-primary/10 text-primary-foreground rounded-full"
+            >
               {tag}
             </span>
           ))}
