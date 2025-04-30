@@ -1,21 +1,21 @@
 import type { Character } from '@tavern/db/schema'
-import { faCheck } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { CharacterAvatar } from '@/components/avatar'
 
-interface CharacterItemProps {
-  character: Character
-  isSelectMode?: boolean
-  isSelected?: boolean
-  onSelect?: (characterId: string, selected: boolean) => void
-}
+import { Checkbox } from '@ownxai/ui/components/checkbox'
+import { cn } from '@ownxai/ui/lib/utils'
+
+import { CharacterAvatar } from '@/components/avatar'
 
 export function CharacterItem({
   character,
   isSelectMode = false,
   isSelected = false,
   onSelect,
-}: CharacterItemProps) {
+}: {
+  character: Character
+  isSelectMode?: boolean
+  isSelected?: boolean
+  onSelect?: (characterId: string, selected: boolean) => void
+}) {
   const handleClick = () => {
     if (isSelectMode && onSelect) {
       onSelect(character.id, !isSelected)
@@ -26,34 +26,32 @@ export function CharacterItem({
 
   return (
     <div
-      className={`flex flex-row items-center gap-1 px-1 py-2 rounded-lg cursor-pointer hover:bg-ring/50 transition-colors ${
-        isSelected ? 'bg-ring/50' : ''
-      }`}
+      className={cn(
+        'flex flex-row items-center gap-1 px-1 py-2 border rounded-lg cursor-pointer hover:bg-ring/50 transition-colors',
+        isSelected && 'bg-orange-400/70 hover:bg-orange-400/80',
+      )}
       onClick={handleClick}
     >
-      {isSelectMode && (
-        <div className="w-6 h-6 flex items-center justify-center">
-          <div
-            className={`w-5 h-5 border-2 rounded-md flex items-center justify-center ${
-              isSelected ? 'bg-primary border-primary' : 'border-muted-foreground'
-            }`}
-          >
-            {isSelected && (
-              <FontAwesomeIcon icon={faCheck} className="text-primary-foreground" />
-            )}
-          </div>
-        </div>
-      )}
+      {isSelectMode && <Checkbox checked={isSelected} className="border-ring data-[state=checked]:bg-transparent data-[state=checked]:text-orange-300 data-[state=checked]:border-orange-300" />}
+
       <CharacterAvatar src={character.metadata.url} alt={data.name} />
+
       <div className="flex flex-col gap-1">
         <div className="flex flex-row items-center justify-between">
           <h3 className="font-medium text-yellow-400">{data.name}</h3>
           <span className="text-xs text-muted-foreground">{data.character_version}</span>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-1">{data.description}</p>
+        <p
+          className={cn(
+            'text-sm text-muted-foreground line-clamp-1',
+            isSelected && 'text-secondary-foreground',
+          )}
+        >
+          {data.description}
+        </p>
         <div className="flex flex-wrap gap-1">
           {data.tags.map((tag: string) => (
-            <span key={tag} className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+            <span key={tag} className="px-2 py-0.5 text-xs bg-primary/10 text-primary-foreground rounded-full">
               {tag}
             </span>
           ))}

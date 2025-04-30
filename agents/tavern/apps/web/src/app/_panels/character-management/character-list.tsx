@@ -1,51 +1,44 @@
+import type { CheckedState } from '@radix-ui/react-checkbox'
 import { useRef, useState } from 'react'
 import {
   faCloudArrowDown,
   faFileImport,
   faGear,
+  faListSquares,
   faStar,
   faTags,
   faTrash,
-  faSquareCheck,
-  faCheckDouble,
-  faListSquares,
   faUserPlus,
   faUsers,
   faUsersGear,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
+import { TrashIcon, XIcon } from 'lucide-react'
 import { VList } from 'virtua'
 
+import { Button } from '@ownxai/ui/components/button'
+import { CheckboxIndeterminate } from '@ownxai/ui/components/checkbox-indeterminate'
+
 import { FaButton } from '@/components/fa-button'
-import { useCharacters, useImportCharactersFromFiles } from '@/lib/character'
+import { useCharacters } from '@/lib/character'
 import { CharacterItem } from './character-item'
-import { ImportUrlDialog } from './import-url-dialog'
 import { DeleteCharactersDialog } from './delete-characters-dialog'
+import { ImportFileInput } from './import-file-input'
+import { ImportUrlDialog } from './import-url-dialog'
 
 export function CharacterList() {
   const { characters } = useCharacters()
-  const importCharacters = useImportCharactersFromFiles()
   const [isImportUrlDialogOpen, setIsImportUrlDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(new Set())
+  const [selectState, setSelectState] = useState<CheckedState>(false)
 
-  // Create file input reference
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Handle file selection
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    void importCharacters(event.target.files).finally(() => {
-      // Reset file input to allow selecting the same file again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    })
-  }
+  const importFileInputRef = useRef<HTMLInputElement>(null)
 
   // Handle import button click
   const handleImportClick = () => {
-    fileInputRef.current?.click()
+    importFileInputRef.current?.click()
   }
 
   const handleCreateCharacter = () => {
@@ -80,18 +73,18 @@ export function CharacterList() {
 
   const handleSelectCharacters = () => {
     setIsSelectMode(!isSelectMode)
-    if (!isSelectMode) {
-      setSelectedCharacters(new Set())
-    }
+    setSelectedCharacters(new Set())
   }
 
   const handleSelectAll = () => {
-    const allIds = new Set(characters.map(char => char.id))
+    const allIds = new Set(characters.map((char) => char.id))
     setSelectedCharacters(allIds)
+    setSelectState(true)
   }
 
   const handleDeselectAll = () => {
     setSelectedCharacters(new Set())
+    setSelectState(false)
   }
 
   const handleDeleteSelected = () => {
@@ -106,6 +99,15 @@ export function CharacterList() {
       newSelected.delete(characterId)
     }
     setSelectedCharacters(newSelected)
+
+    // Update select state based on selection
+    if (newSelected.size === 0) {
+      setSelectState(false)
+    } else if (newSelected.size === characters.length) {
+      setSelectState(true)
+    } else {
+      setSelectState('indeterminate')
+    }
   }
 
   const createActions = [
@@ -131,7 +133,8 @@ export function CharacterList() {
     },
   ]
 
-  const operateActions = [{
+  const operateActions = [
+    {
       action: handleShowFavorites,
       icon: faStar,
       tooltip: 'Show only favorite characters',
@@ -161,16 +164,6 @@ export function CharacterList() {
 
   return (
     <div className="flex flex-col gap-4 h-full">
-      {/* Hidden file input */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        className="hidden"
-        accept=".png,.json,.charx"
-        multiple
-        onChange={handleFileChange}
-      />
-
       <div className="flex flex-row gap-1">
         {createActions.map(({ action, icon, tooltip }, index) => (
           <FaButton
@@ -201,48 +194,47 @@ export function CharacterList() {
 
       {isSelectMode && (
         <div className="flex flex-row gap-2 items-center">
-          <span className="text-sm text-muted-foreground">
-            {selectedCharacters.size} selected
-          </span>
+          <span className="text-sm text-muted-foreground">{selectedCharacters.size} selected</span>
           <div className="flex flex-row gap-1">
-            {selectedCharacters.size < characters.length && (
-              <FaButton
-                icon={faCheckDouble}
-                btnSize="size-8"
-                iconSize="1x"
-                title="Select All"
-                className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
-                onClick={handleSelectAll}
+            <Button variant="outline" size="icon" className="size-6 text-muted-foreground"
+                    title="Select/deselect all characters"
+                    asChild>
+              <CheckboxIndeterminate
+                className="border-ring text-muted-foreground data-[state=checked]:bg-transparent data-[state=checked]:text-muted-foreground data-[state=checked]:border-ring data-[state=checked]:hover:bg-accent"
+                checked={selectState}
+                onCheckedChange={(checked) => {
+                  if (checked === true) {
+                    handleSelectAll()
+                  } else {
+                    handleDeselectAll()
+                  }
+                }}
               />
-            )}
+            </Button>
             {selectedCharacters.size > 0 && (
-              <>
-                <FaButton
-                  icon={faSquareCheck}
-                  btnSize="size-8"
-                  iconSize="1x"
-                  title="Deselect All"
-                  className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
-                  onClick={handleDeselectAll}
-                />
-                <FaButton
-                  icon={faTrash}
-                  btnSize="size-8"
-                  iconSize="1x"
-                  title="Delete Selected"
-                  className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
-                  onClick={handleDeleteSelected}
-                />
-              </>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-6 border-ring text-muted-foreground hover:text-muted-foreground"
+                title="Delete selected characters"
+                onClick={handleDeleteSelected}
+              >
+                <TrashIcon />
+              </Button>
             )}
-            <FaButton
-              icon={faXmark}
-              btnSize="size-8"
-              iconSize="1x"
-              title="Exit Selection Mode"
-              className="border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full"
-              onClick={() => setIsSelectMode(false)}
-            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-6 border-ring text-muted-foreground hover:text-muted-foreground"
+              title="Exit selection mode"
+              onClick={() => {
+                setIsSelectMode(false)
+                setSelectedCharacters(new Set())
+                setSelectState(false)
+              }}
+            >
+              <XIcon />
+            </Button>
           </div>
         </div>
       )}
@@ -262,7 +254,10 @@ export function CharacterList() {
         }}
       </VList>
 
+      <ImportFileInput ref={importFileInputRef} />
+
       <ImportUrlDialog open={isImportUrlDialogOpen} onOpenChange={setIsImportUrlDialogOpen} />
+
       <DeleteCharactersDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}

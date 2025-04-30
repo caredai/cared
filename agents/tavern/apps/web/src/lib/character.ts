@@ -83,7 +83,10 @@ export function useImportCharactersFromFiles() {
           return
         }
 
-        const result = await importFile(file, defaultPngBytes)
+        const result = await importFile(file, defaultPngBytes).catch((error) => {
+          toast.error(`Unable to import character file: ${error.message}`)
+          throw error
+        })
 
         if (typeof result !== 'object') {
           toast.error(`Unable to parse character file: ${result}`)
@@ -118,6 +121,7 @@ export function useImportCharactersFromUrls() {
       }
 
       for (const url of urls) {
+        // Always import url locally first
         let blob, filename
         try {
           const result = await importUrl(url)
@@ -130,7 +134,7 @@ export function useImportCharactersFromUrls() {
             filename = result.filename
           }
         } catch {
-          /* empty */
+          // If local importing failed, import url again at server side
         }
 
         // Create form data and submit

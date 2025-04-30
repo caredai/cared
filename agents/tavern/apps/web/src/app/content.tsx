@@ -204,7 +204,7 @@ export function Content() {
       )}
     >
       <div className="w-full lg:w-1/2 h-full flex flex-col relative">
-        <header className="bg-zinc-800 text-white flex flex-col shadow-[0_2px_20px_rgba(0,0,0,0.7)] z-3000">
+        <header className="bg-sidebar text-white flex flex-col shadow-[0_2px_20px_rgba(0,0,0,0.7)] z-3000">
           <nav className="w-full flex flex-row items-center justify-between px-4 h-[35px] relative">
             {navPanels.map(({ icon, name, panel: Panel }, index) => (
               <Collapsible
@@ -228,7 +228,7 @@ export function Content() {
                   }}
                   className={cn(
                     'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
-                    'bg-zinc-800 border border-background rounded-lg shadow-lg',
+                    'bg-background border border-background rounded-lg shadow-lg',
                     'absolute top-[35px] left-0 right-0 w-full p-1.5',
                     'max-h-[calc(100dvh-calc(35px))] overflow-y-auto',
                     (index === 0 || index === navPanels.length - 1) &&
@@ -247,10 +247,10 @@ export function Content() {
           </nav>
         </header>
 
-        <main className="flex-1 bg-zinc-900 overflow-y-auto p-4"></main>
+        <main className="flex-1 overflow-y-auto p-4 bg-background"></main>
 
         <div className="pt-[1px] pb-[5px] bg-transparent">
-          <div className="flex flex-row items-center bg-zinc-900 rounded-b-lg px-1 text-sm focus-within:ring-1 focus-within:ring-ring">
+          <div className="flex flex-row items-center rounded-b-lg px-1 text-sm bg-background focus-within:ring-1 focus-within:ring-ring">
             <button className="inline-flex">
               <FontAwesomeIcon
                 icon={faBars}
