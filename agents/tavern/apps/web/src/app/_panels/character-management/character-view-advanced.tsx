@@ -1,5 +1,5 @@
 import type { Character } from '@/lib/character'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
 import { characterCardV2ExtensionsSchema, characterCardV2Schema, getExtensions } from '@tavern/core'
@@ -124,6 +124,7 @@ export function CharacterViewAdvanced({
                         placeholder="Any content here will replace the default main prompt used for this character. You can insert {{original}} anywhere to include the default prompt from system settings."
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -140,6 +141,7 @@ export function CharacterViewAdvanced({
                         placeholder="Any content here will replace the default post-history instructions used for this character. You can insert {{original}} anywhere to include the default prompt from system settings."
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -172,6 +174,7 @@ export function CharacterViewAdvanced({
                         placeholder="(Character creator's name / contact info)"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -188,6 +191,7 @@ export function CharacterViewAdvanced({
                         placeholder="(If you want to track character versions)"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -205,6 +209,7 @@ export function CharacterViewAdvanced({
                         placeholder="(Describe the character, give usage tips, or list the chat models it has been tested on. This will be displayed in the character list.)"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -235,6 +240,7 @@ export function CharacterViewAdvanced({
                         placeholder="(Input a comma-separated list of tags)"
                       />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -254,6 +260,7 @@ export function CharacterViewAdvanced({
                     placeholder="(A brief description of the personality)"
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -271,6 +278,7 @@ export function CharacterViewAdvanced({
                     placeholder="(Circumstances and context of the interaction)"
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -289,6 +297,7 @@ export function CharacterViewAdvanced({
                       placeholder="(Text to be inserted into chat @ the designated depth and role)"
                     />
                   </FormControl>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -301,8 +310,9 @@ export function CharacterViewAdvanced({
                   <FormItem>
                     <FormLabel className="font-medium">@ Depth</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input type="number" min={0} max={999} step={1} {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -313,18 +323,19 @@ export function CharacterViewAdvanced({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-medium">Role</FormLabel>
-                    <FormControl>
-                      <Select {...field}>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <FormControl>
                         <SelectTrigger className="w-full">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="system">System</SelectItem>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="assistant">Assistant</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
+                      </FormControl>
+                      <SelectContent className="z-6000">
+                        <SelectItem value="system">System</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="assistant">Assistant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -359,6 +370,7 @@ export function CharacterViewAdvanced({
                     </div>
                   </div>
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -381,6 +393,7 @@ export function CharacterViewAdvanced({
                     placeholder="(Examples of chat dialog. Begin each example with <START> on a new line.)"
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />

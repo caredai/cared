@@ -280,6 +280,45 @@ export function convertToV2(
   throw new Error('unknown character card format')
 }
 
+export function updateWithV2(
+  card: CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
+  newCard: CharacterCardV2,
+): CharacterCardV1 | CharacterCardV2 | CharacterCardV3 {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if ((card as CharacterCardV2).spec === 'chara_card_v2') {
+    return newCard
+  }
+
+  const cardV3 = card as CharacterCardV3
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (cardV3.spec === 'chara_card_v3') {
+    const book =
+      (cardV3.data.character_book ?? newCard.data.character_book) &&
+      ({
+        ...cardV3.data.character_book,
+        ...newCard.data.character_book,
+      } as LorebookV3)
+
+    return {
+      ...cardV3,
+      data: {
+        ...cardV3.data,
+        ...newCard.data,
+        character_book: book,
+      },
+    }
+  }
+
+  return {
+    name: newCard.data.name,
+    description: newCard.data.description,
+    personality: newCard.data.personality,
+    scenario: newCard.data.scenario,
+    first_mes: newCard.data.first_mes,
+    mes_example: newCard.data.mes_example,
+  }
+}
+
 export const characterCardV2ExtensionsSchema = z.object({
   talkativeness: z.coerce.number().min(0).max(1).step(0.05),
   fav: z.boolean(),

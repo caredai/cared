@@ -1,8 +1,22 @@
 import * as path from 'path'
-import type { CharacterCardV2 } from '@tavern/core'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
-import { DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3'
-import { convertToV2, importUrl, pngRead } from '@tavern/core'
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3'
+import {
+  CharacterCardV1,
+  CharacterCardV2,
+  characterCardV2Schema,
+  CharacterCardV3,
+  convertToV2,
+  importUrl,
+  pngRead,
+  pngWrite,
+  updateWithV2,
+} from '@tavern/core'
 import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
@@ -15,7 +29,7 @@ import { env } from '../env'
 import { s3Client } from '../s3'
 import { userProtectedProcedure } from '../trpc'
 
-async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
+function imageUrl() {
   if (!env.NEXT_PUBLIC_IMAGE_URL) {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
@@ -23,6 +37,41 @@ async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
     })
   }
 
+  return env.NEXT_PUBLIC_IMAGE_URL
+}
+
+async function getCharacterCard(url: string) {
+  if (!url.startsWith(env.S3_BUCKET) || !url.startsWith(imageUrl())) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Invalid character card url',
+    })
+  }
+  const key = new URL(url).pathname.slice(1) // Remove leading slash
+  const command = new GetObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: key,
+  })
+  const { Body } = await s3Client.send(command)
+  if (!Body) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Character card not found',
+    })
+  }
+  const bytes = await Body.transformToByteArray()
+
+  const c = JSON.parse(pngRead(bytes))
+  const charV2 = convertToV2(c)
+
+  return {
+    original: c as CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
+    content: charV2,
+    bytes,
+  }
+}
+
+async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
   const bytes = blob instanceof Blob ? await blob.bytes() : blob
   const c = JSON.parse(pngRead(bytes))
   const charV2 = convertToV2(c)
@@ -37,12 +86,12 @@ async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
 
   return {
     content: charV2,
-    url: path.posix.join(env.NEXT_PUBLIC_IMAGE_URL, key),
+    url: path.posix.join(imageUrl(), key),
   }
 }
 
 async function deleteCharacterCard(url: string) {
-  if (!url.startsWith(env.S3_BUCKET)) {
+  if (!url.startsWith(env.S3_BUCKET) || !url.startsWith(imageUrl())) {
     return
   }
   const key = new URL(url).pathname.slice(1) // Remove leading slash
@@ -56,7 +105,7 @@ async function deleteCharacterCard(url: string) {
 async function deleteCharacterCards(urls: string[]) {
   // Filter out invalid URLs and extract keys
   const keys = urls
-    .filter((url) => url.startsWith(env.S3_BUCKET))
+    .filter((url) => url.startsWith(env.S3_BUCKET) || url.startsWith(imageUrl()))
     .map((url) => ({
       Key: new URL(url).pathname.slice(1), // Remove leading slash
     }))
@@ -225,14 +274,17 @@ export const characterRouter = {
         .instanceof(FormData)
         .transform((fd) => Object.fromEntries(fd.entries()))
         .pipe(
-          z.object({
-            id: z.string(),
-            blob: z.instanceof(Blob),
-          }),
+          z
+            .object({
+              id: z.string(),
+              blob: z.instanceof(Blob).optional(),
+              content: characterCardV2Schema.optional(),
+            })
+            .refine((data) => data.blob || data.content, 'Either blob or content is required'),
         ),
     )
     .mutation(async ({ ctx, input }) => {
-      const character = await ctx.db.query.Character.findFirst({
+      let character = await ctx.db.query.Character.findFirst({
         where: and(eq(Character.id, input.id), eq(Character.userId, ctx.auth.userId)),
       })
       if (!character) {
@@ -251,19 +303,39 @@ export const characterRouter = {
           })
       }
 
-      const { content, url } = await uploadCharacterCard(input.blob, character.metadata.filename)
+      let blob: Blob | Uint8Array | undefined = input.blob
+      if (!blob) {
+        const { original, bytes } = await getCharacterCard(character.metadata.url)
+        const content = updateWithV2(original, input.content!)
+        blob = pngWrite(bytes, JSON.stringify(content))
+      }
+
+      // eslint-disable-next-line prefer-const
+      let { content, url } = await uploadCharacterCard(blob, character.metadata.filename)
+
+      // Actually not needed, but just in case
+      if (input.content && hash(content) !== hash(input.content)) {
+        content = input.content
+      }
+
+      if (url !== character.metadata.url) {
+        await deleteCharacterCard(character.metadata.url)
+      }
 
       if (hash(content) !== hash(character.content) || url !== character.metadata.url) {
-        await ctx.db
-          .update(Character)
-          .set({
-            content,
-            metadata: {
-              ...character.metadata,
-              url,
-            },
-          })
-          .where(eq(Character.id, input.id))
+        character = (
+          await ctx.db
+            .update(Character)
+            .set({
+              content,
+              metadata: {
+                ...character.metadata,
+                url,
+              },
+            })
+            .where(eq(Character.id, input.id))
+            .returning()
+        ).at(0)
       }
 
       return { character }
