@@ -1,7 +1,7 @@
 'use client'
 
 import type { Character } from '@/lib/character'
-import type { ReactNode } from 'react'
+import { ReactNode, useState } from 'react'
 import {
   faBook,
   faClone,
@@ -33,13 +33,20 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
+import { CharacterViewAdvanced } from './character-view-advanced'
 
 export function CharacterView({ character }: { character: Character }) {
   const data = character.content.data
   const metadata = character.metadata
 
+  const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false)
+
   const handleAddToFavorites = () => {
     console.log('Set favorite character')
+  }
+
+  const handleShowAdvancedDefinitions = () => {
+    setIsAdvancedDialogOpen(!isAdvancedDialogOpen)
   }
 
   const operateActions = [
@@ -50,9 +57,9 @@ export function CharacterView({ character }: { character: Character }) {
       className: 'text-yellow-400',
     },
     {
-      action: handleAddToFavorites,
+      action: handleShowAdvancedDefinitions,
       icon: faBook,
-      tooltip: 'Add to favorites',
+      tooltip: 'Advanced definitions',
     },
     {
       action: handleAddToFavorites,
@@ -131,6 +138,13 @@ export function CharacterView({ character }: { character: Character }) {
         <p>First message</p>
         <Textarea value={data.first_mes} className="h-30" />
       </div>
+
+      {isAdvancedDialogOpen && (
+        <CharacterViewAdvanced
+          character={character}
+          onClose={() => setIsAdvancedDialogOpen(false)}
+        />
+      )}
     </div>
   )
 }

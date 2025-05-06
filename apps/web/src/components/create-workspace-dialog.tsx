@@ -67,7 +67,7 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
 
         toast.success('Workspace created successfully')
 
-        await queryClient.invalidateQueries(trpc.workspace.queryFilter())
+        await queryClient.invalidateQueries(trpc.workspace.list.queryOptions())
 
         // Redirect to new workspace or call success callback
         if (onSuccess) {

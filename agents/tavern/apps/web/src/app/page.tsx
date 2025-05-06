@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 
-import { Content } from '@/app/content'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { PageContent } from './_page'
 import { SignIn } from './sign-in'
 
 export default async function Page() {
@@ -16,7 +16,7 @@ export default async function Page() {
   return (
     <HydrateClient>
       <Suspense fallback={<></>}>
-        <Content />
+        <PageContent />
       </Suspense>
     </HydrateClient>
   )

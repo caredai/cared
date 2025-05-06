@@ -3,20 +3,16 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   faAddressCard,
-  faBars,
   faBookAtlas,
   faCubes,
   faFaceSmile,
   faFont,
-  faMagicWandSparkles,
   faPanorama,
-  faPaperPlane,
   faPlug,
   // faPlugCircleExclamation,
   faSliders,
   faUserCog,
 } from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import {
   Collapsible,
@@ -25,18 +21,17 @@ import {
 } from '@ownxai/ui/components/collapsible'
 import { cn } from '@ownxai/ui/lib/utils'
 
-import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
 import { FaButton } from '@/components/fa-button'
-import { useAppearanceSettings, useBackgroundSettings } from '@/lib/settings'
-import { backgroundFittings, BackgroundImagePanel } from './_panels/background-image'
-import { CharacterManagementPanel } from './_panels/character-management'
-import { ExtensionsPanel } from './_panels/extensions'
-import { PersonaManagementPanel } from './_panels/persona-management'
-import { ProviderModelPanel } from './_panels/provider-model'
-import { ResponseConfigurationPanel } from './_panels/response-configuration'
-import { ResponseFormattingPanel } from './_panels/response-formatting'
-import { UserSettingsPanel } from './_panels/user-settings'
-import { WorldInfoPanel } from './_panels/world-info'
+import { useAppearanceSettings } from '@/lib/settings'
+import { BackgroundImagePanel } from '../_panels/background-image'
+import { CharacterManagementPanel } from '../_panels/character-management'
+import { ExtensionsPanel } from '../_panels/extensions'
+import { PersonaManagementPanel } from '../_panels/persona-management'
+import { ProviderModelPanel } from '../_panels/provider-model'
+import { ResponseConfigurationPanel } from '../_panels/response-configuration'
+import { ResponseFormattingPanel } from '../_panels/response-formatting'
+import { UserSettingsPanel } from '../_panels/user-settings'
+import { WorldInfoPanel } from '../_panels/world-info'
 
 // Define navigation panel configuration
 const navPanels = [
@@ -51,8 +46,7 @@ const navPanels = [
   { icon: faAddressCard, name: 'character-management', panel: CharacterManagementPanel },
 ] as const
 
-export function Content() {
-  const backgroundSettings = useBackgroundSettings()
+export function Navbar() {
   const appearanceSettings = useAppearanceSettings()
 
   // Use Set to track multiple open panels instead of a single openItem
@@ -179,106 +173,48 @@ export function Content() {
     })
   }
 
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const image = new Image()
-    image.src = `${backgroundSettings.active.url}`
-
-    image.onload = () => {
-      if (ref.current) {
-        ref.current.style.backgroundImage = `url("${backgroundSettings.active.url}")`
-      }
-    }
-
-    return () => {
-      image.src = ''
-    }
-  }, [backgroundSettings.active.url])
-
   return (
-    <div
-      ref={ref}
-      className={cn(
-        'h-screen w-full flex justify-center bg-no-repeat transition-[background-image] duration-500',
-        backgroundFittings[backgroundSettings.fitting],
-      )}
-    >
-      <div className="w-full lg:w-1/2 h-full flex flex-col relative">
-        <header className="bg-sidebar text-white flex flex-col shadow-[0_2px_20px_rgba(0,0,0,0.7)] z-3000">
-          <nav className="w-full flex flex-row items-center justify-between px-4 h-[35px] relative">
-            {navPanels.map(({ icon, name, panel: Panel }, index) => (
-              <Collapsible
-                key={name}
-                open={openPanels.has(name)}
-                onOpenChange={() => toggleItem(name)}
-                className="size-8"
-              >
-                <CollapsibleTrigger asChild>
-                  <FaButton
-                    ref={(el) => {
-                      triggerRefs.current[name] = el
-                    }}
-                    icon={icon}
-                    isActive={openPanels.has(name)}
-                  />
-                </CollapsibleTrigger>
-                <CollapsibleContent
-                  ref={(el) => {
-                    panelRefs.current[name] = el
-                  }}
-                  className={cn(
-                    'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
-                    'bg-background border border-background rounded-lg shadow-lg',
-                    'absolute top-[35px] left-0 right-0 w-full p-1.5',
-                    'max-h-[calc(100dvh-calc(35px))] overflow-y-auto',
-                    (index === 0 || index === navPanels.length - 1) &&
-                      'lg:fixed lg:top-0 lg:w-[calc(25%-1px)] h-full',
-                    index === 0
-                      ? 'lg:right-auto'
-                      : index === navPanels.length - 1
-                        ? 'lg:left-auto'
-                        : undefined,
-                  )}
-                >
-                  <Panel />
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-          </nav>
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-4 bg-background"></main>
-
-        <div className="pt-[1px] pb-[5px] bg-transparent">
-          <div className="flex flex-row items-center rounded-b-lg px-1 text-sm bg-background focus-within:ring-1 focus-within:ring-ring">
-            <button className="inline-flex">
-              <FontAwesomeIcon
-                icon={faBars}
-                size="2x"
-                className="fa-fw text-muted-foreground hover:text-foreground transition-colors duration-200"
+    <header className="bg-sidebar text-white flex flex-col shadow-[0_2px_20px_rgba(0,0,0,0.7)] z-3000">
+      <nav className="w-full flex flex-row items-center justify-between px-4 h-[35px] relative">
+        {navPanels.map(({ icon, name, panel: Panel }, index) => (
+          <Collapsible
+            key={name}
+            open={openPanels.has(name)}
+            onOpenChange={() => toggleItem(name)}
+            className="size-8"
+          >
+            <CollapsibleTrigger asChild>
+              <FaButton
+                ref={(el) => {
+                  triggerRefs.current[name] = el
+                }}
+                icon={icon}
+                isActive={openPanels.has(name)}
               />
-            </button>
-            <button className="inline-flex">
-              <FontAwesomeIcon
-                icon={faMagicWandSparkles}
-                size="2x"
-                className="fa-fw text-muted-foreground hover:text-foreground transition-colors duration-200"
-              />
-            </button>
-            <AutoGrowTextarea
-              className="flex-1 min-h-[36px] max-h-[50dvh] text-white focus:outline-none border-0 focus-visible:ring-0 resize-y rounded-none"
-              placeholder="Type your message..."
-            />
-            <button className="inline-flex ml-1">
-              <FontAwesomeIcon
-                icon={faPaperPlane}
-                size="2x"
-                className="fa-fw text-muted-foreground hover:text-foreground transition-colors duration-200"
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent
+              ref={(el) => {
+                panelRefs.current[name] = el
+              }}
+              className={cn(
+                'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
+                'bg-background border border-background rounded-lg shadow-lg',
+                'absolute top-[35px] left-0 right-0 w-full p-1.5',
+                'max-h-[calc(100dvh-calc(35px))] overflow-y-auto',
+                (index === 0 || index === navPanels.length - 1) &&
+                  'lg:fixed lg:top-0 lg:w-[calc(25%-1px)] h-full',
+                index === 0
+                  ? 'lg:right-auto'
+                  : index === navPanels.length - 1
+                    ? 'lg:left-auto'
+                    : undefined,
+              )}
+            >
+              <Panel />
+            </CollapsibleContent>
+          </Collapsible>
+        ))}
+      </nav>
+    </header>
   )
 }

@@ -1,5 +1,6 @@
 import type { Character } from '@tavern/db/schema'
 
+import { Badge } from '@ownxai/ui/components/badge'
 import { Checkbox } from '@ownxai/ui/components/checkbox'
 import { cn } from '@ownxai/ui/lib/utils'
 
@@ -49,7 +50,7 @@ export function CharacterItem({
         </div>
         <p
           className={cn(
-            'text-sm text-muted-foreground line-clamp-1',
+            'text-sm text-secondary-foreground line-clamp-1',
             isSelected && 'text-secondary-foreground',
           )}
         >
@@ -57,12 +58,9 @@ export function CharacterItem({
         </p>
         <div className="flex flex-wrap gap-1">
           {data.tags.map((tag: string) => (
-            <span
-              key={tag}
-              className="px-2 py-0.5 text-xs bg-primary/10 text-primary-foreground rounded-full"
-            >
+            <Badge key={tag} variant="outline" className="text-muted-foreground border-ring px-1 py-0 rounded-sm">
               {tag}
-            </span>
+            </Badge>
           ))}
         </div>
       </div>
