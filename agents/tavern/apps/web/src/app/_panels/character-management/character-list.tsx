@@ -212,7 +212,7 @@ export function CharacterList({
             btnSize="size-8"
             iconSize="lg"
             title={tooltip}
-            className="text-foreground border-1 border-background hover:bg-muted-foreground rounded-sm"
+            className="text-foreground border-1 border-border hover:bg-muted-foreground rounded-sm"
             onClick={action}
           />
         ))}

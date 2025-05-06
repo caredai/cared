@@ -2,7 +2,7 @@ import type { Character } from '@/lib/character'
 import { useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
-import { characterCardV2Schema } from '@tavern/core'
+import { characterCardV2ExtensionsSchema, characterCardV2Schema, getExtensions } from '@tavern/core'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
@@ -20,7 +20,16 @@ import {
   FormLabel,
   FormMessage,
 } from '@ownxai/ui/components/form'
+import { Input } from '@ownxai/ui/components/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ownxai/ui/components/select'
 import { Separator } from '@ownxai/ui/components/separator'
+import { Slider } from '@ownxai/ui/components/slider'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { useContentRef } from '@/app/_page/content'
@@ -35,19 +44,31 @@ export function CharacterViewAdvanced({
 }) {
   const contentRef = useContentRef()
 
-  const data = useMemo(() => structuredClone(character.content.data), [character])
+  const data = useMemo(
+    () => ({
+      ...structuredClone(character.content.data),
+      ...getExtensions(character.content),
+    }),
+    [character],
+  )
   console.log(data)
 
   const form = useForm({
     resolver: zodResolver(
-      characterCardV2Schema.shape.data.pick({
-        personality: true,
-        scenario: true,
-        mes_example: true,
-        creator_notes: true,
-        system_prompt: true,
-        post_history_instructions: true,
-      }),
+      characterCardV2Schema.shape.data
+        .pick({
+          personality: true,
+          scenario: true,
+          mes_example: true,
+          creator_notes: true,
+          system_prompt: true,
+          post_history_instructions: true,
+          alternate_greetings: true,
+          tags: true,
+          creator: true,
+          character_version: true,
+        })
+        .merge(characterCardV2ExtensionsSchema),
     ),
     defaultValues: {
       ...data,
@@ -57,12 +78,12 @@ export function CharacterViewAdvanced({
   return (
     <Portal.Root
       container={contentRef?.current}
-      className="absolute w-full z-5000 p-2 flex flex-col gap-6"
+      className="absolute w-full h-full z-5000 flex flex-col gap-6 p-2 overflow-y-auto bg-background border border-border rounded-lg shadow-lg"
     >
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-medium">
           <span className="truncate">{data.name}</span>{' '}
-          <span className="text-sm text-muted-foreground">- Advanced Definitions</span>
+          <span className="text-md text-muted-foreground">- Advanced Definitions</span>
         </h1>
 
         <Button
@@ -79,10 +100,10 @@ export function CharacterViewAdvanced({
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 
       <Form {...form}>
-        <form className="flex flex-col gap-4">
+        <form className="flex flex-col gap-6">
           <Collapsible>
             <CollapsibleTrigger asChild>
-              <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180">
+              <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer">
                 <h2 className="text-lg font-medium">Prompt Overrides</h2>
 
                 <Button type="button" variant="outline" size="icon" className="size-6">
@@ -90,38 +111,281 @@ export function CharacterViewAdvanced({
                 </Button>
               </div>
             </CollapsibleTrigger>
-            <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
-              <div className="flex flex-col gap-2">
-                <FormField
-                  control={form.control}
-                  name="system_prompt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Main Prompt</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+            <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2">
+              <FormField
+                control={form.control}
+                name="system_prompt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Main Prompt</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Any content here will replace the default main prompt used for this character. You can insert {{original}} anywhere to include the default prompt from system settings."
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="post_history_instructions"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Post-History Instructions</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="post_history_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Post-History Instructions</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Any content here will replace the default post-history instructions used for this character. You can insert {{original}} anywhere to include the default prompt from system settings."
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </CollapsibleContent>
           </Collapsible>
 
-          <div className="flex justify-center gap-2 mt-4">
+          <Collapsible>
+            <CollapsibleTrigger asChild>
+              <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer">
+                <h2 className="text-lg font-medium">
+                  Creator's Metadata{' '}
+                  <span className="text-sm text-muted-foreground">(Not sent with the prompts)</span>
+                </h2>
+
+                <Button type="button" variant="outline" size="icon" className="size-6">
+                  <ChevronDownIcon className="transition-transform duration-200" />
+                </Button>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden grid grid-cols-2 gap-2 p-[1px]">
+              <FormField
+                control={form.control}
+                name="creator"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Creator</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="(Character creator's name / contact info)"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="character_version"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Character Version</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="(If you want to track character versions)"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="creator_notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Creator's Notes</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        className="min-h-25"
+                        placeholder="(Describe the character, give usage tips, or list the chat models it has been tested on. This will be displayed in the character list.)"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tags"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Embedded Tags{' '}
+                      <span className="text-sm text-muted-foreground">(Separated by comma)</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        // Convert array to comma-separated string for display
+                        value={field.value.join(', ')}
+                        // When user edits, split by comma and trim spaces
+                        onChange={(e) => {
+                          const input = e.target.value
+                          const arr = input
+                            .split(',')
+                            .map((tag) => tag.trim())
+                            .filter((tag) => tag.length > 0)
+                          field.onChange(arr)
+                        }}
+                        className="min-h-25"
+                        placeholder="(Input a comma-separated list of tags)"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </CollapsibleContent>
+          </Collapsible>
+
+          <FormField
+            control={form.control}
+            name="personality"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-lg font-medium">Personality summary</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    className="min-h-25"
+                    placeholder="(A brief description of the personality)"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="scenario"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-lg font-medium">Scenario</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    className="min-h-25"
+                    placeholder="(Circumstances and context of the interaction)"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <div className="flex gap-4">
+            <FormField
+              control={form.control}
+              name="depth_prompt_prompt"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel className="text-lg font-medium">Character's Note</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      className="min-h-30"
+                      placeholder="(Text to be inserted into chat @ the designated depth and role)"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <div className="flex flex-col gap-2 w-25 mt-1">
+              <FormField
+                control={form.control}
+                name="depth_prompt_depth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-medium">@ Depth</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="depth_prompt_role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-medium">Role</FormLabel>
+                    <FormControl>
+                      <Select {...field}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="system">System</SelectItem>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="assistant">Assistant</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="talkativeness"
+            render={({ field }) => (
+              <FormItem className="flex flex-col gap-2">
+                <FormLabel className="text-lg font-medium">
+                  Talkativeness{' '}
+                  <span className="text-sm text-muted-foreground">
+                    (How often the character speaks in{' '}
+                    <span className="text-foreground font-bold">group chats</span>)
+                  </span>
+                </FormLabel>
+                <FormControl>
+                  <div className="flex flex-col gap-1">
+                    <Slider
+                      value={[field.value]}
+                      onValueChange={(vals) => field.onChange(vals[0])}
+                      min={0}
+                      max={1}
+                      step={0.05}
+                    />
+                    <div className="flex justify-between text-xs">
+                      <span className="w-12 text-left">Shy</span>
+                      <span className="w-12 text-center">Normal</span>
+                      <span className="w-12 text-right">Chatty</span>
+                    </div>
+                  </div>
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="mes_example"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-lg font-medium">
+                  Dialogue Example{' '}
+                  <span className="text-sm text-muted-foreground">
+                    (Important to set the character's writing style)
+                  </span>
+                </FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    className="min-h-30"
+                    placeholder="(Examples of chat dialog. Begin each example with <START> on a new line.)"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <div className="flex justify-center gap-2 my-4">
             <Button
               type="button"
               variant="outline"

@@ -101,7 +101,7 @@ export function CharacterView({ character }: { character: Character }) {
   ]
 
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto">
+    <div className="flex flex-col gap-4 overflow-y-auto p-[1px]">
       <div className="flex flex-row justify-between items-center gap-4">
         <CharacterAvatar src={character.metadata.url} alt={data.name} />
 
@@ -130,12 +130,17 @@ export function CharacterView({ character }: { character: Character }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <p>Description</p>
+        <h2>Creator's Notes</h2>
+        <Textarea defaultValue={data.creator_notes} disabled className="h-30" />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h2>Description</h2>
         <Textarea value={data.description} className="h-80" />
       </div>
 
       <div className="flex flex-col gap-2">
-        <p>First message</p>
+        <h2>First message</h2>
         <Textarea value={data.first_mes} className="h-30" />
       </div>
 

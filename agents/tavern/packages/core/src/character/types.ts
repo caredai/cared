@@ -280,9 +280,23 @@ export function convertToV2(
   throw new Error('unknown character card format')
 }
 
+export const characterCardV2ExtensionsSchema = z.object({
+  talkativeness: z.coerce.number().min(0).max(1).step(0.05),
+  fav: z.boolean(),
+  world: z.string(),
+  depth_prompt_prompt: z.string(),
+  depth_prompt_depth: z.coerce.number().int().nonnegative().max(999).step(1),
+  depth_prompt_role: z.enum(['system', 'user', 'assistant']),
+})
+
 export function getExtensions(card: CharacterCardV2) {
   const extensions = card.data.extensions
   const depthPrompt = extensions.depth_prompt
+
+  let depthPromptRole = String(extensions.role ?? 'system')
+  if (!['system', 'user', 'assistant'].includes(depthPromptRole)) {
+    depthPromptRole = 'system'
+  }
 
   return {
     talkativeness: !isNaN(Number(extensions.talkativeness))
@@ -290,10 +304,8 @@ export function getExtensions(card: CharacterCardV2) {
       : 0.5,
     fav: !!extensions.fav,
     world: String(extensions.world ?? ''), // TODO: parse world info
-    depth_prompt: {
-      prompt: String(depthPrompt.prompt ?? ''),
-      depth: !isNaN(Number(depthPrompt.depth)) ? Number(depthPrompt.depth) : 4,
-      role: String(extensions.role ?? 'system'),
-    },
+    depth_prompt_prompt: String(depthPrompt.prompt ?? ''),
+    depth_prompt_depth: !isNaN(Number(depthPrompt.depth)) ? Number(depthPrompt.depth) : 4,
+    depth_prompt_role: depthPromptRole as 'system' | 'user' | 'assistant',
   }
 }

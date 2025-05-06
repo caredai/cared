@@ -198,7 +198,7 @@ export function Navbar() {
               }}
               className={cn(
                 'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
-                'bg-background border border-background rounded-lg shadow-lg',
+                'bg-background border border-border rounded-lg shadow-lg',
                 'absolute top-[35px] left-0 right-0 w-full p-1.5',
                 'max-h-[calc(100dvh-calc(35px))] overflow-y-auto',
                 (index === 0 || index === navPanels.length - 1) &&

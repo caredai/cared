@@ -29,7 +29,7 @@ export function CharacterItem({
   return (
     <div
       className={cn(
-        'flex flex-row items-center gap-1 px-1 py-2 border rounded-lg cursor-pointer hover:bg-ring/50 transition-colors',
+        'flex flex-row items-center gap-1 px-1 py-2 rounded-lg cursor-pointer hover:bg-ring/50 transition-colors',
         isSelected && 'bg-orange-400/70 hover:bg-orange-400/80',
       )}
       onClick={handleClick}
@@ -54,7 +54,7 @@ export function CharacterItem({
             isSelected && 'text-secondary-foreground',
           )}
         >
-          {data.description}
+          {data.creator_notes}
         </p>
         <div className="flex flex-wrap gap-1">
           {data.tags.map((tag: string) => (
