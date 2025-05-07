@@ -131,7 +131,7 @@ export function CharacterView({ character }: { character: Character }) {
 
       <div className="flex flex-col gap-2">
         <h2>Creator's Notes</h2>
-        <Textarea defaultValue={data.creator_notes} disabled className="h-30" />
+        <Textarea defaultValue={data.creator_notes} readOnly className="h-30 cursor-default" />
       </div>
 
       <div className="flex flex-col gap-2">

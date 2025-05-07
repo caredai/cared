@@ -1,10 +1,15 @@
-import type { Character } from '@/lib/character'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
-import { characterCardV2ExtensionsSchema, characterCardV2Schema, getExtensions } from '@tavern/core'
+import {
+  characterCardV2ExtensionsSchema,
+  characterCardV2Schema,
+  extractExtensions,
+  formatExtensions,
+} from '@tavern/core'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -34,6 +39,24 @@ import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { useContentRef } from '@/app/_page/content'
 import { CircleSpinner } from '@/components/spinner'
+import { Character, useUpdateCharacter } from '@/lib/character'
+
+const updateCharacterFormSchema = characterCardV2Schema.shape.data
+  .pick({
+    personality: true,
+    scenario: true,
+    mes_example: true,
+    creator_notes: true,
+    system_prompt: true,
+    post_history_instructions: true,
+    alternate_greetings: true,
+    tags: true,
+    creator: true,
+    character_version: true,
+  })
+  .merge(characterCardV2ExtensionsSchema)
+
+type UpdateCharacterFormValues = z.infer<typeof updateCharacterFormSchema>
 
 export function CharacterViewAdvanced({
   character,
@@ -44,36 +67,37 @@ export function CharacterViewAdvanced({
 }) {
   const contentRef = useContentRef()
 
+  const updateCharacter = useUpdateCharacter(character)
+
   const data = useMemo(
     () => ({
       ...structuredClone(character.content.data),
-      ...getExtensions(character.content),
+      ...extractExtensions(character.content),
     }),
     [character],
   )
-  console.log(data)
+  console.log(character)
 
   const form = useForm({
-    resolver: zodResolver(
-      characterCardV2Schema.shape.data
-        .pick({
-          personality: true,
-          scenario: true,
-          mes_example: true,
-          creator_notes: true,
-          system_prompt: true,
-          post_history_instructions: true,
-          alternate_greetings: true,
-          tags: true,
-          creator: true,
-          character_version: true,
-        })
-        .merge(characterCardV2ExtensionsSchema),
-    ),
+    resolver: zodResolver(updateCharacterFormSchema),
     defaultValues: {
       ...data,
     },
   })
+
+  const onSubmit = useCallback(
+    async (updates: UpdateCharacterFormValues) => {
+      await updateCharacter({
+        ...character.content,
+        ...{
+          ...character.content.data,
+          ...updates,
+          extensions: formatExtensions(updates),
+        },
+      })
+    },
+    [character, updateCharacter],
+  )
 
   return (
     <Portal.Root
@@ -100,7 +124,7 @@ export function CharacterViewAdvanced({
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 
       <Form {...form}>
-        <form className="flex flex-col gap-6">
+        <form className="flex flex-col gap-6" onSubmit={form.handleSubmit(onSubmit)}>
           <Collapsible>
             <CollapsibleTrigger asChild>
               <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer">

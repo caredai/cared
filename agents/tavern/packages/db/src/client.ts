@@ -1,3 +1,4 @@
+import * as process from 'node:process'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { VercelPgDatabase } from 'drizzle-orm/vercel-postgres/driver'
 import { sql } from '@vercel/postgres'
@@ -10,17 +11,18 @@ export type DB = PostgresJsDatabase<typeof schema> | VercelPgDatabase<typeof sch
 
 export const db: DB =
   process.env.POSTGRES_URL &&
-  [
+  ([
     '127.0.0.1',
     'localhost',
-  ].includes(new URL(process.env.POSTGRES_URL).hostname)
+  ].includes(new URL(process.env.POSTGRES_URL).hostname) ||
+    process.env.POSTGRES_URL.includes('supabase'))
     ? drizzle({
         connection: {
           url: process.env.POSTGRES_URL,
         },
         schema,
         casing: 'camelCase',
-        logger: true,
+        logger: process.env.NODE_ENV === 'development',
       })
     : drizzleVercel({
         client: sql,

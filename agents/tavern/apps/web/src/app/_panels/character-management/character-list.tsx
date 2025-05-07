@@ -41,6 +41,12 @@ export function CharacterList({
   const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(new Set())
   const [selectState, setSelectState] = useState<CheckedState>(false)
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
+  const setSelectMode = (isSelectMode: boolean) => {
+    setIsSelectMode(isSelectMode)
+    setSelectedCharacters(new Set())
+    setSelectState(false)
+    setLastSelectedId(null)
+  }
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
@@ -82,9 +88,7 @@ export function CharacterList({
   }
 
   const handleSelectCharacters = () => {
-    setIsSelectMode(!isSelectMode)
-    setSelectedCharacters(new Set())
-    setSelectState(false)
+    setSelectMode(!isSelectMode)
   }
 
   const handleSelectAll = () => {
@@ -275,9 +279,7 @@ export function CharacterList({
               className="size-6 border-ring text-muted-foreground hover:text-muted-foreground"
               title="Exit selection mode"
               onClick={() => {
-                setIsSelectMode(false)
-                setSelectedCharacters(new Set())
-                setSelectState(false)
+                setSelectMode(false)
               }}
             >
               <XIcon />
@@ -309,6 +311,7 @@ export function CharacterList({
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         selectedCharacterIds={Array.from(selectedCharacters)}
+        onDelete={() => setSelectMode(false)}
       />
     </div>
   )

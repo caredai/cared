@@ -1,4 +1,4 @@
-import * as path from 'path'
+import type { CharacterCardV1, CharacterCardV2, CharacterCardV3 } from '@tavern/core'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
 import {
   DeleteObjectCommand,
@@ -7,10 +7,7 @@ import {
   PutObjectCommand,
 } from '@aws-sdk/client-s3'
 import {
-  CharacterCardV1,
-  CharacterCardV2,
   characterCardV2Schema,
-  CharacterCardV3,
   convertToV2,
   importUrl,
   pngRead,
@@ -41,7 +38,7 @@ function imageUrl() {
 }
 
 async function getCharacterCard(url: string) {
-  if (!url.startsWith(env.S3_BUCKET) || !url.startsWith(imageUrl())) {
+  if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
       message: 'Invalid character card url',
@@ -86,12 +83,12 @@ async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
 
   return {
     content: charV2,
-    url: path.posix.join(imageUrl(), key),
+    url: new URL(key, imageUrl()).toString(),
   }
 }
 
 async function deleteCharacterCard(url: string) {
-  if (!url.startsWith(env.S3_BUCKET) || !url.startsWith(imageUrl())) {
+  if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {
     return
   }
   const key = new URL(url).pathname.slice(1) // Remove leading slash
@@ -105,7 +102,7 @@ async function deleteCharacterCard(url: string) {
 async function deleteCharacterCards(urls: string[]) {
   // Filter out invalid URLs and extract keys
   const keys = urls
-    .filter((url) => url.startsWith(env.S3_BUCKET) || url.startsWith(imageUrl()))
+    .filter((url) => url.startsWith(env.S3_ENDPOINT) || url.startsWith(imageUrl()))
     .map((url) => ({
       Key: new URL(url).pathname.slice(1), // Remove leading slash
     }))
@@ -125,6 +122,7 @@ async function deleteCharacterCards(urls: string[]) {
         Quiet: true, // Don't return detailed errors for each object
       },
     })
+    console.log('Deleting character cards from object storage', chunk.map((key) => key.Key))
     await s3Client.send(command)
   }
 }
@@ -278,9 +276,13 @@ export const characterRouter = {
             .object({
               id: z.string(),
               blob: z.instanceof(Blob).optional(),
-              content: characterCardV2Schema.optional(),
+              content: z
+                .string()
+                .transform((content) => JSON.parse(content))
+                .pipe(characterCardV2Schema)
+                .optional(),
             })
-            .refine((data) => data.blob || data.content, 'Either blob or content is required'),
+            .refine((data) => data.blob ?? data.content, 'Either blob or content is required'),
         ),
     )
     .mutation(async ({ ctx, input }) => {
@@ -386,7 +388,7 @@ export const characterRouter = {
       // Delete all character cards from storage
       await deleteCharacterCards(characters.map((character) => character.metadata.url))
 
-      // Delete all characters from database
+      // Delete all characters from the database
       await ctx.db
         .delete(Character)
         .where(and(eq(Character.userId, ctx.auth.userId), inArray(Character.id, input.ids)))

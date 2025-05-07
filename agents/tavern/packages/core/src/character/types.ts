@@ -328,7 +328,9 @@ export const characterCardV2ExtensionsSchema = z.object({
   depth_prompt_role: z.enum(['system', 'user', 'assistant']),
 })
 
-export function getExtensions(card: CharacterCardV2) {
+export type CharacterCardV2Extensions = z.infer<typeof characterCardV2ExtensionsSchema>
+
+export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensions {
   const extensions = card.data.extensions
   const depthPrompt = extensions.depth_prompt
 
@@ -346,5 +348,18 @@ export function getExtensions(card: CharacterCardV2) {
     depth_prompt_prompt: String(depthPrompt.prompt ?? ''),
     depth_prompt_depth: !isNaN(Number(depthPrompt.depth)) ? Number(depthPrompt.depth) : 4,
     depth_prompt_role: depthPromptRole as 'system' | 'user' | 'assistant',
+  }
+}
+
+export function formatExtensions(extensions: CharacterCardV2Extensions): Record<string, any> {
+  return {
+    talkativeness: extensions.talkativeness,
+    fav: extensions.fav,
+    world: extensions.world,
+    depth_prompt: {
+      prompt: extensions.depth_prompt_prompt,
+      depth: extensions.depth_prompt_depth,
+      role: extensions.depth_prompt_role,
+    },
   }
 }

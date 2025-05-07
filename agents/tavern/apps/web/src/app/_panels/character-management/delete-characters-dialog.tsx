@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { Button } from '@ownxai/ui/components/button'
 import {
   Dialog,
@@ -7,21 +9,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@ownxai/ui/components/dialog'
-import { useDeleteCharacters } from '@/lib/character'
-import { CircleSpinner } from '@/components/spinner'
-import { useState } from 'react'
 
-interface DeleteCharactersDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  selectedCharacterIds: string[]
-}
+import { CircleSpinner } from '@/components/spinner'
+import { useDeleteCharacters } from '@/lib/character'
 
 export function DeleteCharactersDialog({
   open,
   onOpenChange,
   selectedCharacterIds,
-}: DeleteCharactersDialogProps) {
+  onDelete,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  selectedCharacterIds: string[]
+  onDelete: () => void
+}) {
   const deleteCharacters = useDeleteCharacters()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -30,6 +32,7 @@ export function DeleteCharactersDialog({
     try {
       await deleteCharacters(selectedCharacterIds)
       onOpenChange(false)
+      onDelete()
     } finally {
       setIsLoading(false)
     }

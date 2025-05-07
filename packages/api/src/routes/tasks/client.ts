@@ -7,7 +7,10 @@ class WorkflowClient extends Client {
   override trigger(config: Parameters<Client['trigger']>[0]) {
     return super.trigger({
       ...config,
-      url: path.posix.join(env.UPSTASH_WORKFLOW_URL, tasksApiRoutePath ?? '', config.url),
+      url: new URL(
+        path.posix.join(tasksApiRoutePath ?? '', config.url),
+        env.UPSTASH_WORKFLOW_URL,
+      ).toString(),
     })
   }
 }
