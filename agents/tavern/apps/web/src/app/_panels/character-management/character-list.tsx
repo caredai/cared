@@ -2,7 +2,7 @@
 
 import type { Character } from '@/lib/character'
 import type { CheckedState } from '@radix-ui/react-checkbox'
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   faCloudArrowDown,
   faFileImport,
@@ -14,11 +14,20 @@ import {
   faUsers,
   faUsersGear,
 } from '@fortawesome/free-solid-svg-icons'
+import { Document } from 'flexsearch'
 import { TrashIcon, XIcon } from 'lucide-react'
 import { VList } from 'virtua'
 
 import { Button } from '@ownxai/ui/components/button'
 import { CheckboxIndeterminate } from '@ownxai/ui/components/checkbox-indeterminate'
+import { Input } from '@ownxai/ui/components/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ownxai/ui/components/select'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
@@ -41,16 +50,84 @@ export function CharacterList({
   const [selectedCharacters, setSelectedCharacters] = useState<Set<string>>(new Set())
   const [selectState, setSelectState] = useState<CheckedState>(false)
   const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
-  const setSelectMode = (isSelectMode: boolean) => {
-    setIsSelectMode(isSelectMode)
-    setSelectedCharacters(new Set())
-    setSelectState(false)
-    setLastSelectedId(null)
-  }
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const importFileInputRef = useRef<HTMLInputElement>(null)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchIndex, setSearchIndex] = useState<Document>()
+  const [searchResults, setSearchResults] = useState<Set<string>>(new Set())
+
+  const [sortBy, setSortBy] = useState<'a-z' | 'z-a' | 'newest' | 'oldest'>('a-z')
+
+  // Initialize search index
+  useEffect(() => {
+    const index = new Document({
+      document: {
+        id: 'id',
+        index: [
+          'content:data:name',
+          'content:data:description',
+          'content:data:mes_example',
+          'content:data:scenario',
+          'content:data:personality',
+          'content:data:first_mes',
+          'content:data:creator_notes',
+          'content:data:creator',
+          'content:data:tags',
+          'content:data:alternate_greetings',
+        ],
+        store: ['id'],
+      },
+      tokenize: 'bidirectional',
+    })
+
+    // Add all characters to the index
+    void Promise.all(
+      characters.map((char) => {
+        // @ts-ignore
+        return index.add(char)
+      }),
+    )
+
+    // @ts-ignore
+    setSearchIndex(index)
+  }, [characters])
+
+  // Handle search
+  useEffect(() => {
+    if (!searchIndex || !searchQuery.trim()) {
+      setSearchResults(new Set())
+      return
+    }
+
+    const results = searchIndex.search(searchQuery)
+    const matchedIds = new Set(results.flatMap((result) => result.result as string[]))
+    setSearchResults(matchedIds)
+  }, [searchQuery, searchIndex])
+
+  // Filter and sort characters
+  const filteredAndSortedCharacters = useMemo(
+    () =>
+      characters
+        .filter((char) => !searchQuery.trim() || searchResults.has(char.id))
+        .sort((a, b) => {
+          switch (sortBy) {
+            case 'a-z':
+              return a.content.data.name.localeCompare(b.content.data.name)
+            case 'z-a':
+              return b.content.data.name.localeCompare(a.content.data.name)
+            case 'newest':
+              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            case 'oldest':
+              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            default:
+              return 0
+          }
+        }),
+    [characters, searchQuery, searchResults, sortBy],
+  )
 
   // Handle import button click
   const handleImportClick = () => {
@@ -206,6 +283,13 @@ export function CharacterList({
     },
   ]
 
+  const setSelectMode = (isSelectMode: boolean) => {
+    setIsSelectMode(isSelectMode)
+    setSelectedCharacters(new Set())
+    setSelectState(false)
+    setLastSelectedId(null)
+  }
+
   return (
     <div className="flex flex-col gap-4 h-full">
       <div className="flex flex-row gap-1">
@@ -220,6 +304,29 @@ export function CharacterList({
             onClick={action}
           />
         ))}
+
+        <Input
+          type="search"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1"
+        />
+
+        <Select
+          value={sortBy}
+          onValueChange={(value: 'a-z' | 'z-a' | 'newest' | 'oldest') => setSortBy(value)}
+        >
+          <SelectTrigger className="flex-1">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent className="z-6000">
+            <SelectItem value="a-z">A-Z</SelectItem>
+            <SelectItem value="z-a">Z-A</SelectItem>
+            <SelectItem value="newest">Newest</SelectItem>
+            <SelectItem value="oldest">Oldest</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-row gap-1">
@@ -288,9 +395,9 @@ export function CharacterList({
         </div>
       )}
 
-      <VList className="flex-1" count={characters.length}>
+      <VList className="flex-1" count={filteredAndSortedCharacters.length}>
         {(i) => {
-          const character = characters[i]!
+          const character = filteredAndSortedCharacters[i]!
           return (
             <CharacterItem
               key={character.id}

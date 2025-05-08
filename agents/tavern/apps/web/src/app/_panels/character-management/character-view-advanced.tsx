@@ -1,4 +1,6 @@
-import { useCallback, useMemo } from 'react'
+import type { Character } from '@/lib/character'
+import type { z } from 'zod'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
 import {
@@ -9,7 +11,6 @@ import {
 } from '@tavern/core'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { z } from 'zod'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -39,7 +40,7 @@ import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { useContentRef } from '@/app/_page/content'
 import { CircleSpinner } from '@/components/spinner'
-import { Character, useUpdateCharacter } from '@/lib/character'
+import { useUpdateCharacter } from '@/lib/character'
 
 const updateCharacterFormSchema = characterCardV2Schema.shape.data
   .pick({
@@ -76,7 +77,6 @@ export function CharacterViewAdvanced({
     }),
     [character],
   )
-  console.log(character)
 
   const form = useForm({
     resolver: zodResolver(updateCharacterFormSchema),
@@ -85,11 +85,16 @@ export function CharacterViewAdvanced({
     },
   })
 
+  const [tagsInput, setTagsInput] = useState('')
+  useEffect(() => {
+    setTagsInput(data.tags.join(', '))
+  }, [data])
+
   const onSubmit = useCallback(
     async (updates: UpdateCharacterFormValues) => {
       await updateCharacter({
         ...character.content,
-        ...{
+        data: {
           ...character.content.data,
           ...updates,
           extensions: formatExtensions(updates),
@@ -249,16 +254,17 @@ export function CharacterViewAdvanced({
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        // Convert array to comma-separated string for display
-                        value={field.value.join(', ')}
-                        // When user edits, split by comma and trim spaces
+                        value={tagsInput}
                         onChange={(e) => {
-                          const input = e.target.value
-                          const arr = input
+                          setTagsInput(e.target.value)
+                        }}
+                        onBlur={() => {
+                          const tags = tagsInput
                             .split(',')
                             .map((tag) => tag.trim())
                             .filter((tag) => tag.length > 0)
-                          field.onChange(arr)
+                          setTagsInput(tags.join(', '))
+                          field.onChange(tags)
                         }}
                         className="min-h-25"
                         placeholder="(Input a comma-separated list of tags)"
@@ -431,7 +437,7 @@ export function CharacterViewAdvanced({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting}>
+            <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
               {form.formState.isSubmitting ? (
                 <>
                   <CircleSpinner />

@@ -15,7 +15,9 @@ export const db: DB =
     '127.0.0.1',
     'localhost',
   ].includes(new URL(process.env.POSTGRES_URL).hostname) ||
-    process.env.POSTGRES_URL.includes('supabase'))
+    process.env.POSTGRES_URL.includes('supabase') ||
+    // eslint-disable-next-line turbo/no-undeclared-env-vars
+    process.env.POSTGRES_DONOT_USE_VERCEL_CLIENT)
     ? drizzle({
         connection: {
           url: process.env.POSTGRES_URL,

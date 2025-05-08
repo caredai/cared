@@ -16,7 +16,7 @@ import {
 } from '@tavern/core'
 import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, asc, eq, inArray } from 'drizzle-orm'
 import sanitize from 'sanitize-filename'
 import hash from 'stable-hash'
 import { v7 as uuid } from 'uuid'
@@ -25,6 +25,7 @@ import { z } from 'zod'
 import { env } from '../env'
 import { s3Client } from '../s3'
 import { userProtectedProcedure } from '../trpc'
+import { measure } from '../utils'
 
 function imageUrl() {
   if (!env.NEXT_PUBLIC_IMAGE_URL) {
@@ -44,7 +45,7 @@ async function getCharacterCard(url: string) {
       message: 'Invalid character card url',
     })
   }
-  const key = new URL(url).pathname.slice(1) // Remove leading slash
+  const key = decodeURIComponent(new URL(url).pathname.slice(1)) // Remove leading slash
   const command = new GetObjectCommand({
     Bucket: env.S3_BUCKET,
     Key: key,
@@ -79,7 +80,12 @@ async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
     Body: bytes,
     ContentType: 'image/png',
   })
-  await s3Client.send(command)
+  const [execSeconds] = await measure(s3Client.send(command))
+  console.log('Upload character card to object storage', {
+    key,
+    size: bytes.length,
+    execSeconds,
+  })
 
   return {
     content: charV2,
@@ -91,7 +97,7 @@ async function deleteCharacterCard(url: string) {
   if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {
     return
   }
-  const key = new URL(url).pathname.slice(1) // Remove leading slash
+  const key = decodeURIComponent(new URL(url).pathname.slice(1)) // Remove leading slash
   const command = new DeleteObjectCommand({
     Bucket: env.S3_BUCKET,
     Key: key,
@@ -104,7 +110,7 @@ async function deleteCharacterCards(urls: string[]) {
   const keys = urls
     .filter((url) => url.startsWith(env.S3_ENDPOINT) || url.startsWith(imageUrl()))
     .map((url) => ({
-      Key: new URL(url).pathname.slice(1), // Remove leading slash
+      Key: decodeURIComponent(new URL(url).pathname.slice(1)), // Remove leading slash
     }))
 
   if (keys.length === 0) {
@@ -122,7 +128,10 @@ async function deleteCharacterCards(urls: string[]) {
         Quiet: true, // Don't return detailed errors for each object
       },
     })
-    console.log('Deleting character cards from object storage', chunk.map((key) => key.Key))
+    console.log(
+      'Deleting character cards from object storage',
+      chunk.map((key) => key.Key),
+    )
     await s3Client.send(command)
   }
 }
@@ -133,6 +142,7 @@ export const characterRouter = {
       .select()
       .from(Character)
       .where(eq(Character.userId, ctx.auth.userId))
+      .orderBy(asc(Character.id))
     return { characters }
   }),
 

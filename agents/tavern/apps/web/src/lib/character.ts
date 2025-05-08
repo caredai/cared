@@ -151,6 +151,7 @@ export function useUpdateCharacter(char: Character) {
 
   return useCallback(
     async (character: CharacterCardV2) => {
+      console.log('update character', character)
       const formData = new FormData()
       formData.set('id', char.id)
       formData.set('content', JSON.stringify(character))
