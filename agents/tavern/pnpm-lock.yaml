@@ -547,6 +547,9 @@ importers:
       '@better-auth/utils':
         specifier: ^0.2.4
         version: 0.2.4
+      '@ownxai/kv':
+        specifier: ^0.1.1
+        version: 0.1.1
       '@tavern/db':
         specifier: workspace:*
         version: link:../db
@@ -1887,6 +1890,9 @@ packages:
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
     engines: {node: '>=8.0.0'}
 
+  '@ownxai/kv@0.1.1':
+    resolution: {integrity: sha512-46hxChBm596B8j7w7ND7791zjwy7GNjNAVyOC7E1FT5sPvMku/23nV6W+LM+2+cS1FEXi+3S7bSiixpFkPZAdg==}
+
   '@ownxai/log@0.1.1':
     resolution: {integrity: sha512-Lly3wLWCcWYHub2sDto5H7qQ7qhGf0FRg4EGQiRGuxRfKJGS+xnkgGm9Nf501A8I+1stUfjv43/sweEDdq8vsg==}
 
@@ -3133,6 +3139,9 @@ packages:
     resolution: {integrity: sha512-QcGHmlRHWOl93o64ZUMNewCdwKGU6WItOU52H0djgNmn1EOrhVudrDzXz4OycCRSCPwFCDrE2iIt5vmuUdHxuQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@upstash/redis@1.34.9':
+    resolution: {integrity: sha512-7qzzF2FQP5VxR2YUNjemWs+hl/8VzJJ6fOkT7O7kt9Ct8olEVzb1g6/ik6B8Pb8W7ZmYv81SdlVV9F6O8bh/gw==}
+
   '@vercel/postgres@0.10.0':
     resolution: {integrity: sha512-fSD23DxGND40IzSkXjcFcxr53t3Tiym59Is0jSYIFpG4/0f0KO9SGtcp1sXiebvPaGe7N/tU05cH4yt2S6/IPg==}
     engines: {node: '>=18.14'}
@@ -3500,6 +3509,9 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
 
   css-in-js-utils@3.1.0:
     resolution: {integrity: sha512-fJAcud6B3rRu+KHYk+Bwf+WFL2MDCJJ1XG9x137tJQ0xYxor7XziQtuGFbWNdqrvF4Tk26O3H73nfVqXt/fW1A==}
@@ -7419,6 +7431,10 @@ snapshots:
 
   '@opentelemetry/api@1.9.0': {}
 
+  '@ownxai/kv@0.1.1':
+    dependencies:
+      '@upstash/redis': 1.34.9
+
   '@ownxai/log@0.1.1':
     dependencies:
       pino: 9.6.0
@@ -8879,6 +8895,10 @@ snapshots:
       '@typescript-eslint/types': 8.31.0
       eslint-visitor-keys: 4.2.0
 
+  '@upstash/redis@1.34.9':
+    dependencies:
+      crypto-js: 4.2.0
+
   '@vercel/postgres@0.10.0':
     dependencies:
       '@neondatabase/serverless': 0.9.5
@@ -9295,6 +9315,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  crypto-js@4.2.0: {}
 
   css-in-js-utils@3.1.0:
     dependencies:

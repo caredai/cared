@@ -15,8 +15,6 @@ export const env = createEnv({
           .filter(Boolean),
       )
       .optional(),
-    CLOUDFLARE_WORKERS_KV_URL: z.string().min(1).optional(),
-    CLOUDFLARE_WORKERS_KV_API_TOKEN: z.string().min(1).optional(),
     OWNX_DISCOVERY_URL: z.string().min(1),
     OWNX_CLIENT_ID: z.string().min(1),
     OWNX_CLIENT_SECRET: z.string().min(1),

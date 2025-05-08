@@ -1,6 +1,6 @@
 {
-  "extends": "@ownxai/tsconfig/internal-package.json",
+  "extends": "@ownxai/tsconfig/base.json",
   "compilerOptions": {},
-  "include": ["*.ts", "src"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }

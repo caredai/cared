@@ -7,11 +7,13 @@ import { nextCookies } from 'better-auth/next-js'
 import { customSession, genericOAuth, openAPI } from 'better-auth/plugins'
 import { decodeJwt } from 'jose'
 
+import { getKV } from '@ownxai/kv'
 import { generateId } from '@ownxai/sdk'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
-import { KVClient } from './kv'
+
+const kv = getKV('tavern::auth', 'upstash')
 
 const options = {
   appName: 'CryptoTavern',
@@ -27,20 +29,7 @@ const options = {
   database: drizzleAdapter(db, {
     provider: 'pg',
   }),
-  ...(KVClient.getInstance() && {
-    secondaryStorage: {
-      get: async (key) => {
-        const value = await KVClient.getInstance()!.get(key)
-        return value ? value : null
-      },
-      set: async (key, value, ttl) => {
-        await KVClient.getInstance()!.set(key, value, ttl)
-      },
-      delete: async (key) => {
-        await KVClient.getInstance()!.delete(key)
-      },
-    },
-  }),
+  secondaryStorage: kv,
   trustedOrigins: env.BETTER_AUTH_TRUSTED_ORIGINS,
   rateLimit: {
     enabled: true,

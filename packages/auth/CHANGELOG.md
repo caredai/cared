@@ -1,5 +1,12 @@
 # @ownxai/auth
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @ownxai/kv@0.1.1
+
 ## 0.1.3
 
 ### Patch Changes

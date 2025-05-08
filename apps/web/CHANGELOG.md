@@ -1,5 +1,12 @@
 # @ownxai/web
 
+## 0.1.4
+
+### Patch Changes
+
+- @ownxai/auth@0.1.4
+- @ownxai/api@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes
