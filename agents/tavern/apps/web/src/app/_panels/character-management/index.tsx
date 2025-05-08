@@ -1,18 +1,19 @@
-import type { Character } from '@/lib/character'
-import type { CharacterGroup } from '@/lib/character-group'
 import { useState } from 'react'
 
 import { Separator } from '@ownxai/ui/components/separator'
 
 import { CharacterManagementHeader } from '@/app/_panels/character-management/header'
+import { useCharacter } from '@/lib/character'
 import { isCharacterGroup } from '@/lib/character-group'
 import { CharacterGroupView } from './character-group-view'
 import { CharacterList } from './character-list'
 import { CharacterView } from './character-view'
 
 export function CharacterManagementPanel() {
-  const [selectedCharacter, setSelectedCharacter] = useState<Character | CharacterGroup>()
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string>()
   const [showCharacterList, setShowCharacterList] = useState(true)
+
+  const selectedCharacter = useCharacter(selectedCharacterId)
 
   return (
     <div className="flex flex-col gap-2 h-full overflow-hidden">
@@ -26,7 +27,7 @@ export function CharacterManagementPanel() {
           onClick={() => setShowCharacterList(false)}
         >
           {isCharacterGroup(selectedCharacter)
-            ? (selectedCharacter.metadata?.name ?? 'Group')
+            ? (selectedCharacter.metadata.name ?? 'Group')
             : selectedCharacter.content.data.name}
         </h1>
       )}
@@ -40,7 +41,7 @@ export function CharacterManagementPanel() {
       ) : (
         <CharacterList
           selectCharacter={(char) => {
-            setSelectedCharacter(char)
+            setSelectedCharacterId(char?.id)
             setShowCharacterList(false)
           }}
         />

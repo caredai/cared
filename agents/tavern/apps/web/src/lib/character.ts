@@ -1,11 +1,14 @@
 import type { AppRouter } from '@tavern/api'
 import type { CharacterCardV2 } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
-import { useCallback } from 'react'
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { useCallback, useMemo, useRef } from 'react'
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { importFile, importUrl } from '@tavern/core'
+import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
+import hash from 'stable-hash'
 
+import { debounceTimeout } from '@/lib/debounce'
 import defaultPng from '@/public/images/ai4.png'
 import { useTRPC } from '@/trpc/client'
 
@@ -25,6 +28,13 @@ export function useCharacters() {
     characters: data.characters,
     refetchCharacters: refetch,
   }
+}
+
+export function useCharacter(id?: string) {
+  const { characters } = useCharacters()
+  return useMemo(() => {
+    return characters.find((char) => char.id === id)
+  }, [characters, id])
 }
 
 function useCreateCharacter() {
@@ -151,13 +161,107 @@ export function useUpdateCharacter(char: Character) {
 
   return useCallback(
     async (character: CharacterCardV2) => {
-      console.log('update character', character)
       const formData = new FormData()
       formData.set('id', char.id)
       formData.set('content', JSON.stringify(character))
       await updateMutation.mutateAsync(formData)
     },
     [updateMutation, char.id],
+  )
+}
+
+export function useUpdateCharacterDebounce(char: Character) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const mutationOptions = trpc.character.update.mutationOptions({
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches
+      // (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: trpc.character.list.queryKey() })
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(trpc.character.list.queryKey())
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
+        if (!old) {
+          return undefined
+        }
+        const id = newData.get('id') as string
+        const content: CharacterCardV2 = JSON.parse(newData.get('content') as string)
+        const index = old.characters.findIndex((char) => char.id === id)
+        return {
+          characters: [
+            ...old.characters.slice(0, index),
+            {
+              ...old.characters.at(index)!,
+              content,
+            },
+            ...old.characters.slice(index + 1),
+          ],
+        }
+      })
+
+      // Return a context object with the snapshotted value
+      return { previousData }
+    },
+    // If the mutation fails,
+    // use the context returned from onMutate to roll back
+    onError: (error, newData, context) => {
+      if (context) {
+        queryClient.setQueryData(trpc.character.list.queryKey(), context.previousData)
+      }
+      console.error('Failed to save character:', error)
+      toast.error(`Failed to save character: ${error.message}`)
+    },
+  })
+
+  const mutationFnRef = useRef(mutationOptions.mutationFn)
+  mutationFnRef.current = mutationOptions.mutationFn
+
+  // @ts-ignore
+  const mutationFn = useCallback((...args: any[]) => mutationFnRef.current?.(...args), [])
+
+  // @ts-ignore
+  mutationOptions.mutationFn = useMemo(
+    () => pDebounce(mutationFn, debounceTimeout.extended),
+    [mutationFn],
+  )
+
+  const mutation = useMutation(mutationOptions)
+  const mutateAsync = mutation.mutateAsync
+  mutation.mutateAsync = (variables) =>
+    mutateAsync(variables, {
+      onSuccess: (data) => {
+        // Will execute only once, for the last mutation
+        queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
+          if (!old) {
+            return undefined
+          }
+          const index = old.characters.findIndex((char) => char.id === data.character.id)
+          return {
+            characters: [
+              ...old.characters.slice(0, index),
+              data.character,
+              ...old.characters.slice(index + 1),
+            ],
+          }
+        })
+      },
+    })
+
+  return useCallback(
+    async (character: CharacterCardV2) => {
+      if (hash(character) === hash(char.content)) {
+        return
+      }
+      const formData = new FormData()
+      formData.set('id', char.id)
+      formData.set('content', JSON.stringify(character))
+      await mutation.mutateAsync(formData)
+    },
+    [mutation, char.id],
   )
 }
 

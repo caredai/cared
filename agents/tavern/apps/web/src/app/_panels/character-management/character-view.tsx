@@ -1,7 +1,8 @@
 'use client'
 
 import type { Character } from '@/lib/character'
-import { ReactNode, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   faBook,
   faClone,
@@ -13,6 +14,8 @@ import {
   faSkull,
   faStar,
 } from '@fortawesome/free-solid-svg-icons'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
 
 import {
   DropdownMenu,
@@ -28,16 +31,23 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@ownxai/ui/components/dropdown-menu'
-import { Textarea } from '@ownxai/ui/components/textarea'
+import { Form } from '@ownxai/ui/components/form'
 import { cn } from '@ownxai/ui/lib/utils'
 
+import type { CharacterBasicFormValues } from './character-form/basic'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
+import { useUpdateCharacterDebounce } from '@/lib/character'
+import { CharacterBasicFormFields, characterBasicFormSchema } from './character-form/basic'
 import { CharacterViewAdvanced } from './character-view-advanced'
 
 export function CharacterView({ character }: { character: Character }) {
-  const data = character.content.data
-  const metadata = character.metadata
+  const data = useMemo(
+    () => ({
+      ...structuredClone(character.content.data),
+    }),
+    [character],
+  )
 
   const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false)
 
@@ -100,6 +110,29 @@ export function CharacterView({ character }: { character: Character }) {
     },
   ]
 
+  const updateCharacter = useUpdateCharacterDebounce(character)
+
+  const form = useForm({
+    resolver: zodResolver(characterBasicFormSchema),
+    defaultValues: {
+      ...data,
+    },
+  })
+
+  const onSubmit = useCallback(
+    async (updates: CharacterBasicFormValues) => {
+      await updateCharacter({
+        ...character.content,
+        data: {
+          ...character.content.data,
+          ...updates,
+        },
+      })
+      form.reset(updates)
+    },
+    [character, updateCharacter, form],
+  )
+
   return (
     <div className="flex flex-col gap-4 overflow-y-auto p-[1px]">
       <div className="flex flex-row justify-between items-center gap-4">
@@ -129,20 +162,17 @@ export function CharacterView({ character }: { character: Character }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <h2>Creator's Notes</h2>
-        <Textarea defaultValue={data.creator_notes} readOnly className="h-30 cursor-default" />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h2>Description</h2>
-        <Textarea value={data.description} className="h-80" />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <h2>First message</h2>
-        <Textarea value={data.first_mes} className="h-30" />
-      </div>
+      <Form {...form}>
+        <form className="flex flex-col gap-6">
+          {/* @ts-ignore */}
+          <CharacterBasicFormFields
+            form={form}
+            onBlur={async () => {
+              await form.handleSubmit(onSubmit)()
+            }}
+          />
+        </form>
+      </Form>
 
       {isAdvancedDialogOpen && (
         <CharacterViewAdvanced

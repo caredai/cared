@@ -347,7 +347,7 @@ export const characterRouter = {
             })
             .where(eq(Character.id, input.id))
             .returning()
-        ).at(0)
+        ).at(0)!
       }
 
       return { character }

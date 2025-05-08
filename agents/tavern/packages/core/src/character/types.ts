@@ -334,7 +334,7 @@ export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensi
   const extensions = card.data.extensions
   const depthPrompt = extensions.depth_prompt
 
-  let depthPromptRole = String(extensions.role ?? 'system')
+  let depthPromptRole = String(depthPrompt?.role ?? 'system')
   if (!['system', 'user', 'assistant'].includes(depthPromptRole)) {
     depthPromptRole = 'system'
   }
@@ -345,8 +345,8 @@ export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensi
       : 0.5,
     fav: !!extensions.fav,
     world: String(extensions.world ?? ''), // TODO: parse world info
-    depth_prompt_prompt: String(depthPrompt.prompt ?? ''),
-    depth_prompt_depth: !isNaN(Number(depthPrompt.depth)) ? Number(depthPrompt.depth) : 4,
+    depth_prompt_prompt: String(depthPrompt?.prompt ?? ''),
+    depth_prompt_depth: !isNaN(Number(depthPrompt?.depth)) ? Number(depthPrompt?.depth) : 4,
     depth_prompt_role: depthPromptRole as 'system' | 'user' | 'assistant',
   }
 }
