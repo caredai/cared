@@ -57,6 +57,14 @@ export function useCharacterGroups() {
   }
 }
 
+export function useCharacterGroup(id?: string) {
+  const { groups } = useCharacterGroups()
+
+  return useMemo(() => {
+    return groups.find((g) => g.id === id)
+  }, [groups, id])
+}
+
 export function useCreateCharacterGroup() {
   const trpc = useTRPC()
   const { refetchGroups } = useCharacterGroups()

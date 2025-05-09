@@ -1,51 +1,49 @@
-import { useState } from 'react'
-
 import { Separator } from '@ownxai/ui/components/separator'
 
-import { CharacterManagementHeader } from '@/app/_panels/character-management/header'
-import { useCharacter } from '@/lib/character'
+import { useActiveCharacter } from '@/hooks/use-active-character'
 import { isCharacterGroup } from '@/lib/character-group'
+import { CharacterCreate } from './character-create'
 import { CharacterGroupView } from './character-group-view'
 import { CharacterList } from './character-list'
 import { CharacterView } from './character-view'
+import { CharacterManagementHeader } from './header'
+import { useIsCreateCharacter, useSetShowCharacterList, useShowCharacterList } from './hooks'
 
 export function CharacterManagementPanel() {
-  const [selectedCharacterId, setSelectedCharacterId] = useState<string>()
-  const [showCharacterList, setShowCharacterList] = useState(true)
-
-  const selectedCharacter = useCharacter(selectedCharacterId)
+  const activeCharacter = useActiveCharacter()
+  const isCreateCharacter = useIsCreateCharacter()
+  const showCharacterList = useShowCharacterList()
+  const setShowCharacterList = useSetShowCharacterList()
 
   return (
     <div className="flex flex-col gap-2 h-full overflow-hidden">
-      <CharacterManagementHeader onShowCharacterList={() => setShowCharacterList(true)} />
+      <CharacterManagementHeader />
 
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 
-      {selectedCharacter && (
+      {!isCreateCharacter && activeCharacter && (
         <h1
           className="font-semibold text-xl text-muted-foreground hover:text-primary-foreground cursor-pointer truncate"
           onClick={() => setShowCharacterList(false)}
         >
-          {isCharacterGroup(selectedCharacter)
-            ? (selectedCharacter.metadata.name ?? 'Group')
-            : selectedCharacter.content.data.name}
+          {isCharacterGroup(activeCharacter)
+            ? (activeCharacter.metadata?.name ?? 'Group')
+            : activeCharacter.content.data.name}
         </h1>
       )}
 
-      {!showCharacterList && selectedCharacter ? (
-        isCharacterGroup(selectedCharacter) ? (
-          <CharacterGroupView group={selectedCharacter} />
+      {!showCharacterList && isCreateCharacter && <CharacterCreate />}
+
+      {!showCharacterList &&
+        !isCreateCharacter &&
+        activeCharacter &&
+        (isCharacterGroup(activeCharacter) ? (
+          <CharacterGroupView group={activeCharacter} />
         ) : (
-          <CharacterView character={selectedCharacter} />
-        )
-      ) : (
-        <CharacterList
-          selectCharacter={(char) => {
-            setSelectedCharacterId(char?.id)
-            setShowCharacterList(false)
-          }}
-        />
-      )}
+          <CharacterView character={activeCharacter} />
+        ))}
+
+      {showCharacterList && <CharacterList />}
     </div>
   )
 }

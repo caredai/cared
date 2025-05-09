@@ -2,7 +2,7 @@
 
 import type { Character } from '@/lib/character'
 import type { ReactNode } from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   faBook,
   faClone,
@@ -14,8 +14,6 @@ import {
   faSkull,
   faStar,
 } from '@fortawesome/free-solid-svg-icons'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
 
 import {
   DropdownMenu,
@@ -31,32 +29,27 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@ownxai/ui/components/dropdown-menu'
-import { Form } from '@ownxai/ui/components/form'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import type { CharacterBasicFormValues } from './character-form/basic'
+import { useCharacterAdvancedView } from '@/app/_panels/character-management/character-form/advanced'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
-import { useUpdateCharacterDebounce } from '@/lib/character'
-import { CharacterBasicFormFields, characterBasicFormSchema } from './character-form/basic'
+import { ImageCropDialog } from '@/components/image-crop-dialog'
+import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/lib/character'
+import { CharacterBasicForm } from './character-form/basic'
 import { CharacterViewAdvanced } from './character-view-advanced'
 
 export function CharacterView({ character }: { character: Character }) {
-  const data = useMemo(
-    () => ({
-      ...structuredClone(character.content.data),
-    }),
-    [character],
-  )
-
-  const [isAdvancedDialogOpen, setIsAdvancedDialogOpen] = useState(false)
+  const { isShowCharacterAdvancedView, toggleShowCharacterAdvancedView } =
+    useCharacterAdvancedView()
 
   const handleAddToFavorites = () => {
     console.log('Set favorite character')
   }
 
   const handleShowAdvancedDefinitions = () => {
-    setIsAdvancedDialogOpen(!isAdvancedDialogOpen)
+    toggleShowCharacterAdvancedView()
   }
 
   const operateActions = [
@@ -110,33 +103,37 @@ export function CharacterView({ character }: { character: Character }) {
     },
   ]
 
-  const updateCharacter = useUpdateCharacterDebounce(character)
-
-  const form = useForm({
-    resolver: zodResolver(characterBasicFormSchema),
-    defaultValues: {
-      ...data,
-    },
-  })
+  const updateCharacter = useUpdateCharacterDebounce()
 
   const onSubmit = useCallback(
-    async (updates: CharacterBasicFormValues) => {
-      await updateCharacter({
+    async (updates: Partial<CharacterBasicFormValues>) => {
+      await updateCharacter(character, {
         ...character.content,
         data: {
           ...character.content.data,
           ...updates,
         },
       })
-      form.reset(updates)
     },
-    [character, updateCharacter, form],
+    [character, updateCharacter],
   )
+
+  const [showImageCropDialog, setShowImageCropDialog] = useState(false)
+  const [inputImageFile, setInputImageFile] = useState<File>()
+
+  const updateCharacterImage = useUpdateCharacterImage()
 
   return (
     <div className="flex flex-col gap-4 overflow-y-auto p-[1px]">
       <div className="flex flex-row justify-between items-center gap-4">
-        <CharacterAvatar src={character.metadata.url} alt={data.name} />
+        <CharacterAvatar
+          src={character.metadata.url}
+          alt={character.content.data.name}
+          onFileChange={(file) => {
+            setInputImageFile(file)
+            setShowImageCropDialog(!!file)
+          }}
+        />
 
         <div className="flex flex-col gap-2">
           <div className="flex flex-row flex-wrap justify-end gap-1">
@@ -162,24 +159,16 @@ export function CharacterView({ character }: { character: Character }) {
         </div>
       </div>
 
-      <Form {...form}>
-        <form className="flex flex-col gap-6">
-          {/* @ts-ignore */}
-          <CharacterBasicFormFields
-            form={form}
-            onBlur={async () => {
-              await form.handleSubmit(onSubmit)()
-            }}
-          />
-        </form>
-      </Form>
+      <CharacterBasicForm onChange={onSubmit} />
 
-      {isAdvancedDialogOpen && (
-        <CharacterViewAdvanced
-          character={character}
-          onClose={() => setIsAdvancedDialogOpen(false)}
-        />
-      )}
+      {isShowCharacterAdvancedView && <CharacterViewAdvanced />}
+
+      <ImageCropDialog
+        open={showImageCropDialog}
+        onOpenChange={setShowImageCropDialog}
+        imageFile={inputImageFile}
+        onCrop={(image) => updateCharacterImage(character, image)}
+      />
     </div>
   )
 }

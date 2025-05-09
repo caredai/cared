@@ -1,9 +1,16 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { z } from 'zod'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
-import { characterCardV2ExtensionsSchema, characterCardV2Schema } from '@tavern/core'
+import {
+  characterCardV2ExtensionsSchema,
+  characterCardV2Schema,
+  extractExtensions,
+} from '@tavern/core'
+import { atom, useAtom } from 'jotai'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
+import { useForm } from 'react-hook-form'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -32,7 +39,8 @@ import { Slider } from '@ownxai/ui/components/slider'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { useContentRef } from '@/app/_page/content'
-import { CircleSpinner } from '@/components/spinner'
+import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
+import { useIsCreateCharacter } from '../hooks'
 
 export const characterAdvancedFormSchema = characterCardV2Schema.shape.data
   .pick({
@@ -52,25 +60,115 @@ export const characterAdvancedFormSchema = characterCardV2Schema.shape.data
 
 export type CharacterAdvancedFormValues = z.infer<typeof characterAdvancedFormSchema>
 
+export const defaultCharacterAdvancedFormValues: CharacterAdvancedFormValues = {
+  name: '',
+  personality: '',
+  scenario: '',
+  mes_example: '',
+  creator_notes: '',
+  system_prompt: '',
+  post_history_instructions: '',
+  alternate_greetings: [],
+  tags: [],
+  creator: '',
+  character_version: '',
+  ...extractExtensions({
+    // @ts-ignore
+    data: {
+      extensions: {},
+    },
+  }),
+}
+
+const isShowCharacterAdvancedViewAtom = atom(false)
+
+export function useCharacterAdvancedView() {
+  const [isShowCharacterAdvancedView, setIsShowCharacterAdvancedView] = useAtom(
+    isShowCharacterAdvancedViewAtom,
+  )
+
+  const toggleShowCharacterAdvancedView = () => {
+    setIsShowCharacterAdvancedView((prev) => !prev)
+  }
+
+  return {
+    isShowCharacterAdvancedView,
+    setIsShowCharacterAdvancedView,
+    toggleShowCharacterAdvancedView,
+  }
+}
+
 export function CharacterAdvancedForm({
+  onChange,
+}: {
+  onChange: (values: CharacterAdvancedFormValues) => void
+}) {
+  const { isShowCharacterAdvancedView, setIsShowCharacterAdvancedView } = useCharacterAdvancedView()
+  const isCreateCharacter = useIsCreateCharacter()
+  const character = useActiveCharacter()
+
+  const defaultValues = useMemo(
+    () =>
+      !isCreateCharacter && isCharacter(character)
+        ? {
+            ...structuredClone(character.content.data),
+            ...extractExtensions(character.content),
+          }
+        : defaultCharacterAdvancedFormValues,
+    [character, isCreateCharacter],
+  )
+
+  useEffect(() => {
+    onChange(defaultValues)
+  }, [onChange, defaultValues])
+
+  const form = useForm({
+    resolver: zodResolver(characterAdvancedFormSchema),
+    defaultValues,
+  })
+
+  useEffect(() => {
+    form.reset(defaultValues)
+  }, [defaultValues, form])
+
+  if (!isShowCharacterAdvancedView || (!isCreateCharacter && !isCharacter(character))) {
+    return null
+  }
+
+  return (
+    <CharacterAdvancedFormView
+      forCreate={isCreateCharacter}
+      defaultValues={defaultValues}
+      form={form}
+      onChange={onChange}
+      onClose={() => {
+        setIsShowCharacterAdvancedView(false)
+      }}
+    />
+  )
+}
+
+function CharacterAdvancedFormView({
   forCreate = false,
-  data,
+  defaultValues,
   form,
-  onSubmit,
+  onChange,
   onClose,
 }: {
   forCreate?: boolean
-  data: CharacterAdvancedFormValues
+  defaultValues: CharacterAdvancedFormValues
   form: UseFormReturn<CharacterAdvancedFormValues>
-  onSubmit: (updates: CharacterAdvancedFormValues) => Promise<void>
+  onChange: (values: CharacterAdvancedFormValues) => void
   onClose: () => void
 }) {
   const contentRef = useContentRef()
 
   const [tagsInput, setTagsInput] = useState('')
+  const [depthInput, setDepthInput] = useState('')
   useEffect(() => {
-    setTagsInput(data.tags.join(', '))
-  }, [data])
+    setTagsInput(defaultValues.tags.join(', '))
+    setDepthInput(defaultValues.depth_prompt_depth.toString())
+  }, [defaultValues])
 
   return (
     <Portal.Root
@@ -79,7 +177,7 @@ export function CharacterAdvancedForm({
     >
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-medium">
-          <span className="truncate">{forCreate ? 'Create Character' : data.name}</span>{' '}
+          <span className="truncate">{forCreate ? 'Create Character' : defaultValues.name}</span>{' '}
           <span className="text-md text-muted-foreground">- Advanced Definitions</span>
         </h1>
 
@@ -97,7 +195,7 @@ export function CharacterAdvancedForm({
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 
       <Form {...form}>
-        <form className="flex flex-col gap-6" onSubmit={form.handleSubmit(onSubmit)}>
+        <form className="flex flex-col gap-6" onBlur={() => onChange(form.getValues())}>
           <Collapsible>
             <CollapsibleTrigger asChild>
               <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer">
@@ -108,7 +206,7 @@ export function CharacterAdvancedForm({
                 </Button>
               </div>
             </CollapsibleTrigger>
-            <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2">
+            <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 p-[1px]">
               <FormField
                 control={form.control}
                 name="system_prompt"
@@ -308,7 +406,26 @@ export function CharacterAdvancedForm({
                   <FormItem>
                     <FormLabel className="font-medium">@ Depth</FormLabel>
                     <FormControl>
-                      <Input type="number" min={0} max={999} step={1} {...field} />
+                      <Input
+                        type="number"
+                        min={0}
+                        max={999}
+                        step={1}
+                        value={depthInput}
+                        onChange={(e) => {
+                          setDepthInput(e.target.value)
+                        }}
+                        onBlur={() => {
+                          const numValue = parseInt(depthInput)
+                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 999) {
+                            setDepthInput(numValue.toString())
+                            field.onChange(numValue)
+                          } else {
+                            // Reset to previous valid value if invalid
+                            setDepthInput(field.value.toString())
+                          }
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -395,29 +512,6 @@ export function CharacterAdvancedForm({
               </FormItem>
             )}
           />
-
-          <div className="flex justify-center gap-2 my-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={form.formState.isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
-              {form.formState.isSubmitting ? (
-                <>
-                  <CircleSpinner />
-                  {forCreate ? 'Creating...' : 'Saving...'}
-                </>
-              ) : forCreate ? (
-                'Create'
-              ) : (
-                'Save'
-              )}
-            </Button>
-          </div>
         </form>
       </Form>
     </Portal.Root>

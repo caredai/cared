@@ -1,6 +1,5 @@
 'use client'
 
-import type { Character } from '@/lib/character'
 import type { CheckedState } from '@radix-ui/react-checkbox'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -31,18 +30,20 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
+import { useSetActiveCharacter } from '@/hooks/use-active-character'
 import { useCharacters } from '@/lib/character'
 import { CharacterItem } from './character-item'
 import { DeleteCharactersDialog } from './delete-characters-dialog'
+import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
 import { ImportFileInput } from './import-file-input'
 import { ImportUrlDialog } from './import-url-dialog'
 
-export function CharacterList({
-  selectCharacter,
-}: {
-  selectCharacter: (character: Character | undefined) => void
-}) {
+export function CharacterList() {
   const { characters } = useCharacters()
+
+  const setActiveCharacter = useSetActiveCharacter()
+  const setIsCreateCharacter = useSetIsCreateCharacter()
+  const setShowCharacterList = useSetShowCharacterList()
 
   const [isImportUrlDialogOpen, setIsImportUrlDialogOpen] = useState(false)
 
@@ -135,8 +136,8 @@ export function CharacterList({
   }
 
   const handleCreateCharacter = () => {
-    // Logic for creating new character
-    console.log('Create new character')
+    setIsCreateCharacter(true)
+    setShowCharacterList(false)
   }
 
   const handleImportFromUrl = () => {
@@ -189,7 +190,9 @@ export function CharacterList({
     event?: React.MouseEvent,
   ) => {
     if (!isSelectMode) {
-      selectCharacter(characters.find((char) => char.id === characterId))
+      setActiveCharacter(characters.find((char) => char.id === characterId)?.id)
+      setIsCreateCharacter(false)
+      setShowCharacterList(false)
       return
     }
 

@@ -55,7 +55,7 @@ export const characterCardV2Schema = z.object({
   spec: z.literal('chara_card_v2'),
   spec_version: z.literal('2.0'),
   data: z.object({
-    name: z.string(),
+    name: z.string().min(1),
     description: z.string(),
     personality: z.string(),
     scenario: z.string(),

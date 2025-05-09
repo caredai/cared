@@ -26,7 +26,6 @@ export const characterSourceEnumValues = [
 export const characterSourceEnum = pgEnum('source', characterSourceEnumValues)
 
 export interface CharacterMetadata {
-  filename: string // with file extension
   url: string // the url of the file stored in the object storage
   fromUrl?: string // the url of the imported character
 
@@ -34,7 +33,6 @@ export interface CharacterMetadata {
 }
 
 export const characterMetadataSchema = z.object({
-  filename: z.string(),
   url: z.string(),
   fromUrl: z.string().optional(),
   custom: z.unknown().optional(),

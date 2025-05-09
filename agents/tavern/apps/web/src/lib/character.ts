@@ -3,7 +3,7 @@ import type { CharacterCardV2 } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { importFile, importUrl } from '@tavern/core'
+import { characterCardV2Schema, importFile, importUrl, pngWrite } from '@tavern/core'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
@@ -37,7 +37,7 @@ export function useCharacter(id?: string) {
   }, [characters, id])
 }
 
-function useCreateCharacter() {
+function useCreateCharacterMutation() {
   const trpc = useTRPC()
   const { refetchCharacters } = useCharacters()
 
@@ -53,8 +53,31 @@ function useCreateCharacter() {
   )
 }
 
+export function useCreateCharacter() {
+  const createMutation = useCreateCharacterMutation()
+
+  return useCallback(
+    async (content: CharacterCardV2, imageDataUrl?: string) => {
+      const pngBytes = imageDataUrl
+        ? await fetch(imageDataUrl).then((r) => r.bytes())
+        : await (await fetch(defaultPng.src)).bytes()
+
+      const bytes = pngWrite(pngBytes, JSON.stringify(content))
+
+      // Create form data and submit
+      const formData = new FormData()
+      formData.set('source', 'create')
+      formData.set('blob', new Blob([bytes]))
+
+      await createMutation.mutateAsync(formData)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+}
+
 export function useImportCharactersFromFiles() {
-  const createMutation = useCreateCharacter()
+  const createMutation = useCreateCharacterMutation()
 
   return useCallback(
     async (files: FileList | null) => {
@@ -87,17 +110,17 @@ export function useImportCharactersFromFiles() {
         const formData = new FormData()
         formData.set('source', 'import-file')
         formData.set('blob', new Blob([result.bytes]))
-        formData.set('filename', result.filename)
 
         await createMutation.mutateAsync(formData)
       }
     },
-    [createMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 }
 
 export function useImportCharactersFromUrls() {
-  const createMutation = useCreateCharacter()
+  const createMutation = useCreateCharacterMutation()
 
   return useCallback(
     async (str: string) => {
@@ -112,7 +135,7 @@ export function useImportCharactersFromUrls() {
 
       for (const url of urls) {
         // Always import url locally first
-        let blob, filename
+        let blob
         try {
           const result = await importUrl(url)
           if (
@@ -121,7 +144,6 @@ export function useImportCharactersFromUrls() {
             result.mimeType === 'image/png'
           ) {
             blob = new Blob([result.bytes])
-            filename = result.filename
           }
         } catch {
           // If local importing failed, import url again at server side
@@ -131,15 +153,15 @@ export function useImportCharactersFromUrls() {
         const formData = new FormData()
         formData.set('source', 'import-url')
         formData.set('fromUrl', url)
-        if (blob && filename) {
+        if (blob) {
           formData.set('blob', blob)
-          formData.set('filename', filename)
         }
 
         await createMutation.mutateAsync(formData)
       }
     },
-    [createMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 }
 
@@ -166,11 +188,12 @@ export function useUpdateCharacter(char: Character) {
       formData.set('content', JSON.stringify(character))
       await updateMutation.mutateAsync(formData)
     },
-    [updateMutation, char.id],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [char.id],
   )
 }
 
-export function useUpdateCharacterDebounce(char: Character) {
+export function useUpdateCharacterDebounce() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -212,8 +235,8 @@ export function useUpdateCharacterDebounce(char: Character) {
       if (context) {
         queryClient.setQueryData(trpc.character.list.queryKey(), context.previousData)
       }
-      console.error('Failed to save character:', error)
-      toast.error(`Failed to save character: ${error.message}`)
+      console.error('Failed to update character:', error)
+      toast.error(`Failed to update character: ${error.message}`)
     },
   })
 
@@ -252,16 +275,107 @@ export function useUpdateCharacterDebounce(char: Character) {
     })
 
   return useCallback(
-    async (character: CharacterCardV2) => {
-      if (hash(character) === hash(char.content)) {
+    async (character: Character, content: CharacterCardV2) => {
+      // Strip out any unnecessary properties
+      content = characterCardV2Schema.parse(content)
+      // Check if the content is the same as the current one
+      if (hash(content) === hash(character.content)) {
         return
       }
       const formData = new FormData()
-      formData.set('id', char.id)
-      formData.set('content', JSON.stringify(character))
+      formData.set('id', character.id)
+      formData.set('content', JSON.stringify(content))
       await mutation.mutateAsync(formData)
     },
-    [mutation, char.id],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+}
+
+export function useUpdateCharacterImage() {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const updateMutation = useMutation(
+    trpc.character.update.mutationOptions({
+      onMutate: async (newData) => {
+        // Cancel any outgoing refetches
+        // (so they don't overwrite our optimistic update)
+        await queryClient.cancelQueries({ queryKey: trpc.character.list.queryKey() })
+
+        // Snapshot the previous value
+        const previousData = queryClient.getQueryData(trpc.character.list.queryKey())
+
+        // Optimistically update to the new value
+        queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
+          if (!old) {
+            return undefined
+          }
+          const id = newData.get('id') as string
+          const url = newData.get('url') as string
+          const index = old.characters.findIndex((char) => char.id === id)
+          const char = old.characters.at(index)!
+          return {
+            characters: [
+              ...old.characters.slice(0, index),
+              {
+                ...char,
+                metadata: {
+                  ...char.metadata,
+                  url,
+                },
+              },
+              ...old.characters.slice(index + 1),
+            ],
+          }
+        })
+
+        // Return a context object with the snapshotted value
+        return { previousData }
+      },
+      // If the mutation fails,
+      // use the context returned from onMutate to roll back
+      onError: (error, newData, context) => {
+        if (context) {
+          queryClient.setQueryData(trpc.character.list.queryKey(), context.previousData)
+        }
+        console.error('Failed to update character:', error)
+        toast.error(`Failed to update character: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (char: Character, imageDataUrl: string) => {
+      const pngBytes = await fetch(imageDataUrl).then((r) => r.bytes())
+      const bytes = pngWrite(pngBytes, JSON.stringify(char.content))
+
+      const formData = new FormData()
+      formData.set('id', char.id)
+      formData.set('blob', new Blob([bytes]))
+      // Not used by server side, only for optimistic update at client side
+      formData.set('url', imageDataUrl)
+      await updateMutation.mutateAsync(formData, {
+        onSuccess: (data) => {
+          // Will execute only once, for the last mutation
+          queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
+            if (!old) {
+              return undefined
+            }
+            const index = old.characters.findIndex((char) => char.id === data.character.id)
+            return {
+              characters: [
+                ...old.characters.slice(0, index),
+                data.character,
+                ...old.characters.slice(index + 1),
+              ],
+            }
+          })
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 }
 
@@ -285,7 +399,8 @@ export function useDeleteCharacter(char: Character) {
     await deleteMutation.mutateAsync({
       id: char.id,
     })
-  }, [deleteMutation, char.id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [char.id])
 }
 
 export function useDeleteCharacters() {
@@ -310,6 +425,7 @@ export function useDeleteCharacters() {
         ids,
       })
     },
-    [deleteMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 }

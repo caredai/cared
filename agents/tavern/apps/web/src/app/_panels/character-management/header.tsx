@@ -4,12 +4,11 @@ import { faListUl, faLock, faUnlock } from '@fortawesome/free-solid-svg-icons'
 
 import { FaButton } from '@/components/fa-button'
 import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
+import { useSetShowCharacterList } from './hooks'
 
-export function CharacterManagementHeader({
-  onShowCharacterList,
-}: {
-  onShowCharacterList: () => void
-}) {
+export function CharacterManagementHeader() {
+  const setShowCharacterList = useSetShowCharacterList()
+
   const appearanceSettings = useAppearanceSettings()
 
   const updateSettingsMutation = useUpdateSettingsMutation()
@@ -38,7 +37,7 @@ export function CharacterManagementHeader({
           btnSize="size-6"
           iconSize="xl"
           title="Show character list"
-          onClick={onShowCharacterList}
+          onClick={() => setShowCharacterList(true)}
         />
       </div>
       <div className="flex flex-row"></div>

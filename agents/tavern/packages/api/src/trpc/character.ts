@@ -69,11 +69,17 @@ async function getCharacterCard(url: string) {
   }
 }
 
-async function uploadCharacterCard(blob: Blob | Uint8Array, filename: string) {
+async function uploadCharacterCard(blob: Blob | Uint8Array) {
   const bytes = blob instanceof Blob ? await blob.bytes() : blob
   const c = JSON.parse(pngRead(bytes))
   const charV2 = convertToV2(c)
-  const key = `characters/${uuid()}/${sanitize(filename)}`
+  if (!charV2.data.name) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Character card name is required',
+    })
+  }
+  const key = `characters/${uuid()}/${sanitize(charV2.data.name)}.png`
   const command = new PutObjectCommand({
     Bucket: env.S3_BUCKET,
     Key: key,
@@ -174,7 +180,6 @@ export const characterRouter = {
           z.object({
             source: z.enum(characterSourceEnumValues),
             blob: z.instanceof(Blob).optional(),
-            filename: z.string().optional(),
             fromUrl: z.string().optional(),
             nftId: z.string().optional(),
           }),
@@ -191,17 +196,16 @@ export const characterRouter = {
       switch (input.source) {
         case 'create': // passthrough
         case 'import-file': {
-          if (!input.blob || !input.filename) {
+          if (!input.blob) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
-              message: 'blob and filename are required for import-file source',
+              message: '`blob` is required for `create` or `import-file` source',
             })
           }
-          const { content, url } = await uploadCharacterCard(input.blob, input.filename)
+          const { content, url } = await uploadCharacterCard(input.blob)
 
           values.content = content
           values.metadata = {
-            filename: input.filename,
             url,
           }
           break
@@ -215,8 +219,7 @@ export const characterRouter = {
           }
 
           let blob: Blob | Uint8Array | undefined = input.blob
-          let filename = input.filename
-          if (!blob || !filename) {
+          if (!blob) {
             const result = await importUrl(input.fromUrl)
             if (typeof result === 'string') {
               throw new TRPCError({
@@ -232,14 +235,12 @@ export const characterRouter = {
             }
 
             blob = result.bytes
-            filename = result.filename
           }
 
-          const { content, url } = await uploadCharacterCard(blob, filename)
+          const { content, url } = await uploadCharacterCard(blob)
 
           values.content = content
           values.metadata = {
-            filename,
             url,
             fromUrl: input.fromUrl,
           }
@@ -323,7 +324,7 @@ export const characterRouter = {
       }
 
       // eslint-disable-next-line prefer-const
-      let { content, url } = await uploadCharacterCard(blob, character.metadata.filename)
+      let { content, url } = await uploadCharacterCard(blob)
 
       // Actually not needed, but just in case
       if (input.content && hash(content) !== hash(input.content)) {

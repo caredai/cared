@@ -1,50 +1,32 @@
-import type { Character } from '@/lib/character'
-import { useCallback, useMemo } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { extractExtensions, formatExtensions } from '@tavern/core'
-import { useForm } from 'react-hook-form'
+import { useCallback } from 'react'
+import { formatExtensions } from '@tavern/core'
 
 import type { CharacterAdvancedFormValues } from './character-form/advanced'
-import { useUpdateCharacter } from '@/lib/character'
-import { CharacterAdvancedForm, characterAdvancedFormSchema } from './character-form/advanced'
+import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
+import { useUpdateCharacterDebounce } from '@/lib/character'
+import { CharacterAdvancedForm } from './character-form/advanced'
 
-export function CharacterViewAdvanced({
-  character,
-  onClose,
-}: {
-  character: Character
-  onClose: () => void
-}) {
-  const updateCharacter = useUpdateCharacter(character)
+export function CharacterViewAdvanced() {
+  const character = useActiveCharacter()
 
-  const data = useMemo(
-    () => ({
-      ...structuredClone(character.content.data),
-      ...extractExtensions(character.content),
-    }),
-    [character],
-  )
-
-  const form = useForm({
-    resolver: zodResolver(characterAdvancedFormSchema),
-    defaultValues: {
-      ...data,
-    },
-  })
+  const updateCharacter = useUpdateCharacterDebounce()
 
   const onSubmit = useCallback(
-    async (updates: CharacterAdvancedFormValues) => {
-      await updateCharacter({
+    async (values: CharacterAdvancedFormValues) => {
+      if (!isCharacter(character)) {
+        return
+      }
+      await updateCharacter(character, {
         ...character.content,
         data: {
           ...character.content.data,
-          ...updates,
-          extensions: formatExtensions(updates),
+          ...values,
+          extensions: formatExtensions(values),
         },
       })
     },
     [character, updateCharacter],
   )
 
-  return <CharacterAdvancedForm data={data} form={form} onSubmit={onSubmit} onClose={onClose} />
+  return <CharacterAdvancedForm onChange={onSubmit} />
 }
