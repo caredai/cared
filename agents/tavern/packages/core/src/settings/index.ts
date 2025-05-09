@@ -10,6 +10,7 @@ import { fillInTagsSettingsWithDefaults, tagsSettingsSchema } from './tags'
 export * from './background'
 export * from './theme'
 export * from './model-preset'
+export * from './tags'
 
 export interface Settings {
   firstRun: boolean

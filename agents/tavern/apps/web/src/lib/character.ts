@@ -355,9 +355,9 @@ export function useUpdateCharacterImage() {
       formData.set('blob', new Blob([bytes]))
       // Not used by server side, only for optimistic update at client side
       formData.set('url', imageDataUrl)
+
       await updateMutation.mutateAsync(formData, {
         onSuccess: (data) => {
-          // Will execute only once, for the last mutation
           queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
             if (!old) {
               return undefined

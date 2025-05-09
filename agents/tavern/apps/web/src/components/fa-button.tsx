@@ -2,11 +2,6 @@ import type { IconProp, SizeProp } from '@fortawesome/fontawesome-svg-core'
 import type { ComponentProps } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@ownxai/ui/components/tooltip'
 import { cn } from '@ownxai/ui/lib/utils'
 
 export function FaButton({
@@ -37,45 +32,39 @@ export function FaButton({
   )
 }
 
-export function TooltipFaButton({
+export function FaButtonWithBadge({
   icon,
-  btnSize,
-  iconSize,
+  badgeIcon,
+  btnSize = 'size-8',
+  iconSize = '2x',
+  badgeSize = 'xs',
   isActive,
-  tooltip,
   className,
   ...props
 }: ComponentProps<'button'> & {
   icon: IconProp
+  badgeIcon: IconProp
   btnSize?: string
   iconSize?: SizeProp
+  badgeSize?: SizeProp
   isActive?: boolean
-  tooltip?: string
 }) {
-  return tooltip ? (
-      <Tooltip delayDuration={1000}>
-        <TooltipTrigger asChild>
-          <FaButton
-            icon={icon}
-            btnSize={btnSize}
-            iconSize={iconSize}
-            isActive={isActive}
-            className={className}
-            {...props}
-          />
-        </TooltipTrigger>
-        <TooltipContent className="z-5000">
-          <p>{tooltip}</p>
-        </TooltipContent>
-      </Tooltip>
-  ) : (
-    <FaButton
-      icon={icon}
-      btnSize={btnSize}
-      iconSize={iconSize}
-      isActive={isActive}
-      className={className}
+  return (
+    <button
+      className={cn(
+        'inline-flex items-center justify-center text-[0.9375rem] text-ring hover:text-foreground transition-colors duration-200 relative',
+        isActive && 'text-foreground',
+        btnSize,
+        className,
+      )}
       {...props}
-    />
+    >
+      <FontAwesomeIcon icon={icon} size={iconSize} className="fa-fw" />
+      <FontAwesomeIcon 
+        icon={badgeIcon} 
+        size={badgeSize} 
+        className="absolute -top-1 -right-1 fa-fw" 
+      />
+    </button>
   )
 }

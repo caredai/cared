@@ -2,6 +2,7 @@ import { default as Colorjs } from 'colorjs.io'
 import { z } from 'zod'
 
 export interface TagsSettings {
+  isShow: boolean
   tags: Tag[]
   tagMap: Record<string, string[]> // char id or group id => array of tag name
 }
@@ -26,6 +27,7 @@ const colorSchema = z.string().refine(
 )
 
 export const tagsSettingsSchema = z.object({
+  isShow: z.boolean(),
   tags: z.array(
     z.object({
       name: z.string(),
@@ -38,10 +40,14 @@ export const tagsSettingsSchema = z.object({
 })
 
 export function fillInTagsSettingsWithDefaults(settings?: TagsSettings) {
-  return (
-    settings ?? {
-      tags: [],
-      tagMap: {},
-    }
-  )
+  return settings
+    ? {
+        ...settings,
+        isShow: typeof settings.isShow === 'boolean' ? settings.isShow : true,
+      }
+    : {
+        isShow: true,
+        tags: [],
+        tagMap: {},
+      }
 }

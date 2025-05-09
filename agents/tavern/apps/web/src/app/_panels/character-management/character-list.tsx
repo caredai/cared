@@ -17,6 +17,7 @@ import { Document } from 'flexsearch'
 import { TrashIcon, XIcon } from 'lucide-react'
 import { VList } from 'virtua'
 
+import { Badge } from '@ownxai/ui/components/badge'
 import { Button } from '@ownxai/ui/components/button'
 import { CheckboxIndeterminate } from '@ownxai/ui/components/checkbox-indeterminate'
 import { Input } from '@ownxai/ui/components/input'
@@ -32,6 +33,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 import { FaButton } from '@/components/fa-button'
 import { useSetActiveCharacter } from '@/hooks/use-active-character'
 import { useCharacters } from '@/lib/character'
+import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
 import { CharacterItem } from './character-item'
 import { DeleteCharactersDialog } from './delete-characters-dialog'
 import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
@@ -40,6 +42,8 @@ import { ImportUrlDialog } from './import-url-dialog'
 
 export function CharacterList() {
   const { characters } = useCharacters()
+  const tags = useTagsSettings()
+  const updateTagsSettings = useUpdateTagsSettings()
 
   const setActiveCharacter = useSetActiveCharacter()
   const setIsCreateCharacter = useSetIsCreateCharacter()
@@ -158,11 +162,10 @@ export function CharacterList() {
   }
 
   const handleManageTags = () => {
-    console.log('Manage tags')
   }
 
   const handleShowTags = () => {
-    console.log('Show tags')
+    void updateTagsSettings({ isShow: !tags.isShow })
   }
 
   const handleSelectCharacters = () => {
@@ -395,6 +398,20 @@ export function CharacterList() {
               <XIcon />
             </Button>
           </div>
+        </div>
+      )}
+
+      {tags.isShow && tags.tags.length > 0 && (
+        <div className="flex flex-row gap-1">
+          {tags.tags.map((tag) => (
+            <Badge
+              key={tag.name}
+              variant="outline"
+              className="text-muted-foreground border-ring px-1 py-0 rounded-sm"
+            >
+              {tag.name}
+            </Badge>
+          ))}
         </div>
       )}
 

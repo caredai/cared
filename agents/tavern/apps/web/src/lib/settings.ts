@@ -1,4 +1,4 @@
-import type { Settings } from '@tavern/core'
+import type { Settings, TagsSettings } from '@tavern/core'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import pDebounce from 'p-debounce'
@@ -88,4 +88,33 @@ export function useAppearanceSettings() {
     select: useCallback(({ settings }: { settings: Settings }) => settings.appearance, []),
   })
   return data
+}
+
+export function useTagsSettings() {
+  const trpc = useTRPC()
+  const { data } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+    select: useCallback(({ settings }: { settings: Settings }) => settings.tags, []),
+  })
+  return data
+}
+
+export function useUpdateTagsSettings() {
+  const tagsSettings = useTagsSettings()
+  const updateSettingsMutation = useUpdateSettingsMutation()
+
+  return useCallback(
+    async (tags: Partial<TagsSettings>) => {
+      await updateSettingsMutation.mutateAsync({
+        settings: {
+          tags: {
+            ...tagsSettings,
+            ...tags,
+          },
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tagsSettings],
+  )
 }
