@@ -69,7 +69,7 @@ export function useCreateCharacter() {
       formData.set('source', 'create')
       formData.set('blob', new Blob([bytes]))
 
-      await createMutation.mutateAsync(formData)
+      return await createMutation.mutateAsync(formData)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -111,7 +111,7 @@ export function useImportCharactersFromFiles() {
         formData.set('source', 'import-file')
         formData.set('blob', new Blob([result.bytes]))
 
-        await createMutation.mutateAsync(formData)
+        return await createMutation.mutateAsync(formData)
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,7 +157,7 @@ export function useImportCharactersFromUrls() {
           formData.set('blob', blob)
         }
 
-        await createMutation.mutateAsync(formData)
+        return await createMutation.mutateAsync(formData)
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

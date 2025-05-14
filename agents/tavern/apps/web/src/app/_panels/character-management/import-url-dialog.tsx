@@ -4,6 +4,7 @@ import { Button } from '@ownxai/ui/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ownxai/ui/components/dialog'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
+import { useImportTagsDialog } from '@/app/_panels/character-management/import-tags-dialog'
 import { CircleSpinner } from '@/components/spinner'
 import { useImportCharactersFromUrls } from '@/lib/character'
 
@@ -15,6 +16,8 @@ interface ImportUrlDialogProps {
 export function ImportUrlDialog({ open, onOpenChange }: ImportUrlDialogProps) {
   const importCharacters = useImportCharactersFromUrls()
 
+  const importTags = useImportTagsDialog()
+
   const [urls, setUrls] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -23,9 +26,12 @@ export function ImportUrlDialog({ open, onOpenChange }: ImportUrlDialogProps) {
 
     setIsLoading(true)
     try {
-      await importCharacters(urls)
+      const character = (await importCharacters(urls))?.character
       onOpenChange(false)
       setUrls('')
+      if (character) {
+        void importTags(character, true)
+      }
     } finally {
       setIsLoading(false)
     }

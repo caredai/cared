@@ -24,6 +24,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@ownxai/ui/components/dropdown-menu'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import type { CharacterAdvancedFormValues } from './character-form/advanced'
 import type { CharacterBasicFormValues } from './character-form/basic'
@@ -32,7 +33,6 @@ import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
 import { useCreateCharacter } from '@/lib/character'
 import defaultPng from '@/public/images/ai4.png'
-import { cn } from '../../../../../../../../packages/ui/src/lib/utils'
 import {
   CharacterAdvancedForm,
   characterAdvancedFormSchema,

@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 
 import { useImportCharactersFromFiles } from '@/lib/character'
+import { useImportTagsDialog } from './import-tags-dialog'
 
 export function ImportFileInput({
   ref: fileInputRef,
@@ -9,14 +10,20 @@ export function ImportFileInput({
 }) {
   const importCharacters = useImportCharactersFromFiles()
 
+  const importTags = useImportTagsDialog()
+
   // Handle file selection
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    void importCharacters(event.target.files).finally(() => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const character  = (await importCharacters(event.target.files).finally(() => {
       // Reset file input to allow selecting the same file again
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-    })
+    }))?.character
+
+    if (character) {
+      await importTags(character, true)
+    }
   }
 
   return (

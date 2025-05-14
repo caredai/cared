@@ -3,9 +3,12 @@ import { z } from 'zod'
 
 export interface TagsSettings {
   isShow: boolean
+  importOption: TagImportOption
   tags: Tag[]
   tagMap: Record<string, string[]> // char id or group id => array of tag name
 }
+
+export type TagImportOption = 'none' | 'all' | 'existing' | 'ask'
 
 export interface Tag {
   name: string
@@ -28,6 +31,7 @@ const colorSchema = z.string().refine(
 
 export const tagsSettingsSchema = z.object({
   isShow: z.boolean(),
+  importOption: z.enum(['none', 'all', 'existing', 'ask']),
   tags: z.array(
     z.object({
       name: z.string(),
@@ -44,9 +48,12 @@ export function fillInTagsSettingsWithDefaults(settings?: TagsSettings) {
     ? {
         ...settings,
         isShow: typeof settings.isShow === 'boolean' ? settings.isShow : true,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        importOption: settings.importOption ?? 'ask',
       }
     : {
         isShow: true,
+        importOption: 'ask',
         tags: [],
         tagMap: {},
       }

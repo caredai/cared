@@ -18,27 +18,24 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@ownxai/ui/components/dropdown-menu'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import type { CharacterBasicFormValues } from './character-form/basic'
-import { useCharacterAdvancedView } from '@/app/_panels/character-management/character-form/advanced'
 import { CharacterAvatar } from '@/components/avatar'
+import { ClosableTag } from '@/components/badge'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
 import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/lib/character'
+import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
+import { useCharacterAdvancedView } from './character-form/advanced'
 import { CharacterBasicForm } from './character-form/basic'
 import { CharacterViewAdvanced } from './character-view-advanced'
+import { useImportTagsDialog } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
   const { isShowCharacterAdvancedView, toggleShowCharacterAdvancedView } =
@@ -123,6 +120,17 @@ export function CharacterView({ character }: { character: Character }) {
 
   const updateCharacterImage = useUpdateCharacterImage()
 
+  const tagsSettings = useTagsSettings()
+  const updateTagsSettings = useUpdateTagsSettings()
+  const removeTag = async (tag: string) => {
+    const newTagMap = { ...tagsSettings.tagMap }
+    newTagMap[character.id] = newTagMap[character.id]?.filter((t) => t !== tag) ?? []
+    await updateTagsSettings({
+      ...tagsSettings,
+      tagMap: newTagMap,
+    })
+  }
+
   return (
     <div className="flex flex-col gap-4 overflow-y-auto p-[1px]">
       <div className="flex flex-row justify-between items-center gap-4">
@@ -153,11 +161,21 @@ export function CharacterView({ character }: { character: Character }) {
                 />
               )
 
-              return Wrapper ? <Wrapper key={index} trigger={btn} /> : btn
+              return Wrapper ? <Wrapper key={index} trigger={btn} character={character} /> : btn
             })}
           </div>
         </div>
       </div>
+
+      {tagsSettings.tagMap[character.id] && (
+        <div className="flex gap-2 flex-wrap">
+          {tagsSettings.tagMap[character.id]?.map((tag) => (
+            <ClosableTag key={tag} onClick={() => removeTag(tag)}>
+              {tag}
+            </ClosableTag>
+          ))}
+        </div>
+      )}
 
       <CharacterBasicForm onChange={onSubmit} />
 
@@ -173,58 +191,23 @@ export function CharacterView({ character }: { character: Character }) {
   )
 }
 
-export function MoreActionsDropdownMenu({ trigger }: { trigger: ReactNode }) {
+export function MoreActionsDropdownMenu({
+  trigger,
+  character,
+}: {
+  trigger: ReactNode
+  character: Character
+}) {
+  const importTags = useImportTagsDialog()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 z-5000" side="bottom" align="end">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuLabel>More Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            Profile
-            <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Billing
-            <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Settings
-            <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            Keyboard shortcuts
-            <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem>Team</DropdownMenuItem>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>Invite users</DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuItem>Email</DropdownMenuItem>
-                <DropdownMenuItem>Message</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>More...</DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-          <DropdownMenuItem>
-            New Team
-            <DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>GitHub</DropdownMenuItem>
-        <DropdownMenuItem>Support</DropdownMenuItem>
-        <DropdownMenuItem disabled>API</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          Log out
-          <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+        <DropdownMenuItem className="cursor-pointer" onClick={() => importTags(character)}>
+          Import Tags
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
