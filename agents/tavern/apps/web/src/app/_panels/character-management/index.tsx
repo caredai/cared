@@ -9,6 +9,7 @@ import { CharacterView } from './character-view'
 import { CharacterManagementHeader } from './header'
 import { useIsCreateCharacter, useSetShowCharacterList, useShowCharacterList } from './hooks'
 import { ImportTagsDialog } from './import-tags-dialog'
+import { TagsManagementDialog } from './tags-management-dialog'
 
 export function CharacterManagementPanel() {
   const activeCharacter = useActiveCharacter()
@@ -47,6 +48,7 @@ export function CharacterManagementPanel() {
       {showCharacterList && <CharacterList />}
 
       <ImportTagsDialog />
+      <TagsManagementDialog />
     </div>
   )
 }

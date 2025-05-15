@@ -38,6 +38,7 @@ export function FaButtonWithBadge({
   btnSize = 'size-8',
   iconSize = '2x',
   badgeSize = 'xs',
+  badgeClassName,
   isActive,
   className,
   ...props
@@ -47,6 +48,7 @@ export function FaButtonWithBadge({
   btnSize?: string
   iconSize?: SizeProp
   badgeSize?: SizeProp
+  badgeClassName?: string
   isActive?: boolean
 }) {
   return (
@@ -60,10 +62,10 @@ export function FaButtonWithBadge({
       {...props}
     >
       <FontAwesomeIcon icon={icon} size={iconSize} className="fa-fw" />
-      <FontAwesomeIcon 
-        icon={badgeIcon} 
-        size={badgeSize} 
-        className="absolute -top-1 -right-1 fa-fw" 
+      <FontAwesomeIcon
+        icon={badgeIcon}
+        size={badgeSize}
+        className={cn("absolute -top-1 -right-1 fa-fw", badgeClassName)}
       />
     </button>
   )

@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from '@ownxai/ui/components/dialog'
 
-import { Tag } from '@/components/badge'
+import { Tag } from '@/components/tag'
 import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
 
 const openAtom = atom(false)
@@ -69,7 +69,7 @@ async function importTags(
   })
 }
 
-export function useImportTagsDialog() {
+export function useImportTags() {
   const [, setOpen] = useAtom(openAtom)
   const [, setCharacter] = useAtom(characterAtom)
   const tagsSettings = useTagsSettings()

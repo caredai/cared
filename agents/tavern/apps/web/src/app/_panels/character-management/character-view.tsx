@@ -27,15 +27,14 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import type { CharacterBasicFormValues } from './character-form/basic'
 import { CharacterAvatar } from '@/components/avatar'
-import { ClosableTag } from '@/components/badge'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
 import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/lib/character'
-import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
 import { useCharacterAdvancedView } from './character-form/advanced'
 import { CharacterBasicForm } from './character-form/basic'
+import { CharacterTagsView } from './character-tags-view'
 import { CharacterViewAdvanced } from './character-view-advanced'
-import { useImportTagsDialog } from './import-tags-dialog'
+import { useImportTags } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
   const { isShowCharacterAdvancedView, toggleShowCharacterAdvancedView } =
@@ -120,17 +119,6 @@ export function CharacterView({ character }: { character: Character }) {
 
   const updateCharacterImage = useUpdateCharacterImage()
 
-  const tagsSettings = useTagsSettings()
-  const updateTagsSettings = useUpdateTagsSettings()
-  const removeTag = async (tag: string) => {
-    const newTagMap = { ...tagsSettings.tagMap }
-    newTagMap[character.id] = newTagMap[character.id]?.filter((t) => t !== tag) ?? []
-    await updateTagsSettings({
-      ...tagsSettings,
-      tagMap: newTagMap,
-    })
-  }
-
   return (
     <div className="flex flex-col gap-4 overflow-y-auto p-[1px]">
       <div className="flex flex-row justify-between items-center gap-4">
@@ -167,15 +155,7 @@ export function CharacterView({ character }: { character: Character }) {
         </div>
       </div>
 
-      {tagsSettings.tagMap[character.id] && (
-        <div className="flex gap-2 flex-wrap">
-          {tagsSettings.tagMap[character.id]?.map((tag) => (
-            <ClosableTag key={tag} onClick={() => removeTag(tag)}>
-              {tag}
-            </ClosableTag>
-          ))}
-        </div>
-      )}
+      <CharacterTagsView />
 
       <CharacterBasicForm onChange={onSubmit} />
 
@@ -198,7 +178,7 @@ export function MoreActionsDropdownMenu({
   trigger: ReactNode
   character: Character
 }) {
-  const importTags = useImportTagsDialog()
+  const importTags = useImportTags()
 
   return (
     <DropdownMenu>
