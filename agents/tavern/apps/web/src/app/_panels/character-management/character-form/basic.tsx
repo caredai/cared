@@ -18,6 +18,7 @@ import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
 import { useIsCreateCharacter } from '../hooks'
+import { CreateTagInput } from '@/app/_panels/character-management/create-tag-input'
 
 export const characterBasicFormSchema = characterCardV2Schema.shape.data.pick({
   name: true,
@@ -97,6 +98,8 @@ export function CharacterBasicFormView({
             )}
           />
         )}
+
+        <CreateTagInput/>
 
         {!forCreate && (
           <FormField
