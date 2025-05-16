@@ -1,7 +1,7 @@
-import { modelPresetSchema } from '@tavern/core'
+import { defaultModelPreset, modelPresetSchema } from '@tavern/core'
 import { ModelPreset } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { userProtectedProcedure } from '../trpc'
@@ -23,6 +23,21 @@ export const modelPresetRouter = {
         where: eq(ModelPreset.userId, userId),
         orderBy: desc(ModelPreset.id),
       })
+
+      if (!modelPresets.length) {
+        const modelPreset = (
+          await ctx.db
+            .insert(ModelPreset)
+            .values({
+              userId: userId,
+              name: 'Default',
+              preset: defaultModelPreset,
+            })
+            .returning()
+        ).at(0)!
+        modelPresets.push(modelPreset)
+      }
+
       return { modelPresets }
     }),
 
@@ -63,6 +78,7 @@ export const modelPresetRouter = {
     })
     .input(
       z.object({
+        name: z.string().min(1),
         preset: modelPresetSchema,
       }),
     )
@@ -73,6 +89,7 @@ export const modelPresetRouter = {
         .insert(ModelPreset)
         .values({
           userId,
+          name: input.name,
           preset: input.preset,
         })
         .returning()
@@ -84,7 +101,7 @@ export const modelPresetRouter = {
         })
       }
 
-      return { modelPreset: modelPreset }
+      return { modelPreset }
     }),
 
   update: userProtectedProcedure
@@ -160,6 +177,18 @@ export const modelPresetRouter = {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Model preset not found',
+        })
+      }
+
+      const num = await ctx.db
+        .select({ count: count() })
+        .from(ModelPreset)
+        .where(eq(ModelPreset.userId, userId))
+        .then((r) => r[0]!.count)
+      if (num <= 1) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot delete the last model preset',
         })
       }
 

@@ -1,164 +1,65 @@
 import { z } from 'zod'
 
+import type { ModelPreset } from '../model-preset'
+import type { Prompt } from '../prompt'
+import { modelPresetSchema } from '../model-preset'
+import { promptSchema } from '../prompt'
+
 export interface ModelPresetSettings {
-  // Active model preset label; if conflicted, use the first one.
+  // Active model preset name; if conflicted, use the first one.
   preset: string
-  // Customizations for the active model preset.
-  // If key is `[model preset label]`, its value will customize the corresponding model preset.
-  customizations: Partial<ModelPreset> & Record<`[${string}]`, Partial<ModelPreset>>
+  // Customizations for the model presets.
+  // Key is `[model preset name]`, value will customize the corresponding model preset.
+  customizations?: Record<`[${string}]`, ModelPresetCustomization>
 }
 
-export interface ModelPreset {
-  /**
-   The maximum number of tokens that will be sent as the prompt.
-   */
-  maxContext?: number
-  /**
-   Maximum number of tokens to generate.
-   */
-  maxTokens?: number
-  /**
-   Temperature setting. This is a number between 0 (almost no randomness) and
-   1 (very random).
-
-   It is recommended to set either `temperature` or `topP`, but not both.
-
-   @default 0
-   */
-  temperature?: number
-
-  /**
-   Nucleus sampling. This is a number between 0 and 1.
-
-   E.g. 0.1 would mean that only tokens with the top 10% probability mass
-   are considered.
-
-   It is recommended to set either `temperature` or `topP`, but not both.
-   */
-  topP?: number
-
-  /**
-   Only sample from the top K options for each subsequent token.
-
-   Used to remove "long tail" low probability responses.
-   Recommended for advanced use cases only. You usually only need to use temperature.
-   */
-  topK?: number
-
-  /**
-   Presence penalty setting. It affects the likelihood of the model to
-   repeat information that is already in the prompt.
-
-   The presence penalty is a number between -1 (increase repetition)
-   and 1 (maximum penalty, decrease repetition). 0 means no penalty.
-   */
-  presencePenalty?: number
-
-  /**
-   Frequency penalty setting. It affects the likelihood of the model
-   to repeatedly use the same words or phrases.
-
-   The frequency penalty is a number between -1 (increase repetition)
-   and 1 (maximum penalty, decrease repetition). 0 means no penalty.
-   */
-  frequencyPenalty?: number
-  /**
-   Stop sequences.
-   If set, the model will stop generating text when one of the stop sequences is generated.
-   Providers may have limits on the number of stop sequences.
-   */
-  stopSequences?: string[]
-  /**
-   The seed (integer) to use for random sampling. If set and supported
-   by the model, calls will generate deterministic results.
-   */
-  seed?: number
-
-  /**
-   * Disable sending attachments to model.
-   */
-  disableSendingAttachments?: boolean
-  /**
-   * Disable all tool calls.
-   */
-  disableTools?: boolean
-  /**
-   * Disable sending reasoning from model.
-   */
-  disableSendingReasoning?: boolean
-
-  characterNameBehavior?: 'none' | 'default' | 'completion' | 'content'
-  continuePostfix?: 'none' | 'space' | 'newline' | 'double-newline'
-  wrapInQuotes?: boolean
-  continuePrefill?: boolean
-  squashSystemMessages?: boolean
-
-  utilityPrompts: {
-    impersonationPrompt: string
-    newChatPrompt: string
-    newGroupChatPrompt: string
-    newExampleChatPrompt: string
-    continueNudgePrompt: string
-    groupNudgePrompt: string
-    worldInfoFormat: string
-    scenarioFormat: string
-    personalityFormat: string
-    sendIfEmpty: string
-  }
-
-  vendor: {
-    openrouter: {
-      middleout?: 'on' | 'off' | 'auto'
-    }
-    claude: {
-      assistantPrefill: string
-      assistantImpersonation: string
-      useSysPrompt: string
-    }
-  }
+export type ModelPresetCustomization = Partial<
+  Omit<ModelPreset, 'utilityPrompts' | 'prompts' | 'vendor'>
+> & {
+  utilityPrompts?: Partial<ModelPreset['utilityPrompts']>
+  // Allow overwriting any property (excluding `identifier`) of any existing prompt or adding new prompts
+  prompts?: (Partial<Prompt> & Pick<Prompt, 'identifier'>)[]
+  // Allow any deepest property to be customized
+  vendor?: DeepPartial<ModelPreset['vendor']>
 }
 
-export const modelPresetSchema = z.object({
-  maxContext: z.number().optional(),
-  maxTokens: z.number().optional(),
-  temperature: z.number().optional(),
-  topP: z.number().optional(),
-  topK: z.number().optional(),
-  presencePenalty: z.number().optional(),
-  frequencyPenalty: z.number().optional(),
-  stopSequences: z.array(z.string()).optional(),
-  seed: z.number().optional(),
-  disableSendingAttachments: z.boolean().optional(),
-  disableTools: z.boolean().optional(),
-  disableSendingReasoning: z.boolean().optional(),
+type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>
+    }
+  : T
 
-  characterNameBehavior: z.enum(['none', 'default', 'completion', 'content']).optional(),
-  continuePostfix: z.enum(['none', 'space', 'newline', 'double-newline']).optional(),
-  wrapInQuotes: z.boolean().optional(),
-  continuePrefill: z.boolean().optional(),
-  squashSystemMessages: z.boolean().optional(),
+export const modelPresetCustomizationSchema: z.ZodType<ModelPresetCustomization> = modelPresetSchema
+  .omit({
+    utilityPrompts: true,
+    prompts: true,
+    vendor: true,
+  })
+  .partial()
+  .extend({
+    utilityPrompts: modelPresetSchema.shape.utilityPrompts.partial().optional(),
+    prompts: z.array(promptSchema.partial().required({ identifier: true })).optional(),
+    vendor: modelPresetSchema.required({ vendor: true }).shape.vendor.deepPartial().optional(),
+  })
 
-  utilityPrompts: z.object({
-    impersonationPrompt: z.string(),
-    newChatPrompt: z.string(),
-    newGroupChatPrompt: z.string(),
-    newExampleChatPrompt: z.string(),
-    continueNudgePrompt: z.string(),
-    groupNudgePrompt: z.string(),
-    worldInfoFormat: z.string(),
-    scenarioFormat: z.string(),
-    personalityFormat: z.string(),
-    sendIfEmpty: z.string(),
-  }),
-
-  vendor: z.object({
-    openrouter: z.object({
-      middleout: z.enum(['on', 'off', 'auto']).optional(),
-    }),
-    claude: z.object({
-      assistantPrefill: z.string(),
-      assistantImpersonation: z.string(),
-      useSysPrompt: z.string(),
-    }),
-  }),
+export const modelPresetSettingsSchema: z.ZodType<ModelPresetSettings> = z.object({
+  preset: z.string(),
+  customizations: z
+    .record(
+      z.custom<`[${string}]`>((val) => {
+        return typeof val === 'string' && /^\[.+\]$/.test(val)
+      }) as z.ZodType<string>,
+      modelPresetCustomizationSchema,
+    )
+    .optional(),
 })
+
+export function fillInModelPresetSettingsWithDefaults(
+  settings?: ModelPresetSettings,
+): ModelPresetSettings {
+  return (
+    settings ?? {
+      preset: 'Default',
+    }
+  )
+}

@@ -26,16 +26,16 @@ import { useAppearanceSettings } from '@/lib/settings'
 import { BackgroundImagePanel } from '../_panels/background-image'
 import { CharacterManagementPanel } from '../_panels/character-management'
 import { ExtensionsPanel } from '../_panels/extensions'
+import { ModelConfigurationPanel } from '../_panels/model-configuration'
 import { PersonaManagementPanel } from '../_panels/persona-management'
 import { ProviderModelPanel } from '../_panels/provider-model'
-import { ResponseConfigurationPanel } from '../_panels/response-configuration'
 import { ResponseFormattingPanel } from '../_panels/response-formatting'
 import { UserSettingsPanel } from '../_panels/user-settings'
 import { WorldInfoPanel } from '../_panels/world-info'
 
 // Define navigation panel configuration
 const navPanels = [
-  { icon: faSliders, name: 'response-configuration', panel: ResponseConfigurationPanel },
+  { icon: faSliders, name: 'response-configuration', panel: ModelConfigurationPanel },
   { icon: faPlug, name: 'provider-model', panel: ProviderModelPanel },
   { icon: faFont, name: 'response-formatting', panel: ResponseFormattingPanel },
   { icon: faBookAtlas, name: 'world-info', panel: WorldInfoPanel },

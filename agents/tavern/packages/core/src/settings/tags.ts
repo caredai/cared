@@ -43,7 +43,7 @@ export const tagsSettingsSchema = z.object({
   tagMap: z.record(z.array(z.string())),
 })
 
-export function fillInTagsSettingsWithDefaults(settings?: TagsSettings) {
+export function fillInTagsSettingsWithDefaults(settings?: TagsSettings): TagsSettings {
   return settings
     ? {
         ...settings,

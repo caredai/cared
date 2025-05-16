@@ -1,4 +1,5 @@
-export * from './prompt-manager'
+export * from './prompt'
+export * from './model-preset'
 export * from './settings'
 export * from './char-data'
 export * from './character'
