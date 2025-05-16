@@ -1,7 +1,8 @@
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
-import type { Tag, TagsSettings } from '@tavern/core'
+import type { Tag } from '@tavern/core'
+import type { ComponentPropsWithoutRef } from 'react'
 import type { ColorResult } from 'react-color'
-import { forwardRef, memo, useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -22,13 +23,14 @@ import { CSS } from '@dnd-kit/utilities'
 import {
   faBars,
   faCheck,
-  faEye,
+  faEyeSlash,
   faFolder,
   faTrashCan,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { atom, useAtom } from 'jotai'
 import { SketchPicker } from 'react-color'
+import { createPortal } from 'react-dom'
 import { VList } from 'virtua'
 
 import { Button } from '@ownxai/ui/components/button'
@@ -59,10 +61,11 @@ export function useOpenTagsManagementDialog() {
 
 export function TagsManagementDialog() {
   const [open, setOpen] = useAtom(openAtom)
-  const tagsSettings = useTagsSettings()
   const updateTagsSettings = useUpdateTagsSettings()
+  const tagsSettings = useTagsSettings()
+  const tagMap = tagsSettings.tagMap
 
-  const [activeName, setActiveName] = useState<string | null>(null)
+  const [activeName, setActiveName] = useState<string>()
   const [items, setItems] = useState<Tag[]>(() => tagsSettings.tags)
 
   useEffect(() => {
@@ -81,23 +84,31 @@ export function TagsManagementDialog() {
   }, [])
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
-    setActiveName(null)
+    setActiveName(undefined)
     const { active, over } = event
     if (over && active.id !== over.id) {
       setItems((currentItems) => {
         const oldIndex = currentItems.findIndex((item) => item.name === active.id)
         const newIndex = currentItems.findIndex((item) => item.name === over.id)
-        return arrayMove(currentItems, oldIndex, newIndex)
+        const newItems = arrayMove(currentItems, oldIndex, newIndex)
+        void updateTagsSettings({ ...tagsSettings, tags: newItems })
+        return newItems
       })
     }
-  }, [])
+  }, [tagsSettings, updateTagsSettings])
 
   const handleDeleteTag = useCallback((nameToDelete: string) => {
     setItems((currentItems) => {
       const newItems = currentItems.filter((item) => item.name !== nameToDelete)
+      // Update tagMap to remove references to the deleted tag
+      const newTagMap = { ...tagMap }
+      for (const [charId, tags] of Object.entries(newTagMap)) {
+        newTagMap[charId] = tags.filter(tag => tag !== nameToDelete)
+      }
+      void updateTagsSettings({ ...tagsSettings, tags: newItems, tagMap: newTagMap })
       return newItems
     })
-  }, [])
+  }, [tagMap, tagsSettings, updateTagsSettings])
 
   const handleRenameTag = useCallback((oldName: string, newName: string) => {
     setItems((currentItems) => {
@@ -113,9 +124,15 @@ export function TagsManagementDialog() {
       const newItems = currentItems.map((item) =>
         item.name === oldName ? { ...item, name: newName } : item,
       )
+      // Update tagMap to reflect the renamed tag
+      const newTagMap = { ...tagMap }
+      for (const [charId, tags] of Object.entries(newTagMap)) {
+        newTagMap[charId] = tags.map(tag => tag === oldName ? newName : tag)
+      }
+      void updateTagsSettings({ ...tagsSettings, tags: newItems, tagMap: newTagMap })
       return newItems
     })
-  }, [])
+  }, [tagMap, tagsSettings, updateTagsSettings])
 
   const handleColorChange = useCallback(
     (nameToUpdate: string, newColor: string, type: 'bg' | 'text') => {
@@ -125,10 +142,11 @@ export function TagsManagementDialog() {
             ? { ...item, [type === 'bg' ? 'bgColor' : 'textColor']: newColor }
             : item,
         )
+        void updateTagsSettings({ ...tagsSettings, tags: newItems })
         return newItems
       })
     },
-    [],
+    [tagsSettings, updateTagsSettings],
   )
 
   const handleToggleFolder = useCallback((nameToUpdate: string) => {
@@ -137,9 +155,9 @@ export function TagsManagementDialog() {
         if (item.name === nameToUpdate) {
           let newFolderState: Tag['folder'] = 'no'
           if (item.folder === 'no') {
-            newFolderState = 'closed'
-          } else if (item.folder === 'closed') {
             newFolderState = 'open'
+          } else if (item.folder === 'open') {
+            newFolderState = 'closed'
           } else {
             newFolderState = 'no'
           }
@@ -147,163 +165,20 @@ export function TagsManagementDialog() {
         }
         return item
       })
+      void updateTagsSettings({ ...tagsSettings, tags: newItems })
       return newItems
     })
-  }, [])
+  }, [tagsSettings, updateTagsSettings])
 
-  const characterCountMap = new Map<string, number>()
-  tagsSettings.tags.forEach((tag) =>
-    characterCountMap.set(tag.name, Math.floor(Math.random() * 10)),
-  )
-
-  const Row = memo(
-    forwardRef<HTMLDivElement, { item: Tag }>(({ item, ...props }, _ref) => {
-      const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id: item.name,
-      })
-
-      const [isEditing, setIsEditing] = useState(false)
-      const [editingName, setEditingName] = useState(item.name)
-
-      useEffect(() => {
-        if (!isDragging) {
-          setEditingName(item.name) // Reset editingName if item.name changes from outside (e.g. undo)
-        }
-      }, [item.name, isDragging])
-
-      const handleNameSubmit = useCallback(() => {
-        if (editingName.trim() === '') {
-          setEditingName(item.name) // Reset to original if empty
-          setIsEditing(false)
-          return
-        }
-        if (editingName !== item.name) {
-          handleRenameTag(item.name, editingName.trim())
-        }
-        setIsEditing(false)
-      }, [editingName, item.name])
-
-      const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-        padding: '10px',
-        marginBottom: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        height: '65px',
-        boxSizing: 'border-box' as const,
+  const characterCountMap = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const tags of Object.values(tagMap)) {
+      for (const tag of tags) {
+        map.set(tag, (map.get(tag) ?? 0) + 1)
       }
-
-      let folderClassName
-      let folderBadgeIcon
-      let folderBadgeClassName
-      let folderBtnTitle
-
-      if (item.folder === 'closed') {
-        folderBadgeIcon = faEye
-        folderBtnTitle = 'Closed Folder (Hide all characters unless selected)'
-      } else if (item.folder === 'open') {
-        folderBadgeIcon = faCheck
-        folderBadgeClassName = 'text-green-500'
-        folderBtnTitle = 'Open Folder (Show all characters even if not selected)'
-      } else {
-        folderBadgeIcon = faXmark
-        folderClassName = 'brightness-25 saturate-25'
-        folderBadgeClassName = 'text-red-500 brightness-50 saturate-50'
-        folderBtnTitle = 'No Folder'
-      }
-
-      return (
-        <div
-          ref={setNodeRef}
-          style={style}
-          {...attributes}
-          {...props}
-          className="flex justify-between items-center gap-4 rounded border cursor-default"
-        >
-          <FaButton
-            icon={faBars}
-            btnSize="size-4"
-            iconSize="sm"
-            className="text-foreground hover:bg-muted-foreground cursor-grab"
-            {...listeners}
-          />
-
-          <FaButtonWithBadge
-            icon={faFolder}
-            badgeIcon={folderBadgeIcon}
-            onClick={() => handleToggleFolder(item.name)}
-            btnSize="size-6"
-            iconSize="lg"
-            badgeClassName={folderBadgeClassName}
-            className={cn('text-muted-foreground', folderClassName)}
-            title={folderBtnTitle}
-          />
-
-          <ColorPicker
-            color={item.bgColor}
-            defaultColor="#000000"
-            onChangeComplete={(color: ColorResult) => {
-              handleColorChange(item.name, color.hex, 'bg')
-            }}
-            ariaLabel="Change background color"
-          />
-
-          <ColorPicker
-            color={item.textColor}
-            defaultColor="#ffffff"
-            onChangeComplete={(color: ColorResult) => {
-              handleColorChange(item.name, color.hex, 'text')
-            }}
-            ariaLabel="Change text color"
-          />
-
-          <Input
-            type="text"
-            value={editingName}
-            onChange={(e) => setEditingName(e.target.value)}
-            onBlur={handleNameSubmit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleNameSubmit()
-              } else if (e.key === 'Escape') {
-                setEditingName(item.name)
-                setIsEditing(false)
-              }
-            }}
-            onClick={() => {
-              if (!isEditing) {
-                setIsEditing(true)
-                setEditingName(item.name) // Ensure editingName starts with current item name
-              }
-            }}
-            readOnly={!isEditing}
-            autoFocus={isEditing} // autoFocus when isEditing becomes true
-            className={`flex-shrink w-fit max-w-32 truncate px-2 py-1 rounded text-sm bg-background text-foreground h-auto border ${
-              isEditing ? 'border-primary' : 'border-ring cursor-pointer'
-            }`}
-            style={{ backgroundColor: item.bgColor, color: item.textColor }}
-            title={item.name}
-          />
-
-          <span className="text-sm text-muted-foreground w-16 text-center">
-            {characterCountMap.get(item.name) ?? 0} entries
-          </span>
-
-          <FaButton
-            icon={faTrashCan}
-            btnSize="size-7"
-            iconSize="1x"
-            title="Delete tag"
-            className="text-foreground border-1 border-border hover:bg-muted-foreground rounded-sm"
-            onClick={() => handleDeleteTag(item.name)}
-          />
-        </div>
-      )
-    }),
-  )
-  Row.displayName = 'Row'
+    }
+    return map
+  }, [tagMap])
 
   const activeItem = activeName ? items.find((item) => item.name === activeName) : null
 
@@ -329,33 +204,198 @@ export function TagsManagementDialog() {
               items={items.map((item) => item.name)}
               strategy={verticalListSortingStrategy}
             >
-              <VList style={{ height: '100%' }} className="pr-2">
+              <VList className="w-full h-full pr-2">
                 {items.map((item) => (
-                  <Row key={item.name} item={item} />
+                  <TagRow
+                    key={item.name}
+                    item={item}
+                    onRename={handleRenameTag}
+                    onDelete={handleDeleteTag}
+                    onColorChange={handleColorChange}
+                    onToggleFolder={handleToggleFolder}
+                    characterCount={characterCountMap.get(item.name) ?? 0}
+                  />
                 ))}
               </VList>
             </SortableContext>
-            <DragOverlay>{activeItem ? <Row item={activeItem} /> : null}</DragOverlay>
+            {createPortal(
+              <DragOverlay zIndex={7000}>
+                {activeItem ? (
+                  <TagRow
+                    item={activeItem}
+                    characterCount={characterCountMap.get(activeItem.name) ?? 0}
+                  />
+                ) : null}
+              </DragOverlay>,
+              document.body,
+            )}
           </DndContext>
         </div>
 
         <DialogFooter className="flex gap-2 mt-auto">
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              void updateTagsSettings({ ...tagsSettings, tags: items } as TagsSettings)
-              setOpen(false)
-            }}
-          >
-            Save Changes
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+
+const TagRow = memo(function TagRow({
+  item,
+  onRename,
+  onDelete,
+  onColorChange,
+  onToggleFolder,
+  characterCount,
+  ...props
+}: {
+  item: Tag
+  onRename?: (oldName: string, newName: string) => void
+  onDelete?: (name: string) => void
+  onColorChange?: (name: string, color: string, type: 'bg' | 'text') => void
+  onToggleFolder?: (name: string) => void
+  characterCount: number
+} & ComponentPropsWithoutRef<'div'>) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.name,
+  })
+
+  const [isEditing, setIsEditing] = useState(false)
+  const [editingName, setEditingName] = useState(item.name)
+
+  useEffect(() => {
+    setEditingName(item.name)
+  }, [item.name])
+
+  const handleNameSubmit = useCallback(() => {
+    if (editingName.trim() === '') {
+      setEditingName(item.name)
+      setIsEditing(false)
+      return
+    }
+    if (editingName !== item.name) {
+      onRename?.(item.name, editingName.trim())
+    }
+    setIsEditing(false)
+  }, [editingName, item.name, onRename])
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  let folderClassName
+  let folderBadgeIcon
+  let folderBadgeClassName
+  let folderBtnTitle
+
+  if (item.folder === 'closed') {
+    folderBadgeIcon = faEyeSlash
+    folderBtnTitle = 'Closed Folder (Hide all characters unless selected)'
+  } else if (item.folder === 'open') {
+    folderBadgeIcon = faCheck
+    folderBadgeClassName = 'text-green-500'
+    folderBtnTitle = 'Open Folder (Show all characters even if not selected)'
+  } else {
+    folderBadgeIcon = faXmark
+    folderClassName = 'brightness-25 saturate-25'
+    folderBadgeClassName = 'text-red-500 brightness-25 saturate-25'
+    folderBtnTitle = 'No Folder'
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...props}
+      className={cn(
+        'flex justify-between items-center gap-4 cursor-default p-2',
+        isDragging && 'invisible',
+      )}
+    >
+      <FaButton
+        icon={faBars}
+        btnSize="size-4"
+        iconSize="sm"
+        className="text-foreground hover:bg-muted-foreground cursor-grab"
+        {...listeners}
+      />
+
+      <FaButtonWithBadge
+        icon={faFolder}
+        badgeIcon={folderBadgeIcon}
+        onClick={() => onToggleFolder?.(item.name)}
+        btnSize="size-6"
+        iconSize="lg"
+        badgeClassName={folderBadgeClassName}
+        className={cn('text-muted-foreground', folderClassName)}
+        title={folderBtnTitle}
+      />
+
+      <ColorPicker
+        color={item.bgColor}
+        defaultColor="#000000"
+        onChangeComplete={(color: ColorResult) => {
+          onColorChange?.(item.name, color.hex, 'bg')
+        }}
+        ariaLabel="Change background color"
+      />
+
+      <ColorPicker
+        color={item.textColor}
+        defaultColor="#ffffff"
+        onChangeComplete={(color: ColorResult) => {
+          onColorChange?.(item.name, color.hex, 'text')
+        }}
+        ariaLabel="Change text color"
+      />
+
+      <Input
+        type="text"
+        value={editingName}
+        onChange={(e) => setEditingName(e.target.value)}
+        onBlur={handleNameSubmit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            handleNameSubmit()
+          } else if (e.key === 'Escape') {
+            setEditingName(item.name)
+            setIsEditing(false)
+          }
+        }}
+        onClick={() => {
+          if (!isEditing) {
+            setIsEditing(true)
+            setEditingName(item.name)
+          }
+        }}
+        readOnly={!isEditing}
+        autoFocus={isEditing}
+        className={`max-w-24 truncate px-2 py-1 rounded text-sm bg-background text-foreground h-auto border ${
+          isEditing ? 'border-primary' : 'border-ring cursor-pointer'
+        }`}
+        style={{ backgroundColor: item.bgColor, color: item.textColor }}
+        title={item.name}
+      />
+
+      <span className="text-sm text-muted-foreground w-16 text-center">
+        {characterCount} entries
+      </span>
+
+      <FaButton
+        icon={faTrashCan}
+        btnSize="size-7"
+        iconSize="1x"
+        title="Delete tag"
+        className="text-foreground border-1 border-border hover:bg-muted-foreground rounded-sm"
+        onClick={() => onDelete?.(item.name)}
+      />
+    </div>
+  )
+})
 
 function ColorPicker({
   color,

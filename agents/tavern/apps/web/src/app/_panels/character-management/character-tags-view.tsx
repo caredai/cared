@@ -120,23 +120,34 @@ export function CharacterTagsView() {
 
   return (
     <div className="flex flex-col gap-4">
-      {charTags.length && (
-        <div className="flex gap-2 flex-wrap">
-          {charTags.map((tag) => (
-            <ClosableTag key={tag} onClick={() => removeCharTag(tag)}>
-              {tag}
-            </ClosableTag>
-          ))}
+      {charTags.length > 0 && (
+        <div className="flex gap-1 flex-wrap">
+          {charTags.map((tag) => {
+            const t = tagsSettings.tags.find((t) => t.name === tag)
+            return (
+              <ClosableTag
+                key={tag}
+                onClick={() => removeCharTag(tag)}
+                style={{
+                  backgroundColor: t?.bgColor,
+                  color: t?.textColor
+                }}
+              >
+                {tag}
+              </ClosableTag>
+            )
+          })}
         </div>
       )}
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 justify-between items-center">
         <Combobox
           type="single"
           open={open}
           onOpenChange={setOpen}
           inputValue={inputValue}
           onInputValueChange={setInputValue}
+          className="flex-1"
         >
           <ComboboxInput placeholder="Search or create tags..." />
           <Virtualized asChild>

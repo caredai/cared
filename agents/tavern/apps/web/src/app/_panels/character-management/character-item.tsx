@@ -1,10 +1,11 @@
 import type { Character } from '@tavern/db/schema'
 
-import { Badge } from '@ownxai/ui/components/badge'
 import { Checkbox } from '@ownxai/ui/components/checkbox'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { CharacterAvatar } from '@/components/avatar'
+import { Tag } from '@/components/tag'
+import { useTagsSettings } from '@/lib/settings'
 
 export function CharacterItem({
   character,
@@ -25,6 +26,9 @@ export function CharacterItem({
   }
 
   const data = character.content.data
+
+  const tagsSettings = useTagsSettings()
+  const tags = tagsSettings.tagMap[character.id]
 
   return (
     <div
@@ -56,13 +60,24 @@ export function CharacterItem({
         >
           {data.creator_notes}
         </p>
-        <div className="flex flex-wrap gap-1">
-          {data.tags.map((tag: string) => (
-            <Badge key={tag} variant="outline" className="text-muted-foreground border-ring px-1 py-0 rounded-sm">
-              {tag}
-            </Badge>
-          ))}
-        </div>
+        {(tags?.length ?? 0) > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {tags?.map((tag: string) => {
+              const t = tagsSettings.tags.find((t) => t.name === tag)
+              return (
+                <Tag
+                  key={tag}
+                  style={{
+                    backgroundColor: t?.bgColor,
+                    color: t?.textColor,
+                  }}
+                >
+                  {tag}
+                </Tag>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

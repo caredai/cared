@@ -4,6 +4,8 @@ import type { CheckedState } from '@radix-ui/react-checkbox'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   faCloudArrowDown,
+  faEye,
+  faEyeSlash,
   faFileImport,
   faGear,
   faListSquares,
@@ -30,7 +32,7 @@ import {
 } from '@ownxai/ui/components/select'
 import { cn } from '@ownxai/ui/lib/utils'
 
-import { FaButton } from '@/components/fa-button'
+import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
 import { useSetActiveCharacter } from '@/hooks/use-active-character'
 import { useCharacters } from '@/lib/character'
 import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
@@ -39,6 +41,7 @@ import { DeleteCharactersDialog } from './delete-characters-dialog'
 import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
 import { ImportFileInput } from './import-file-input'
 import { ImportUrlDialog } from './import-url-dialog'
+import { useOpenTagsManagementDialog } from './tags-management-dialog'
 
 export function CharacterList() {
   const { characters } = useCharacters()
@@ -134,6 +137,8 @@ export function CharacterList() {
     [characters, searchQuery, searchResults, sortBy],
   )
 
+  const openTagsManagementDialog = useOpenTagsManagementDialog()
+
   // Handle import button click
   const handleImportClick = () => {
     importFileInputRef.current?.click()
@@ -162,6 +167,7 @@ export function CharacterList() {
   }
 
   const handleManageTags = () => {
+    openTagsManagementDialog()
   }
 
   const handleShowTags = () => {
@@ -273,12 +279,14 @@ export function CharacterList() {
     },
     {
       action: handleManageTags,
-      icon: faGear,
+      icon: faTags,
+      badgeIcon: faGear,
       tooltip: 'Manage tags',
     },
     {
       action: handleShowTags,
       icon: faTags,
+      badgeIcon: tags.isShow ? faEye : faEyeSlash,
       tooltip: 'Show tags',
     },
     {
@@ -336,20 +344,35 @@ export function CharacterList() {
       </div>
 
       <div className="flex flex-row gap-1">
-        {operateActions.map(({ action, icon, tooltip, className }, index) => (
-          <FaButton
-            key={index}
-            icon={icon}
-            btnSize="size-8"
-            iconSize="1x"
-            title={tooltip}
-            className={cn(
-              'border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full',
-              className,
-            )}
-            onClick={typeof action === 'function' ? action : undefined}
-          />
-        ))}
+        {operateActions.map(({ action, icon, badgeIcon, tooltip, className }, index) => {
+          const classname = cn(
+            'border-1 border-ring/60 bg-ring/10 hover:border-ring hover:bg-ring rounded-full',
+            className,
+          )
+          return !badgeIcon ? (
+            <FaButton
+              key={index}
+              icon={icon}
+              btnSize="size-8"
+              iconSize="1x"
+              title={tooltip}
+              className={classname}
+              onClick={action}
+            />
+          ) : (
+            <FaButtonWithBadge
+              key={index}
+              icon={icon}
+              badgeIcon={badgeIcon}
+              btnSize="size-8"
+              iconSize="1x"
+              title={tooltip}
+              className={classname}
+              badgeClassName="-top-0 -right-0"
+              onClick={action}
+            />
+          )
+        })}
       </div>
 
       {isSelectMode && (
@@ -402,7 +425,7 @@ export function CharacterList() {
       )}
 
       {tags.isShow && tags.tags.length > 0 && (
-        <div className="flex flex-row gap-1">
+        <div className="flex flex-wrap gap-1">
           {tags.tags.map((tag) => (
             <Badge
               key={tag.name}
