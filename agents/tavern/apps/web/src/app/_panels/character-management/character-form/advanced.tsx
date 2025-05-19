@@ -8,7 +8,6 @@ import {
   characterCardV2Schema,
   extractExtensions,
 } from '@tavern/core'
-import { atom, useAtom } from 'jotai'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
@@ -38,8 +37,8 @@ import { Separator } from '@ownxai/ui/components/separator'
 import { Slider } from '@ownxai/ui/components/slider'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
-import { useContentRef } from '@/app/_page/content'
 import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
+import { useContentAreaRef, useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { useIsCreateCharacter } from '../hooks'
 
 export const characterAdvancedFormSchema = characterCardV2Schema.shape.data
@@ -80,30 +79,13 @@ export const defaultCharacterAdvancedFormValues: CharacterAdvancedFormValues = {
   }),
 }
 
-const isShowCharacterAdvancedViewAtom = atom(false)
-
-export function useCharacterAdvancedView() {
-  const [isShowCharacterAdvancedView, setIsShowCharacterAdvancedView] = useAtom(
-    isShowCharacterAdvancedViewAtom,
-  )
-
-  const toggleShowCharacterAdvancedView = () => {
-    setIsShowCharacterAdvancedView((prev) => !prev)
-  }
-
-  return {
-    isShowCharacterAdvancedView,
-    setIsShowCharacterAdvancedView,
-    toggleShowCharacterAdvancedView,
-  }
-}
-
 export function CharacterAdvancedForm({
   onChange,
 }: {
   onChange: (values: CharacterAdvancedFormValues) => void
 }) {
-  const { isShowCharacterAdvancedView, setIsShowCharacterAdvancedView } = useCharacterAdvancedView()
+  const { isShowCharacterAdvancedView, setIsShowCharacterAdvancedView } =
+    useIsShowCharacterAdvancedView()
   const isCreateCharacter = useIsCreateCharacter()
   const character = useActiveCharacter()
 
@@ -161,7 +143,7 @@ function CharacterAdvancedFormView({
   onChange: (values: CharacterAdvancedFormValues) => void
   onClose: () => void
 }) {
-  const contentRef = useContentRef()
+  const { contentAreaRef } = useContentAreaRef()
 
   const [tagsInput, setTagsInput] = useState('')
   const [depthInput, setDepthInput] = useState('')
@@ -172,7 +154,7 @@ function CharacterAdvancedFormView({
 
   return (
     <Portal.Root
-      container={contentRef?.current}
+      container={contentAreaRef?.current}
       className="absolute w-full h-full z-5000 flex flex-col gap-6 p-2 overflow-y-auto bg-background border border-border rounded-lg shadow-lg"
     >
       <div className="flex justify-between items-center">

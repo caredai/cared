@@ -9,8 +9,7 @@ import {
   default_personality_format,
   default_scenario_format,
   default_wi_format,
-  defaultPromptOrder,
-  defaultPrompts,
+  defaultOrderedPrompts,
 } from '../prompt'
 
 export const defaultModelPreset: ModelPreset = {
@@ -45,8 +44,7 @@ export const defaultModelPreset: ModelPreset = {
     sendIfEmpty: '',
   },
 
-  prompts: defaultPrompts,
-  promptOrder: defaultPromptOrder,
+  prompts: defaultOrderedPrompts,
 
   vendor: {
     openrouter: {

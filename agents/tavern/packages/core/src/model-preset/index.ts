@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
-import type { Prompt, PromptOrder } from '../prompt'
-import { promptOrderSchema, promptSchema } from '../prompt'
+import { Prompt, promptListSchema } from '../prompt'
+import { promptSchema } from '../prompt'
 
 export * from './defaults'
 
@@ -105,8 +105,6 @@ export interface ModelPreset {
 
   prompts: Prompt[]
 
-  promptOrder: PromptOrder[]
-
   vendor?: {
     openrouter?: {
       middleout?: 'on' | 'off' | 'auto'
@@ -152,9 +150,7 @@ export const modelPresetSchema = z.object({
     sendIfEmpty: z.string(),
   }),
 
-  prompts: z.array(promptSchema),
-
-  promptOrder: z.array(promptOrderSchema),
+  prompts: promptListSchema,
 
   vendor: z
     .object({

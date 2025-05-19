@@ -29,23 +29,23 @@ import type { CharacterBasicFormValues } from './character-form/basic'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
+import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/lib/character'
-import { useCharacterAdvancedView } from './character-form/advanced'
 import { CharacterBasicForm } from './character-form/basic'
 import { CharacterTagsView } from './character-tags-view'
 import { CharacterViewAdvanced } from './character-view-advanced'
 import { useImportTags } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
-  const { isShowCharacterAdvancedView, toggleShowCharacterAdvancedView } =
-    useCharacterAdvancedView()
+  const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
+    useIsShowCharacterAdvancedView()
 
   const handleAddToFavorites = () => {
     console.log('Set favorite character')
   }
 
   const handleShowAdvancedDefinitions = () => {
-    toggleShowCharacterAdvancedView()
+    toggleIsShowCharacterAdvancedView()
   }
 
   const operateActions = [

@@ -17,135 +17,99 @@ export const default_personality_format = '{{personality}}'
 export const default_scenario_format = '{{scenario}}'
 export const default_group_nudge_prompt = '[Write the next reply only as {{char}}.]'
 
-export const defaultPrompts = [
+export const defaultOrderedPrompts = [
   {
+    identifier: 'main',
+    enabled: true,
     name: 'Main Prompt',
     system_prompt: true,
+    marker: false,
     role: 'system',
     content:
       "Write {{char}}'s next reply in a fictional chat between {{charIfNotGroup}} and {{user}}.",
-    identifier: 'main',
-  },
-  {
-    name: 'Auxiliary Prompt',
-    system_prompt: true,
-    role: 'system',
-    content: '',
-    identifier: 'nsfw',
-  },
-  {
-    identifier: 'dialogueExamples',
-    name: 'Chat Examples',
-    system_prompt: true,
-    marker: true,
-  },
-  {
-    name: 'Post-History Instructions',
-    system_prompt: true,
-    role: 'system',
-    content: '',
-    identifier: 'jailbreak',
-  },
-  {
-    identifier: 'chatHistory',
-    name: 'Chat History',
-    system_prompt: true,
-    marker: true,
-  },
-  {
-    identifier: 'worldInfoAfter',
-    name: 'World Info (after)',
-    system_prompt: true,
-    marker: true,
   },
   {
     identifier: 'worldInfoBefore',
+    enabled: true,
     name: 'World Info (before)',
     system_prompt: true,
     marker: true,
   },
   {
-    identifier: 'enhanceDefinitions',
-    role: 'system',
-    name: 'Enhance Definitions',
-    content:
-      "If you have more knowledge of {{char}}, add to the character's lore and personality to enhance them but keep the Character Sheet's definitions absolute.",
+    identifier: 'personaDescription',
+    enabled: true,
+    name: 'Persona Description',
     system_prompt: true,
-    marker: false,
+    marker: true,
   },
   {
     identifier: 'charDescription',
+    enabled: true,
     name: 'Char Description',
     system_prompt: true,
     marker: true,
   },
   {
     identifier: 'charPersonality',
+    enabled: true,
     name: 'Char Personality',
     system_prompt: true,
     marker: true,
   },
   {
     identifier: 'scenario',
+    enabled: true,
     name: 'Scenario',
     system_prompt: true,
     marker: true,
   },
   {
-    identifier: 'personaDescription',
-    name: 'Persona Description',
-    system_prompt: true,
-    marker: true,
-  },
-]
-
-export const defaultPromptOrder = [
-  {
-    identifier: 'main',
-    enabled: true,
-  },
-  {
-    identifier: 'worldInfoBefore',
-    enabled: true,
-  },
-  {
-    identifier: 'personaDescription',
-    enabled: true,
-  },
-  {
-    identifier: 'charDescription',
-    enabled: true,
-  },
-  {
-    identifier: 'charPersonality',
-    enabled: true,
-  },
-  {
-    identifier: 'scenario',
-    enabled: true,
-  },
-  {
     identifier: 'enhanceDefinitions',
     enabled: false,
+    name: 'Enhance Definitions',
+    system_prompt: true,
+    marker: false,
+    role: 'system',
+    content:
+      "If you have more knowledge of {{char}}, add to the character's lore and personality to enhance them but keep the Character Sheet's definitions absolute.",
   },
   {
     identifier: 'nsfw',
     enabled: true,
+    name: 'Auxiliary Prompt',
+    system_prompt: true,
+    marker: false,
+    role: 'system',
+    content: '',
   },
   {
     identifier: 'worldInfoAfter',
     enabled: true,
+    name: 'World Info (after)',
+    system_prompt: true,
+    marker: true,
   },
   {
     identifier: 'dialogueExamples',
     enabled: true,
+    name: 'Chat Examples',
+    system_prompt: true,
+    marker: true,
   },
   {
     identifier: 'chatHistory',
     enabled: true,
+    name: 'Chat History',
+    system_prompt: true,
+    marker: true,
   },
   {
     identifier: 'jailbreak',
     enabled: true,
+    name: 'Post-History Instructions',
+    system_prompt: true,
+    marker: false,
+    role: 'system',
+    content: '',
   },
 ]

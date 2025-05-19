@@ -1,21 +1,14 @@
 'use client'
 
-import type { RefObject } from 'react'
 import { useEffect, useRef } from 'react'
-import { atom, useAtom } from 'jotai'
 
-const contentRefAtom = atom<RefObject<HTMLDivElement | null>>()
-
-export function useContentRef() {
-  const [contentRef] = useAtom(contentRefAtom)
-  return contentRef
-}
+import { useContentAreaRef } from '@/hooks/use-show-in-content-area'
 
 export function Content() {
   const ref = useRef<HTMLDivElement>(null)
-  const [, setContentRef] = useAtom(contentRefAtom)
+  const { setContentAreaRef } = useContentAreaRef()
   useEffect(() => {
-    setContentRef(ref)
+    setContentAreaRef(ref)
     /* eslint-disable react-hooks/exhaustive-deps */
   }, [])
 

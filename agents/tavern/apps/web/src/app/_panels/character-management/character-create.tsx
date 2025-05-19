@@ -31,29 +31,22 @@ import type { CharacterBasicFormValues } from './character-form/basic'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
+import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { useCreateCharacter } from '@/lib/character'
 import defaultPng from '@/public/images/ai4.png'
 import {
   CharacterAdvancedForm,
-  characterAdvancedFormSchema,
   defaultCharacterAdvancedFormValues,
-  useCharacterAdvancedView,
 } from './character-form/advanced'
-import {
-  CharacterBasicForm,
-  characterBasicFormSchema,
-  defaultCharacterBasicFormValues,
-} from './character-form/basic'
+import { CharacterBasicForm, defaultCharacterBasicFormValues } from './character-form/basic'
 import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
-
-export const characterCreateFormSchema = characterBasicFormSchema.merge(characterAdvancedFormSchema)
 
 export function CharacterCreate() {
   const setIsCreateCharacter = useSetIsCreateCharacter()
   const setShowCharacterList = useSetShowCharacterList()
 
-  const { isShowCharacterAdvancedView, toggleShowCharacterAdvancedView } =
-    useCharacterAdvancedView()
+  const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
+    useIsShowCharacterAdvancedView()
 
   const [basicValues, setBasicValues] = useState<CharacterBasicFormValues>()
   const [advancedValues, setAdvancedValues] = useState<CharacterAdvancedFormValues>()
@@ -95,7 +88,7 @@ export function CharacterCreate() {
   }
 
   const handleShowAdvancedDefinitions = () => {
-    toggleShowCharacterAdvancedView()
+    toggleIsShowCharacterAdvancedView()
   }
 
   const operateActions = [
