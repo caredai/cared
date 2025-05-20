@@ -1,7 +1,6 @@
 import { Separator } from '@ownxai/ui/components/separator'
 
-import { useActiveCharacter } from '@/hooks/use-active-character'
-import { isCharacterGroup } from '@/lib/character-group'
+import { isCharacterGroup, useActiveCharacter } from '@/hooks/use-active-character'
 import { CharacterCreate } from './character-create'
 import { CharacterGroupView } from './character-group-view'
 import { CharacterList } from './character-list'

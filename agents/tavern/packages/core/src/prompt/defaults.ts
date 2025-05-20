@@ -24,7 +24,7 @@ export const defaultOrderedPrompts = [
     name: 'Main Prompt',
     system_prompt: true,
     marker: false,
-    role: 'system',
+    role: 'system' as const,
     content:
       "Write {{char}}'s next reply in a fictional chat between {{charIfNotGroup}} and {{user}}.",
   },
@@ -69,7 +69,7 @@ export const defaultOrderedPrompts = [
     name: 'Enhance Definitions',
     system_prompt: true,
     marker: false,
-    role: 'system',
+    role: 'system' as const,
     content:
       "If you have more knowledge of {{char}}, add to the character's lore and personality to enhance them but keep the Character Sheet's definitions absolute.",
   },
@@ -79,7 +79,7 @@ export const defaultOrderedPrompts = [
     name: 'Auxiliary Prompt',
     system_prompt: true,
     marker: false,
-    role: 'system',
+    role: 'system' as const,
     content: '',
   },
   {
@@ -109,7 +109,7 @@ export const defaultOrderedPrompts = [
     name: 'Post-History Instructions',
     system_prompt: true,
     marker: false,
-    role: 'system',
+    role: 'system' as const,
     content: '',
   },
 ]

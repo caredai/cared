@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 import { Prompt, promptListSchema } from '../prompt'
-import { promptSchema } from '../prompt'
 
 export * from './defaults'
 

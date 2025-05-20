@@ -12,17 +12,17 @@ import { Switch } from '@ownxai/ui/components/switch'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
-import { useActiveModelPreset, useCustomizeModelPreset } from '@/hooks/use-model-preset'
+import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
 import { usePromptEdit } from './prompt-edit'
 import { usePromptInspect } from './prompt-inspect'
 
 export function PromptList() {
-  const { activePreset } = useActiveModelPreset()
-  const { openPromptEdit } = usePromptEdit()
-  const { openPromptInspect } = usePromptInspect()
+  const { activeCustomizedPreset } = useCustomizeModelPreset()
+  const { toggleEditPromptEdit } = usePromptEdit()
+  const { togglePromptInspect } = usePromptInspect()
 
   // Get prompts from active preset
-  const prompts = activePreset.preset.prompts
+  const prompts = activeCustomizedPreset.prompts
 
   const { customization, saveCustomization } = useCustomizeModelPreset()
 
@@ -49,52 +49,50 @@ export function PromptList() {
         return (
           <div
             key={prompt.identifier}
-            className="flex justify-between items-center gap-4 px-2 py-1 rounded-sm border border-border hover:bg-muted/50"
+            className="w-full grid grid-cols-[4fr_80px_45px] justify-between items-center px-2 py-1 rounded-sm border border-border hover:bg-muted/50"
           >
-            <FaButton
-              icon={
-                prompt.system_prompt
-                  ? prompt.marker
-                    ? faLocationDot
-                    : faSquarePollHorizontal
-                  : faUserPen
-              }
-              btnSize="size-6"
-              iconSize="lg"
-              className={cn('text-muted-foreground')}
-              title={
-                prompt.system_prompt
-                  ? prompt.marker
-                    ? 'System Marker Prompt'
-                    : 'System Prompt'
-                  : 'User-defined Prompt'
-              }
-            />
-
-            <Button
-              variant="link"
-              className="flex-1 justify-start text-secondary-foreground truncate"
-              title={prompt.name}
-              onClick={() => openPromptInspect(prompt)}
-            >
-              <span className="truncate">{prompt.name}</span>
-            </Button>
-
-            <div className="flex justify-between items-center">
+            <span className="flex items-center overflow-x-hidden">
               <FaButton
-                icon={faPen}
+                icon={
+                  prompt.system_prompt
+                    ? prompt.marker
+                      ? faLocationDot
+                      : faSquarePollHorizontal
+                    : faUserPen
+                }
                 btnSize="size-6"
-                iconSize="sm"
-                className="text-muted-foreground hover:text-foreground"
-                title="Edit prompt"
-                onClick={() => openPromptEdit({
-                  ...prompt,
-                  role: prompt.role ?? 'system',
-                  injection_position: prompt.injection_position ?? 'relative',
-                  injection_depth: prompt.injection_depth ?? 4,
-                  content: prompt.content ?? '',
-                })}
+                iconSize="lg"
+                className={cn('text-muted-foreground')}
+                title={
+                  prompt.system_prompt
+                    ? prompt.marker
+                      ? 'System Marker Prompt'
+                      : 'System Prompt'
+                    : 'User-defined Prompt'
+                }
               />
+
+              <Button
+                variant="link"
+                className="px-1 text-secondary-foreground"
+                title={prompt.name}
+                onClick={() => togglePromptInspect(prompt.identifier)}
+              >
+                {prompt.name}
+              </Button>
+            </span>
+
+            <span className="inline w-full text-right">
+              {!['dialogueExamples', 'chatHistory'].includes(prompt.identifier) && (
+                <FaButton
+                  icon={faPen}
+                  btnSize="size-6"
+                  iconSize="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  title="Edit prompt"
+                  onClick={() => toggleEditPromptEdit(prompt.identifier)}
+                />
+              )}
 
               <Switch
                 checked={prompt.enabled}
@@ -103,9 +101,9 @@ export function PromptList() {
                 }}
                 className="data-[state=checked]:bg-yellow-700 scale-60"
               />
-            </div>
+            </span>
 
-            <span className="text-sm text-muted-foreground w-16 text-right">0 tokens</span>
+            <span className="inline w-full text-sm text-muted-foreground text-right">0</span>
           </div>
         )
       })}

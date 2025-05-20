@@ -14,10 +14,6 @@ export type CharacterGroup = Omit<RouterOutput['characterGroup']['get']['group']
   missingCharacters: string[]
 }
 
-export function isCharacterGroup(char: Character | CharacterGroup): char is CharacterGroup {
-  return 'characters' in char
-}
-
 export function useCharacterGroups() {
   const { characters } = useCharacters()
 

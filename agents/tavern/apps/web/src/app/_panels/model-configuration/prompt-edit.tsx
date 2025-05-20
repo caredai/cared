@@ -1,5 +1,6 @@
 import type { Prompt } from '@tavern/core'
-import { useEffect } from 'react'
+import type { z } from 'zod'
+import { useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
 import { promptSchema } from '@tavern/core'
@@ -26,41 +27,66 @@ import {
   SelectValue,
 } from '@ownxai/ui/components/select'
 import { Textarea } from '@ownxai/ui/components/textarea'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
+import { usePrompt } from '@/hooks/use-prompt'
 import { useContentAreaRef, useIsShowPromptEdit } from '@/hooks/use-show-in-content-area'
 
-type EditPrompt = Prompt &
-  Required<Pick<Prompt, 'role' | 'injection_position' | 'injection_depth' | 'content'>>
-
-const editPromptAtom = atom<EditPrompt>()
+const editPromptIdAtom = atom<string>()
 
 export function usePromptEdit() {
-  const [, setEditPrompt] = useAtom(editPromptAtom)
+  const [editPromptId, setEditPromptId] = useAtom(editPromptIdAtom)
 
   const { isShowPromptEdit, setIsShowPromptEdit } = useIsShowPromptEdit()
 
-  const openPromptEdit = (prompt: EditPrompt) => {
-    setEditPrompt(prompt)
+  const openPromptEdit = (identifier: string) => {
+    setEditPromptId(identifier)
     setIsShowPromptEdit(true)
   }
 
   const closePromptEdit = () => {
-    setEditPrompt(undefined)
+    setEditPromptId(undefined)
     setIsShowPromptEdit(false)
+  }
+
+  const toggleEditPromptEdit = (identifier: string) => {
+    if (editPromptId && editPromptId !== identifier) {
+      setEditPromptId(identifier)
+      return
+    }
+    const isShow = !isShowPromptEdit
+    setEditPromptId(isShow ? identifier : undefined)
+    setIsShowPromptEdit(isShow)
   }
 
   useEffect(() => {
     if (!isShowPromptEdit) {
-      setEditPrompt(undefined)
+      setEditPromptId(undefined)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isShowPromptEdit])
 
+  const prompt = usePrompt(editPromptId)
+  const promptEdit = useMemo(
+    () => ({
+      ...prompt,
+      name: prompt?.name ?? '',
+      role: prompt?.role ?? 'system',
+      injection_position: prompt?.injection_position ?? 'relative',
+      injection_depth: prompt?.injection_depth ?? 4,
+      content: prompt?.content ?? '',
+    }),
+    [prompt],
+  )
+
   return {
     isShowPromptEdit,
+    prompt,
+    promptEdit,
     openPromptEdit,
     closePromptEdit,
+    toggleEditPromptEdit,
   }
 }
 
@@ -73,18 +99,20 @@ const promptEditFormSchema = promptSchema.pick({
 })
 
 export function PromptEdit() {
-  const { isShowPromptEdit, closePromptEdit } = usePromptEdit()
-  const [prompt, setPrompt] = useAtom(editPromptAtom)
+  const { isShowPromptEdit, prompt, promptEdit, closePromptEdit } = usePromptEdit()
   const { contentAreaRef } = useContentAreaRef()
 
   const form = useForm({
     resolver: zodResolver(promptEditFormSchema),
-    defaultValues: prompt,
+    defaultValues: promptEdit,
   })
 
+  const [depthInput, setDepthInput] = useState('')
+
   useEffect(() => {
-    form.reset(prompt)
-  }, [prompt, form])
+    form.reset(promptEdit)
+    setDepthInput(promptEdit.injection_depth.toString())
+  }, [promptEdit, form])
 
   const { customization, saveCustomization } = useCustomizeModelPreset()
 
@@ -92,11 +120,11 @@ export function PromptEdit() {
     if (!prompt) {
       return
     }
+
     const newPrompt = {
-      ...prompt,
+      ...promptEdit,
       ...values,
     }
-    setPrompt(newPrompt)
 
     const newCustomization = {
       ...customization,
@@ -141,7 +169,9 @@ export function PromptEdit() {
 
       <Form {...form}>
         <form
-          onBlur={() => onSubmit(promptEditFormSchema.parse(form.getValues()))}
+          onBlur={() => {
+            onSubmit(promptEditFormSchema.parse(sanitizeValues(prompt, form.getValues())))
+          }}
           className="flex-1 flex flex-col gap-6"
         >
           <div className="flex justify-between gap-6">
@@ -153,7 +183,7 @@ export function PromptEdit() {
                   <FormLabel>Name</FormLabel>
                   <FormDescription>A name for this prompt</FormDescription>
                   <FormControl>
-                    <Input {...field} placeholder="Enter prompt name" />
+                    <Input {...field} maxLength={128} placeholder="Enter prompt name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -167,7 +197,11 @@ export function PromptEdit() {
                 <FormItem className="flex-1">
                   <FormLabel>Role</FormLabel>
                   <FormDescription>To whom this message will be attributed</FormDescription>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={prompt.marker}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
@@ -196,7 +230,11 @@ export function PromptEdit() {
                     Injection position: relative (to other prompts in prompt list) or absolute @
                     depth
                   </FormDescription>
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={prompt.system_prompt && !prompt.marker}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select position" />
@@ -212,32 +250,49 @@ export function PromptEdit() {
               )}
             />
 
-            {form.watch('injection_position') === 'absolute' ? (
-              <FormField
-                control={form.control}
-                name="injection_depth"
-                render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Depth</FormLabel>
-                    <FormDescription>
-                      Injection depth: 0 = after the last message, 1 = before the last message, etc
-                    </FormDescription>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                        placeholder="Enter depth"
-                        disabled={form.watch('injection_position') !== 'absolute'}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            ) : (
-              <div className="flex-1" />
-            )}
+            <FormField
+              control={form.control}
+              name="injection_depth"
+              render={({ field }) => (
+                <FormItem
+                  className={cn(
+                    'flex-1',
+                    form.watch('injection_position') !== 'absolute' && 'hidden',
+                  )}
+                >
+                  <FormLabel>Depth</FormLabel>
+                  <FormDescription>
+                    Injection depth: 0 = after the last message, 1 = before the last message, etc
+                  </FormDescription>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={depthInput}
+                      onChange={(e) => {
+                        setDepthInput(e.target.value)
+                      }}
+                      onBlur={() => {
+                        const numValue = parseInt(depthInput)
+                        if (!isNaN(numValue) && numValue >= 0) {
+                          setDepthInput(numValue.toString())
+                          field.onChange(numValue)
+                        } else {
+                          // Reset to previous valid value if invalid
+                          setDepthInput(field.value?.toString() ?? '')
+                        }
+                      }}
+                      placeholder="Enter depth"
+                      disabled={form.watch('injection_position') !== 'absolute'}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch('injection_position') !== 'absolute' && <div className="flex-1" />}
           </div>
 
           <FormField
@@ -263,12 +318,18 @@ export function PromptEdit() {
               </FormItem>
             )}
           />
-
-          <div className="flex justify-end gap-2">
-            <Button type="submit">Save</Button>
-          </div>
         </form>
       </Form>
     </Portal.Root>
   )
+}
+
+function sanitizeValues(prompt: Prompt, values: z.infer<typeof promptEditFormSchema>) {
+  return {
+    name: values.name,
+    role: !prompt.marker ? values.role : undefined,
+    content: !prompt.marker ? values.content : undefined,
+    injection_position: values.injection_position,
+    injection_depth: values.injection_position === 'absolute' ? values.injection_depth : undefined,
+  }
 }

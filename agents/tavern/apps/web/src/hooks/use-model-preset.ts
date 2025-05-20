@@ -1,11 +1,12 @@
 import type { AppRouter } from '@tavern/api'
+import type { ModelPresetCustomization } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { ModelPresetCustomization, modelPresetSchema, promptSchema } from '@tavern/core'
-import { deepmerge } from 'deepmerge-ts'
+import { modelPresetWithCustomization, sanitizeModelPresetCustomization } from '@tavern/core'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
+import hash from 'stable-hash'
 
 import { debounceTimeout } from '@/lib/debounce'
 import { useModelPresetSettings, useUpdateModelPresetSettings } from '@/lib/settings'
@@ -180,26 +181,54 @@ export function useCustomizeModelPreset() {
 
   const customization = modelPresetSettings.customizations?.[activePreset.name]
 
+  const activeCustomizedPreset = useMemo(
+    () => modelPresetWithCustomization(activePreset.preset, customization),
+    [activePreset, customization],
+  )
+
   const saveCustomization = useCallback(
     (values: ModelPresetCustomization) => {
-      const newCustomization = {
+      const { [activePreset.name]: customization, ...customizations } =
+        modelPresetSettings.customizations ?? {}
+
+      let newCustomization: ModelPresetCustomization | undefined = {
         ...customization,
         ...values,
       }
 
+      if (hash(newCustomization) === hash(customization)) {
+        // No changes detected, do not update
+        return
+      }
+
       // Check whether the customization is valid
+      const customizedModelPreset = modelPresetWithCustomization(
+        activePreset.preset,
+        newCustomization,
+      )
+      // Sanitize the customization
+      newCustomization = sanitizeModelPresetCustomization(
+        newCustomization,
+        activePreset.preset,
+        customizedModelPreset,
+      )
+      // Check again
       const _ = modelPresetWithCustomization(activePreset.preset, newCustomization)
+
+      if (hash(newCustomization) === hash(customization)) {
+        // No changes detected, do not update
+        return
+      }
 
       return updateModelPresetSettings({
         customizations: {
-          ...modelPresetSettings.customizations,
-          [activePreset.name]: newCustomization,
+          ...customizations,
+          ...(newCustomization && { [activePreset.name]: newCustomization }),
         },
       })
     },
     [
       activePreset,
-      customization,
       modelPresetSettings,
       updateModelPresetSettings,
     ],
@@ -227,73 +256,9 @@ export function useCustomizeModelPreset() {
   }, [activePreset, modelPresetSettings, updateModelPreset, updateModelPresetSettings])
 
   return {
+    activeCustomizedPreset,
     customization,
     saveCustomization,
     updateModelPresetWithCustomization,
   }
-}
-
-function modelPresetWithCustomization(
-  modelPreset: ModelPreset['preset'],
-  customization: ModelPresetCustomization | undefined,
-): ModelPreset['preset'] {
-  if (!customization) {
-    return modelPreset
-  }
-
-  const { utilityPrompts, prompts, promptOrder, vendor, ...otherCustomization } = customization
-
-  // Merge prompts with null handling for deletion
-  let newPrompts = [...modelPreset.prompts]
-  if (prompts) {
-    Object.entries(prompts).forEach(([identifier, prompt]) => {
-      const index = newPrompts.findIndex((p) => p.identifier === identifier)
-      if (prompt === null) {
-        // Remove prompt if null
-        if (index !== -1) {
-          newPrompts.splice(index, 1)
-        }
-      } else {
-        // Update or add prompt
-        if (index !== -1) {
-          newPrompts[index] = { ...newPrompts[index]!, ...prompt }
-        } else {
-          newPrompts.push(promptSchema.parse(prompt))
-        }
-      }
-    })
-  }
-
-  // Reorder prompts if promptOrder is provided
-  if (promptOrder) {
-    // Verify promptOrder matches prompts exactly
-    const promptIdentifiers = new Set(newPrompts.map((p) => p.identifier))
-    const orderIdentifiers = new Set(promptOrder)
-    if (
-      promptIdentifiers.size !== orderIdentifiers.size ||
-      ![...promptIdentifiers].every((id) => orderIdentifiers.has(id))
-    ) {
-      throw new Error(
-        `promptOrder does not match prompts exactly. Expected ${promptIdentifiers.size} unique identifiers.`,
-      )
-    }
-
-    // Reorder prompts according to promptOrder
-    newPrompts = promptOrder.map(
-      (identifier) => newPrompts.find((p) => p.identifier === identifier)!,
-    )
-  }
-
-  const newModelPreset: ModelPreset['preset'] = {
-    ...modelPreset,
-    ...otherCustomization,
-    utilityPrompts: {
-      ...modelPreset.utilityPrompts,
-      ...utilityPrompts,
-    },
-    prompts: newPrompts,
-    vendor: deepmerge(modelPreset.vendor, vendor),
-  }
-
-  return modelPresetSchema.parse(newModelPreset)
 }

@@ -35,7 +35,7 @@ export function AutoGrowTextarea({
     // Timeout ensures that the DOM is fully rendered and styles applied
     const timer = setTimeout(adjustHeight, 0)
     return () => clearTimeout(timer)
-    // Rerun when the value changes externally or adjustHeight changes (ref change)
+    // Rerun when the value changes externally, or adjustHeight changes (ref change)
   }, [value, adjustHeight])
 
   const handleInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
