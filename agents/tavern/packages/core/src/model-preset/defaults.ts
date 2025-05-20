@@ -15,9 +15,9 @@ import {
 export const defaultModelPreset: ModelPreset = {
   maxContext: 4095,
   maxTokens: 300,
-  temperature: 1,
+  temperature: 0.5,
   topP: 1,
-  topK: 1,
+  topK: 0,
   presencePenalty: 0,
   frequencyPenalty: 0,
   seed: -1,

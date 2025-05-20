@@ -27,6 +27,7 @@ import {
   useModelPresetSettings,
   useUpdateSettingsMutation,
 } from '@/lib/settings'
+import { ModelConf } from './model-conf'
 import { PromptEdit } from './prompt-edit'
 import { PromptInspect } from './prompt-inspect'
 import { PromptList } from './prompt-list'
@@ -76,7 +77,7 @@ export function ModelConfigurationPanel() {
   ]
 
   return (
-    <div className="flex flex-col gap-2 h-full overflow-hidden">
+    <div className="flex flex-col gap-2 h-full px-2 overflow-y-auto">
       <div className="flex flex-row items-center justify-between gap-4 m-[1px]">
         <FaButton
           icon={appearanceSettings.leftNavPanelLocked ? faLock : faUnlock}
@@ -126,6 +127,7 @@ export function ModelConfigurationPanel() {
       </div>
 
       <div className="space-y-4">
+        <ModelConf />
         <PromptList />
       </div>
 

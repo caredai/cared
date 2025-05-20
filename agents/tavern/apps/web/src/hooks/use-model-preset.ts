@@ -1,6 +1,4 @@
-import type { AppRouter } from '@tavern/api'
-import type { ModelPresetCustomization } from '@tavern/core'
-import type { inferRouterOutputs } from '@trpc/server'
+import type { ModelPreset, ModelPresetCustomization } from '@tavern/core'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { modelPresetWithCustomization, sanitizeModelPresetCustomization } from '@tavern/core'
@@ -11,9 +9,6 @@ import hash from 'stable-hash'
 import { debounceTimeout } from '@/lib/debounce'
 import { useModelPresetSettings, useUpdateModelPresetSettings } from '@/lib/settings'
 import { useTRPC } from '@/trpc/client'
-
-type RouterOutput = inferRouterOutputs<AppRouter>
-export type ModelPreset = RouterOutput['modelPreset']['get']['modelPreset']
 
 export function useModelPresets() {
   const trpc = useTRPC()
@@ -38,8 +33,8 @@ export function useActiveModelPreset() {
   // Find the active preset by name
   let activePreset = modelPresets.find((preset) => preset.name === modelPresetSettings.preset)
 
-  const setActivePreset = async (preset: ModelPreset | string) => {
-    await updateModelPresetSettings({ preset: typeof preset === 'string' ? preset : preset.name })
+  const setActivePreset = async (preset: string) => {
+    await updateModelPresetSettings({ preset })
   }
 
   // If the active preset doesn't exist, use the first preset and update settings
@@ -69,7 +64,7 @@ export function useCreateModelPreset() {
     }),
   )
 
-  return useCallback(async (name: string, preset: ModelPreset['preset']) => {
+  return useCallback(async (name: string, preset: ModelPreset) => {
     return await createMutation.mutateAsync({
       name,
       preset,
@@ -162,7 +157,7 @@ export function useUpdateModelPreset() {
     })
 
   return useCallback(
-    async (id: string, preset: Partial<ModelPreset['preset']>) => {
+    async (id: string, preset: Partial<ModelPreset>) => {
       return await mutation.mutateAsync({
         id,
         preset,
@@ -256,7 +251,7 @@ export function useCustomizeModelPreset() {
   }, [activePreset, modelPresetSettings, updateModelPreset, updateModelPresetSettings])
 
   return {
-    activeCustomizedPreset,
+    activeCustomizedPreset: activeCustomizedPreset,
     customization,
     saveCustomization,
     updateModelPresetWithCustomization,
