@@ -86,16 +86,15 @@ export const modelRouter = {
     .query(async ({ input }) => {
       const providerInfos = await getProviderInfos()
 
-      const models: Record<
-        string,
-        {
-          id: string
-          name: string
-          description?: string
-          icon?: string
-          models: any[]
-        }[]
-      > = {}
+      type Models = {
+        id: string
+        name: string
+        description?: string
+        icon?: string
+        models: any[]
+      }[]
+
+      const models: Record<string, Models> = {}
 
       // Process language models if type is not specified or type is 'language'
       if (!input.type || input.type === 'language') {
@@ -145,7 +144,13 @@ export const modelRouter = {
           }))
       }
 
-      return { models }
+      return { models } as {
+        models: {
+          language?: Models
+          'text-embedding'?: Models
+          image?: Models
+        }
+      }
     }),
 
   /**

@@ -17,7 +17,8 @@ export default function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request, {
     cookiePrefix: 'ownx',
   })
-  if (!sessionCookie) {
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '')
+  if (!sessionCookie && !token) {
     const redirectTo = request.nextUrl.pathname + request.nextUrl.search
     return NextResponse.redirect(new URL(`/auth/sign-in?redirectTo=${redirectTo}`, request.url))
   }

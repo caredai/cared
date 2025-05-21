@@ -1,4 +1,4 @@
-import type { ModelPresetSettings, Settings, TagsSettings } from '@tavern/core'
+import type { ModelPresetSettings, ModelSettings, Settings, TagsSettings } from '@tavern/core'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import pDebounce from 'p-debounce'
@@ -145,5 +145,34 @@ export function useUpdateModelPresetSettings() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [modelPresetSettings],
+  )
+}
+
+export function useModelSettings() {
+  const trpc = useTRPC()
+  const { data } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+    select: useCallback(({ settings }: { settings: Settings }) => settings.model, []),
+  })
+  return data
+}
+
+export function useUpdateModelSettings() {
+  const modelSettings = useModelSettings()
+  const updateSettingsMutation = useUpdateSettingsMutation()
+
+  return useCallback(
+    async (modelSettingsValues: Partial<ModelSettings>) => {
+      await updateSettingsMutation.mutateAsync({
+        settings: {
+          model: {
+            ...modelSettings,
+            ...modelSettingsValues,
+          },
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [modelSettings],
   )
 }

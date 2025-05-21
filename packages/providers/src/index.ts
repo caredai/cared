@@ -59,6 +59,8 @@ export function modelFullId(providerId: string, modelId: string) {
 }
 
 export function splitModelFullId(fullId: string) {
-  const [providerId, modelId] = fullId.split(':', 2)
+  const index = fullId.indexOf(':')
+  const providerId = fullId.slice(0, index)
+  const modelId = fullId.slice(index + 1)
   return { providerId, modelId } as { providerId: ProviderId; modelId: string }
 }

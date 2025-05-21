@@ -1,5 +1,5 @@
 import type { UseControllerProps } from 'react-hook-form'
-import * as React from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   Combobox,
@@ -19,8 +19,6 @@ import {
 } from '@ownxai/ui/components/form'
 import { Virtualized, VirtualizedVirtualizer } from '@ownxai/ui/components/virtualized'
 
-import { SelectLabel } from '@/components/virtualized-select-content'
-
 interface ModelSelectProps<
   TFieldValues extends {
     languageModel: string
@@ -33,6 +31,7 @@ interface ModelSelectProps<
   description: string
   groups: Group[]
   control: UseControllerProps<TFieldValues>['control']
+  defaultValue: string
 }
 
 interface Group {
@@ -56,11 +55,20 @@ export function ModelSelect<
     embeddingModel: string
     imageModel: string
   },
->({ name, label, description, groups, control }: ModelSelectProps<TFieldValues>) {
-  const [inputValue, setInputValue] = React.useState('')
-  const [open, setOpen] = React.useState(false)
+>({ name, label, description, groups, control, defaultValue }: ModelSelectProps<TFieldValues>) {
+  const [inputValue, setInputValue] = useState('')
+  const [open, setOpen] = useState(false)
 
-  const filtered = React.useMemo(() => {
+  useEffect(() => {
+    for (const group of groups) {
+      const item = group.items.find((item) => item.value === defaultValue)
+      if (item) {
+        setInputValue(item.label)
+      }
+    }
+  }, [groups, defaultValue])
+
+  const filtered = useMemo(() => {
     if (!inputValue) {
       return groups
     }
@@ -114,9 +122,12 @@ export function ModelSelect<
                   <ComboboxGroup>
                     <VirtualizedVirtualizer startMargin={32}>
                       {filtered.flatMap((group) => [
-                        <SelectLabel key={group.label} className="text-muted-foreground">
+                        <div
+                          key={group.label}
+                          className="px-2 py-1.5 text-sm font-semibold text-muted-foreground"
+                        >
                           {group.label}
-                        </SelectLabel>,
+                        </div>,
                         ...group.items.map((item) => (
                           <ComboboxItem
                             key={item.value}
