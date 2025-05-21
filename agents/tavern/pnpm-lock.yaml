@@ -371,6 +371,9 @@ importers:
       '@ownxai/log':
         specifier: ^0.1.1
         version: 0.1.1
+      '@ownxai/tokenizer':
+        specifier: ^0.1.2
+        version: 0.1.2
       '@ownxai/ui':
         specifier: workspace:*
         version: link:../../../../packages/ui
@@ -705,6 +708,9 @@ importers:
         version: 5.8.3
 
 packages:
+
+  '@agnai/web-tokenizers@0.1.3':
+    resolution: {integrity: sha512-KlmTftToTtmb6aLVdne4NluS+POWputPF5J8v25UN/EQS+K9vahWEIe1NPRSFqBQclObkqHaj7JOnFrmnSm5MA==}
 
   '@ai-sdk/provider-utils@2.2.6':
     resolution: {integrity: sha512-sUlZ7Gnq84DCGWMQRIK8XVbkzIBnvPR1diV4v6JwPgpn5armnLI/j+rqn62MpLrU5ZCQZlDKl/Lw6ed3ulYqaA==}
@@ -1958,6 +1964,9 @@ packages:
     peerDependencies:
       drizzle-orm: '>=0.38.4'
       zod: '>=3.24.2'
+
+  '@ownxai/tokenizer@0.1.2':
+    resolution: {integrity: sha512-Gj/7qHL4HOzpWrRmVESLnXAGBLExlUInSv9jEkvM1QGvN4/CiQXrAx14HgMfG/zUeIakMxOsrEnqLIctPK0g3w==}
 
   '@peculiar/asn1-android@2.3.16':
     resolution: {integrity: sha512-a1viIv3bIahXNssrOIkXZIlI2ePpZaNmR30d4aBL99mu2rO+mT9D6zBsp7H6eROWGtmwv0Ionp5olJurIo09dw==}
@@ -4627,6 +4636,9 @@ packages:
   js-cookie@2.2.1:
     resolution: {integrity: sha512-HvdH2LzI/EAZcUwA8+0nKNtWHqS+ZmijLA30RwZA0bo7ToCckjK5MkGhjED9KoRcXO6BaGI3I9UIzSA1FKFPOQ==}
 
+  js-tiktoken@1.0.20:
+    resolution: {integrity: sha512-Xlaqhhs8VfCd6Sh7a1cFkZHQbYTLCwVJJWiHVxBYzLPxW0XsoxBy1hitmjkdIjD3Aon5BXLHFwU5O8WUx6HH+A==}
+
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -6251,6 +6263,8 @@ packages:
 
 snapshots:
 
+  '@agnai/web-tokenizers@0.1.3': {}
+
   '@ai-sdk/provider-utils@2.2.6(zod@3.24.3)':
     dependencies:
       '@ai-sdk/provider': 1.1.2
@@ -7593,6 +7607,11 @@ snapshots:
       drizzle-orm: 0.38.4(@cloudflare/workers-types@4.20250428.0)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(@types/react@19.1.2)(@vercel/postgres@0.10.0)(kysely@0.27.6)(postgres@3.4.5)(react@19.1.0)
       uuid: 11.1.0
       zod: 3.24.3
+
+  '@ownxai/tokenizer@0.1.2':
+    dependencies:
+      '@agnai/web-tokenizers': 0.1.3
+      js-tiktoken: 1.0.20
 
   '@peculiar/asn1-android@2.3.16':
     dependencies:
@@ -10665,6 +10684,10 @@ snapshots:
   joycon@3.1.1: {}
 
   js-cookie@2.2.1: {}
+
+  js-tiktoken@1.0.20:
+    dependencies:
+      base64-js: 1.5.1
 
   js-tokens@4.0.0: {}
 

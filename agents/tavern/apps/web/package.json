@@ -25,6 +25,7 @@
     "@hookform/resolvers": "^4.1.3",
     "@lukemorales/query-key-factory": "^1.3.4",
     "@ownxai/log": "^0.1.1",
+    "@ownxai/tokenizer": "^0.1.2",
     "@ownxai/ui": "workspace:*",
     "@t3-oss/env-nextjs": "^0.12.0",
     "@tanstack/react-query": "catalog:",
