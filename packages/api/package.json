@@ -1,6 +1,6 @@
 {
   "name": "@ownxai/api",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "type": "module",
   "exports": {
@@ -16,7 +16,9 @@
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
-    "generate-api-types": "tsx ./scripts/generate-api-types.ts"
+    "generate-api-types": "tsx ./scripts/generate-api-types.ts",
+    "upload-tokenizer-assets": "pnpm with-env tsx ./scripts/upload-tokenizer-assets.ts",
+    "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "@ownxai/auth": "workspace:*",

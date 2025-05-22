@@ -7,7 +7,7 @@ import { Input } from '@ownxai/ui/components/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@ownxai/ui/components/popover'
 import { Separator } from '@ownxai/ui/components/separator'
 
-import { useModels } from '@/hooks/use-models'
+import { useModels } from '@/hooks/use-model'
 import { useModelSettings, useUpdateModelSettings } from '@/lib/settings'
 import { cn } from '@ownxai/ui/lib/utils'
 

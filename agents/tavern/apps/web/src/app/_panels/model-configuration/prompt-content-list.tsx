@@ -10,7 +10,9 @@ import {
   CollapsibleTrigger,
 } from '@ownxai/ui/components/collapsible'
 
+import { env } from '@/env'
 import { isCharacterGroup, useActiveCharacter } from '@/hooks/use-active-character'
+import { useTextTokens } from '@/hooks/use-count-tokens'
 import { usePromptInspect } from './prompt-inspect'
 
 export function PromptContentList() {
@@ -88,28 +90,40 @@ export function PromptContentList() {
 
   return (
     <div className="flex flex-col gap-2 border border-border p-2 rounded-sm bg-black/20 text-sm">
-      {list?.map((item, index) => {
-        return (
-          <Collapsible key={index}>
-            <CollapsibleTrigger asChild>
-              <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer text-muted-foreground">
-                <span>
-                  Name: {item.name}, Role: {item.role}
-                </span>
-
-                <Button type="button" variant="outline" size="icon" className="size-6">
-                  <ChevronDownIcon className="transition-transform duration-200" />
-                </Button>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 p-[1px] pt-2">
-              {item.content.split('\n').map((item, index) => (
-                <p key={index}>{item}</p>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
-        )
-      })}
+      {list?.map((item, index) => <PromptContentItem key={index} item={item} />)}
     </div>
+  )
+}
+
+function PromptContentItem({
+  item,
+}: {
+  item: {
+    name: string
+    role: string
+    content: string
+  }
+}) {
+  const tokens = useTextTokens(item.content)
+
+  return (
+    <Collapsible>
+      <CollapsibleTrigger asChild>
+        <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer text-muted-foreground">
+          <span>
+            Name: {item.name}, Role: {item.role}, Tokens: {tokens ?? 0}
+          </span>
+
+          <Button type="button" variant="outline" size="icon" className="size-6">
+            <ChevronDownIcon className="transition-transform duration-200" />
+          </Button>
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 p-[1px] pt-2">
+        {item.content.split('\n').map((line, index) => (
+          <p key={index}>{line}</p>
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

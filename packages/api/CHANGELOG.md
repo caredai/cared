@@ -1,5 +1,12 @@
 # @ownxai/api
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @ownxai/tokenizer@0.1.3
+
 ## 0.1.6
 
 ### Patch Changes
