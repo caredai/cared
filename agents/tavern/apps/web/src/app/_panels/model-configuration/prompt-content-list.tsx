@@ -10,9 +10,8 @@ import {
   CollapsibleTrigger,
 } from '@ownxai/ui/components/collapsible'
 
-import { env } from '@/env'
 import { isCharacterGroup, useActiveCharacter } from '@/hooks/use-active-character'
-import { useTextTokens } from '@/hooks/use-count-tokens'
+import { useTextTokens } from '@/hooks/use-tokenizer'
 import { usePromptInspect } from './prompt-inspect'
 
 export function PromptContentList() {

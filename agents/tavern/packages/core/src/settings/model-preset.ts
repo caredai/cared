@@ -28,7 +28,7 @@ export type ModelPresetCustomization = Partial<
   vendor?: DeepPartial<ModelPreset['vendor']>
 }
 
-type PromptCustomization = Partial<Omit<Prompt, 'identifier'>> | null
+export type PromptCustomization = Partial<Omit<Prompt, 'identifier'>> | null
 
 type DeepPartial<T> = T extends object
   ? {
@@ -90,7 +90,12 @@ export function modelPresetWithCustomization(
         if (index !== -1) {
           newPrompts[index] = { ...newPrompts[index]!, ...prompt }
         } else {
-          newPrompts.push(promptSchema.parse(prompt))
+          newPrompts.push(
+            promptSchema.parse({
+              identifier,
+              ...prompt,
+            }),
+          )
         }
       }
     })
@@ -133,16 +138,12 @@ export function modelPresetWithCustomization(
 export function sanitizeModelPresetCustomization(
   customization: ModelPresetCustomization,
   modelPreset: ModelPreset,
-  customizedModelPreset: ModelPreset,
 ) {
   const sanitized: ModelPresetCustomization = {}
 
   const { utilityPrompts, prompts, promptOrder, vendor, ...otherCustomization } = customization
 
-  for (const [key, value] of Object.entries(otherCustomization) as [
-    keyof ModelPreset,
-    any,
-  ][]) {
+  for (const [key, value] of Object.entries(otherCustomization) as [keyof ModelPreset, any][]) {
     if (!isEqual(value, modelPreset[key])) {
       sanitized[key] = value
     }
@@ -181,7 +182,10 @@ export function sanitizeModelPresetCustomization(
           // Update
           const pc: PromptCustomization = {}
 
-          for (const [key, value] of Object.entries(promptCustom) as [keyof NonNullable<PromptCustomization>, any][]) {
+          for (const [key, value] of Object.entries(promptCustom) as [
+            keyof NonNullable<PromptCustomization>,
+            any,
+          ][]) {
             if (!isEqual(value, prompt[key])) {
               if (key === 'injection_position' && !prompt[key] && value === 'relative') {
                 continue
@@ -208,7 +212,12 @@ export function sanitizeModelPresetCustomization(
   }
 
   if (promptOrder) {
-    if (!isEqual(promptOrder, customizedModelPreset.prompts.map(p => p.identifier))) {
+    if (
+      !isEqual(
+        promptOrder,
+        modelPreset.prompts.map((p) => p.identifier),
+      )
+    ) {
       sanitized.promptOrder = promptOrder
     }
   }

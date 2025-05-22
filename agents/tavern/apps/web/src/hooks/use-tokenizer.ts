@@ -7,19 +7,22 @@ import { countTokens } from '@/lib/tokenizer'
 
 export function useTextTokens(text: string) {
   const { activeLanguageModelId } = useActiveLanguageModel()
-  console.log('activeLanguageModelId', activeLanguageModelId)
 
   const [tokens, setTokens] = useState<number>()
 
-  const debouncedCountTokens = useMemo(() => pDebounce(countTokens, debounceTimeout.extended), [])
+  const debouncedCountTokens = useMemo(() => pDebounce(countTokens, debounceTimeout.relaxed), [])
 
   useEffect(() => {
+    if (!text) {
+      setTokens(0)
+      return
+    }
     if (typeof tokens === 'number') {
       void debouncedCountTokens(text, activeLanguageModelId).then(setTokens)
     } else {
       void countTokens(text, activeLanguageModelId).then(setTokens)
     }
-  }, [activeLanguageModelId, text])
+  }, [activeLanguageModelId, text, tokens])
 
   return tokens
 }

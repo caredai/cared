@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-import { Prompt, promptListSchema } from '../prompt'
+import type { Prompt } from '../prompt'
+import { promptListSchema } from '../prompt'
 
 export * from './defaults'
 
@@ -65,7 +66,7 @@ export interface ModelPreset {
    */
   stopSequences?: string[]
   /**
-   The seed (integer) to use for random sampling. If set and supported
+   The seed (integer) to be used for random sampling. If set and supported
    by the model, calls will generate deterministic results.
    */
   seed?: number
@@ -117,13 +118,13 @@ export interface ModelPreset {
 }
 
 export const modelPresetSchema = z.object({
-  maxContext: z.number().optional(),
-  maxTokens: z.number().optional(),
-  temperature: z.number().optional(),
-  topP: z.number().optional(),
-  topK: z.number().optional(),
-  presencePenalty: z.number().optional(),
-  frequencyPenalty: z.number().optional(),
+  maxContext: z.number().int().min(512).max(2000000).optional(),
+  maxTokens: z.number().int().min(0).max(2000000).optional(),
+  temperature: z.number().min(0).max(1).step(0.01).optional(),
+  topP: z.number().min(0).max(1).step(0.01).optional(),
+  topK: z.number().int().min(0).max(500).optional(),
+  presencePenalty: z.number().min(-1).max(1).step(0.01).optional(),
+  frequencyPenalty: z.number().min(-1).max(1).step(0.01).optional(),
   stopSequences: z.array(z.string()).optional(),
   seed: z.number().optional(),
   disableSendingAttachments: z.boolean().optional(),

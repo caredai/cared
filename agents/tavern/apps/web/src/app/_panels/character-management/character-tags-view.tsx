@@ -130,7 +130,7 @@ export function CharacterTagsView() {
                 onClick={() => removeCharTag(tag)}
                 style={{
                   backgroundColor: t?.bgColor,
-                  color: t?.textColor
+                  color: t?.textColor,
                 }}
               >
                 {tag}
@@ -162,7 +162,7 @@ export function CharacterTagsView() {
                       onSelect={() => {
                         void handleSelect(tag, false)
                       }}
-                      className="data-[selected=true]:bg-destructive data-[selected=true]:text-destructive-foreground"
+                      className="data-[selected=true]:bg-background data-[selected=true]:text-foreground"
                     >
                       {tag}
                     </ComboboxItem>
@@ -174,7 +174,7 @@ export function CharacterTagsView() {
                       onSelect={() => {
                         void handleSelect(inputValue.trim(), true)
                       }}
-                      className="data-[selected=true]:bg-destructive data-[selected=true]:text-destructive-foreground"
+                      className="data-[selected=true]:bg-background data-[selected=true]:text-foreground"
                     >
                       {`Create "${inputValue.trim()}"`}
                     </ComboboxItem>

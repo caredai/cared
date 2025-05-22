@@ -24,6 +24,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@ownxai/ui/components/form'
 import { Input } from '@ownxai/ui/components/input'
 import {
@@ -40,6 +41,7 @@ import { Textarea } from '@ownxai/ui/components/textarea'
 import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
 import { useContentAreaRef, useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { useIsCreateCharacter } from '../hooks'
+import { useTextTokens } from '@/hooks/use-tokenizer'
 
 export const characterAdvancedFormSchema = characterCardV2Schema.shape.data
   .pick({
@@ -152,6 +154,13 @@ function CharacterAdvancedFormView({
     setDepthInput(defaultValues.depth_prompt_depth.toString())
   }, [defaultValues])
 
+  const systemPromptTokens = useTextTokens(form.watch('system_prompt'))
+  const postHistoryTokens = useTextTokens(form.watch('post_history_instructions'))
+  const personalityTokens = useTextTokens(form.watch('personality'))
+  const scenarioTokens = useTextTokens(form.watch('scenario'))
+  const characterNoteTokens = useTextTokens(form.watch('depth_prompt_prompt'))
+  const dialogueExampleTokens = useTextTokens(form.watch('mes_example'))
+
   return (
     <Portal.Root
       container={contentAreaRef?.current}
@@ -201,6 +210,9 @@ function CharacterAdvancedFormView({
                         placeholder="Any content here will replace the default main prompt used for this character. You can insert {{original}} anywhere to include the default prompt from system settings."
                       />
                     </FormControl>
+                    <FormDescription className="text-right">
+                      Tokens: {systemPromptTokens ?? 0}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -218,6 +230,9 @@ function CharacterAdvancedFormView({
                         placeholder="Any content here will replace the default post-history instructions used for this character. You can insert {{original}} anywhere to include the default prompt from system settings."
                       />
                     </FormControl>
+                    <FormDescription className="text-right">
+                      Tokens: {postHistoryTokens ?? 0}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -338,6 +353,9 @@ function CharacterAdvancedFormView({
                     placeholder="(A brief description of the personality)"
                   />
                 </FormControl>
+                <FormDescription className="text-right">
+                  Tokens: {personalityTokens ?? 0}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -356,6 +374,9 @@ function CharacterAdvancedFormView({
                     placeholder="(Circumstances and context of the interaction)"
                   />
                 </FormControl>
+                <FormDescription className="text-right">
+                  Tokens: {scenarioTokens ?? 0}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -375,6 +396,9 @@ function CharacterAdvancedFormView({
                       placeholder="(Text to be inserted into chat @ the designated depth and role)"
                     />
                   </FormControl>
+                  <FormDescription className="text-right">
+                    Tokens: {characterNoteTokens ?? 0}
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -490,6 +514,9 @@ function CharacterAdvancedFormView({
                     placeholder="(Examples of chat dialog. Begin each example with <START> on a new line.)"
                   />
                 </FormControl>
+                <FormDescription className="text-right">
+                  Tokens: {dialogueExampleTokens ?? 0}
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

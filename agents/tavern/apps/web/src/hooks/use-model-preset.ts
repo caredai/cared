@@ -1,5 +1,5 @@
 import type { ModelPreset, ModelPresetCustomization } from '@tavern/core'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { modelPresetWithCustomization, sanitizeModelPresetCustomization } from '@tavern/core'
 import pDebounce from 'p-debounce'
@@ -33,13 +33,21 @@ export function useActiveModelPreset() {
   // Find the active preset by name
   let activePreset = modelPresets.find((preset) => preset.name === modelPresetSettings.preset)
 
-  const setActivePreset = async (preset: string) => {
-    await updateModelPresetSettings({ preset })
-  }
+  const setActivePreset = useCallback(
+    async (preset: string) => {
+      await updateModelPresetSettings({ preset })
+    },
+    [updateModelPresetSettings],
+  )
+
+  useEffect(() => {
+    if (!activePreset) {
+      void setActivePreset(modelPresets[0]!.name)
+    }
+  }, [modelPresets, activePreset, setActivePreset])
 
   // If the active preset doesn't exist, use the first preset and update settings
   if (!activePreset) {
-    void setActivePreset(modelPresets[0]!.name)
     activePreset = modelPresets[0]!
   }
 
@@ -197,18 +205,11 @@ export function useCustomizeModelPreset() {
       }
 
       // Check whether the customization is valid
-      const customizedModelPreset = modelPresetWithCustomization(
-        activePreset.preset,
-        newCustomization,
-      )
+      let _ = modelPresetWithCustomization(activePreset.preset, newCustomization)
       // Sanitize the customization
-      newCustomization = sanitizeModelPresetCustomization(
-        newCustomization,
-        activePreset.preset,
-        customizedModelPreset,
-      )
+      newCustomization = sanitizeModelPresetCustomization(newCustomization, activePreset.preset)
       // Check again
-      const _ = modelPresetWithCustomization(activePreset.preset, newCustomization)
+      _ = modelPresetWithCustomization(activePreset.preset, newCustomization)
 
       if (hash(newCustomization) === hash(customization)) {
         // No changes detected, do not update
@@ -250,10 +251,70 @@ export function useCustomizeModelPreset() {
     ])
   }, [activePreset, modelPresetSettings, updateModelPreset, updateModelPresetSettings])
 
+  const restoreModelPreset = useCallback(async () => {
+    const { [activePreset.name]: customization, ...customizations } =
+      modelPresetSettings.customizations ?? {}
+
+    if (!customization) {
+      return
+    }
+
+    await updateModelPresetSettings({
+      // Delete the customization for the model preset
+      customizations,
+    })
+  }, [activePreset, modelPresetSettings, updateModelPresetSettings])
+
+  const hasPromptsCustomization = useMemo(() => {
+    return Boolean(customization?.prompts ?? customization?.promptOrder)
+  }, [customization])
+
+  const restoreModelPresetPrompts = useCallback(async () => {
+    if (!hasPromptsCustomization) {
+      return
+    }
+
+    await saveCustomization({
+      prompts: undefined,
+      promptOrder: undefined,
+    })
+  }, [hasPromptsCustomization, saveCustomization])
+
   return {
-    activeCustomizedPreset: activeCustomizedPreset,
+    activeCustomizedPreset,
     customization,
     saveCustomization,
     updateModelPresetWithCustomization,
+    restoreModelPreset,
+    hasPromptsCustomization,
+    restoreModelPresetPrompts,
   }
+}
+
+export function useDeleteModelPreset() {
+  const trpc = useTRPC()
+  const { refetchModelPresets } = useModelPresets()
+
+  const deleteMutation = useMutation(
+    trpc.modelPreset.delete.mutationOptions({
+      onSuccess: () => {
+        void refetchModelPresets()
+      },
+      onError: (error) => {
+        toast.error(`Failed to delete model preset: ${error.message}`)
+      },
+    }),
+  )
+
+  const { restoreModelPreset } = useCustomizeModelPreset()
+
+  return useCallback(async (id: string) => {
+    return await Promise.all([
+      restoreModelPreset(),
+      deleteMutation.mutateAsync({
+        id,
+      }),
+    ])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 }

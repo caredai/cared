@@ -12,12 +12,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@ownxai/ui/components/form'
 import { Input } from '@ownxai/ui/components/input'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
 import { useIsCreateCharacter } from '../hooks'
+import { useTextTokens } from '@/hooks/use-tokenizer'
 
 export const characterBasicFormSchema = characterCardV2Schema.shape.data.pick({
   name: true,
@@ -79,6 +81,9 @@ export function CharacterBasicFormView({
   onChange: (values: CharacterBasicFormValues) => void
   forCreate?: boolean
 }) {
+  const descriptionTokens = useTextTokens(form.watch('description'))
+  const firstMessageTokens = useTextTokens(form.watch('first_mes'))
+
   return (
     <Form {...form}>
       <form className="flex flex-col gap-6" onBlur={() => onChange(form.getValues())}>
@@ -127,6 +132,9 @@ export function CharacterBasicFormView({
                   placeholder="Describe your character's physical and mental traits here."
                 />
               </FormControl>
+              <FormDescription className="text-right">
+                Tokens: {descriptionTokens ?? 0}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -145,6 +153,9 @@ export function CharacterBasicFormView({
                   placeholder="This will be the first message from the character that starts every chat."
                 />
               </FormControl>
+              <FormDescription className="text-right">
+                Tokens: {firstMessageTokens ?? 0}
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

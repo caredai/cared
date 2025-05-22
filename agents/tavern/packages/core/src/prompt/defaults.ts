@@ -6,7 +6,7 @@ export const default_impersonation_prompt =
   "[Write your next reply from the point of view of {{user}}, using the chat history so far as a guideline for the writing style of {{user}}. Don't write as {{char}} or system. Don't describe actions of {{char}}.]"
 export const default_enhance_definitions_prompt =
   "If you have more knowledge of {{char}}, add to the character's lore and personality to enhance them but keep the Character Sheet's definitions absolute."
-export const default_wi_format = '{0}'
+export const default_wi_format = '[Details of the fictional world the RP is set in:\n{0}]'
 export const default_new_chat_prompt = '[Start a new Chat]'
 export const default_new_group_chat_prompt = '[Start a new group chat. Group members: {{group}}]'
 export const default_new_example_chat_prompt = '[Example Chat]'
