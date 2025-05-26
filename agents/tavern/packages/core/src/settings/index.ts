@@ -2,11 +2,13 @@ import { z } from 'zod'
 
 import type { AppearanceSettings } from './appearance'
 import type { BackgroundSettings } from './background'
+import type { LorebookSettings } from './lorebook'
 import type { ModelSettings } from './model'
 import type { ModelPresetSettings } from './model-preset'
 import type { TagsSettings } from './tags'
 import { appearanceSettingsSchema, fillInAppearanceSettingsWithDefaults } from './appearance'
 import { backgroundSettingsSchema, fillInBackgroundSettingsWithDefaults } from './background'
+import { fillInLorebookSettingsWithDefaults, lorebookSettingsSchema } from './lorebook'
 import { fillInModelSettingsWithDefaults, modelSettingsSchema } from './model'
 import { fillInModelPresetSettingsWithDefaults, modelPresetSettingsSchema } from './model-preset'
 import { fillInTagsSettingsWithDefaults, tagsSettingsSchema } from './tags'
@@ -16,6 +18,7 @@ export * from './theme'
 export * from './model-preset'
 export * from './tags'
 export * from './model'
+export * from './lorebook'
 
 export interface Settings {
   firstRun: boolean
@@ -24,6 +27,7 @@ export interface Settings {
   tags: TagsSettings
   modelPreset: ModelPresetSettings
   model: ModelSettings
+  lorebook: LorebookSettings
 }
 
 export const settingsSchema = z.object({
@@ -33,6 +37,7 @@ export const settingsSchema = z.object({
   tags: tagsSettingsSchema,
   modelPreset: modelPresetSettingsSchema,
   model: modelSettingsSchema,
+  lorebook: lorebookSettingsSchema,
 })
 
 export function fillInSettingsWithDefaults(settings: Partial<Settings>): Settings {
@@ -43,5 +48,6 @@ export function fillInSettingsWithDefaults(settings: Partial<Settings>): Setting
     tags: fillInTagsSettingsWithDefaults(settings.tags),
     modelPreset: fillInModelPresetSettingsWithDefaults(settings.modelPreset),
     model: fillInModelSettingsWithDefaults(settings.model),
+    lorebook: fillInLorebookSettingsWithDefaults(settings.lorebook),
   }
 }

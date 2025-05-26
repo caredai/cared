@@ -1,0 +1,53 @@
+import { z } from 'zod'
+
+export interface LorebookSettings {
+  scanDepth: number
+  context: number
+  budgetCap: number
+  minActivations: number
+  maxDepth: number
+  maxRecursionSteps: number
+  insertionStrategy: 'evenly' | 'character_first' | 'global_first'
+  includeNames: boolean
+  recursiveScan: boolean
+  caseSensitive: boolean
+  matchWholeWords: boolean
+  useGroupScoring: boolean
+  alertOnOverflow: boolean
+}
+
+export const lorebookSettingsSchema = z.object({
+  scanDepth: z.number().int().min(0).max(100),
+  context: z.number().int().min(1).max(100),
+  budgetCap: z.number().int().min(0).max(8192),
+  minActivations: z.number().int().min(0).max(100),
+  maxDepth: z.number().int().min(0).max(100),
+  maxRecursionSteps: z.number().int().min(0).max(10),
+  insertionStrategy: z.enum(['evenly', 'character_first', 'global_first']),
+  includeNames: z.boolean(),
+  recursiveScan: z.boolean(),
+  caseSensitive: z.boolean(),
+  matchWholeWords: z.boolean(),
+  useGroupScoring: z.boolean(),
+  alertOnOverflow: z.boolean(),
+})
+
+export function fillInLorebookSettingsWithDefaults(settings?: LorebookSettings): LorebookSettings {
+  return (
+    settings ?? {
+      scanDepth: 2,
+      context: 25,
+      budgetCap: 0,
+      minActivations: 0,
+      maxDepth: 0,
+      maxRecursionSteps: 0,
+      insertionStrategy: 'character_first',
+      includeNames: true,
+      recursiveScan: true,
+      caseSensitive: false,
+      matchWholeWords: true,
+      useGroupScoring: false,
+      alertOnOverflow: false,
+    }
+  )
+}

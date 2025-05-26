@@ -176,3 +176,32 @@ export function useUpdateModelSettings() {
     [modelSettings],
   )
 }
+
+export function useLorebookSettings() {
+  const trpc = useTRPC()
+  const { data } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+    select: useCallback(({ settings }: { settings: Settings }) => settings.lorebook, []),
+  })
+  return data
+}
+
+export function useUpdateLorebookSettings() {
+  const lorebookSettings = useLorebookSettings()
+  const updateSettingsMutation = useUpdateSettingsMutation()
+
+  return useCallback(
+    async (lorebook: Partial<Settings['lorebook']>) => {
+      await updateSettingsMutation.mutateAsync({
+        settings: {
+          lorebook: {
+            ...lorebookSettings,
+            ...lorebook,
+          },
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [lorebookSettings],
+  )
+}

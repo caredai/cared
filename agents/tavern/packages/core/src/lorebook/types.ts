@@ -16,6 +16,8 @@ export interface LorebookContent {
  * Lorebook entry interface
  */
 export interface LorebookEntry {
+  /** Controls whether the entry is currently disabled */
+  disabled: boolean
   /** An array of primary keys associated with the entry */
   keys: string[]
   /** An array of secondary keys associated with the entry (optional) */
@@ -28,17 +30,12 @@ export interface LorebookEntry {
   constant: boolean
   /** Indicates if the extension is optimized for vectorized processing */
   vectorized: boolean
-  /** Indicates if the entry's inclusion is controlled by specific conditions */
-  selective: boolean
   /** Defines the logic used to determine if the extension is applied selectively */
-  selectiveLogic: LorebookLogic
-  addMemo: boolean
+  selectiveLogic: SelectiveLogic
   /** Defines the order in which the entry is inserted during processing */
   order: number
   /** Specifies the location where the entry applies */
-  position: number
-  /** Controls whether the entry is currently disabled */
-  disabled: boolean
+  position: Position
   /** Prevents the extension from being applied recursively */
   excludeRecursion: boolean
   /** Completely disallows recursive application of the extension */
@@ -47,8 +44,6 @@ export interface LorebookEntry {
   delayUntilRecursion: boolean
   /** The chance (between 0 and 1) of the extension being applied */
   probability: number
-  /** Determines if the `probability` property is used */
-  useProbability: boolean
   /** The maximum level of nesting allowed for recursive application of the extension */
   depth: number
   /** A category or grouping for the extension */
@@ -57,7 +52,13 @@ export interface LorebookEntry {
   groupOverride: boolean
   /** A value used for prioritizing extensions within the same group */
   groupWeight: number
-  /** The maximum depth to search for matches when applying the extension */
+  /** The entry stays active for N messages after being activated. Stickied entries ignore probability checks on consequent scans until they expire. */
+  sticky: number
+  /** The entry can't be activated for N messages after being activated. Can be used together with sticky: the entry goes on cooldown when the sticky duration ends. */
+  cooldown: number
+  /** The entry can't be activated unless there are at least N messages in the chat at the moment of evaluation. */
+  delay: number
+  /** Defines how many messages in the chat history should be scanned for World Info keys. */
   scanDepth: number
   /** Controls whether case sensitivity is applied during matching for the extension */
   caseSensitive: boolean
@@ -68,48 +69,73 @@ export interface LorebookEntry {
   /** An identifier used for automation purposes related to the extension */
   automationId: string
   /** The specific function or purpose of the extension */
-  role: number
-  sticky?: number
-  cooldown?: number
-  delay?: number
+  role?: 'system' | 'user' | 'assistant'
+  characterFilter?: {
+    isExclude: boolean
+    names: string[]
+    tags: string[]
+  }
+  /** Indicates if the entry's inclusion is controlled by specific conditions */
+  selective: boolean
+  /** Determines if the `probability` property is used */
+  useProbability: boolean
+  /** Whether the comment should be added to the entry */
+  addMemo: boolean
 }
 
-export enum LorebookLogic {
+export enum SelectiveLogic {
   AND_ANY = 'andAny',
   NOT_ALL = 'notAll',
   NOT_ANY = 'notAny',
   AND_ALL = 'andAll',
 }
 
+export enum Position {
+  Before = 0, // Before Char Defs
+  After = 1, // After Char Defs
+  ANTop = 2, // Top of AN (Author's Note)
+  ANBottom = 3, // Bottom of AN
+  AtDepth = 4, // @ Depth
+  EMTop = 5, // Before Example Messages
+  EMBottom = 6, // After Example Messages
+}
+
 export const lorebookEntrySchema = z.object({
+  disabled: z.boolean(),
   keys: z.array(z.string()),
   secondaryKeys: z.array(z.string()).optional(),
   comment: z.string(),
   content: z.string(),
   constant: z.boolean(),
   vectorized: z.boolean(),
-  selective: z.boolean(),
-  selectiveLogic: z.nativeEnum(LorebookLogic),
-  addMemo: z.boolean(),
+  selectiveLogic: z.nativeEnum(SelectiveLogic),
   order: z.number(),
-  position: z.number(),
-  disabled: z.boolean(),
+  position: z.nativeEnum(Position),
   excludeRecursion: z.boolean(),
   preventRecursion: z.boolean(),
   delayUntilRecursion: z.boolean(),
   probability: z.number(),
-  useProbability: z.boolean(),
   depth: z.number(),
   group: z.string(),
   groupOverride: z.boolean(),
   groupWeight: z.number(),
+  sticky: z.number(),
+  cooldown: z.number(),
+  delay: z.number(),
   scanDepth: z.number(),
   caseSensitive: z.boolean(),
   matchWholeWords: z.boolean(),
   useGroupScoring: z.boolean(),
   automationId: z.string(),
-  role: z.number(),
-  sticky: z.number().optional(),
-  cooldown: z.number().optional(),
-  delay: z.number().optional(),
+  role: z.enum(['system', 'user', 'assistant']).optional(),
+  characterFilter: z
+    .object({
+      isExclude: z.boolean(),
+      names: z.array(z.string()),
+      tags: z.array(z.string()),
+    })
+    .optional(),
+  selective: z.boolean(),
+  useProbability: z.boolean(),
+  addMemo: z.boolean(),
 })
