@@ -36,3 +36,13 @@ export async function measure<T>(
 
   return [executionTime, result]
 }
+
+export function omitUserId<
+  T extends {
+    userId: string
+    [key: string]: any
+  },
+>(obj: T): Omit<T, 'userId'> {
+  const { userId: _, ...rest } = obj
+  return rest
+}

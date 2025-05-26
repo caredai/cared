@@ -2,7 +2,7 @@ import path from 'path'
 import type { LorebookContent } from '@tavern/core'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { lorebookEntrySchema, lorebookUpdatesSchema, updateLorebook } from '@tavern/core'
-import { and, eq } from '@tavern/db'
+import { and, desc, eq } from '@tavern/db'
 import { Lorebook } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import sanitize from 'sanitize-filename'
@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { env } from '../env'
 import { s3Client } from '../s3'
 import { userProtectedProcedure } from '../trpc'
+import { omitUserId } from '../utils'
 
 export async function uploadLorebook(content: LorebookContent) {
   let name = content.name
@@ -28,27 +29,45 @@ export async function uploadLorebook(content: LorebookContent) {
 }
 
 export const lorebookRouter = {
-  list: userProtectedProcedure.query(async ({ ctx }) => {
-    const lorebooks = await ctx.db.query.Lorebook.findMany({
-      // Omit `entries` field since it may be too big.
-      columns: {
-        id: true,
-        userId: true,
-        name: true,
-        description: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      where: eq(Lorebook.userId, ctx.auth.userId),
-    })
-    return { lorebooks }
-  }),
+  list: userProtectedProcedure
+    .input(
+      z
+        .object({
+          includeEntries: z.boolean().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const lorebooks = await ctx.db.query.Lorebook.findMany({
+        columns: {
+          id: true,
+          name: true,
+          description: true,
+          // Default to omitting `entries` field since it may be too big.
+          entries: !!input?.includeEntries,
+          metadata: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        where: eq(Lorebook.userId, ctx.auth.userId),
+        orderBy: desc(Lorebook.id),
+      })
+      return { lorebooks } as {
+        lorebooks: (Omit<Lorebook, 'userId' | 'entries'> & Partial<Pick<Lorebook, 'entries'>>)[]
+      }
+    }),
 
   get: userProtectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
     const lorebook = await ctx.db.query.Lorebook.findFirst({
       where: and(eq(Lorebook.id, input.id), eq(Lorebook.userId, ctx.auth.userId)),
     })
-    return { lorebook }
+    if (!lorebook) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Lorebook not found',
+      })
+    }
+    return { lorebook: omitUserId(lorebook) }
   }),
 
   create: userProtectedProcedure
@@ -69,7 +88,7 @@ export const lorebookRouter = {
           entries: input.entries ?? [],
         })
         .returning()
-      return { lorebook: lorebook! }
+      return { lorebook: omitUserId(lorebook!) }
     }),
 
   update: userProtectedProcedure
@@ -100,7 +119,7 @@ export const lorebookRouter = {
 
       await ctx.db.update(Lorebook).set(result.updates).where(eq(Lorebook.id, input.id))
 
-      // Do not return lorebook here
+      // Do not return lorebook here since it may be too big.
     }),
 
   delete: userProtectedProcedure
@@ -110,7 +129,10 @@ export const lorebookRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [lorebook] = await ctx.db.delete(Lorebook).where(eq(Lorebook.id, input.id)).returning()
+      const [lorebook] = await ctx.db
+        .delete(Lorebook)
+        .where(and(eq(Lorebook.id, input.id), eq(Lorebook.userId, ctx.auth.userId)))
+        .returning()
       if (!lorebook) {
         throw new TRPCError({
           code: 'NOT_FOUND',

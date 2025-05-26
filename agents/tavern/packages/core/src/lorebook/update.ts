@@ -31,9 +31,11 @@ export const lorebookUpdatesSchema = z
   )
   .min(1)
 
+export type LorebookUpdates = z.infer<typeof lorebookUpdatesSchema>
+
 export function updateLorebook(
   lorebook: LorebookContent,
-  updates: z.infer<typeof lorebookUpdatesSchema>,
+  updates: LorebookUpdates,
 ):
   | {
       updates: Partial<LorebookContent>
