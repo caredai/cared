@@ -17,7 +17,7 @@ export function CharacterManagementHeader() {
     <div className="flex flex-row items-center justify-between gap-2">
       <div className="flex flex-col gap-1">
         <FaButton
-          icon={appearanceSettings.rightNavPanelLocked ? faLock : faUnlock}
+          icon={appearanceSettings.characterPanelLocked ? faLock : faUnlock}
           btnSize="size-6"
           iconSize="xl"
           title="If locked, character management panel will stay open"
@@ -26,7 +26,7 @@ export function CharacterManagementHeader() {
               settings: {
                 appearance: {
                   ...appearanceSettings,
-                  rightNavPanelLocked: !appearanceSettings.rightNavPanelLocked,
+                  characterPanelLocked: !appearanceSettings.characterPanelLocked,
                 },
               },
             })

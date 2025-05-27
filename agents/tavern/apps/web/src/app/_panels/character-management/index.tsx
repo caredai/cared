@@ -17,7 +17,7 @@ export function CharacterManagementPanel() {
   const setShowCharacterList = useSetShowCharacterList()
 
   return (
-    <div className="flex flex-col gap-2 h-full overflow-hidden">
+    <div className="flex flex-col gap-2 h-full p-1.5 pr-0 overflow-hidden">
       <CharacterManagementHeader />
 
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />

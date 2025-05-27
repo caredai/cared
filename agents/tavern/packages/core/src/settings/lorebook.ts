@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 export interface LorebookSettings {
+  active: string[] // active lorebooks for all chats
+
   scanDepth: number
   context: number
   budgetCap: number
@@ -17,6 +19,8 @@ export interface LorebookSettings {
 }
 
 export const lorebookSettingsSchema = z.object({
+  active: z.array(z.string()),
+
   scanDepth: z.number().int().min(0).max(100),
   context: z.number().int().min(1).max(100),
   budgetCap: z.number().int().min(0).max(8192),
@@ -34,7 +38,12 @@ export const lorebookSettingsSchema = z.object({
 
 export function fillInLorebookSettingsWithDefaults(settings?: LorebookSettings): LorebookSettings {
   return (
-    settings ?? {
+    settings ? {
+      ...settings,
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      active: settings.active ?? [],
+    }: {
+      active: [],
       scanDepth: 2,
       context: 25,
       budgetCap: 0,

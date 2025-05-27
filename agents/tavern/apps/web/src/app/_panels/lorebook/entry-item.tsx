@@ -110,12 +110,10 @@ export function EntryItemEdit({
     <Collapsible>
       <CollapsibleTrigger asChild>
         <div className="flex justify-between items-center cursor-pointer [&[data-state=open]>button>svg]:rotate-180">
-          <FormLabel className="cursor-pointer">
-            <div className="flex items-center gap-1">
-              Entry Settings
-              <Tooltip content="Configure entry settings and parameters" icon={HelpCircle} />
-            </div>
-          </FormLabel>
+          <div className="flex items-center gap-1">
+            Entry Settings
+            <Tooltip content="Configure entry settings and parameters" icon={HelpCircle} />
+          </div>
           <Button type="button" variant="outline" size="icon" className="size-6">
             <ChevronDownIcon className="transition-transform duration-200" />
           </Button>

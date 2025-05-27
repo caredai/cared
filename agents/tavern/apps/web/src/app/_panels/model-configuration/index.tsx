@@ -179,10 +179,10 @@ export function ModelConfigurationPanel() {
   ]
 
   return (
-    <div className="flex flex-col gap-2 px-2">
+    <div className="flex flex-col gap-2 px-2 py-1.5">
       <div className="flex flex-row items-center justify-between gap-4 m-[1px]">
         <FaButton
-          icon={appearanceSettings.leftNavPanelLocked ? faLock : faUnlock}
+          icon={appearanceSettings.modelPresetPanelLocked ? faLock : faUnlock}
           btnSize="size-6"
           iconSize="xl"
           title="If locked, character management panel will stay open"
@@ -191,7 +191,7 @@ export function ModelConfigurationPanel() {
               settings: {
                 appearance: {
                   ...appearanceSettings,
-                  leftNavPanelLocked: !appearanceSettings.leftNavPanelLocked,
+                  modelPresetPanelLocked: !appearanceSettings.modelPresetPanelLocked,
                 },
               },
             })
@@ -339,7 +339,7 @@ function SaveAsDialog({
           >
             {isSaving ? (
               <>
-                <CircleSpinner className="mr-2" />
+                <CircleSpinner />
                 Saving...
               </>
             ) : (
@@ -445,7 +445,7 @@ function DeleteDialog({
           <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
             {isDeleting ? (
               <>
-                <CircleSpinner className="mr-2" />
+                <CircleSpinner />
                 Deleting...
               </>
             ) : (

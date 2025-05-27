@@ -1,8 +1,9 @@
 import { z } from 'zod'
 
 export interface AppearanceSettings {
-  leftNavPanelLocked: boolean
-  rightNavPanelLocked: boolean
+  modelPresetPanelLocked: boolean
+  characterPanelLocked: boolean
+  lorebookPanelLocked: boolean
 
   movingUI?:
     | { enabled: false }
@@ -25,8 +26,9 @@ export interface AppearanceSettings {
 const movingUIPanels = ['left-nav-panel', 'right-nav-panel'] as const
 
 export const appearanceSettingsSchema = z.object({
-  leftNavPanelLocked: z.boolean(),
-  rightNavPanelLocked: z.boolean(),
+  modelPresetPanelLocked: z.boolean(),
+  characterPanelLocked: z.boolean(),
+  lorebookPanelLocked: z.boolean(),
   movingUI: z
     .discriminatedUnion('enabled', [
       z.object({ enabled: z.literal(false) }),
@@ -51,8 +53,9 @@ export const appearanceSettingsSchema = z.object({
 export function fillInAppearanceSettingsWithDefaults(settings?: AppearanceSettings) {
   return (
     settings ?? {
-      leftNavPanelLocked: false,
-      rightNavPanelLocked: false,
+      modelPresetPanelLocked: false,
+      characterPanelLocked: false,
+      lorebookPanelLocked: false,
       movingUI: undefined,
     }
   )

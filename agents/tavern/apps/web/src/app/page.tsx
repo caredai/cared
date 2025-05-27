@@ -15,6 +15,11 @@ export default async function Page() {
   prefetch(trpc.characterGroup.list.queryOptions())
   prefetch(trpc.modelPreset.list.queryOptions())
   prefetch(trpc.model.list.queryOptions())
+  prefetch(
+    trpc.lorebook.list.queryOptions({
+      includeEntries: true,
+    }),
+  )
 
   return (
     <HydrateClient>

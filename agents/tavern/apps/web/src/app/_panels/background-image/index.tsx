@@ -65,7 +65,7 @@ export function BackgroundImagePanel() {
   )
 
   return (
-    <div className="flex flex-col gap-4 h-full">
+    <div className="flex flex-col gap-4 h-full p-1.5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Background Image</h2>

@@ -31,16 +31,14 @@ export function useLorebooks() {
 }
 
 export function useLorebook(id: string) {
-  const trpc = useTRPC()
+  const { lorebooks } = useLorebooks()
 
-  const { data } = useSuspenseQuery({
-    ...trpc.lorebook.get.queryOptions({ id }),
-    staleTime: Infinity,
-    gcTime: Infinity,
-  })
+  const lorebook = useMemo(() => {
+    return lorebooks.find((lorebook) => lorebook.id === id)
+  }, [lorebooks, id])
 
   return {
-    lorebook: data.lorebook,
+    lorebook,
   }
 }
 
@@ -51,53 +49,76 @@ export function useCreateLorebook() {
   const createMutation = useMutation(
     trpc.lorebook.create.mutationOptions({
       onMutate: async (newData) => {
-        await queryClient.cancelQueries({ queryKey: trpc.lorebook.list.queryKey() })
+        await queryClient.cancelQueries({
+          queryKey: trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+        })
 
-        const previousData = queryClient.getQueryData(trpc.lorebook.list.queryKey())
+        const previousData = queryClient.getQueryData(
+          trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+        )
 
         // Optimistically add the new lorebook
-        queryClient.setQueryData(trpc.lorebook.list.queryKey(), (old) => {
-          if (!old) {
-            return undefined
-          }
-          const newLorebook = {
-            id: 'temp-id',
-            name: newData.name,
-            description: newData.description ?? null,
-            entries: newData.entries ?? [],
-            metadata: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }
-          return {
-            lorebooks: [newLorebook, ...old.lorebooks],
-          }
-        })
+        queryClient.setQueryData(
+          trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+          (old) => {
+            if (!old) {
+              return undefined
+            }
+            const newLorebook = {
+              id: 'temp-id',
+              name: newData.name,
+              description: newData.description ?? null,
+              entries: newData.entries ?? [],
+              metadata: null,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            }
+            return {
+              lorebooks: [newLorebook, ...old.lorebooks],
+            }
+          },
+        )
 
         return { previousData }
       },
       onError: (error, newData, context) => {
         if (context) {
-          queryClient.setQueryData(trpc.lorebook.list.queryKey(), context.previousData)
+          queryClient.setQueryData(
+            trpc.lorebook.list.queryKey({
+              includeEntries: true,
+            }),
+            context.previousData,
+          )
         }
         console.error('Failed to create lorebook:', error)
         toast.error(`Failed to create lorebook: ${error.message}`)
       },
       onSuccess: (data) => {
         // Update the temporary lorebook with the real one
-        queryClient.setQueryData(trpc.lorebook.list.queryKey(), (old) => {
-          if (!old) {
-            return undefined
-          }
-          const index = old.lorebooks.findIndex((lorebook) => lorebook.id === 'temp-id')
-          return {
-            lorebooks: [
-              ...old.lorebooks.slice(0, index),
-              data.lorebook,
-              ...old.lorebooks.slice(index + 1),
-            ],
-          }
-        })
+        queryClient.setQueryData(
+          trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+          (old) => {
+            if (!old) {
+              return undefined
+            }
+            const index = old.lorebooks.findIndex((lorebook) => lorebook.id === 'temp-id')
+            return {
+              lorebooks: [
+                ...old.lorebooks.slice(0, index),
+                data.lorebook,
+                ...old.lorebooks.slice(index + 1),
+              ],
+            }
+          },
+        )
       },
     }),
   )
@@ -118,33 +139,51 @@ export function useUpdateLorebook() {
 
   const mutationOptions = trpc.lorebook.update.mutationOptions({
     onMutate: async (newData) => {
-      await queryClient.cancelQueries({ queryKey: trpc.lorebook.list.queryKey() })
-
-      const previousData = queryClient.getQueryData(trpc.lorebook.list.queryKey())
-
-      queryClient.setQueryData(trpc.lorebook.list.queryKey(), (old) => {
-        if (!old) {
-          return undefined
-        }
-        const index = old.lorebooks.findIndex((lorebook) => lorebook.id === newData.id)
-        const lorebook = old.lorebooks[index]! as Lorebook
-        return {
-          lorebooks: [
-            ...old.lorebooks.slice(0, index),
-            {
-              ...lorebook,
-              ...updateLorebook(lorebook, newData.updates).updates,
-            },
-            ...old.lorebooks.slice(index + 1),
-          ],
-        }
+      await queryClient.cancelQueries({
+        queryKey: trpc.lorebook.list.queryKey({
+          includeEntries: true,
+        }),
       })
+
+      const previousData = queryClient.getQueryData(
+        trpc.lorebook.list.queryKey({
+          includeEntries: true,
+        }),
+      )
+
+      queryClient.setQueryData(
+        trpc.lorebook.list.queryKey({
+          includeEntries: true,
+        }),
+        (old) => {
+          if (!old) {
+            return undefined
+          }
+          const index = old.lorebooks.findIndex((lorebook) => lorebook.id === newData.id)
+          const lorebook = old.lorebooks[index]! as Lorebook
+          return {
+            lorebooks: [
+              ...old.lorebooks.slice(0, index),
+              {
+                ...lorebook,
+                ...updateLorebook(lorebook, newData.updates).updates,
+              },
+              ...old.lorebooks.slice(index + 1),
+            ],
+          }
+        },
+      )
 
       return { previousData }
     },
     onError: (error, newData, context) => {
       if (context) {
-        queryClient.setQueryData(trpc.lorebook.list.queryKey(), context.previousData)
+        queryClient.setQueryData(
+          trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+          context.previousData,
+        )
       }
       console.error('Failed to update lorebook:', error)
       toast.error(`Failed to update lorebook: ${error.message}`)
@@ -186,25 +225,43 @@ export function useDeleteLorebook() {
   const deleteMutation = useMutation(
     trpc.lorebook.delete.mutationOptions({
       onMutate: async (newData) => {
-        await queryClient.cancelQueries({ queryKey: trpc.lorebook.list.queryKey() })
+        await queryClient.cancelQueries({
+          queryKey: trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+        })
 
-        const previousData = queryClient.getQueryData(trpc.lorebook.list.queryKey())
+        const previousData = queryClient.getQueryData(
+          trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+        )
 
         // Optimistically remove the lorebook
-        queryClient.setQueryData(trpc.lorebook.list.queryKey(), (old) => {
-          if (!old) {
-            return undefined
-          }
-          return {
-            lorebooks: old.lorebooks.filter((lorebook) => lorebook.id !== newData.id),
-          }
-        })
+        queryClient.setQueryData(
+          trpc.lorebook.list.queryKey({
+            includeEntries: true,
+          }),
+          (old) => {
+            if (!old) {
+              return undefined
+            }
+            return {
+              lorebooks: old.lorebooks.filter((lorebook) => lorebook.id !== newData.id),
+            }
+          },
+        )
 
         return { previousData }
       },
       onError: (error, newData, context) => {
         if (context) {
-          queryClient.setQueryData(trpc.lorebook.list.queryKey(), context.previousData)
+          queryClient.setQueryData(
+            trpc.lorebook.list.queryKey({
+              includeEntries: true,
+            }),
+            context.previousData,
+          )
         }
         console.error('Failed to delete lorebook:', error)
         toast.error(`Failed to delete lorebook: ${error.message}`)

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'tailwind-scrollbar-utilities';
 
 @import '../../../../../packages/ui/src/tailwindcss-animate.css';
 
@@ -151,7 +152,6 @@
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
-    scrollbar-gutter: stable;
   }
 
   ::-webkit-scrollbar-track {

@@ -26,12 +26,12 @@ import { useAppearanceSettings } from '@/lib/settings'
 import { BackgroundImagePanel } from '../_panels/background-image'
 import { CharacterManagementPanel } from '../_panels/character-management'
 import { ExtensionsPanel } from '../_panels/extensions'
+import { LorebookPanel } from '../_panels/lorebook'
 import { ModelConfigurationPanel } from '../_panels/model-configuration'
 import { PersonaManagementPanel } from '../_panels/persona-management'
 import { ProviderModelPanel } from '../_panels/provider-model'
 import { ResponseFormattingPanel } from '../_panels/response-formatting'
 import { UserSettingsPanel } from '../_panels/user-settings'
-import { LorebookPanel } from '../_panels/lorebook'
 
 // Define navigation panel configuration
 const navPanels = [
@@ -60,23 +60,29 @@ export function Navbar() {
   useEffect(() => {
     const leftPanelName = navPanels[0].name
     const rightPanelName = navPanels.at(-1)!.name
+    const lorebookPanelName = navPanels.find(panel => panel.name === 'lorebook')!.name
 
     setOpenPanels((prev) => {
       const newSet = new Set(prev)
 
       // Open left panel if locked
-      if (appearanceSettings.leftNavPanelLocked) {
+      if (appearanceSettings.modelPresetPanelLocked) {
         newSet.add(leftPanelName)
       }
 
       // Open right panel if locked
-      if (appearanceSettings.rightNavPanelLocked) {
+      if (appearanceSettings.characterPanelLocked) {
         newSet.add(rightPanelName)
+      }
+
+      // Open lorebook panel if locked
+      if (appearanceSettings.lorebookPanelLocked) {
+        newSet.add(lorebookPanelName)
       }
 
       return newSet
     })
-  }, [appearanceSettings.leftNavPanelLocked, appearanceSettings.rightNavPanelLocked])
+  }, [appearanceSettings.modelPresetPanelLocked, appearanceSettings.characterPanelLocked, appearanceSettings.lorebookPanelLocked])
 
   // Handle click outside
   useEffect(() => {
@@ -115,11 +121,13 @@ export function Navbar() {
           const panelIndex = navPanels.findIndex((panel) => panel.name === panelName)
           const isLeftPanel = panelIndex === 0
           const isRightPanel = panelIndex === navPanels.length - 1
+          const isLorebookPanel = panelName === 'lorebook'
 
           // Don't close the panel if it's locked
           const isLocked =
-            (isLeftPanel && appearanceSettings.leftNavPanelLocked) ||
-            (isRightPanel && appearanceSettings.rightNavPanelLocked)
+            (isLeftPanel && appearanceSettings.modelPresetPanelLocked) ||
+            (isRightPanel && appearanceSettings.characterPanelLocked) ||
+            (isLorebookPanel && appearanceSettings.lorebookPanelLocked)
 
           // Close panel only if click is outside both panel and trigger, and the panel is not locked
           if (!isWithinPanel && !isWithinTrigger && !isLocked) {
@@ -139,8 +147,9 @@ export function Navbar() {
     }
   }, [
     openPanels,
-    appearanceSettings.leftNavPanelLocked,
-    appearanceSettings.rightNavPanelLocked,
+    appearanceSettings.modelPresetPanelLocked,
+    appearanceSettings.characterPanelLocked,
+    appearanceSettings.lorebookPanelLocked,
     navPanels,
   ])
 
@@ -157,9 +166,11 @@ export function Navbar() {
           const idx = navPanels.findIndex((panel) => panel.name === panelName)
           const isPanelLeft = idx === 0
           const isPanelRight = idx === navPanels.length - 1
+          const isPanelLorebook = panelName === 'lorebook'
           const isPanelLocked =
-            (isPanelLeft && appearanceSettings.leftNavPanelLocked) ||
-            (isPanelRight && appearanceSettings.rightNavPanelLocked)
+            (isPanelLeft && appearanceSettings.modelPresetPanelLocked) ||
+            (isPanelRight && appearanceSettings.characterPanelLocked) ||
+            (isPanelLorebook && appearanceSettings.lorebookPanelLocked)
 
           if (!isPanelLocked) {
             newSet.delete(panelName)
@@ -199,16 +210,30 @@ export function Navbar() {
               className={cn(
                 'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
                 'bg-background border border-border rounded-lg shadow-lg',
-                'absolute top-[35px] left-0 right-0 w-full p-1.5',
-                'max-h-[calc(100dvh-calc(35px))] overflow-y-auto',
+                'absolute top-[35px] left-0 right-0 w-full',
+                'max-h-[calc(100dvh-calc(70px))] overflow-y-auto scrollbar-stable',
                 (index === 0 || index === navPanels.length - 1) &&
-                  'lg:fixed lg:top-0 lg:w-[calc(25%-1px)] h-full',
+                  'max-h-[calc(100dvh-calc(35px))] lg:fixed lg:top-0 lg:w-[calc(25%-1px)] h-full',
                 index === 0
                   ? 'lg:right-auto'
                   : index === navPanels.length - 1
                     ? 'lg:left-auto'
                     : undefined,
               )}
+              onAnimationStart={(e) => {
+                if (index === 0 || index === navPanels.length - 1) {
+                  return
+                }
+                const target = e.target as HTMLElement
+                target.style.overflow = 'hidden'
+              }}
+              onAnimationEnd={(e) => {
+                if (index === 0 || index === navPanels.length - 1) {
+                  return
+                }
+                const target = e.target as HTMLElement
+                target.style.overflow = ''
+              }}
             >
               <Panel />
             </CollapsibleContent>
