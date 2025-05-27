@@ -20,12 +20,12 @@ export const lorebookUpdatesSchema = z
       }),
       z.object({
         type: z.literal('updateEntry'),
-        index: z.number().int().nonnegative(),
+        uid: z.number().int().min(0),
         entry: lorebookEntrySchema,
       }),
       z.object({
         type: z.literal('removeEntry'),
-        index: z.number().int().nonnegative(),
+        uid: z.number().int().min(0),
       }),
     ]),
   )
@@ -58,20 +58,24 @@ export function updateLorebook(
         lorebook.entries.push(update.entry)
         result.entries = lorebook.entries
         break
-      case 'updateEntry':
-        if (update.index >= lorebook.entries.length) {
-          return { error: `Updating index out of range: ${update.index}` }
+      case 'updateEntry': {
+        const index = lorebook.entries.findIndex(entry => entry.uid === update.uid)
+        if (index === -1) {
+          return { error: `Entry with uid ${update.uid} not found` }
         }
-        lorebook.entries[update.index] = update.entry
+        lorebook.entries[index] = update.entry
         result.entries = lorebook.entries
         break
-      case 'removeEntry':
-        if (update.index >= lorebook.entries.length) {
-          return { error: `Removing index out of range: ${update.index}` }
+      }
+      case 'removeEntry': {
+        const index = lorebook.entries.findIndex(entry => entry.uid === update.uid)
+        if (index === -1) {
+          return { error: `Entry with uid ${update.uid} not found` }
         }
-        lorebook.entries.splice(update.index, 1)
+        lorebook.entries.splice(index, 1)
         result.entries = lorebook.entries
         break
+      }
     }
   }
 

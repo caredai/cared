@@ -16,6 +16,8 @@ export interface LorebookContent {
  * Lorebook entry interface
  */
 export interface LorebookEntry {
+  /** Unique identifier for the entry */
+  uid: number
   /** Controls whether the entry is currently disabled */
   disabled: boolean
   /** An array of primary keys associated with the entry */
@@ -101,6 +103,7 @@ export enum Position {
 }
 
 export const lorebookEntrySchema = z.object({
+  uid: z.number().int().min(0),
   disabled: z.boolean(),
   keys: z.array(z.string()),
   secondaryKeys: z.array(z.string()).optional(),

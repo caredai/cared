@@ -31,14 +31,14 @@ import { PersonaManagementPanel } from '../_panels/persona-management'
 import { ProviderModelPanel } from '../_panels/provider-model'
 import { ResponseFormattingPanel } from '../_panels/response-formatting'
 import { UserSettingsPanel } from '../_panels/user-settings'
-import { WorldInfoPanel } from '../_panels/world-info'
+import { LorebookPanel } from '../_panels/lorebook'
 
 // Define navigation panel configuration
 const navPanels = [
   { icon: faSliders, name: 'response-configuration', panel: ModelConfigurationPanel },
   { icon: faPlug, name: 'provider-model', panel: ProviderModelPanel },
   { icon: faFont, name: 'response-formatting', panel: ResponseFormattingPanel },
-  { icon: faBookAtlas, name: 'world-info', panel: WorldInfoPanel },
+  { icon: faBookAtlas, name: 'lorebook', panel: LorebookPanel },
   { icon: faUserCog, name: 'user-settings', panel: UserSettingsPanel },
   { icon: faPanorama, name: 'background-image', panel: BackgroundImagePanel },
   { icon: faCubes, name: 'extensions', panel: ExtensionsPanel },
