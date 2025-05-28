@@ -47,7 +47,7 @@ export interface LorebookEntry {
   /** The chance (between 0 and 1) of the extension being applied */
   probability: number
   /** The maximum level of nesting allowed for recursive application of the extension */
-  depth: number
+  depth?: number
   /** A category or grouping for the extension */
   group: string
   /** Overrides any existing group assignment for the extension */
@@ -61,15 +61,15 @@ export interface LorebookEntry {
   /** The entry can't be activated unless there are at least N messages in the chat at the moment of evaluation. */
   delay: number
   /** Defines how many messages in the chat history should be scanned for World Info keys. */
-  scanDepth: number
+  scanDepth?: number
   /** Controls whether case sensitivity is applied during matching for the extension */
-  caseSensitive: boolean
+  caseSensitive?: boolean
   /** Specifies if only entire words should be matched during extension application */
-  matchWholeWords: boolean
+  matchWholeWords?: boolean
   /** Indicates if group weight is considered when selecting extensions */
-  useGroupScoring: boolean
+  useGroupScoring?: boolean
   /** An identifier used for automation purposes related to the extension */
-  automationId: string
+  automationId?: string
   /** The specific function or purpose of the extension */
   role?: 'system' | 'user' | 'assistant'
   characterFilter?: {
@@ -112,24 +112,24 @@ export const lorebookEntrySchema = z.object({
   constant: z.boolean(),
   vectorized: z.boolean(),
   selectiveLogic: z.nativeEnum(SelectiveLogic),
-  order: z.number(),
+  order: z.number().int().min(0).step(1),
   position: z.nativeEnum(Position),
   excludeRecursion: z.boolean(),
   preventRecursion: z.boolean(),
   delayUntilRecursion: z.boolean(),
-  probability: z.number(),
-  depth: z.number(),
+  probability: z.number().int().min(0).max(100).step(1),
+  depth: z.number().int().min(0).step(1).optional(),
   group: z.string(),
   groupOverride: z.boolean(),
-  groupWeight: z.number(),
-  sticky: z.number(),
-  cooldown: z.number(),
-  delay: z.number(),
-  scanDepth: z.number(),
-  caseSensitive: z.boolean(),
-  matchWholeWords: z.boolean(),
-  useGroupScoring: z.boolean(),
-  automationId: z.string(),
+  groupWeight: z.number().int().min(1).step(1),
+  sticky: z.number().int().min(0).step(1),
+  cooldown: z.number().int().min(0).step(1),
+  delay: z.number().int().min(0).step(1),
+  scanDepth: z.number().int().min(0).max(1000).step(1).optional(),
+  caseSensitive: z.boolean().optional(),
+  matchWholeWords: z.boolean().optional(),
+  useGroupScoring: z.boolean().optional(),
+  automationId: z.string().optional(),
   role: z.enum(['system', 'user', 'assistant']).optional(),
   characterFilter: z
     .object({

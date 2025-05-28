@@ -173,7 +173,6 @@ export function ModelConf() {
               label="Context Size (tokens)"
               name="maxContext"
               control={form.control}
-              defaultValue={defaultValues.maxContext}
               min={512}
               max={2000000}
               step={1}
@@ -183,7 +182,6 @@ export function ModelConf() {
               label="Max Response Size (tokens)"
               name="maxTokens"
               control={form.control}
-              defaultValue={defaultValues.maxTokens}
               min={0}
               max={2000000}
               step={1}
@@ -193,7 +191,6 @@ export function ModelConf() {
               label="Temperature"
               name="temperature"
               control={form.control}
-              defaultValue={defaultValues.temperature}
               min={0}
               max={1}
               step={0.01}
@@ -203,7 +200,6 @@ export function ModelConf() {
               label="Top P"
               name="topP"
               control={form.control}
-              defaultValue={defaultValues.topP}
               min={0}
               max={1}
               step={0.01}
@@ -213,7 +209,6 @@ export function ModelConf() {
               label="Top K"
               name="topK"
               control={form.control}
-              defaultValue={defaultValues.topK}
               min={0}
               max={500}
               step={1}
@@ -223,7 +218,6 @@ export function ModelConf() {
               label="Presence Penalty"
               name="presencePenalty"
               control={form.control}
-              defaultValue={defaultValues.presencePenalty}
               min={-1}
               max={1}
               step={0.01}
@@ -233,7 +227,6 @@ export function ModelConf() {
               label="Frequency Penalty"
               name="frequencyPenalty"
               control={form.control}
-              defaultValue={defaultValues.frequencyPenalty}
               min={-1}
               max={1}
               step={0.01}

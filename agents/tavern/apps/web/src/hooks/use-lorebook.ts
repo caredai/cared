@@ -203,11 +203,20 @@ export function useUpdateLorebook() {
   )
 
   const mutation = useMutation(mutationOptions)
-  const mutateAsync = mutation.mutateAsync
-  mutation.mutateAsync = (variables) => mutateAsync(variables)
+
+  const { lorebooks } = useLorebooks()
 
   return useCallback(
     async (id: string, updates: LorebookUpdates) => {
+      const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
+      if (!lorebook) {
+        return
+      }
+      const { error } = updateLorebook(lorebook, updates)
+      if (error) {
+        return
+      }
+
       return await mutation.mutateAsync({
         id,
         updates,

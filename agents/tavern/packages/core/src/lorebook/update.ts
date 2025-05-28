@@ -1,3 +1,4 @@
+import hash from 'stable-hash'
 import { z } from 'zod'
 
 import type { LorebookContent } from './types'
@@ -55,25 +56,30 @@ export function updateLorebook(
         result.description = update.description || null
         break
       case 'addEntry':
-        lorebook.entries.push(update.entry)
-        result.entries = lorebook.entries
+        result.entries = [
+          ...structuredClone(lorebook.entries),
+          update.entry,
+        ]
         break
       case 'updateEntry': {
-        const index = lorebook.entries.findIndex(entry => entry.uid === update.uid)
+        const index = lorebook.entries.findIndex((entry) => entry.uid === update.uid)
         if (index === -1) {
           return { error: `Entry with uid ${update.uid} not found` }
         }
-        lorebook.entries[index] = update.entry
-        result.entries = lorebook.entries
+        if (hash(update.entry) === hash(lorebook.entries[index])) {
+          return { error: `Entry with uid ${update.uid} is unchanged` }
+        }
+        result.entries = structuredClone(lorebook.entries)
+        result.entries[index] = update.entry
         break
       }
       case 'removeEntry': {
-        const index = lorebook.entries.findIndex(entry => entry.uid === update.uid)
+        const index = lorebook.entries.findIndex((entry) => entry.uid === update.uid)
         if (index === -1) {
           return { error: `Entry with uid ${update.uid} not found` }
         }
-        lorebook.entries.splice(index, 1)
-        result.entries = lorebook.entries
+        result.entries = structuredClone(lorebook.entries)
+        result.entries.splice(index, 1)
         break
       }
     }

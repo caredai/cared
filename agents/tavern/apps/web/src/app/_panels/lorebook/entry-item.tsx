@@ -1,12 +1,13 @@
 import type { z } from 'zod'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { faComments, faPaste, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { lorebookEntrySchema, SelectiveLogic } from '@tavern/core'
-import { ChevronDownIcon, HelpCircle } from 'lucide-react'
+import { lorebookEntrySchema, Position, SelectiveLogic } from '@tavern/core'
+import { ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
 import { Button } from '@ownxai/ui/components/button'
-import { Checkbox } from '@ownxai/ui/components/checkbox'
 import {
   Collapsible,
   CollapsibleContent,
@@ -21,83 +22,128 @@ import {
   FormMessage,
 } from '@ownxai/ui/components/form'
 import { Input } from '@ownxai/ui/components/input'
+import { Label } from '@ownxai/ui/components/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ownxai/ui/components/select'
+import { Switch } from '@ownxai/ui/components/switch'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
-import { Tooltip } from '@/components/tooltip'
+import { CheckboxField } from '@/components/checkbox-field'
+import { FaButton } from '@/components/fa-button'
+import { NumberInput, OptionalNumberInput } from '@/components/number-input'
 import { useUpdateLorebook } from '@/hooks/use-lorebook'
+import { useTextTokens } from '@/hooks/use-tokenizer'
+import { cn } from '@ownxai/ui/lib/utils'
 
 const selectiveLogicOptions = [
-  { value: 'andAny', label: 'AND ANY' },
-  { value: 'notAll', label: 'NOT ALL' },
-  { value: 'notAny', label: 'NOT ANY' },
-  { value: 'andAll', label: 'AND ALL' },
-]
-const positionOptions = [
-  { value: 0, label: 'Before Char Defs' },
-  { value: 1, label: 'After Char Defs' },
-  { value: 2, label: 'Top of AN' },
-  { value: 3, label: 'Bottom of AN' },
-  { value: 4, label: '@ Depth' },
-  { value: 5, label: 'Before Example Messages' },
-  { value: 6, label: 'After Example Messages' },
-]
-const roleOptions = [
-  { value: 'system', label: 'System' },
-  { value: 'user', label: 'User' },
-  { value: 'assistant', label: 'Assistant' },
+  { value: SelectiveLogic.AND_ANY, label: 'AND ANY' },
+  { value: SelectiveLogic.NOT_ALL, label: 'NOT ALL' },
+  { value: SelectiveLogic.NOT_ANY, label: 'NOT ANY' },
+  { value: SelectiveLogic.AND_ALL, label: 'AND ALL' },
 ]
 
-const entryFormSchema = lorebookEntrySchema.required()
+const positionOptions = [
+  {
+    value: 'before-char',
+    label: 'Before Character Definitions',
+    name: '↑Char',
+    position: Position.Before,
+  },
+  {
+    value: 'after-char',
+    label: 'After Character Definitions',
+    name: '↓Char',
+    position: Position.After,
+  },
+  { value: 'before-an', label: "Before Author's Note", name: '↑AN', position: Position.ANTop },
+  { value: 'after-an', label: "After Author's Note", name: '↓AN', position: Position.ANBottom },
+  { value: 'before-em', label: 'Before Example Messages', name: '↑EM', position: Position.EMTop },
+  { value: 'after-em', label: 'After Example Messages', name: '↓EM', position: Position.EMBottom },
+  {
+    value: 'at-depth-system',
+    label: 'At Depth (⚙️ System)',
+    name: '@D ⚙️',
+    position: Position.AtDepth,
+    role: 'system' as const,
+  },
+  {
+    value: 'at-depth-user',
+    label: 'At Depth (👤 User)',
+    name: '@D 👤',
+    position: Position.AtDepth,
+    role: 'user' as const,
+  },
+  {
+    value: 'at-depth-assistant',
+    label: 'At Depth (🤖 Assistant)',
+    name: '@D 🤖',
+    position: Position.AtDepth,
+    role: 'assistant' as const,
+  },
+]
+
+const entryFormSchema = lorebookEntrySchema
 
 export type EntryFormValues = z.infer<typeof entryFormSchema>
+
+type Strategy = 'normal' | 'constant' | 'vectorized'
+
+const strategyOptions = [
+  { value: 'normal', label: '🟢 Normal', name: '🟢' },
+  { value: 'constant', label: '🔵 Constant', name: '🔵' },
+  { value: 'vectorized', label: '🔗 Vectorized', name: '🔗' },
+]
 
 export function EntryItemEdit({
   id,
   uid,
   defaultValues,
+  maxUid,
 }: {
   id: string
   uid: number
   defaultValues: Partial<EntryFormValues>
+  maxUid: number
 }) {
   const updateLorebook = useUpdateLorebook()
+
+  const [secondaryKeys, setSecondaryKeys] = useState<string>(
+    defaultValues.secondaryKeys?.join(', ') ?? '',
+  )
+
   const form = useForm<EntryFormValues>({
     resolver: zodResolver(entryFormSchema),
-    defaultValues: {
-      keys: [],
-      secondaryKeys: [],
-      comment: '',
-      content: '',
-      constant: false,
-      vectorized: false,
-      selectiveLogic: SelectiveLogic.AND_ANY,
-      order: 0,
-      position: 0,
-      excludeRecursion: false,
-      preventRecursion: false,
-      delayUntilRecursion: false,
-      probability: 1,
-      depth: 0,
-      group: '',
-      groupOverride: false,
-      groupWeight: 100,
-      sticky: 0,
-      cooldown: 0,
-      delay: 0,
-      scanDepth: 0,
-      caseSensitive: false,
-      matchWholeWords: false,
-      useGroupScoring: false,
-      automationId: '',
-      role: 'system',
-      selective: false,
-      useProbability: false,
-      addMemo: false,
-      disabled: false,
-      characterFilter: { isExclude: false, names: [], tags: [] },
-      ...defaultValues,
-    },
+    defaultValues,
   })
+
+  useEffect(() => {
+    form.reset(defaultValues)
+  }, [defaultValues, form])
+
+  const isPositionAtDepth = form.watch('position') === Position.AtDepth
+
+  useEffect(() => {
+    form.setValue('depth', isPositionAtDepth ? 4 : undefined)
+  }, [isPositionAtDepth, form])
+
+  const handleStrategyChange = useCallback(
+    (value: Strategy) => {
+      form.setValue('constant', value === 'constant')
+      form.setValue('vectorized', value === 'vectorized')
+    },
+    [form],
+  )
+
+  const getStrategyValue = useCallback(() => {
+    if (form.watch('constant')) return 'constant'
+    if (form.watch('vectorized')) return 'vectorized'
+    return 'normal'
+  }, [form])
 
   const handleBlur = useCallback(() => {
     const values = form.getValues()
@@ -106,295 +152,343 @@ export function EntryItemEdit({
     ])
   }, [form, updateLorebook, id, uid])
 
+  const handleCopy = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const values = form.getValues()
+    const newUid = maxUid + 1
+
+    const newEntry = {
+      ...values,
+      uid: newUid,
+    }
+
+    void updateLorebook(id, [
+      { type: 'addEntry', entry: newEntry },
+    ])
+  }, [form, updateLorebook, id, maxUid])
+
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    void updateLorebook(id, [
+      { type: 'removeEntry', uid },
+    ])
+  }, [updateLorebook, id, uid])
+
+  const contentTokens = useTextTokens(form.watch('content'))
+
   return (
-    <Collapsible>
-      <CollapsibleTrigger asChild>
-        <div className="flex justify-between items-center cursor-pointer [&[data-state=open]>button>svg]:rotate-180">
-          <div className="flex items-center gap-1">
-            Entry Settings
-            <Tooltip content="Configure entry settings and parameters" icon={HelpCircle} />
-          </div>
-          <Button type="button" variant="outline" size="icon" className="size-6">
-            <ChevronDownIcon className="transition-transform duration-200" />
-          </Button>
-        </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 pt-2">
-        <Form {...form}>
-          <form className="flex flex-col gap-4" onBlur={handleBlur} autoComplete="off">
+    <Form {...form}>
+      <form
+        className="flex flex-col justify-center p-1 pb-2 my-0.25 border border-border rounded-md"
+        onBlur={handleBlur}
+        autoComplete="off"
+      >
+        <Collapsible>
+          <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="size-6 [&[data-state=open]>svg]:rotate-180"
+              >
+                <ChevronDownIcon className="transition-transform duration-200" />
+              </Button>
+            </CollapsibleTrigger>
+
             <FormField
               control={form.control}
-              name="keys"
+              name="disabled"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Keys (comma separated)</FormLabel>
+                <FormItem className="space-y-0 h-5">
                   <FormControl>
-                    <Input
-                      value={field.value.join(', ')}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value
-                            .split(',')
-                            .map((s) => s.trim())
-                            .filter(Boolean),
-                        )
-                      }
-                      placeholder="e.g. magic, dragon, sword"
+                    <Switch
+                      checked={!field.value}
+                      onCheckedChange={(value) => field.onChange(!value)}
+                      className="data-[state=checked]:bg-yellow-700 scale-60 -mx-2"
                     />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="secondaryKeys"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Secondary Keys (comma separated)</FormLabel>
-                  <FormControl>
-                    <Input
-                      value={field.value.join(', ')}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value
-                            .split(',')
-                            .map((s) => s.trim())
-                            .filter(Boolean),
-                        )
-                      }
-                      placeholder="e.g. legend, quest"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+
             <FormField
               control={form.control}
               name="comment"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Comment</FormLabel>
+                <FormItem className="flex-1 space-y-0">
                   <FormControl>
-                    <Input {...field} placeholder="Optional comment" />
+                    <Textarea
+                      {...field}
+                      className="min-h-7 h-7 px-2 py-0.5 text-sm"
+                      placeholder="Comment"
+                    />
                   </FormControl>
-                  <FormMessage />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Content</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} className="h-32" placeholder="Entry content" />
-                  </FormControl>
-                  <FormMessage />
+              name="constant"
+              render={() => (
+                <FormItem className="w-fit space-y-0">
+                  <Select value={getStrategyValue()} onValueChange={handleStrategyChange}>
+                    <FormControl>
+                      <SelectTrigger className="w-13 h-7 px-1 py-0.5">
+                        <SelectValue>
+                          {strategyOptions.find((opt) => opt.value === getStrategyValue())?.name}
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="z-6000">
+                      {strategyOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
+
+            <FormField
+              control={form.control}
+              name="position"
+              render={() => (
+                <FormItem className="w-fit space-y-0">
+                  <Select
+                    onValueChange={(value) => {
+                      const selectedOption = positionOptions.find((opt) => opt.value === value)
+                      if (!selectedOption) return
+                      form.setValue('position', selectedOption.position)
+                      if (selectedOption.position === Position.AtDepth && selectedOption.role) {
+                        form.setValue('role', selectedOption.role)
+                      } else {
+                        form.setValue('role', undefined as any)
+                      }
+                    }}
+                    value={(() => {
+                      const pos = form.watch('position')
+                      const role = form.watch('role')
+                      const found = positionOptions.find(
+                        (opt) =>
+                          opt.position === pos &&
+                          (opt.position === Position.AtDepth ? opt.role === role : true),
+                      )
+                      return found?.value ?? ''
+                    })()}
+                  >
+                    <FormControl>
+                      <SelectTrigger
+                        className="w-18 h-7 px-1 py-0.5"
+                        title="↑Char: Before Character Definitions
+↓Char: After Character Definitions
+↑EM: Before Example Messages
+↓EM: After Example Messages
+↑AN: Before Author's Note
+↓AN: After Author's Note
+@D ⚙️: At Depth (System)
+@D 👤: At Depth (User)
+@D 🤖: At Depth (Assistant)"
+                      >
+                        <SelectValue placeholder="Select position">
+                          {(() => {
+                            const pos = form.watch('position')
+                            const role = form.watch('role')
+                            const found = positionOptions.find(
+                              (opt) =>
+                                opt.position === pos &&
+                                (opt.position === Position.AtDepth ? opt.role === role : true),
+                            )
+                            return found?.name
+                          })()}
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="z-6000">
+                      {positionOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="depth"
+              render={({ field }) => (
+                <FormItem className="w-15 space-y-0">
+                  <FormControl>
+                      <NumberInput
+                        min={0}
+                        step={1}
+                        value={field.value ?? 4}
+                        onChange={(value) => field.onChange(value)}
+                        className={cn("h-7 px-2 py-0.5", !isPositionAtDepth && 'invisible')}
+                      />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="order"
+              render={({ field }) => (
+                <FormItem className="w-15 space-y-0">
+                  <FormControl>
+                    <NumberInput min={0} step={1} {...field} className="h-7 px-2 py-0.5" />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="probability"
+              render={({ field }) => (
+                <FormItem className="w-15 space-y-0">
+                  <FormControl>
+                    <NumberInput
+                      min={0}
+                      max={100}
+                      step={1}
+                      {...field}
+                      className="h-7 px-2 py-0.5"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FaButton
+              icon={faPaste}
+              btnSize="size-6"
+              iconSize="1x"
+              title="Copy entry"
+              className="text-foreground border-1 hover:bg-muted-foreground rounded-sm"
+              onClick={handleCopy}
+            />
+
+            <FaButton
+              icon={faTrashCan}
+              btnSize="size-6"
+              iconSize="1x"
+              title="Delete entry"
+              className="text-foreground border-1 hover:bg-destructive rounded-sm"
+              onClick={handleDelete}
+            />
+          </div>
+
+          <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 pt-2">
+            <div className="grid grid-cols-[1fr_92px_1fr] items-center gap-x-2 gap-y-0 mx-[1px]">
+              <Label className="text-xs">Primary Keywords</Label>
+              <Label className="text-xs">Logic</Label>
+              <Label className="text-xs">Optional Filter</Label>
               <FormField
                 control={form.control}
-                name="constant"
+                name="keys"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
+                  <FormItem>
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      <Textarea
+                        value={field.value.join(', ')}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              .split(',')
+                              .map((s) => s.trim())
+                              .filter(Boolean),
+                          )
+                        }
+                        placeholder="Comma separated keys"
+                        className="min-h-7 h-7 px-2 py-0.5"
+                      />
                     </FormControl>
-                    <FormLabel>Constant</FormLabel>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="vectorized"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Vectorized</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+
               <FormField
                 control={form.control}
                 name="selectiveLogic"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selective Logic</FormLabel>
-                    <FormControl>
-                      <select {...field} className="input">
+                  <FormItem className="w-fit space-y-0">
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="w-23 h-7 px-1 py-0.5">
+                          <SelectValue placeholder="Select logic" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="z-6000">
                         {selectiveLogicOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
+                          <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
-                          </option>
+                          </SelectItem>
                         ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
-                name="order"
+                name="secondaryKeys"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Order</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Textarea
+                        value={secondaryKeys}
+                        onChange={(e) => {
+                          setSecondaryKeys(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                          const values = e.target.value
+                            .split(',')
+                            .map((s: string) => s.trim())
+                            .filter(Boolean)
+                          const newValue = values.length > 0 ? values : undefined
+                          field.onChange(newValue)
+                          setSecondaryKeys(values.join(', '))
+                        }}
+                        placeholder="Comma separated keys (ignored if empty)"
+                        className="min-h-7 h-7 px-2 py-0.5"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="position"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Position</FormLabel>
-                    <FormControl>
-                      <select {...field} className="input">
-                        {positionOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="probability"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Probability</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min={0} max={1} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="depth"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Depth</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="group"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Group</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Group name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="groupOverride"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Group Override</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="groupWeight"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Group Weight</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="sticky"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Sticky</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="cooldown"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cooldown</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="delay"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Delay</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
+
+            <div className="grid grid-cols-5 gap-x-2 gap-y-0 mx-[1px]">
+              <Label className="text-xs">Scan Depth</Label>
+              <Label className="text-xs">Case Sensitive</Label>
+              <Label className="text-xs">Match Whole Words</Label>
+              <Label className="text-xs">Use Group Scoring</Label>
+              <Label className="text-xs">Automation ID</Label>
               <FormField
                 control={form.control}
                 name="scanDepth"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Scan Depth</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <OptionalNumberInput
+                        min={0}
+                        max={1000}
+                        step={1}
+                        placeholder="Use global"
+                        {...field}
+                        className="h-7 px-2 py-0.5"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -404,11 +498,8 @@ export function EntryItemEdit({
                 control={form.control}
                 name="caseSensitive"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Case Sensitive</FormLabel>
+                  <FormItem>
+                    <BooleanSelect field={field} />
                   </FormItem>
                 )}
               />
@@ -416,25 +507,17 @@ export function EntryItemEdit({
                 control={form.control}
                 name="matchWholeWords"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Match Whole Words</FormLabel>
+                  <FormItem>
+                    <BooleanSelect field={field} />
                   </FormItem>
                 )}
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="useGroupScoring"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Use Group Scoring</FormLabel>
+                  <FormItem>
+                    <BooleanSelect field={field} />
                   </FormItem>
                 )}
               />
@@ -443,188 +526,233 @@ export function EntryItemEdit({
                 name="automationId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Automation ID</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input placeholder="None" {...field} className="h-7 px-2 py-0.5" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            <div className="grid grid-cols-2 items-start gap-6">
+              <div className="space-y-1">
+                <CheckboxField
+                  label="Non-recursable (will not be activated by another)"
+                  name="excludeRecursion"
+                  control={form.control}
+                />
+                <CheckboxField
+                  label="Prevent further recursion (will not activate others)"
+                  name="preventRecursion"
+                  control={form.control}
+                />
+                <CheckboxField
+                  label="Delay until recursion (can only be activated on recursive checking)"
+                  name="delayUntilRecursion"
+                  control={form.control}
+                />
+
+                <div className="flex justify-end gap-2">
+                  <FormField
+                    control={form.control}
+                    name="sticky"
+                    render={({ field }) => (
+                      <FormItem className="w-18 space-y-0">
+                        <FormLabel className="text-xs">
+                          Sticky <FontAwesomeIcon icon={faComments} size="xs" className="fa-fw" />
+                        </FormLabel>
+                        <FormControl>
+                          <NumberInput min={0} step={1} {...field} className="h-7 px-2 py-0.5" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cooldown"
+                    render={({ field }) => (
+                      <FormItem className="w-18 space-y-0">
+                        <FormLabel className="text-xs">
+                          Cooldown <FontAwesomeIcon icon={faComments} size="xs" className="fa-fw" />
+                        </FormLabel>
+                        <FormControl>
+                          <NumberInput min={0} step={1} {...field} className="h-7 px-2 py-0.5" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="delay"
+                    render={({ field }) => (
+                      <FormItem className="w-18 space-y-0">
+                        <FormLabel className="text-xs">
+                          Delay <FontAwesomeIcon icon={faComments} size="xs" className="fa-fw" />
+                        </FormLabel>
+                        <FormControl>
+                          <NumberInput min={0} step={1} {...field} className="h-7 px-2 py-0.5" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3 mr-[1px]">
+                <FormField
+                  control={form.control}
+                  name="group"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Inclusion Group(s)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Comma separated group names"
+                          className="h-7 px-2 py-0.5"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="groupWeight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Group Weight</FormLabel>
+                      <FormControl>
+                        <NumberInput min={1} step={1} {...field} className="h-7 px-2 py-0.5" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <CheckboxField
+                  label="Prioritize Inclusion"
+                  name="groupOverride"
+                  control={form.control}
+                />
+              </div>
+            </div>
+
             <FormField
               control={form.control}
-              name="role"
+              name="content"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
+                <FormItem className="mx-[1px]">
+                  <FormLabel>
+                    Content (Tokens: {contentTokens ?? 0}, UID: {uid})
+                  </FormLabel>
                   <FormControl>
-                    <select {...field} className="input">
-                      {roleOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
+                    <Textarea
+                      {...field}
+                      className="h-32"
+                      placeholder="What this keyword should mean to the AI, sent verbatim"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="excludeRecursion"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Exclude Recursion</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="preventRecursion"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Prevent Recursion</FormLabel>
-                  </FormItem>
-                )}
-              />
+
+            <div className="border border-input rounded p-2">
+              <div className="flex justify-between items-center gap-4">
+                <div className="text-sm">Filter to Characters or Tags</div>
+                <CheckboxField
+                  label="Exclude"
+                  name="characterFilter.isExclude"
+                  control={form.control}
+                />
+              </div>
+              <div className="flex justify-between items-center gap-4">
+                <FormField
+                  control={form.control}
+                  name="characterFilter.names"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Names (comma separated)</FormLabel>
+                      <FormControl>
+                        <Input
+                          value={field.value.join(', ')}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean),
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="characterFilter.tags"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tags (comma separated)</FormLabel>
+                      <FormControl>
+                        <Input
+                          value={field.value.join(', ')}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean),
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="delayUntilRecursion"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Delay Until Recursion</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="selective"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Selective</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="useProbability"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Use Probability</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="addMemo"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Add Memo</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="border rounded p-2 mt-2">
-              <div className="font-semibold mb-2">Character/Tag Filter</div>
-              <FormField
-                control={form.control}
-                name="characterFilter.isExclude"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                    <FormLabel>Exclude Mode</FormLabel>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="characterFilter.names"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Names (comma separated)</FormLabel>
-                    <FormControl>
-                      <Input
-                        value={field.value.join(', ')}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value
-                              .split(',')
-                              .map((s) => s.trim())
-                              .filter(Boolean),
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="characterFilter.tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tags (comma separated)</FormLabel>
-                    <FormControl>
-                      <Input
-                        value={field.value.join(', ')}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value
-                              .split(',')
-                              .map((s) => s.trim())
-                              .filter(Boolean),
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="disabled"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center gap-2 mt-2">
-                  <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                  </FormControl>
-                  <FormLabel>Disabled</FormLabel>
-                </FormItem>
-              )}
-            />
-          </form>
-        </Form>
-      </CollapsibleContent>
-    </Collapsible>
+          </CollapsibleContent>
+        </Collapsible>
+      </form>
+    </Form>
+  )
+}
+
+function BooleanSelect({
+  field,
+}: {
+  field: {
+    value: boolean | undefined
+    onChange: (value: boolean | undefined) => void
+  }
+}) {
+  return (
+    <Select
+      value={field.value === undefined ? 'global' : field.value ? 'yes' : 'no'}
+      onValueChange={(value: 'global' | 'yes' | 'no') => {
+        field.onChange(value === 'global' ? undefined : value === 'yes')
+      }}
+    >
+      <FormControl>
+        <SelectTrigger className="h-7 px-2 py-0.5">
+          <SelectValue />
+        </SelectTrigger>
+      </FormControl>
+      <SelectContent className="z-6000">
+        <SelectItem value="global">Use Global</SelectItem>
+        <SelectItem value="yes">Yes</SelectItem>
+        <SelectItem value="no">No</SelectItem>
+      </SelectContent>
+    </Select>
   )
 }

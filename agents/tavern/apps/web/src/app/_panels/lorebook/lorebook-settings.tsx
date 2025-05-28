@@ -72,7 +72,6 @@ export function LorebookSettings() {
               label="Scan Depth"
               name="scanDepth"
               control={form.control}
-              defaultValue={lorebookSettings.scanDepth}
               min={0}
               max={100}
               step={1}
@@ -82,7 +81,6 @@ export function LorebookSettings() {
               label="Context %"
               name="context"
               control={form.control}
-              defaultValue={lorebookSettings.context}
               min={1}
               max={100}
               step={1}
@@ -92,7 +90,6 @@ export function LorebookSettings() {
               label="Budget Cap"
               name="budgetCap"
               control={form.control}
-              defaultValue={lorebookSettings.budgetCap}
               min={0}
               max={8192}
               step={1}
@@ -102,7 +99,6 @@ export function LorebookSettings() {
               label="Min Activations"
               name="minActivations"
               control={form.control}
-              defaultValue={lorebookSettings.minActivations}
               min={0}
               max={100}
               step={1}
@@ -112,7 +108,6 @@ export function LorebookSettings() {
               label="Max Depth"
               name="maxDepth"
               control={form.control}
-              defaultValue={lorebookSettings.maxDepth}
               min={0}
               max={100}
               step={1}
@@ -122,7 +117,6 @@ export function LorebookSettings() {
               label="Max Recursion Steps"
               name="maxRecursionSteps"
               control={form.control}
-              defaultValue={lorebookSettings.maxRecursionSteps}
               min={0}
               max={10}
               step={1}
