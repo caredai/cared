@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   faArrowDown91,
   faCompress,
@@ -17,25 +17,48 @@ import {
 import { lorebookEntrySchema, Position, SelectiveLogic } from '@tavern/core'
 import { Virtualizer } from 'virtua'
 
+import { Label } from '@ownxai/ui/components/label'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
-import { useLorebook, useUpdateLorebook } from '@/hooks/use-lorebook'
+import { useLorebook, useLorebooks, useUpdateLorebook } from '@/hooks/use-lorebook'
 import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
-import { Label } from '../../../../../../../../packages/ui/src/components/label'
 import { AddLorebookDialog } from './add-lorebook-dialog'
 import { DeleteLorebookDialog } from './delete-lorebook-dialog'
-import { EntryItemEdit } from './entry-item'
+import { LorebookEntryItemEdit } from './lorebook-entry-item'
 import { LorebookSettings } from './lorebook-settings'
 import { SelectActiveLorebooks } from './select-active-lorebooks'
 import { SelectLorebook, useSelectedLorebookId } from './select-lorebook'
 
 export function LorebookPanel() {
   const { selectedLorebookId } = useSelectedLorebookId()
+
+  const { lorebooks } = useLorebooks()
   const { lorebook } = useLorebook(selectedLorebookId ?? '')
   const updateLorebook = useUpdateLorebook()
+
   const appearanceSettings = useAppearanceSettings()
   const updateSettingsMutation = useUpdateSettingsMutation()
+
+  const virtualizerRef = useRef<HTMLDivElement>(null)
+  const [startMargin, setStartMargin] = useState(300)
+
+  useEffect(() => {
+    const calculateStartMargin = () => {
+      if (virtualizerRef.current) {
+        const rect = virtualizerRef.current.getBoundingClientRect()
+        const parentRect = virtualizerRef.current.parentElement?.getBoundingClientRect()
+        if (parentRect) {
+          console.log(`Virtualizer`, rect.y, parentRect.y, rect.y - parentRect.y)
+          setStartMargin(rect.y - parentRect.y)
+        }
+      }
+    }
+
+    calculateStartMargin()
+    window.addEventListener('resize', calculateStartMargin)
+    return () => window.removeEventListener('resize', calculateStartMargin)
+  }, [])
 
   // Calculate maxUid using useMemo
   const maxUid = useMemo(() => {
@@ -43,7 +66,7 @@ export function LorebookPanel() {
   }, [lorebook?.entries])
 
   const handleAddEntry = useCallback(async () => {
-    if (!selectedLorebookId) return
+    if (!selectedLorebookId || !lorebook) return
 
     const newUid = maxUid + 1
 
@@ -85,10 +108,11 @@ export function LorebookPanel() {
     // Validate the new entry
     lorebookEntrySchema.parse(newEntry)
 
-    await updateLorebook(selectedLorebookId, [
-      { type: 'addEntry', entry: newEntry },
-    ])
-  }, [selectedLorebookId, updateLorebook])
+    await updateLorebook({
+      id: selectedLorebookId,
+      entries: [...lorebook.entries, newEntry],
+    })
+  }, [maxUid, selectedLorebookId, updateLorebook, lorebook])
 
   const operateActions = [
     {
@@ -213,7 +237,7 @@ export function LorebookPanel() {
           )}
         </div>
 
-        <div/>
+        <div />
       </div>
 
       <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
@@ -226,14 +250,16 @@ export function LorebookPanel() {
       </div>
 
       {lorebook && (
-        <Virtualizer startMargin={300}>
+        <Virtualizer startMargin={startMargin}>
+          <div ref={virtualizerRef} />
           {lorebook.entries.map((entry) => (
-            <EntryItemEdit 
-              key={entry.uid} 
-              id={lorebook.id} 
-              uid={entry.uid} 
-              defaultValues={entry} 
+            <LorebookEntryItemEdit
+              key={entry.uid}
+              id={lorebook.id}
+              uid={entry.uid}
+              defaultValues={entry}
               maxUid={maxUid}
+              lorebooks={lorebooks}
             />
           ))}
         </Virtualizer>

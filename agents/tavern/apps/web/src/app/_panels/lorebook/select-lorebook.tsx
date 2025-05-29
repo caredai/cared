@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { atom, useAtom } from 'jotai'
 import { Virtualizer } from 'virtua'
 
@@ -25,8 +25,13 @@ export function useSelectedLorebookId() {
 
 export function SelectLorebook() {
   const { lorebooks } = useLorebooks()
+
   const { selectedLorebookId, setSelectedLorebookId } = useSelectedLorebookId()
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    setSelectedLorebookId(lorebooks.at(0)?.id)
+  }, [lorebooks, setSelectedLorebookId])
 
   // Virtual list ref
   const ref = useRef<any>(null)
@@ -47,14 +52,6 @@ export function SelectLorebook() {
     [items, selectedLorebookId],
   )
 
-  // Handle value change
-  const handleValueChange = useCallback(
-    (newValue: string) => {
-      setSelectedLorebookId(newValue)
-    },
-    [setSelectedLorebookId],
-  )
-
   // Scroll to selected item when dropdown opens
   useLayoutEffect(() => {
     if (!open || !selectedLorebookId) return
@@ -72,29 +69,31 @@ export function SelectLorebook() {
     })
   }, [open, selectedLorebookId, index])
 
+  if (!selectedLorebookId) {
+    return null
+  }
+
   return (
-    <div>
-      <Select
-        value={selectedLorebookId}
-        onValueChange={handleValueChange}
-        open={open}
-        onOpenChange={setOpen}
-      >
-        <SelectTrigger className="w-40 h-7 px-2 py-0.5" aria-label="Select lorebook to edit">
-          <SelectValue placeholder="Select lorebook to edit">
-            {items.find((d) => d.id === selectedLorebookId)?.label}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent className="z-6000">
-          <Virtualizer ref={ref} keepMounted={index !== -1 ? [index] : undefined} overscan={2}>
-            {items.map((item) => (
-              <SelectItem key={item.id} value={item.id}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </Virtualizer>
-        </SelectContent>
-      </Select>
-    </div>
+    <Select
+      value={selectedLorebookId}
+      onValueChange={setSelectedLorebookId}
+      open={open}
+      onOpenChange={setOpen}
+    >
+      <SelectTrigger className="w-40 h-7 px-2 py-0.5">
+        <SelectValue>
+          {items.find((d) => d.id === selectedLorebookId)?.label}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent className="max-h-[300px] z-6000">
+        <Virtualizer ref={ref} keepMounted={index !== -1 ? [index] : undefined} overscan={2}>
+          {items.map((item) => (
+            <SelectItem key={item.id} value={item.id}>
+              {item.label}
+            </SelectItem>
+          ))}
+        </Virtualizer>
+      </SelectContent>
+    </Select>
   )
 }

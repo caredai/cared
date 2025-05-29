@@ -37,15 +37,7 @@ export type LorebookUpdates = z.infer<typeof lorebookUpdatesSchema>
 export function updateLorebook(
   lorebook: LorebookContent,
   updates: LorebookUpdates,
-):
-  | {
-      updates: Partial<LorebookContent>
-      error?: never
-    }
-  | {
-      updates?: never
-      error: string
-    } {
+): Partial<LorebookContent> | undefined {
   const result = {} as LorebookContent
   for (const update of updates) {
     switch (update.type) {
@@ -56,6 +48,10 @@ export function updateLorebook(
         result.description = update.description || null
         break
       case 'addEntry':
+        if (lorebook.entries.find((entry) => entry.uid === update.entry.uid)) {
+          // Entry with the same UID already exists
+          return
+        }
         result.entries = [
           ...structuredClone(lorebook.entries),
           update.entry,
@@ -64,10 +60,12 @@ export function updateLorebook(
       case 'updateEntry': {
         const index = lorebook.entries.findIndex((entry) => entry.uid === update.uid)
         if (index === -1) {
-          return { error: `Entry with uid ${update.uid} not found` }
+          // Entry not found
+          return
         }
         if (hash(update.entry) === hash(lorebook.entries[index])) {
-          return { error: `Entry with uid ${update.uid} is unchanged` }
+          // No changes to the entry
+          return
         }
         result.entries = structuredClone(lorebook.entries)
         result.entries[index] = update.entry
@@ -76,7 +74,8 @@ export function updateLorebook(
       case 'removeEntry': {
         const index = lorebook.entries.findIndex((entry) => entry.uid === update.uid)
         if (index === -1) {
-          return { error: `Entry with uid ${update.uid} not found` }
+          // Entry not found
+          return
         }
         result.entries = structuredClone(lorebook.entries)
         result.entries.splice(index, 1)
@@ -85,5 +84,5 @@ export function updateLorebook(
     }
   }
 
-  return { updates: result }
+  return result
 }

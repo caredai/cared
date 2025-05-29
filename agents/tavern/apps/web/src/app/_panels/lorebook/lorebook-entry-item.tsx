@@ -32,13 +32,13 @@ import {
 } from '@ownxai/ui/components/select'
 import { Switch } from '@ownxai/ui/components/switch'
 import { Textarea } from '@ownxai/ui/components/textarea'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { CheckboxField } from '@/components/checkbox-field'
 import { FaButton } from '@/components/fa-button'
 import { NumberInput, OptionalNumberInput } from '@/components/number-input'
-import { useUpdateLorebook } from '@/hooks/use-lorebook'
+import { Lorebook, useUpdateLorebook } from '@/hooks/use-lorebook'
 import { useTextTokens } from '@/hooks/use-tokenizer'
-import { cn } from '@ownxai/ui/lib/utils'
 
 const selectiveLogicOptions = [
   { value: SelectiveLogic.AND_ANY, label: 'AND ANY' },
@@ -99,16 +99,18 @@ const strategyOptions = [
   { value: 'vectorized', label: '🔗 Vectorized', name: '🔗' },
 ]
 
-export function EntryItemEdit({
+export function LorebookEntryItemEdit({
   id,
   uid,
   defaultValues,
   maxUid,
+  lorebooks,
 }: {
   id: string
   uid: number
   defaultValues: Partial<EntryFormValues>
   maxUid: number
+  lorebooks: Lorebook[]
 }) {
   const updateLorebook = useUpdateLorebook()
 
@@ -147,32 +149,51 @@ export function EntryItemEdit({
 
   const handleBlur = useCallback(() => {
     const values = form.getValues()
-    void updateLorebook(id, [
-      { type: 'updateEntry', uid, entry: { ...values, uid } },
-    ])
-  }, [form, updateLorebook, id, uid])
+    const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
+    if (!lorebook) return
 
-  const handleCopy = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    const values = form.getValues()
-    const newUid = maxUid + 1
+    const entries = lorebook.entries.map((entry) => (entry.uid === uid ? { ...values } : entry))
 
-    const newEntry = {
-      ...values,
-      uid: newUid,
-    }
+    void updateLorebook({
+      id,
+      entries,
+    })
+  }, [form, updateLorebook, id, uid, lorebooks])
 
-    void updateLorebook(id, [
-      { type: 'addEntry', entry: newEntry },
-    ])
-  }, [form, updateLorebook, id, maxUid])
+  const handleCopy = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      const values = form.getValues()
+      const newUid = maxUid + 1
+      const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
+      if (!lorebook) return
 
-  const handleDelete = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-    void updateLorebook(id, [
-      { type: 'removeEntry', uid },
-    ])
-  }, [updateLorebook, id, uid])
+      const newEntry = {
+        ...values,
+        uid: newUid,
+      }
+
+      void updateLorebook({
+        id,
+        entries: [...lorebook.entries, newEntry],
+      })
+    },
+    [form, updateLorebook, id, maxUid, lorebooks],
+  )
+
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
+      if (!lorebook) return
+
+      void updateLorebook({
+        id,
+        entries: lorebook.entries.filter((entry) => entry.uid !== uid),
+      })
+    },
+    [updateLorebook, id, uid, lorebooks],
+  )
 
   const contentTokens = useTextTokens(form.watch('content'))
 
@@ -325,13 +346,13 @@ export function EntryItemEdit({
               render={({ field }) => (
                 <FormItem className="w-15 space-y-0">
                   <FormControl>
-                      <NumberInput
-                        min={0}
-                        step={1}
-                        value={field.value ?? 4}
-                        onChange={(value) => field.onChange(value)}
-                        className={cn("h-7 px-2 py-0.5", !isPositionAtDepth && 'invisible')}
-                      />
+                    <NumberInput
+                      min={0}
+                      step={1}
+                      value={field.value ?? 4}
+                      onChange={(value) => field.onChange(value)}
+                      className={cn('h-7 px-2 py-0.5', !isPositionAtDepth && 'invisible')}
+                    />
                   </FormControl>
                 </FormItem>
               )}

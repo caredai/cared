@@ -23,7 +23,7 @@ import { Separator } from './separator'
  * Uses class-variance-authority (cva) to define different styles based on "variant" prop.
  */
 export const multiSelectVariants = cva(
-  'm-1 transition ease-in-out delay-150 hover:-translate-y-1 hover:scale-110 duration-300',
+  'm-1',
   {
     variants: {
       variant: {
@@ -208,13 +208,15 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
                       >
                         {IconComponent && <IconComponent className="h-4 w-4 mr-2" />}
                         {option?.label}
-                        <XCircle
-                          className="ml-2 h-4 w-4 cursor-pointer"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            toggleOption(value)
-                          }}
-                        />
+                        <span>
+                          <XCircle
+                            className="ml-2 h-4 w-4 cursor-pointer"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              toggleOption(value)
+                            }}
+                          />
+                        </span>
                       </Badge>
                     )
                   })}
@@ -228,13 +230,15 @@ export const MultiSelect = React.forwardRef<HTMLButtonElement, MultiSelectProps>
                       style={{ animationDuration: `${animation}s` }}
                     >
                       {`+ ${selectedValues.length - maxCount} more`}
-                      <XCircle
-                        className="ml-2 h-4 w-4 cursor-pointer"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          clearExtraOptions()
-                        }}
-                      />
+                      <span>
+                        <XCircle
+                          className="ml-2 h-4 w-4 cursor-pointer"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            clearExtraOptions()
+                          }}
+                        />
+                      </span>
                     </Badge>
                   )}
                 </div>

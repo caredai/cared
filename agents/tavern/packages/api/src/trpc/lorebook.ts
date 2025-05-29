@@ -1,7 +1,7 @@
 import path from 'path'
 import type { LorebookContent } from '@tavern/core'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
-import { lorebookEntrySchema, lorebookUpdatesSchema, updateLorebook } from '@tavern/core'
+import { lorebookEntriesSchema, lorebookEntrySchema } from '@tavern/core'
 import { and, desc, eq } from '@tavern/db'
 import { Lorebook } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
@@ -95,7 +95,8 @@ export const lorebookRouter = {
     .input(
       z.object({
         id: z.string(),
-        updates: lorebookUpdatesSchema,
+        name: z.string().min(1).optional(),
+        entries: lorebookEntriesSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -109,15 +110,14 @@ export const lorebookRouter = {
         })
       }
 
-      const result = updateLorebook(lorebook, input.updates)
-      if (result.error || !result.updates) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: result.error,
-        })
+      const updates = {
+        ...(input.name && { name: input.name }),
+        ...(input.entries && {
+          entries: input.entries,
+        }),
       }
 
-      await ctx.db.update(Lorebook).set(result.updates).where(eq(Lorebook.id, input.id))
+      await ctx.db.update(Lorebook).set(updates).where(eq(Lorebook.id, input.id))
 
       // Do not return lorebook here since it may be too big.
     }),

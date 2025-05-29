@@ -14,6 +14,7 @@ export function SelectActiveLorebooks() {
   }))
 
   const handleValueChange = (selectedIds: string[]) => {
+    console.log('Selected Lorebooks:', selectedIds.length)
     void updateLorebookSettings({
       active: selectedIds,
     })
@@ -21,15 +22,16 @@ export function SelectActiveLorebooks() {
 
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-sm">Active Worlds for all chats</span>
+      <span className="text-sm">Active lorebooks for all chats</span>
       <MultiSelectVirtual
         disabled={!lorebooks.length}
         options={options}
         value={lorebookSettings.active}
         onValueChange={handleValueChange}
-        placeholder="No Worlds active. Click here to select."
+        maxCount={5}
+        placeholder="No lorebooks active. Click here to select."
         className="border-input"
-        contentClassName="z-6000 border-input"
+        contentClassName="z-6000 w-48 border-input"
       />
     </div>
   )

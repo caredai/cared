@@ -1,11 +1,11 @@
 import type { AppRouter } from '@tavern/api'
-import type { LorebookEntry, LorebookUpdates } from '@tavern/core'
+import type { LorebookEntry } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { updateLorebook } from '@tavern/core'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
+import hash from 'stable-hash'
 
 import { debounceTimeout } from '@/lib/debounce'
 import { useTRPC } from '@/trpc/client'
@@ -166,7 +166,7 @@ export function useUpdateLorebook() {
               ...old.lorebooks.slice(0, index),
               {
                 ...lorebook,
-                ...updateLorebook(lorebook, newData.updates).updates,
+                ...newData,
               },
               ...old.lorebooks.slice(index + 1),
             ],
@@ -196,7 +196,6 @@ export function useUpdateLorebook() {
   // @ts-ignore
   const mutationFn = useCallback((...args: any[]) => mutationFnRef.current?.(...args), [])
 
-  // @ts-ignore
   mutationOptions.mutationFn = useMemo(
     () => pDebounce(mutationFn, debounceTimeout.extended),
     [mutationFn],
@@ -207,20 +206,21 @@ export function useUpdateLorebook() {
   const { lorebooks } = useLorebooks()
 
   return useCallback(
-    async (id: string, updates: LorebookUpdates) => {
-      const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
+    async (args: { id: string; name?: string; entries?: LorebookEntry[] }) => {
+      const lorebook = lorebooks.find((lorebook) => lorebook.id === args.id)
       if (!lorebook) {
         return
       }
-      const { error } = updateLorebook(lorebook, updates)
-      if (error) {
+
+      if (
+        !(args.name && args.name !== lorebook.name) &&
+        !(args.entries && hash(args.entries) !== hash(lorebook.entries))
+      ) {
+        // No changes to apply
         return
       }
 
-      return await mutation.mutateAsync({
-        id,
-        updates,
-      })
+      return await mutation.mutateAsync(args)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

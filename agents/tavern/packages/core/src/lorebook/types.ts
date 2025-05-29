@@ -142,3 +142,14 @@ export const lorebookEntrySchema = z.object({
   useProbability: z.boolean(),
   addMemo: z.boolean(),
 })
+
+export const lorebookEntriesSchema = z.array(lorebookEntrySchema).superRefine((entries, ctx) => {
+  if (new Set(entries.map((entry) => entry.uid)).size !== entries.length) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Each entry must have a unique uid',
+    })
+  }
+
+  return z.NEVER
+})

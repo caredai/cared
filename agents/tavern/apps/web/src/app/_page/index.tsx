@@ -1,16 +1,25 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { backgroundFittings } from '@/app/_panels/background-image'
 import { useBackgroundSettings } from '@/lib/settings'
+import { signIn } from '@/lib/sign-in'
+import { useTRPC } from '@/trpc/client'
 import { Content } from './content'
 import { Input } from './input'
 import { Navbar } from './navbar'
 
 export function PageContent() {
+  const trpc = useTRPC()
+  const { data: session } = useQuery(trpc.user.session.queryOptions())
+  if (!session?.user) {
+    void signIn()
+  }
+
   const backgroundSettings = useBackgroundSettings()
 
   const ref = useRef<HTMLDivElement>(null)
