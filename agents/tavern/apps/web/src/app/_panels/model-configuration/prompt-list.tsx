@@ -236,11 +236,11 @@ export function PromptList() {
               />
             ))}
           </SortableContext>
-          {createPortal(
+          {(globalThis as any).document && createPortal(
             <DragOverlay zIndex={7000}>
               {activePrompt ? <PromptListItem prompt={activePrompt} /> : null}
             </DragOverlay>,
-            document.body,
+            globalThis.document.body,
           )}
         </DndContext>
       </div>

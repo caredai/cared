@@ -14,11 +14,8 @@ import {
   faUserCog,
 } from '@fortawesome/free-solid-svg-icons'
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+import { Collapsible, CollapsibleTrigger } from '@ownxai/ui/components/collapsible'
+import { CollapsibleContent } from '@ownxai/ui/components/collapsible-content'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
@@ -60,7 +57,7 @@ export function Navbar() {
   useEffect(() => {
     const leftPanelName = navPanels[0].name
     const rightPanelName = navPanels.at(-1)!.name
-    const lorebookPanelName = navPanels.find(panel => panel.name === 'lorebook')!.name
+    const lorebookPanelName = navPanels.find((panel) => panel.name === 'lorebook')!.name
 
     setOpenPanels((prev) => {
       const newSet = new Set(prev)
@@ -82,7 +79,11 @@ export function Navbar() {
 
       return newSet
     })
-  }, [appearanceSettings.modelPresetPanelLocked, appearanceSettings.characterPanelLocked, appearanceSettings.lorebookPanelLocked])
+  }, [
+    appearanceSettings.modelPresetPanelLocked,
+    appearanceSettings.characterPanelLocked,
+    appearanceSettings.lorebookPanelLocked,
+  ])
 
   // Handle click outside
   useEffect(() => {
@@ -147,10 +148,7 @@ export function Navbar() {
     }
   }, [
     openPanels,
-    appearanceSettings.modelPresetPanelLocked,
-    appearanceSettings.characterPanelLocked,
-    appearanceSettings.lorebookPanelLocked,
-    navPanels,
+    appearanceSettings,
   ])
 
   // Toggle panel open/close state
@@ -209,33 +207,26 @@ export function Navbar() {
               }}
               className={cn(
                 'data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down',
-                'bg-background border border-border rounded-lg shadow-lg',
                 'absolute top-[35px] left-0 right-0 w-full',
-                'max-h-[calc(100dvh-calc(70px))] overflow-y-auto scrollbar-stable',
                 (index === 0 || index === navPanels.length - 1) &&
-                  'max-h-[calc(100dvh-calc(35px))] lg:fixed lg:top-0 lg:w-[calc(25%-1px)] h-full',
+                  'lg:fixed lg:top-0 lg:w-[calc(25%-1px)]',
                 index === 0
                   ? 'lg:right-auto'
                   : index === navPanels.length - 1
                     ? 'lg:left-auto'
                     : undefined,
               )}
-              onAnimationStart={(e) => {
-                if (index === 0 || index === navPanels.length - 1) {
-                  return
-                }
-                const target = e.target as HTMLElement
-                target.style.overflow = 'hidden'
-              }}
-              onAnimationEnd={(e) => {
-                if (index === 0 || index === navPanels.length - 1) {
-                  return
-                }
-                const target = e.target as HTMLElement
-                target.style.overflow = ''
-              }}
             >
-              <Panel />
+              <div
+                className={cn(
+                  'bg-background border border-border rounded-lg shadow-lg',
+                  'overflow-y-auto scrollbar-stable',
+                  index > 0 && index < navPanels.length - 1 && 'max-h-[calc(100dvh-calc(70px))] px-2 py-1.5',
+                  (index === 0 || index === navPanels.length - 1) && 'h-[calc(100dvh-calc(35px))]',
+                )}
+              >
+                <Panel />
+              </div>
             </CollapsibleContent>
           </Collapsible>
         ))}

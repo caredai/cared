@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
   faArrowDown91,
   faCompress,
@@ -32,6 +32,7 @@ import { SelectLorebook, useSelectedLorebookId } from './select-lorebook'
 
 export function LorebookPanel() {
   const { selectedLorebookId } = useSelectedLorebookId()
+  const [openEntries, setOpenEntries] = useState<Record<number, boolean>>({})
 
   const { lorebooks } = useLorebooks()
   const { lorebook } = useLorebook(selectedLorebookId ?? '')
@@ -40,29 +41,25 @@ export function LorebookPanel() {
   const appearanceSettings = useAppearanceSettings()
   const updateSettingsMutation = useUpdateSettingsMutation()
 
-  const virtualizerRef = useRef<HTMLDivElement>(null)
-  const [startMargin, setStartMargin] = useState(300)
-
-  useEffect(() => {
-    const calculateStartMargin = () => {
-      if (virtualizerRef.current) {
-        const rect = virtualizerRef.current.getBoundingClientRect()
-        const parentRect = virtualizerRef.current.parentElement?.getBoundingClientRect()
-        if (parentRect) {
-          console.log(`Virtualizer`, rect.y, parentRect.y, rect.y - parentRect.y)
-          setStartMargin(rect.y - parentRect.y)
-        }
-      }
-    }
-
-    calculateStartMargin()
-    window.addEventListener('resize', calculateStartMargin)
-    return () => window.removeEventListener('resize', calculateStartMargin)
-  }, [])
-
   // Calculate maxUid using useMemo
   const maxUid = useMemo(() => {
     return lorebook?.entries.reduce((max, entry) => Math.max(max, entry.uid), 0) ?? 0
+  }, [lorebook?.entries])
+
+  // Update openEntries when lorebook entries change
+  useEffect(() => {
+    if (!lorebook) {
+      setOpenEntries({})
+      return
+    }
+
+    // Keep existing open states for entries that still exist
+    const newOpenEntries = lorebook.entries.reduce((acc, entry) => ({
+      ...acc,
+      [entry.uid]: openEntries[entry.uid] ?? false
+    }), {})
+
+    setOpenEntries(newOpenEntries)
   }, [lorebook?.entries])
 
   const handleAddEntry = useCallback(async () => {
@@ -114,6 +111,31 @@ export function LorebookPanel() {
     })
   }, [maxUid, selectedLorebookId, updateLorebook, lorebook])
 
+  const handleOpenChange = useCallback((uid: number, open: boolean) => {
+    setOpenEntries(prev => ({
+      ...prev,
+      [uid]: open
+    }))
+  }, [])
+
+  const handleExpandAll = useCallback(() => {
+    if (!lorebook) return
+    const newState = lorebook.entries.reduce((acc, entry) => ({
+      ...acc,
+      [entry.uid]: true
+    }), {})
+    setOpenEntries(newState)
+  }, [lorebook])
+
+  const handleCollapseAll = useCallback(() => {
+    if (!lorebook) return
+    const newState = lorebook.entries.reduce((acc, entry) => ({
+      ...acc,
+      [entry.uid]: false
+    }), {})
+    setOpenEntries(newState)
+  }, [lorebook])
+
   const operateActions = [
     {
       action: handleAddEntry,
@@ -122,12 +144,12 @@ export function LorebookPanel() {
       disabled: !selectedLorebookId,
     },
     {
-      action: () => {},
+      action: handleExpandAll,
       icon: faExpand,
       tooltip: 'Open all Entries',
     },
     {
-      action: () => {},
+      action: handleCollapseAll,
       icon: faCompress,
       tooltip: 'Close all Entries',
     },
@@ -172,7 +194,6 @@ export function LorebookPanel() {
       tooltip: 'Duplicate Lorebook',
     },
     {
-      action: () => {},
       icon: faTrashCan,
       tooltip: 'Delete Lorebook',
       disabled: !selectedLorebookId,
@@ -181,7 +202,7 @@ export function LorebookPanel() {
   ]
 
   return (
-    <div className="flex flex-col gap-1 p-2 overflow-hidden [overflow-anchor:none]">
+    <Virtualizer>
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-2">
           <FaButton
@@ -238,32 +259,29 @@ export function LorebookPanel() {
         </div>
 
         <div />
+
+        <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
+          <Label className="col-start-3 text-xs">Title/Memo</Label>
+          <Label className="text-xs">Strategy</Label>
+          <Label className="text-xs">Position</Label>
+          <Label className="text-xs">Depth</Label>
+          <Label className="text-xs">Order</Label>
+          <Label className="text-xs">Trigger %</Label>
+        </div>
       </div>
 
-      <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
-        <Label className="col-start-3 text-xs">Title/Memo</Label>
-        <Label className="text-xs">Strategy</Label>
-        <Label className="text-xs">Position</Label>
-        <Label className="text-xs">Depth</Label>
-        <Label className="text-xs">Order</Label>
-        <Label className="text-xs">Trigger %</Label>
-      </div>
-
-      {lorebook && (
-        <Virtualizer startMargin={startMargin}>
-          <div ref={virtualizerRef} />
-          {lorebook.entries.map((entry) => (
-            <LorebookEntryItemEdit
-              key={entry.uid}
-              id={lorebook.id}
-              uid={entry.uid}
-              defaultValues={entry}
-              maxUid={maxUid}
-              lorebooks={lorebooks}
-            />
-          ))}
-        </Virtualizer>
-      )}
-    </div>
+      {lorebook?.entries.map((entry) => (
+        <LorebookEntryItemEdit
+          key={entry.uid}
+          id={lorebook.id}
+          uid={entry.uid}
+          defaultValues={entry}
+          maxUid={maxUid}
+          lorebooks={lorebooks}
+          open={openEntries[entry.uid]}
+          onOpenChange={(open) => handleOpenChange(entry.uid, open)}
+        />
+      ))}
+    </Virtualizer>
   )
 }

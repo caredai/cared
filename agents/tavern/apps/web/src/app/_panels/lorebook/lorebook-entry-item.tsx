@@ -105,12 +105,16 @@ export function LorebookEntryItemEdit({
   defaultValues,
   maxUid,
   lorebooks,
+  open,
+  onOpenChange,
 }: {
   id: string
   uid: number
   defaultValues: Partial<EntryFormValues>
   maxUid: number
   lorebooks: Lorebook[]
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }) {
   const updateLorebook = useUpdateLorebook()
 
@@ -204,7 +208,7 @@ export function LorebookEntryItemEdit({
         onBlur={handleBlur}
         autoComplete="off"
       >
-        <Collapsible>
+        <Collapsible open={open} onOpenChange={onOpenChange}>
           <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
             <CollapsibleTrigger asChild>
               <Button

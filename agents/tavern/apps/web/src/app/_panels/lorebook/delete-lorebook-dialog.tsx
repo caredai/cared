@@ -43,7 +43,7 @@ export function DeleteLorebookDialog({ trigger }: DeleteLorebookDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="z-7000">
         <DialogHeader>
           <DialogTitle>Delete Lorebook</DialogTitle>
           <DialogDescription>

@@ -1,3 +1,5 @@
+'use client'
+
 import { Separator } from '@ownxai/ui/components/separator'
 
 import { isCharacterGroup, useActiveCharacter } from '@/hooks/use-active-character'

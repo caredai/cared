@@ -1,3 +1,5 @@
+'use client'
+
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import type { Tag } from '@tavern/core'
 import type { ComponentPropsWithoutRef } from 'react'
@@ -218,7 +220,7 @@ export function TagsManagementDialog() {
                 ))}
               </VList>
             </SortableContext>
-            {createPortal(
+            {(globalThis as any).document && createPortal(
               <DragOverlay zIndex={7000}>
                 {activeItem ? (
                   <TagRow
@@ -227,7 +229,7 @@ export function TagsManagementDialog() {
                   />
                 ) : null}
               </DragOverlay>,
-              document.body,
+              globalThis.document.body,
             )}
           </DndContext>
         </div>
