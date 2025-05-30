@@ -11,7 +11,7 @@ export function OptionalNumberInput({
   step,
   className,
   ...props
-}: ComponentPropsWithoutRef<typeof Input> & {
+}: Omit<ComponentPropsWithoutRef<typeof Input>, 'value' | 'onChange'> & {
   value?: number
   onChange: (value?: number) => void
   min?: number
@@ -31,7 +31,11 @@ export function OptionalNumberInput({
     }
 
     const numValue = parseFloat(inputValue)
-    if (!isNaN(numValue) && (typeof min !== 'number' || numValue >= min) && (typeof max !== 'number' || numValue <= max)) {
+    if (
+      !isNaN(numValue) &&
+      (typeof min !== 'number' || numValue >= min) &&
+      (typeof max !== 'number' || numValue <= max)
+    ) {
       // Round to the nearest step
       const roundedValue = Math.round(numValue / step) * step
       setInputValue(roundedValue.toString())
@@ -65,7 +69,7 @@ export function NumberInput({
   step,
   className,
   ...props
-}: ComponentPropsWithoutRef<typeof Input> & {
+}: Omit<ComponentPropsWithoutRef<typeof Input>, 'value' | 'onChange'> & {
   value: number
   onChange: (value: number) => void
   min?: number
@@ -80,7 +84,11 @@ export function NumberInput({
 
   const handleBlur = () => {
     const numValue = parseFloat(inputValue)
-    if (!isNaN(numValue) && (typeof min !== 'number' || numValue >= min) && (typeof max !== 'number' || numValue <= max)) {
+    if (
+      !isNaN(numValue) &&
+      (typeof min !== 'number' || numValue >= min) &&
+      (typeof max !== 'number' || numValue <= max)
+    ) {
       // Round to the nearest step
       const roundedValue = Math.round(numValue / step) * step
       setInputValue(roundedValue.toString())

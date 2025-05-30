@@ -12,8 +12,6 @@ import {
   faTrashCan,
   faUnlock,
 } from '@fortawesome/free-solid-svg-icons'
-import { modelPresetSchema } from '@tavern/core'
-import { toast } from 'sonner'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -50,6 +48,7 @@ import { ModelConf } from './model-conf'
 import { PromptEdit } from './prompt-edit'
 import { PromptInspect } from './prompt-inspect'
 import { PromptList } from './prompt-list'
+import { ImportPresetDialog } from './import-preset-dialog'
 
 export function ModelConfigurationPanel() {
   const appearanceSettings = useAppearanceSettings()
@@ -66,8 +65,7 @@ export function ModelConfigurationPanel() {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isViewChangesDialogOpen, setIsViewChangesDialogOpen] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isImporting, setIsImporting] = useState(false)
+  const importFileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSaveAs = async (name: string) => {
     await createModelPreset(name, activePreset.preset)
@@ -76,54 +74,6 @@ export function ModelConfigurationPanel() {
 
   const handleDelete = async () => {
     await deleteModelPreset(activePreset.id)
-  }
-
-  const handleImport = async (file: File) => {
-    try {
-      const text = await file.text()
-      const preset = JSON.parse(text)
-
-      // Validate the preset using schema
-      const validatedPreset = modelPresetSchema.parse(preset)
-
-      // Get name from file name without extension
-      const name = file.name.replace(/\.json$/, '')
-
-      // Check if name exists and add suffix if needed
-      let finalName = name
-      let counter = 1
-      while (presets.some((p) => p.name === finalName)) {
-        finalName = `${name} (${counter})`
-        counter++
-      }
-
-      await createModelPreset(finalName, validatedPreset)
-      await setActivePreset(finalName)
-      toast.success('Preset imported successfully')
-    } catch {
-      toast.error('Failed to import preset: invalid file format')
-    }
-  }
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (!file.name.endsWith('.json')) {
-      toast.error('Please select a JSON file')
-      return
-    }
-
-    setIsImporting(true)
-    try {
-      await handleImport(file)
-    } finally {
-      setIsImporting(false)
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    }
   }
 
   const operateActions = [
@@ -158,11 +108,9 @@ export function ModelConfigurationPanel() {
       tooltip: 'Save preset as...',
     },
     {
-      action: () => fileInputRef.current?.click(),
+      action: () => importFileInputRef.current?.click(),
       icon: faFileImport,
       tooltip: 'Import preset',
-      disabled: isImporting,
-      className: isImporting ? 'disabled:pointer-events-none disabled:opacity-50' : '',
     },
     {
       action: () => setIsExportDialogOpen(true),
@@ -264,13 +212,10 @@ export function ModelConfigurationPanel() {
         customization={customization}
       />
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        onChange={handleFileChange}
-        disabled={isImporting}
-        className="hidden"
+      <ImportPresetDialog
+        ref={importFileInputRef}
+        onImport={setActivePreset}
+        existingPresets={presets}
       />
     </div>
   )

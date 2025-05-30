@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   faArrowDown91,
   faCompress,
@@ -25,16 +25,22 @@ import { FaButton } from '@/components/fa-button'
 import { useLorebook, useLorebooks, useUpdateLorebook } from '@/hooks/use-lorebook'
 import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
 import { AddLorebookDialog } from './add-lorebook-dialog'
+import { ApplySortingDialog } from './apply-sorting-dialog'
 import { DeleteLorebookDialog } from './delete-lorebook-dialog'
+import { DuplicateLorebookDialog } from './duplicate-lorebook-dialog'
+import { ExportLorebookDialog } from './export-lorebook-dialog'
 import { LorebookEntryItemEdit } from './lorebook-entry-item'
 import { LorebookSettings } from './lorebook-settings'
+import { RenameLorebookDialog } from './rename-lorebook-dialog'
 import { SelectActiveLorebooks } from './select-active-lorebooks'
 import { SelectLorebook, useSelectedLorebookId } from './select-lorebook'
+import { ImportLorebookDialog } from './import-lorebook-dialog'
 
 export function LorebookPanel() {
   const { selectedLorebookId } = useSelectedLorebookId()
   const [openEntries, setOpenEntries] = useState<Record<number, boolean>>({})
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const importFileInputRef = useRef<HTMLInputElement>(null)
 
   const { lorebooks } = useLorebooks()
   const { lorebook } = useLorebook(selectedLorebookId ?? '')
@@ -194,45 +200,52 @@ export function LorebookPanel() {
       tooltip: 'Fill empty Memo/Titles with Keywords',
     },
     {
-      action: () => {},
       icon: faArrowDown91,
       tooltip: 'Apply current sorting as Order',
+      disabled: !selectedLorebookId,
+      wrapper: ApplySortingDialog,
     },
     {
-      action: () => {},
       icon: faPencil,
       tooltip: 'Rename Lorebook',
-      disabled: false,
-      className: '',
+      disabled: !selectedLorebookId,
+      wrapper: RenameLorebookDialog,
     },
     {
-      action: () => {},
       icon: faSquarePlus,
       tooltip: 'New Lorebook',
       disabled: false,
-      className: '',
       wrapper: AddLorebookDialog,
     },
     {
-      action: () => {},
+      action: () => importFileInputRef.current?.click(),
       icon: faFileImport,
       tooltip: 'Import Lorebook',
+      wrapper: (props: any) => (
+        <ImportLorebookDialog
+          ref={importFileInputRef}
+          {...props}
+        />
+      ),
     },
     {
-      action: () => {},
       icon: faFileExport,
       tooltip: 'Export Lorebook',
+      disabled: !selectedLorebookId,
+      wrapper: ExportLorebookDialog,
     },
     {
-      action: () => {},
       icon: faPaste,
       tooltip: 'Duplicate Lorebook',
+      disabled: !selectedLorebookId,
+      wrapper: DuplicateLorebookDialog,
     },
     {
       icon: faTrashCan,
       tooltip: 'Delete Lorebook',
       disabled: !selectedLorebookId,
       wrapper: DeleteLorebookDialog,
+      className: 'hover:bg-destructive'
     },
   ]
 

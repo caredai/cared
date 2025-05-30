@@ -1,4 +1,5 @@
-import { ReactNode, useCallback, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useCallback, useState } from 'react'
 import { GlobeIcon } from 'lucide-react'
 
 import { Button } from '@ownxai/ui/components/button'
@@ -13,6 +14,7 @@ import { Input } from '@ownxai/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useCreateLorebook, useLorebooks } from '@/hooks/use-lorebook'
+import { useSelectedLorebookId } from './select-lorebook'
 
 export function AddLorebookDialog({ trigger }: { trigger?: ReactNode }) {
   const [name, setName] = useState('')
@@ -22,10 +24,12 @@ export function AddLorebookDialog({ trigger }: { trigger?: ReactNode }) {
   const createLorebook = useCreateLorebook()
   const { lorebooks } = useLorebooks()
 
+  const { setSelectedLorebookId } = useSelectedLorebookId()
+
   // Generate default lorebook name
   const generateDefaultName = useCallback(() => {
     const baseName = 'Lorebook'
-    const existingNames = new Set(lorebooks.map(lb => lb.name))
+    const existingNames = new Set(lorebooks.map((lb) => lb.name))
 
     let index = 1
     let newName = `${baseName} (${index})`
@@ -38,24 +42,32 @@ export function AddLorebookDialog({ trigger }: { trigger?: ReactNode }) {
     return newName
   }, [lorebooks])
 
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    setOpen(newOpen)
-    if (newOpen) {
-      setName(generateDefaultName())
-    }
-  }, [generateDefaultName])
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      setOpen(newOpen)
+      if (newOpen) {
+        setName(generateDefaultName())
+      }
+    },
+    [generateDefaultName],
+  )
 
   const handleSubmit = useCallback(async () => {
     if (!name.trim()) return
     setLoading(true)
     try {
-      await createLorebook(name)
+      const {
+        lorebook: { id },
+      } = await createLorebook(name)
+
+      setSelectedLorebookId(id)
+
       setName('')
       setOpen(false)
     } finally {
       setLoading(false)
     }
-  }, [createLorebook, name])
+  }, [createLorebook, name, setSelectedLorebookId])
 
   // Default trigger button if none provided
   const defaultTrigger = (
@@ -68,7 +80,7 @@ export function AddLorebookDialog({ trigger }: { trigger?: ReactNode }) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
-      <DialogContent>
+      <DialogContent className="z-7000">
         <DialogHeader>
           <DialogTitle>Create New Lorebook</DialogTitle>
         </DialogHeader>
