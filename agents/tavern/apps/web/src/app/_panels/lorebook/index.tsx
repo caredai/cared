@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   faArrowDown91,
   faCompress,
@@ -15,6 +15,7 @@ import {
   faUnlock,
 } from '@fortawesome/free-solid-svg-icons'
 import { lorebookEntrySchema, Position, SelectiveLogic } from '@tavern/core'
+import { toast } from 'sonner'
 import { Virtualizer } from 'virtua'
 
 import { Label } from '@ownxai/ui/components/label'
@@ -33,13 +34,14 @@ import { SelectLorebook, useSelectedLorebookId } from './select-lorebook'
 export function LorebookPanel() {
   const { selectedLorebookId } = useSelectedLorebookId()
   const [openEntries, setOpenEntries] = useState<Record<number, boolean>>({})
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const { lorebooks } = useLorebooks()
   const { lorebook } = useLorebook(selectedLorebookId ?? '')
   const updateLorebook = useUpdateLorebook()
 
   const appearanceSettings = useAppearanceSettings()
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
 
   // Calculate maxUid using useMemo
   const maxUid = useMemo(() => {
@@ -54,10 +56,13 @@ export function LorebookPanel() {
     }
 
     // Keep existing open states for entries that still exist
-    const newOpenEntries = lorebook.entries.reduce((acc, entry) => ({
-      ...acc,
-      [entry.uid]: openEntries[entry.uid] ?? false
-    }), {})
+    const newOpenEntries = lorebook.entries.reduce(
+      (acc, entry) => ({
+        ...acc,
+        [entry.uid]: openEntries[entry.uid] ?? false,
+      }),
+      {},
+    )
 
     setOpenEntries(newOpenEntries)
   }, [lorebook?.entries])
@@ -111,28 +116,58 @@ export function LorebookPanel() {
     })
   }, [maxUid, selectedLorebookId, updateLorebook, lorebook])
 
+  const handleFillEmptyTitles = useCallback(async () => {
+    if (!selectedLorebookId || !lorebook) return
+
+    let filledCount = 0
+    const updatedEntries = lorebook.entries.map((entry) => {
+      if (!entry.comment && entry.keys.length > 0) {
+        filledCount++
+        return {
+          ...entry,
+          comment: entry.keys[0]!,
+        }
+      }
+      return entry
+    })
+
+    if (filledCount > 0) {
+      toast.success(`Backfilled ${filledCount} titles`)
+      await updateLorebook({
+        id: selectedLorebookId,
+        entries: updatedEntries,
+      })
+    }
+  }, [selectedLorebookId, lorebook, updateLorebook])
+
   const handleOpenChange = useCallback((uid: number, open: boolean) => {
-    setOpenEntries(prev => ({
+    setOpenEntries((prev) => ({
       ...prev,
-      [uid]: open
+      [uid]: open,
     }))
   }, [])
 
   const handleExpandAll = useCallback(() => {
     if (!lorebook) return
-    const newState = lorebook.entries.reduce((acc, entry) => ({
-      ...acc,
-      [entry.uid]: true
-    }), {})
+    const newState = lorebook.entries.reduce(
+      (acc, entry) => ({
+        ...acc,
+        [entry.uid]: true,
+      }),
+      {},
+    )
     setOpenEntries(newState)
   }, [lorebook])
 
   const handleCollapseAll = useCallback(() => {
     if (!lorebook) return
-    const newState = lorebook.entries.reduce((acc, entry) => ({
-      ...acc,
-      [entry.uid]: false
-    }), {})
+    const newState = lorebook.entries.reduce(
+      (acc, entry) => ({
+        ...acc,
+        [entry.uid]: false,
+      }),
+      {},
+    )
     setOpenEntries(newState)
   }, [lorebook])
 
@@ -154,7 +189,7 @@ export function LorebookPanel() {
       tooltip: 'Close all Entries',
     },
     {
-      action: () => {},
+      action: handleFillEmptyTitles,
       icon: faFill,
       tooltip: 'Fill empty Memo/Titles with Keywords',
     },
@@ -211,12 +246,10 @@ export function LorebookPanel() {
             iconSize="xl"
             title="If locked, lorebook panel will stay open"
             onClick={async () => {
-              await updateSettingsMutation.mutateAsync({
-                settings: {
-                  appearance: {
-                    ...appearanceSettings,
-                    lorebookPanelLocked: !appearanceSettings.lorebookPanelLocked,
-                  },
+              await updateSettings({
+                appearance: {
+                  ...appearanceSettings,
+                  lorebookPanelLocked: !appearanceSettings.lorebookPanelLocked,
                 },
               })
             }}
@@ -229,7 +262,7 @@ export function LorebookPanel() {
             <SelectActiveLorebooks />
           </div>
           <div className="w-full md:w-1/2">
-            <LorebookSettings />
+            <LorebookSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
           </div>
         </div>
 
@@ -279,7 +312,7 @@ export function LorebookPanel() {
           maxUid={maxUid}
           lorebooks={lorebooks}
           open={openEntries[entry.uid]}
-          onOpenChange={(open) => handleOpenChange(entry.uid, open)}
+          onOpenChange={handleOpenChange}
         />
       ))}
     </Virtualizer>

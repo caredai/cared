@@ -55,7 +55,7 @@ const BackgroundItem = ({
 export function BackgroundImagePanel() {
   const backgroundSettings = useBackgroundSettings()
 
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
 
   const [filter, setFilter] = useState('')
 
@@ -81,12 +81,10 @@ export function BackgroundImagePanel() {
           <Select
             value={backgroundSettings.fitting}
             onValueChange={async (value) => {
-              await updateSettingsMutation.mutateAsync({
-                settings: {
-                  background: {
-                    ...backgroundSettings,
-                    fitting: value as keyof typeof backgroundFittings,
-                  },
+              await updateSettings({
+                background: {
+                  ...backgroundSettings,
+                  fitting: value as keyof typeof backgroundFittings,
                 },
               })
             }}
@@ -120,12 +118,10 @@ export function BackgroundImagePanel() {
               name={bg.name}
               selected={backgroundSettings.active.url === bg.url}
               onClick={async () => {
-                await updateSettingsMutation.mutateAsync({
-                  settings: {
-                    background: {
-                      ...backgroundSettings,
-                      active: bg,
-                    },
+                await updateSettings({
+                  background: {
+                    ...backgroundSettings,
+                    active: bg,
                   },
                 })
               }}

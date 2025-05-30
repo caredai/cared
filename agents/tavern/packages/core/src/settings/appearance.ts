@@ -4,6 +4,9 @@ export interface AppearanceSettings {
   modelPresetPanelLocked: boolean
   characterPanelLocked: boolean
   lorebookPanelLocked: boolean
+  modelPresetPanelOpen: boolean
+  characterPanelOpen: boolean
+  lorebookPanelOpen: boolean
 
   movingUI?:
     | { enabled: false }
@@ -29,6 +32,9 @@ export const appearanceSettingsSchema = z.object({
   modelPresetPanelLocked: z.boolean(),
   characterPanelLocked: z.boolean(),
   lorebookPanelLocked: z.boolean(),
+  modelPresetPanelOpen: z.boolean(),
+  characterPanelOpen: z.boolean(),
+  lorebookPanelOpen: z.boolean(),
   movingUI: z
     .discriminatedUnion('enabled', [
       z.object({ enabled: z.literal(false) }),
@@ -56,6 +62,9 @@ export function fillInAppearanceSettingsWithDefaults(settings?: AppearanceSettin
       modelPresetPanelLocked: false,
       characterPanelLocked: false,
       lorebookPanelLocked: false,
+      modelPresetPanelOpen: false,
+      characterPanelOpen: false,
+      lorebookPanelOpen: false,
       movingUI: undefined,
     }
   )

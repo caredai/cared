@@ -53,7 +53,7 @@ import { PromptList } from './prompt-list'
 
 export function ModelConfigurationPanel() {
   const appearanceSettings = useAppearanceSettings()
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
   const { modelPresets: presets } = useModelPresets()
   const { activePreset, setActivePreset } = useActiveModelPreset()
   const createModelPreset = useCreateModelPreset()
@@ -187,12 +187,10 @@ export function ModelConfigurationPanel() {
           iconSize="xl"
           title="If locked, character management panel will stay open"
           onClick={async () => {
-            await updateSettingsMutation.mutateAsync({
-              settings: {
-                appearance: {
-                  ...appearanceSettings,
-                  modelPresetPanelLocked: !appearanceSettings.modelPresetPanelLocked,
-                },
+            await updateSettings({
+              appearance: {
+                ...appearanceSettings,
+                modelPresetPanelLocked: !appearanceSettings.modelPresetPanelLocked,
               },
             })
           }}

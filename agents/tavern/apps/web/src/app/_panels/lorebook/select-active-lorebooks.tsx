@@ -26,7 +26,7 @@ export function SelectActiveLorebooks() {
       <MultiSelectVirtual
         disabled={!lorebooks.length}
         options={options}
-        value={lorebookSettings.active}
+        defaultValue={lorebookSettings.active}
         onValueChange={handleValueChange}
         maxCount={5}
         placeholder="No lorebooks active. Click here to select."

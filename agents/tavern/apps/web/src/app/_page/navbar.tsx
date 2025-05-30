@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   faAddressCard,
   faBookAtlas,
@@ -19,7 +19,7 @@ import { CollapsibleContent } from '@ownxai/ui/components/collapsible-content'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
-import { useAppearanceSettings } from '@/lib/settings'
+import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
 import { BackgroundImagePanel } from '../_panels/background-image'
 import { CharacterManagementPanel } from '../_panels/character-management'
 import { ExtensionsPanel } from '../_panels/extensions'
@@ -45,13 +45,40 @@ const navPanels = [
 
 export function Navbar() {
   const appearanceSettings = useAppearanceSettings()
+  const updateSettings = useUpdateSettingsMutation()
 
   // Use Set to track multiple open panels instead of a single openItem
-  const [openPanels, setOpenPanels] = useState<Set<string>>(new Set())
+  const [openPanels, _setOpenPanels] = useState<Set<string>>(new Set())
 
   // Create refs object to store all panel refs
   const panelRefs = useRef<Record<string, HTMLDivElement | null>>({})
   const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+
+  // Wrapped version of setOpenPanels that also updates appearance settings
+  const setOpenPanels = useCallback(
+    (updater: (prev: Set<string>) => Set<string>) => {
+      _setOpenPanels((prev) => {
+        const newSet = updater(prev)
+
+        // Update appearance settings
+        const leftPanelName = navPanels[0].name
+        const rightPanelName = navPanels.at(-1)!.name
+        const lorebookPanelName = navPanels.find((panel) => panel.name === 'lorebook')!.name
+
+        void updateSettings({
+          appearance: {
+            ...appearanceSettings,
+            modelPresetPanelOpen: newSet.has(leftPanelName),
+            characterPanelOpen: newSet.has(rightPanelName),
+            lorebookPanelOpen: newSet.has(lorebookPanelName),
+          },
+        })
+
+        return newSet
+      })
+    },
+    [appearanceSettings, updateSettings],
+  )
 
   // Initialize panels - automatically open locked panels when component mounts
   useEffect(() => {
@@ -59,30 +86,30 @@ export function Navbar() {
     const rightPanelName = navPanels.at(-1)!.name
     const lorebookPanelName = navPanels.find((panel) => panel.name === 'lorebook')!.name
 
-    setOpenPanels((prev) => {
+    _setOpenPanels((prev) => {
       const newSet = new Set(prev)
 
       // Open left panel if locked
-      if (appearanceSettings.modelPresetPanelLocked) {
+      if (appearanceSettings.modelPresetPanelOpen) {
         newSet.add(leftPanelName)
       }
 
       // Open right panel if locked
-      if (appearanceSettings.characterPanelLocked) {
+      if (appearanceSettings.characterPanelOpen) {
         newSet.add(rightPanelName)
       }
 
       // Open lorebook panel if locked
-      if (appearanceSettings.lorebookPanelLocked) {
+      if (appearanceSettings.lorebookPanelOpen) {
         newSet.add(lorebookPanelName)
       }
 
       return newSet
     })
   }, [
-    appearanceSettings.modelPresetPanelLocked,
-    appearanceSettings.characterPanelLocked,
-    appearanceSettings.lorebookPanelLocked,
+    appearanceSettings.modelPresetPanelOpen,
+    appearanceSettings.characterPanelOpen,
+    appearanceSettings.lorebookPanelOpen,
   ])
 
   // Handle click outside
@@ -146,10 +173,7 @@ export function Navbar() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [
-    openPanels,
-    appearanceSettings,
-  ])
+  }, [openPanels, appearanceSettings, setOpenPanels])
 
   // Toggle panel open/close state
   const toggleItem = (itemName: string) => {
@@ -221,7 +245,9 @@ export function Navbar() {
                 className={cn(
                   'bg-background border border-border rounded-lg shadow-lg',
                   'overflow-y-auto scrollbar-stable',
-                  index > 0 && index < navPanels.length - 1 && 'max-h-[calc(100dvh-calc(70px))] px-2 py-1.5',
+                  index > 0 &&
+                    index < navPanels.length - 1 &&
+                    'max-h-[calc(100dvh-calc(70px))] px-2 py-1.5',
                   (index === 0 || index === navPanels.length - 1) && 'h-[calc(100dvh-calc(35px))]',
                 )}
               >

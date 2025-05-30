@@ -1,5 +1,5 @@
 import type { z } from 'zod'
-import { useEffect } from 'react'
+import { memo, useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { lorebookSettingsSchema } from '@tavern/core'
 import { ChevronDownIcon } from 'lucide-react'
@@ -37,7 +37,13 @@ const formSchema = lorebookSettingsSchema.omit({
 
 type FormValues = z.infer<typeof formSchema>
 
-export function LorebookSettings() {
+export const LorebookSettings = memo(function LorebookSettings({
+  open,
+  onOpenChange,
+}: {
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
   const lorebookSettings = useLorebookSettings()
   const updateLorebookSettings = useUpdateLorebookSettings()
 
@@ -51,7 +57,7 @@ export function LorebookSettings() {
   }, [lorebookSettings, form])
 
   return (
-    <Collapsible>
+    <Collapsible open={open} onOpenChange={onOpenChange}>
       <CollapsibleTrigger asChild>
         <div className="flex justify-between items-center cursor-pointer [&[data-state=open]>button>svg]:rotate-180">
           <span className="text-sm">Global settings for lorebooks activation</span>
@@ -193,4 +199,4 @@ export function LorebookSettings() {
       </CollapsibleContent>
     </Collapsible>
   )
-}
+})

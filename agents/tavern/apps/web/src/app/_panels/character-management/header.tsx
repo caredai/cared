@@ -11,7 +11,7 @@ export function CharacterManagementHeader() {
 
   const appearanceSettings = useAppearanceSettings()
 
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
 
   return (
     <div className="flex flex-row items-center justify-between gap-2">
@@ -22,12 +22,10 @@ export function CharacterManagementHeader() {
           iconSize="xl"
           title="If locked, character management panel will stay open"
           onClick={async () => {
-            await updateSettingsMutation.mutateAsync({
-              settings: {
-                appearance: {
-                  ...appearanceSettings,
-                  characterPanelLocked: !appearanceSettings.characterPanelLocked,
-                },
+            await updateSettings({
+              appearance: {
+                ...appearanceSettings,
+                characterPanelLocked: !appearanceSettings.characterPanelLocked,
               },
             })
           }}

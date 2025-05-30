@@ -1,6 +1,6 @@
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import type { Prompt } from '@tavern/core'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useId, useMemo, useState } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -187,6 +187,8 @@ export function PromptList() {
 
   const activePrompt = activeId ? prompts.find((p) => p.identifier === activeId) : null
 
+  const id = useId()
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col">
@@ -216,6 +218,8 @@ export function PromptList() {
 
       <div className="flex flex-col gap-2 border border-border p-2 rounded-sm bg-black/20">
         <DndContext
+          // https://github.com/clauderic/dnd-kit/issues/926#issuecomment-1640115665
+          id={id}
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
@@ -236,12 +240,13 @@ export function PromptList() {
               />
             ))}
           </SortableContext>
-          {(globalThis as any).document && createPortal(
-            <DragOverlay zIndex={7000}>
-              {activePrompt ? <PromptListItem prompt={activePrompt} /> : null}
-            </DragOverlay>,
-            globalThis.document.body,
-          )}
+          {(globalThis as any).document &&
+            createPortal(
+              <DragOverlay zIndex={7000}>
+                {activePrompt ? <PromptListItem prompt={activePrompt} /> : null}
+              </DragOverlay>,
+              globalThis.document.body,
+            )}
         </DndContext>
       </div>
     </div>

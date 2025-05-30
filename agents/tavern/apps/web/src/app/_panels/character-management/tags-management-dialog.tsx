@@ -2,7 +2,7 @@
 
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import type { Tag } from '@tavern/core'
-import type { ComponentPropsWithoutRef } from 'react'
+import { ComponentPropsWithoutRef, useId } from 'react'
 import type { ColorResult } from 'react-color'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -184,6 +184,8 @@ export function TagsManagementDialog() {
 
   const activeItem = activeName ? items.find((item) => item.name === activeName) : null
 
+  const id = useId()
+
   return (
     <Dialog modal open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[500px] z-6000 flex flex-col">
@@ -197,6 +199,7 @@ export function TagsManagementDialog() {
 
         <div className="flex-grow overflow-auto my-4 h-[50dvh]">
           <DndContext
+            id={id}
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}

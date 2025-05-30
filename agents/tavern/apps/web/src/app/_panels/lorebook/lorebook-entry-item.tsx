@@ -1,5 +1,6 @@
+import type { Lorebook } from '@/hooks/use-lorebook'
 import type { z } from 'zod'
-import { useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import { faComments, faPaste, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -37,7 +38,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 import { CheckboxField } from '@/components/checkbox-field'
 import { FaButton } from '@/components/fa-button'
 import { NumberInput, OptionalNumberInput } from '@/components/number-input'
-import { Lorebook, useUpdateLorebook } from '@/hooks/use-lorebook'
+import { useUpdateLorebook } from '@/hooks/use-lorebook'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 
 const selectiveLogicOptions = [
@@ -99,7 +100,7 @@ const strategyOptions = [
   { value: 'vectorized', label: '🔗 Vectorized', name: '🔗' },
 ]
 
-export function LorebookEntryItemEdit({
+export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
   id,
   uid,
   defaultValues,
@@ -114,12 +115,15 @@ export function LorebookEntryItemEdit({
   maxUid: number
   lorebooks: Lorebook[]
   open?: boolean
-  onOpenChange?: (open: boolean) => void
+  onOpenChange?: (uid: number, open: boolean) => void
 }) {
   const updateLorebook = useUpdateLorebook()
 
   const [secondaryKeys, setSecondaryKeys] = useState<string>(
     defaultValues.secondaryKeys?.join(', ') ?? '',
+  )
+  const [primaryKeys, setPrimaryKeys] = useState<string>(
+    defaultValues.keys?.join(', ') ?? '',
   )
 
   const form = useForm<EntryFormValues>({
@@ -208,7 +212,7 @@ export function LorebookEntryItemEdit({
         onBlur={handleBlur}
         autoComplete="off"
       >
-        <Collapsible open={open} onOpenChange={onOpenChange}>
+        <Collapsible open={open} onOpenChange={(open) => onOpenChange?.(uid, open)}>
           <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
             <CollapsibleTrigger asChild>
               <Button
@@ -423,15 +427,18 @@ export function LorebookEntryItemEdit({
                   <FormItem>
                     <FormControl>
                       <Textarea
-                        value={field.value.join(', ')}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value
-                              .split(',')
-                              .map((s) => s.trim())
-                              .filter(Boolean),
-                          )
-                        }
+                        value={primaryKeys}
+                        onChange={(e) => {
+                          setPrimaryKeys(e.target.value)
+                        }}
+                        onBlur={(e) => {
+                          const values = e.target.value
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean)
+                          field.onChange(values)
+                          setPrimaryKeys(values.join(', '))
+                        }}
                         placeholder="Comma separated keys"
                         className="min-h-7 h-7 px-2 py-0.5"
                       />
@@ -751,7 +758,7 @@ export function LorebookEntryItemEdit({
       </form>
     </Form>
   )
-}
+})
 
 function BooleanSelect({
   field,

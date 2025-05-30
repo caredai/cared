@@ -3,6 +3,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
+import hash from 'stable-hash'
 
 import { useTRPC } from '@/trpc/client'
 import { debounceTimeout } from './debounce'
@@ -69,7 +70,27 @@ export function useUpdateSettingsMutation() {
         queryClient.setQueryData(trpc.settings.get.queryKey(), data)
       },
     })
-  return mutation
+
+  const {
+    data: { settings },
+  } = useSuspenseQuery(trpc.settings.get.queryOptions())
+
+  return useCallback(
+    async (updates: Partial<Settings>) => {
+      if (
+        hash({
+          ...settings,
+          ...updates,
+        }) === hash(settings)
+      ) {
+        return
+      }
+
+      return await mutation.mutateAsync({ settings: updates })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [settings],
+  )
 }
 
 export function useBackgroundSettings() {
@@ -101,16 +122,14 @@ export function useTagsSettings() {
 
 export function useUpdateTagsSettings() {
   const tagsSettings = useTagsSettings()
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
 
   return useCallback(
     async (tags: Partial<TagsSettings>) => {
-      await updateSettingsMutation.mutateAsync({
-        settings: {
-          tags: {
-            ...tagsSettings,
-            ...tags,
-          },
+      await updateSettings({
+        tags: {
+          ...tagsSettings,
+          ...tags,
         },
       })
     },
@@ -130,16 +149,14 @@ export function useModelPresetSettings() {
 
 export function useUpdateModelPresetSettings() {
   const modelPresetSettings = useModelPresetSettings()
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
 
   return useCallback(
     async (modelPreset: Partial<ModelPresetSettings>) => {
-      await updateSettingsMutation.mutateAsync({
-        settings: {
-          modelPreset: {
-            ...modelPresetSettings,
-            ...modelPreset,
-          },
+      await updateSettings({
+        modelPreset: {
+          ...modelPresetSettings,
+          ...modelPreset,
         },
       })
     },
@@ -159,16 +176,14 @@ export function useModelSettings() {
 
 export function useUpdateModelSettings() {
   const modelSettings = useModelSettings()
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
 
   return useCallback(
     async (modelSettingsValues: Partial<ModelSettings>) => {
-      await updateSettingsMutation.mutateAsync({
-        settings: {
-          model: {
-            ...modelSettings,
-            ...modelSettingsValues,
-          },
+      await updateSettings({
+        model: {
+          ...modelSettings,
+          ...modelSettingsValues,
         },
       })
     },
@@ -188,16 +203,14 @@ export function useLorebookSettings() {
 
 export function useUpdateLorebookSettings() {
   const lorebookSettings = useLorebookSettings()
-  const updateSettingsMutation = useUpdateSettingsMutation()
+  const updateSettings = useUpdateSettingsMutation()
 
   return useCallback(
     async (lorebook: Partial<Settings['lorebook']>) => {
-      await updateSettingsMutation.mutateAsync({
-        settings: {
-          lorebook: {
-            ...lorebookSettings,
-            ...lorebook,
-          },
+      await updateSettings({
+        lorebook: {
+          ...lorebookSettings,
+          ...lorebook,
         },
       })
     },

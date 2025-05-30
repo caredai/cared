@@ -6,6 +6,7 @@ import { composeRefs } from '@radix-ui/react-compose-refs'
 
 import { cn } from '@ownxai/ui/lib/utils'
 
+// https://github.com/radix-ui/primitives/discussions/1481#discussioncomment-11392540
 export function CollapsibleContent({
   className,
   children,
@@ -63,6 +64,7 @@ export function CollapsibleContent({
       forceMount
       className={cn('overflow-hidden', className)}
       style={{
+        maxHeight: `${height}px`,
         height: `${isOpen ? height : 0}px`,
         // @ts-ignore
         '--radix-collapsible-content-height': `${height}px`,
