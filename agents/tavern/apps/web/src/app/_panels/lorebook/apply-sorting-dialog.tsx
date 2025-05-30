@@ -11,20 +11,15 @@ import {
 
 import { NumberInput } from '@/components/number-input'
 import { CircleSpinner } from '@/components/spinner'
-import { useLorebook, useUpdateLorebook } from '@/hooks/use-lorebook'
-import { useSelectedLorebookId } from './select-lorebook'
+import { useUpdateLorebook } from '@/hooks/use-lorebook'
+import { useSelectedLorebook } from './select-lorebook'
 
-interface ApplySortingDialogProps {
-  trigger: React.ReactNode
-}
-
-export function ApplySortingDialog({ trigger }: ApplySortingDialogProps) {
+export function ApplySortingDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [startOrder, setStartOrder] = useState(100)
 
-  const { selectedLorebookId } = useSelectedLorebookId()
-  const { lorebook } = useLorebook(selectedLorebookId ?? '')
+  const { selectedLorebook } = useSelectedLorebook()
   const updateLorebook = useUpdateLorebook()
 
   useEffect(() => {
@@ -34,17 +29,17 @@ export function ApplySortingDialog({ trigger }: ApplySortingDialogProps) {
   }, [open])
 
   const handleConfirm = useCallback(() => {
-    if (!selectedLorebookId || !lorebook) return
+    if (!selectedLorebook) return
 
     setLoading(true)
     try {
-      const updatedEntries = lorebook.entries.map((entry, index) => ({
+      const updatedEntries = selectedLorebook.entries.map((entry, index) => ({
         ...entry,
         order: Math.max(0, startOrder - index),
       }))
 
       void updateLorebook({
-        id: selectedLorebookId,
+        id: selectedLorebook.id,
         entries: updatedEntries,
       })
 
@@ -52,9 +47,9 @@ export function ApplySortingDialog({ trigger }: ApplySortingDialogProps) {
     } finally {
       setLoading(false)
     }
-  }, [selectedLorebookId, lorebook, startOrder, updateLorebook])
+  }, [selectedLorebook, startOrder, updateLorebook])
 
-  const entryCount = lorebook?.entries.length ?? 0
+  const entryCount = selectedLorebook?.entries.length ?? 0
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

@@ -66,7 +66,7 @@ export const LorebookSettings = memo(function LorebookSettings({
           </Button>
         </div>
       </CollapsibleTrigger>
-      <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden">
+      <CollapsibleContent className="overflow-hidden">
         <Form {...form}>
           <form
             onBlur={() => {

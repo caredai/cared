@@ -1,26 +1,37 @@
 'use client'
 
-import type { RefObject } from 'react'
-import { useState } from 'react'
+import type { ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { lorebookEntriesSchema } from '@tavern/core'
+import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
 
 import { Input } from '@ownxai/ui/components/input'
 
 import { useCreateLorebook, useLorebooks } from '@/hooks/use-lorebook'
-import { useSelectedLorebookId } from './select-lorebook'
+import { useSelectedLorebook } from './select-lorebook'
 
-export function ImportLorebookDialog({
-  ref: fileInputRef,
-}: {
-  ref: RefObject<HTMLInputElement | null>
-}) {
+const refAtom = atom({ current: null as HTMLInputElement | null })
+
+export function useImportLorebookFileInputRef() {
+  const [ref] = useAtom(refAtom)
+  return ref
+}
+
+export function ImportLorebookDialog({ trigger }: { trigger: ReactNode }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [, setRefState] = useAtom(refAtom)
+
+  useEffect(() => {
+    setRefState(fileInputRef)
+  }, [fileInputRef, setRefState])
+
   const [isImporting, setIsImporting] = useState(false)
 
   const { lorebooks } = useLorebooks()
   const createLorebook = useCreateLorebook()
 
-  const { setSelectedLorebookId } = useSelectedLorebookId()
+  const { setSelectedLorebookId } = useSelectedLorebook()
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -70,13 +81,16 @@ export function ImportLorebookDialog({
   }
 
   return (
-    <Input
-      ref={fileInputRef}
-      type="file"
-      accept=".json"
-      onChange={handleFileChange}
-      disabled={isImporting}
-      className="hidden"
-    />
+    <div className="flex justify-center items-center">
+      {trigger}
+      <Input
+        ref={fileInputRef}
+        type="file"
+        accept=".json"
+        onChange={handleFileChange}
+        disabled={isImporting}
+        className="hidden"
+      />
+    </div>
   )
 }

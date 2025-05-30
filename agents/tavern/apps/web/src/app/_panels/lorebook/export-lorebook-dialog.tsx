@@ -12,27 +12,21 @@ import {
   DialogTrigger,
 } from '@ownxai/ui/components/dialog'
 
-import { useLorebook } from '@/hooks/use-lorebook'
-import { useSelectedLorebookId } from './select-lorebook'
+import { useSelectedLorebook } from './select-lorebook'
 
-interface ExportLorebookDialogProps {
-  trigger: ReactNode
-}
-
-export function ExportLorebookDialog({ trigger }: ExportLorebookDialogProps) {
+export function ExportLorebookDialog({ trigger }: { trigger: ReactNode }) {
   const [open, setOpen] = useState(false)
-  const { selectedLorebookId } = useSelectedLorebookId()
-  const { lorebook } = useLorebook(selectedLorebookId ?? '')
+  const { selectedLorebook } = useSelectedLorebook()
 
   const handleExport = useCallback(() => {
-    if (!lorebook) return
+    if (!selectedLorebook) return
 
     // Create a blob with the lorebook data
     const blob = new Blob(
       [
         JSON.stringify(
           {
-            entries: lorebook.entries,
+            entries: selectedLorebook.entries,
           },
           null,
           2,
@@ -47,7 +41,7 @@ export function ExportLorebookDialog({ trigger }: ExportLorebookDialogProps) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${lorebook.name}.json`
+    link.download = `${selectedLorebook.name}.json`
 
     // Trigger download
     document.body.appendChild(link)
@@ -59,7 +53,7 @@ export function ExportLorebookDialog({ trigger }: ExportLorebookDialogProps) {
 
     // Close dialog
     setOpen(false)
-  }, [lorebook])
+  }, [selectedLorebook])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -68,8 +62,8 @@ export function ExportLorebookDialog({ trigger }: ExportLorebookDialogProps) {
         <DialogHeader>
           <DialogTitle>Export Lorebook</DialogTitle>
           <DialogDescription>
-            Are you sure you want to export the lorebook "{lorebook?.name}"? This will download a
-            JSON file containing the lorebook configuration.
+            Are you sure you want to export the lorebook "{selectedLorebook?.name}"? This will
+            download a JSON file containing the lorebook configuration.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

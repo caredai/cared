@@ -13,38 +13,37 @@ import {
 import { Input } from '@ownxai/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useCreateLorebook, useLorebook, useLorebooks } from '@/hooks/use-lorebook'
-import { useSelectedLorebookId } from './select-lorebook'
+import { useCreateLorebook, useLorebooks } from '@/hooks/use-lorebook'
+import { useSelectedLorebook } from './select-lorebook'
 
 export function DuplicateLorebookDialog({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [newLorebookName, setNewLorebookName] = useState('')
   const [isDuplicating, setIsDuplicating] = useState(false)
 
-  const { selectedLorebookId, setSelectedLorebookId } = useSelectedLorebookId()
-  const { lorebook } = useLorebook(selectedLorebookId ?? '')
+  const { selectedLorebook, setSelectedLorebookId } = useSelectedLorebook()
   const { lorebooks } = useLorebooks()
   const createLorebook = useCreateLorebook()
 
   // Reset form when the dialog opens
   useEffect(() => {
-    if (open && lorebook) {
+    if (open && selectedLorebook) {
       const existingNames = new Set(lorebooks.map((lb) => lb.name))
 
       let index = 1
-      let newName = `${lorebook.name} (${index})`
+      let newName = `${selectedLorebook.name} (${index})`
 
       while (existingNames.has(newName)) {
         index++
-        newName = `${lorebook.name} (${index})`
+        newName = `${selectedLorebook.name} (${index})`
       }
 
       setNewLorebookName(newName)
     }
-  }, [open, lorebook, lorebooks])
+  }, [open, selectedLorebook, lorebooks])
 
   const handleDuplicate = async () => {
-    if (!lorebook || !newLorebookName.trim()) {
+    if (!selectedLorebook || !newLorebookName.trim()) {
       return
     }
 
@@ -54,8 +53,8 @@ export function DuplicateLorebookDialog({ trigger }: { trigger: React.ReactNode 
         lorebook: { id },
       } = await createLorebook(
         newLorebookName.trim(),
-        lorebook.description ?? undefined,
-        structuredClone(lorebook.entries),
+        selectedLorebook.description ?? undefined,
+        structuredClone(selectedLorebook.entries),
       )
 
       setSelectedLorebookId(id)
@@ -99,7 +98,6 @@ export function DuplicateLorebookDialog({ trigger }: { trigger: React.ReactNode 
           </Button>
         </DialogFooter>
       </DialogContent>
-      {trigger}
     </Dialog>
   )
 }

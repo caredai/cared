@@ -30,7 +30,7 @@ export function useLorebooks() {
   }
 }
 
-export function useLorebook(id: string) {
+export function useLorebook(id?: string) {
   const { lorebooks } = useLorebooks()
 
   const lorebook = useMemo(() => {
@@ -38,7 +38,7 @@ export function useLorebook(id: string) {
   }, [lorebooks, id])
 
   return {
-    lorebook,
+    lorebook: lorebook,
   }
 }
 
@@ -220,10 +220,10 @@ export function useUpdateLorebook() {
         return
       }
 
-      return await mutation.mutateAsync(args)
+      return await mutation.mutateAsync(structuredClone(args))
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [lorebooks],
   )
 }
 

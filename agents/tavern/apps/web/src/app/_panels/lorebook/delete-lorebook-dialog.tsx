@@ -13,32 +13,26 @@ import {
 } from '@ownxai/ui/components/dialog'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useDeleteLorebook, useLorebook } from '@/hooks/use-lorebook'
-import { useSelectedLorebookId } from './select-lorebook'
+import { useDeleteLorebook } from '@/hooks/use-lorebook'
+import { useSelectedLorebook } from './select-lorebook'
 
-interface DeleteLorebookDialogProps {
-  trigger: ReactNode
-}
-
-export function DeleteLorebookDialog({ trigger }: DeleteLorebookDialogProps) {
-  const { selectedLorebookId, setSelectedLorebookId } = useSelectedLorebookId()
-  const { lorebook } = useLorebook(selectedLorebookId ?? '')
+export function DeleteLorebookDialog({ trigger }: { trigger: ReactNode }) {
+  const { selectedLorebook } = useSelectedLorebook()
   const deleteLorebook = useDeleteLorebook()
 
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
 
   const handleDelete = useCallback(async () => {
-    if (!selectedLorebookId) return
+    if (!selectedLorebook) return
     setLoading(true)
     try {
-      await deleteLorebook(selectedLorebookId)
-      setSelectedLorebookId(undefined)
+      await deleteLorebook(selectedLorebook.id)
       setOpen(false)
     } finally {
       setLoading(false)
     }
-  }, [selectedLorebookId, deleteLorebook, setSelectedLorebookId])
+  }, [selectedLorebook, deleteLorebook])
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -47,8 +41,8 @@ export function DeleteLorebookDialog({ trigger }: DeleteLorebookDialogProps) {
         <DialogHeader>
           <DialogTitle>Delete Lorebook</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete lorebook "{lorebook?.name}"? This action cannot be
-            undone.
+            Are you sure you want to delete lorebook "{selectedLorebook?.name}"? This action cannot
+            be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

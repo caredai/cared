@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { atom, useAtom } from 'jotai'
 import { Virtualizer } from 'virtua'
 
@@ -10,14 +10,18 @@ import {
   SelectValue,
 } from '@ownxai/ui/components/select'
 
-import { useLorebooks } from '@/hooks/use-lorebook'
+import { useLorebook, useLorebooks } from '@/hooks/use-lorebook'
 
 // Atom for storing the selected lorebook ID
 export const selectedLorebookIdAtom = atom<string | undefined>(undefined)
 
-export function useSelectedLorebookId() {
+export function useSelectedLorebook() {
   const [selectedLorebookId, setSelectedLorebookId] = useAtom(selectedLorebookIdAtom)
+
+  const { lorebook } = useLorebook(selectedLorebookId)
+
   return {
+    selectedLorebook: lorebook,
     selectedLorebookId,
     setSelectedLorebookId,
   }
@@ -26,12 +30,14 @@ export function useSelectedLorebookId() {
 export function SelectLorebook() {
   const { lorebooks } = useLorebooks()
 
-  const { selectedLorebookId, setSelectedLorebookId } = useSelectedLorebookId()
+  const { selectedLorebookId, setSelectedLorebookId } = useSelectedLorebook()
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    setSelectedLorebookId(lorebooks.at(0)?.id)
-  }, [lorebooks, setSelectedLorebookId])
+    if (!selectedLorebookId || !lorebooks.some((lorebook) => lorebook.id === selectedLorebookId)) {
+      setSelectedLorebookId(lorebooks.at(0)?.id)
+    }
+  }, [lorebooks, selectedLorebookId, setSelectedLorebookId])
 
   // Virtual list ref
   const ref = useRef<any>(null)
@@ -41,33 +47,12 @@ export function SelectLorebook() {
     () =>
       lorebooks.map((lorebook) => ({
         id: lorebook.id,
-        label: lorebook.name,
+        name: lorebook.name,
       })),
     [lorebooks],
   )
 
-  // Find index of selected item
-  const index = useMemo(
-    () => items.findIndex((d) => d.id === selectedLorebookId),
-    [items, selectedLorebookId],
-  )
-
-  // Scroll to selected item when dropdown opens
-  useLayoutEffect(() => {
-    if (!open || !selectedLorebookId) return
-    if (index === -1) return
-
-    // Scroll to selected item
-    ref.current?.scrollToIndex(index)
-
-    // Recover focus
-    setTimeout(() => {
-      const element = document.querySelector('.SelectItem[data-state=checked]')
-      if (element instanceof HTMLElement) {
-        element.focus({ preventScroll: true })
-      }
-    })
-  }, [open, selectedLorebookId, index])
+  const name = items.find((d) => d.id === selectedLorebookId)?.name
 
   if (!selectedLorebookId) {
     return null
@@ -81,15 +66,13 @@ export function SelectLorebook() {
       onOpenChange={setOpen}
     >
       <SelectTrigger className="w-40 h-7 px-2 py-0.5">
-        <SelectValue>
-          {items.find((d) => d.id === selectedLorebookId)?.label}
-        </SelectValue>
+        <SelectValue>{name}</SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[300px] z-6000">
-        <Virtualizer ref={ref} keepMounted={index !== -1 ? [index] : undefined} overscan={2}>
+        <Virtualizer ref={ref} overscan={2}>
           {items.map((item) => (
             <SelectItem key={item.id} value={item.id}>
-              {item.label}
+              {item.name}
             </SelectItem>
           ))}
         </Virtualizer>

@@ -14,7 +14,7 @@ import { Input } from '@ownxai/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useCreateLorebook, useLorebooks } from '@/hooks/use-lorebook'
-import { useSelectedLorebookId } from './select-lorebook'
+import { useSelectedLorebook } from './select-lorebook'
 
 export function AddLorebookDialog({ trigger }: { trigger?: ReactNode }) {
   const [name, setName] = useState('')
@@ -24,7 +24,7 @@ export function AddLorebookDialog({ trigger }: { trigger?: ReactNode }) {
   const createLorebook = useCreateLorebook()
   const { lorebooks } = useLorebooks()
 
-  const { setSelectedLorebookId } = useSelectedLorebookId()
+  const { setSelectedLorebookId } = useSelectedLorebook()
 
   // Generate default lorebook name
   const generateDefaultName = useCallback(() => {

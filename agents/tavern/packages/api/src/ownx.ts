@@ -18,9 +18,7 @@ export function createOwnxClient(ctx: Context, useApiKey?: boolean) {
         }
       : {
           accessToken: async () => {
-            const token = await lock.acquire(ctx.auth.userId!, () => getOwnxUserToken(ctx))
-            console.log('accessToken', token)
-            return token
+            return await lock.acquire(ctx.auth.userId!, () => getOwnxUserToken(ctx))
           },
         },
   )

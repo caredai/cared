@@ -35,14 +35,19 @@ export function CollapsibleContent({
 
     handleStateChange()
 
-    const observer = new MutationObserver(handleStateChange)
-    observer.observe(element, {
+    const resizeObserver = new ResizeObserver(handleStateChange)
+    if (contentRef.current) {
+      resizeObserver.observe(contentRef.current)
+    }
+    const mutationObserver = new MutationObserver(handleStateChange)
+    mutationObserver.observe(element, {
       attributes: true,
       attributeFilter: ['data-state'],
     })
 
     return () => {
-      observer.disconnect()
+      resizeObserver.disconnect()
+      mutationObserver.disconnect()
     }
   }, [])
 

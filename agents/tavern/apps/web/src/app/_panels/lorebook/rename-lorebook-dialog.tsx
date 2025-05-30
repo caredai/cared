@@ -13,16 +13,11 @@ import {
 import { Input } from '@ownxai/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useLorebook, useUpdateLorebook } from '@/hooks/use-lorebook'
-import { useSelectedLorebookId } from './select-lorebook'
+import { useUpdateLorebook } from '@/hooks/use-lorebook'
+import { useSelectedLorebook } from './select-lorebook'
 
-interface RenameLorebookDialogProps {
-  trigger: ReactNode
-}
-
-export function RenameLorebookDialog({ trigger }: RenameLorebookDialogProps) {
-  const { selectedLorebookId } = useSelectedLorebookId()
-  const { lorebook } = useLorebook(selectedLorebookId ?? '')
+export function RenameLorebookDialog({ trigger }: { trigger: ReactNode }) {
+  const { selectedLorebook } = useSelectedLorebook()
   const updateLorebook = useUpdateLorebook()
 
   const [open, setOpen] = useState(false)
@@ -32,26 +27,26 @@ export function RenameLorebookDialog({ trigger }: RenameLorebookDialogProps) {
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       setOpen(newOpen)
-      if (newOpen && lorebook) {
-        setName(lorebook.name)
+      if (newOpen && selectedLorebook) {
+        setName(selectedLorebook.name)
       }
     },
-    [lorebook],
+    [selectedLorebook],
   )
 
   const handleRename = useCallback(() => {
-    if (!selectedLorebookId || !lorebook || !name.trim()) return
+    if (!selectedLorebook || !name.trim()) return
     setLoading(true)
     try {
       void updateLorebook({
-        id: selectedLorebookId,
+        id: selectedLorebook.id,
         name: name.trim(),
       })
       setOpen(false)
     } finally {
       setLoading(false)
     }
-  }, [selectedLorebookId, lorebook, name, updateLorebook])
+  }, [selectedLorebook, name, updateLorebook])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -59,7 +54,9 @@ export function RenameLorebookDialog({ trigger }: RenameLorebookDialogProps) {
       <DialogContent className="z-7000">
         <DialogHeader>
           <DialogTitle>Rename Lorebook</DialogTitle>
-          <DialogDescription>Enter a new name for lorebook "{lorebook?.name}".</DialogDescription>
+          <DialogDescription>
+            Enter a new name for lorebook "{selectedLorebook?.name}".
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Input
