@@ -324,11 +324,11 @@ export const LorebookPanelUpperPart = memo(function LorebookPanelUpperPart({
         <h1 className="text-lg font-bold">Worlds / Lorebooks</h1>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
           <SelectActiveLorebooks />
         </div>
-        <div className="w-full md:w-1/2">
+        <div>
           <LorebookSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
         </div>
       </div>

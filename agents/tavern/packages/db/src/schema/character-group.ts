@@ -1,30 +1,10 @@
 import type { InferSelectModel } from 'drizzle-orm'
+import { CharGroupMetadata } from '@tavern/core'
 import { index, jsonb, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
-import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
-import { z } from 'zod'
 
-import {
-  generateId,
-  makeObjectNonempty,
-  timestamps,
-  timestampsIndices,
-  timestampsOmits,
-} from '@ownxai/sdk'
+import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
 
 import { User } from '.'
-
-export interface CharGroupMetadata {
-  name?: string
-  disabledAutoReplyCharacters?: string[]
-
-  custom?: unknown
-}
-
-export const charGroupMetadataSchema = z.object({
-  name: z.string().min(1).optional(),
-  disabledAutoReplyCharacters: z.array(z.string()).optional(),
-  custom: z.unknown().optional(),
-})
 
 export const CharGroup = pgTable(
   'character_group',
@@ -37,7 +17,7 @@ export const CharGroup = pgTable(
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
     characters: jsonb().$type<string[]>().notNull(), // Array of character references
-    metadata: jsonb().$type<CharGroupMetadata>(),
+    metadata: jsonb().$type<CharGroupMetadata>().notNull(),
     ...timestamps,
   },
   (table) => [
@@ -47,24 +27,6 @@ export const CharGroup = pgTable(
 )
 
 export type CharGroup = InferSelectModel<typeof CharGroup>
-
-export const CreateCharGroupSchema = createInsertSchema(CharGroup, {
-  userId: z.string(),
-  characters: z.array(z.string()).min(1),
-  metadata: charGroupMetadataSchema.optional(),
-}).omit({
-  id: true,
-  ...timestampsOmits,
-})
-
-export const UpdateCharGroupSchema = createUpdateSchema(CharGroup, {
-  id: z.string(),
-  characters: z.array(z.any()).optional(),
-  metadata: makeObjectNonempty(charGroupMetadataSchema).optional(),
-}).omit({
-  userId: true,
-  ...timestampsOmits,
-})
 
 export const CharGroupChat = pgTable(
   'character_group_chat',

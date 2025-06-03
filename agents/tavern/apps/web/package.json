@@ -43,7 +43,7 @@
     "gpt-tokenizer": "^2.9.0",
     "jotai": "^2.12.2",
     "lodash": "^4.17.21",
-    "next": "^15.2.1",
+    "next": "15.4.0-canary.35",
     "p-debounce": "^4.0.0",
     "react": "catalog:react19",
     "react-color": "^2.19.3",

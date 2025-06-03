@@ -1,4 +1,5 @@
-import { CharGroup, charGroupMetadataSchema } from '@tavern/db/schema'
+import { charGroupMetadataSchema } from '@tavern/core'
+import { CharGroup } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
@@ -39,7 +40,7 @@ export const characterGroupRouter = {
     .input(
       z.object({
         characters: z.array(z.string()).min(1),
-        metadata: charGroupMetadataSchema.optional(),
+        metadata: charGroupMetadataSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
