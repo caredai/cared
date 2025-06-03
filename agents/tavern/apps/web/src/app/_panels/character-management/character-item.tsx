@@ -1,4 +1,4 @@
-import type { Character } from '@tavern/db/schema'
+import type { Character } from '@/hooks/use-character'
 
 import { Checkbox } from '@ownxai/ui/components/checkbox'
 import { cn } from '@ownxai/ui/lib/utils'

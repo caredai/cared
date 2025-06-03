@@ -2,19 +2,25 @@
 
 import { Separator } from '@ownxai/ui/components/separator'
 
-import { isCharacterGroup, useActiveCharacter } from '@/hooks/use-active-character'
+import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
 import { CharacterCreate } from './character-create'
 import { CharacterGroupView } from './character-group-view'
 import { CharacterList } from './character-list'
 import { CharacterView } from './character-view'
 import { CharacterManagementHeader } from './header'
-import { useIsCreateCharacter, useSetShowCharacterList, useShowCharacterList } from './hooks'
+import {
+  useIsCreateCharacter,
+  useIsCreateCharacterGroup,
+  useSetShowCharacterList,
+  useShowCharacterList,
+} from './hooks'
 import { ImportTagsDialog } from './import-tags-dialog'
 import { TagsManagementDialog } from './tags-management-dialog'
 
 export function CharacterManagementPanel() {
-  const activeCharacter = useActiveCharacter()
+  const activeCharacter = useActiveCharacterOrGroup()
   const isCreateCharacter = useIsCreateCharacter()
+  const isCreateCharacterGroup = useIsCreateCharacterGroup()
   const showCharacterList = useShowCharacterList()
   const setShowCharacterList = useSetShowCharacterList()
 
@@ -30,15 +36,17 @@ export function CharacterManagementPanel() {
           onClick={() => setShowCharacterList(false)}
         >
           {isCharacterGroup(activeCharacter)
-            ? (activeCharacter.metadata?.name ?? 'Group')
+            ? activeCharacter.metadata.name
             : activeCharacter.content.data.name}
         </h1>
       )}
 
       {!showCharacterList && isCreateCharacter && <CharacterCreate />}
+      {!showCharacterList && isCreateCharacterGroup && <CharacterGroupView />}
 
       {!showCharacterList &&
         !isCreateCharacter &&
+        !isCreateCharacterGroup &&
         activeCharacter &&
         (isCharacterGroup(activeCharacter) ? (
           <CharacterGroupView group={activeCharacter} />

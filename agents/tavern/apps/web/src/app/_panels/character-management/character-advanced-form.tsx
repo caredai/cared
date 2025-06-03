@@ -1,6 +1,6 @@
-import type { UseFormReturn } from 'react-hook-form'
+import type { RefObject } from 'react'
 import type { z } from 'zod'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
 import {
@@ -38,7 +38,7 @@ import { Separator } from '@ownxai/ui/components/separator'
 import { Slider } from '@ownxai/ui/components/slider'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
-import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
+import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
 import { useContentAreaRef, useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { useIsCreateCharacter } from './hooks'
@@ -83,13 +83,15 @@ export const defaultCharacterAdvancedFormValues: CharacterAdvancedFormValues = {
 
 export function CharacterAdvancedForm({
   onChange,
+  ref,
 }: {
-  onChange: (values: CharacterAdvancedFormValues) => void
+  onChange?: (values: CharacterAdvancedFormValues) => void
+  ref?: RefObject<(() => Promise<CharacterAdvancedFormValues | false>) | null>
 }) {
   const { isShowCharacterAdvancedView, setIsShowCharacterAdvancedView } =
     useIsShowCharacterAdvancedView()
   const isCreateCharacter = useIsCreateCharacter()
-  const character = useActiveCharacter()
+  const character = useActiveCharacterOrGroup()
 
   const defaultValues = useMemo(
     () =>
@@ -103,7 +105,7 @@ export function CharacterAdvancedForm({
   )
 
   useEffect(() => {
-    onChange(defaultValues)
+    onChange?.(defaultValues)
   }, [onChange, defaultValues])
 
   const form = useForm({
@@ -115,36 +117,16 @@ export function CharacterAdvancedForm({
     form.reset(defaultValues)
   }, [defaultValues, form])
 
-  if (!isShowCharacterAdvancedView || (!isCreateCharacter && !isCharacter(character))) {
-    return null
-  }
+  const getValues = useCallback(async () => {
+    return (await form.trigger()) && form.getValues()
+  }, [form])
 
-  return (
-    <CharacterAdvancedFormView
-      forCreate={isCreateCharacter}
-      defaultValues={defaultValues}
-      form={form}
-      onChange={onChange}
-      onClose={() => {
-        setIsShowCharacterAdvancedView(false)
-      }}
-    />
-  )
-}
+  useEffect(() => {
+    if (ref) {
+      ref.current = getValues
+    }
+  }, [ref, getValues])
 
-function CharacterAdvancedFormView({
-  forCreate = false,
-  defaultValues,
-  form,
-  onChange,
-  onClose,
-}: {
-  forCreate?: boolean
-  defaultValues: CharacterAdvancedFormValues
-  form: UseFormReturn<CharacterAdvancedFormValues>
-  onChange: (values: CharacterAdvancedFormValues) => void
-  onClose: () => void
-}) {
   const { contentAreaRef } = useContentAreaRef()
 
   const [tagsInput, setTagsInput] = useState('')
@@ -161,6 +143,10 @@ function CharacterAdvancedFormView({
   const characterNoteTokens = useTextTokens(form.watch('depth_prompt_prompt'))
   const dialogueExampleTokens = useTextTokens(form.watch('mes_example'))
 
+  if (!isShowCharacterAdvancedView || (!isCreateCharacter && !isCharacter(character))) {
+    return null
+  }
+
   return (
     <Portal.Root
       container={contentAreaRef?.current}
@@ -168,7 +154,9 @@ function CharacterAdvancedFormView({
     >
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-medium">
-          <span className="truncate">{forCreate ? 'Create Character' : defaultValues.name}</span>{' '}
+          <span className="truncate">
+            {isCreateCharacter ? 'Create Character' : defaultValues.name}
+          </span>{' '}
           <span className="text-md text-muted-foreground">- Advanced Definitions</span>
         </h1>
 
@@ -176,7 +164,7 @@ function CharacterAdvancedFormView({
           variant="outline"
           size="icon"
           className="size-6"
-          onClick={onClose}
+          onClick={() => setIsShowCharacterAdvancedView(false)}
           disabled={form.formState.isSubmitting}
         >
           <XIcon />
@@ -186,7 +174,15 @@ function CharacterAdvancedFormView({
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 
       <Form {...form}>
-        <form className="flex flex-col gap-6" onBlur={() => onChange(form.getValues())}>
+        <form
+          className="flex flex-col gap-6"
+          onBlur={async () => {
+            const values = await getValues()
+            if (values) {
+              onChange?.(values)
+            }
+          }}
+        >
           <Collapsible>
             <CollapsibleTrigger asChild>
               <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer">

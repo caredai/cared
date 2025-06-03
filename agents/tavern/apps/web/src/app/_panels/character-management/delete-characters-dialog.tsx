@@ -11,7 +11,7 @@ import {
 } from '@ownxai/ui/components/dialog'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useDeleteCharacters } from '@/hooks/use-characters'
+import { useDeleteCharacters } from '@/hooks/use-character'
 
 export function DeleteCharactersDialog({
   open,
@@ -40,7 +40,7 @@ export function DeleteCharactersDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="z-7000">
         <DialogHeader>
           <DialogTitle>Delete characters</DialogTitle>
           <DialogDescription>

@@ -1,4 +1,4 @@
-import type { Character } from '@/hooks/use-characters'
+import type { Character } from '@/hooks/use-character'
 import type { TagImportOption } from '@tavern/core'
 import { useEffect, useMemo, useState } from 'react'
 import { atom, useAtom } from 'jotai'

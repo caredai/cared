@@ -33,12 +33,12 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
-import { useSetActiveCharacter } from '@/hooks/use-active-character'
-import { useCharacters } from '@/hooks/use-characters'
+import { useSetActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
+import { useCharacters } from '@/hooks/use-character'
 import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
 import { CharacterItem } from './character-item'
 import { DeleteCharactersDialog } from './delete-characters-dialog'
-import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
+import { useSetIsCreateCharacter, useSetIsCreateCharacterGroup, useSetShowCharacterList } from './hooks'
 import { ImportFileInput } from './import-file-input'
 import { ImportUrlDialog } from './import-url-dialog'
 import { useOpenTagsManagementDialog } from './tags-management-dialog'
@@ -48,8 +48,9 @@ export function CharacterList() {
   const tags = useTagsSettings()
   const updateTagsSettings = useUpdateTagsSettings()
 
-  const setActiveCharacter = useSetActiveCharacter()
+  const setActiveCharacter = useSetActiveCharacterOrGroup()
   const setIsCreateCharacter = useSetIsCreateCharacter()
+  const setIsCreateCharacterGroup  = useSetIsCreateCharacterGroup()
   const setShowCharacterList = useSetShowCharacterList()
 
   const [isImportUrlDialogOpen, setIsImportUrlDialogOpen] = useState(false)
@@ -146,6 +147,7 @@ export function CharacterList() {
 
   const handleCreateCharacter = () => {
     setIsCreateCharacter(true)
+    setIsCreateCharacterGroup(false)
     setShowCharacterList(false)
   }
 
@@ -154,8 +156,9 @@ export function CharacterList() {
   }
 
   const handleCreateGroup = () => {
-    // Logic for creating character group
-    console.log('Create character group')
+    setIsCreateCharacter(false)
+    setIsCreateCharacterGroup(true)
+    setShowCharacterList(false)
   }
 
   const handleShowFavorites = () => {
@@ -201,6 +204,7 @@ export function CharacterList() {
     if (!isSelectMode) {
       setActiveCharacter(characters.find((char) => char.id === characterId)?.id)
       setIsCreateCharacter(false)
+      setIsCreateCharacterGroup(false)
       setShowCharacterList(false)
       return
     }

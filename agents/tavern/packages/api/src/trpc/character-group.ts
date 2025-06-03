@@ -101,7 +101,7 @@ export const characterGroupRouter = {
         .where(eq(CharGroup.id, id))
         .returning()
 
-      return { group: updatedGroup }
+      return { group: updatedGroup! }
     }),
 
   delete: userProtectedProcedure

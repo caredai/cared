@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   faBook,
   faCheck,
@@ -31,14 +31,15 @@ import type { CharacterBasicFormValues } from './character-basic-form'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
+import { useCreateCharacter } from '@/hooks/use-character'
 import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
-import { useCreateCharacter } from '@/hooks/use-characters'
 import defaultPng from '@/public/images/ai4.png'
 import {
   CharacterAdvancedForm,
   defaultCharacterAdvancedFormValues,
 } from './character-advanced-form'
-import { CharacterBasicForm, defaultCharacterBasicFormValues } from './character-basic-form'
+import { CharacterBasicForm } from './character-basic-form'
+import { CharacterTagsView } from './character-tags-view'
 import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
 
 export function CharacterCreate() {
@@ -48,8 +49,9 @@ export function CharacterCreate() {
   const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
     useIsShowCharacterAdvancedView()
 
-  const [basicValues, setBasicValues] = useState<CharacterBasicFormValues>()
-  const [advancedValues, setAdvancedValues] = useState<CharacterAdvancedFormValues>()
+  const getBasicValuesRef = useRef<() => Promise<CharacterBasicFormValues | false>>(null)
+  const getAdvancedValuesRef = useRef<() => Promise<CharacterAdvancedFormValues | false>>(null)
+  const setTagsRef = useRef<(id: string) => Promise<void>>(null)
 
   const [imageDataUrl, setImageDataUrl] = useState<string>()
   const [showImageCropDialog, setShowImageCropDialog] = useState(false)
@@ -58,12 +60,18 @@ export function CharacterCreate() {
   const createCharacter = useCreateCharacter()
 
   const handleCreate = async () => {
-    handleCancel()
+    const basic = await getBasicValuesRef.current?.()
+    const advanced = isShowCharacterAdvancedView
+      ? await getAdvancedValuesRef.current?.()
+      : defaultCharacterAdvancedFormValues
 
-    const basic = basicValues ?? defaultCharacterBasicFormValues
-    const advanced = advancedValues ?? defaultCharacterAdvancedFormValues
+    if (!basic || !advanced) {
+      return
+    }
 
-    await createCharacter(
+    handleClose()
+
+    const { character } = await createCharacter(
       {
         spec: 'chara_card_v2',
         spec_version: '2.0',
@@ -76,9 +84,12 @@ export function CharacterCreate() {
       },
       imageDataUrl,
     )
+
+    console.log(setTagsRef.current, character.id)
+    await setTagsRef.current?.(character.id)
   }
 
-  const handleCancel = () => {
+  const handleClose = () => {
     setIsCreateCharacter(false)
     setShowCharacterList(true)
   }
@@ -93,7 +104,7 @@ export function CharacterCreate() {
 
   const operateActions = [
     {
-      action: handleCancel,
+      action: handleClose,
       icon: faXmark,
       tooltip: 'Cancel creation',
     },
@@ -163,9 +174,11 @@ export function CharacterCreate() {
         </div>
       </div>
 
-      <CharacterBasicForm onChange={setBasicValues} />
+      <CharacterTagsView ref={setTagsRef} />
 
-      {isShowCharacterAdvancedView && <CharacterAdvancedForm onChange={setAdvancedValues} />}
+      <CharacterBasicForm ref={getBasicValuesRef} />
+
+      {isShowCharacterAdvancedView && <CharacterAdvancedForm ref={getAdvancedValuesRef} />}
 
       <ImageCropDialog
         open={showImageCropDialog}

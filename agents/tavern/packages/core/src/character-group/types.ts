@@ -11,8 +11,8 @@ export interface CharGroupMetadata {
   disabledCharacters?: string[] // characters that should not auto-reply
   autoModeDelay?: number
   hideMutedSprites: boolean
-  chatMetadata?: {
-    scenario: string
+  chatMetadata: {
+    scenario?: string
   }
 }
 
@@ -24,9 +24,9 @@ export enum GroupActivationStrategy {
 }
 
 export enum GroupGenerationMode {
-  Swap = 'swap',
-  Append = 'append',
-  AppendDisabled = 'append-disabled',
+  Swap = 'swap', // swap character cards
+  Append = 'append', // join character cards, exclude disabled ones
+  AppendDisabled = 'append-disabled', // join character cards, include disabled ones
 }
 
 export const charGroupMetadataSchema = z.object({
@@ -40,9 +40,7 @@ export const charGroupMetadataSchema = z.object({
   disabledCharacters: z.array(z.string()).optional(),
   autoModeDelay: z.number().int().min(0).optional(),
   hideMutedSprites: z.boolean(),
-  chatMetadata: z
-    .object({
-      scenario: z.string(),
-    })
-    .optional(),
+  chatMetadata: z.object({
+    scenario: z.string().optional(),
+  }),
 })

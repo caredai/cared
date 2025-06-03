@@ -1,6 +1,6 @@
 'use client'
 
-import type { Character } from '@/hooks/use-characters'
+import type { Character } from '@/hooks/use-character'
 import type { ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 import {
@@ -26,19 +26,23 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import type { CharacterBasicFormValues } from './character-basic-form'
+import { useSetShowCharacterList } from '@/app/_panels/character-management/hooks'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
+import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/hooks/use-character'
 import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
-import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/hooks/use-characters'
 import { CharacterBasicForm } from './character-basic-form'
 import { CharacterTagsView } from './character-tags-view'
 import { CharacterViewAdvanced } from './character-view-advanced'
+import { DeleteCharacterDialog } from './delete-character-dialog'
 import { useImportTags } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
+  const setShowCharacterList = useSetShowCharacterList()
   const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
     useIsShowCharacterAdvancedView()
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const handleAddToFavorites = () => {
     console.log('Set favorite character')
@@ -46,6 +50,10 @@ export function CharacterView({ character }: { character: Character }) {
 
   const handleShowAdvancedDefinitions = () => {
     toggleIsShowCharacterAdvancedView()
+  }
+
+  const handleDeleteCharacter = () => {
+    setShowDeleteDialog(true)
   }
 
   const operateActions = [
@@ -86,9 +94,9 @@ export function CharacterView({ character }: { character: Character }) {
       tooltip: 'Add to favorites',
     },
     {
-      action: handleAddToFavorites,
+      action: handleDeleteCharacter,
       icon: faSkull,
-      tooltip: 'Add to favorites',
+      tooltip: 'Delete character',
       className: 'bg-destructive/50 hover:bg-destructive',
     },
     {
@@ -166,6 +174,13 @@ export function CharacterView({ character }: { character: Character }) {
         onOpenChange={setShowImageCropDialog}
         imageFile={inputImageFile}
         onCrop={(image) => updateCharacterImage(character, image)}
+      />
+
+      <DeleteCharacterDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        character={character}
+        onDelete={() => setShowCharacterList(true)}
       />
     </div>
   )

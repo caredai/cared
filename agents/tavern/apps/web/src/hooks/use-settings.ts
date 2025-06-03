@@ -5,8 +5,10 @@ import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
 
+import { useCharacters } from '@/hooks/use-character'
+import { useCharacterGroups } from '@/hooks/use-character-group'
+import { debounceTimeout } from '@/lib/debounce'
 import { useTRPC } from '@/trpc/client'
-import { debounceTimeout } from '../lib/debounce'
 
 export function useUpdateSettingsMutation() {
   const trpc = useTRPC()
@@ -126,15 +128,61 @@ export function useUpdateTagsSettings() {
 
   return useCallback(
     async (tags: Partial<TagsSettings>) => {
+      const newTagsSettings = {
+        ...tagsSettings,
+        ...tags,
+      }
+      for (const [id, tags] of Object.entries(newTagsSettings.tagMap)) {
+        if (!tags.length) {
+          delete newTagsSettings.tagMap[id]
+        }
+      }
+
+      console.log(newTagsSettings)
       await updateSettings({
-        tags: {
-          ...tagsSettings,
-          ...tags,
-        },
+        tags: newTagsSettings,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tagsSettings],
+  )
+}
+
+export function useClearTagMap() {
+  const tagsSettings = useTagsSettings()
+  const updateSettings = useUpdateSettingsMutation()
+
+  const { characters } = useCharacters()
+  const { groups } = useCharacterGroups()
+
+  return useCallback(
+    async (ids: string[]) => {
+      const newTagMap = { ...tagsSettings.tagMap }
+
+      for (const id of ids) {
+        delete newTagMap[id]
+      }
+
+      for (const [id, tags] of Object.entries(newTagMap)) {
+        if (!tags.length) {
+          delete newTagMap[id]
+          continue
+        }
+        const character = characters.find((c) => c.id === id)
+        const group = groups.find((g) => g.id === id)
+        if (!character && !group) {
+          delete newTagMap[id]
+        }
+      }
+
+      await updateSettings({
+        tags: {
+          ...tagsSettings,
+          tagMap: newTagMap,
+        },
+      })
+    },
+    [characters, groups, tagsSettings, updateSettings],
   )
 }
 

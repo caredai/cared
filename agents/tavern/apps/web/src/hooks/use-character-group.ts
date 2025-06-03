@@ -1,12 +1,16 @@
 import type { AppRouter } from '@tavern/api'
+import type { CharGroupMetadata } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
-import { useCallback, useMemo } from 'react'
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
+import { useCallback, useMemo, useRef } from 'react'
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
+import hash from 'stable-hash'
 
-import type { Character } from './use-characters'
+import type { Character } from './use-character'
+import { debounceTimeout } from '@/lib/debounce'
 import { useTRPC } from '@/trpc/client'
-import { useCharacters } from './use-characters'
+import { useCharacters } from './use-character'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 export type CharacterGroup = Omit<RouterOutput['characterGroup']['get']['group'], 'characters'> & {
@@ -77,16 +81,10 @@ export function useCreateCharacterGroup() {
   )
 
   return useCallback(
-    async (characters: Character[], name?: string) => {
+    async (characters: Character[], metadata: CharGroupMetadata) => {
       await createGroupMutation.mutateAsync({
         characters: characters.map((c) => c.id),
-        metadata: {
-          name:
-            name ??
-            (characters[0]!.content.data.name
-              ? `Group: ${characters[0]!.content.data.name}`
-              : 'Group'),
-        },
+        metadata,
       })
     },
     [createGroupMutation],
@@ -95,32 +93,95 @@ export function useCreateCharacterGroup() {
 
 export function useUpdateCharacterGroup() {
   const trpc = useTRPC()
-  const { refetchGroups } = useCharacterGroups()
+  const queryClient = useQueryClient()
 
-  const updateGroupMutation = useMutation(
-    trpc.characterGroup.update.mutationOptions({
-      onSuccess: () => {
-        void refetchGroups()
-      },
-      onError: (error) => {
-        toast.error(`Failed to update character group: ${error.message}`)
-      },
-    }),
+  const mutationOptions = trpc.characterGroup.update.mutationOptions({
+    onMutate: async (newData) => {
+      await queryClient.cancelQueries({
+        queryKey: trpc.characterGroup.list.queryKey(),
+      })
+
+      const previousData = queryClient.getQueryData(trpc.characterGroup.list.queryKey())
+
+      // Optimistically update the group
+      queryClient.setQueryData(trpc.characterGroup.list.queryKey(), (old) => {
+        if (!old) {
+          return undefined
+        }
+        const index = old.groups.findIndex((group) => group.id === newData.id)
+        const group = old.groups[index]!
+        return {
+          groups: [
+            ...old.groups.slice(0, index),
+            {
+              ...group,
+              ...newData,
+              metadata: {
+                ...group.metadata,
+                ...newData.metadata,
+              },
+            },
+            ...old.groups.slice(index + 1),
+          ],
+        }
+      })
+
+      return { previousData }
+    },
+    onError: (error, newData, context) => {
+      if (context) {
+        queryClient.setQueryData(trpc.characterGroup.list.queryKey(), context.previousData)
+      }
+      console.error('Failed to update character group:', error)
+      toast.error(`Failed to update character group: ${error.message}`)
+    },
+  })
+
+  const mutationFnRef = useRef(mutationOptions.mutationFn)
+  mutationFnRef.current = mutationOptions.mutationFn
+
+  // @ts-ignore
+  const mutationFn = useCallback((...args: any[]) => mutationFnRef.current?.(...args), [])
+
+  // @ts-ignore
+  mutationOptions.mutationFn = useMemo(
+    () => pDebounce(mutationFn, debounceTimeout.extended),
+    [mutationFn],
   )
 
+  const mutation = useMutation(mutationOptions)
+
+  const { groups } = useCharacterGroups()
+
   return useCallback(
-    async (id: string, characters?: string[], name?: string) => {
-      await updateGroupMutation.mutateAsync({
+    async (id: string, characters?: string[], metadata?: Partial<CharGroupMetadata>) => {
+      const group = groups.find((group) => group.id === id)
+      if (!group) {
+        return
+      }
+
+      if (
+        !(characters && hash(characters) !== hash(group.characters.map((c) => c.id))) &&
+        !(
+          metadata &&
+          hash({
+            ...group.metadata,
+            ...metadata,
+          }) !== hash(group.metadata)
+        )
+      ) {
+        // No changes to apply
+        return
+      }
+
+      return await mutation.mutateAsync({
         id,
         characters,
-        ...(name && {
-          metadata: {
-            name,
-          },
-        }),
+        metadata,
       })
     },
-    [updateGroupMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [groups],
   )
 }
 

@@ -8,6 +8,7 @@ import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
 
+import { useClearTagMap } from '@/hooks/use-settings'
 import { debounceTimeout } from '@/lib/debounce'
 import defaultPng from '@/public/images/ai4.png'
 import { useTRPC } from '@/trpc/client'
@@ -395,12 +396,15 @@ export function useDeleteCharacter(char: Character) {
     }),
   )
 
+  const clearTagMap = useClearTagMap()
+
   return useCallback(async () => {
     await deleteMutation.mutateAsync({
       id: char.id,
     })
+    await clearTagMap([char.id])
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [char.id])
+  }, [char.id, clearTagMap])
 }
 
 export function useDeleteCharacters() {
@@ -419,13 +423,16 @@ export function useDeleteCharacters() {
     }),
   )
 
+  const clearTagMap = useClearTagMap()
+
   return useCallback(
     async (ids: string[]) => {
       await deleteMutation.mutateAsync({
         ids,
       })
+      await clearTagMap(ids)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [clearTagMap],
   )
 }

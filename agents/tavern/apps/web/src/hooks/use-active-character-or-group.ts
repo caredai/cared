@@ -1,23 +1,23 @@
-import type { Character } from '@/hooks/use-characters'
+import type { Character } from '@/hooks/use-character'
 import type { CharacterGroup } from '@/hooks/use-character-group'
 import { useMemo } from 'react'
 import { atom, useAtom } from 'jotai'
 
-import { useCharacters } from '@/hooks/use-characters'
+import { useCharacters } from '@/hooks/use-character'
 import { useCharacterGroups } from '@/hooks/use-character-group'
 
-const activeCharacterIdAtom = atom<string | undefined>(undefined)
+const activeCharacterOrGroupIdAtom = atom<string | undefined>(undefined)
 
-export function useSetActiveCharacter() {
-  const [, setActiveCharacter] = useAtom(activeCharacterIdAtom)
+export function useSetActiveCharacterOrGroup() {
+  const [, setActiveCharacter] = useAtom(activeCharacterOrGroupIdAtom)
   return setActiveCharacter
 }
 
-export function useActiveCharacter() {
+export function useActiveCharacterOrGroup() {
   const { characters } = useCharacters()
   const { groups } = useCharacterGroups()
 
-  const [activeCharacterId] = useAtom(activeCharacterIdAtom)
+  const [activeCharacterId] = useAtom(activeCharacterOrGroupIdAtom)
 
   return useMemo(() => {
     if (!activeCharacterId) {

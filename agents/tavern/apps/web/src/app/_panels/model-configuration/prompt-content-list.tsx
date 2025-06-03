@@ -10,13 +10,13 @@ import {
   CollapsibleTrigger,
 } from '@ownxai/ui/components/collapsible'
 
-import { isCharacterGroup, useActiveCharacter } from '@/hooks/use-active-character'
+import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { usePromptInspect } from './prompt-inspect'
 
 export function PromptContentList() {
   const { prompt } = usePromptInspect()
-  const characterOrGroup = useActiveCharacter()
+  const characterOrGroup = useActiveCharacterOrGroup()
   const character = isCharacterGroup(characterOrGroup)
     ? characterOrGroup.characters[0]
     : characterOrGroup

@@ -1,6 +1,6 @@
-import type { UseFormReturn } from 'react-hook-form'
+import type { RefObject } from 'react'
 import type { z } from 'zod'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { characterCardV2Schema } from '@tavern/core'
 import { useForm } from 'react-hook-form'
@@ -17,7 +17,7 @@ import {
 import { Input } from '@ownxai/ui/components/input'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
-import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
+import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { useIsCreateCharacter } from './hooks'
 
@@ -39,10 +39,12 @@ export const defaultCharacterBasicFormValues: CharacterBasicFormValues = {
 
 export function CharacterBasicForm({
   onChange,
+  ref,
 }: {
-  onChange: (values: CharacterBasicFormValues) => void
+  onChange?: (values: CharacterBasicFormValues) => void
+  ref?: RefObject<(() => Promise<CharacterBasicFormValues | false>) | null>
 }) {
-  const character = useActiveCharacter()
+  const character = useActiveCharacterOrGroup()
 
   const isCreateCharacter = useIsCreateCharacter()
 
@@ -57,7 +59,7 @@ export function CharacterBasicForm({
   )
 
   useEffect(() => {
-    onChange(defaultValues)
+    onChange?.(defaultValues)
   }, [onChange, defaultValues])
 
   const form = useForm({
@@ -69,25 +71,31 @@ export function CharacterBasicForm({
     form.reset(defaultValues)
   }, [defaultValues, form])
 
-  return <CharacterBasicFormView form={form} onChange={onChange} forCreate={isCreateCharacter} />
-}
-
-export function CharacterBasicFormView({
-  form,
-  onChange,
-  forCreate,
-}: {
-  form: UseFormReturn<CharacterBasicFormValues>
-  onChange: (values: CharacterBasicFormValues) => void
-  forCreate?: boolean
-}) {
   const descriptionTokens = useTextTokens(form.watch('description'))
   const firstMessageTokens = useTextTokens(form.watch('first_mes'))
 
+  const getValues = useCallback(async () => {
+    return (await form.trigger()) && form.getValues()
+  }, [form])
+
+  useEffect(() => {
+    if (ref) {
+      ref.current = getValues
+    }
+  }, [ref, getValues])
+
   return (
     <Form {...form}>
-      <form className="flex flex-col gap-6" onBlur={() => onChange(form.getValues())}>
-        {forCreate && (
+      <form
+        className="flex flex-col gap-6"
+        onBlur={async () => {
+          const values = await getValues()
+          if (values) {
+            onChange?.(values)
+          }
+        }}
+      >
+        {isCreateCharacter && (
           <FormField
             control={form.control}
             name="name"
@@ -103,7 +111,7 @@ export function CharacterBasicFormView({
           />
         )}
 
-        {!forCreate && (
+        {!isCreateCharacter && (
           <FormField
             control={form.control}
             name="creator_notes"

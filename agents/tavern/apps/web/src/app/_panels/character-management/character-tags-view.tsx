@@ -1,4 +1,5 @@
 import type { TagsSettings } from '@tavern/core'
+import type { RefObject } from 'react'
 import * as React from 'react'
 import { useEffect } from 'react'
 import { faTags } from '@fortawesome/free-solid-svg-icons'
@@ -15,38 +16,58 @@ import { Virtualized, VirtualizedVirtualizer } from '@ownxai/ui/components/virtu
 
 import { FaButton } from '@/components/fa-button'
 import { ClosableTag } from '@/components/tag'
-import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
+import { useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
 import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
-import { useIsCreateCharacter } from './hooks'
+import { useIsCreateCharacterOrGroup } from './hooks'
 import { useOpenTagsManagementDialog } from './tags-management-dialog'
 
-export function CharacterTagsView() {
-  const character = useActiveCharacter()
+export function CharacterTagsView({
+  ref,
+}: {
+  ref?: RefObject<((id: string) => Promise<void>) | null>
+}) {
+  const charOrGroup = useActiveCharacterOrGroup()
 
-  const isCreateCharacter = useIsCreateCharacter()
+  const isCreateCharOrGroup = useIsCreateCharacterOrGroup()
 
   const tagsSettings = useTagsSettings()
   const updateTagsSettings = useUpdateTagsSettings()
 
   const [charTags, setCharTags] = React.useState<string[]>([])
+
   useEffect(() => {
-    if (!isCreateCharacter && isCharacter(character)) {
-      setCharTags(tagsSettings.tagMap[character.id] ?? [])
+    if (ref) {
+      ref.current = async (id: string) => {
+        console.log(id, charTags)
+        await updateTagsSettings({
+          ...tagsSettings,
+          tagMap: {
+            ...tagsSettings.tagMap,
+            [id]: charTags,
+          },
+        })
+      }
+    }
+  }, [ref, tagsSettings, updateTagsSettings, charTags])
+
+  useEffect(() => {
+    if (!isCreateCharOrGroup && charOrGroup) {
+      setCharTags(tagsSettings.tagMap[charOrGroup.id] ?? [])
     } else {
       setCharTags([])
     }
-  }, [character, isCreateCharacter, tagsSettings.tagMap])
+  }, [charOrGroup, isCreateCharOrGroup, tagsSettings.tagMap])
 
   const removeCharTag = async (tag: string) => {
     const newTags = charTags.filter((t) => t !== tag)
     setCharTags(newTags)
 
-    if (!isCreateCharacter && isCharacter(character)) {
+    if (!isCreateCharOrGroup && charOrGroup) {
       await updateTagsSettings({
         ...tagsSettings,
         tagMap: {
           ...tagsSettings.tagMap,
-          [character.id]: newTags,
+          [charOrGroup.id]: newTags,
         },
       })
     }
@@ -89,10 +110,10 @@ export function CharacterTagsView() {
     setCharTags(newTags)
 
     const newTagsSettings = {} as TagsSettings
-    if (!isCreateCharacter && isCharacter(character)) {
+    if (!isCreateCharOrGroup && charOrGroup) {
       newTagsSettings.tagMap = {
         ...tagsSettings.tagMap,
-        [character.id]: newTags,
+        [charOrGroup.id]: newTags,
       }
     }
 
