@@ -1,6 +1,6 @@
 import type { RefObject } from 'react'
 
-import { useImportCharactersFromFiles } from '@/lib/character'
+import { useImportCharactersFromFiles } from '@/hooks/use-characters'
 import { useImportTags } from './import-tags-dialog'
 
 export function ImportFileInput({

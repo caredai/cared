@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@ownxai/ui/components/p
 import { Separator } from '@ownxai/ui/components/separator'
 
 import { useModels } from '@/hooks/use-model'
-import { useModelSettings, useUpdateModelSettings } from '@/lib/settings'
+import { useModelSettings, useUpdateModelSettings } from '@/hooks/use-settings'
 import { cn } from '@ownxai/ui/lib/utils'
 
 interface Group {

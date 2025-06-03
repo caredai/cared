@@ -20,11 +20,11 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@ownxai/ui/components/form'
 import { Input } from '@ownxai/ui/components/input'
 import {
@@ -40,8 +40,8 @@ import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
 import { useContentAreaRef, useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
-import { useIsCreateCharacter } from '../hooks'
 import { useTextTokens } from '@/hooks/use-tokenizer'
+import { useIsCreateCharacter } from './hooks'
 
 export const characterAdvancedFormSchema = characterCardV2Schema.shape.data
   .pick({

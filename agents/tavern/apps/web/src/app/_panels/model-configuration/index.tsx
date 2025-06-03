@@ -43,7 +43,7 @@ import {
   useDeleteModelPreset,
   useModelPresets,
 } from '@/hooks/use-model-preset'
-import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
+import { useAppearanceSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
 import { ModelConf } from './model-conf'
 import { PromptEdit } from './prompt-edit'
 import { PromptInspect } from './prompt-inspect'

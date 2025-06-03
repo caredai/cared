@@ -49,7 +49,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@ownxai/ui/components/p
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
-import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
+import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
 
 const openAtom = atom(false)
 

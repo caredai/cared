@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 
-import { useModelSettings } from '@/lib/settings'
+import { useModelSettings } from '@/hooks/use-settings'
 import { useTRPC } from '@/trpc/client'
 
 export function useModels() {

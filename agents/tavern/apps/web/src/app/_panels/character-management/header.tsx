@@ -3,7 +3,7 @@
 import { faListUl, faLock, faUnlock } from '@fortawesome/free-solid-svg-icons'
 
 import { FaButton } from '@/components/fa-button'
-import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
+import { useAppearanceSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
 import { useSetShowCharacterList } from './hooks'
 
 export function CharacterManagementHeader() {

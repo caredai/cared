@@ -6,7 +6,7 @@ import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { useImportTags } from '@/app/_panels/character-management/import-tags-dialog'
 import { CircleSpinner } from '@/components/spinner'
-import { useImportCharactersFromUrls } from '@/lib/character'
+import { useImportCharactersFromUrls } from '@/hooks/use-characters'
 
 interface ImportUrlDialogProps {
   open: boolean

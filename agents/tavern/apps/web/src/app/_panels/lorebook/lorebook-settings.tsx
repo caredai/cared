@@ -29,7 +29,7 @@ import {
 
 import { CheckboxField } from '@/components/checkbox-field'
 import { SliderInputField } from '@/components/slider-input-field'
-import { useLorebookSettings, useUpdateLorebookSettings } from '@/lib/settings'
+import { useLorebookSettings, useUpdateLorebookSettings } from '@/hooks/use-settings'
 
 const formSchema = lorebookSettingsSchema.omit({
   active: true,

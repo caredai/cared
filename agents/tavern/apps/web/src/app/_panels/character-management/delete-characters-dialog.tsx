@@ -11,7 +11,7 @@ import {
 } from '@ownxai/ui/components/dialog'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useDeleteCharacters } from '@/lib/character'
+import { useDeleteCharacters } from '@/hooks/use-characters'
 
 export function DeleteCharactersDialog({
   open,

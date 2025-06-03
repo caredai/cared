@@ -4,9 +4,9 @@ import { useCallback, useMemo } from 'react'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import type { Character } from './character'
+import type { Character } from './use-characters'
 import { useTRPC } from '@/trpc/client'
-import { useCharacters } from './character'
+import { useCharacters } from './use-characters'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 export type CharacterGroup = Omit<RouterOutput['characterGroup']['get']['group'], 'characters'> & {

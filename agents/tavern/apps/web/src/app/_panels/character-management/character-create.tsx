@@ -26,19 +26,19 @@ import {
 } from '@ownxai/ui/components/dropdown-menu'
 import { cn } from '@ownxai/ui/lib/utils'
 
-import type { CharacterAdvancedFormValues } from './character-form/advanced'
-import type { CharacterBasicFormValues } from './character-form/basic'
+import type { CharacterAdvancedFormValues } from './character-advanced-form'
+import type { CharacterBasicFormValues } from './character-basic-form'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
 import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
-import { useCreateCharacter } from '@/lib/character'
+import { useCreateCharacter } from '@/hooks/use-characters'
 import defaultPng from '@/public/images/ai4.png'
 import {
   CharacterAdvancedForm,
   defaultCharacterAdvancedFormValues,
-} from './character-form/advanced'
-import { CharacterBasicForm, defaultCharacterBasicFormValues } from './character-form/basic'
+} from './character-advanced-form'
+import { CharacterBasicForm, defaultCharacterBasicFormValues } from './character-basic-form'
 import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
 
 export function CharacterCreate() {

@@ -5,7 +5,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import { CharacterAvatar } from '@/components/avatar'
 import { Tag } from '@/components/tag'
-import { useTagsSettings } from '@/lib/settings'
+import { useTagsSettings } from '@/hooks/use-settings'
 
 export function CharacterItem({
   character,

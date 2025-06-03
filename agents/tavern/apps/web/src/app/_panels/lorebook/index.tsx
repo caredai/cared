@@ -25,7 +25,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
 import { useLorebooks, useUpdateLorebook } from '@/hooks/use-lorebook'
-import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
+import { useAppearanceSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
 import { AddLorebookDialog } from './add-lorebook-dialog'
 import { ApplySortingDialog } from './apply-sorting-dialog'
 import { DeleteLorebookDialog } from './delete-lorebook-dialog'

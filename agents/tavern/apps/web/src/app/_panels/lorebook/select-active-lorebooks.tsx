@@ -1,7 +1,7 @@
 import { MultiSelectVirtual } from '@ownxai/ui/components/multi-select-virtual'
 
 import { useLorebooks } from '@/hooks/use-lorebook'
-import { useLorebookSettings, useUpdateLorebookSettings } from '@/lib/settings'
+import { useLorebookSettings, useUpdateLorebookSettings } from '@/hooks/use-settings'
 
 export function SelectActiveLorebooks() {
   const { lorebooks } = useLorebooks()

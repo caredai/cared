@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { backgroundFittings } from '@/app/_panels/background-image'
-import { useBackgroundSettings } from '@/lib/settings'
+import { useBackgroundSettings } from '@/hooks/use-settings'
 import { signIn } from '@/lib/sign-in'
 import { useTRPC } from '@/trpc/client'
 import { Content } from './content'

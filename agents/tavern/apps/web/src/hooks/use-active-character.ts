@@ -1,10 +1,10 @@
-import type { Character } from '@/lib/character'
-import type { CharacterGroup } from '@/lib/character-group'
+import type { Character } from '@/hooks/use-characters'
+import type { CharacterGroup } from '@/hooks/use-character-group'
 import { useMemo } from 'react'
 import { atom, useAtom } from 'jotai'
 
-import { useCharacters } from '@/lib/character'
-import { useCharacterGroups } from '@/lib/character-group'
+import { useCharacters } from '@/hooks/use-characters'
+import { useCharacterGroups } from '@/hooks/use-character-group'
 
 const activeCharacterIdAtom = atom<string | undefined>(undefined)
 

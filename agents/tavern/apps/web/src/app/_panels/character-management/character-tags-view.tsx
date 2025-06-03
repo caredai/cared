@@ -16,7 +16,7 @@ import { Virtualized, VirtualizedVirtualizer } from '@ownxai/ui/components/virtu
 import { FaButton } from '@/components/fa-button'
 import { ClosableTag } from '@/components/tag'
 import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
-import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
+import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
 import { useIsCreateCharacter } from './hooks'
 import { useOpenTagsManagementDialog } from './tags-management-dialog'
 

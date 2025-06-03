@@ -1,4 +1,4 @@
-import type { CharacterGroup } from '@/lib/character-group'
+import type { CharacterGroup } from '@/hooks/use-character-group'
 
 export function CharacterGroupView({ group }: { group: CharacterGroup }) {
   return <></>

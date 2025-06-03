@@ -19,7 +19,7 @@ import { CollapsibleContent } from '@ownxai/ui/components/collapsible-content'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
-import { useAppearanceSettings, useUpdateSettingsMutation } from '@/lib/settings'
+import { useAppearanceSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
 import { BackgroundImagePanel } from '../_panels/background-image'
 import { CharacterManagementPanel } from '../_panels/character-management'
 import { ExtensionsPanel } from '../_panels/extensions'

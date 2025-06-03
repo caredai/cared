@@ -1,4 +1,4 @@
-import type { Character } from '@/lib/character'
+import type { Character } from '@/hooks/use-characters'
 import type { TagImportOption } from '@tavern/core'
 import { useEffect, useMemo, useState } from 'react'
 import { atom, useAtom } from 'jotai'
@@ -15,7 +15,7 @@ import {
 } from '@ownxai/ui/components/dialog'
 
 import { Tag } from '@/components/tag'
-import { useTagsSettings, useUpdateTagsSettings } from '@/lib/settings'
+import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
 
 const openAtom = atom(false)
 const characterAtom = atom<Character | undefined>(undefined)

@@ -8,18 +8,18 @@ import { useForm } from 'react-hook-form'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@ownxai/ui/components/form'
 import { Input } from '@ownxai/ui/components/input'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
 import { isCharacter, useActiveCharacter } from '@/hooks/use-active-character'
-import { useIsCreateCharacter } from '../hooks'
 import { useTextTokens } from '@/hooks/use-tokenizer'
+import { useIsCreateCharacter } from './hooks'
 
 export const characterBasicFormSchema = characterCardV2Schema.shape.data.pick({
   name: true,

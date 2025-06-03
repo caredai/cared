@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@ownxai/ui/components/select'
 
-import { useBackgroundSettings, useUpdateSettingsMutation } from '@/lib/settings'
+import { useBackgroundSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
 
 export const backgroundFittings = {
   classic: 'bg-cover',

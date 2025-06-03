@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import hash from 'stable-hash'
 
 import { useTRPC } from '@/trpc/client'
-import { debounceTimeout } from './debounce'
+import { debounceTimeout } from '../lib/debounce'
 
 export function useUpdateSettingsMutation() {
   const trpc = useTRPC()
