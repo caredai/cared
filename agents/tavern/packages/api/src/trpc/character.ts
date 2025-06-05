@@ -27,7 +27,7 @@ import { s3Client } from '../s3'
 import { userProtectedProcedure } from '../trpc'
 import { measure } from '../utils'
 
-function imageUrl() {
+export function imageUrl() {
   if (!env.NEXT_PUBLIC_IMAGE_URL) {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
@@ -396,13 +396,13 @@ export const characterRouter = {
         })
       }
 
-      // Delete all character cards from storage
-      await deleteCharacterCards(characters.map((character) => character.metadata.url))
-
       // Delete all characters from the database
       await ctx.db
         .delete(Character)
         .where(and(eq(Character.userId, ctx.auth.userId), inArray(Character.id, input.ids)))
+
+      // Delete all character cards from storage
+      await deleteCharacterCards(characters.map((character) => character.metadata.url))
 
       return { characters }
     }),

@@ -1,34 +1,36 @@
 import type { Character } from '@/hooks/use-character'
+import type { CharacterGroup } from '@/hooks/use-character-group'
 
 import { Checkbox } from '@ownxai/ui/components/checkbox'
 import { cn } from '@ownxai/ui/lib/utils'
 
-import { CharacterAvatar } from '@/components/avatar'
+import { CharacterAvatar, CharacterGroupAvatar } from '@/components/avatar'
 import { Tag } from '@/components/tag'
+import { isCharacter } from '@/hooks/use-character-or-group'
 import { useTagsSettings } from '@/hooks/use-settings'
 
 export function CharacterItem({
-  character,
+  charOrGroup,
   isSelectMode = false,
   isSelected = false,
   onSelect,
 }: {
-  character: Character
+  charOrGroup: Character | CharacterGroup
   isSelectMode?: boolean
   isSelected?: boolean
   onSelect: (characterId: string, selected: boolean, event?: React.MouseEvent) => void
 }) {
   const handleClick = (event: React.MouseEvent) => {
-    onSelect(character.id, !isSelected, event)
+    onSelect(charOrGroup.id, !isSelected, event)
 
     // Clear any existing text selection
     window.getSelection()?.removeAllRanges()
   }
 
-  const data = character.content.data
+  const name = isCharacter(charOrGroup) ? charOrGroup.content.data.name : charOrGroup.metadata.name
 
   const tagsSettings = useTagsSettings()
-  const tags = tagsSettings.tagMap[character.id]
+  const tags = tagsSettings.tagMap[charOrGroup.id]
 
   return (
     <div
@@ -45,12 +47,24 @@ export function CharacterItem({
         />
       )}
 
-      <CharacterAvatar src={character.metadata.url} alt={data.name} />
+      {isCharacter(charOrGroup) ? (
+        <CharacterAvatar src={charOrGroup.metadata.url} alt={name} />
+      ) : (
+        <CharacterGroupAvatar
+          src={charOrGroup.metadata.imageUrl}
+          characterAvatars={charOrGroup.characters.map((c) => c.metadata.url)}
+          alt={name}
+        />
+      )}
 
-      <div className="flex flex-col gap-1">
+      <div className="flex-1 flex flex-col gap-1">
         <div className="flex flex-row items-center justify-between">
-          <h3 className="font-medium text-yellow-400">{data.name}</h3>
-          <span className="text-xs text-muted-foreground">{data.character_version}</span>
+          <h3 className="font-medium text-yellow-400">{name}</h3>
+          <span className="text-xs text-muted-foreground">
+            {isCharacter(charOrGroup)
+              ? charOrGroup.content.data.character_version
+              : `${charOrGroup.characters.length} characters`}
+          </span>
         </div>
         <p
           className={cn(
@@ -58,7 +72,9 @@ export function CharacterItem({
             isSelected && 'text-secondary-foreground',
           )}
         >
-          {data.creator_notes}
+          {isCharacter(charOrGroup)
+            ? charOrGroup.content.data.creator_notes
+            : `${charOrGroup.characters.map((c) => c.content.data.name).join(', ')}`}
         </p>
         {(tags?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1">

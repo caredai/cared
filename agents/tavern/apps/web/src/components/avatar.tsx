@@ -59,9 +59,10 @@ export function CharacterAvatar(
 
 export function CharacterGroupAvatar(
   allProps: ComponentProps<'div'> &
-    Pick<ComponentProps<typeof RemoteImage>, 'src' | 'alt'> & {
+    Partial<Pick<ComponentProps<typeof RemoteImage>, 'src'>> &
+    Pick<ComponentProps<typeof RemoteImage>, 'alt'> & {
       onFileChange?: (file?: File) => void
-      characterAvatars: string[]
+      characterAvatars?: string[]
     },
 ) {
   const { src, alt, onFileChange, characterAvatars, ...props } = allProps
@@ -82,8 +83,8 @@ export function CharacterGroupAvatar(
   }
 
   // Get the first 4 avatars
-  const avatars = characterAvatars.slice(0, 4)
-  const avatarCount = avatars.length
+  const avatars = characterAvatars?.slice(0, 4)
+  const avatarCount = avatars?.length ?? 0
 
   // If no avatars, return empty div
   if (avatarCount === 0) {
@@ -92,7 +93,7 @@ export function CharacterGroupAvatar(
 
   // If only one avatar, render as single avatar
   if (avatarCount === 1) {
-    return <CharacterAvatar src={avatars[0]!} alt={alt} onFileChange={onFileChange} {...props} />
+    return <CharacterAvatar src={avatars![0]!} alt={alt} onFileChange={onFileChange} {...props} />
   }
 
   return (
@@ -103,11 +104,8 @@ export function CharacterGroupAvatar(
         props.className,
       )}
     >
-      <div className="grid grid-cols-2 grid-rows-2 w-full h-full">
-        {avatars.map((avatar, index) => {
-          // For 3 avatars, skip the last position
-          if (avatarCount === 3 && index === 3) return null
-
+      <div className={cn("grid grid-cols-2 w-full h-full", avatarCount === 2 && 'grid-rows-1', avatarCount === 4 && 'grid-rows-2')}>
+        {avatars?.map((avatar, index) => {
           return (
             <RemoteImage
               key={index}
@@ -115,7 +113,15 @@ export function CharacterGroupAvatar(
               alt={`${alt} ${index + 1}`}
               width={26}
               height={26}
-              className="aspect-square w-full h-full object-cover"
+              className={cn("aspect-square w-full h-full object-cover", avatarCount === 3 && index === 2 && 'col-span-2',
+                index === 0 && 'border-r',
+                index === 0 && avatarCount > 2 && 'border-b',
+                index === 1 && 'border-l',
+                index === 1 && avatarCount > 2 && 'border-b',
+                index === 2 && 'border-t',
+                index === 2 && avatarCount > 3 && 'border-r',
+                index === 3 && 'border-t border-l',
+              )}
             />
           )
         })}

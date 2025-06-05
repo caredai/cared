@@ -40,10 +40,9 @@ import {
 } from './character-advanced-form'
 import { CharacterBasicForm } from './character-basic-form'
 import { CharacterTagsView } from './character-tags-view'
-import { useSetIsCreateCharacter, useSetShowCharacterList } from './hooks'
+import { useSetShowCharacterList } from './hooks'
 
 export function CharacterCreate() {
-  const setIsCreateCharacter = useSetIsCreateCharacter()
   const setShowCharacterList = useSetShowCharacterList()
 
   const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
@@ -85,13 +84,11 @@ export function CharacterCreate() {
       imageDataUrl,
     )
 
-    console.log(setTagsRef.current, character.id)
     await setTagsRef.current?.(character.id)
   }
 
   const handleClose = () => {
-    setIsCreateCharacter(false)
-    setShowCharacterList(true)
+    setShowCharacterList()
   }
 
   const handleAddToFavorites = () => {

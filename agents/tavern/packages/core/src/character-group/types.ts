@@ -11,9 +11,6 @@ export interface CharGroupMetadata {
   disabledCharacters?: string[] // characters that should not auto-reply
   autoModeDelay?: number
   hideMutedSprites: boolean
-  chatMetadata: {
-    scenario?: string
-  }
 }
 
 export enum GroupActivationStrategy {
@@ -40,7 +37,4 @@ export const charGroupMetadataSchema = z.object({
   disabledCharacters: z.array(z.string()).optional(),
   autoModeDelay: z.number().int().min(0).optional(),
   hideMutedSprites: z.boolean(),
-  chatMetadata: z.object({
-    scenario: z.string().optional(),
-  }),
 })

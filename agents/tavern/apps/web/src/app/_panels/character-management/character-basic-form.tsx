@@ -17,7 +17,7 @@ import {
 import { Input } from '@ownxai/ui/components/input'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
-import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
+import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { useIsCreateCharacter } from './hooks'
 

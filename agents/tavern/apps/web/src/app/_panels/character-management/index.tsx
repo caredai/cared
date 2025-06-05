@@ -2,7 +2,7 @@
 
 import { Separator } from '@ownxai/ui/components/separator'
 
-import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
+import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { CharacterCreate } from './character-create'
 import { CharacterGroupView } from './character-group-view'
 import { CharacterList } from './character-list'
@@ -33,7 +33,7 @@ export function CharacterManagementPanel() {
       {!isCreateCharacter && activeCharacter && (
         <h1
           className="font-semibold text-xl text-muted-foreground hover:text-primary-foreground cursor-pointer truncate"
-          onClick={() => setShowCharacterList(false)}
+          onClick={setShowCharacterList}
         >
           {isCharacterGroup(activeCharacter)
             ? activeCharacter.metadata.name

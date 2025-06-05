@@ -35,7 +35,7 @@ export function CharacterManagementHeader() {
           btnSize="size-6"
           iconSize="xl"
           title="Show character list"
-          onClick={() => setShowCharacterList(true)}
+          onClick={setShowCharacterList}
         />
       </div>
       <div className="flex flex-row"></div>

@@ -1,5 +1,5 @@
+import type { CharGroupMetadata } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
-import { CharGroupMetadata } from '@tavern/core'
 import { index, jsonb, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 
 import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'

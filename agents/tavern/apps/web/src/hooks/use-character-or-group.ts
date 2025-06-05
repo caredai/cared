@@ -6,11 +6,17 @@ import { atom, useAtom } from 'jotai'
 import { useCharacters } from '@/hooks/use-character'
 import { useCharacterGroups } from '@/hooks/use-character-group'
 
+export function useCharactersAndGroups(): (Character | CharacterGroup)[] {
+  const { characters } = useCharacters()
+  const { groups } = useCharacterGroups()
+  return useMemo(() => [...characters, ...groups], [characters, groups])
+}
+
 const activeCharacterOrGroupIdAtom = atom<string | undefined>(undefined)
 
 export function useSetActiveCharacterOrGroup() {
-  const [, setActiveCharacter] = useAtom(activeCharacterOrGroupIdAtom)
-  return setActiveCharacter
+  const [, setActiveCharacterOrGroup] = useAtom(activeCharacterOrGroupIdAtom)
+  return setActiveCharacterOrGroup
 }
 
 export function useActiveCharacterOrGroup() {

@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import hash from 'stable-hash'
 
 import type { Character } from './use-character'
+import { useClearTagMap } from '@/hooks/use-settings'
 import { debounceTimeout } from '@/lib/debounce'
 import { useTRPC } from '@/trpc/client'
 import { useCharacters } from './use-character'
@@ -82,7 +83,7 @@ export function useCreateCharacterGroup() {
 
   return useCallback(
     async (characters: Character[], metadata: CharGroupMetadata) => {
-      await createGroupMutation.mutateAsync({
+      return await createGroupMutation.mutateAsync({
         characters: characters.map((c) => c.id),
         metadata,
       })
@@ -115,7 +116,7 @@ export function useUpdateCharacterGroup() {
             ...old.groups.slice(0, index),
             {
               ...group,
-              ...newData,
+              characters: newData.characters ?? group.characters,
               metadata: {
                 ...group.metadata,
                 ...newData.metadata,
@@ -160,6 +161,26 @@ export function useUpdateCharacterGroup() {
         return
       }
 
+      // Check `disabledCharacters`
+      {
+        let disabledCharacters = {
+          ...group.metadata,
+          ...metadata,
+        }.disabledCharacters
+        const chars = characters ?? group.characters.map((c) => c.id)
+        disabledCharacters = disabledCharacters?.filter((id) => chars.includes(id))
+        if (hash(disabledCharacters) !== hash(group.metadata.disabledCharacters)) {
+          metadata = metadata
+            ? {
+                ...metadata,
+                disabledCharacters,
+              }
+            : {
+                disabledCharacters,
+              }
+        }
+      }
+
       if (
         !(characters && hash(characters) !== hash(group.characters.map((c) => c.id))) &&
         !(
@@ -200,13 +221,18 @@ export function useDeleteCharacterGroup() {
     }),
   )
 
+  const clearTagMap = useClearTagMap()
+
   return useCallback(
     async (id: string) => {
       await deleteGroupMutation.mutateAsync({
         id,
       })
+
+      await clearTagMap([id])
     },
-    [deleteGroupMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clearTagMap],
   )
 }
 
@@ -225,12 +251,17 @@ export function useDeleteCharacterGroups() {
     }),
   )
 
+  const clearTagMap = useClearTagMap()
+
   return useCallback(
     async (ids: string[]) => {
       await deleteGroupsMutation.mutateAsync({
         ids,
       })
+
+      await clearTagMap(ids)
     },
-    [deleteGroupsMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clearTagMap],
   )
 }

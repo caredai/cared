@@ -38,7 +38,7 @@ import { Separator } from '@ownxai/ui/components/separator'
 import { Slider } from '@ownxai/ui/components/slider'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
-import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
+import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useContentAreaRef, useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { useIsCreateCharacter } from './hooks'

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback } from 'react'
 import { atom, useAtom } from 'jotai'
 
 const isCreateCharacterAtom = atom(false)
@@ -26,50 +26,49 @@ export function useShowCharacterList() {
   return showCharacterList
 }
 
-export function useSetIsCreateCharacter() {
-  const [isCreateCharacter, setIsCreateCharacter] = useAtom(isCreateCharacterAtom)
+function useSetFlag() {
+  const [, setIsCreateCharacter] = useAtom(isCreateCharacterAtom)
   const [, setIsCreateCharacterGroup] = useAtom(isCreateCharacterGroupAtom)
   const [, setShowCharacterList] = useAtom(showCharacterListAtom)
-
-  useEffect(() => {
-    if (isCreateCharacter) {
-      setIsCreateCharacterGroup(false)
-      setShowCharacterList(false)
-    }
+  return useCallback(
+    (flag?: 'create-character' | 'create-character-group' | 'show-character-list') => {
+      setIsCreateCharacter(flag === 'create-character')
+      setIsCreateCharacterGroup(flag === 'create-character-group')
+      setShowCharacterList(flag === 'show-character-list')
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCreateCharacter])
+    [],
+  )
+}
 
-  return setIsCreateCharacter
+export function useSetIsCreateCharacter() {
+  const setFlag = useSetFlag()
+  return useCallback(() => {
+    setFlag('create-character')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 }
 
 export function useSetIsCreateCharacterGroup() {
-  const [isCreateCharacterGroup, setIsCreateCharacterGroup] = useAtom(isCreateCharacterGroupAtom)
-  const [, setIsCreateCharacter] = useAtom(isCreateCharacterAtom)
-  const [, setShowCharacterList] = useAtom(showCharacterListAtom)
-
-  useEffect(() => {
-    if (isCreateCharacterGroup) {
-      setIsCreateCharacter(false)
-      setShowCharacterList(false)
-    }
+  const setFlag = useSetFlag()
+  return useCallback(() => {
+    setFlag('create-character-group')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isCreateCharacterGroup])
-
-  return setIsCreateCharacterGroup
+  }, [])
 }
 
 export function useSetShowCharacterList() {
-  const [showCharacterList, setShowCharacterList] = useAtom(showCharacterListAtom)
-  const [, setIsCreateCharacter] = useAtom(isCreateCharacterAtom)
-  const [, setIsCreateCharacterGroup] = useAtom(isCreateCharacterGroupAtom)
-
-  useEffect(() => {
-    if (showCharacterList) {
-      setIsCreateCharacter(false)
-      setIsCreateCharacterGroup(false)
-    }
+  const setFlag = useSetFlag()
+  return useCallback(() => {
+    setFlag('show-character-list')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCharacterList])
+  }, [])
+}
 
-  return setShowCharacterList
+export function useClearAllFlags() {
+  const setFlag = useSetFlag()
+  return useCallback(() => {
+    setFlag()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 }

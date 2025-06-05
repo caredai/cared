@@ -12,25 +12,39 @@ import {
 
 import { CircleSpinner } from '@/components/spinner'
 import { useDeleteCharacters } from '@/hooks/use-character'
+import { useDeleteCharacterGroups } from '@/hooks/use-character-group'
+import { useCharacterGroups } from '@/hooks/use-character-group'
 
-export function DeleteCharactersDialog({
+export function DeleteCharactersOrGroupsDialog({
   open,
   onOpenChange,
-  selectedCharacterIds,
+  ids,
   onDelete,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedCharacterIds: string[]
+  ids: string[]
   onDelete: () => void
 }) {
   const deleteCharacters = useDeleteCharacters()
+  const deleteCharacterGroups = useDeleteCharacterGroups()
+  const { groups } = useCharacterGroups()
   const [isLoading, setIsLoading] = useState(false)
+
+  // Split IDs into character IDs and group IDs
+  const groupIds = ids.filter(id => groups.some(group => group.id === id))
+  const characterIds = ids.filter(id => !groupIds.includes(id))
 
   const handleConfirm = async () => {
     setIsLoading(true)
     try {
-      await deleteCharacters(selectedCharacterIds)
+      // Delete both characters and groups if they exist
+      if (groupIds.length > 0) {
+        await deleteCharacterGroups(groupIds)
+      }
+      if (characterIds.length > 0) {
+        await deleteCharacters(characterIds)
+      }
       onOpenChange(false)
       onDelete()
     } finally {
@@ -38,14 +52,25 @@ export function DeleteCharactersDialog({
     }
   }
 
+  // Generate description text based on what's being deleted
+  const getDescription = () => {
+    const parts = []
+    if (characterIds.length > 0) {
+      parts.push(`${characterIds.length} character${characterIds.length > 1 ? 's' : ''}`)
+    }
+    if (groupIds.length > 0) {
+      parts.push(`${groupIds.length} character group${groupIds.length > 1 ? 's' : ''}`)
+    }
+    return parts.join(' and ')
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="z-7000">
         <DialogHeader>
-          <DialogTitle>Delete characters</DialogTitle>
+          <DialogTitle>Delete items</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete {selectedCharacterIds.length} selected character
-            {selectedCharacterIds.length > 1 ? 's' : ''}? This action cannot be undone.
+            Are you sure you want to delete {getDescription()}? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

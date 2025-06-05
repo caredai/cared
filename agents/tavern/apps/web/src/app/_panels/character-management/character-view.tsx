@@ -4,6 +4,7 @@ import type { Character } from '@/hooks/use-character'
 import type { ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 import {
+  faLeftLong,
   faBook,
   faClone,
   faEllipsisVertical,
@@ -35,7 +36,7 @@ import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area
 import { CharacterBasicForm } from './character-basic-form'
 import { CharacterTagsView } from './character-tags-view'
 import { CharacterViewAdvanced } from './character-view-advanced'
-import { DeleteCharacterDialog } from './delete-character-dialog'
+import { DeleteCharacterOrGroupDialog } from './delete-character-or-group-dialog'
 import { useImportTags } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
@@ -43,6 +44,10 @@ export function CharacterView({ character }: { character: Character }) {
   const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
     useIsShowCharacterAdvancedView()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+
+  const handleClose = () => {
+    setShowCharacterList()
+  }
 
   const handleAddToFavorites = () => {
     console.log('Set favorite character')
@@ -57,6 +62,10 @@ export function CharacterView({ character }: { character: Character }) {
   }
 
   const operateActions = [
+    {
+      action: handleClose,
+      icon: faLeftLong,
+    },
     {
       action: handleAddToFavorites,
       icon: faStar,
@@ -128,7 +137,7 @@ export function CharacterView({ character }: { character: Character }) {
   const updateCharacterImage = useUpdateCharacterImage()
 
   return (
-    <div className="flex flex-col gap-4 overflow-y-auto p-[1px]">
+    <div className="flex-1 flex flex-col gap-4 overflow-y-auto p-[1px]">
       <div className="flex flex-row justify-between items-center gap-4">
         <CharacterAvatar
           src={character.metadata.url}
@@ -176,11 +185,11 @@ export function CharacterView({ character }: { character: Character }) {
         onCrop={(image) => updateCharacterImage(character, image)}
       />
 
-      <DeleteCharacterDialog
+      <DeleteCharacterOrGroupDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        character={character}
-        onDelete={() => setShowCharacterList(true)}
+        charOrGroup={character}
+        onDelete={handleClose}
       />
     </div>
   )

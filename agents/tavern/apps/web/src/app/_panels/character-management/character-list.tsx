@@ -33,25 +33,28 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
-import { useSetActiveCharacterOrGroup } from '@/hooks/use-active-character-or-group'
-import { useCharacters } from '@/hooks/use-character'
+import {
+  isCharacterGroup,
+  useCharactersAndGroups,
+  useSetActiveCharacterOrGroup,
+} from '@/hooks/use-character-or-group'
 import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
 import { CharacterItem } from './character-item'
-import { DeleteCharactersDialog } from './delete-characters-dialog'
-import { useSetIsCreateCharacter, useSetIsCreateCharacterGroup, useSetShowCharacterList } from './hooks'
+import { DeleteCharactersOrGroupsDialog } from './delete-characters-or-groups-dialog'
+import { useClearAllFlags, useSetIsCreateCharacter, useSetIsCreateCharacterGroup } from './hooks'
 import { ImportFileInput } from './import-file-input'
 import { ImportUrlDialog } from './import-url-dialog'
 import { useOpenTagsManagementDialog } from './tags-management-dialog'
 
 export function CharacterList() {
-  const { characters } = useCharacters()
+  const charactersAndGroups = useCharactersAndGroups()
   const tags = useTagsSettings()
   const updateTagsSettings = useUpdateTagsSettings()
 
-  const setActiveCharacter = useSetActiveCharacterOrGroup()
+  const setActiveCharacterOrGroup = useSetActiveCharacterOrGroup()
   const setIsCreateCharacter = useSetIsCreateCharacter()
-  const setIsCreateCharacterGroup  = useSetIsCreateCharacterGroup()
-  const setShowCharacterList = useSetShowCharacterList()
+  const setIsCreateCharacterGroup = useSetIsCreateCharacterGroup()
+  const clearAllFlags = useClearAllFlags()
 
   const [isImportUrlDialogOpen, setIsImportUrlDialogOpen] = useState(false)
 
@@ -76,6 +79,7 @@ export function CharacterList() {
       document: {
         id: 'id',
         index: [
+          // for character
           'content:data:name',
           'content:data:description',
           'content:data:mes_example',
@@ -86,23 +90,36 @@ export function CharacterList() {
           'content:data:creator',
           'content:data:tags',
           'content:data:alternate_greetings',
+          // for character group
+          'metadata:name',
+          'metadata:chatMetadata:scenario',
+          'characters:content:data:name',
+          'characters:content:data:description',
+          'characters:content:data:mes_example',
+          'characters:content:data:scenario',
+          'characters:content:data:personality',
+          'characters:content:data:first_mes',
+          'characters:content:data:creator_notes',
+          'characters:content:data:creator',
+          'characters:content:data:tags',
+          'characters:content:data:alternate_greetings',
         ],
         store: ['id'],
       },
       tokenize: 'bidirectional',
     })
 
-    // Add all characters to the index
+    // Add all characters and groups to the index
     void Promise.all(
-      characters.map((char) => {
+      charactersAndGroups.map((item) => {
         // @ts-ignore
-        return index.add(char)
+        return index.add(item)
       }),
     )
 
     // @ts-ignore
     setSearchIndex(index)
-  }, [characters])
+  }, [charactersAndGroups])
 
   // Handle search
   useEffect(() => {
@@ -116,26 +133,35 @@ export function CharacterList() {
     setSearchResults(matchedIds)
   }, [searchQuery, searchIndex])
 
-  // Filter and sort characters
-  const filteredAndSortedCharacters = useMemo(
+  // Filter and sort characters and groups
+  const filteredAndSortedItems = useMemo(
     () =>
-      characters
-        .filter((char) => !searchQuery.trim() || searchResults.has(char.id))
+      charactersAndGroups
+        .filter((item) => !searchQuery.trim() || searchResults.has(item.id))
         .sort((a, b) => {
+          const aName = isCharacterGroup(a) ? a.metadata.name : a.content.data.name
+          const bName = isCharacterGroup(b) ? b.metadata.name : b.content.data.name
+          const aDate = isCharacterGroup(a)
+            ? new Date(a.createdAt).getTime()
+            : new Date(a.createdAt).getTime()
+          const bDate = isCharacterGroup(b)
+            ? new Date(b.createdAt).getTime()
+            : new Date(b.createdAt).getTime()
+
           switch (sortBy) {
             case 'a-z':
-              return a.content.data.name.localeCompare(b.content.data.name)
+              return aName.localeCompare(bName)
             case 'z-a':
-              return b.content.data.name.localeCompare(a.content.data.name)
+              return bName.localeCompare(aName)
             case 'newest':
-              return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              return bDate - aDate
             case 'oldest':
-              return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+              return aDate - bDate
             default:
               return 0
           }
         }),
-    [characters, searchQuery, searchResults, sortBy],
+    [charactersAndGroups, searchQuery, searchResults, sortBy],
   )
 
   const openTagsManagementDialog = useOpenTagsManagementDialog()
@@ -146,9 +172,7 @@ export function CharacterList() {
   }
 
   const handleCreateCharacter = () => {
-    setIsCreateCharacter(true)
-    setIsCreateCharacterGroup(false)
-    setShowCharacterList(false)
+    setIsCreateCharacter()
   }
 
   const handleImportFromUrl = () => {
@@ -156,9 +180,7 @@ export function CharacterList() {
   }
 
   const handleCreateGroup = () => {
-    setIsCreateCharacter(false)
-    setIsCreateCharacterGroup(true)
-    setShowCharacterList(false)
+    setIsCreateCharacterGroup()
   }
 
   const handleShowFavorites = () => {
@@ -182,7 +204,7 @@ export function CharacterList() {
   }
 
   const handleSelectAll = () => {
-    const allIds = new Set(characters.map((char) => char.id))
+    const allIds = new Set(charactersAndGroups.map((item) => item.id))
     setSelectedCharacters(allIds)
     setSelectState(true)
   }
@@ -196,16 +218,10 @@ export function CharacterList() {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleCharacterSelect = (
-    characterId: string,
-    selected: boolean,
-    event?: React.MouseEvent,
-  ) => {
+  const handleCharacterSelect = (itemId: string, selected: boolean, event?: React.MouseEvent) => {
     if (!isSelectMode) {
-      setActiveCharacter(characters.find((char) => char.id === characterId)?.id)
-      setIsCreateCharacter(false)
-      setIsCreateCharacterGroup(false)
-      setShowCharacterList(false)
+      setActiveCharacterOrGroup(charactersAndGroups.find((item) => item.id === itemId)?.id)
+      clearAllFlags()
       return
     }
 
@@ -213,34 +229,34 @@ export function CharacterList() {
 
     // Handle shift-click selection
     if (event?.shiftKey && lastSelectedId && selectedCharacters.has(lastSelectedId)) {
-      const lastIndex = characters.findIndex((char) => char.id === lastSelectedId)
-      const currentIndex = characters.findIndex((char) => char.id === characterId)
+      const lastIndex = charactersAndGroups.findIndex((item) => item.id === lastSelectedId)
+      const currentIndex = charactersAndGroups.findIndex((item) => item.id === itemId)
 
       if (lastIndex !== -1 && currentIndex !== -1) {
         const start = Math.min(lastIndex, currentIndex)
         const end = Math.max(lastIndex, currentIndex)
 
-        // Select all characters between last selected and current
+        // Select all items between last selected and current
         for (let i = start; i <= end; i++) {
-          newSelected.add(characters[i]!.id)
+          newSelected.add(charactersAndGroups[i]!.id)
         }
       }
     } else {
       // Normal selection
       if (selected) {
-        newSelected.add(characterId)
+        newSelected.add(itemId)
       } else {
-        newSelected.delete(characterId)
+        newSelected.delete(itemId)
       }
     }
 
     setSelectedCharacters(newSelected)
-    setLastSelectedId(characterId)
+    setLastSelectedId(itemId)
 
     // Update select state based on selection
     if (newSelected.size === 0) {
       setSelectState(false)
-    } else if (newSelected.size === characters.length) {
+    } else if (newSelected.size === charactersAndGroups.length) {
       setSelectState(true)
     } else {
       setSelectState('indeterminate')
@@ -442,15 +458,15 @@ export function CharacterList() {
         </div>
       )}
 
-      <VList className="flex-1" count={filteredAndSortedCharacters.length}>
+      <VList className="flex-1" count={filteredAndSortedItems.length}>
         {(i) => {
-          const character = filteredAndSortedCharacters[i]!
+          const item = filteredAndSortedItems[i]!
           return (
             <CharacterItem
-              key={character.id}
-              character={character}
+              key={item.id}
+              charOrGroup={item}
               isSelectMode={isSelectMode}
-              isSelected={selectedCharacters.has(character.id)}
+              isSelected={selectedCharacters.has(item.id)}
               onSelect={handleCharacterSelect}
             />
           )
@@ -461,10 +477,10 @@ export function CharacterList() {
 
       <ImportUrlDialog open={isImportUrlDialogOpen} onOpenChange={setIsImportUrlDialogOpen} />
 
-      <DeleteCharactersDialog
+      <DeleteCharactersOrGroupsDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
-        selectedCharacterIds={Array.from(selectedCharacters)}
+        ids={Array.from(selectedCharacters)}
         onDelete={() => setSelectMode(false)}
       />
     </div>

@@ -380,7 +380,7 @@ export function useUpdateCharacterImage() {
   )
 }
 
-export function useDeleteCharacter(char: Character) {
+export function useDeleteCharacter() {
   const trpc = useTRPC()
 
   const { refetchCharacters } = useCharacters()
@@ -398,13 +398,16 @@ export function useDeleteCharacter(char: Character) {
 
   const clearTagMap = useClearTagMap()
 
-  return useCallback(async () => {
-    await deleteMutation.mutateAsync({
-      id: char.id,
-    })
-    await clearTagMap([char.id])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [char.id, clearTagMap])
+  return useCallback(
+    async (id: string) => {
+      await deleteMutation.mutateAsync({
+        id,
+      })
+      await clearTagMap([id])
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [clearTagMap],
+  )
 }
 
 export function useDeleteCharacters() {

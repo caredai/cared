@@ -13,25 +13,33 @@ import {
 import { CircleSpinner } from '@/components/spinner'
 import { useDeleteCharacter } from '@/hooks/use-character'
 import type { Character } from '@/hooks/use-character'
+import type { CharacterGroup} from '@/hooks/use-character-group';
+import { useDeleteCharacterGroup } from '@/hooks/use-character-group'
+import { isCharacterGroup } from '@/hooks/use-character-or-group'
 
-export function DeleteCharacterDialog({
+export function DeleteCharacterOrGroupDialog({
   open,
   onOpenChange,
-  character,
+  charOrGroup,
   onDelete,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  character: Character
+  charOrGroup: Character | CharacterGroup
   onDelete?: () => void
 }) {
-  const deleteCharacter = useDeleteCharacter(character)
+  const deleteCharacter = useDeleteCharacter()
+  const deleteCharacterGroup = useDeleteCharacterGroup()
   const [isLoading, setIsLoading] = useState(false)
 
   const handleConfirm = async () => {
     setIsLoading(true)
     try {
-      await deleteCharacter()
+      if (isCharacterGroup(charOrGroup)) {
+        await deleteCharacterGroup(charOrGroup.id)
+      } else {
+        await deleteCharacter(charOrGroup.id)
+      }
       onOpenChange(false)
       onDelete?.()
     } finally {
@@ -39,13 +47,17 @@ export function DeleteCharacterDialog({
     }
   }
 
+  const name = isCharacterGroup(charOrGroup)
+    ? charOrGroup.metadata.name
+    : charOrGroup.content.data.name
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="z-7000">
         <DialogHeader>
-          <DialogTitle>Delete character</DialogTitle>
+          <DialogTitle>Delete {isCharacterGroup(charOrGroup) ? 'character group' : 'character'}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete character "{character.content.data.name}"? This action cannot be undone.
+            Are you sure you want to delete {isCharacterGroup(charOrGroup) ? 'character group' : 'character'} "{name}"? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
