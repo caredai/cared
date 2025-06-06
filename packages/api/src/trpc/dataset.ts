@@ -25,8 +25,8 @@ import { mergeWithoutUndefined } from '@ownxai/shared'
 
 import type { Context } from '../trpc'
 import { env } from '../env'
-import { getClient } from '../routes/s3-upload/client'
-import { taskTrigger } from '../routes/tasks'
+import { getClient } from '../rest/s3-upload/client'
+import { taskTrigger } from '../rest/tasks'
 import { userProtectedProcedure } from '../trpc'
 import { verifyWorkspaceMembership } from './workspace'
 

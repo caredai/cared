@@ -7,7 +7,7 @@ import { PencilIcon, UploadIcon, XIcon } from 'lucide-react'
 import { usePresignedUpload } from 'next-s3-upload'
 import { toast } from 'sonner'
 
-import type { s3Upload } from '@ownxai/api/routes'
+import type { s3Upload } from '@ownxai/api/rest'
 import { Button } from '@ownxai/ui/components/button'
 import {
   DropdownMenu,

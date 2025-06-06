@@ -23,7 +23,7 @@ import { log } from '@ownxai/log'
 
 import type { Context } from '../trpc'
 import { env } from '../env'
-import { getClient } from '../routes/s3-upload/client'
+import { getClient } from '../rest/s3-upload/client'
 import { appProtectedProcedure } from '../trpc'
 
 function getKeyPrefixByApp(ctx: Context) {

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 
 import { env } from '../src/env'
-import { getClient } from '../src/routes/s3-upload/client'
+import { getClient } from '../src/rest/s3-upload/client'
 
 // @ts-ignore
 const __filename = fileURLToPath(import.meta.url)

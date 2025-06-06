@@ -46,7 +46,7 @@ export interface ChatMetadata {
 
 const chatMetadataSchema = z
   .object({
-    title: z.string(),
+    title: z.string().default(''),
     visibility: z.enum(visibilityEnumValues).default('public'),
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
