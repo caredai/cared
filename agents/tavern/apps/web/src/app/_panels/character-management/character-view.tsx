@@ -4,13 +4,13 @@ import type { Character } from '@/hooks/use-character'
 import type { ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 import {
-  faLeftLong,
   faBook,
   faClone,
   faEllipsisVertical,
   faFaceSmile,
   faFileExport,
   faGlobe,
+  faLeftLong,
   faPassport,
   faSkull,
   faStar,
@@ -32,6 +32,7 @@ import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
 import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/hooks/use-character'
+import { useCharacterSettings, useUpdateCharacterSettings } from '@/hooks/use-settings'
 import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { CharacterBasicForm } from './character-basic-form'
 import { CharacterTagsView } from './character-tags-view'
@@ -44,13 +45,22 @@ export function CharacterView({ character }: { character: Character }) {
   const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
     useIsShowCharacterAdvancedView()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const characterSettings = useCharacterSettings()
+  const updateCharacterSettings = useUpdateCharacterSettings()
 
   const handleClose = () => {
     setShowCharacterList()
   }
 
-  const handleAddToFavorites = () => {
-    console.log('Set favorite character')
+  const handleAddToFavorites = async () => {
+    const isFavorite = characterSettings.favorites.includes(character.id)
+    const newFavorites = isFavorite
+      ? characterSettings.favorites.filter((id) => id !== character.id)
+      : [...characterSettings.favorites, character.id]
+
+    await updateCharacterSettings({
+      favorites: newFavorites,
+    })
   }
 
   const handleShowAdvancedDefinitions = () => {
@@ -69,38 +79,42 @@ export function CharacterView({ character }: { character: Character }) {
     {
       action: handleAddToFavorites,
       icon: faStar,
-      tooltip: 'Add to favorites',
-      className: 'text-yellow-400',
+      tooltip: characterSettings.favorites.includes(character.id)
+        ? 'Remove from Favorites'
+        : 'Add to Favorites',
+      className: characterSettings.favorites.includes(character.id)
+        ? 'text-yellow-400 hover:text-yellow-400'
+        : '',
     },
     {
       action: handleShowAdvancedDefinitions,
       icon: faBook,
-      tooltip: 'Advanced definitions',
+      tooltip: 'Advanced Definitions',
     },
     {
       action: handleAddToFavorites,
       icon: faGlobe,
-      tooltip: 'Add to favorites',
+      tooltip: 'Character Lore',
     },
     {
       action: handleAddToFavorites,
       icon: faPassport,
-      tooltip: 'Add to favorites',
+      tooltip: 'Chat Lore',
     },
     {
       action: handleAddToFavorites,
       icon: faFaceSmile,
-      tooltip: 'Add to favorites',
+      tooltip: 'Connected Personas',
     },
     {
       action: handleAddToFavorites,
       icon: faFileExport,
-      tooltip: 'Add to favorites',
+      tooltip: 'Export Character',
     },
     {
       action: handleAddToFavorites,
       icon: faClone,
-      tooltip: 'Add to favorites',
+      tooltip: 'Duplicate Character',
     },
     {
       action: handleDeleteCharacter,
@@ -148,27 +162,25 @@ export function CharacterView({ character }: { character: Character }) {
           }}
         />
 
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row flex-wrap justify-end gap-1">
-            {operateActions.map(({ action, icon, tooltip, className, wrapper: Wrapper }, index) => {
-              const btn = (
-                <FaButton
-                  key={index}
-                  icon={icon}
-                  btnSize="size-7"
-                  iconSize="1x"
-                  title={tooltip}
-                  className={cn(
-                    'text-foreground border-1 hover:bg-muted-foreground rounded-sm',
-                    className,
-                  )}
-                  onClick={action}
-                />
-              )
+        <div className="flex flex-row flex-wrap justify-end gap-1">
+          {operateActions.map(({ action, icon, tooltip, className, wrapper: Wrapper }, index) => {
+            const btn = (
+              <FaButton
+                key={index}
+                icon={icon}
+                btnSize="size-7"
+                iconSize="1x"
+                title={tooltip}
+                className={cn(
+                  'text-foreground border-1 hover:bg-muted-foreground rounded-sm',
+                  className,
+                )}
+                onClick={action}
+              />
+            )
 
-              return Wrapper ? <Wrapper key={index} trigger={btn} character={character} /> : btn
-            })}
-          </div>
+            return Wrapper ? <Wrapper key={index} trigger={btn} character={character} /> : btn
+          })}
         </div>
       </div>
 

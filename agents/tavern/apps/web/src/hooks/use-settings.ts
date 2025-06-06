@@ -266,3 +266,30 @@ export function useUpdateLorebookSettings() {
     [lorebookSettings],
   )
 }
+
+export function useCharacterSettings() {
+  const trpc = useTRPC()
+  const { data } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+    select: useCallback(({ settings }: { settings: Settings }) => settings.character, []),
+  })
+  return data
+}
+
+export function useUpdateCharacterSettings() {
+  const characterSettings = useCharacterSettings()
+  const updateSettings = useUpdateSettingsMutation()
+
+  return useCallback(
+    async (character: Partial<Settings['character']>) => {
+      await updateSettings({
+        character: {
+          ...characterSettings,
+          ...character,
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [characterSettings],
+  )
+}

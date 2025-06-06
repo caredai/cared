@@ -37,6 +37,7 @@ import { OptionalNumberInput } from '@/components/number-input'
 import { useCharacters } from '@/hooks/use-character'
 import { useCreateCharacterGroup, useUpdateCharacterGroup } from '@/hooks/use-character-group'
 import { useSetActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
+import { useCharacterSettings, useUpdateCharacterSettings } from '@/hooks/use-settings'
 import { CharacterGroupItem } from './character-group-item'
 import { DeleteCharacterOrGroupDialog } from './delete-character-or-group-dialog'
 
@@ -68,10 +69,13 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
   const setActiveCharacterOrGroup = useSetActiveCharacterOrGroup()
   const createCharacterGroup = useCreateCharacterGroup()
   const updateCharacterGroup = useUpdateCharacterGroup()
+  const characterSettings = useCharacterSettings()
+  const updateCharacterSettings = useUpdateCharacterSettings()
 
   const [showImageCropDialog, setShowImageCropDialog] = useState(false)
   const [inputImageFile, setInputImageFile] = useState<File>()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [pendingFavorite, setPendingFavorite] = useState(false)
 
   const setTagsRef = useRef<(id: string) => Promise<void>>(null)
 
@@ -109,8 +113,22 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
     setShowCharacterList()
   }
 
-  const handleAddToFavorites = () => {
-    // TODO
+  const handleAddToFavorites = async () => {
+    if (isCreate) {
+      // Toggle pending favorite state during creation
+      setPendingFavorite(!pendingFavorite)
+      return
+    }
+
+    // Handle favorite for existing group
+    const isFavorite = characterSettings.favorites.includes(group.id)
+    const newFavorites = isFavorite
+      ? characterSettings.favorites.filter((id) => id !== group.id)
+      : [...characterSettings.favorites, group.id]
+
+    await updateCharacterSettings({
+      favorites: newFavorites,
+    })
   }
 
   const handleDelete = () => {
@@ -129,7 +147,15 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
 
     const { group } = await createCharacterGroup(currentMembers, metadataForm.getValues())
 
-    await setTagsRef.current?.(group.id)
+    // Apply pending favorite state after creation
+    if (pendingFavorite) {
+      const newFavorites = [...characterSettings.favorites, group.id]
+      void updateCharacterSettings({
+        favorites: newFavorites,
+      })
+    }
+
+    void setTagsRef.current?.(group.id)
   }
 
   const operateActions = [
@@ -141,8 +167,12 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
     {
       action: handleAddToFavorites,
       icon: faStar,
-      tooltip: 'Add to favorites',
-      className: 'text-yellow-400',
+      tooltip: (isCreate ? pendingFavorite : characterSettings.favorites.includes(group.id))
+        ? 'Remove from Favorites'
+        : 'Add to Favorites',
+      className: (isCreate ? pendingFavorite : characterSettings.favorites.includes(group.id))
+        ? 'text-yellow-400 hover:text-yellow-400'
+        : '',
     },
     {
       action: !isCreate && handleDelete,

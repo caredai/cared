@@ -45,6 +45,7 @@ import { useClearAllFlags, useSetIsCreateCharacter, useSetIsCreateCharacterGroup
 import { ImportFileInput } from './import-file-input'
 import { ImportUrlDialog } from './import-url-dialog'
 import { useOpenTagsManagementDialog } from './tags-management-dialog'
+import { useCharacterSettings, useUpdateCharacterSettings } from '@/hooks/use-settings'
 
 export function CharacterList() {
   const charactersAndGroups = useCharactersAndGroups()
@@ -72,6 +73,9 @@ export function CharacterList() {
   const [searchResults, setSearchResults] = useState<Set<string>>(new Set())
 
   const [sortBy, setSortBy] = useState<'a-z' | 'z-a' | 'newest' | 'oldest'>('a-z')
+
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const characterSettings = useCharacterSettings()
 
   // Initialize search index
   useEffect(() => {
@@ -137,7 +141,12 @@ export function CharacterList() {
   const filteredAndSortedItems = useMemo(
     () =>
       charactersAndGroups
-        .filter((item) => !searchQuery.trim() || searchResults.has(item.id))
+        .filter((item) => {
+          if (showFavoritesOnly && !characterSettings.favorites.includes(item.id)) {
+            return false
+          }
+          return !searchQuery.trim() || searchResults.has(item.id)
+        })
         .sort((a, b) => {
           const aName = isCharacterGroup(a) ? a.metadata.name : a.content.data.name
           const bName = isCharacterGroup(b) ? b.metadata.name : b.content.data.name
@@ -161,7 +170,7 @@ export function CharacterList() {
               return 0
           }
         }),
-    [charactersAndGroups, searchQuery, searchResults, sortBy],
+    [charactersAndGroups, searchQuery, searchResults, sortBy, showFavoritesOnly, characterSettings.favorites],
   )
 
   const openTagsManagementDialog = useOpenTagsManagementDialog()
@@ -184,7 +193,7 @@ export function CharacterList() {
   }
 
   const handleShowFavorites = () => {
-    console.log('Show only favorite characters')
+    setShowFavoritesOnly(!showFavoritesOnly)
   }
 
   const handleShowGroups = () => {
@@ -290,7 +299,8 @@ export function CharacterList() {
     {
       action: handleShowFavorites,
       icon: faStar,
-      tooltip: 'Show only favorite characters',
+      tooltip: showFavoritesOnly ? 'Show all characters' : 'Show only favorite characters',
+      className: showFavoritesOnly ? 'text-yellow-400' : '',
     },
     {
       action: handleShowGroups,
