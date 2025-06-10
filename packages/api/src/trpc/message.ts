@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@ownxai/db'
-import { and, asc, desc, eq, gt, inArray, lt } from '@ownxai/db'
+import { and, asc, desc, eq, gt, gte, inArray, lt } from '@ownxai/db'
 import {
   CreateMessageSchema,
   CreateMessageVoteSchema,
@@ -205,93 +205,6 @@ export const messageRouter = {
     }),
 
   /**
-   * Create multiple messages in a chat.
-   * Only accessible by authenticated users.
-   * @param input - Array of message data following the {@link CreateMessageSchema}
-   * @returns The created messages
-   */
-  batchCreate: userProtectedProcedure
-    .meta({
-      openapi: {
-        method: 'POST',
-        path: '/v1/messages',
-        protect: true,
-        tags: ['chats'],
-        summary: 'Create multiple messages in a chat',
-      },
-    })
-    .input(z.array(CreateMessageSchema))
-    .mutation(async ({ ctx, input }) => {
-      const firstMsg = input.at(0)
-      if (!firstMsg) {
-        return { messages: [] }
-      }
-
-      // Verify chat exists and user has access
-      await getChatById(ctx, firstMsg.chatId)
-
-      // Verify all messages are for the same chat
-      if (!input.every((msg) => msg.chatId === firstMsg.chatId)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'All messages must belong to the same chat',
-        })
-      }
-
-      if (firstMsg.id) {
-        // If first message has ID, verify all messages have IDs
-        if (!input.every((msg) => msg.id)) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'If first message has ID, all messages must have IDs',
-          })
-        }
-
-        // Check IDs are in ascending order
-        for (let i = 1; i < input.length; i++) {
-          if (input[i]!.id! <= input[i - 1]!.id!) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: 'Message IDs must be in ascending order',
-            })
-          }
-        }
-
-        // Verify first message ID is greater than the last message ID in database
-        const lastMsg = await ctx.db.query.Message.findFirst({
-          where: eq(Message.chatId, firstMsg.chatId),
-          orderBy: [desc(Message.id)],
-        })
-
-        if (lastMsg && firstMsg.id <= lastMsg.id) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'First message ID must be greater than the last message ID in chat',
-          })
-        }
-      } else {
-        // If the first message has no ID, verify all messages have no IDs
-        if (input.some((msg) => msg.id)) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'If first message has no ID, all messages must have no IDs',
-          })
-        }
-      }
-
-      const messages = await ctx.db.insert(Message).values(input).returning()
-
-      if (!messages.length) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create messages',
-        })
-      }
-
-      return { messages }
-    }),
-
-  /**
    * Update a message's content.
    * Only accessible by authenticated users.
    * @param input - Object containing message ID and new content
@@ -335,31 +248,37 @@ export const messageRouter = {
     }),
 
   /**
-   * Delete all messages in a chat that were created after the specified message.
+   * Delete messages in a chat based on the specified message ID.
    * Only accessible by authenticated users.
-   * @param input - Object containing message ID
+   * @param input - Object containing:
+   *   - id: Message ID to start deletion from
+   *   - deleteTrailing: Optional flag to delete all messages after the specified message
+   *   - excludeSelf: Optional flag to exclude the specified message from deletion
+   * @returns Object containing array of deleted messages
    */
-  deleteTrailing: userProtectedProcedure
+  delete: userProtectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
-        path: '/v1/messages',
+        path: '/v1/messages/{id}',
         protect: true,
         tags: ['chats'],
-        summary: 'Delete all messages in a chat that were created after the specified message',
+        summary: 'Delete messages in a chat based on the specified message ID',
       },
     })
     .input(
       z.object({
-        messageId: z.string().min(32),
+        id: z.string().min(32),
+        deleteTrailing: z.boolean().optional(),
+        excludeSelf: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const message = await getMessageById(ctx, input.messageId)
+      const message = await getMessageById(ctx, input.id)
 
       // First, find all messages that are descendants of the specified message
       const descendantMessages = await ctx.db.query.Message.findMany({
-        where: and(eq(Message.chatId, message.chatId), gt(Message.id, message.id)),
+        where: and(eq(Message.chatId, message.chatId), (input.excludeSelf ? gt : gte)(Message.id, message.id)),
       })
       if (!descendantMessages.length) {
         return {

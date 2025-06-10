@@ -31,5 +31,10 @@
     "turbo": "^2.3.4",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config"
+  "prettier": "@ownxai/prettier-config",
+  "pnpm": {
+    "overrides": {
+      "zod": "3.25.51"
+    }
+  }
 }

@@ -30,39 +30,6 @@ export const messageRouter = {
       }
     }),
 
-  batchCreate: userProtectedProcedure
-    .input(
-      z.object({
-        chatId: z.string(),
-        messages: z.array(
-          z.object({
-            role: z.enum(['user', 'assistant', 'system']),
-            content: z.object({
-              parts: z.array(
-                z.object({
-                  type: z.literal('text'),
-                  text: z.string(),
-                }),
-              ),
-            }),
-          }),
-        ),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
-
-      const { messages } = await ownxTrpc.message.batchCreate.mutate({
-        chatId: input.chatId,
-        messages: input.messages,
-      })
-
-      return {
-        messages,
-      }
-    }),
-
   update: userProtectedProcedure
     .input(
       z.object({
@@ -89,5 +56,22 @@ export const messageRouter = {
       return {
         message,
       }
+    }),
+
+  delete: userProtectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        deleteTrailing: z.boolean().optional(),
+        excludeSelf: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const ownx = createOwnxClient(ctx)
+      const ownxTrpc = ownx.trpc
+
+      const { messages } = await ownxTrpc.message.delete.mutate(input)
+
+      return { messages }
     }),
 }

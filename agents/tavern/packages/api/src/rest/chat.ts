@@ -89,14 +89,16 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     if (!retainBranch) {
-      await ownxTrpc.message.deleteTrailing.mutate({
-        messageId: inputMessage.id,
+      await ownxTrpc.message.delete.mutate({
+        id: inputMessage.id,
+        excludeSelf: true,
       })
     }
   } else {
     if (!retainBranch && parentMessageId) {
-      await ownxTrpc.message.deleteTrailing.mutate({
-        messageId: parentMessageId,
+      await ownxTrpc.message.delete.mutate({
+        id: parentMessageId,
+        excludeSelf: true,
       })
     }
 

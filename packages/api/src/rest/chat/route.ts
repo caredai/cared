@@ -84,7 +84,7 @@ export async function POST(request: Request): Promise<Response> {
   })
 
   let chat: Chat | undefined
-  let deleteChat: (() => Promise<void>) | undefined
+  let mayDeleteChat: (() => Promise<void>) | undefined
   if (id) {
     chat = (await caller.chat.byId({ id })).chat
 
@@ -106,7 +106,7 @@ export async function POST(request: Request): Promise<Response> {
       })
     ).chat
 
-    deleteChat = async () => {
+    mayDeleteChat = async () => {
       await caller.chat.delete({ id: chat!.id })
     }
   }
@@ -121,19 +121,21 @@ export async function POST(request: Request): Promise<Response> {
 
   if (lastMessage) {
     if (parentMessageId && lastMessage.parentId !== parentMessageId) {
-      await deleteChat?.()
+      await mayDeleteChat?.()
       return new Response('Invalid parent message id', { status: 400 })
     }
 
     if (!retainBranch) {
-      await caller.message.deleteTrailing({
-        messageId: inputMessage.id,
+      await caller.message.delete({
+        id: inputMessage.id,
+        excludeSelf: true,
       })
     }
   } else {
     if (!retainBranch && parentMessageId) {
-      await caller.message.deleteTrailing({
-        messageId: parentMessageId,
+      await caller.message.delete({
+        id: parentMessageId,
+        excludeSelf: true,
       })
     }
 
@@ -160,7 +162,7 @@ export async function POST(request: Request): Promise<Response> {
   if (agentId) {
     agent = agents.find((agent) => agent.id === agentId)
     if (!agent) {
-      await deleteChat?.()
+      await mayDeleteChat?.()
       return new Response('Unauthorized', { status: 401 })
     }
   } else {
