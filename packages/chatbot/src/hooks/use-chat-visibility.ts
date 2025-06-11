@@ -22,7 +22,7 @@ export function useChatVisibility({
     trpc.chat.update.mutationOptions({
       onSuccess: async () => {
         await queryClient.invalidateQueries({
-          queryKey: trpc.chat.listByApp.queryKey(),
+          queryKey: trpc.chat.list.queryKey(),
         })
       },
       onError: (err) => {

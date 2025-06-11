@@ -12,6 +12,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
+import { relations } from 'drizzle-orm'
 
 import type { MessageContent } from '@ownxai/shared'
 import { messageContentSchema, messageRoleEnumValues, uiMessageSchema } from '@ownxai/shared'
@@ -138,6 +139,22 @@ export const Message = pgTable(
 )
 
 export type Message = InferSelectModel<typeof Message>
+
+// Define relations for Chat
+export const chatRelations = relations(Chat, ({ many }) => ({
+  messages: many(Message, {
+    relationName: 'chat_messages',
+  }),
+}))
+
+// Define relations for Message
+export const messageRelations = relations(Message, ({ one }) => ({
+  chat: one(Chat, {
+    fields: [Message.chatId],
+    references: [Chat.id],
+    relationName: 'chat_messages',
+  }),
+}))
 
 export const CreateMessageSchema = z.object({
   id: makeIdValid('msg').optional(),

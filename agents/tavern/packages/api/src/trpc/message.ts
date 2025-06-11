@@ -3,6 +3,16 @@ import { z } from 'zod'
 import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
 
+export interface MessageMetadata {
+  characterOrGroupId?: string
+  modelId?: string
+}
+
+export const messageMetadataSchema = z.object({
+  characterOrGroupId: z.string().optional(),
+  modelId: z.string().optional(),
+})
+
 export const messageRouter = {
   list: userProtectedProcedure
     .input(
@@ -41,7 +51,8 @@ export const messageRouter = {
               text: z.string(),
             }),
           ),
-        }),
+        }).optional(),
+        metadata: messageMetadataSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -50,7 +61,8 @@ export const messageRouter = {
 
       const { message } = await ownxTrpc.message.update.mutate({
         id: input.id,
-        content: input.content,
+        ...(input.content && {content: input.content}),
+        ...(input.metadata && {metadata: input.metadata}),
       })
 
       return {

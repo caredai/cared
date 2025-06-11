@@ -95,20 +95,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
                     app: {
-                        name: string;
+                        type: "single-agent" | "multiple-agents";
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
-                        workspaceId: string;
                         metadata: AppMetadata;
+                        workspaceId: string;
                     };
                     categories: {
                         id: string;
@@ -124,20 +124,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listByCategory: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 categoryId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
                     app: {
-                        name: string;
+                        type: "single-agent" | "multiple-agents";
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
-                        workspaceId: string;
                         metadata: AppMetadata;
+                        workspaceId: string;
                     };
                     categories: {
                         id: string;
@@ -153,20 +153,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listByTags: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 tags: string[];
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
                     app: {
-                        name: string;
+                        type: "single-agent" | "multiple-agents";
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
-                        workspaceId: string;
                         metadata: AppMetadata;
+                        workspaceId: string;
                     };
                     categories: {
                         id: string;
@@ -182,18 +182,18 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listVersions: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 id: string;
-                limit?: number | undefined;
                 after?: number | undefined;
                 before?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 versions: {
+                    appId: string;
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
-                    appId: string;
                     version: number;
                 }[];
                 hasMore: boolean;
@@ -207,13 +207,13 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 app: {
-                    name: string;
+                    type: "single-agent" | "multiple-agents";
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
-                    workspaceId: string;
                     metadata: AppMetadata;
+                    workspaceId: string;
                 };
             };
         }>;
@@ -223,8 +223,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 category: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                 }[];
@@ -232,8 +232,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         updateCategory: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                name: string;
                 id: string;
+                name: string;
             };
             output: {
                 category: {
@@ -258,14 +258,14 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         listWorkspaces: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 workspaces: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                 }[];
@@ -278,8 +278,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: string;
             output: {
                 workspace: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                 };
@@ -288,20 +288,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listMembers: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 workspaceId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 members: {
                     user: {
-                        name: string;
                         id: string;
-                        createdAt: Date;
-                        updatedAt: Date;
+                        name: string;
                         email: string;
                         emailVerified: boolean;
                         image: string | null;
+                        createdAt: Date;
+                        updatedAt: Date;
                         twoFactorEnabled: boolean | null;
                         role: string | null;
                         banned: boolean | null;
@@ -309,7 +309,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                         banExpires: Date | null;
                         normalizedEmail: string | null;
                     };
-                    role: "owner" | "member";
+                    role: "member" | "owner";
                 }[];
                 hasMore: boolean;
                 first: string | undefined;
@@ -318,18 +318,18 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         getMember: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                workspaceId: string;
                 userId: string;
+                workspaceId: string;
             };
             output: {
                 user: {
-                    name: string;
                     id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
+                    name: string;
                     email: string;
                     emailVerified: boolean;
                     image: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
                     twoFactorEnabled: boolean | null;
                     role: string | null;
                     banned: boolean | null;
@@ -337,25 +337,25 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     banExpires: Date | null;
                     normalizedEmail: string | null;
                 };
-                role: "owner" | "member";
+                role: "member" | "owner";
             };
         }>;
         listUsers: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 search?: string | undefined;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 users: {
-                    name: string;
                     id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
+                    name: string;
                     email: string;
                     emailVerified: boolean;
                     image: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
                     twoFactorEnabled: boolean | null;
                     role: string | null;
                     banned: boolean | null;
@@ -372,13 +372,13 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: string;
             output: {
                 user: {
-                    name: string;
                     id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
+                    name: string;
                     email: string;
                     emailVerified: boolean;
                     image: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
                     twoFactorEnabled: boolean | null;
                     role: string | null;
                     banned: boolean | null;
@@ -399,12 +399,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             output: {
                 workspaces: {
                     workspace: {
-                        name: string;
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
                     };
-                    role: "owner" | "member";
+                    role: "member" | "owner";
                 }[];
             };
         }>;
@@ -414,12 +414,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 workspace: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                 };
-                role: "owner" | "member";
+                role: "member" | "owner";
             };
         }>;
         create: import("@trpc/server").TRPCMutationProcedure<{
@@ -428,8 +428,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 workspace: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                 };
@@ -438,8 +438,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         update: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                name: string;
                 id: string;
+                name: string;
             };
             output: {
                 workspace: {
@@ -464,13 +464,13 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             output: {
                 members: {
                     user: {
-                        name: string;
                         id: string;
-                        createdAt: Date;
-                        updatedAt: Date;
+                        name: string;
                         email: string;
                         emailVerified: boolean;
                         image: string | null;
+                        createdAt: Date;
+                        updatedAt: Date;
                         twoFactorEnabled: boolean | null;
                         role: string | null;
                         banned: boolean | null;
@@ -478,24 +478,24 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                         banExpires: Date | null;
                         normalizedEmail: string | null;
                     };
-                    role: "owner" | "member";
+                    role: "member" | "owner";
                 }[];
             };
         }>;
         getMember: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                workspaceId: string;
                 userId: string;
+                workspaceId: string;
             };
             output: {
                 user: {
-                    name: string;
                     id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
+                    name: string;
                     email: string;
                     emailVerified: boolean;
                     image: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
                     twoFactorEnabled: boolean | null;
                     role: string | null;
                     banned: boolean | null;
@@ -503,24 +503,24 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     banExpires: Date | null;
                     normalizedEmail: string | null;
                 };
-                role: "owner" | "member";
+                role: "member" | "owner";
             };
         }>;
         addMember: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                workspaceId: string;
                 userId: string;
-                role?: "owner" | "member" | undefined;
+                workspaceId: string;
+                role?: "member" | "owner" | undefined;
             };
             output: {
                 user: {
-                    name: string;
                     id: string;
-                    createdAt: Date;
-                    updatedAt: Date;
+                    name: string;
                     email: string;
                     emailVerified: boolean;
                     image: string | null;
+                    createdAt: Date;
+                    updatedAt: Date;
                     twoFactorEnabled: boolean | null;
                     role: string | null;
                     banned: boolean | null;
@@ -528,20 +528,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     banExpires: Date | null;
                     normalizedEmail: string | null;
                 };
-                role: "owner" | "member";
+                role: "member" | "owner";
             };
         }>;
         deleteMember: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                workspaceId: string;
                 userId: string;
+                workspaceId: string;
             };
             output: void;
         }>;
         transferOwner: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                workspaceId: string;
                 userId: string;
+                workspaceId: string;
             };
             output: void;
         }>;
@@ -602,10 +602,10 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: void;
             output: {
                 accounts: {
+                    userId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     accountId: string;
                     providerId: string;
                     accessToken: string | null;
@@ -710,20 +710,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 workspaceId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
                     app: {
-                        name: string;
+                        type: "single-agent" | "multiple-agents";
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
-                        workspaceId: string;
                         metadata: AppMetadata;
+                        workspaceId: string;
                     };
                     categories: {
                         id: string;
@@ -740,20 +740,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: {
                 workspaceId: string;
                 categoryId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
                     app: {
-                        name: string;
+                        type: "single-agent" | "multiple-agents";
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
-                        workspaceId: string;
                         metadata: AppMetadata;
+                        workspaceId: string;
                     };
                     categories: {
                         id: string;
@@ -770,20 +770,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: {
                 workspaceId: string;
                 tags: string[];
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 apps: {
                     app: {
-                        name: string;
+                        type: "single-agent" | "multiple-agents";
                         id: string;
+                        name: string;
                         createdAt: Date;
                         updatedAt: Date;
-                        type: "single-agent" | "multiple-agents";
-                        workspaceId: string;
                         metadata: AppMetadata;
+                        workspaceId: string;
                     };
                     categories: {
                         id: string;
@@ -799,18 +799,18 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listVersions: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 id: string;
-                limit?: number | undefined;
                 after?: number | undefined;
                 before?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 versions: {
+                    appId: string;
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
-                    appId: string;
                     version: number;
                 }[];
                 hasMore: boolean;
@@ -824,13 +824,13 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 app: {
-                    name: string;
+                    type: "single-agent" | "multiple-agents";
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
-                    workspaceId: string;
                     metadata: AppMetadata;
+                    workspaceId: string;
                 };
             };
         }>;
@@ -841,12 +841,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 version: {
+                    appId: string;
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
-                    appId: string;
                     version: number;
                 };
             };
@@ -854,11 +854,10 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         create: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 name: string;
-                workspaceId: string;
                 metadata: {
                     description?: string | undefined;
-                    imageUrl?: string | undefined;
                     clientId?: string | undefined;
+                    imageUrl?: string | undefined;
                     languageModel?: string | undefined;
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
@@ -870,25 +869,26 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                 } & {
                     [k: string]: unknown;
                 };
+                workspaceId: string;
                 type?: "single-agent" | "multiple-agents" | undefined;
             };
             output: {
                 app: {
-                    name: string;
+                    type: "single-agent" | "multiple-agents";
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
-                    workspaceId: string;
                     metadata: AppMetadata;
+                    workspaceId: string;
                 };
                 draft: {
+                    appId: string;
+                    type: "single-agent" | "multiple-agents";
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
                     metadata: AppMetadata;
-                    appId: string;
                     version: number;
                 };
             };
@@ -917,13 +917,13 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 app: {
-                    name: string;
+                    type: "single-agent" | "multiple-agents";
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    type: "single-agent" | "multiple-agents";
-                    workspaceId: string;
                     metadata: AppMetadata;
+                    workspaceId: string;
                 };
                 draft: {
                     createdAt: Date;
@@ -963,9 +963,9 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         listTags: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             } | undefined;
             output: {
                 tags: {
@@ -993,14 +993,14 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         listCategories: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             } | undefined;
             output: {
                 categories: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                 }[];
@@ -1017,8 +1017,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 categories: {
-                    name: string;
                     id: string;
+                    name: string;
                 }[];
             };
         }>;
@@ -1105,8 +1105,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
     oauthApp: {
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                workspaceId?: string | undefined;
                 appId?: string | undefined;
+                workspaceId?: string | undefined;
             };
             output: {
                 oauthApps: {
@@ -1226,18 +1226,18 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listByApp: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 appId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 agents: {
-                    name: string;
+                    appId: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    appId: string;
                 }[];
                 hasMore: boolean;
                 first: string | undefined;
@@ -1255,17 +1255,17 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    version: number;
                     agentId: string;
+                    version: number;
                 }[];
             };
         }>;
         listVersions: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 agentId: string;
-                limit?: number | undefined;
                 after?: number | undefined;
                 before?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 versions: {
@@ -1273,8 +1273,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    version: number;
                     agentId: string;
+                    version: number;
                 }[];
                 hasMore: boolean;
                 first: number | undefined;
@@ -1287,19 +1287,19 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 agent: {
-                    name: string;
+                    appId: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    appId: string;
                 };
             };
         }>;
         create: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                name: string;
                 appId: string;
+                name: string;
                 metadata?: import("zod").objectInputType<{
                     description: import("zod").ZodOptional<import("zod").ZodString>;
                     imageUrl: import("zod").ZodOptional<import("zod").ZodString>;
@@ -1319,20 +1319,20 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 agent: {
-                    name: string;
+                    appId: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    appId: string;
                 };
                 draft: {
                     name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    version: number;
                     agentId: string;
+                    version: number;
                 };
             };
         }>;
@@ -1359,12 +1359,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 agent: {
-                    name: string;
+                    appId: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    appId: string;
                 };
                 draft: {
                     createdAt: Date;
@@ -1381,18 +1381,18 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 workspaceId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 datasets: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: DatasetMetadata;
+                    workspaceId: string;
                 }[];
                 hasMore: boolean;
                 first: string | undefined;
@@ -1403,19 +1403,18 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: string;
             output: {
                 dataset: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: DatasetMetadata;
+                    workspaceId: string;
                 };
             };
         }>;
         create: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 name: string;
-                workspaceId: string;
                 metadata: {
                     languageModel?: string | undefined;
                     embeddingModel?: string | undefined;
@@ -1427,15 +1426,16 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                         totalSizeBytes?: number | undefined;
                     } | undefined;
                 };
+                workspaceId: string;
             };
             output: {
                 dataset: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: DatasetMetadata;
+                    workspaceId: string;
                 };
             };
         }>;
@@ -1483,12 +1483,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 document: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: DocumentMetadata;
+                    workspaceId: string;
                     datasetId: string;
                 };
             };
@@ -1522,18 +1522,18 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listDocuments: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 datasetId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 documents: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: DocumentMetadata;
+                    workspaceId: string;
                     datasetId: string;
                 }[];
                 hasMore: boolean;
@@ -1545,12 +1545,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: string;
             output: {
                 document: {
-                    name: string;
                     id: string;
+                    name: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: DocumentMetadata;
+                    workspaceId: string;
                     datasetId: string;
                 };
             };
@@ -1569,8 +1569,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: unknown;
+                    workspaceId: string;
                     content: string;
                     datasetId: string;
                     documentId: string;
@@ -1607,17 +1607,17 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listSegments: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 documentId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 segments: {
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: unknown;
+                    workspaceId: string;
                     content: string;
                     datasetId: string;
                     documentId: string;
@@ -1643,8 +1643,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: unknown;
+                    workspaceId: string;
                     content: string;
                     datasetId: string;
                     documentId: string;
@@ -1683,17 +1683,17 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listChunks: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 segmentId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 chunks: {
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    workspaceId: string;
                     metadata: unknown;
+                    workspaceId: string;
                     content: string;
                     datasetId: string;
                     documentId: string;
@@ -1709,8 +1709,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
     storage: {
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                prefix?: string | undefined;
                 limit?: number | undefined;
+                prefix?: string | undefined;
                 delimiter?: string | undefined;
                 cursor?: string | undefined;
                 startAfter?: string | undefined;
@@ -1799,8 +1799,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         listMultipartUploads: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                prefix?: string | undefined;
                 limit?: number | undefined;
+                prefix?: string | undefined;
                 delimiter?: string | undefined;
                 keyMarker?: string | undefined;
                 uploadIdMarker?: string | undefined;
@@ -1864,11 +1864,11 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         completeMultipartUpload: import("@trpc/server").TRPCMutationProcedure<{
             input: {
+                key: string;
                 parts: {
                     ETag: string;
                     PartNumber: number;
                 }[];
-                key: string;
                 uploadId: string;
             };
             output: {
@@ -1989,8 +1989,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         getModel: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                id: string;
                 type: "image" | "language" | "text-embedding";
+                id: string;
             };
             output: {
                 model: {
@@ -2034,27 +2034,67 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
     };
     chat: {
-        listByApp: import("@trpc/server").TRPCQueryProcedure<{
+        list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
-                orderBy?: "asc" | "desc" | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
+                orderBy?: "desc" | "asc" | undefined;
                 orderOn?: "createdAt" | "updatedAt" | undefined;
+                includeLastMessage?: boolean | undefined;
             };
             output: {
                 chats: {
+                    lastMessage: {
+                        chatId: string;
+                        id: string;
+                        createdAt: Date;
+                        updatedAt: Date;
+                        role: "user" | "system" | "assistant";
+                        metadata: unknown;
+                        agentId: string | null;
+                        parentId: string | null;
+                        content: MessageContent;
+                    } | undefined;
+                    userId: string;
+                    appId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
-                    appId: string;
                     debug: boolean;
                 }[];
                 hasMore: boolean;
                 first: string | undefined;
                 last: string | undefined;
+            };
+        }>;
+        listByIds: import("@trpc/server").TRPCQueryProcedure<{
+            input: {
+                ids: string[];
+                includeLastMessage?: boolean | undefined;
+            };
+            output: {
+                chats: {
+                    lastMessage: {
+                        chatId: string;
+                        id: string;
+                        createdAt: Date;
+                        updatedAt: Date;
+                        role: "user" | "system" | "assistant";
+                        metadata: unknown;
+                        agentId: string | null;
+                        parentId: string | null;
+                        content: MessageContent;
+                    } | undefined;
+                    userId: string;
+                    appId: string;
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    metadata: ChatMetadata;
+                    debug: boolean;
+                }[];
             };
         }>;
         byId: import("@trpc/server").TRPCQueryProcedure<{
@@ -2063,12 +2103,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 chat: {
+                    userId: string;
+                    appId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
-                    appId: string;
                     debug: boolean;
                 };
             };
@@ -2087,15 +2127,72 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                 };
                 id?: string | undefined;
                 debug?: boolean | undefined;
+                initialMessages?: {
+                    role: "user" | "system" | "assistant";
+                    content: {
+                        parts: ({
+                            type: "text";
+                            text: string;
+                        } | {
+                            type: "reasoning";
+                            reasoning: string;
+                            details: ({
+                                type: "text";
+                                text: string;
+                                signature?: string | undefined;
+                            } | {
+                                type: "redacted";
+                                data: string;
+                            })[];
+                        } | {
+                            type: "tool-invocation";
+                            toolInvocation: ({
+                                state: "partial-call";
+                                step?: number | undefined;
+                            } & import("ai").ToolCall<string, any>) | ({
+                                state: "call";
+                                step?: number | undefined;
+                            } & import("ai").ToolCall<string, any>) | ({
+                                state: "result";
+                                step?: number | undefined;
+                            } & import("ai").ToolResult<string, any, any>);
+                        } | {
+                            type: "source";
+                            source: {
+                                id: string;
+                                sourceType: "url";
+                                url: string;
+                                title?: string | undefined;
+                                providerMetadata?: Record<string, Record<string, import("ai").JSONValue>> | undefined;
+                            };
+                        } | {
+                            type: "file";
+                            data: string;
+                            mimeType: string;
+                        } | {
+                            type: "step-start";
+                        })[];
+                        content?: string | undefined;
+                        experimental_attachments?: {
+                            url: string;
+                            name?: string | undefined;
+                            contentType?: string | undefined;
+                        }[] | undefined;
+                        annotations?: import("ai").JSONValue[] | undefined;
+                    };
+                    id?: string | undefined;
+                    metadata?: Record<string, unknown> | undefined;
+                    agentId?: string | undefined;
+                }[] | undefined;
             };
             output: {
                 chat: {
+                    userId: string;
+                    appId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
-                    appId: string;
                     debug: boolean;
                 };
             };
@@ -2131,12 +2228,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 chat: {
+                    userId: string;
+                    appId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     metadata: ChatMetadata;
-                    appId: string;
                     debug: boolean;
                 };
             };
@@ -2146,13 +2243,14 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 chatId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
-                order?: "asc" | "desc" | undefined;
+                limit?: number | undefined;
+                order?: "desc" | "asc" | undefined;
             };
             output: {
                 messages: {
+                    chatId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
@@ -2160,7 +2258,6 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     metadata: unknown;
                     agentId: string | null;
                     parentId: string | null;
-                    chatId: string;
                     content: MessageContent;
                 }[];
                 hasMore: boolean;
@@ -2174,6 +2271,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 message: {
+                    chatId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
@@ -2181,7 +2279,6 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     metadata: unknown;
                     agentId: string | null;
                     parentId: string | null;
-                    chatId: string;
                     content: MessageContent;
                 } | undefined;
             };
@@ -2192,6 +2289,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 message: {
+                    chatId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
@@ -2199,15 +2297,14 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     metadata: unknown;
                     agentId: string | null;
                     parentId: string | null;
-                    chatId: string;
                     content: MessageContent;
                 };
             };
         }>;
         create: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                role: "user" | "system" | "assistant";
                 chatId: string;
+                role: "user" | "system" | "assistant";
                 content: {
                     parts: ({
                         type: "text";
@@ -2266,6 +2363,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 message: {
+                    chatId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
@@ -2273,7 +2371,6 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     metadata: unknown;
                     agentId: string | null;
                     parentId: string | null;
-                    chatId: string;
                     content: MessageContent;
                 };
             };
@@ -2281,7 +2378,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         update: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 id: string;
-                content: {
+                metadata?: Record<string, unknown> | undefined;
+                content?: {
                     parts: ({
                         type: "text";
                         text: string;
@@ -2331,7 +2429,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                         contentType?: string | undefined;
                     }[] | undefined;
                     annotations?: import("ai").JSONValue[] | undefined;
-                };
+                } | undefined;
             };
             output: {
                 message: {
@@ -2355,6 +2453,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 messages: {
+                    chatId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
@@ -2362,7 +2461,6 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     metadata: unknown;
                     agentId: string | null;
                     parentId: string | null;
-                    chatId: string;
                     content: MessageContent;
                 }[];
             };
@@ -2375,9 +2473,9 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             };
             output: {
                 vote: {
+                    chatId: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    chatId: string;
                     messageId: string;
                     isUpvoted: boolean;
                 };
@@ -2388,19 +2486,19 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listByChat: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 chatId: string;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
             };
             output: {
                 artifacts: {
+                    userId: string;
+                    chatId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     version: number;
                     title: string;
-                    chatId: string;
                     content: unknown;
                     kind: "code" | "image" | "text" | "sheet";
                 }[];
@@ -2412,19 +2510,19 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         listVersionsById: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 id: string;
-                limit?: number | undefined;
                 after?: number | undefined;
                 before?: number | undefined;
+                limit?: number | undefined;
             };
             output: {
                 versions: {
+                    userId: string;
+                    chatId: string;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    userId: string;
                     version: number;
                     title: string;
-                    chatId: string;
                     content: unknown;
                     kind: "code" | "image" | "text" | "sheet";
                 }[];
@@ -2435,25 +2533,25 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         }>;
         deleteVersionsByIdAfterVersion: import("@trpc/server").TRPCMutationProcedure<{
             input: {
-                id: string;
                 after: number;
+                id: string;
             };
             output: void;
         }>;
         listSuggestions: import("@trpc/server").TRPCQueryProcedure<{
             input: {
                 artifactId: string;
-                artifactVersion?: number | undefined;
-                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
+                limit?: number | undefined;
+                artifactVersion?: number | undefined;
             };
             output: {
                 suggestions: {
+                    description: string | null;
                     id: string;
                     createdAt: Date;
                     updatedAt: Date;
-                    description: string | null;
                     artifactId: string;
                     artifactVersion: number;
                     originalText: string;

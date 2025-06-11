@@ -223,7 +223,8 @@ export const messageRouter = {
     .input(
       z.object({
         id: z.string().min(32),
-        content: messageContentSchema,
+        content: messageContentSchema.optional(),
+        metadata: z.record(z.unknown()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -232,7 +233,8 @@ export const messageRouter = {
       const [updatedMessage] = await ctx.db
         .update(Message)
         .set({
-          content: input.content,
+          ...(input.content && { content: input.content }),
+          ...(input.metadata && { metadata: input.metadata }),
         })
         .where(eq(Message.id, message.id))
         .returning()
@@ -278,7 +280,10 @@ export const messageRouter = {
 
       // First, find all messages that are descendants of the specified message
       const descendantMessages = await ctx.db.query.Message.findMany({
-        where: and(eq(Message.chatId, message.chatId), (input.excludeSelf ? gt : gte)(Message.id, message.id)),
+        where: and(
+          eq(Message.chatId, message.chatId),
+          (input.excludeSelf ? gt : gte)(Message.id, message.id),
+        ),
       })
       if (!descendantMessages.length) {
         return {

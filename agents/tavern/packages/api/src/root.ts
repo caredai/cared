@@ -3,6 +3,7 @@ import { characterRouter } from './trpc/character'
 import { characterGroupRouter } from './trpc/character-group'
 import { chatRouter } from './trpc/chat'
 import { lorebookRouter } from './trpc/lorebook'
+import { messageRouter } from './trpc/message'
 import { modelRouter } from './trpc/model'
 import { modelPresetRouter } from './trpc/model-preset'
 import { settingsRouter } from './trpc/settings'
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   characterGroup: characterGroupRouter,
   lorebook: lorebookRouter,
   chat: chatRouter,
+  message: messageRouter,
   model: modelRouter,
 })
 

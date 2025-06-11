@@ -18,7 +18,7 @@ export const chatRouter = {
       const ownx = createOwnxClient(ctx)
       const ownxTrpc = ownx.trpc
 
-      const { chats, hasMore, last } = await ownxTrpc.chat.listByApp.query({
+      const { chats, hasMore, last } = await ownxTrpc.chat.list.query({
         before: input.cursor,
         limit: input.limit,
         orderBy: 'desc',
@@ -56,12 +56,13 @@ export const chatRouter = {
 
       return {
         chats: chats.map((chat) => {
-          const { id, metadata, createdAt, updatedAt } = chat
+          const { id, metadata, createdAt, updatedAt, lastMessage } = chat
           return {
             id,
             metadata,
             createdAt,
             updatedAt,
+            lastMessage,
             characterId: chatToCharacterMap[id],
             groupId: chatToGroupMap[id],
           }
@@ -80,7 +81,8 @@ export const chatRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const chats = await ctx.db
+      // First get chat IDs and timestamps from character chat table
+      const characterChats = await ctx.db
         .select({ id: CharacterChat.chatId, updatedAt: CharacterChat.updatedAt })
         .from(CharacterChat)
         .where(
@@ -95,15 +97,46 @@ export const chatRouter = {
         .orderBy(desc(CharacterChat.updatedAt))
         .limit(input.limit + 1)
 
-      const hasMore = chats.length > input.limit
+      const hasMore = characterChats.length > input.limit
       if (hasMore) {
-        chats.pop()
+        characterChats.pop()
       }
 
-      const cursor = chats[chats.length - 1]?.updatedAt.toISOString()
+      const cursor = characterChats[characterChats.length - 1]?.updatedAt.toISOString()
+
+      // Get chat IDs for querying ownx service
+      const chatIds = characterChats.map((chat) => chat.id)
+
+      // Fetch complete chat information from ownx service
+      const ownx = createOwnxClient(ctx)
+      const ownxTrpc = ownx.trpc
+
+      const { chats } = await ownxTrpc.chat.listByIds.query({
+        ids: chatIds,
+      })
+
+      // Create a map of chat ID to chat data for easy lookup
+      const chatMap = Object.fromEntries(chats.map((chat) => [chat.id, chat]))
 
       return {
-        chats,
+        chats: characterChats.map((chat) => {
+          const ownxChat = chatMap[chat.id]
+          if (!ownxChat) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Chat data inconsistency between ownx and local database',
+            })
+          }
+          const { id, metadata, createdAt, updatedAt, lastMessage } = ownxChat
+          return {
+            id,
+            metadata,
+            createdAt,
+            updatedAt,
+            lastMessage,
+            characterId: input.characterId,
+          }
+        }),
         hasMore,
         cursor,
       }
@@ -118,7 +151,8 @@ export const chatRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const chats = await ctx.db
+      // First get chat IDs and timestamps from group chat table
+      const groupChats = await ctx.db
         .select({ id: CharGroupChat.chatId, updatedAt: CharGroupChat.updatedAt })
         .from(CharGroupChat)
         .where(
@@ -133,15 +167,46 @@ export const chatRouter = {
         .orderBy(desc(CharGroupChat.updatedAt))
         .limit(input.limit + 1)
 
-      const hasMore = chats.length > input.limit
+      const hasMore = groupChats.length > input.limit
       if (hasMore) {
-        chats.pop()
+        groupChats.pop()
       }
 
-      const cursor = chats[chats.length - 1]?.updatedAt.toISOString()
+      const cursor = groupChats[groupChats.length - 1]?.updatedAt.toISOString()
+
+      // Get chat IDs for querying ownx service
+      const chatIds = groupChats.map((chat) => chat.id)
+
+      // Fetch complete chat information from ownx service
+      const ownx = createOwnxClient(ctx)
+      const ownxTrpc = ownx.trpc
+
+      const { chats } = await ownxTrpc.chat.listByIds.query({
+        ids: chatIds,
+      })
+
+      // Create a map of chat ID to chat data for easy lookup
+      const chatMap = Object.fromEntries(chats.map((chat) => [chat.id, chat]))
 
       return {
-        chats,
+        chats: groupChats.map((chat) => {
+          const ownxChat = chatMap[chat.id]
+          if (!ownxChat) {
+            throw new TRPCError({
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Chat data inconsistency between ownx and local database',
+            })
+          }
+          const { id, metadata, createdAt, updatedAt, lastMessage } = ownxChat
+          return {
+            id,
+            metadata,
+            createdAt,
+            updatedAt,
+            lastMessage,
+            groupId: input.groupId,
+          }
+        }),
         hasMore,
         cursor,
       }
