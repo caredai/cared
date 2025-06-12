@@ -4,6 +4,7 @@ import { atom, useAtom } from 'jotai'
 const isCreateCharacterAtom = atom(false)
 const isCreateCharacterGroupAtom = atom(false)
 const showCharacterListAtom = atom(true)
+const showChatListAtom = atom(false)
 
 export function useIsCreateCharacter() {
   const [isCreateCharacter] = useAtom(isCreateCharacterAtom)
@@ -26,15 +27,28 @@ export function useShowCharacterList() {
   return showCharacterList
 }
 
+export function useShowChatList() {
+  const [showChatList] = useAtom(showChatListAtom)
+  return showChatList
+}
+
 function useSetFlag() {
   const [, setIsCreateCharacter] = useAtom(isCreateCharacterAtom)
   const [, setIsCreateCharacterGroup] = useAtom(isCreateCharacterGroupAtom)
   const [, setShowCharacterList] = useAtom(showCharacterListAtom)
+  const [, setShowChatList] = useAtom(showChatListAtom)
   return useCallback(
-    (flag?: 'create-character' | 'create-character-group' | 'show-character-list') => {
+    (
+      flag?:
+        | 'create-character'
+        | 'create-character-group'
+        | 'show-character-list'
+        | 'show-chat-list',
+    ) => {
       setIsCreateCharacter(flag === 'create-character')
       setIsCreateCharacterGroup(flag === 'create-character-group')
       setShowCharacterList(flag === 'show-character-list')
+      setShowChatList(flag === 'show-chat-list')
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -61,6 +75,14 @@ export function useSetShowCharacterList() {
   const setFlag = useSetFlag()
   return useCallback(() => {
     setFlag('show-character-list')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+}
+
+export function useSetShowChatList() {
+  const setFlag = useSetFlag()
+  return useCallback((isShow?: boolean) => {
+    setFlag(isShow || isShow === undefined ? 'show-chat-list' : undefined)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }

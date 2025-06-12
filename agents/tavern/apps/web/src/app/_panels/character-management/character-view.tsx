@@ -6,6 +6,7 @@ import { useCallback, useState } from 'react'
 import {
   faBook,
   faClone,
+  faComments,
   faEllipsisVertical,
   faFaceSmile,
   faFileExport,
@@ -27,7 +28,10 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import type { CharacterBasicFormValues } from './character-basic-form'
-import { useSetShowCharacterList } from '@/app/_panels/character-management/hooks'
+import {
+  useSetShowCharacterList,
+  useSetShowChatList,
+} from '@/app/_panels/character-management/hooks'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
@@ -42,6 +46,7 @@ import { useImportTags } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
   const setShowCharacterList = useSetShowCharacterList()
+  const setShowChatList = useSetShowChatList()
   const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
     useIsShowCharacterAdvancedView()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -50,6 +55,10 @@ export function CharacterView({ character }: { character: Character }) {
 
   const handleClose = () => {
     setShowCharacterList()
+  }
+
+  const handleToggleShowChatList = () => {
+    setShowChatList()
   }
 
   const handleAddToFavorites = async () => {
@@ -75,6 +84,11 @@ export function CharacterView({ character }: { character: Character }) {
     {
       action: handleClose,
       icon: faLeftLong,
+    },
+    {
+      action: handleToggleShowChatList,
+      icon: faComments,
+      tooltip: 'Show Chat History',
     },
     {
       action: handleAddToFavorites,

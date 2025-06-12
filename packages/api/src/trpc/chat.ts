@@ -207,10 +207,45 @@ export const chatRouter = {
         summary: 'Get a single chat by ID',
       },
     })
-    .input(z.object({ id: z.string().min(32) }))
+    .input(
+      z.object({
+        id: z.string().min(32),
+        includeLastMessage: z.boolean().default(false),
+      }),
+    )
     .query(async ({ ctx, input }) => {
-      const chat = await getChatById(ctx, input.id)
-      return { chat }
+      const chat = await ctx.db.query.Chat.findFirst({
+        where: and(
+          eq(Chat.id, input.id),
+          eq(Chat.appId, ctx.auth.appId),
+          eq(Chat.userId, ctx.auth.userId),
+        ),
+        with: input.includeLastMessage
+          ? {
+              messages: {
+                orderBy: [desc(Message.id)],
+                limit: 1,
+              },
+            }
+          : undefined,
+      })
+
+      if (!chat) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Chat with id ${input.id} not found`,
+        })
+      }
+
+      // Transform the result to include the last message if requested
+      const transformedChat = {
+        ...chat,
+        lastMessage: input.includeLastMessage
+          ? ((chat as any).messages as Message[])[0]
+          : undefined,
+      }
+
+      return { chat: transformedChat }
     }),
 
   /**
@@ -273,6 +308,7 @@ export const chatRouter = {
             },
           )
           .optional(),
+        includeLastMessage: z.boolean().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -315,6 +351,7 @@ export const chatRouter = {
           })
         }
 
+        let messages: Message[] = []
         // Create initial messages if any
         if (input.initialMessages && input.initialMessages.length > 0) {
           // First pass: generate IDs for all messages
@@ -332,7 +369,7 @@ export const chatRouter = {
               }) satisfies typeof CreateMessageSchema._type,
           )
 
-          const messages = await tx.insert(Message).values(messagesWithIds).returning()
+          messages = await tx.insert(Message).values(messagesWithIds).returning()
 
           if (messages.length !== input.initialMessages.length) {
             throw new TRPCError({
@@ -342,7 +379,15 @@ export const chatRouter = {
           }
         }
 
-        return { chat }
+        return {
+          chat: {
+            ...chat,
+            lastMessage:
+              input.includeLastMessage && messages.length > 0
+                ? messages[messages.length - 1]
+                : undefined,
+          },
+        }
       })
     }),
 

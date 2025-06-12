@@ -104,7 +104,7 @@ export const UpdateChatSchema = createUpdateSchema(Chat, {
   ...timestampsOmits,
 })
 
-export const messageRoleEnum = pgEnum('role', messageRoleEnumValues)
+export const messageRoleEnum = pgEnum('message_role', messageRoleEnumValues)
 
 export function generateMessageId() {
   return generateId('msg')

@@ -189,9 +189,7 @@ export const characterRouter = {
       const values = {
         userId: ctx.auth.userId,
         source: input.source,
-      } as z.infer<typeof CreateCharacterSchema> & {
-        content: CharacterCardV2
-      }
+      } as z.infer<typeof CreateCharacterSchema>
 
       switch (input.source) {
         case 'create': // passthrough

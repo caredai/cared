@@ -4,9 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   faAddressCard,
   faBookAtlas,
-  faCubes,
+  // faCubes,
   faFaceSmile,
-  faFont,
   faPanorama,
   faPlug,
   // faPlugCircleExclamation,
@@ -22,23 +21,21 @@ import { FaButton } from '@/components/fa-button'
 import { useAppearanceSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
 import { BackgroundImagePanel } from '../_panels/background-image'
 import { CharacterManagementPanel } from '../_panels/character-management'
-import { ExtensionsPanel } from '../_panels/extensions'
+// import { ExtensionsPanel } from '../_panels/extensions'
 import { LorebookPanel } from '../_panels/lorebook'
 import { ModelConfigurationPanel } from '../_panels/model-configuration'
 import { PersonaManagementPanel } from '../_panels/persona-management'
 import { ProviderModelPanel } from '../_panels/provider-model'
-import { ResponseFormattingPanel } from '../_panels/response-formatting'
 import { UserSettingsPanel } from '../_panels/user-settings'
 
 // Define navigation panel configuration
 const navPanels = [
   { icon: faSliders, name: 'response-configuration', panel: ModelConfigurationPanel },
   { icon: faPlug, name: 'provider-model', panel: ProviderModelPanel },
-  { icon: faFont, name: 'response-formatting', panel: ResponseFormattingPanel },
   { icon: faBookAtlas, name: 'lorebook', panel: LorebookPanel },
   { icon: faUserCog, name: 'user-settings', panel: UserSettingsPanel },
   { icon: faPanorama, name: 'background-image', panel: BackgroundImagePanel },
-  { icon: faCubes, name: 'extensions', panel: ExtensionsPanel },
+  // { icon: faCubes, name: 'extensions', panel: ExtensionsPanel },
   { icon: faFaceSmile, name: 'persona-management', panel: PersonaManagementPanel },
   { icon: faAddressCard, name: 'character-management', panel: CharacterManagementPanel },
 ] as const

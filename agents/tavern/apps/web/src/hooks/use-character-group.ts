@@ -88,7 +88,8 @@ export function useCreateCharacterGroup() {
         metadata,
       })
     },
-    [createGroupMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 }
 

@@ -19,10 +19,11 @@ import {
   useCharacterSettings,
   useUpdateSettingsMutation,
 } from '@/hooks/use-settings'
-import { useSetShowCharacterList } from './hooks'
+import { useClearAllFlags, useSetShowCharacterList } from './hooks'
 
 export function CharacterManagementHeader() {
   const setShowCharacterList = useSetShowCharacterList()
+  const clearAllFlags = useClearAllFlags()
   const appearanceSettings = useAppearanceSettings()
   const characterSettings = useCharacterSettings()
   const updateSettings = useUpdateSettingsMutation()
@@ -85,7 +86,10 @@ export function CharacterManagementHeader() {
                   'cursor-pointer hover:opacity-80 transition-opacity',
                   'flex items-center justify-center',
                 )}
-                onClick={() => setActiveCharacterOrGroup(item.id)}
+                onClick={() => {
+                  setActiveCharacterOrGroup(item.id)
+                  clearAllFlags()
+                }}
               >
                 {isCharacterGroup(item) ? (
                   <CharacterGroupAvatar

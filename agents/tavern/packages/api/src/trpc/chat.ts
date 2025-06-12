@@ -3,6 +3,8 @@ import { TRPCError } from '@trpc/server'
 import { and, desc, eq, inArray, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
+import type { OwnxTrpcRouterInputs } from '@ownxai/sdk'
+
 import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
 
@@ -23,6 +25,7 @@ export const chatRouter = {
         limit: input.limit,
         orderBy: 'desc',
         orderOn: 'updatedAt',
+        includeLastMessage: true,
       })
 
       // Get all chat IDs
@@ -111,9 +114,14 @@ export const chatRouter = {
       const ownx = createOwnxClient(ctx)
       const ownxTrpc = ownx.trpc
 
-      const { chats } = await ownxTrpc.chat.listByIds.query({
-        ids: chatIds,
-      })
+      const chats = chatIds.length
+        ? (
+            await ownxTrpc.chat.listByIds.query({
+              ids: chatIds,
+              includeLastMessage: true,
+            })
+          ).chats
+        : []
 
       // Create a map of chat ID to chat data for easy lookup
       const chatMap = Object.fromEntries(chats.map((chat) => [chat.id, chat]))
@@ -181,9 +189,14 @@ export const chatRouter = {
       const ownx = createOwnxClient(ctx)
       const ownxTrpc = ownx.trpc
 
-      const { chats } = await ownxTrpc.chat.listByIds.query({
-        ids: chatIds,
-      })
+      const chats = chatIds.length
+        ? (
+            await ownxTrpc.chat.listByIds.query({
+              ids: chatIds,
+              includeLastMessage: true,
+            })
+          ).chats
+        : []
 
       // Create a map of chat ID to chat data for easy lookup
       const chatMap = Object.fromEntries(chats.map((chat) => [chat.id, chat]))
@@ -225,6 +238,7 @@ export const chatRouter = {
       const chat = (
         await ownxTrpc.chat.byId.query({
           id: input.id,
+          includeLastMessage: true,
         })
       ).chat
 
@@ -282,6 +296,20 @@ export const chatRouter = {
           metadata: {
             title: '',
           },
+          initialMessages: [
+            {
+              role: 'assistant',
+              content: {
+                parts: [
+                  {
+                    type: 'text',
+                    text: randomPickFirstMessage(character),
+                  },
+                ],
+              },
+            },
+          ],
+          includeLastMessage: true,
         })
       ).chat
 
@@ -291,12 +319,13 @@ export const chatRouter = {
         userId: ctx.auth.userId,
       })
 
-      const { id, metadata, createdAt, updatedAt } = chat
+      const { id, metadata, createdAt, updatedAt, lastMessage } = chat
       return {
         id,
         metadata,
         createdAt,
         updatedAt,
+        lastMessage,
         characterId: character.id,
       }
     }),
@@ -323,6 +352,27 @@ export const chatRouter = {
         })
       }
 
+      let initialMessages: OwnxTrpcRouterInputs['chat']['create']['initialMessages'] | undefined
+      if (group.characters.length) {
+        const characters = await ctx.db.query.Character.findMany({
+          where: and(
+            inArray(Character.id, group.characters),
+            eq(Character.userId, ctx.auth.userId),
+          ),
+        })
+        initialMessages = characters.map((character) => ({
+          role: 'assistant',
+          content: {
+            parts: [
+              {
+                type: 'text',
+                text: randomPickFirstMessage(character),
+              },
+            ],
+          },
+        }))
+      }
+
       const chat = (
         await ownxTrpc.chat.create.mutate({
           // If id is provided, it will be used; otherwise, a new id will be generated
@@ -330,6 +380,8 @@ export const chatRouter = {
           metadata: {
             title: '',
           },
+          initialMessages,
+          includeLastMessage: true,
         })
       ).chat
 
@@ -339,12 +391,13 @@ export const chatRouter = {
         userId: ctx.auth.userId,
       })
 
-      const { id, metadata, createdAt, updatedAt } = chat
+      const { id, metadata, createdAt, updatedAt, lastMessage } = chat
       return {
         id,
         metadata,
         createdAt,
         updatedAt,
+        lastMessage,
         groupId: group.id,
       }
     }),
@@ -408,4 +461,13 @@ export const chatRouter = {
         })
       })
     }),
+}
+
+function randomPickFirstMessage(character: Character) {
+  const arr = [
+    character.content.data.first_mes,
+    ...character.content.data.alternate_greetings,
+  ]
+  const randomIndex = Math.floor(Math.random() * arr.length)
+  return arr[randomIndex]!
 }

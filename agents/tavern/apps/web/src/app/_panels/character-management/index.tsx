@@ -7,12 +7,14 @@ import { CharacterCreate } from './character-create'
 import { CharacterGroupView } from './character-group-view'
 import { CharacterList } from './character-list'
 import { CharacterView } from './character-view'
+import { ChatListView } from './chat-list-view'
 import { CharacterManagementHeader } from './header'
 import {
+  useClearAllFlags,
   useIsCreateCharacter,
   useIsCreateCharacterGroup,
-  useSetShowCharacterList,
   useShowCharacterList,
+  useShowChatList,
 } from './hooks'
 import { ImportTagsDialog } from './import-tags-dialog'
 import { TagsManagementDialog } from './tags-management-dialog'
@@ -22,7 +24,8 @@ export function CharacterManagementPanel() {
   const isCreateCharacter = useIsCreateCharacter()
   const isCreateCharacterGroup = useIsCreateCharacterGroup()
   const showCharacterList = useShowCharacterList()
-  const setShowCharacterList = useSetShowCharacterList()
+  const showChatList = useShowChatList()
+  const clearAllFlags = useClearAllFlags()
 
   return (
     <div className="flex flex-col gap-2 h-full p-1.5 pr-0 overflow-hidden">
@@ -33,7 +36,7 @@ export function CharacterManagementPanel() {
       {!isCreateCharacter && activeCharacter && (
         <h1
           className="font-semibold text-xl text-muted-foreground hover:text-primary-foreground cursor-pointer truncate"
-          onClick={setShowCharacterList}
+          onClick={clearAllFlags}
         >
           {isCharacterGroup(activeCharacter)
             ? activeCharacter.metadata.name
@@ -47,6 +50,7 @@ export function CharacterManagementPanel() {
       {!showCharacterList &&
         !isCreateCharacter &&
         !isCreateCharacterGroup &&
+        !showChatList &&
         activeCharacter &&
         (isCharacterGroup(activeCharacter) ? (
           <CharacterGroupView group={activeCharacter} />
@@ -55,6 +59,8 @@ export function CharacterManagementPanel() {
         ))}
 
       {showCharacterList && <CharacterList />}
+
+      {showChatList && <ChatListView />}
 
       <ImportTagsDialog />
       <TagsManagementDialog />
