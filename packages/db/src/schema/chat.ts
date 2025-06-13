@@ -118,7 +118,7 @@ export const Message = pgTable(
     parentId: text().references((): AnyPgColumn => Message.id),
     chatId: text()
       .notNull()
-      .references(() => Chat.id),
+      .references(() => Chat.id, { onDelete: 'cascade' }),
     role: messageRoleEnum().notNull(),
     // Agent id. Only set for assistant role messages.
     agentId: text().references(() => Agent.id),

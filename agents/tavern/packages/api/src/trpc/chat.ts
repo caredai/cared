@@ -2,6 +2,7 @@ import { Character, CharacterChat, CharGroup, CharGroupChat } from '@tavern/db/s
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq, inArray, lt } from 'drizzle-orm'
 import { z } from 'zod'
+import { format } from 'date-fns'
 
 import type { OwnxTrpcRouterInputs } from '@ownxai/sdk'
 
@@ -294,7 +295,7 @@ export const chatRouter = {
           // If id is provided, it will be used; otherwise, a new id will be generated
           id: input.id,
           metadata: {
-            title: '',
+            title: `${character.content.data.name} - ${format(new Date(), "yyyy-MM-dd@HH'h'mm'm'ss's'")}`,
           },
           initialMessages: [
             {
@@ -378,7 +379,7 @@ export const chatRouter = {
           // If id is provided, it will be used; otherwise, a new id will be generated
           id: input.id,
           metadata: {
-            title: '',
+            title: `${group.metadata.name} - ${format(new Date(), "yyyy-MM-dd@HH'h'mm'm'ss's'")}`,
           },
           initialMessages,
           includeLastMessage: true,
