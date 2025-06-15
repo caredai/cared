@@ -26,17 +26,7 @@ import { env } from '../env'
 import { s3Client } from '../s3'
 import { userProtectedProcedure } from '../trpc'
 import { measure } from '../utils'
-
-export function imageUrl() {
-  if (!env.NEXT_PUBLIC_IMAGE_URL) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Environment variable NEXT_PUBLIC_IMAGE_URL is not set',
-    })
-  }
-
-  return env.NEXT_PUBLIC_IMAGE_URL
-}
+import { imageUrl } from './utils'
 
 async function getCharacterCard(url: string) {
   if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {

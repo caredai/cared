@@ -4,7 +4,7 @@ import { index, jsonb, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
 
 import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
 
-import { Character, CharGroup, User } from '.'
+import { Character, CharGroup, Persona, User } from '.'
 
 export const Lorebook = pgTable(
   'lorebook',
@@ -99,3 +99,27 @@ export const LorebookToGroup = pgTable(
 )
 
 export type LorebookToGroup = InferSelectModel<typeof LorebookToGroup>
+
+export const LorebookToPersona = pgTable(
+  'lorebook_to_persona',
+  {
+    lorebookId: text()
+      .notNull()
+      .references(() => Lorebook.id),
+    personaId: text()
+      .notNull()
+      .references(() => Persona.id),
+    userId: text()
+      .notNull()
+      .references(() => User.id, { onDelete: 'cascade' }),
+    ...timestamps,
+  },
+  (table) => [
+    primaryKey({ columns: [table.lorebookId, table.personaId] }),
+    index().on(table.personaId),
+    index().on(table.userId),
+    ...timestampsIndices(table),
+  ],
+)
+
+export type LorebookToPersona = InferSelectModel<typeof LorebookToPersona>

@@ -6,6 +6,7 @@ import { lorebookRouter } from './trpc/lorebook'
 import { messageRouter } from './trpc/message'
 import { modelRouter } from './trpc/model'
 import { modelPresetRouter } from './trpc/model-preset'
+import { personaRouter } from './trpc/persona'
 import { settingsRouter } from './trpc/settings'
 import { themeRouter } from './trpc/theme'
 import { userRouter } from './trpc/user'
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   settings: settingsRouter,
   modelPreset: modelPresetRouter,
   theme: themeRouter,
+  persona: personaRouter,
   character: characterRouter,
   characterGroup: characterGroupRouter,
   lorebook: lorebookRouter,

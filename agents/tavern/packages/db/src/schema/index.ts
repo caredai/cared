@@ -3,11 +3,12 @@ import type { InferSelectModel } from 'drizzle-orm'
 import { account, user, verification } from './auth'
 
 export * from './auth'
-export * from './character'
-export * from './character-group'
 export * from './settings'
 export * from './model-preset'
 export * from './theme'
+export * from './persona'
+export * from './character'
+export * from './character-group'
 export * from './lorebook'
 
 export const User = user
