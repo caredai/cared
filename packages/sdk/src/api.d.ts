@@ -1012,8 +1012,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         updateCategories: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 id: string;
-                add?: string[] | undefined;
                 remove?: string[] | undefined;
+                add?: string[] | undefined;
             };
             output: {
                 categories: {
@@ -1255,8 +1255,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    agentId: string;
                     version: number;
+                    agentId: string;
                 }[];
             };
         }>;
@@ -1273,8 +1273,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    agentId: string;
                     version: number;
+                    agentId: string;
                 }[];
                 hasMore: boolean;
                 first: number | undefined;
@@ -1331,8 +1331,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     createdAt: Date;
                     updatedAt: Date;
                     metadata: AgentMetadata;
-                    agentId: string;
                     version: number;
+                    agentId: string;
                 };
             };
         }>;
@@ -2036,8 +2036,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
     chat: {
         list: import("@trpc/server").TRPCQueryProcedure<{
             input: {
-                limit?: number | undefined;
                 orderBy?: "asc" | "desc" | undefined;
+                limit?: number | undefined;
                 after?: string | undefined;
                 before?: string | undefined;
                 orderOn?: "createdAt" | "updatedAt" | undefined;
@@ -2128,12 +2128,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
         create: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 metadata: {
+                    visibility?: "public" | "private" | undefined;
                     languageModel?: string | undefined;
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
                     imageModel?: string | undefined;
                     title?: string | undefined;
-                    visibility?: "public" | "private" | undefined;
                 } & {
                     [k: string]: unknown;
                 };
@@ -2185,7 +2185,6 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                         } | {
                             type: "step-start";
                         })[];
-                        content?: string | undefined;
                         experimental_attachments?: {
                             url: string;
                             name?: string | undefined;
@@ -2225,12 +2224,12 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
             input: {
                 id: string;
                 metadata?: {
+                    visibility?: "public" | "private" | undefined;
                     languageModel?: string | undefined;
                     embeddingModel?: string | undefined;
                     rerankModel?: string | undefined;
                     imageModel?: string | undefined;
                     title?: string | undefined;
-                    visibility?: "public" | "private" | undefined;
                 } | undefined;
                 debug?: boolean | undefined;
             };
@@ -2372,7 +2371,6 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     } | {
                         type: "step-start";
                     })[];
-                    content?: string | undefined;
                     experimental_attachments?: {
                         url: string;
                         name?: string | undefined;
@@ -2446,7 +2444,6 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     } | {
                         type: "step-start";
                     })[];
-                    content?: string | undefined;
                     experimental_attachments?: {
                         url: string;
                         name?: string | undefined;

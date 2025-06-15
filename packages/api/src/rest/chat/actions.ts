@@ -1,12 +1,12 @@
 import type { LanguageModelV1 } from '@ai-sdk/provider'
-import type { Message } from 'ai'
 import { generateText } from 'ai'
+import type { UIMessage } from '@ownxai/shared'
 
 export async function generateChatTitleFromUserMessage({
   message,
   model,
 }: {
-  message: Message
+  message: UIMessage
   model: LanguageModelV1
 }) {
   const { text: title } = await generateText({

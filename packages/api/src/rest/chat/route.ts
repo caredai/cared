@@ -225,7 +225,7 @@ export async function POST(request: Request): Promise<Response> {
         system:
           agent.metadata.languageModelSettings?.systemPrompt ??
           app.metadata.languageModelSettings?.systemPrompt,
-        messages,
+        messages: messages.map((msg) => ({ ...msg, content: '' })),
         maxSteps: 5, // TODO
         experimental_activeTools: undefined, // TODO
         experimental_transform: smoothStream({ chunking: 'word' }),
@@ -235,7 +235,7 @@ export async function POST(request: Request): Promise<Response> {
           const lastMessage = messages.at(-1)!
           const responseMessages = appendResponseMessages({
             // `appendResponseMessages` only use the last message in the input messages
-            messages: [lastMessage],
+            messages: [{ ...lastMessage, content: '' }],
             responseMessages: response.messages,
           })
 
@@ -324,18 +324,12 @@ async function getMessages(
       ) {
         const prefix = agent.name ? `${agent.name}: ` : ''
 
-        // For string content, directly prepend prefix
-        if (msg.content) {
-          msg.content = prefix + msg.content
-        }
         // For structured parts, add prefix to first text part
-        else {
-          // Locate the first text part
-          const firstTextPart = msg.parts.find((item) => item.type === 'text')
-          // Prepend prefix if text part exists
-          if (firstTextPart) {
-            firstTextPart.text = prefix + firstTextPart.text
-          }
+        // Locate the first text part
+        const firstTextPart = msg.parts.find((item) => item.type === 'text')
+        // Prepend prefix if text part exists
+        if (firstTextPart) {
+          firstTextPart.text = prefix + firstTextPart.text
         }
       }
 

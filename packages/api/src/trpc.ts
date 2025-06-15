@@ -1,4 +1,5 @@
 import type { OpenApiMeta } from 'trpc-to-openapi'
+import { connection } from 'next/server'
 import * as trpc from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
@@ -101,6 +102,7 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   const start = performance.now()
 
   if (t._config.isDev) {
+    await connection()
     // artificial delay in dev 100-500ms
     const waitMs = Math.floor(Math.random() * 400) + 100
     await new Promise((resolve) => setTimeout(resolve, waitMs))

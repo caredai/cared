@@ -60,7 +60,7 @@ export const messageRouter = {
           chatId: z.string().min(32),
           after: z.string().optional(),
           before: z.string().optional(),
-          limit: z.number().min(1).max(cfg.perChat.maxMessages).default(50),
+          limit: z.number().min(1).max(1000).default(50),
           order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine((data) => !(data.after && data.before), {
@@ -253,7 +253,7 @@ export const messageRouter = {
    * Delete messages in a chat based on the specified message ID.
    * Only accessible by authenticated users.
    * @param input - Object containing:
-   *   - id: Message ID to start deletion from
+   *   - id: Message ID to delete
    *   - deleteTrailing: Optional flag to delete all messages after the specified message
    *   - excludeSelf: Optional flag to exclude the specified message from deletion
    * @returns Object containing array of deleted messages
@@ -273,10 +273,26 @@ export const messageRouter = {
         id: z.string().min(32),
         deleteTrailing: z.boolean().optional(),
         excludeSelf: z.boolean().optional(),
-      }),
+      })
+      .refine(
+        (data) => !data.excludeSelf || data.deleteTrailing,
+        {
+          message: "excludeSelf can only be specified when deleteTrailing is true",
+          path: ["excludeSelf"],
+        }
+      ),
     )
     .mutation(async ({ ctx, input }) => {
       const message = await getMessageById(ctx, input.id)
+
+      // If deleteTrailing is not set, only delete the specified message
+      if (!input.deleteTrailing) {
+        const [deletedMessage] = await ctx.db
+          .delete(Message)
+          .where(eq(Message.id, message.id))
+          .returning()
+        return { messages: [deletedMessage] }
+      }
 
       // First, find all messages that are descendants of the specified message
       const descendantMessages = await ctx.db.query.Message.findMany({

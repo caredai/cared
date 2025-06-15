@@ -390,7 +390,7 @@ importers:
         specifier: workspace:*
         version: link:../providers
       '@ownxai/sdk':
-        specifier: ^0.1.6
+        specifier: workspace:*
         version: link:../sdk
       '@ownxai/tools':
         specifier: workspace:*

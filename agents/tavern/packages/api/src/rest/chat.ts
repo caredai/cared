@@ -120,7 +120,7 @@ export async function POST(request: Request): Promise<Response> {
       const result = streamText({
         model: languageModel,
         system: '', // TODO
-        messages,
+        messages: messages.map(msg => ({...msg, content: ''})),
         maxSteps: 1,
         experimental_transform: smoothStream({ chunking: 'word' }),
         experimental_generateMessageId: generateMessageId,

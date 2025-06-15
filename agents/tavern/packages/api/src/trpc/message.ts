@@ -1,17 +1,10 @@
+import { messageMetadataSchema } from '@tavern/core'
 import { z } from 'zod'
+
+import { messageContentSchema } from '@ownxai/sdk'
 
 import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
-
-export interface MessageMetadata {
-  characterOrGroupId?: string
-  modelId?: string
-}
-
-export const messageMetadataSchema = z.object({
-  characterOrGroupId: z.string().optional(),
-  modelId: z.string().optional(),
-})
 
 export const messageRouter = {
   list: userProtectedProcedure
@@ -19,7 +12,7 @@ export const messageRouter = {
       z.object({
         chatId: z.string(),
         cursor: z.string().optional(),
-        limit: z.number().min(1).max(10000).default(50),
+        limit: z.number().min(1).max(1000).default(50),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -44,14 +37,7 @@ export const messageRouter = {
     .input(
       z.object({
         id: z.string(),
-        content: z.object({
-          parts: z.array(
-            z.object({
-              type: z.literal('text'),
-              text: z.string(),
-            }),
-          ),
-        }).optional(),
+        content: messageContentSchema.optional(),
         metadata: messageMetadataSchema.optional(),
       }),
     )
@@ -61,8 +47,8 @@ export const messageRouter = {
 
       const { message } = await ownxTrpc.message.update.mutate({
         id: input.id,
-        ...(input.content && {content: input.content}),
-        ...(input.metadata && {metadata: input.metadata}),
+        ...(input.content && { content: input.content }),
+        ...(input.metadata && { metadata: input.metadata }),
       })
 
       return {
@@ -76,7 +62,7 @@ export const messageRouter = {
         id: z.string(),
         deleteTrailing: z.boolean().optional(),
         excludeSelf: z.boolean().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const ownx = createOwnxClient(ctx)

@@ -35,7 +35,7 @@
     "@codemirror/view": "^6.36.2",
     "@ownxai/db": "workspace:*",
     "@ownxai/providers": "workspace:*",
-    "@ownxai/sdk": "^0.1.6",
+    "@ownxai/sdk": "workspace:*",
     "@ownxai/tools": "workspace:*",
     "@ownxai/ui": "workspace:*",
     "ai": "catalog:",

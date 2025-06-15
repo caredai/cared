@@ -257,12 +257,13 @@ export const chatRouter = {
         where: eq(CharGroupChat.chatId, input.id),
       })
 
-      const { id, metadata, createdAt, updatedAt } = chat
+      const { id, metadata, createdAt, updatedAt, lastMessage } = chat
       return {
         id,
         metadata,
         createdAt,
         updatedAt,
+        lastMessage,
         characterId: characterChat?.characterId,
         groupId: groupChat?.groupId,
       }

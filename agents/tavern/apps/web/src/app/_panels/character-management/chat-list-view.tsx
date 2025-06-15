@@ -1,24 +1,31 @@
 import type { Chat } from '@/hooks/use-chat'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
 import { Plus, Trash2 } from 'lucide-react'
 import { useInView } from 'react-intersection-observer'
-import { useSwipeable } from 'react-swipeable'
 import { Virtualizer } from 'virtua'
 
 import { Button } from '@ownxai/ui/components/button'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@ownxai/ui/components/context-menu'
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
-import { useChatsByCharacterOrGroup, useCreateChat, useSetActiveChat } from '@/hooks/use-chat'
+import { useActiveChatId, useChatsByCharacterOrGroup, useCreateChat } from '@/hooks/use-chat'
 import { DeleteChatDialog } from './delete-chat-dialog'
 
 export function ChatListView() {
   const activeCharOrGroup = useActiveCharacterOrGroup()
-  const setActiveChat = useSetActiveChat()
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useChatsByCharacterOrGroup(activeCharOrGroup?.id)
+  const chats = useMemo(() => data?.pages.flatMap((page) => page.chats as Chat[]) ?? [], [data])
+  const { activeChatId, setActiveChat } = useActiveChatId()
+
   const createChat = useCreateChat()
   const [isCreating, setIsCreating] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -75,16 +82,6 @@ export function ChatListView() {
     }
   }, [inView, handleLoadMore])
 
-  if (!activeCharOrGroup) {
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        Select a character or group to view chat history
-      </div>
-    )
-  }
-
-  const chats = data?.pages.flatMap((page) => page.chats as Chat[]) ?? []
-
   return (
     <div className="flex-1 flex flex-col overflow-y-auto px-[1px] [overflow-anchor:none]">
       <div className="h-8 pb-2 sticky top-0 flex items-center justify-between bg-background z-1">
@@ -119,6 +116,7 @@ export function ChatListView() {
             <ChatItem
               key={chat.id}
               chat={chat}
+              isActive={activeChatId === chat.id}
               onClick={() => handleChatClick(chat.id)}
               onDeleteClick={handleDeleteClick}
             />
@@ -152,36 +150,16 @@ export function ChatListView() {
 
 function ChatItem({
   chat,
+  isActive,
   onClick,
   onDeleteClick,
 }: {
   chat: Chat
+  isActive?: boolean
   onClick: () => void
   onDeleteClick: (chat: Chat) => void
 }) {
   const [showDelete, setShowDelete] = useState(false)
-  const [swipeOffset, setSwipeOffset] = useState(0)
-
-  // Handle swipe gestures for mobile
-  const swipeHandlers = useSwipeable({
-    onSwiping: (e) => {
-      // Only allow left swipe
-      if (e.dir === 'Left') {
-        setSwipeOffset(Math.min(e.deltaX, 80))
-      }
-    },
-    onSwipedLeft: () => {
-      console.log(swipeOffset)
-      if (swipeOffset > 40) {
-        onDeleteClick(chat)
-      }
-      setSwipeOffset(0)
-    },
-    onSwipedRight: () => {
-      setSwipeOffset(0)
-    },
-    trackMouse: true,
-  })
 
   let lastMsg =
     chat.lastMessage?.content.parts[0]?.type === 'text'
@@ -191,67 +169,59 @@ function ChatItem({
   lastMsg = lastMsg.length > len ? '...' + lastMsg.substring(lastMsg.length - len) : lastMsg
 
   return (
-    <div
-      {...swipeHandlers}
-      className="relative"
-      style={{
-        transform: `translateX(${swipeOffset}px)`,
-        transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : undefined,
-      }}
-    >
-      <button
-        onClick={onClick}
-        onMouseEnter={() => setShowDelete(true)}
-        onMouseLeave={() => setShowDelete(false)}
-        className={cn(
-          'flex w-full flex-col items-start my-1 border border-border rounded-lg p-3 text-left transition-colors',
-          'hover:bg-accent hover:text-accent-foreground',
-        )}
-      >
-        <div className="flex w-full items-center justify-between text-muted-foreground">
-          <span className="text-sm font-medium">{chat.metadata.title || 'Untitled Chat'}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xs">
-              {format(new Date(chat.updatedAt), 'MMM dd, yyyy hh:mm a')}
-            </span>
-            {/* Desktop delete button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                'h-6 w-6 opacity-0 transition-opacity',
-                'hover:bg-destructive hover:text-destructive-foreground',
-                showDelete && 'opacity-100',
-                'md:inline-flex hidden',
-              )}
-              onClick={(e) => {
-                e.stopPropagation()
-                onDeleteClick(chat)
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          onClick={onClick}
+          onMouseEnter={() => setShowDelete(true)}
+          onMouseLeave={() => setShowDelete(false)}
+          className={cn(
+            'flex w-full flex-col items-start my-1 border border-border rounded-lg p-3 text-left transition-colors cursor-pointer',
+            'hover:bg-accent hover:text-accent-foreground',
+            isActive && 'bg-indigo-500/25 hover:bg-indigo-500/25',
+          )}
+        >
+          <div className="flex w-full items-center justify-between text-muted-foreground">
+            <span className="text-sm font-medium">{chat.metadata.title || 'Untitled Chat'}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs">
+                {format(new Date(chat.updatedAt), 'MMM dd, yyyy hh:mm a')}
+              </span>
+              {/* Desktop delete button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-6 w-6 opacity-0 transition-opacity',
+                  'hover:bg-destructive hover:text-destructive-foreground',
+                  showDelete && 'opacity-100',
+                  'md:inline-flex hidden',
+                )}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDeleteClick(chat)
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+          {lastMsg && (
+            <p className="mt-1 line-clamp-3 text-xs text-secondary-foreground">{lastMsg}</p>
+          )}
         </div>
-        {lastMsg && (
-          <p className="mt-1 line-clamp-3 text-sm text-secondary-foreground">{lastMsg}</p>
-        )}
-      </button>
-      {/* Mobile delete button (shown when swiped) */}
-      <div
-        className={cn(
-          'absolute right-0 top-0 h-full flex items-center px-4 bg-destructive text-destructive-foreground',
-          'md:hidden',
-          swipeOffset > 0 ? 'opacity-100' : 'opacity-0',
-        )}
-        style={{
-          width: '80px',
-          transform: `translateX(${swipeOffset}px)`,
-          transition: swipeOffset === 0 ? 'transform 0.2s ease-out' : undefined,
-        }}
-      >
-        <Trash2 className="h-5 w-5" />
-      </div>
-    </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="z-6000">
+        <ContextMenuItem
+          className="focus:bg-ring pl-2"
+          onClick={() => {
+            onDeleteClick(chat)
+          }}
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete Chat
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }

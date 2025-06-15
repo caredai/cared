@@ -5,14 +5,14 @@ import { jsonValueSchema, providerMetadataSchema } from './schema'
 
 export type UIMessage = Pick<
   _UIMessage,
-  'id' | 'createdAt' | 'content' | 'parts' | 'experimental_attachments' | 'annotations'
+  'id' | 'createdAt' | 'parts' | 'experimental_attachments' | 'annotations'
 > & {
   role: 'system' | 'user' | 'assistant'
 }
 
 export type MessageContent = Pick<
   UIMessage,
-  'content' | 'parts' | 'experimental_attachments' | 'annotations'
+  'parts' | 'experimental_attachments' | 'annotations'
 >
 
 const toolCallSchema = z.object({
@@ -28,7 +28,6 @@ const toolResultSchema = toolCallSchema.and(
 ) as z.ZodType<ToolResult<string, any, any>>
 
 export const messageContentSchema = z.object({
-  content: z.string().default(''),
   parts: z.array(
     z.union([
       z.object({ type: z.literal('text'), text: z.string() }),

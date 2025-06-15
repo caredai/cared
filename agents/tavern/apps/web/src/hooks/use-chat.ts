@@ -1,7 +1,7 @@
 import type { InfiniteData } from '@tanstack/react-query'
 import type { AppRouter } from '@tavern/api'
 import type { inferRouterOutputs } from '@trpc/server'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import {
   skipToken,
   useInfiniteQuery,
@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 
 import { useCharacters } from '@/hooks/use-character'
 import { useCharacterGroups } from '@/hooks/use-character-group'
+import { useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useTRPC } from '@/trpc/client'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
@@ -24,19 +25,42 @@ const PAGE_SIZE = 10
 
 const activeChatIdAtom = atom<string | undefined>(undefined)
 
-export function useSetActiveChat() {
-  const [, setActiveChat] = useAtom(activeChatIdAtom)
-  return setActiveChat
+export function useActiveChatId() {
+  const [activeChatId, setActiveChat] = useAtom(activeChatIdAtom)
+  return {
+    activeChatId,
+    setActiveChat,
+  }
 }
 
 export function useActiveChat() {
-  const [activeChatId] = useAtom(activeChatIdAtom)
+  const { activeChatId, setActiveChat } = useActiveChatId()
+
+  const activeCharOrGroup = useActiveCharacterOrGroup()
+  const { data: chats, isSuccess } = useChatsByCharacterOrGroup(activeCharOrGroup?.id)
+
+  const createChat = useCreateChat()
+
+  useEffect(() => {
+    const id = chats?.pages[0]?.chats[0]?.id
+    if (activeCharOrGroup && isSuccess && !id) {
+      void createChat(activeCharOrGroup.id)
+    }
+    setActiveChat(id)
+  }, [activeCharOrGroup, chats, isSuccess, createChat, setActiveChat])
+
+  const activeChat = useMemo(() => {
+    if (!isSuccess || !activeChatId) return undefined
+    return chats.pages
+      .flatMap((page) => page.chats as Chat[])
+      .find((chat) => chat.id === activeChatId)
+  }, [activeChatId, chats, isSuccess])
 
   const trpc = useTRPC()
 
-  const { data, refetch } = useQuery({
+  const { data: activeChat2, refetch } = useQuery({
     ...trpc.chat.get.queryOptions(
-      activeChatId
+      activeChatId && isSuccess && !activeChat
         ? {
             id: activeChatId,
           }
@@ -45,7 +69,7 @@ export function useActiveChat() {
   })
 
   return {
-    activeChat: data,
+    activeChat: activeChat ?? activeChat2,
     refetchActiveChat: refetch,
   }
 }
@@ -221,19 +245,19 @@ export function useCreateChat() {
   )
 
   return useCallback(
-    async (id: string, chatId?: string) => {
-      const character = characters.find((c) => c.id === id)
+    async (characterId: string, chatId?: string) => {
+      const character = characters.find((c) => c.id === characterId)
       if (character) {
         return await createForCharacterMutation.mutateAsync({
-          characterId: id,
+          characterId: characterId,
           id: chatId,
         })
       }
 
-      const group = groups.find((g) => g.id === id)
+      const group = groups.find((g) => g.id === characterId)
       if (group) {
         return await createForGroupMutation.mutateAsync({
-          groupId: id,
+          groupId: characterId,
           id: chatId,
         })
       }
@@ -245,7 +269,7 @@ export function useCreateChat() {
   )
 }
 
-export function useUpdateChat() {
+export function useUpdateChat(characterId?: string, groupId?: string) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -255,27 +279,49 @@ export function useUpdateChat() {
         // Cancel any outgoing refetches for all chat list queries
         await Promise.all([
           queryClient.cancelQueries({
-            queryKey: trpc.chat.list.infiniteQueryKey(),
+            queryKey: trpc.chat.list.infiniteQueryKey({
+              limit: PAGE_SIZE,
+            }),
           }),
-          queryClient.cancelQueries({
-            queryKey: trpc.chat.listByCharacter.infiniteQueryKey(),
-          }),
-          queryClient.cancelQueries({
-            queryKey: trpc.chat.listByGroup.infiniteQueryKey(),
-          }),
+          characterId &&
+            queryClient.cancelQueries({
+              queryKey: trpc.chat.listByCharacter.infiniteQueryKey({
+                characterId,
+                limit: PAGE_SIZE,
+              }),
+            }),
+          groupId &&
+            queryClient.cancelQueries({
+              queryKey: trpc.chat.listByGroup.infiniteQueryKey({
+                groupId,
+                limit: PAGE_SIZE,
+              }),
+            }),
         ])
 
         // Snapshot the previous values
         const previousData = {
           list: queryClient.getQueryData<InfiniteData<ChatListOutput>>(
-            trpc.chat.list.infiniteQueryKey(),
+            trpc.chat.list.infiniteQueryKey({
+              limit: PAGE_SIZE,
+            }),
           ),
-          listByCharacter: queryClient.getQueryData<InfiniteData<ChatListOutput>>(
-            trpc.chat.listByCharacter.infiniteQueryKey(),
-          ),
-          listByGroup: queryClient.getQueryData<InfiniteData<ChatListOutput>>(
-            trpc.chat.listByGroup.infiniteQueryKey(),
-          ),
+          listByCharacter: characterId
+            ? queryClient.getQueryData<InfiniteData<ChatListOutput>>(
+                trpc.chat.listByCharacter.infiniteQueryKey({
+                  characterId,
+                  limit: PAGE_SIZE,
+                }),
+              )
+            : undefined,
+          listByGroup: groupId
+            ? queryClient.getQueryData<InfiniteData<ChatListOutput>>(
+                trpc.chat.listByGroup.infiniteQueryKey({
+                  groupId,
+                  limit: PAGE_SIZE,
+                }),
+              )
+            : undefined,
         }
 
         // Helper function to update chat list
@@ -297,9 +343,27 @@ export function useUpdateChat() {
         }
 
         // Optimistically update all chat lists
-        updateChatList(trpc.chat.list.infiniteQueryKey())
-        updateChatList(trpc.chat.listByCharacter.infiniteQueryKey())
-        updateChatList(trpc.chat.listByGroup.infiniteQueryKey())
+        updateChatList(
+          trpc.chat.list.infiniteQueryKey({
+            limit: PAGE_SIZE,
+          }),
+        )
+        if (characterId) {
+          updateChatList(
+            trpc.chat.listByCharacter.infiniteQueryKey({
+              characterId,
+              limit: PAGE_SIZE,
+            }),
+          )
+        }
+        if (groupId) {
+          updateChatList(
+            trpc.chat.listByGroup.infiniteQueryKey({
+              groupId,
+              limit: PAGE_SIZE,
+            }),
+          )
+        }
 
         return { previousData }
       },
@@ -308,19 +372,27 @@ export function useUpdateChat() {
         if (context?.previousData) {
           if (context.previousData.list) {
             queryClient.setQueryData<InfiniteData<ChatListOutput>>(
-              trpc.chat.list.infiniteQueryKey(),
+              trpc.chat.list.infiniteQueryKey({
+                limit: PAGE_SIZE,
+              }),
               context.previousData.list,
             )
           }
-          if (context.previousData.listByCharacter) {
+          if (context.previousData.listByCharacter && characterId) {
             queryClient.setQueryData<InfiniteData<ChatListOutput>>(
-              trpc.chat.listByCharacter.infiniteQueryKey(),
+              trpc.chat.listByCharacter.infiniteQueryKey({
+                characterId,
+                limit: PAGE_SIZE,
+              }),
               context.previousData.listByCharacter,
             )
           }
-          if (context.previousData.listByGroup) {
+          if (context.previousData.listByGroup && groupId) {
             queryClient.setQueryData<InfiniteData<ChatListOutput>>(
-              trpc.chat.listByGroup.infiniteQueryKey(),
+              trpc.chat.listByGroup.infiniteQueryKey({
+                groupId,
+                limit: PAGE_SIZE,
+              }),
               context.previousData.listByGroup,
             )
           }
@@ -356,18 +428,20 @@ export function useDeleteChat(characterId?: string, groupId?: string) {
               limit: PAGE_SIZE,
             }),
           }),
-          characterId && queryClient.cancelQueries({
-            queryKey: trpc.chat.listByCharacter.infiniteQueryKey({
-              characterId,
-              limit: PAGE_SIZE,
+          characterId &&
+            queryClient.cancelQueries({
+              queryKey: trpc.chat.listByCharacter.infiniteQueryKey({
+                characterId,
+                limit: PAGE_SIZE,
+              }),
             }),
-          }),
-          groupId && queryClient.cancelQueries({
-            queryKey: trpc.chat.listByGroup.infiniteQueryKey({
-              groupId,
-              limit: PAGE_SIZE,
+          groupId &&
+            queryClient.cancelQueries({
+              queryKey: trpc.chat.listByGroup.infiniteQueryKey({
+                groupId,
+                limit: PAGE_SIZE,
+              }),
             }),
-          }),
         ])
 
         // Snapshot the previous values
@@ -377,18 +451,22 @@ export function useDeleteChat(characterId?: string, groupId?: string) {
               limit: PAGE_SIZE,
             }),
           ),
-          listByCharacter: characterId ? queryClient.getQueryData<InfiniteData<ChatListOutput>>(
-            trpc.chat.listByCharacter.infiniteQueryKey({
-              characterId,
-              limit: PAGE_SIZE,
-            }),
-          ) : undefined,
-          listByGroup: groupId ? queryClient.getQueryData<InfiniteData<ChatListOutput>>(
-            trpc.chat.listByGroup.infiniteQueryKey({
-              groupId,
-              limit: PAGE_SIZE,
-            }),
-          ) : undefined,
+          listByCharacter: characterId
+            ? queryClient.getQueryData<InfiniteData<ChatListOutput>>(
+                trpc.chat.listByCharacter.infiniteQueryKey({
+                  characterId,
+                  limit: PAGE_SIZE,
+                }),
+              )
+            : undefined,
+          listByGroup: groupId
+            ? queryClient.getQueryData<InfiniteData<ChatListOutput>>(
+                trpc.chat.listByGroup.infiniteQueryKey({
+                  groupId,
+                  limit: PAGE_SIZE,
+                }),
+              )
+            : undefined,
         }
 
         // Helper function to update chat list
@@ -408,21 +486,26 @@ export function useDeleteChat(characterId?: string, groupId?: string) {
         }
 
         // Optimistically update all chat lists
-        updateChatList(trpc.chat.list.infiniteQueryKey({
-          limit: PAGE_SIZE
-        }))
-
-        if (characterId) {
-          updateChatList(trpc.chat.listByCharacter.infiniteQueryKey({
-            characterId,
+        updateChatList(
+          trpc.chat.list.infiniteQueryKey({
             limit: PAGE_SIZE,
-          }))
+          }),
+        )
+        if (characterId) {
+          updateChatList(
+            trpc.chat.listByCharacter.infiniteQueryKey({
+              characterId,
+              limit: PAGE_SIZE,
+            }),
+          )
         }
         if (groupId) {
-          updateChatList(trpc.chat.listByGroup.infiniteQueryKey({
-            groupId,
-            limit: PAGE_SIZE,
-          }))
+          updateChatList(
+            trpc.chat.listByGroup.infiniteQueryKey({
+              groupId,
+              limit: PAGE_SIZE,
+            }),
+          )
         }
 
         return { previousData }
