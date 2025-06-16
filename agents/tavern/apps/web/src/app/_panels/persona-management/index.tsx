@@ -1,91 +1,253 @@
-import { useState } from 'react'
-import classNames from 'classnames'
+'use client'
 
-// Mock persona data
-const mockPersonas = [
-  { id: '1', name: 'Professional', traits: ['Formal', 'Knowledgeable', 'Precise'] },
-  { id: '2', name: 'Friendly', traits: ['Casual', 'Warm', 'Supportive'] },
-  // Add more personas as needed
-]
+import type { ReactNode } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
+import { faFileExport, faFileImport, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { personaMetadataSchema, personaSettingsSchema } from '@tavern/core'
+import { useForm } from 'react-hook-form'
+import { toast } from 'sonner'
+import { z } from 'zod'
 
-interface PersonaCardProps {
-  id: string
-  name: string
-  traits: string[]
-  selected: boolean
-  onClick: () => void
-}
+import { Form } from '@ownxai/ui/components/form'
+import { Separator } from '@ownxai/ui/components/separator'
+import { cn } from '@ownxai/ui/lib/utils'
 
-// Persona card component
-const PersonaCard = ({ name, traits, selected, onClick }: PersonaCardProps) => {
-  return (
-    <div
-      className={classNames(
-        'p-4 border rounded-lg cursor-pointer transition-all',
-        'hover:border-purple-500',
-        selected && 'border-purple-500 bg-purple-50',
-      )}
-      onClick={onClick}
-    >
-      <h3 className="font-medium">{name}</h3>
-      <div className="flex flex-wrap gap-2 mt-2">
-        {traits.map((trait, index) => (
-          <span key={index} className="px-2 py-1 bg-gray-100 rounded-full text-xs">
-            {trait}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
-}
+import { CheckboxField } from '@/components/checkbox-field'
+import { FaButton } from '@/components/fa-button'
+import { useImportPersonas, usePersonas } from '@/hooks/use-persona'
+import { usePersonaSettings, useUpdatePersonaSettings } from '@/hooks/use-settings'
+import { CreatePersonaDialog } from './create-persona-dialog'
+import { PersonaList } from './persona-list'
+import { PersonaView } from './persona-view'
 
-// Persona Management Panel Component
 export function PersonaManagementPanel() {
-  const [selectedPersona, setSelectedPersona] = useState<string>('')
-  const [searchQuery, setSearchQuery] = useState('')
+  const { personas } = usePersonas()
+  const { active: activePersonaId } = usePersonaSettings()
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string>()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const importPersonas = useImportPersonas()
+  const [isImporting, setIsImporting] = useState(false)
 
-  // Filter personas based on search
-  const filteredPersonas = mockPersonas.filter(
-    (persona) =>
-      persona.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      persona.traits.some((trait) => trait.toLowerCase().includes(searchQuery.toLowerCase())),
-  )
+  const handleExport = () => {
+    // Create a blob with the personas data
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          personas.map(({ name, metadata: { description, injectionPosition, depth, role } }) => ({
+            name,
+            description,
+            injectionPosition,
+            depth,
+            role,
+          })),
+          null,
+          2,
+        ),
+      ],
+      { type: 'application/json' },
+    )
+    const url = URL.createObjectURL(blob)
+
+    // Create a temporary link element to trigger the download
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'personas.json'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.json')) {
+      toast.error('Please select a JSON file')
+      return
+    }
+
+    const personasSchema = z.array(
+      z
+        .object({
+          name: z.string().min(1),
+        })
+        .merge(
+          personaMetadataSchema.pick({
+            description: true,
+            injectionPosition: true,
+            depth: true,
+            role: true,
+          }),
+        ),
+    )
+
+    try {
+      const text = await file.text()
+      const importedPersonas = personasSchema.parse(JSON.parse(text))
+
+      setIsImporting(true)
+
+      await importPersonas(
+        importedPersonas.map((persona) => ({
+          name: persona.name,
+          metadata: {
+            description: persona.description,
+            injectionPosition: persona.injectionPosition,
+            depth: persona.depth,
+            role: persona.role,
+          },
+        })),
+      )
+
+      toast.success(`Successfully imported ${importedPersonas.length} personas`)
+    } finally {
+      setIsImporting(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const operateActions = [
+    {
+      icon: faPlus,
+      tooltip: 'Create Persona',
+      wrapper: ({ trigger }: { trigger: ReactNode }) => <CreatePersonaDialog trigger={trigger} />,
+    },
+    {
+      action: handleExport,
+      icon: faFileExport,
+      tooltip: 'Export Personas',
+      disabled: !personas.length,
+      className: !personas.length ? 'disabled:pointer-events-none disabled:opacity-50' : '',
+    },
+    {
+      action: () => fileInputRef.current?.click(),
+      icon: faFileImport,
+      tooltip: 'Import Personas',
+      disabled: isImporting,
+      className: isImporting ? 'disabled:pointer-events-none disabled:opacity-50' : '',
+    },
+  ]
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Persona Management</h2>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Search personas..."
-            className="px-3 py-1 rounded border"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button className="px-3 py-1 rounded bg-purple-500 text-white">Create New</button>
-        </div>
+    <div className="flex flex-col gap-6">
+      {/* Hidden file input for import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".json"
+        onChange={handleImport}
+        disabled={isImporting}
+        className="hidden"
+      />
+
+      {/* Title */}
+      <div className="flex items-center gap-2">
+        <h1 className="text-lg font-bold">Persona</h1>
       </div>
 
-      {/* Persona List */}
-      <div className="grid grid-cols-2 gap-4">
-        {filteredPersonas.map((persona) => (
-          <PersonaCard
-            key={persona.id}
-            {...persona}
-            selected={selectedPersona === persona.id}
-            onClick={() => setSelectedPersona(persona.id)}
-          />
-        ))}
+      {/* Upper part with actions and settings */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left side: Actions */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap justify-start items-center gap-1">
+            {operateActions.map(
+              ({ action, icon, tooltip, disabled, wrapper: Wrapper, className }) => {
+                const btn = (
+                  <FaButton
+                    key={tooltip}
+                    icon={icon}
+                    btnSize="size-6"
+                    iconSize="1x"
+                    title={tooltip}
+                    className={cn(
+                      'text-foreground border-1 border-border hover:bg-muted-foreground rounded-sm',
+                      className,
+                    )}
+                    disabled={disabled}
+                    onClick={action}
+                  />
+                )
+                return Wrapper ? <Wrapper key={tooltip} trigger={btn} /> : btn
+              },
+            )}
+          </div>
+        </div>
+
+        {/* Right side: Settings */}
+        <PersonaSettings />
       </div>
 
-      {/* Empty State */}
-      {filteredPersonas.length === 0 && (
-        <div className="text-center text-gray-500 py-8">
-          No personas found. Create a new one to get started.
-        </div>
-      )}
+      <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
+
+      {/* Main content area */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left side: Persona list */}
+        <PersonaList
+          personas={personas}
+          selectedPersonaId={selectedPersonaId}
+          onSelectPersona={setSelectedPersonaId}
+        />
+
+        {/* Right side: Persona view */}
+        {activePersonaId && <PersonaView personaId={activePersonaId} />}
+      </div>
     </div>
   )
 }
+
+const personaSettingsFormSchema = personaSettingsSchema.pick({
+  showNotification: true,
+  allowMultiConnectionsPerCharacter: true,
+  autoLockToChat: true,
+})
+
+export const PersonaSettings = memo(function PersonaSettings() {
+  const personaSettings = usePersonaSettings()
+  const updatePersonaSettings = useUpdatePersonaSettings()
+
+  const form = useForm({
+    resolver: zodResolver(personaSettingsFormSchema),
+    defaultValues: personaSettings,
+  })
+
+  useEffect(() => {
+    form.reset(personaSettings)
+  }, [personaSettings, form])
+
+  return (
+    <div className="flex flex-col gap-4">
+      <span className="text-sm font-medium">Global Settings</span>
+      <Form {...form}>
+        <form
+          onBlur={() => {
+            void updatePersonaSettings(form.getValues())
+          }}
+          className="space-y-2"
+        >
+          <CheckboxField
+            label="Show notification when switching persona"
+            name="showNotification"
+            control={form.control}
+          />
+
+          <CheckboxField
+            label="Allow multiple persona connections per character"
+            name="allowMultiConnectionsPerCharacter"
+            control={form.control}
+          />
+
+          <CheckboxField
+            label="Auto-lock a chosen persona to the chat"
+            name="autoLockToChat"
+            control={form.control}
+          />
+        </form>
+      </Form>
+    </div>
+  )
+})

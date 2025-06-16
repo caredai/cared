@@ -63,6 +63,32 @@ export function useCreatePersona() {
   )
 }
 
+export function useImportPersonas() {
+  const trpc = useTRPC()
+  const { refetchPersonas } = usePersonas()
+
+  const batchCreatePersonasMutation = useMutation(
+    trpc.persona.batchCreate.mutationOptions({
+      onSuccess: () => {
+        void refetchPersonas()
+      },
+      onError: (error) => {
+        toast.error(`Failed to import personas: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (personas: { name: string; metadata: Omit<PersonaMetadata, 'imageUrl'> }[]) => {
+      return await batchCreatePersonasMutation.mutateAsync({
+        personas,
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+}
+
 export function useUpdatePersona() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()

@@ -11,6 +11,7 @@ export default async function Page() {
   }
 
   prefetch(trpc.settings.get.queryOptions())
+  prefetch(trpc.persona.list.queryOptions())
   prefetch(trpc.character.list.queryOptions())
   prefetch(trpc.characterGroup.list.queryOptions())
   prefetch(trpc.modelPreset.list.queryOptions())

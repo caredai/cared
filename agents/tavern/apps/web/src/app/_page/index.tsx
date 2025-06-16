@@ -12,6 +12,7 @@ import { useTRPC } from '@/trpc/client'
 import { Content } from './content'
 import { Input } from './input'
 import { Navbar } from './navbar'
+import { WelcomeDialog } from './welcome-dialog'
 
 export function PageContent() {
   const trpc = useTRPC()
@@ -51,6 +52,8 @@ export function PageContent() {
         <Content />
         <Input />
       </div>
+
+      <WelcomeDialog />
     </div>
   )
 }

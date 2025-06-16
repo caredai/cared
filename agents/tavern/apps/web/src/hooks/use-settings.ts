@@ -293,3 +293,30 @@ export function useUpdateCharacterSettings() {
     [characterSettings],
   )
 }
+
+export function usePersonaSettings() {
+  const trpc = useTRPC()
+  const { data } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+    select: useCallback(({ settings }: { settings: Settings }) => settings.persona, []),
+  })
+  return data
+}
+
+export function useUpdatePersonaSettings() {
+  const personaSettings = usePersonaSettings()
+  const updateSettings = useUpdateSettingsMutation()
+
+  return useCallback(
+    async (persona: Partial<Settings['persona']>) => {
+      await updateSettings({
+        persona: {
+          ...personaSettings,
+          ...persona,
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [personaSettings],
+  )
+}

@@ -52,7 +52,7 @@ export const personaRouter = {
   create: userProtectedProcedure
     .input(
       z.object({
-        name: z.string(),
+        name: z.string().min(1),
         metadata: personaMetadataSchema,
       }),
     )
@@ -75,6 +75,39 @@ export const personaRouter = {
       }
 
       return { persona }
+    }),
+
+  // Batch create multiple personas
+  batchCreate: userProtectedProcedure
+    .input(
+      z.object({
+        personas: z.array(
+          z.object({
+            name: z.string().min(1),
+            metadata: personaMetadataSchema.omit({
+              imageUrl: true,
+            }),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const values = input.personas.map((persona) => ({
+        userId: ctx.auth.userId,
+        name: persona.name,
+        metadata: persona.metadata,
+      }))
+
+      const personas = await ctx.db.insert(Persona).values(values).returning()
+
+      if (!personas.length) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to create personas',
+        })
+      }
+
+      return { personas }
     }),
 
   // Update an existing persona
