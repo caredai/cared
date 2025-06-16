@@ -24,7 +24,6 @@ import { PersonaView } from './persona-view'
 export function PersonaManagementPanel() {
   const { personas } = usePersonas()
   const { active: activePersonaId } = usePersonaSettings()
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importPersonas = useImportPersonas()
   const [isImporting, setIsImporting] = useState(false)
@@ -187,11 +186,7 @@ export function PersonaManagementPanel() {
       {/* Main content area */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left side: Persona list */}
-        <PersonaList
-          personas={personas}
-          selectedPersonaId={selectedPersonaId}
-          onSelectPersona={setSelectedPersonaId}
-        />
+        <PersonaList personas={personas} />
 
         {/* Right side: Persona view */}
         {activePersonaId && <PersonaView personaId={activePersonaId} />}

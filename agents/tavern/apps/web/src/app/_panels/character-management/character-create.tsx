@@ -182,6 +182,7 @@ export function CharacterCreate() {
         onOpenChange={setShowImageCropDialog}
         imageFile={inputImageFile}
         onCrop={setImageDataUrl}
+        title="Crop Character Image"
       />
     </div>
   )

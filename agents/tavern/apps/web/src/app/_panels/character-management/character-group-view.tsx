@@ -477,6 +477,7 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
             void updateCharacterGroup(group.id, undefined, metadataForm.getValues())
           }
         }}
+        title="Crop Character Group Image"
       />
 
       {group && (

@@ -1,11 +1,18 @@
-import type { PersonaMetadata } from '@tavern/core'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PersonaPosition } from '@tavern/core'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { Label } from '@ownxai/ui/components/label'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@ownxai/ui/components/form'
+import { Input } from '@ownxai/ui/components/input'
 import {
   Select,
   SelectContent,
@@ -15,144 +22,198 @@ import {
 } from '@ownxai/ui/components/select'
 import { Textarea } from '@ownxai/ui/components/textarea'
 
+import { NumberInput } from '@/components/number-input'
 import { usePersona, useUpdatePersona } from '@/hooks/use-persona'
 
 const personaFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string(),
   injectionPosition: z.nativeEnum(PersonaPosition),
-  depth: z.number().int().min(0).optional(),
+  depth: z.number().int().min(0).step(1).optional(),
   role: z.enum(['system', 'user', 'assistant']).optional(),
 })
 
 type PersonaFormValues = z.infer<typeof personaFormSchema>
 
+const positionOptions = [
+  { value: 'none', label: 'None', position: PersonaPosition.None },
+  {
+    value: 'in-prompt',
+    label: 'In Story String / Prompt Manager',
+    position: PersonaPosition.InPrompt,
+  },
+  { value: 'an-top', label: "Top of Author's Note", position: PersonaPosition.ANTop },
+  { value: 'an-bottom', label: "Bottom of Author's Note", position: PersonaPosition.ANBottom },
+  {
+    value: 'at-depth-system',
+    label: 'At Depth (⚙️ System)',
+    position: PersonaPosition.AtDepth,
+    role: 'system' as const,
+  },
+  {
+    value: 'at-depth-user',
+    label: 'At Depth (👤 User)',
+    position: PersonaPosition.AtDepth,
+    role: 'user' as const,
+  },
+  {
+    value: 'at-depth-assistant',
+    label: 'At Depth (🤖 Assistant)',
+    position: PersonaPosition.AtDepth,
+    role: 'assistant' as const,
+  },
+]
+
 export function PersonaView({ personaId }: { personaId: string }) {
   const persona = usePersona(personaId)
   const updatePersona = useUpdatePersona()
 
-  // Initialize form with persona data
-  const form = useForm<PersonaFormValues>({
-    resolver: zodResolver(personaFormSchema),
-    defaultValues: {
+  const defaultValues = useMemo(
+    () => ({
       name: persona?.name ?? '',
       description: persona?.metadata.description ?? '',
-      injectionPosition: persona?.metadata.injectionPosition ?? PersonaPosition.None,
+      injectionPosition: persona?.metadata.injectionPosition ?? PersonaPosition.InPrompt,
       depth: persona?.metadata.depth,
       role: persona?.metadata.role,
-    },
+    }),
+    [persona],
+  )
+
+  const form = useForm<PersonaFormValues>({
+    resolver: zodResolver(personaFormSchema),
+    defaultValues,
   })
 
-  // Update form when persona changes
   useEffect(() => {
-    if (persona) {
-      form.reset({
-        name: persona.name,
-        description: persona.metadata.description,
-        injectionPosition: persona.metadata.injectionPosition,
-        depth: persona.metadata.depth,
-        role: persona.metadata.role,
-      })
-    }
-  }, [persona, form])
+    form.reset(defaultValues)
+  }, [form, defaultValues])
+
+  // Handle depth and role when injectionPosition is AtDepth
+  const isPositionAtDepth = form.watch('injectionPosition') === PersonaPosition.AtDepth
+  useEffect(() => {
+    form.setValue('depth', isPositionAtDepth ? 2 : undefined)
+  }, [isPositionAtDepth, form])
 
   // Handle form submission
-  const onSubmit = useCallback(
-    async (values: PersonaFormValues) => {
-      if (!persona) return
+  const onBlur = useCallback(async () => {
+    if (!persona) return
 
-      const metadata: Partial<PersonaMetadata> = {
-        description: values.description,
-        injectionPosition: values.injectionPosition,
-        depth: values.depth,
-        role: values.role,
-      }
+    const { name, ...metadata } = form.getValues()
 
-      await updatePersona(persona.id, {
-        name: values.name,
-        metadata,
-      })
-    },
-    [persona, updatePersona],
-  )
+    await updatePersona(persona.id, {
+      name,
+      metadata,
+    })
+  }, [form, persona, updatePersona])
 
   if (!persona) {
     return null
   }
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      {/* Name */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="name">Name</Label>
-        <input
-          id="name"
-          {...form.register('name')}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+    <Form {...form}>
+      <form onBlur={onBlur} className="flex flex-col gap-4">
+        {/* Name */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
         />
-        {form.formState.errors.name && (
-          <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
-        )}
-      </div>
 
-      {/* Description */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" {...form.register('description')} className="min-h-[100px]" />
-      </div>
+        {/* Description */}
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea {...field} className="min-h-[100px]"
+                          placeholder="{{user}} is a 28-year-old Romanian cat girl."
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      {/* Injection Position */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="injectionPosition">Injection Position</Label>
-        <Select
-          value={form.watch('injectionPosition').toString()}
-          onValueChange={(value) => form.setValue('injectionPosition', parseInt(value))}
-        >
-          <SelectTrigger id="injectionPosition">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={PersonaPosition.None.toString()}>None</SelectItem>
-            <SelectItem value={PersonaPosition.InPrompt.toString()}>In Prompt</SelectItem>
-            <SelectItem value={PersonaPosition.ANTop.toString()}>AN Top</SelectItem>
-            <SelectItem value={PersonaPosition.ANBottom.toString()}>AN Bottom</SelectItem>
-            <SelectItem value={PersonaPosition.AtDepth.toString()}>At Depth</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+        {/* Injection Position */}
+        <FormField
+          control={form.control}
+          name="injectionPosition"
+          render={() => (
+            <FormItem>
+              <FormLabel>Injection Position</FormLabel>
+              <Select
+                value={(() => {
+                  const pos = form.watch('injectionPosition')
+                  const role = form.watch('role')
+                  const found = positionOptions.find(
+                    (opt) =>
+                      opt.position === pos &&
+                      (opt.position === PersonaPosition.AtDepth ? opt.role === role : true),
+                  )
+                  return found?.value ?? ''
+                })()}
+                onValueChange={(value) => {
+                  const selectedOption = positionOptions.find((opt) => opt.value === value)
+                  if (!selectedOption) return
+                  form.setValue('injectionPosition', selectedOption.position)
+                  if (selectedOption.position === PersonaPosition.AtDepth && selectedOption.role) {
+                    form.setValue('role', selectedOption.role)
+                  } else {
+                    form.setValue('role', undefined)
+                  }
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent side="top" className="z-6000">
+                  {positionOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-      {/* Depth (only show when position is AtDepth) */}
-      {form.watch('injectionPosition') === PersonaPosition.AtDepth && (
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="depth">Depth</Label>
-          <input
-            id="depth"
-            type="number"
-            min={0}
-            {...form.register('depth', { valueAsNumber: true })}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        {/* Depth (only show when position is AtDepth) */}
+        {isPositionAtDepth && (
+          <FormField
+            control={form.control}
+            name="depth"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Depth</FormLabel>
+                <FormControl>
+                  <NumberInput
+                    min={0}
+                    step={1}
+                    value={field.value ?? 2}
+                    onChange={(value) => field.onChange(value)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
-      )}
-
-      {/* Role */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="role">Role</Label>
-        <Select
-          value={form.watch('role') ?? ''}
-          onValueChange={(value) => form.setValue('role', value as 'system' | 'user' | 'assistant')}
-        >
-          <SelectTrigger id="role">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">None</SelectItem>
-            <SelectItem value="system">System</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-            <SelectItem value="assistant">Assistant</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-    </form>
+        )}
+      </form>
+    </Form>
   )
 }

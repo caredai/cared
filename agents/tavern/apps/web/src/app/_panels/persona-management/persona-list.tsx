@@ -49,8 +49,8 @@ export function PersonaList({ personas }: { personas: Persona[] }) {
           <div
             key={persona.id}
             className={cn(
-              'flex items-center gap-4 p-2 rounded-md cursor-pointer hover:bg-muted/50',
-              activePersonaId === persona.id && 'bg-muted',
+              'flex items-center gap-2 p-2 my-2 rounded-md border border-border cursor-pointer hover:bg-muted',
+              activePersonaId === persona.id && 'bg-muted border-ring',
             )}
             onClick={() => handleSelectPersona(persona.id)}
           >
@@ -63,7 +63,7 @@ export function PersonaList({ personas }: { personas: Persona[] }) {
                 setShowImageCropDialog(!!file)
               }}
             />
-            <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex flex-col min-w-0">
               <div className="font-medium truncate">{persona.name}</div>
               <div className="text-sm text-muted-foreground truncate">
                 {persona.metadata.description}
@@ -85,6 +85,7 @@ export function PersonaList({ personas }: { personas: Persona[] }) {
             }
           }
         }}
+        title="Crop Persona Avatar"
       />
     </div>
   )

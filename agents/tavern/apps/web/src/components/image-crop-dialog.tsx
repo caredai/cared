@@ -25,11 +25,13 @@ export function ImageCropDialog({
   onOpenChange,
   imageFile,
   onCrop,
+  title,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   imageFile?: File
   onCrop: (croppedImage: string) => void
+  title: string
 }) {
   const [imageSrc, setImageSrc] = useState<string>()
   const [crop, setCrop] = useState({ x: 0, y: 0 })
@@ -79,7 +81,7 @@ export function ImageCropDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] z-6000">
         <DialogHeader>
-          <DialogTitle>Crop character image</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="w-full h-[60dvh] relative">
           <Cropper

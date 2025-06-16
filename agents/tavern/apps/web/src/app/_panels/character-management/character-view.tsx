@@ -209,6 +209,7 @@ export function CharacterView({ character }: { character: Character }) {
         onOpenChange={setShowImageCropDialog}
         imageFile={inputImageFile}
         onCrop={(image) => updateCharacterImage(character, image)}
+        title="Crop Character Image"
       />
 
       <DeleteCharacterOrGroupDialog
