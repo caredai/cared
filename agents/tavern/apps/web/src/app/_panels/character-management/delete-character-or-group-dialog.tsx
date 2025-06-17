@@ -1,3 +1,6 @@
+import type { Character } from '@/hooks/use-character'
+import type { CharacterGroup } from '@/hooks/use-character-group'
+import type { ReactNode } from 'react'
 import { useState } from 'react'
 
 import { Button } from '@ownxai/ui/components/button'
@@ -8,29 +11,30 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@ownxai/ui/components/dialog'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useDeleteCharacter } from '@/hooks/use-character'
-import type { Character } from '@/hooks/use-character'
-import type { CharacterGroup} from '@/hooks/use-character-group';
 import { useDeleteCharacterGroup } from '@/hooks/use-character-group'
 import { isCharacterGroup } from '@/hooks/use-character-or-group'
+import { useSetShowCharacterList } from './hooks'
 
 export function DeleteCharacterOrGroupDialog({
   open,
   onOpenChange,
+  trigger,
   charOrGroup,
-  onDelete,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  trigger?: ReactNode
   charOrGroup: Character | CharacterGroup
-  onDelete?: () => void
 }) {
   const deleteCharacter = useDeleteCharacter()
   const deleteCharacterGroup = useDeleteCharacterGroup()
   const [isLoading, setIsLoading] = useState(false)
+  const setShowCharacterList = useSetShowCharacterList()
 
   const handleConfirm = async () => {
     setIsLoading(true)
@@ -41,7 +45,7 @@ export function DeleteCharacterOrGroupDialog({
         await deleteCharacter(charOrGroup.id)
       }
       onOpenChange(false)
-      onDelete?.()
+      setShowCharacterList()
     } finally {
       setIsLoading(false)
     }
@@ -53,11 +57,16 @@ export function DeleteCharacterOrGroupDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="z-7000">
         <DialogHeader>
-          <DialogTitle>Delete {isCharacterGroup(charOrGroup) ? 'character group' : 'character'}</DialogTitle>
+          <DialogTitle>
+            Delete {isCharacterGroup(charOrGroup) ? 'character group' : 'character'}
+          </DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete {isCharacterGroup(charOrGroup) ? 'character group' : 'character'} "{name}"? This action cannot be undone.
+            Are you sure you want to delete{' '}
+            {isCharacterGroup(charOrGroup) ? 'character group' : 'character'} "{name}"? This action
+            cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -77,5 +86,23 @@ export function DeleteCharacterOrGroupDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  )
+}
+
+export function DeleteCharacterDialog({
+  trigger,
+  character,
+}: {
+  trigger: ReactNode
+  character: Character
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <DeleteCharacterOrGroupDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={trigger}
+      charOrGroup={character}
+    />
   )
 }

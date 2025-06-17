@@ -1,18 +1,26 @@
 import { personaMetadataSchema } from '@tavern/core'
-import { Persona, PersonaToCharacter, PersonaToChat, PersonaToGroup } from '@tavern/db/schema'
+import {
+  Character,
+  CharGroup,
+  Persona,
+  PersonaToCharacter,
+  PersonaToChat,
+  PersonaToGroup,
+} from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { makeObjectNonempty } from '@ownxai/sdk'
 
+import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
 import { deleteImage, deleteImages, uploadImage } from './utils'
 
 // Helper function to process metadata and handle image upload
-async function processMetadata(metadata: z.infer<typeof personaMetadataSchema>) {
+async function processMetadata(metadata: z.infer<typeof personaMetadataSchema>, name: string) {
   if (metadata.imageUrl?.startsWith('data:')) {
-    const imageUrl = await uploadImage(metadata.imageUrl, metadata.description, 'personas')
+    const imageUrl = await uploadImage(metadata.imageUrl, name, 'personas')
     return {
       ...metadata,
       imageUrl,
@@ -22,10 +30,27 @@ async function processMetadata(metadata: z.infer<typeof personaMetadataSchema>) 
 }
 
 export const personaRouter = {
-  // List all personas for the current user
+  // List all personas for the current user with relations
   list: userProtectedProcedure.query(async ({ ctx }) => {
-    const personas = await ctx.db.select().from(Persona).where(eq(Persona.userId, ctx.auth.userId))
-    return { personas }
+    const personas = await ctx.db.query.Persona.findMany({
+      where: eq(Persona.userId, ctx.auth.userId),
+      with: {
+        personaToCharacters: true,
+        personaToGroups: true,
+        personaToChats: true,
+      },
+    })
+
+    return {
+      personas: personas.map(
+        ({ personaToCharacters, personaToGroups, personaToChats, ...persona }) => ({
+          ...persona,
+          characters: personaToCharacters.map((c) => c.characterId),
+          groups: personaToGroups.map((g) => g.groupId),
+          chats: personaToChats.map((c) => c.chatId),
+        }),
+      ),
+    }
   }),
 
   // Get a specific persona by ID
@@ -38,6 +63,11 @@ export const personaRouter = {
     .query(async ({ ctx, input }) => {
       const persona = await ctx.db.query.Persona.findFirst({
         where: and(eq(Persona.id, input.id), eq(Persona.userId, ctx.auth.userId)),
+        with: {
+          personaToCharacters: true,
+          personaToGroups: true,
+          personaToChats: true,
+        },
       })
       if (!persona) {
         throw new TRPCError({
@@ -45,7 +75,16 @@ export const personaRouter = {
           message: 'Persona not found',
         })
       }
-      return { persona }
+
+      const { personaToCharacters, personaToGroups, personaToChats, ...personaData } = persona
+      return {
+        persona: {
+          ...personaData,
+          characters: personaToCharacters.map((c) => c.characterId),
+          groups: personaToGroups.map((g) => g.groupId),
+          chats: personaToChats.map((c) => c.chatId),
+        },
+      }
     }),
 
   // Create a new persona
@@ -57,7 +96,7 @@ export const personaRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const metadata = await processMetadata(input.metadata)
+      const metadata = await processMetadata(input.metadata, input.name)
 
       const [persona] = await ctx.db
         .insert(Persona)
@@ -136,10 +175,13 @@ export const personaRouter = {
 
       let metadata
       if (partialMetadata) {
-        metadata = await processMetadata({
-          ...persona.metadata,
-          ...partialMetadata,
-        })
+        metadata = await processMetadata(
+          {
+            ...persona.metadata,
+            ...partialMetadata,
+          },
+          name ?? persona.name,
+        )
 
         if (persona.metadata.imageUrl && metadata.imageUrl !== persona.metadata.imageUrl) {
           await deleteImage(persona.metadata.imageUrl)
@@ -230,21 +272,58 @@ export const personaRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [link] = await ctx.db
-        .insert(PersonaToCharacter)
-        .values({
-          personaId: input.personaId,
-          characterId: input.characterId,
-          userId: ctx.auth.userId,
+      return await ctx.db.transaction(async (tx) => {
+        // Check if persona exists and belongs to user
+        const persona = await tx.query.Persona.findFirst({
+          where: and(eq(Persona.id, input.personaId), eq(Persona.userId, ctx.auth.userId)),
         })
-        .returning()
-      if (!link) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to link persona to character',
+        if (!persona) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Persona not found',
+          })
+        }
+
+        // Check if character exists and belongs to user
+        const character = await tx.query.Character.findFirst({
+          where: and(eq(Character.id, input.characterId), eq(Character.userId, ctx.auth.userId)),
         })
-      }
-      return { link }
+        if (!character) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Character not found',
+          })
+        }
+
+        // Delete existing links for the character
+        await tx
+          .delete(PersonaToCharacter)
+          .where(
+            and(
+              eq(PersonaToCharacter.characterId, input.characterId),
+              eq(PersonaToCharacter.userId, ctx.auth.userId),
+            ),
+          )
+
+        // Create new link
+        const [link] = await tx
+          .insert(PersonaToCharacter)
+          .values({
+            personaId: input.personaId,
+            characterId: input.characterId,
+            userId: ctx.auth.userId,
+          })
+          .returning()
+
+        if (!link) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to link persona to character',
+          })
+        }
+
+        return { link }
+      })
     }),
 
   // Unlink persona from a character
@@ -256,6 +335,28 @@ export const personaRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Check if persona exists and belongs to user
+      const persona = await ctx.db.query.Persona.findFirst({
+        where: and(eq(Persona.id, input.personaId), eq(Persona.userId, ctx.auth.userId)),
+      })
+      if (!persona) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Persona not found',
+        })
+      }
+
+      // Check if character exists and belongs to user
+      const character = await ctx.db.query.Character.findFirst({
+        where: and(eq(Character.id, input.characterId), eq(Character.userId, ctx.auth.userId)),
+      })
+      if (!character) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Character not found',
+        })
+      }
+
       const [link] = await ctx.db
         .delete(PersonaToCharacter)
         .where(
@@ -284,21 +385,58 @@ export const personaRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [link] = await ctx.db
-        .insert(PersonaToGroup)
-        .values({
-          personaId: input.personaId,
-          groupId: input.groupId,
-          userId: ctx.auth.userId,
+      return await ctx.db.transaction(async (tx) => {
+        // Check if persona exists and belongs to user
+        const persona = await tx.query.Persona.findFirst({
+          where: and(eq(Persona.id, input.personaId), eq(Persona.userId, ctx.auth.userId)),
         })
-        .returning()
-      if (!link) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to link persona to character group',
+        if (!persona) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Persona not found',
+          })
+        }
+
+        // Check if group exists and belongs to user
+        const group = await tx.query.CharGroup.findFirst({
+          where: and(eq(CharGroup.id, input.groupId), eq(CharGroup.userId, ctx.auth.userId)),
         })
-      }
-      return { link }
+        if (!group) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Character group not found',
+          })
+        }
+
+        // Delete existing links for the group
+        await tx
+          .delete(PersonaToGroup)
+          .where(
+            and(
+              eq(PersonaToGroup.groupId, input.groupId),
+              eq(PersonaToGroup.userId, ctx.auth.userId),
+            ),
+          )
+
+        // Create new link
+        const [link] = await tx
+          .insert(PersonaToGroup)
+          .values({
+            personaId: input.personaId,
+            groupId: input.groupId,
+            userId: ctx.auth.userId,
+          })
+          .returning()
+
+        if (!link) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to link persona to character group',
+          })
+        }
+
+        return { link }
+      })
     }),
 
   // Unlink persona from a character group
@@ -310,6 +448,28 @@ export const personaRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Check if persona exists and belongs to user
+      const persona = await ctx.db.query.Persona.findFirst({
+        where: and(eq(Persona.id, input.personaId), eq(Persona.userId, ctx.auth.userId)),
+      })
+      if (!persona) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Persona not found',
+        })
+      }
+
+      // Check if group exists and belongs to user
+      const group = await ctx.db.query.CharGroup.findFirst({
+        where: and(eq(CharGroup.id, input.groupId), eq(CharGroup.userId, ctx.auth.userId)),
+      })
+      if (!group) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Character group not found',
+        })
+      }
+
       const [link] = await ctx.db
         .delete(PersonaToGroup)
         .where(
@@ -338,21 +498,51 @@ export const personaRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [link] = await ctx.db
-        .insert(PersonaToChat)
-        .values({
-          personaId: input.personaId,
-          chatId: input.chatId,
-          userId: ctx.auth.userId,
+      return await ctx.db.transaction(async (tx) => {
+        // Check if persona exists and belongs to user
+        const persona = await tx.query.Persona.findFirst({
+          where: and(eq(Persona.id, input.personaId), eq(Persona.userId, ctx.auth.userId)),
         })
-        .returning()
-      if (!link) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to link persona to chat',
+        if (!persona) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Persona not found',
+          })
+        }
+
+        // Check if chat exists by querying the external service
+        const ownx = createOwnxClient(ctx)
+        const ownxTrpc = ownx.trpc
+        await ownxTrpc.chat.byId.query({
+          id: input.chatId,
         })
-      }
-      return { link }
+
+        // Delete existing links for the chat
+        await tx
+          .delete(PersonaToChat)
+          .where(
+            and(eq(PersonaToChat.chatId, input.chatId), eq(PersonaToChat.userId, ctx.auth.userId)),
+          )
+
+        // Create new link
+        const [link] = await tx
+          .insert(PersonaToChat)
+          .values({
+            personaId: input.personaId,
+            chatId: input.chatId,
+            userId: ctx.auth.userId,
+          })
+          .returning()
+
+        if (!link) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to link persona to chat',
+          })
+        }
+
+        return { link }
+      })
     }),
 
   // Unlink persona from a chat
@@ -364,6 +554,24 @@ export const personaRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Check if persona exists and belongs to user
+      const persona = await ctx.db.query.Persona.findFirst({
+        where: and(eq(Persona.id, input.personaId), eq(Persona.userId, ctx.auth.userId)),
+      })
+      if (!persona) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Persona not found',
+        })
+      }
+
+      // Check if chat exists by querying the external service
+      const ownx = createOwnxClient(ctx)
+      const ownxTrpc = ownx.trpc
+      await ownxTrpc.chat.byId.query({
+        id: input.chatId,
+      })
+
       const [link] = await ctx.db
         .delete(PersonaToChat)
         .where(

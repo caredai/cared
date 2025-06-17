@@ -10,9 +10,10 @@ export function CharacterAvatar(
   allProps: ComponentProps<'div'> &
     Pick<ComponentProps<typeof RemoteImage>, 'src' | 'alt'> & {
       onFileChange?: (file?: File) => void
+      outline?: boolean
     },
 ) {
-  const { src, alt, onFileChange, ...props } = allProps
+  const { src, alt, onFileChange, outline, ...props } = allProps
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -30,6 +31,7 @@ export function CharacterAvatar(
       className={cn(
         'relative flex h-13 w-13 m-1 shrink-0 overflow-hidden rounded-full cursor-pointer transition-all duration-200 hover:drop-shadow-[0px_0px_4px_rgba(225,138,36,1)]',
         props.className,
+        outline && 'outline-2 outline-yellow-500',
       )}
     >
       <RemoteImage
@@ -63,9 +65,10 @@ export function CharacterGroupAvatar(
     Pick<ComponentProps<typeof RemoteImage>, 'alt'> & {
       onFileChange?: (file?: File) => void
       characterAvatars?: string[]
+      outline?: boolean
     },
 ) {
-  const { src, alt, onFileChange, characterAvatars, ...props } = allProps
+  const { src, alt, onFileChange, characterAvatars, outline, ...props } = allProps
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -79,7 +82,15 @@ export function CharacterGroupAvatar(
 
   // If src exists, render as single avatar
   if (src) {
-    return <CharacterAvatar src={src} alt={alt} onFileChange={onFileChange} {...props} />
+    return (
+      <CharacterAvatar
+        src={src}
+        alt={alt}
+        onFileChange={onFileChange}
+        outline={outline}
+        {...props}
+      />
+    )
   }
 
   // Get the first 4 avatars
@@ -88,12 +99,28 @@ export function CharacterGroupAvatar(
 
   // If no avatars, return empty div
   if (avatarCount === 0) {
-    return <CharacterAvatar src={defaultPng} alt={alt} onFileChange={onFileChange} {...props} />
+    return (
+      <CharacterAvatar
+        src={defaultPng}
+        alt={alt}
+        onFileChange={onFileChange}
+        outline={outline}
+        {...props}
+      />
+    )
   }
 
   // If only one avatar, render as single avatar
   if (avatarCount === 1) {
-    return <CharacterAvatar src={avatars![0]!} alt={alt} onFileChange={onFileChange} {...props} />
+    return (
+      <CharacterAvatar
+        src={avatars![0]!}
+        alt={alt}
+        onFileChange={onFileChange}
+        outline={outline}
+        {...props}
+      />
+    )
   }
 
   return (
@@ -102,9 +129,16 @@ export function CharacterGroupAvatar(
       className={cn(
         'relative flex h-13 w-13 m-1 shrink-0 overflow-hidden rounded-full',
         props.className,
+        outline && 'outline-2 outline-yellow-500',
       )}
     >
-      <div className={cn("grid grid-cols-2 w-full h-full", avatarCount === 2 && 'grid-rows-1', avatarCount === 4 && 'grid-rows-2')}>
+      <div
+        className={cn(
+          'grid grid-cols-2 w-full h-full',
+          avatarCount === 2 && 'grid-rows-1',
+          avatarCount === 4 && 'grid-rows-2',
+        )}
+      >
         {avatars?.map((avatar, index) => {
           return (
             <RemoteImage
@@ -113,7 +147,9 @@ export function CharacterGroupAvatar(
               alt={`${alt} ${index + 1}`}
               width={26}
               height={26}
-              className={cn("aspect-square w-full h-full object-cover", avatarCount === 3 && index === 2 && 'col-span-2',
+              className={cn(
+                'aspect-square w-full h-full object-cover',
+                avatarCount === 3 && index === 2 && 'col-span-2',
                 index === 0 && 'border-r',
                 index === 0 && avatarCount > 2 && 'border-b',
                 index === 1 && 'border-l',

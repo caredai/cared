@@ -485,7 +485,6 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
           open={showDeleteDialog}
           onOpenChange={setShowDeleteDialog}
           charOrGroup={group}
-          onDelete={handleClose}
         />
       )}
     </div>

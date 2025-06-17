@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo } from 'react'
+import { faClone, faCrown, faLock, faSkull, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PersonaPosition } from '@tavern/core'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+import { Button } from '@ownxai/ui/components/button'
 import {
   Form,
   FormControl,
@@ -21,9 +24,16 @@ import {
   SelectValue,
 } from '@ownxai/ui/components/select'
 import { Textarea } from '@ownxai/ui/components/textarea'
+import { cn } from '@ownxai/ui/lib/utils'
 
+import { FaButton } from '@/components/fa-button'
 import { NumberInput } from '@/components/number-input'
-import { usePersona, useUpdatePersona } from '@/hooks/use-persona'
+import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
+import { useActiveChat } from '@/hooks/use-chat'
+import { useLinkPersona, usePersona, useUnlinkPersona, useUpdatePersona } from '@/hooks/use-persona'
+import { usePersonaSettings, useUpdatePersonaSettings } from '@/hooks/use-settings'
+import { DeletePersonaDialog } from './delete-persona-dialog'
+import { DuplicatePersonaDialog } from './duplicate-persona-dialog'
 
 const personaFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -67,6 +77,16 @@ const positionOptions = [
 export function PersonaView({ personaId }: { personaId: string }) {
   const persona = usePersona(personaId)
   const updatePersona = useUpdatePersona()
+  const linkPersona = useLinkPersona()
+  const unlinkPersona = useUnlinkPersona()
+
+  // Get current active character/group and chat
+  const activeCharacterOrGroup = useActiveCharacterOrGroup()
+  const { activeChat } = useActiveChat()
+
+  // Get persona settings
+  const personaSettings = usePersonaSettings()
+  const updatePersonaSettings = useUpdatePersonaSettings()
 
   const defaultValues = useMemo(
     () => ({
@@ -98,6 +118,10 @@ export function PersonaView({ personaId }: { personaId: string }) {
   const onBlur = useCallback(async () => {
     if (!persona) return
 
+    if (!(await form.trigger())) {
+      return
+    }
+
     const { name, ...metadata } = form.getValues()
 
     await updatePersona(persona.id, {
@@ -106,114 +130,282 @@ export function PersonaView({ personaId }: { personaId: string }) {
     })
   }, [form, persona, updatePersona])
 
+  // Handle Default button click
+  const handleDefaultClick = useCallback(async () => {
+    if (!persona) return
+
+    const isDefault = personaSettings.default === persona.id
+    if (isDefault) {
+      await updatePersonaSettings({
+        default: undefined,
+      })
+    } else {
+      await updatePersonaSettings({
+        default: persona.id,
+      })
+    }
+  }, [persona, personaSettings.default, updatePersonaSettings])
+
+  // Handle Character button click
+  const handleCharacterClick = useCallback(async () => {
+    if (!persona || !activeCharacterOrGroup) return
+
+    const isLinked =
+      persona.characters.includes(activeCharacterOrGroup.id) ||
+      persona.groups.includes(activeCharacterOrGroup.id)
+
+    if (isLinked) {
+      // Unlink from character/group
+      if (persona.characters.includes(activeCharacterOrGroup.id)) {
+        await unlinkPersona(persona.id, { characterId: activeCharacterOrGroup.id })
+      } else {
+        await unlinkPersona(persona.id, { groupId: activeCharacterOrGroup.id })
+      }
+    } else {
+      // Link to character/group
+      if (isCharacter(activeCharacterOrGroup)) {
+        await linkPersona(persona.id, { characterId: activeCharacterOrGroup.id })
+      } else {
+        await linkPersona(persona.id, { groupId: activeCharacterOrGroup.id })
+      }
+    }
+  }, [persona, activeCharacterOrGroup, linkPersona, unlinkPersona])
+
+  // Handle Chat button click
+  const handleChatClick = useCallback(async () => {
+    if (!persona || !activeChat) return
+
+    const isLinked = persona.chats.includes(activeChat.id)
+
+    if (isLinked) {
+      // Unlink from chat
+      await unlinkPersona(persona.id, { chatId: activeChat.id })
+    } else {
+      // Link to chat
+      await linkPersona(persona.id, { chatId: activeChat.id })
+    }
+  }, [persona, activeChat, linkPersona, unlinkPersona])
+
+  // Check button states
+  const isDefault = personaSettings.default === personaId
+  const isCharacterLinked =
+    activeCharacterOrGroup &&
+    (persona?.characters.includes(activeCharacterOrGroup.id) ||
+      persona?.groups.includes(activeCharacterOrGroup.id))
+  const isChatLinked = activeChat && persona?.chats.includes(activeChat.id)
+
+  const operateActions = [
+    {
+      icon: faClone,
+      tooltip: 'Duplicate Persona',
+      wrapper: DuplicatePersonaDialog,
+    },
+    {
+      icon: faSkull,
+      tooltip: 'Delete Persona',
+      className: 'bg-destructive/50 hover:bg-destructive',
+      wrapper: DeletePersonaDialog,
+    },
+  ]
+
   if (!persona) {
     return null
   }
 
   return (
-    <Form {...form}>
-      <form onBlur={onBlur} className="flex flex-col gap-4">
-        {/* Name */}
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <div className="flex-1 flex flex-col gap-4 overflow-y-auto p-[1px]">
+      {/* Header with action buttons */}
+      <div className="flex flex-row justify-between items-center gap-4">
+        <h2 className="font-semibold text-xl text-muted-foreground truncate">{persona.name}</h2>
 
-        {/* Description */}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea {...field} className="min-h-[100px]"
-                          placeholder="{{user}} is a 28-year-old Romanian cat girl."
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="flex flex-row flex-wrap justify-end gap-1">
+          {operateActions.map(({ icon, tooltip, className, wrapper: Wrapper }, index) => {
+            const btn = (
+              <FaButton
+                key={index}
+                icon={icon}
+                btnSize="size-7"
+                iconSize="1x"
+                title={tooltip}
+                className={cn(
+                  'text-foreground border-1 hover:bg-muted-foreground rounded-sm',
+                  className,
+                )}
+              />
+            )
 
-        {/* Injection Position */}
-        <FormField
-          control={form.control}
-          name="injectionPosition"
-          render={() => (
-            <FormItem>
-              <FormLabel>Injection Position</FormLabel>
-              <Select
-                value={(() => {
-                  const pos = form.watch('injectionPosition')
-                  const role = form.watch('role')
-                  const found = positionOptions.find(
-                    (opt) =>
-                      opt.position === pos &&
-                      (opt.position === PersonaPosition.AtDepth ? opt.role === role : true),
-                  )
-                  return found?.value ?? ''
-                })()}
-                onValueChange={(value) => {
-                  const selectedOption = positionOptions.find((opt) => opt.value === value)
-                  if (!selectedOption) return
-                  form.setValue('injectionPosition', selectedOption.position)
-                  if (selectedOption.position === PersonaPosition.AtDepth && selectedOption.role) {
-                    form.setValue('role', selectedOption.role)
-                  } else {
-                    form.setValue('role', undefined)
-                  }
-                }}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent side="top" className="z-6000">
-                  {positionOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            return <Wrapper key={index} trigger={btn} persona={persona} />
+          })}
+        </div>
+      </div>
 
-        {/* Depth (only show when position is AtDepth) */}
-        {isPositionAtDepth && (
+      {/* Form */}
+      <Form {...form}>
+        <form onBlur={onBlur} className="flex flex-col gap-4">
+          {/* Name */}
           <FormField
             control={form.control}
-            name="depth"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Depth</FormLabel>
+                <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <NumberInput
-                    min={0}
-                    step={1}
-                    value={field.value ?? 2}
-                    onChange={(value) => field.onChange(value)}
+                  <Input {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Description */}
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    className="min-h-[100px]"
+                    placeholder="{{user}} is a 28-year-old Romanian cat girl."
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
-      </form>
-    </Form>
+
+          {/* Injection Position */}
+          <FormField
+            control={form.control}
+            name="injectionPosition"
+            render={() => (
+              <FormItem>
+                <FormLabel>Injection Position</FormLabel>
+                <Select
+                  value={(() => {
+                    const pos = form.watch('injectionPosition')
+                    const role = form.watch('role')
+                    const found = positionOptions.find(
+                      (opt) =>
+                        opt.position === pos &&
+                        (opt.position === PersonaPosition.AtDepth ? opt.role === role : true),
+                    )
+                    return found?.value ?? ''
+                  })()}
+                  onValueChange={(value) => {
+                    const selectedOption = positionOptions.find((opt) => opt.value === value)
+                    if (!selectedOption) return
+                    form.setValue('injectionPosition', selectedOption.position)
+                    if (
+                      selectedOption.position === PersonaPosition.AtDepth &&
+                      selectedOption.role
+                    ) {
+                      form.setValue('role', selectedOption.role)
+                    } else {
+                      form.setValue('role', undefined)
+                    }
+                  }}
+                >
+                  <FormControl>
+                    <SelectTrigger className="mb-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent side="top" className="z-6000">
+                    {positionOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Depth (only show when position is AtDepth) */}
+          {isPositionAtDepth && (
+            <FormField
+              control={form.control}
+              name="depth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Depth</FormLabel>
+                  <FormControl>
+                    <NumberInput
+                      min={0}
+                      step={1}
+                      value={field.value ?? 2}
+                      onChange={(value) => field.onChange(value)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </form>
+      </Form>
+
+      {/* Action Buttons */}
+      <div className="flex flex-row gap-2 pt-2">
+        {/* Default Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          title="Click to select this as default persona for the new chats. Click again to remove it."
+          className={cn(
+            'transition-colors',
+            isDefault &&
+              'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 hover:text-yellow-400 border-yellow-500/30',
+          )}
+          onClick={handleDefaultClick}
+        >
+          <FontAwesomeIcon icon={faCrown} size="lg" className="fa-fw" />
+          Default
+        </Button>
+
+        {/* Character Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          title="Click to lock your selected persona to the current character. Click again to remove the lock."
+          className={cn(
+            'transition-colors',
+            isCharacterLinked &&
+              'bg-green-500/20 hover:bg-green-500/30 text-green-600 hover:text-green-400 border-green-500/30',
+          )}
+          onClick={handleCharacterClick}
+          disabled={!activeCharacterOrGroup}
+        >
+          <FontAwesomeIcon
+            icon={isCharacterLinked ? faLock : faUnlock}
+            size="lg"
+            className="fa-fw"
+          />
+          Character
+        </Button>
+
+        {/* Chat Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          title="Click to lock your selected persona to the current chat. Click again to remove the lock."
+          className={cn(
+            'transition-colors',
+            isChatLinked &&
+              'bg-amber-700/20 hover:bg-amber-700/30 text-amber-700 hover:text-amber-600 border-amber-700/30',
+          )}
+          onClick={handleChatClick}
+          disabled={!activeChat}
+        >
+          <FontAwesomeIcon icon={isChatLinked ? faLock : faUnlock} size="lg" className="fa-fw" />
+          Chat
+        </Button>
+      </div>
+    </div>
   )
 }

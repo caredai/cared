@@ -41,7 +41,8 @@ import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area
 import { CharacterBasicForm } from './character-basic-form'
 import { CharacterTagsView } from './character-tags-view'
 import { CharacterViewAdvanced } from './character-view-advanced'
-import { DeleteCharacterOrGroupDialog } from './delete-character-or-group-dialog'
+import { DeleteCharacterDialog } from './delete-character-or-group-dialog'
+import { DuplicateCharacterDialog } from './duplicate-character-dialog'
 import { useImportTags } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
@@ -49,13 +50,8 @@ export function CharacterView({ character }: { character: Character }) {
   const setShowChatList = useSetShowChatList()
   const { isShowCharacterAdvancedView, toggleIsShowCharacterAdvancedView } =
     useIsShowCharacterAdvancedView()
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const characterSettings = useCharacterSettings()
   const updateCharacterSettings = useUpdateCharacterSettings()
-
-  const handleClose = () => {
-    setShowCharacterList()
-  }
 
   const handleToggleShowChatList = () => {
     setShowChatList()
@@ -76,13 +72,9 @@ export function CharacterView({ character }: { character: Character }) {
     toggleIsShowCharacterAdvancedView()
   }
 
-  const handleDeleteCharacter = () => {
-    setShowDeleteDialog(true)
-  }
-
   const operateActions = [
     {
-      action: handleClose,
+      action: setShowCharacterList,
       icon: faLeftLong,
     },
     {
@@ -126,18 +118,17 @@ export function CharacterView({ character }: { character: Character }) {
       tooltip: 'Export Character',
     },
     {
-      action: handleAddToFavorites,
       icon: faClone,
       tooltip: 'Duplicate Character',
+      wrapper: DuplicateCharacterDialog,
     },
     {
-      action: handleDeleteCharacter,
       icon: faSkull,
       tooltip: 'Delete character',
       className: 'bg-destructive/50 hover:bg-destructive',
+      wrapper: DeleteCharacterDialog,
     },
     {
-      action: handleAddToFavorites,
       icon: faEllipsisVertical,
       tooltip: 'More...',
       wrapper: MoreActionsDropdownMenu,
@@ -210,13 +201,6 @@ export function CharacterView({ character }: { character: Character }) {
         imageFile={inputImageFile}
         onCrop={(image) => updateCharacterImage(character, image)}
         title="Crop Character Image"
-      />
-
-      <DeleteCharacterOrGroupDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        charOrGroup={character}
-        onDelete={handleClose}
       />
     </div>
   )
