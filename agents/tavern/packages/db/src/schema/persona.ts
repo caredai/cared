@@ -1,7 +1,7 @@
 import type { PersonaMetadata } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, jsonb, pgTable, text, primaryKey, unique } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
+import { index, jsonb, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 
 import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
 
@@ -56,7 +56,7 @@ export const PersonaToCharacter = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.personaId, table.characterId] }),
-    unique().on(table.characterId),
+    index().on(table.characterId),
     index().on(table.userId),
     ...timestampsIndices(table),
   ],
@@ -96,7 +96,7 @@ export const PersonaToGroup = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.personaId, table.groupId] }),
-    unique().on(table.groupId),
+    index().on(table.groupId),
     index().on(table.userId),
     ...timestampsIndices(table),
   ],

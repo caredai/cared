@@ -1,17 +1,115 @@
 import type { AppRouter } from '@tavern/api'
 import type { PersonaMetadata } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
 
+import { useActiveChat } from '@/hooks/use-chat'
+import { usePersonaSettings } from '@/hooks/use-settings'
 import { debounceTimeout } from '@/lib/debounce'
 import { useTRPC } from '@/trpc/client'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 export type Persona = RouterOutput['persona']['get']['persona']
+
+export function useActivePersona() {
+  const { personas } = usePersonas()
+  const { active: activePersonaId } = usePersonaSettings()
+
+  const activePersona = useMemo(() => {
+    if (!activePersonaId) {
+      return
+    }
+    return personas.find((p) => p.id === activePersonaId)
+  }, [personas, activePersonaId])
+
+  return {
+    activePersona,
+  }
+}
+
+export function usePersonaByActiveChat(): {
+  persona?: Persona
+  linkedPersonas?: Persona[]
+  characterId?: string
+  groupId?: string
+} {
+  const { personas } = usePersonas()
+  const {
+    active: activePersonaId,
+    default: defaultPersonaId,
+    autoLockToChat,
+  } = usePersonaSettings()
+  const { activeChat } = useActiveChat()
+
+  const linkPersona = useLinkPersona()
+
+  useEffect(() => {
+    if (!activePersonaId || !activeChat || !autoLockToChat) {
+      return
+    }
+    if (
+      personas
+        .find((persona) => persona.id === activePersonaId)
+        ?.chats.find((chatId) => chatId === activeChat.id)
+    ) {
+      return
+    }
+
+    void linkPersona(activePersonaId, {
+      chatId: activeChat.id,
+    })
+  }, [activeChat, activePersonaId, autoLockToChat, linkPersona, personas])
+
+  return useMemo(() => {
+    if (!activeChat) {
+      return {}
+    }
+
+    // 1. Find persona linked to this chat
+    const chatLinkedPersona = personas.find((persona) => persona.chats.includes(activeChat.id))
+    if (chatLinkedPersona) {
+      return {
+        persona: chatLinkedPersona,
+      }
+    }
+
+    // 2. Find persona linked to chat's character or group
+    const characterOrGroupId = activeChat.characterId || activeChat.groupId
+    if (characterOrGroupId) {
+      const linkedPersonas = personas.filter(
+        (persona) =>
+          persona.characters.includes(characterOrGroupId) ||
+          persona.groups.includes(characterOrGroupId),
+      )
+
+      if (linkedPersonas.length > 0) {
+        return {
+          persona: linkedPersonas[0], // Use first one if multiple found
+          linkedPersonas: linkedPersonas.length > 1 ? linkedPersonas : undefined,
+          characterId: activeChat.characterId,
+          groupId: activeChat.groupId,
+        }
+      }
+    }
+
+    // 3. Use default persona from settings
+    if (defaultPersonaId) {
+      const defaultPersona = personas.find((persona) => persona.id === defaultPersonaId)
+      if (defaultPersona) {
+        return {
+          persona: defaultPersona,
+        }
+      }
+    }
+
+    // 4. Return empty
+    return {}
+  }, [activeChat, personas, defaultPersonaId])
+}
 
 export function usePersonas() {
   const trpc = useTRPC()
@@ -245,6 +343,7 @@ export function useDeletePersonas() {
 export function useLinkPersona() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
+  const personaSettings = usePersonaSettings()
 
   // Link to character mutation
   const linkToCharacterMutation = useMutation(
@@ -256,30 +355,34 @@ export function useLinkPersona() {
 
         const previousData = queryClient.getQueryData(trpc.persona.list.queryKey())
 
-        // Optimistically update the persona
+        // Optimistically update the persona list
         queryClient.setQueryData(trpc.persona.list.queryKey(), (old) => {
           if (!old) {
             return undefined
           }
-          
-          // First, remove the character from all other personas
-          const updatedPersonas = old.personas.map((persona) => ({
-            ...persona,
-            characters: persona.characters.filter((id) => id !== characterId),
-          }))
-          
-          // Then, add the character to the target persona
-          const targetIndex = updatedPersonas.findIndex((persona) => persona.id === personaId)
-          if (targetIndex === -1) {
-            return old
-          }
-          
-          const targetPersona = updatedPersonas[targetIndex]!
-          updatedPersonas[targetIndex] = {
-            ...targetPersona,
-            characters: [...targetPersona.characters, characterId],
-          }
-          
+
+          // Check if multi-connections are allowed
+          const allowMulti = personaSettings.allowMultiConnectionsPerCharacter
+
+          const updatedPersonas = old.personas.map((persona) => {
+            if (persona.id === personaId) {
+              // Avoid duplicate
+              if (persona.characters.includes(characterId)) return persona
+              return {
+                ...persona,
+                characters: [...persona.characters, characterId],
+              }
+            }
+            // If multi-connections not allowed, remove from other personas
+            if (!allowMulti) {
+              return {
+                ...persona,
+                characters: persona.characters.filter((id) => id !== characterId),
+              }
+            }
+            return persona
+          })
+
           return {
             personas: updatedPersonas,
           }
@@ -292,7 +395,7 @@ export function useLinkPersona() {
           queryClient.setQueryData(trpc.persona.list.queryKey(), context.previousData)
         }
         console.error('Failed to link persona to character:', error)
-        toast.error(`Failed to link persona to character: ${error.message}`)
+        // toast.error(`Failed to link persona to character: ${error.message}`)
       },
     }),
   )
@@ -307,30 +410,34 @@ export function useLinkPersona() {
 
         const previousData = queryClient.getQueryData(trpc.persona.list.queryKey())
 
-        // Optimistically update the persona
+        // Optimistically update the persona list
         queryClient.setQueryData(trpc.persona.list.queryKey(), (old) => {
           if (!old) {
             return undefined
           }
-          
-          // First, remove the group from all other personas
-          const updatedPersonas = old.personas.map((persona) => ({
-            ...persona,
-            groups: persona.groups.filter((id) => id !== groupId),
-          }))
-          
-          // Then, add the group to the target persona
-          const targetIndex = updatedPersonas.findIndex((persona) => persona.id === personaId)
-          if (targetIndex === -1) {
-            return old
-          }
-          
-          const targetPersona = updatedPersonas[targetIndex]!
-          updatedPersonas[targetIndex] = {
-            ...targetPersona,
-            groups: [...targetPersona.groups, groupId],
-          }
-          
+
+          // Check if multi-connections are allowed
+          const allowMulti = personaSettings.allowMultiConnectionsPerCharacter
+
+          const updatedPersonas = old.personas.map((persona) => {
+            if (persona.id === personaId) {
+              // Avoid duplicate
+              if (persona.groups.includes(groupId)) return persona
+              return {
+                ...persona,
+                groups: [...persona.groups, groupId],
+              }
+            }
+            // If multi-connections not allowed, remove from other personas
+            if (!allowMulti) {
+              return {
+                ...persona,
+                groups: persona.groups.filter((id) => id !== groupId),
+              }
+            }
+            return persona
+          })
+
           return {
             personas: updatedPersonas,
           }
@@ -343,7 +450,7 @@ export function useLinkPersona() {
           queryClient.setQueryData(trpc.persona.list.queryKey(), context.previousData)
         }
         console.error('Failed to link persona to group:', error)
-        toast.error(`Failed to link persona to group: ${error.message}`)
+        // toast.error(`Failed to link persona to group: ${error.message}`)
       },
     }),
   )
@@ -363,25 +470,25 @@ export function useLinkPersona() {
           if (!old) {
             return undefined
           }
-          
+
           // First, remove the chat from all other personas
           const updatedPersonas = old.personas.map((persona) => ({
             ...persona,
             chats: persona.chats.filter((id) => id !== chatId),
           }))
-          
+
           // Then, add the chat to the target persona
           const targetIndex = updatedPersonas.findIndex((persona) => persona.id === personaId)
           if (targetIndex === -1) {
             return old
           }
-          
+
           const targetPersona = updatedPersonas[targetIndex]!
           updatedPersonas[targetIndex] = {
             ...targetPersona,
             chats: [...targetPersona.chats, chatId],
           }
-          
+
           return {
             personas: updatedPersonas,
           }
@@ -394,7 +501,7 @@ export function useLinkPersona() {
           queryClient.setQueryData(trpc.persona.list.queryKey(), context.previousData)
         }
         console.error('Failed to link persona to chat:', error)
-        toast.error(`Failed to link persona to chat: ${error.message}`)
+        // toast.error(`Failed to link persona to chat: ${error.message}`)
       },
     }),
   )
@@ -483,7 +590,7 @@ export function useUnlinkPersona() {
           queryClient.setQueryData(trpc.persona.list.queryKey(), context.previousData)
         }
         console.error('Failed to unlink persona from character:', error)
-        toast.error(`Failed to unlink persona from character: ${error.message}`)
+        // toast.error(`Failed to unlink persona from character: ${error.message}`)
       },
     }),
   )
@@ -527,7 +634,7 @@ export function useUnlinkPersona() {
           queryClient.setQueryData(trpc.persona.list.queryKey(), context.previousData)
         }
         console.error('Failed to unlink persona from group:', error)
-        toast.error(`Failed to unlink persona from group: ${error.message}`)
+        // toast.error(`Failed to unlink persona from group: ${error.message}`)
       },
     }),
   )
@@ -571,7 +678,7 @@ export function useUnlinkPersona() {
           queryClient.setQueryData(trpc.persona.list.queryKey(), context.previousData)
         }
         console.error('Failed to unlink persona from chat:', error)
-        toast.error(`Failed to unlink persona from chat: ${error.message}`)
+        // toast.error(`Failed to unlink persona from chat: ${error.message}`)
       },
     }),
   )

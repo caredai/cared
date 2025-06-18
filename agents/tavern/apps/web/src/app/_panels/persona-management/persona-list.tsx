@@ -1,6 +1,6 @@
 import type { Persona } from '@/hooks/use-persona'
 import { useCallback, useState } from 'react'
-import { faLock } from '@fortawesome/free-solid-svg-icons'
+import { faComments, faLock, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Virtualizer } from 'virtua'
 
@@ -66,7 +66,7 @@ export function PersonaList({ personas }: { personas: Persona[] }) {
             <div
               key={persona.id}
               className={cn(
-                'flex items-center gap-2 p-2 my-2 rounded-md border border-border cursor-pointer hover:bg-muted relative',
+                'h-[78px] flex items-center gap-2 p-1 my-2 rounded-md border border-border cursor-pointer hover:bg-muted relative',
                 activePersonaId === persona.id && 'border-ring',
               )}
               onClick={() => handleSelectPersona(persona.id)}
@@ -85,48 +85,49 @@ export function PersonaList({ personas }: { personas: Persona[] }) {
                 }}
                 outline={defaultPersonaId === persona.id}
               />
-              <div className="flex flex-col min-w-0 flex-1">
+              <div className="flex flex-col min-w-0 flex-1 mb-3">
                 <div className="font-medium text-sm truncate">{persona.name}</div>
                 <div className="text-sm text-muted-foreground truncate">
                   {persona.metadata.description}
                 </div>
-                {/* Link status buttons */}
-                {(isCharacterLinked || isChatLinked) && (
-                  <div className="flex flex-row gap-1 mt-1">
-                    {/* Character Button */}
-                    {isCharacterLinked && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          'h-6 px-1 text-xs transition-colors pointer-events-none',
-                          'bg-green-500/20 text-green-600 border-green-500/30',
-                        )}
-                        disabled
-                      >
-                        <FontAwesomeIcon icon={faLock} size="xs" className="fa-fw" />
-                        Character
-                      </Button>
-                    )}
-
-                    {/* Chat Button */}
-                    {isChatLinked && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={cn(
-                          'h-6 px-1 text-xs transition-colors pointer-events-none',
-                          'bg-amber-700/20 text-amber-700 border-amber-700/30',
-                        )}
-                        disabled
-                      >
-                        <FontAwesomeIcon icon={faLock} size="xs" className="fa-fw" />
-                        Chat
-                      </Button>
-                    )}
-                  </div>
-                )}
               </div>
+
+              {/* Link status buttons */}
+              {(isCharacterLinked || isChatLinked) && (
+                <div className="absolute bottom-1 right-2 flex flex-row justify-end gap-1">
+                  {/* Chat Button */}
+                  {isChatLinked && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'h-5 px-1 has-[>svg]:px-1 gap-0.5 text-xs transition-colors pointer-events-none',
+                        'bg-amber-700/20 text-amber-700 border-amber-700/30',
+                      )}
+                      disabled
+                    >
+                      <FontAwesomeIcon icon={faLock} size="sm" className="fa-fw" />
+                      <FontAwesomeIcon icon={faComments} size="sm" className="fa-fw" />
+                    </Button>
+                  )}
+
+                  {/* Character Button */}
+                  {isCharacterLinked && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'h-5 px-1 has-[>svg]:px-1 gap-0.5 text-xs transition-colors pointer-events-none',
+                        'bg-green-500/20 text-green-600 border-green-500/30',
+                      )}
+                      disabled
+                    >
+                      <FontAwesomeIcon icon={faLock} size="sm" className="fa-fw" />
+                      <FontAwesomeIcon icon={faUser} size="sm" className="fa-fw" />
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}

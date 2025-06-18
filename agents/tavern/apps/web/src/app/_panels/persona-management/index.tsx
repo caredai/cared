@@ -6,10 +6,10 @@ import { faFileExport, faFileImport, faPlus } from '@fortawesome/free-solid-svg-
 import { zodResolver } from '@hookform/resolvers/zod'
 import { personaMetadataSchema, personaSettingsSchema } from '@tavern/core'
 import { Document } from 'flexsearch'
+import { ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
-import { ChevronDownIcon } from 'lucide-react'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -36,6 +36,7 @@ import { usePersonaSettings, useUpdatePersonaSettings } from '@/hooks/use-settin
 import { CreatePersonaDialog } from './create-persona-dialog'
 import { PersonaList } from './persona-list'
 import { PersonaView } from './persona-view'
+import { SelectPersonaDialog } from './select-persona-dialog'
 
 export function PersonaManagementPanel() {
   const { personas } = usePersonas()
@@ -302,6 +303,8 @@ export function PersonaManagementPanel() {
         {/* Right side: Persona view */}
         {activePersonaId && <PersonaView personaId={activePersonaId} />}
       </div>
+
+      <SelectPersonaDialog />
     </div>
   )
 }
@@ -312,7 +315,7 @@ const personaSettingsFormSchema = personaSettingsSchema.pick({
   autoLockToChat: true,
 })
 
-export const PersonaSettings = memo(function PersonaSettings() {
+const PersonaSettings = memo(function PersonaSettings() {
   const personaSettings = usePersonaSettings()
   const updatePersonaSettings = useUpdatePersonaSettings()
 

@@ -6,6 +6,7 @@ import {
   PersonaToCharacter,
   PersonaToChat,
   PersonaToGroup,
+  UserSettings,
 } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
@@ -295,15 +296,25 @@ export const personaRouter = {
           })
         }
 
-        // Delete existing links for the character
-        await tx
-          .delete(PersonaToCharacter)
-          .where(
-            and(
-              eq(PersonaToCharacter.characterId, input.characterId),
-              eq(PersonaToCharacter.userId, ctx.auth.userId),
-            ),
-          )
+        // Get user settings to check allowMultiConnectionsPerCharacter
+        const userSettings = await tx.query.UserSettings.findFirst({
+          where: eq(UserSettings.userId, ctx.auth.userId),
+        })
+
+        const allowMultiConnections =
+          userSettings?.settings.persona.allowMultiConnectionsPerCharacter ?? false
+
+        // Only delete existing links if multi-connections are not allowed
+        if (!allowMultiConnections) {
+          await tx
+            .delete(PersonaToCharacter)
+            .where(
+              and(
+                eq(PersonaToCharacter.characterId, input.characterId),
+                eq(PersonaToCharacter.userId, ctx.auth.userId),
+              ),
+            )
+        }
 
         // Create new link
         const [link] = await tx
@@ -408,15 +419,25 @@ export const personaRouter = {
           })
         }
 
-        // Delete existing links for the group
-        await tx
-          .delete(PersonaToGroup)
-          .where(
-            and(
-              eq(PersonaToGroup.groupId, input.groupId),
-              eq(PersonaToGroup.userId, ctx.auth.userId),
-            ),
-          )
+        // Get user settings to check allowMultiConnectionsPerCharacter
+        const userSettings = await tx.query.UserSettings.findFirst({
+          where: eq(UserSettings.userId, ctx.auth.userId),
+        })
+
+        const allowMultiConnections =
+          userSettings?.settings.persona.allowMultiConnectionsPerCharacter ?? false
+
+        // Only delete existing links if multi-connections are not allowed
+        if (!allowMultiConnections) {
+          await tx
+            .delete(PersonaToGroup)
+            .where(
+              and(
+                eq(PersonaToGroup.groupId, input.groupId),
+                eq(PersonaToGroup.userId, ctx.auth.userId),
+              ),
+            )
+        }
 
         // Create new link
         const [link] = await tx

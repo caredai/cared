@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import type { VListHandle } from 'virtua'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { faClone, faCrown, faLock, faSkull, faUnlock } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PersonaPosition } from '@tavern/core'
 import { useForm } from 'react-hook-form'
+import { VList } from 'virtua'
 import { z } from 'zod'
 
 import { Button } from '@ownxai/ui/components/button'
@@ -16,6 +18,7 @@ import {
   FormMessage,
 } from '@ownxai/ui/components/form'
 import { Input } from '@ownxai/ui/components/input'
+import { Label } from '@ownxai/ui/components/label'
 import {
   Select,
   SelectContent,
@@ -26,9 +29,16 @@ import {
 import { Textarea } from '@ownxai/ui/components/textarea'
 import { cn } from '@ownxai/ui/lib/utils'
 
+import { useClearAllFlags } from '@/app/_panels/character-management/hooks'
+import { CharacterAvatar, CharacterGroupAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { NumberInput } from '@/components/number-input'
-import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
+import {
+  isCharacter,
+  useActiveCharacterOrGroup,
+  useCharactersAndGroups,
+  useSetActiveCharacterOrGroup,
+} from '@/hooks/use-character-or-group'
 import { useActiveChat } from '@/hooks/use-chat'
 import { useLinkPersona, usePersona, useUnlinkPersona, useUpdatePersona } from '@/hooks/use-persona'
 import { usePersonaSettings, useUpdatePersonaSettings } from '@/hooks/use-settings'
@@ -87,6 +97,27 @@ export function PersonaView({ personaId }: { personaId: string }) {
   // Get persona settings
   const personaSettings = usePersonaSettings()
   const updatePersonaSettings = useUpdatePersonaSettings()
+
+  const charsAndGroups = useCharactersAndGroups()
+
+  // Get linked characters and groups
+  const linkedCharsOrGroups = useMemo(() => {
+    if (!persona) return []
+
+    return charsAndGroups.filter(
+      (item) => persona.characters.includes(item.id) || persona.groups.includes(item.id),
+    )
+  }, [persona, charsAndGroups])
+
+  const vlistRef = useRef<VListHandle>(null)
+
+  // Handle mouse wheel horizontal scroll
+  const handleWheel = (e: React.WheelEvent) => {
+    vlistRef.current?.scrollBy(e.deltaY)
+  }
+
+  const setActiveCharacterOrGroup = useSetActiveCharacterOrGroup()
+  const clearAllFlags = useClearAllFlags()
 
   const defaultValues = useMemo(
     () => ({
@@ -351,61 +382,103 @@ export function PersonaView({ personaId }: { personaId: string }) {
       </Form>
 
       {/* Action Buttons */}
-      <div className="flex flex-row gap-2 pt-2">
-        {/* Default Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          title="Click to select this as default persona for the new chats. Click again to remove it."
-          className={cn(
-            'transition-colors',
-            isDefault &&
-              'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 hover:text-yellow-400 border-yellow-500/30',
-          )}
-          onClick={handleDefaultClick}
-        >
-          <FontAwesomeIcon icon={faCrown} size="lg" className="fa-fw" />
-          Default
-        </Button>
+      <div className="flex flex-col gap-1">
+        <Label>Connections</Label>
+        <div className="flex flex-row gap-2">
+          {/* Default Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            title="Click to select this as default persona for the new chats. Click again to remove it."
+            className={cn(
+              'transition-colors',
+              isDefault &&
+                'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-600 hover:text-yellow-400 border-yellow-500/30',
+            )}
+            onClick={handleDefaultClick}
+          >
+            <FontAwesomeIcon icon={faCrown} size="lg" className="fa-fw" />
+            Default
+          </Button>
 
-        {/* Character Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          title="Click to lock your selected persona to the current character. Click again to remove the lock."
-          className={cn(
-            'transition-colors',
-            isCharacterLinked &&
-              'bg-green-500/20 hover:bg-green-500/30 text-green-600 hover:text-green-400 border-green-500/30',
-          )}
-          onClick={handleCharacterClick}
-          disabled={!activeCharacterOrGroup}
-        >
-          <FontAwesomeIcon
-            icon={isCharacterLinked ? faLock : faUnlock}
-            size="lg"
-            className="fa-fw"
-          />
-          Character
-        </Button>
+          {/* Character Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            title="Click to lock your selected persona to the current character. Click again to remove the lock."
+            className={cn(
+              'transition-colors',
+              isCharacterLinked &&
+                'bg-green-500/20 hover:bg-green-500/30 text-green-600 hover:text-green-400 border-green-500/30',
+            )}
+            onClick={handleCharacterClick}
+            disabled={!activeCharacterOrGroup}
+          >
+            <FontAwesomeIcon
+              icon={isCharacterLinked ? faLock : faUnlock}
+              size="lg"
+              className="fa-fw"
+            />
+            Character
+          </Button>
 
-        {/* Chat Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          title="Click to lock your selected persona to the current chat. Click again to remove the lock."
-          className={cn(
-            'transition-colors',
-            isChatLinked &&
-              'bg-amber-700/20 hover:bg-amber-700/30 text-amber-700 hover:text-amber-600 border-amber-700/30',
-          )}
-          onClick={handleChatClick}
-          disabled={!activeChat}
-        >
-          <FontAwesomeIcon icon={isChatLinked ? faLock : faUnlock} size="lg" className="fa-fw" />
-          Chat
-        </Button>
+          {/* Chat Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            title="Click to lock your selected persona to the current chat. Click again to remove the lock."
+            className={cn(
+              'transition-colors',
+              isChatLinked &&
+                'bg-amber-700/20 hover:bg-amber-700/30 text-amber-700 hover:text-amber-600 border-amber-700/30',
+            )}
+            onClick={handleChatClick}
+            disabled={!activeChat}
+          >
+            <FontAwesomeIcon icon={isChatLinked ? faLock : faUnlock} size="lg" className="fa-fw" />
+            Chat
+          </Button>
+        </div>
       </div>
+
+      {/* Linked Characters and Groups */}
+      {linkedCharsOrGroups.length > 0 && (
+        <VList
+          horizontal
+          count={linkedCharsOrGroups.length}
+          className="h-15 no-scrollbar"
+          style={{
+            height: '60px',
+          }}
+          ref={vlistRef}
+          onWheel={handleWheel}
+        >
+          {linkedCharsOrGroups.map((item) => {
+            return (
+              <div
+                key={item.id}
+                className={cn(
+                  'flex items-center justify-center',
+                )}
+                onClick={() => {
+                  setActiveCharacterOrGroup(item.id)
+                  clearAllFlags()
+                }}
+              >
+                {isCharacter(item) ? (
+                  <CharacterAvatar src={item.metadata.url} alt={item.content.data.name} />
+                ) : (
+                  <CharacterGroupAvatar
+                    src={item.metadata.imageUrl}
+                    characterAvatars={item.characters.map((c) => c.metadata.url)}
+                    alt={item.metadata.name}
+                  />
+                )}
+              </div>
+            )
+          })}
+        </VList>
+      )}
     </div>
   )
 }

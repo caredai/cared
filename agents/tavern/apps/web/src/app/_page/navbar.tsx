@@ -120,53 +120,67 @@ export function Navbar() {
       const isWithinDialog = target.closest('[role="dialog"]') !== null
       if (isWithinDialog) return
 
-      // Check each open panel
-      openPanels.forEach((panelName) => {
-        const panel = panelRefs.current[panelName]
-        const trigger = triggerRefs.current[panelName]
+      // Check if click is within any panel (not just the open ones)
+      const { clientX, clientY } = event
 
-        if (panel && trigger) {
-          // Get click coordinates
-          const { clientX, clientY } = event
-
-          // Get panel and trigger boundaries
+      // Check all panel refs to see if click is within any panel
+      let isWithinAnyPanel = false
+      for (const panel of Object.values(panelRefs.current)) {
+        if (panel) {
           const panelRect = panel.getBoundingClientRect()
-          const triggerRect = trigger.getBoundingClientRect()
-
-          // Check if click is within panel boundaries
           const isWithinPanel =
             clientX >= panelRect.left &&
             clientX <= panelRect.right &&
             clientY >= panelRect.top &&
             clientY <= panelRect.bottom
 
-          // Check if click is within trigger boundaries
+          if (isWithinPanel) {
+            isWithinAnyPanel = true
+          }
+        }
+      }
+
+      // Check if click is within any trigger button
+      let isWithinAnyTrigger = false
+      for (const trigger of Object.values(triggerRefs.current)) {
+        if (trigger) {
+          const triggerRect = trigger.getBoundingClientRect()
           const isWithinTrigger =
             clientX >= triggerRect.left &&
             clientX <= triggerRect.right &&
             clientY >= triggerRect.top &&
             clientY <= triggerRect.bottom
 
-          // Check if it's left or right panel and determine closure based on lock status
-          const panelIndex = navPanels.findIndex((panel) => panel.name === panelName)
-          const isLeftPanel = panelIndex === 0
-          const isRightPanel = panelIndex === navPanels.length - 1
-          const isLorebookPanel = panelName === 'lorebook'
-
-          // Don't close the panel if it's locked
-          const isLocked =
-            (isLeftPanel && appearanceSettings.modelPresetPanelLocked) ||
-            (isRightPanel && appearanceSettings.characterPanelLocked) ||
-            (isLorebookPanel && appearanceSettings.lorebookPanelLocked)
-
-          // Close panel only if click is outside both panel and trigger, and the panel is not locked
-          if (!isWithinPanel && !isWithinTrigger && !isLocked) {
-            setOpenPanels((prev) => {
-              const newSet = new Set(prev)
-              newSet.delete(panelName)
-              return newSet
-            })
+          if (isWithinTrigger) {
+            isWithinAnyTrigger = true
           }
+        }
+      }
+
+      // If click is within any panel or trigger, don't close any panels
+      if (isWithinAnyPanel || isWithinAnyTrigger) return
+
+      // Check each open panel
+      openPanels.forEach((panelName) => {
+        // Check if it's left or right panel and determine closure based on lock status
+        const panelIndex = navPanels.findIndex((panel) => panel.name === panelName)
+        const isLeftPanel = panelIndex === 0
+        const isRightPanel = panelIndex === navPanels.length - 1
+        const isLorebookPanel = panelName === 'lorebook'
+
+        // Don't close the panel if it's locked
+        const isLocked =
+          (isLeftPanel && appearanceSettings.modelPresetPanelLocked) ||
+          (isRightPanel && appearanceSettings.characterPanelLocked) ||
+          (isLorebookPanel && appearanceSettings.lorebookPanelLocked)
+
+        // Close panel only if it's not locked
+        if (!isLocked) {
+          setOpenPanels((prev) => {
+            const newSet = new Set(prev)
+            newSet.delete(panelName)
+            return newSet
+          })
         }
       })
     }
