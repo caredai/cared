@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
 
-export function Input() {
+export function MultimodalInput() {
   return (
     <div className="pt-[1px] pb-[5px] bg-transparent">
       <div className="flex flex-row items-center rounded-b-lg px-1 text-sm bg-background focus-within:ring-1 focus-within:ring-ring">

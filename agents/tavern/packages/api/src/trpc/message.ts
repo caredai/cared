@@ -1,4 +1,4 @@
-import { messageMetadataSchema } from '@tavern/core'
+import { MessageMetadata, messageMetadataSchema } from '@tavern/core'
 import { z } from 'zod'
 
 import { messageContentSchema } from '@ownxai/sdk'
@@ -27,7 +27,9 @@ export const messageRouter = {
       })
 
       return {
-        messages,
+        messages: messages as ((typeof messages)[number] & {
+          metadata: MessageMetadata
+        })[],
         hasMore,
         cursor: last,
       }
