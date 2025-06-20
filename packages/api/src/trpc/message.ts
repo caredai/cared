@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 
 import type { SQL } from '@ownxai/db'
-import { and, asc, desc, eq, gt, gte, inArray, lt } from '@ownxai/db'
+import { and, asc, count, desc, eq, gt, gte, inArray, lt } from '@ownxai/db'
 import {
   CreateMessageSchema,
   CreateMessageVoteSchema,
@@ -12,7 +12,6 @@ import {
 } from '@ownxai/db/schema'
 
 import type { Context } from '../trpc'
-import { cfg } from '../config'
 import { userProtectedProcedure } from '../trpc'
 import { getChatById } from './chat'
 
@@ -269,29 +268,53 @@ export const messageRouter = {
       },
     })
     .input(
-      z.object({
-        id: z.string().min(32),
-        deleteTrailing: z.boolean().optional(),
-        excludeSelf: z.boolean().optional(),
-      })
-      .refine(
-        (data) => !data.excludeSelf || data.deleteTrailing,
-        {
-          message: "excludeSelf can only be specified when deleteTrailing is true",
-          path: ["excludeSelf"],
-        }
-      ),
+      z
+        .object({
+          id: z.string().min(32),
+          deleteTrailing: z.boolean().optional(),
+          excludeSelf: z.boolean().optional(),
+        })
+        .refine((data) => !data.excludeSelf || data.deleteTrailing, {
+          message: 'excludeSelf can only be specified when deleteTrailing is true',
+          path: ['excludeSelf'],
+        }),
     )
     .mutation(async ({ ctx, input }) => {
       const message = await getMessageById(ctx, input.id)
 
       // If deleteTrailing is not set, only delete the specified message
       if (!input.deleteTrailing) {
-        const [deletedMessage] = await ctx.db
-          .delete(Message)
-          .where(eq(Message.id, message.id))
-          .returning()
-        return { messages: [deletedMessage] }
+        if (!message.parentId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Cannot delete a root message without deleting its descendant messages',
+          })
+        }
+
+        return await ctx.db.transaction(async (tx) => {
+          // Check if there are direct child messages that need parentId update
+          const directChildrenCount = await tx
+            .select({ count: count() })
+            .from(Message)
+            .where(and(eq(Message.chatId, message.chatId), eq(Message.parentId, message.id)))
+            .then((result) => result[0]?.count ?? 0)
+
+          // Update parentId of direct children to point to the deleted message's parent
+          if (directChildrenCount > 0) {
+            await tx
+              .update(Message)
+              .set({ parentId: message.parentId })
+              .where(and(eq(Message.chatId, message.chatId), eq(Message.parentId, message.id)))
+          }
+
+          // Delete the specified message
+          const [deletedMessage] = await tx
+            .delete(Message)
+            .where(eq(Message.id, message.id))
+            .returning()
+
+          return { messages: [deletedMessage] }
+        })
       }
 
       // First, find all messages that are descendants of the specified message

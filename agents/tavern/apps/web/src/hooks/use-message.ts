@@ -1,6 +1,6 @@
 import type { InfiniteData } from '@tanstack/react-query'
 import type { AppRouter } from '@tavern/api'
-import type { MessageMetadata } from '@tavern/core'
+import type { Message, MessageAnnotation } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback } from 'react'
 import { skipToken, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -11,7 +11,6 @@ import { useTRPC } from '@/trpc/client'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 type MessageListOutput = RouterOutput['message']['list']
-export type Message = MessageListOutput['messages'][number]
 
 const PAGE_SIZE = 10
 
@@ -115,10 +114,10 @@ export function useUpdateMessage(chatId?: string) {
       id: string,
       {
         content,
-        metadata,
+        annotation,
       }: {
         content?: string
-        metadata?: MessageMetadata
+        annotation?: MessageAnnotation
       },
     ) => {
       const message = messages?.pages
@@ -140,9 +139,11 @@ export function useUpdateMessage(chatId?: string) {
         return part
       })
 
+      const annotations: [MessageAnnotation] = annotation ? [annotation] : message.content.annotations
+
       if (
         (!content || hash(parts) === hash(message.content.parts)) &&
-        (!metadata || hash(metadata) === hash(message.metadata))
+        (!annotation || hash(annotations) === hash(message.content.annotations))
       ) {
         return
       }
@@ -152,8 +153,8 @@ export function useUpdateMessage(chatId?: string) {
         content: {
           ...message.content,
           parts,
+          annotations,
         },
-        metadata,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

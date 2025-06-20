@@ -1,7 +1,6 @@
-import { MessageMetadata, messageMetadataSchema } from '@tavern/core'
+import type { Message } from '@tavern/core'
+import { messageContentSchema } from '@tavern/core'
 import { z } from 'zod'
-
-import { messageContentSchema } from '@ownxai/sdk'
 
 import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
@@ -27,11 +26,37 @@ export const messageRouter = {
       })
 
       return {
-        messages: messages as ((typeof messages)[number] & {
-          metadata: MessageMetadata
-        })[],
+        messages: messages as Message[],
         hasMore,
         cursor: last,
+      }
+    }),
+
+  create: userProtectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        parentId: z.string(),
+        chatId: z.string(),
+        role: z.enum(['user', 'assistant']),
+        content: messageContentSchema,
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const ownx = createOwnxClient(ctx)
+      const ownxTrpc = ownx.trpc
+
+      const { id, parentId, chatId, role, content } = input
+      const { message } = await ownxTrpc.message.create.mutate({
+        id,
+        parentId,
+        chatId,
+        role,
+        content,
+      })
+
+      return {
+        message: message as Message,
       }
     }),
 
@@ -40,7 +65,6 @@ export const messageRouter = {
       z.object({
         id: z.string(),
         content: messageContentSchema.optional(),
-        metadata: messageMetadataSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -50,11 +74,10 @@ export const messageRouter = {
       const { message } = await ownxTrpc.message.update.mutate({
         id: input.id,
         ...(input.content && { content: input.content }),
-        ...(input.metadata && { metadata: input.metadata }),
       })
 
       return {
-        message,
+        message: message as Message,
       }
     }),
 
@@ -72,6 +95,6 @@ export const messageRouter = {
 
       const { messages } = await ownxTrpc.message.delete.mutate(input)
 
-      return { messages }
+      return { messages: messages as Message[] }
     }),
 }

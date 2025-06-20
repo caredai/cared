@@ -1,39 +1,36 @@
-import type { LanguageModelV1 } from 'ai'
+import assert from 'assert'
+import type { MessageAnnotation } from '@tavern/core'
 import { db } from '@tavern/db/client'
-import { createDataStreamResponse, generateText, smoothStream, streamText } from 'ai'
+import { appendResponseMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
+import hash from 'stable-hash'
+import { z } from 'zod'
 
-import type { Chat, Message, OwnxTrpcClient, UIMessage } from '@ownxai/sdk'
+import type { UIMessage } from '@ownxai/sdk'
 import { log } from '@ownxai/log'
-import {
-  buildMessageBranchFromDescendant,
-  generateMessageId,
-  toUIMessages,
-  uiMessageSchema,
-} from '@ownxai/sdk'
+import { generateMessageId, uiMessageSchema } from '@ownxai/sdk'
 
 import { auth } from '../auth'
 import { createOwnxClient } from '../ownx'
 
+const requestBodySchema = z.object({
+  id: z.string(),
+  messages: z.array(uiMessageSchema).min(1),
+  characterId: z.string(),
+  modelId: z.string(),
+  preferredLanguage: z.enum(['chinese', 'japanese']).optional(),
+})
+
 export async function POST(request: Request): Promise<Response> {
-  const {
-    id,
-    messages: inputMessages,
-    parentMessageId,
-    retainBranch,
-    modelId,
-  } = (await request.json()) as {
-    id?: string
-    messages: UIMessage[]
-    parentMessageId?: string
-    retainBranch?: boolean
-    modelId: string
+  let requestBody: z.infer<typeof requestBodySchema>
+
+  try {
+    const json = await request.json()
+    requestBody = requestBodySchema.parse(json)
+  } catch {
+    return new Response('Invalid request', { status: 400 })
   }
 
-  let inputMessage = inputMessages.at(-1)
-  if (!inputMessage) {
-    return new Response('No input message provided', { status: 400 })
-  }
-  inputMessage = uiMessageSchema.parse(inputMessage)
+  const { id, messages, characterId, modelId, preferredLanguage } = requestBody
 
   const { userId } = await auth()
   if (!userId) {
@@ -52,80 +49,69 @@ export async function POST(request: Request): Promise<Response> {
 
   const languageModel = await ownx.createLanguageModel(modelId)
 
-  let chat: Chat | undefined
-  let deleteChat: (() => Promise<void>) | undefined
-  if (id) {
-    chat = (await ownxTrpc.chat.byId.query({ id })).chat
-  } else {
-    // if no chat found, create a new one
-    const title = await generateChatTitleFromUserMessage({
-      message: inputMessage,
-      model: languageModel,
-    })
-    chat = (
-      await ownxTrpc.chat.create.mutate({
-        id, // if id is provided, it will be used; otherwise, a new id will be generated
-        metadata: {
-          title,
-        },
-      })
-    ).chat
+  const chat = (await ownxTrpc.chat.byId.query({ id })).chat
 
-    deleteChat = async () => {
-      await ownxTrpc.chat.delete.mutate({ id: chat!.id })
-    }
+  const annotation: MessageAnnotation = {
+    characterId,
+    modelId,
   }
 
-  let lastMessage = (
-    await ownxTrpc.message.find.query({
-      id: inputMessage.id,
-    })
-  ).message
-
-  if (lastMessage) {
-    if (parentMessageId && lastMessage.parentId !== parentMessageId) {
-      await deleteChat?.()
-      return new Response('Invalid parent message id', { status: 400 })
-    }
-
-    if (!retainBranch) {
-      await ownxTrpc.message.delete.mutate({
-        id: inputMessage.id,
-        excludeSelf: true,
-      })
-    }
-  } else {
-    if (!retainBranch && parentMessageId) {
-      await ownxTrpc.message.delete.mutate({
-        id: parentMessageId,
-        excludeSelf: true,
-      })
-    }
-
-    lastMessage = (
-      await ownxTrpc.message.create.mutate({
-        id: inputMessage.id,
-        parentId: parentMessageId,
-        chatId: chat.id,
-        role: inputMessage.role,
-        content: inputMessage,
-      })
-    ).message
-  }
-
-  const messages = await getMessages(ownxTrpc, chat, lastMessage)
+  const skip = true
 
   return createDataStreamResponse({
     execute: (dataStream) => {
       const result = streamText({
         model: languageModel,
-        system: '', // TODO
-        messages: messages.map(msg => ({...msg, content: ''})),
+        messages: messages.map((msg) => ({ ...msg, content: '' })),
         maxSteps: 1,
-        experimental_transform: smoothStream({ chunking: 'word' }),
+        experimental_transform: smoothStream({
+          chunking:
+            preferredLanguage === 'chinese'
+              ? /[\u4E00-\u9FFF]|\S+\s+/
+              : preferredLanguage === 'japanese'
+                ? /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/
+                : 'word',
+        }),
         experimental_generateMessageId: generateMessageId,
-        onFinish: async ({ response: _response }) => {
-          // TODO
+        onChunk() {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (skip) return
+          dataStream.writeMessageAnnotation(annotation as any)
+        },
+        onFinish: async ({ response }) => {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+          if (skip) return
+
+          const lastMessage = messages.at(-1)!
+          const responseMessages = appendResponseMessages({
+            // `appendResponseMessages` only use the last message in the input messages
+            messages: [{ ...lastMessage, content: '' }],
+            responseMessages: response.messages,
+          })
+
+          const newLastMessage = responseMessages.at(0)!
+          assert(newLastMessage.id === lastMessage.id)
+
+          if (hash(newLastMessage) !== hash(lastMessage)) {
+            assert(responseMessages.length === 1 && newLastMessage.role === 'assistant')
+            newLastMessage.annotations = [annotation as any]
+            await ownxTrpc.message.update.mutate({
+              id: newLastMessage.id,
+              content: newLastMessage as UIMessage,
+            })
+          } else {
+            assert(responseMessages.length === 2)
+            const msg = responseMessages.at(-1)!
+            assert(msg.role === 'assistant')
+            msg.annotations = [annotation as any]
+            await ownxTrpc.message.create.mutate({
+              id: msg.id,
+              parentId: lastMessage.id,
+              chatId: chat.id,
+              role: msg.role as any,
+              content: msg as UIMessage,
+            })
+          }
         },
         experimental_telemetry: {
           isEnabled: true,
@@ -145,41 +131,4 @@ export async function POST(request: Request): Promise<Response> {
       return `Internal server error`
     },
   })
-}
-
-async function getMessages(ownxTrpc: OwnxTrpcClient, chat: Chat, lastMsg: Message) {
-  const allMessages = (
-    await ownxTrpc.message.list.query({
-      chatId: chat.id,
-      before: lastMsg.id,
-      limit: 10000, // TODO: truncate
-    })
-  ).messages
-
-  const messageBranch = buildMessageBranchFromDescendant(allMessages, lastMsg)
-  const messages = toUIMessages(messageBranch)
-  // TODO
-  return messages
-}
-
-async function generateChatTitleFromUserMessage({
-  message,
-  model,
-}: {
-  message: UIMessage
-  model: LanguageModelV1
-}) {
-  const { text: title } = await generateText({
-    model,
-    system: `\n
-    - you will generate a short title based on the first message a user begins a conversation with
-    - ensure it is not more than 80 characters long
-    - the title should be a summary of the user's message
-    - detect and use the same language as the user's message for the title
-    - if user writes in Chinese, generate Chinese title; if in English, generate English title
-    - do not use quotes or colons`,
-    prompt: JSON.stringify(message),
-  })
-
-  return title
 }

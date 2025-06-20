@@ -32,7 +32,7 @@ export function buildMessageBranchFromDescendant(
   // Traverse up the message tree using parentId until the root is reached,
   // or a message is not found in the map.
   while (currentMessage) {
-    branch.push(currentMessage) // Add the current message to the beginning of the array.
+    branch.push(currentMessage) // Add the current message to the branch.
     const parentId = currentMessage.parentId
     if (!parentId) {
       break // Reached the root of the branch.

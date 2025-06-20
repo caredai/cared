@@ -9,7 +9,7 @@ import { backgroundFittings } from '@/app/_panels/background-image'
 import { useBackgroundSettings } from '@/hooks/use-settings'
 import { signIn } from '@/lib/sign-in'
 import { useTRPC } from '@/trpc/client'
-import { Content } from './content'
+import { ContentArea } from './content-area'
 import { MultimodalInput } from './multimodal-input'
 import { Navbar } from './navbar'
 import { WelcomeDialog } from './welcome-dialog'
@@ -49,7 +49,7 @@ export function PageContent() {
     >
       <div className="w-full lg:w-1/2 h-full flex flex-col relative">
         <Navbar />
-        <Content />
+        <ContentArea />
         <MultimodalInput />
       </div>
 

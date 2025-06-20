@@ -1,5 +1,5 @@
 import type { Character } from '@/hooks/use-character'
-import type { Message } from '@/hooks/use-message'
+import type { Message } from '@tavern/core'
 import { memo, useState } from 'react'
 import {
   faBullhorn,
@@ -22,9 +22,20 @@ import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-charact
 import { useActivePersona } from '@/hooks/use-persona'
 import defaultPng from '@/public/images/user-default.png'
 
-const PurePreviewMessage = ({ message }: { message: Message }) => {
+const PurePreviewMessage = ({
+  message,
+  index,
+  count,
+  navigate,
+}: {
+  message: Message
+  index: number
+  count: number
+  navigate: (previous: boolean) => void
+}) => {
   const role = message.role
-  const metadata = message.metadata
+  const parts = message.content.parts
+  const annotation = message.content.annotations[0]
 
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { activePersona } = useActivePersona()
@@ -75,20 +86,20 @@ const PurePreviewMessage = ({ message }: { message: Message }) => {
 
   if (role === 'assistant') {
     if (isCharacterGroup(activeCharOrGroup)) {
-      char = activeCharOrGroup.characters.find((c) => c.id === metadata.characterId)
-      if (!metadata.characterId || !char) {
+      char = activeCharOrGroup.characters.find((c) => c.id === annotation.characterId)
+      if (!annotation.characterId || !char) {
         return null
       }
     } else {
       char = activeCharOrGroup
     }
   } else if (role === 'user') {
-    if (metadata.personaId !== activePersona.id) {
-      if (!metadata.personaName) {
+    if (annotation.personaId !== activePersona.id) {
+      if (!annotation.personaName) {
         return null
       }
       persona = {
-        name: metadata.personaName,
+        name: annotation.personaName,
       }
     } else {
       persona = {
@@ -130,7 +141,7 @@ const PurePreviewMessage = ({ message }: { message: Message }) => {
         </div>
 
         <div className="flex flex-col gap-4 w-full">
-          {message.content.parts.map((part, index) => {
+          {parts.map((part, index) => {
             const { type } = part
             const key = `message-${message.id}-part-${index}`
 
