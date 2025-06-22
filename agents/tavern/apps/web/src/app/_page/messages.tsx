@@ -1,19 +1,19 @@
 import type { Message } from '@tavern/core'
 import type { VListHandle } from 'virtua'
-import { memo, useMemo, useRef } from 'react'
+import { memo, RefObject, useMemo} from 'react'
 import { VList } from 'virtua'
 
 import { PreviewMessage } from '@/app/_page/message'
 
 function PureMessages({
+  ref,
   messages,
   navigate,
 }: {
+  ref: RefObject<VListHandle | null>
   messages: MessageNode[]
   navigate: (current: MessageNode, previous: boolean) => void
 }) {
-  const ref = useRef<VListHandle>(null)
-
   const indices = useMemo(() => {
     return messages.map((message) => {
       const index = message.parent?.descendants.findIndex((m) => m === message) ?? 0
@@ -23,7 +23,7 @@ function PureMessages({
         count,
       }
     })
-  }, [])
+  }, [messages])
 
   return (
     <VList ref={ref} reverse>

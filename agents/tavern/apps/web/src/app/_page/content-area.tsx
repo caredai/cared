@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react'
 import { useEffect, useRef } from 'react'
 
-import { useActiveChat } from '@/hooks/use-chat'
 import { useContentAreaRef } from '@/hooks/use-show-in-content-area'
 
 export function ContentArea({ children }: { children?: ReactNode }) {
@@ -13,8 +12,6 @@ export function ContentArea({ children }: { children?: ReactNode }) {
     setContentAreaRef(ref)
     /* eslint-disable react-hooks/exhaustive-deps */
   }, [])
-
-  useActiveChat()
 
   return (
     <main ref={ref} className="flex-1 overflow-y-auto bg-background relative">

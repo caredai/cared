@@ -95,6 +95,16 @@ export function useUpdateSettingsMutation() {
   )
 }
 
+export function useSettings() {
+  const trpc = useTRPC()
+  const {
+    data: { settings },
+  } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+  })
+  return settings
+}
+
 export function useBackgroundSettings() {
   const trpc = useTRPC()
   const { data } = useSuspenseQuery({

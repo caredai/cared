@@ -12,7 +12,7 @@ import {
 } from '@ownxai/db/schema'
 
 import type { Context } from '../trpc'
-import { userProtectedProcedure } from '../trpc'
+import { appUserProtectedProcedure } from '../trpc'
 import { getChatById } from './chat'
 
 async function findMessageById(ctx: Context, id: string) {
@@ -43,7 +43,7 @@ export const messageRouter = {
    * @param input - Object containing chat ID and pagination parameters
    * @returns List of messages with hasMore flag and pagination metadata
    */
-  list: userProtectedProcedure
+  list: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -103,7 +103,7 @@ export const messageRouter = {
       }
     }),
 
-  find: userProtectedProcedure
+  find: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -126,7 +126,7 @@ export const messageRouter = {
    * @param input - Object containing message ID
    * @returns The message if found
    */
-  get: userProtectedProcedure
+  get: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -149,7 +149,7 @@ export const messageRouter = {
    * @param input - The message data following the {@link CreateMessageSchema}
    * @returns The created message
    */
-  create: userProtectedProcedure
+  create: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -209,7 +209,7 @@ export const messageRouter = {
    * @param input - Object containing message ID and new content
    * @returns The updated message
    */
-  update: userProtectedProcedure
+  update: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'PATCH', // Using PATCH as we are partially updating the resource
@@ -257,7 +257,7 @@ export const messageRouter = {
    *   - excludeSelf: Optional flag to exclude the specified message from deletion
    * @returns Object containing array of deleted messages
    */
-  delete: userProtectedProcedure
+  delete: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
@@ -373,7 +373,7 @@ export const messageRouter = {
    * @param input - The vote data following the {@link CreateMessageVoteSchema}
    * @returns The created or updated vote
    */
-  vote: userProtectedProcedure
+  vote: appUserProtectedProcedure
     .meta({
       openapi: {
         method: 'POST',

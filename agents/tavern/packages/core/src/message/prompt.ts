@@ -1,34 +1,32 @@
-import type { Message } from '@ownxai/sdk'
-import {
-  buildMessageBranchFromDescendant,
-  toUIMessages,
-} from '@ownxai/sdk'
+import type { Message as _Message, ModelInfo } from '@ownxai/sdk'
+import { toUIMessages } from '@ownxai/sdk'
 
-import type { CharGroupMetadata } from '../char-group-metadata'
 import type { CharacterCardV2 } from '../character'
+import type { CharGroupMetadata } from '../character-group'
 import type { ModelPreset } from '../model-preset'
 import type { Settings } from '../settings'
 
+export type ReducedMessage = Pick<_Message, 'id' | 'role' | 'content' | 'createdAt'>
+
 export function buildPromptMessages({
-  allMessages,
-  lastMessage,
+  messages,
   settings,
   modelPreset,
+  model,
   character,
   group,
 }: {
-  allMessages: Message[]
-  lastMessage: Message,
+  messages: ReducedMessage[]
   settings: Settings
   modelPreset: ModelPreset
+  model: ModelInfo
   character?: CharacterCardV2
   group?: {
     characters: CharacterCardV2[]
     metadata: CharGroupMetadata
   }
 }) {
-  const messageBranch = buildMessageBranchFromDescendant(allMessages, lastMessage)
-  const messages = toUIMessages(messageBranch)
+  const uiMessages = toUIMessages(messages as _Message[])
 
-  return messages.map(msg => ({...msg, content: ''}))
+  return uiMessages.map((msg) => ({ ...msg, content: '' }))
 }

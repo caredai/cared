@@ -56,11 +56,17 @@ export function useActiveChat() {
       .find((chat) => chat.id === activeChatId)
   }, [activeChatId, chats, isSuccess])
 
+  const bypassGet = true
+
   const trpc = useTRPC()
 
   const { data: activeChat2, refetch } = useQuery({
     ...trpc.chat.get.queryOptions(
-      activeChatId && isSuccess && !activeChat
+      activeChatId &&
+        isSuccess &&
+        !activeChat &&
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        !bypassGet
         ? {
             id: activeChatId,
           }

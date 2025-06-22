@@ -19,10 +19,7 @@ const OUTPUT_PATH = path.resolve(__dirname, '../../sdk/src/api.d.ts')
 const PACKAGES_ROOT = path.resolve(__dirname, '../../')
 
 // Define special type definitions for external dependencies
-const EXTERNAL_TYPE_DEFINITIONS = `import { MessageContent } from '@ownxai/shared'
-
-export * from '@ownxai/shared'
-export type ProviderId = string
+const EXTERNAL_TYPE_DEFINITIONS = `export * from '@ownxai/shared'
 `
 
 /**
@@ -57,14 +54,22 @@ function resolveMonorepoPath(importPath: string): string {
 }
 
 // Helper function to extract type definitions from source files
-async function extractTypeDefinition(importPath: string): Promise<string | null> {
+async function extractTypeDefinition(importPath: string, processedFiles: Set<string> = new Set(), resolvedPath?: string): Promise<string | null> {
   // Resolve the actual file path in monorepo
-  const filePath = resolveMonorepoPath(importPath)
+  const filePath = !resolvedPath ? resolveMonorepoPath(importPath) : resolvedPath
 
   if (!fs.existsSync(filePath)) {
     console.warn(`Source file not found: ${filePath}`)
     return null
   }
+
+  // Prevent infinite recursion
+  if (processedFiles.has(filePath)) {
+    console.log(`Skipping already processed file: ${filePath}`)
+    return null
+  }
+
+  processedFiles.add(filePath)
 
   const sourceContent = fs.readFileSync(filePath, 'utf-8')
   const parsedSourceFile = ts.createSourceFile(
@@ -77,7 +82,7 @@ async function extractTypeDefinition(importPath: string): Promise<string | null>
   let typeDefinition = ''
 
   // Visit each node to find type definitions
-  function visit(node: ts.Node) {
+  async function visit(node: ts.Node) {
     if (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) {
       // Get the type name
       const typeName = node.name.getText(parsedSourceFile)
@@ -88,10 +93,42 @@ async function extractTypeDefinition(importPath: string): Promise<string | null>
           sourceContent.slice(node.getStart(parsedSourceFile), node.getEnd()) + '\n\n'
       }
     }
-    ts.forEachChild(node, visit)
+
+    // Handle export statements that re-export from other modules
+    if (ts.isExportDeclaration(node) && node.moduleSpecifier) {
+      const moduleSpecifier = node.moduleSpecifier.getText(parsedSourceFile)
+      // Remove quotes from module specifier
+      const cleanModuleSpecifier = moduleSpecifier.replace(/["']/g, '')
+
+      // Handle relative imports (e.g., './auth', '../types')
+      if (cleanModuleSpecifier.startsWith('.')) {
+        const resolvedModulePath = path.resolve(path.dirname(filePath), cleanModuleSpecifier)
+
+        // Try to resolve the actual file
+        let actualModulePath = resolvedModulePath
+        if (fs.existsSync(resolvedModulePath + '.ts')) {
+          actualModulePath = resolvedModulePath + '.ts'
+        } else if (fs.existsSync(path.join(resolvedModulePath, 'index.ts'))) {
+          actualModulePath = path.join(resolvedModulePath, 'index.ts')
+        }
+
+        if (fs.existsSync(actualModulePath)) {
+          console.log(`Found re-export from: ${actualModulePath}`)
+          const reExportedTypes = await extractTypeDefinition(importPath, processedFiles, actualModulePath)
+          if (reExportedTypes) {
+            typeDefinition += reExportedTypes
+          }
+        }
+      }
+    }
+
+    // Recursively visit child nodes
+    for (const child of node.getChildren(parsedSourceFile)) {
+      await visit(child)
+    }
   }
 
-  visit(parsedSourceFile)
+  await visit(parsedSourceFile)
   return typeDefinition
 }
 
@@ -108,7 +145,7 @@ function visitNode(node: ts.Node) {
     const importPath = node.argument.getText(rootSourceFile)
     if (importPath.includes('@ownxai')) {
       // Skip DB client type
-      if (importPath.includes('@ownxai/db/client')) {
+      if (importPath.includes('@ownxai/db/client') || importPath.includes('@ownxai/shared')) {
         return
       }
 

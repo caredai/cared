@@ -1,11 +1,58 @@
 'use client'
 
-import { faBars, faMagicWandSparkles, faPaperPlane } from '@fortawesome/free-solid-svg-icons'
+import type { UseChatHelpers } from '@ai-sdk/react'
+import type { UIMessage } from 'ai'
+import { useCallback, useEffect } from 'react'
+import {
+  faBars,
+  faCircleStop,
+  faMagicWandSparkles,
+  faPaperPlane,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
 
-export function MultimodalInput() {
+export function MultimodalInput({
+  input,
+  setInput,
+  status,
+  stop,
+  messages,
+  setMessages,
+  append: _,
+  handleSubmit,
+  scrollToBottom,
+}: {
+  input: UseChatHelpers['input']
+  setInput: UseChatHelpers['setInput']
+  status: UseChatHelpers['status']
+  stop: () => void
+  messages: UIMessage[]
+  setMessages: UseChatHelpers['setMessages']
+  append: UseChatHelpers['append']
+  handleSubmit: UseChatHelpers['handleSubmit']
+  scrollToBottom: () => void
+}) {
+  useEffect(() => {
+    if (status === 'submitted') {
+      scrollToBottom()
+    }
+  }, [status, scrollToBottom])
+
+  const submit = useCallback(() => {
+    if (status === 'error') {
+      // remove last message
+      setMessages(messages.slice(0, -1))
+    } else if (status !== 'ready') {
+      return
+    }
+    handleSubmit(undefined, {
+      allowEmptySubmit: false,
+    })
+    // setInput('')
+  }, [handleSubmit, messages, setMessages, status])
+
   return (
     <div className="pt-[1px] pb-[5px] bg-transparent">
       <div className="flex flex-row items-center rounded-b-lg px-1 text-sm bg-background focus-within:ring-1 focus-within:ring-ring">
@@ -26,10 +73,30 @@ export function MultimodalInput() {
         <AutoGrowTextarea
           className="flex-1 min-h-[36px] max-h-[50dvh] text-white focus:outline-none border-0 focus-visible:ring-0 resize-y rounded-none"
           placeholder="Type your message..."
+          value={input}
+          onInput={(e) => setInput((e.target as HTMLTextAreaElement).value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault()
+              submit()
+            }
+          }}
         />
-        <button className="inline-flex ml-1">
+        <button
+          className="inline-flex ml-1"
+          disabled={status === 'submitted' || status === 'streaming'}
+          onClick={(event) => {
+            event.preventDefault()
+            if (status === 'ready' || status === 'error') {
+              submit()
+            } else {
+              stop()
+              setMessages((messages) => messages)
+            }
+          }}
+        >
           <FontAwesomeIcon
-            icon={faPaperPlane}
+            icon={status === 'ready' || status === 'error' ? faPaperPlane : faCircleStop}
             size="2x"
             className="fa-fw text-muted-foreground hover:text-foreground transition-colors duration-200"
           />

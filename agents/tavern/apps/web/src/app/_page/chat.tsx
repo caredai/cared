@@ -1,11 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { ReducedMessage } from '@tavern/core'
+import type { UIMessage, Message } from 'ai'
+import type { VListHandle } from 'virtua'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
+import { buildPromptMessages } from '@tavern/core'
 
 import { generateMessageId } from '@ownxai/sdk'
 
 import type { MessageNode } from './messages'
 import { MultimodalInput } from '@/app/_page/multimodal-input'
+import {
+  isCharacter,
+  isCharacterGroup,
+  useActiveCharacterOrGroup,
+} from '@/hooks/use-character-or-group'
 import { useMessages } from '@/hooks/use-message'
+import { useActiveLanguageModel } from '@/hooks/use-model'
+import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
+import { useSettings } from '@/hooks/use-settings'
 import { ContentArea } from './content-area'
 import { buildMessageTree, Messages } from './messages'
 
@@ -36,6 +48,7 @@ export function Chat({ id }: { id: string }) {
   const [branch, setBranch] = useState<MessageNode[]>()
 
   useEffect(() => {
+    // Only initialize the message branch if it is not already set or if the tree has changed
     if (!tree || branch) {
       return
     }
@@ -81,18 +94,114 @@ export function Chat({ id }: { id: string }) {
     })
   }, [])
 
+  const settings = useSettings()
+  const { activeCustomizedPreset: modelPreset } = useCustomizeModelPreset()
+  const { activeLanguageModel: model } = useActiveLanguageModel()
+  const charOrGroup = useActiveCharacterOrGroup()
+
+  const prepareRequestBody = useCallback(
+    ({ id, messages: uiMessages }: { id: string; messages: UIMessage[] }) => {
+      if (!branch || !model) {
+        throw new Error('Message branch is not initialized')
+      }
+
+      const lastMessage = uiMessages[uiMessages.length - 1]
+      if (!lastMessage) {
+        throw new Error('No messages')
+      }
+
+      const messages: ReducedMessage[] = branch.map((node) => node.message)
+      const last = messages[messages.length - 1]
+      const secondLast = messages[messages.length - 2]
+      if (lastMessage.id === last?.id) {
+        messages[messages.length - 1] = {
+          ...last,
+          content: lastMessage,
+        }
+      } else if (lastMessage.id === secondLast?.id) {
+        messages[messages.length - 2] = {
+          ...secondLast,
+          content: lastMessage,
+        }
+        // Remove the last message
+        messages.splice(messages.length - 1, 1)
+      } else {
+        messages.push({
+          id: lastMessage.id,
+          role: lastMessage.role as any,
+          content: lastMessage,
+          createdAt: lastMessage.createdAt ?? new Date(),
+        })
+      }
+
+      const promptMessages = buildPromptMessages({
+        messages,
+        settings,
+        modelPreset,
+        model,
+        character: isCharacter(charOrGroup) ? charOrGroup.content : undefined,
+        group: isCharacterGroup(charOrGroup)
+          ? {
+              characters: charOrGroup.characters.map((c) => c.content),
+              metadata: charOrGroup.metadata,
+            }
+          : undefined,
+      })
+
+      return {
+        id,
+        messages: promptMessages,
+        modelId: model.id,
+      }
+    },
+    [branch, charOrGroup, model, modelPreset, settings],
+  )
+
+  const onFinish = useCallback((message: Message) => {
+    console.log(message)
+    // TODO
+  }, [])
+
   const { messages, setMessages, handleSubmit, input, setInput, append, status, stop, reload } =
     useChat({
       id,
       experimental_throttle: 100,
       sendExtraMessageFields: true,
       generateId: generateMessageId,
+      experimental_prepareRequestBody: prepareRequestBody,
+      onFinish,
     })
+
+  const ref = useRef<VListHandle>(null)
+
+  const scrollToBottom = useCallback(() => {
+    if (!branch?.length) {
+      return
+    }
+    ref.current?.scrollToIndex(branch.length - 1, {
+      align: 'end',
+      // Using smooth scrolling over many items can kill performance benefit of virtual scroll.
+      smooth: false,
+    })
+  }, [branch?.length])
 
   return (
     <>
-      <ContentArea>{branch && <Messages messages={branch} navigate={navigate} />}</ContentArea>
-      <MultimodalInput />
+      <ContentArea>
+        {branch && <Messages ref={ref} messages={branch} navigate={navigate} />}
+      </ContentArea>
+
+      <MultimodalInput
+        input={input}
+        setInput={setInput}
+        status={status}
+        stop={stop}
+        messages={messages}
+        setMessages={setMessages}
+        append={append}
+        handleSubmit={handleSubmit}
+        scrollToBottom={scrollToBottom}
+      />
     </>
   )
 }

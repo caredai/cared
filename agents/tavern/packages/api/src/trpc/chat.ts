@@ -308,6 +308,9 @@ export const chatRouter = {
                     text: randomPickFirstMessage(character),
                   },
                 ],
+                annotations: [{
+                  characterId: character.id
+                }]
               },
             },
           ],
@@ -371,6 +374,9 @@ export const chatRouter = {
                 text: randomPickFirstMessage(character),
               },
             ],
+            annotations: [{
+              characterId: character.id
+            }]
           },
         }))
       }
