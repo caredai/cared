@@ -1,8 +1,8 @@
 import assert from 'assert'
 import type { MessageAnnotation } from '@tavern/core'
+import { messageContentSchema } from '@tavern/core'
 import { db } from '@tavern/db/client'
 import { appendResponseMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
-import hash from 'stable-hash'
 import { z } from 'zod'
 
 import type { UIMessage } from '@ownxai/sdk'
@@ -15,6 +15,12 @@ import { createOwnxClient } from '../ownx'
 const requestBodySchema = z.object({
   id: z.string(),
   messages: z.array(uiMessageSchema).min(1),
+  lastMessage: z.object({
+    id: z.string(),
+    parentId: z.string().optional(),
+    role: z.enum(['user', 'assistant']),
+    content: messageContentSchema,
+  }),
   characterId: z.string(),
   modelId: z.string(),
   preferredLanguage: z.enum(['chinese', 'japanese']).optional(),
@@ -30,7 +36,8 @@ export async function POST(request: Request): Promise<Response> {
     return new Response('Invalid request', { status: 400 })
   }
 
-  const { id, messages, characterId, modelId, preferredLanguage } = requestBody
+  const { id, messages, lastMessage, characterId, modelId, preferredLanguage } = requestBody
+  console.log('messages:', JSON.stringify(messages, undefined, 2))
 
   const { userId } = await auth()
   if (!userId) {
@@ -51,12 +58,17 @@ export async function POST(request: Request): Promise<Response> {
 
   const chat = (await ownxTrpc.chat.byId.query({ id })).chat
 
+  if (lastMessage.role === 'user') {
+    await ownxTrpc.message.create.mutate({
+      chatId: chat.id,
+      ...lastMessage,
+    })
+  }
+
   const annotation: MessageAnnotation = {
     characterId,
     modelId,
   }
-
-  const skip = true
 
   return createDataStreamResponse({
     execute: (dataStream) => {
@@ -74,35 +86,37 @@ export async function POST(request: Request): Promise<Response> {
         }),
         experimental_generateMessageId: generateMessageId,
         onChunk() {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (skip) return
           dataStream.writeMessageAnnotation(annotation as any)
         },
         onFinish: async ({ response }) => {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-          if (skip) return
-
-          const lastMessage = messages.at(-1)!
           const responseMessages = appendResponseMessages({
             // `appendResponseMessages` only use the last message in the input messages
-            messages: [{ ...lastMessage, content: '' }],
+            messages: [
+              {
+                ...lastMessage,
+                content: '',
+                parts: lastMessage.content.parts,
+                experimental_attachments: lastMessage.content.experimental_attachments,
+                annotations: lastMessage.content.annotations,
+              },
+            ],
             responseMessages: response.messages,
           })
 
           const newLastMessage = responseMessages.at(0)!
-          assert(newLastMessage.id === lastMessage.id)
+          assert.equal(newLastMessage.id, lastMessage.id)
 
-          if (hash(newLastMessage) !== hash(lastMessage)) {
-            assert(responseMessages.length === 1 && newLastMessage.role === 'assistant')
+          if (responseMessages.length === 1) {
+            assert.equal(newLastMessage.role, 'assistant')
             newLastMessage.annotations = [annotation as any]
             await ownxTrpc.message.update.mutate({
               id: newLastMessage.id,
               content: newLastMessage as UIMessage,
             })
           } else {
-            assert(responseMessages.length === 2)
+            assert.equal(responseMessages.length, 2)
             const msg = responseMessages.at(-1)!
-            assert(msg.role === 'assistant')
+            assert.equal(msg.role, 'assistant')
             msg.annotations = [annotation as any]
             await ownxTrpc.message.create.mutate({
               id: msg.id,

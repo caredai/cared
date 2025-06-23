@@ -283,7 +283,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         await writer.write(`${JSON.stringify(data)}\n`)
       }
 
-      await write({
+      void write({
         type: 'metadata',
         ...metadata,
       })

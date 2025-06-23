@@ -23,6 +23,7 @@ export function MultimodalInput({
   append: _,
   handleSubmit,
   scrollToBottom,
+  disabled,
 }: {
   input: UseChatHelpers['input']
   setInput: UseChatHelpers['setInput']
@@ -33,6 +34,7 @@ export function MultimodalInput({
   append: UseChatHelpers['append']
   handleSubmit: UseChatHelpers['handleSubmit']
   scrollToBottom: () => void
+  disabled: boolean
 }) {
   useEffect(() => {
     if (status === 'submitted') {
@@ -41,6 +43,9 @@ export function MultimodalInput({
   }, [status, scrollToBottom])
 
   const submit = useCallback(() => {
+    if (disabled) {
+      return
+    }
     if (status === 'error') {
       // remove last message
       setMessages(messages.slice(0, -1))
@@ -51,19 +56,23 @@ export function MultimodalInput({
       allowEmptySubmit: false,
     })
     // setInput('')
-  }, [handleSubmit, messages, setMessages, status])
+  }, [handleSubmit, messages, setMessages, status, disabled])
 
   return (
     <div className="pt-[1px] pb-[5px] bg-transparent">
       <div className="flex flex-row items-center rounded-b-lg px-1 text-sm bg-background focus-within:ring-1 focus-within:ring-ring">
-        <button className="inline-flex">
+        <button className="inline-flex"
+                disabled={disabled}
+        >
           <FontAwesomeIcon
             icon={faBars}
             size="2x"
             className="fa-fw text-muted-foreground hover:text-foreground transition-colors duration-200"
           />
         </button>
-        <button className="inline-flex">
+        <button className="inline-flex"
+                disabled={disabled}
+        >
           <FontAwesomeIcon
             icon={faMagicWandSparkles}
             size="2x"
@@ -84,7 +93,7 @@ export function MultimodalInput({
         />
         <button
           className="inline-flex ml-1"
-          disabled={status === 'submitted' || status === 'streaming'}
+          disabled={disabled || status === 'submitted' || status === 'streaming'}
           onClick={(event) => {
             event.preventDefault()
             if (status === 'ready' || status === 'error') {

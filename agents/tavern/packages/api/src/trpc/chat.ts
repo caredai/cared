@@ -1,8 +1,8 @@
 import { Character, CharacterChat, CharGroup, CharGroupChat } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
+import { format } from 'date-fns'
 import { and, desc, eq, inArray, lt } from 'drizzle-orm'
 import { z } from 'zod'
-import { format } from 'date-fns'
 
 import type { OwnxTrpcRouterInputs } from '@ownxai/sdk'
 
@@ -291,6 +291,8 @@ export const chatRouter = {
         })
       }
 
+      const firstMessage = randomPickFirstMessage(character)
+
       const chat = (
         await ownxTrpc.chat.create.mutate({
           // If id is provided, it will be used; otherwise, a new id will be generated
@@ -298,22 +300,26 @@ export const chatRouter = {
           metadata: {
             title: `${character.content.data.name} - ${format(new Date(), "yyyy-MM-dd@HH'h'mm'm'ss's'")}`,
           },
-          initialMessages: [
-            {
-              role: 'assistant',
-              content: {
-                parts: [
-                  {
-                    type: 'text',
-                    text: randomPickFirstMessage(character),
-                  },
-                ],
-                annotations: [{
-                  characterId: character.id
-                }]
+          ...(firstMessage && {
+            initialMessages: [
+              {
+                role: 'assistant',
+                content: {
+                  parts: [
+                    {
+                      type: 'text',
+                      text: firstMessage,
+                    },
+                  ],
+                  annotations: [
+                    {
+                      characterId: character.id,
+                    },
+                  ],
+                },
               },
-            },
-          ],
+            ],
+          }),
           includeLastMessage: true,
         })
       ).chat
@@ -357,7 +363,7 @@ export const chatRouter = {
         })
       }
 
-      let initialMessages: OwnxTrpcRouterInputs['chat']['create']['initialMessages'] | undefined
+      let initialMessages: OwnxTrpcRouterInputs['chat']['create']['initialMessages']
       if (group.characters.length) {
         const characters = await ctx.db.query.Character.findMany({
           where: and(
@@ -365,20 +371,30 @@ export const chatRouter = {
             eq(Character.userId, ctx.auth.userId),
           ),
         })
-        initialMessages = characters.map((character) => ({
-          role: 'assistant',
-          content: {
-            parts: [
-              {
-                type: 'text',
-                text: randomPickFirstMessage(character),
+        initialMessages = characters
+          .map((character) => {
+            const firstMessage = randomPickFirstMessage(character)
+            if (!firstMessage) {
+              return
+            }
+            return {
+              role: 'assistant' as const,
+              content: {
+                parts: [
+                  {
+                    type: 'text' as const,
+                    text: firstMessage,
+                  },
+                ],
+                annotations: [
+                  {
+                    characterId: character.id,
+                  },
+                ],
               },
-            ],
-            annotations: [{
-              characterId: character.id
-            }]
-          },
-        }))
+            }
+          })
+          .filter((message): message is NonNullable<typeof message> => !!message)
       }
 
       const chat = (

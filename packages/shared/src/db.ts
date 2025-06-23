@@ -29,7 +29,7 @@ export function makeIdValid(prefix: string) {
       return z.NEVER
     }
     const timestamp = parseTimestampFromId(id)
-    if (Math.abs(Date.now() - timestamp) > 1000 * 10) {
+    if (timestamp - Date.now() > 1000 * 10) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Invalid ID timestamp: should be within 10 seconds of current time',

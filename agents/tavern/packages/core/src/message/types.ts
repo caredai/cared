@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
-import { Message as _Message, messageContentSchema as _messageContentSchema } from '@ownxai/sdk'
+import type { Message as _Message } from '@ownxai/sdk'
+import { messageContentSchema as _messageContentSchema } from '@ownxai/sdk'
 
 export interface MessageAnnotation {
   characterId?: string // for 'assistant' role

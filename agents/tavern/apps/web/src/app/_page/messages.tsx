@@ -1,6 +1,7 @@
 import type { Message } from '@tavern/core'
 import type { VListHandle } from 'virtua'
-import { memo, RefObject, useMemo} from 'react'
+import type { RefObject} from 'react';
+import { memo, useMemo} from 'react'
 import { VList } from 'virtua'
 
 import { PreviewMessage } from '@/app/_page/message'
@@ -26,9 +27,10 @@ function PureMessages({
   }, [messages])
 
   return (
-    <VList ref={ref} reverse>
+    <VList ref={ref}>
       {messages.map((message, i) => (
         <PreviewMessage
+          key={message.message.id}
           message={message.message}
           index={indices[i]!.index}
           count={indices[i]!.count}

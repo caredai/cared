@@ -33,7 +33,7 @@ export function useActiveChatId() {
   }
 }
 
-export function useActiveChat() {
+export function useActiveChat(create?: boolean) {
   const { activeChatId, setActiveChat } = useActiveChatId()
 
   const activeCharOrGroup = useActiveCharacterOrGroup()
@@ -43,11 +43,11 @@ export function useActiveChat() {
 
   useEffect(() => {
     const id = chats?.pages[0]?.chats[0]?.id
-    if (activeCharOrGroup && isSuccess && !id) {
+    if (create && activeCharOrGroup && isSuccess && !id) {
       void createChat(activeCharOrGroup.id)
     }
     setActiveChat(id)
-  }, [activeCharOrGroup, chats, isSuccess, createChat, setActiveChat])
+  }, [create, activeCharOrGroup, chats, isSuccess, createChat, setActiveChat])
 
   const activeChat = useMemo(() => {
     if (!isSuccess || !activeChatId) return undefined

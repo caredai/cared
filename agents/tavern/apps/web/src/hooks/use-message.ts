@@ -1,6 +1,6 @@
 import type { InfiniteData } from '@tanstack/react-query'
 import type { AppRouter } from '@tavern/api'
-import type { Message, MessageAnnotation } from '@tavern/core'
+import type { Message, MessageContent } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback } from 'react'
 import { skipToken, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -38,6 +38,110 @@ export function useMessages(chatId?: string) {
 export function useMessage(chatId?: string, messageId?: string): Message | undefined {
   const { data } = useMessages(chatId)
   return data?.pages.flatMap((page) => page.messages).find((message) => message.id === messageId)
+}
+
+export function useCreateMessage(chatId?: string) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const createMutation = useMutation(
+    trpc.message.create.mutationOptions({
+      onMutate: async (newData) => {
+        // Cancel any outgoing refetches for message list query
+        if (chatId) {
+          await queryClient.cancelQueries({
+            queryKey: trpc.message.list.infiniteQueryKey({
+              chatId,
+              limit: PAGE_SIZE,
+            }),
+          })
+        }
+
+        // Snapshot the previous value
+        const previousData = chatId
+          ? queryClient.getQueryData<InfiniteData<MessageListOutput>>(
+              trpc.message.list.infiniteQueryKey({
+                chatId,
+                limit: PAGE_SIZE,
+              }),
+            )
+          : undefined
+
+        // Optimistically add the new message to the list
+        if (chatId) {
+          queryClient.setQueryData<InfiniteData<MessageListOutput>>(
+            trpc.message.list.infiniteQueryKey({
+              chatId,
+              limit: PAGE_SIZE,
+            }),
+            (old) => {
+              if (!old) return undefined
+
+              // @ts-ignore
+              const newMessage: Message = {
+                id: newData.id,
+                parentId: newData.parentId || null,
+                chatId: newData.chatId,
+                role: newData.role,
+                content: newData.content,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              }
+
+              return {
+                pages: old.pages.map((page, index) => {
+                  // Add the new message to the first page (most recent messages)
+                  if (index === 0) {
+                    return {
+                      ...page,
+                      messages: [newMessage, ...page.messages],
+                    }
+                  }
+                  return page
+                }),
+                pageParams: old.pageParams,
+              }
+            },
+          )
+        }
+
+        return { previousData }
+      },
+      onError: (error, newData, context) => {
+        // Rollback on error
+        if (context?.previousData && chatId) {
+          queryClient.setQueryData<InfiniteData<MessageListOutput>>(
+            trpc.message.list.infiniteQueryKey({
+              chatId,
+              limit: PAGE_SIZE,
+            }),
+            context.previousData,
+          )
+        }
+        toast.error(`Failed to create message: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (args: {
+      id: string
+      parentId?: string
+      role: 'user' | 'assistant'
+      content: MessageContent
+    }) => {
+      if (!chatId) {
+        return
+      }
+
+      return await createMutation.mutateAsync({
+        chatId,
+        ...args,
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [chatId],
+  )
 }
 
 export function useUpdateMessage(chatId?: string) {
@@ -110,16 +214,7 @@ export function useUpdateMessage(chatId?: string) {
   )
 
   return useCallback(
-    async (
-      id: string,
-      {
-        content,
-        annotation,
-      }: {
-        content?: string
-        annotation?: MessageAnnotation
-      },
-    ) => {
+    async (id: string, content: MessageContent) => {
       const message = messages?.pages
         .flatMap((page) => page.messages)
         .find((message) => message.id === id)
@@ -127,34 +222,13 @@ export function useUpdateMessage(chatId?: string) {
         return
       }
 
-      let found = false
-      const parts = message.content.parts.map((part) => {
-        if (part.type === 'text' && !found) {
-          found = true
-          return {
-            ...part,
-            text: content ?? part.text,
-          }
-        }
-        return part
-      })
-
-      const annotations: [MessageAnnotation] = annotation ? [annotation] : message.content.annotations
-
-      if (
-        (!content || hash(parts) === hash(message.content.parts)) &&
-        (!annotation || hash(annotations) === hash(message.content.annotations))
-      ) {
+      if (hash(content) === hash(message.content)) {
         return
       }
 
       return await updateMutation.mutateAsync({
         id,
-        content: {
-          ...message.content,
-          parts,
-          annotations,
-        },
+        content,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -236,11 +310,38 @@ export function useDeleteMessage(chatId?: string) {
                 }
               }
 
-              // If deleteTrailing is false, only delete the specified message
+              // If deleteTrailing is false, handle single message deletion with parentId updates
+              const targetMessage = old.pages
+                .flatMap((page) => page.messages)
+                .find((message) => message.id === newData.id)
+
+              if (!targetMessage) {
+                return old
+              }
+
+              // Check if this is a root message (no parentId)
+              if (!targetMessage.parentId) {
+                // Cannot delete root message without deleteTrailing, return unchanged
+                return old
+              }
+
+              // Update parentId of direct children to point to the deleted message's parent
+              // and remove the target message
               return {
                 pages: old.pages.map((page) => ({
                   ...page,
-                  messages: page.messages.filter((message) => message.id !== newData.id),
+                  messages: page.messages
+                    .map((message) => {
+                      // Update direct children's parentId
+                      if (message.parentId === newData.id) {
+                        return {
+                          ...message,
+                          parentId: targetMessage.parentId,
+                        }
+                      }
+                      return message
+                    })
+                    .filter((message) => message.id !== newData.id), // Remove the target message
                 })),
                 pageParams: old.pageParams,
               }
@@ -286,4 +387,104 @@ export function useDeleteMessage(chatId?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   )
+}
+
+export function useCachedMessage(chatId?: string) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const addCachedMessage = useCallback(
+    (message: Message) => {
+      if (!chatId) return
+
+      // Add message to the infinite query cache
+      queryClient.setQueryData<InfiniteData<MessageListOutput>>(
+        trpc.message.list.infiniteQueryKey({
+          chatId,
+          limit: PAGE_SIZE,
+        }),
+        (old) => {
+          if (!old) return undefined
+
+          return {
+            pages: old.pages.map((page, index) => {
+              // Add the new message to the first page (most recent messages)
+              if (index === 0) {
+                return {
+                  ...page,
+                  messages: [message, ...page.messages],
+                }
+              }
+              return page
+            }),
+            pageParams: old.pageParams,
+          }
+        },
+      )
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [chatId],
+  )
+
+  const updateCachedMessage = useCallback(
+    (message: Message) => {
+      if (!chatId) return
+
+      // Update message in the infinite query cache
+      queryClient.setQueryData<InfiniteData<MessageListOutput>>(
+        trpc.message.list.infiniteQueryKey({
+          chatId,
+          limit: PAGE_SIZE,
+        }),
+        (old) => {
+          if (!old) return undefined
+
+          return {
+            pages: old.pages.map((page) => ({
+              ...page,
+              messages: page.messages.map((msg) =>
+                msg.id === message.id ? { ...msg, ...message } : msg,
+              ),
+            })),
+            pageParams: old.pageParams,
+          }
+        },
+      )
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [chatId],
+  )
+
+  const removeCachedMessage = useCallback(
+    (messageId: string) => {
+      if (!chatId) return
+
+      // Remove message from the infinite query cache
+      queryClient.setQueryData<InfiniteData<MessageListOutput>>(
+        trpc.message.list.infiniteQueryKey({
+          chatId,
+          limit: PAGE_SIZE,
+        }),
+        (old) => {
+          if (!old) return undefined
+
+          return {
+            pages: old.pages.map((page) => ({
+              ...page,
+              messages: page.messages.filter((msg) => msg.id !== messageId),
+            })),
+            pageParams: old.pageParams,
+          }
+        },
+      )
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [chatId],
+  )
+
+  return {
+    addCachedMessage,
+    updateCachedMessage,
+    removeCachedMessage,
+  }
 }

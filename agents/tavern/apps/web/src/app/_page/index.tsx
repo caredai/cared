@@ -39,7 +39,7 @@ export function PageContent() {
     }
   }, [backgroundSettings.active.url])
 
-  const { activeChat } = useActiveChat()
+  const { activeChat } = useActiveChat(true)
 
   return (
     <div
@@ -51,7 +51,7 @@ export function PageContent() {
     >
       <div className="w-full lg:w-1/2 h-full flex flex-col relative">
         <Navbar />
-        {activeChat && <Chat id={activeChat.id} />}
+        <Chat id={activeChat?.id} />
       </div>
 
       <WelcomeDialog />

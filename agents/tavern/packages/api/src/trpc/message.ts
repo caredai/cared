@@ -36,7 +36,7 @@ export const messageRouter = {
     .input(
       z.object({
         id: z.string(),
-        parentId: z.string(),
+        parentId: z.string().optional(),
         chatId: z.string(),
         role: z.enum(['user', 'assistant']),
         content: messageContentSchema,

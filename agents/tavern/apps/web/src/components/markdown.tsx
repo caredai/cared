@@ -88,6 +88,13 @@ const components: Partial<Components> = {
       </h6>
     )
   },
+  q: ({ node: _, children, ...props }) => {
+    return (
+      <q className="text-orange-500" {...props}>
+        {children}
+      </q>
+    )
+  },
 }
 
 const remarkPlugins = [remarkGfm]
