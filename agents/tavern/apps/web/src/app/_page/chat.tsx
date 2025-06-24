@@ -1,4 +1,4 @@
-import type { Message, MessageContent } from '@tavern/core'
+import type { Message, MessageContent, MessageNode, ReducedChat } from '@tavern/core'
 import type { UIMessage } from 'ai'
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -8,7 +8,6 @@ import hash from 'stable-hash'
 
 import { generateMessageId } from '@ownxai/sdk'
 
-import type { MessageNode } from './messages'
 import { MultimodalInput } from '@/app/_page/multimodal-input'
 import {
   isCharacter,
@@ -23,9 +22,11 @@ import { useSettings } from '@/hooks/use-settings'
 import { ContentArea } from './content-area'
 import { buildMessageTree, Messages } from './messages'
 
-export function Chat({ id }: { id?: string }) {
+export function Chat({ chat }: { chat?: ReducedChat }) {
+  const chatId = chat?.id
+
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMessages(id)
+    useMessages(chatId)
 
   useEffect(() => {
     void (async function () {
@@ -105,12 +106,12 @@ export function Chat({ id }: { id?: string }) {
   const charOrGroup = useActiveCharacterOrGroup()
   const { activePersona: persona } = useActivePersona()
 
-  const { addCachedMessage, updateCachedMessage } = useCachedMessage(id)
+  const { addCachedMessage, updateCachedMessage } = useCachedMessage(chatId)
 
   const prepareRequestBody = useCallback(
     ({ id, messages: uiMessages }: { id: string; messages: UIMessage[] }) => {
-      if (!branch || !model) {
-        throw new Error('Message branch is not initialized')
+      if (!chat || !branch || !model || !persona || !charOrGroup) {
+        throw new Error('Not initialized')
       }
 
       const lastUiMessage = uiMessages[uiMessages.length - 1]
@@ -146,7 +147,7 @@ export function Chat({ id }: { id?: string }) {
               // TODO
               characterId: isCharacter(charOrGroup)
                 ? charOrGroup.id
-                : charOrGroup?.characters[0]?.id,
+                : charOrGroup.characters[0]?.id,
               modelId: model.id,
             },
           ],
@@ -163,8 +164,8 @@ export function Chat({ id }: { id?: string }) {
           ...content,
           annotations: [
             {
-              personaId: persona?.id,
-              personaName: persona?.name,
+              personaId: persona.id,
+              personaName: persona.name,
             },
           ],
         }
@@ -181,15 +182,24 @@ export function Chat({ id }: { id?: string }) {
         addCachedMessage(lastMessage)
       }
 
+      // TODO
+      const nextChar = isCharacter(charOrGroup) ? charOrGroup.content : charOrGroup.characters[0]?.content
+      if (!nextChar) {
+        throw new Error('No character')
+      }
+
       const promptMessages = buildPromptMessages({
         messages,
+        branch,
+        chat,
         settings,
         modelPreset,
         model,
-        character: isCharacter(charOrGroup) ? charOrGroup.content : undefined,
+        persona,
+        character: nextChar,
         group: isCharacterGroup(charOrGroup)
           ? {
-              characters: charOrGroup.characters.map((c) => c.content),
+              characters: charOrGroup.characters,
               metadata: charOrGroup.metadata,
             }
           : undefined,
@@ -203,11 +213,21 @@ export function Chat({ id }: { id?: string }) {
         modelId: model.id,
       }
     },
-    [branch, charOrGroup, model, modelPreset, settings, addCachedMessage, updateCachedMessage],
+    [
+      chat,
+      branch,
+      model,
+      settings,
+      modelPreset,
+      charOrGroup,
+      updateCachedMessage,
+      persona,
+      addCachedMessage,
+    ],
   )
 
   const { messages, setMessages, handleSubmit, input, setInput, append, status, stop } = useChat({
-    id,
+    id: chatId,
     experimental_throttle: 100,
     sendExtraMessageFields: true,
     generateId: generateMessageId,
@@ -243,7 +263,7 @@ export function Chat({ id }: { id?: string }) {
     if (!last || lastUiMessage.id > last.id) {
       addCachedMessage({
         id: lastUiMessage.id,
-        chatId: id,
+        chatId: chatId,
         parentId: last?.id ?? null,
         role: lastUiMessage.role as any,
         content,
@@ -255,7 +275,7 @@ export function Chat({ id }: { id?: string }) {
         content,
       })
     }
-  }, [branch, messages, persona, charOrGroup, model, id, addCachedMessage, updateCachedMessage])
+  }, [branch, messages, persona, charOrGroup, model, chatId, addCachedMessage, updateCachedMessage])
 
   const ref = useRef<VListHandle>(null)
 

@@ -30,3 +30,9 @@ export const messageContentSchema = _messageContentSchema
 export type Message = Omit<_Message, 'content'> & {
   content: MessageContent
 }
+
+export interface MessageNode {
+  message: Message
+  parent?: MessageNode
+  descendants: MessageNode[]
+}

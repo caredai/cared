@@ -632,6 +632,9 @@ importers:
       colorjs.io:
         specifier: ^0.5.2
         version: 0.5.2
+      droll:
+        specifier: ^0.2.1
+        version: 0.2.1
       png-chunk-text:
         specifier: ^1.0.0
         version: 1.0.0
@@ -644,6 +647,9 @@ importers:
       sanitize-filename:
         specifier: ^1.6.3
         version: 1.6.3
+      seedrandom:
+        specifier: ^3.0.5
+        version: 3.0.5
       unzipit:
         specifier: ^1.4.3
         version: 1.4.3
@@ -666,6 +672,9 @@ importers:
       '@types/png-chunks-extract':
         specifier: ^1.0.2
         version: 1.0.2
+      '@types/seedrandom':
+        specifier: ^3.0.8
+        version: 3.0.8
       eslint:
         specifier: 'catalog:'
         version: 9.25.1(jiti@2.4.2)
@@ -3180,6 +3189,9 @@ packages:
     peerDependencies:
       '@types/react': '*'
 
+  '@types/seedrandom@3.0.8':
+    resolution: {integrity: sha512-TY1eezMU2zH2ozQoAFAQFOPpvP15g+ZgSfTZt31AUUH/Rxtnz3H+A/Sv1Snw2/amp//omibc+AEkTaA8KUeOLQ==}
+
   '@types/through@0.0.33':
     resolution: {integrity: sha512-HsJ+z3QuETzP3cswwtzt2vEIiHBk/dCcHGhbmG5X3ecnwFD/lPrMpliGXxSCg03L9AhrdwA4Oz/qfspkDW+xGQ==}
 
@@ -3950,6 +3962,11 @@ packages:
     peerDependencies:
       drizzle-orm: '>=0.36.0'
       zod: 3.25.51
+
+  droll@0.2.1:
+    resolution: {integrity: sha512-fXxtxZSwGK6afeG18Vk6q/8LQDAnIylsvk/2tQhHwDOJmdB/x+YL9GLoSZUZXJkQ8LrBcyU/1EoIL1eSlpDMsg==}
+    engines: {node: '>=0.8.0'}
+    hasBin: true
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -5902,6 +5919,9 @@ packages:
 
   secure-json-parse@2.7.0:
     resolution: {integrity: sha512-6aU+Rwsezw7VR8/nyvKTx8QpWH9FrcYiXXlqC4z5d5XQBDRqtbfsRjnwGyqbi3gddNtWHuEk9OANUotL26qKUw==}
+
+  seedrandom@3.0.5:
+    resolution: {integrity: sha512-8OwmbklUNzwezjGInmZ+2clQmExQPvomqjL7LFqOYqtmuxRgQYqOD3mHaU+MvZn5FLUeVxVfQjwLZW/n/JFuqg==}
 
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
@@ -9392,6 +9412,8 @@ snapshots:
     dependencies:
       '@types/react': 19.1.2
 
+  '@types/seedrandom@3.0.8': {}
+
   '@types/through@0.0.33':
     dependencies:
       '@types/node': 22.15.2
@@ -10135,6 +10157,8 @@ snapshots:
     dependencies:
       drizzle-orm: 0.38.4(@cloudflare/workers-types@4.20250428.0)(@opentelemetry/api@1.9.0)(@types/pg@8.11.6)(@types/react@19.1.2)(@vercel/postgres@0.10.0)(kysely@0.27.6)(postgres@3.4.5)(react@19.1.0)
       zod: 3.25.51
+
+  droll@0.2.1: {}
 
   dunder-proto@1.0.1:
     dependencies:
@@ -12612,6 +12636,8 @@ snapshots:
   screenfull@5.2.0: {}
 
   secure-json-parse@2.7.0: {}
+
+  seedrandom@3.0.5: {}
 
   semver@6.3.1: {}
 

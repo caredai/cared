@@ -51,7 +51,7 @@ export function PageContent() {
     >
       <div className="w-full lg:w-1/2 h-full flex flex-col relative">
         <Navbar />
-        <Chat id={activeChat?.id} />
+        <Chat chat={activeChat} />
       </div>
 
       <WelcomeDialog />

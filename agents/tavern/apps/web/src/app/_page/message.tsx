@@ -133,7 +133,7 @@ const PurePreviewMessage = ({
           persona && <CharacterAvatar src={persona.imageUrl ?? defaultPng} alt={persona.name} />
         )}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex-1 flex flex-col gap-2">
           <div className="flex flex-wrap justify-between items-center gap-2">
             <div className="w-full md:w-auto flex justify-between items-center gap-2">
               <span>{char ? char.content.data.name : persona ? persona.name : ''}</span>

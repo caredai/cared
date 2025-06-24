@@ -1,7 +1,7 @@
-import type { Message } from '@tavern/core'
+import type { Message, MessageNode } from '@tavern/core'
+import type { RefObject } from 'react'
 import type { VListHandle } from 'virtua'
-import type { RefObject} from 'react';
-import { memo, useMemo} from 'react'
+import { memo, useMemo } from 'react'
 import { VList } from 'virtua'
 
 import { PreviewMessage } from '@/app/_page/message'
@@ -42,12 +42,6 @@ function PureMessages({
 }
 
 export const Messages = memo(PureMessages)
-
-export interface MessageNode {
-  message: Message
-  parent?: MessageNode
-  descendants: MessageNode[]
-}
 
 export function buildMessageTree(allMessages?: Message[]):
   | {

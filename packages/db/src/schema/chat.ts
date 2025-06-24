@@ -42,7 +42,7 @@ export interface ChatMetadata {
   rerankModel?: string // used for reranking memories
   imageModel?: string
 
-  [key: string]: unknown
+  custom?: unknown
 }
 
 const chatMetadataSchema = z
@@ -53,8 +53,8 @@ const chatMetadataSchema = z
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),
     imageModel: z.string().optional(),
+    custom: z.unknown().optional(),
   })
-  .catchall(z.unknown())
 
 export function generateChatId() {
   return generateId('chat')
