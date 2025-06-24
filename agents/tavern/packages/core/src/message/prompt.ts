@@ -8,6 +8,7 @@ import type { PersonaMetadata } from '../persona'
 import type { Settings } from '../settings'
 import type { Environment } from './macro'
 import type { MessageNode } from './types'
+import { parseDialogueExamples } from '../prompt'
 import { evaluateMacros as _evaluateMacros } from './macro'
 
 export type ReducedChat = Pick<Chat, 'id' | 'metadata' | 'createdAt'>
@@ -96,7 +97,30 @@ export function buildPromptMessages({
     globalVariables,
   }
 
-  const evaluateMacros = (content: string) => _evaluateMacros(content, env as any)
+  const evaluateBasicMacros = (content: string) => _evaluateMacros(content, env as any)
+
+  envFromChar.persona = evaluateBasicMacros(persona.metadata.description)
+  envFromChar.description = evaluateBasicMacros(character.data.description)
+  envFromChar.personality = evaluateBasicMacros(character.data.personality)
+  // TODO: chat scenario
+  envFromChar.scenario = evaluateBasicMacros(character.data.scenario)
+  envFromChar.mesExamplesRaw = evaluateBasicMacros(character.data.mes_example)
+  envFromChar.mesExamples = parseDialogueExamples(envFromChar.mesExamplesRaw).join('')
+  envFromChar.charPrompt = settings.miscellaneous.preferCharacterPrompt
+    ? evaluateBasicMacros(character.data.system_prompt)
+    : ''
+  envFromChar.charInstruction = envFromChar.charJailbreak = settings.miscellaneous
+    .preferCharacterJailbreak
+    ? evaluateBasicMacros(character.data.post_history_instructions)
+    : ''
+  envFromChar.charVersion = envFromChar.char_version = character.data.character_version
+  // TODO: group
+
+  const evaluateMacros = (content: string) =>
+    _evaluateMacros(content, {
+      ...env,
+      ...envFromChar,
+    } as any)
 
   return uiMessages.map((msg) => ({
     ...msg,

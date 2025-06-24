@@ -4,6 +4,7 @@ import type { AppearanceSettings } from './appearance'
 import type { BackgroundSettings } from './background'
 import type { CharacterSettings } from './character'
 import type { LorebookSettings } from './lorebook'
+import type { MiscellaneousSettings } from './miscellaneous'
 import type { ModelSettings } from './model'
 import type { ModelPresetSettings } from './model-preset'
 import type { PersonaSettings } from './persona'
@@ -13,6 +14,10 @@ import { appearanceSettingsSchema, fillInAppearanceSettingsWithDefaults } from '
 import { backgroundSettingsSchema, fillInBackgroundSettingsWithDefaults } from './background'
 import { characterSettingsSchema, fillInCharacterSettingsWithDefaults } from './character'
 import { fillInLorebookSettingsWithDefaults, lorebookSettingsSchema } from './lorebook'
+import {
+  fillInMiscellaneousSettingsWithDefaults,
+  miscellaneousSettingsSchema,
+} from './miscellaneous'
 import { fillInModelSettingsWithDefaults, modelSettingsSchema } from './model'
 import { fillInModelPresetSettingsWithDefaults, modelPresetSettingsSchema } from './model-preset'
 import { fillInPersonaSettingsWithDefaults, personaSettingsSchema } from './persona'
@@ -28,6 +33,7 @@ export * from './lorebook'
 export * from './character'
 export * from './persona'
 export * from './variables'
+export * from './miscellaneous'
 
 export interface Settings {
   firstRun: boolean
@@ -40,6 +46,7 @@ export interface Settings {
   character: CharacterSettings
   persona: PersonaSettings
   variables: VariablesSettings
+  miscellaneous: MiscellaneousSettings
 }
 
 export const settingsSchema = z.object({
@@ -53,6 +60,7 @@ export const settingsSchema = z.object({
   character: characterSettingsSchema,
   persona: personaSettingsSchema,
   variables: variablesSettingsSchema,
+  miscellaneous: miscellaneousSettingsSchema,
 })
 
 export function fillInSettingsWithDefaults(settings: Partial<Settings>): Settings {
@@ -67,5 +75,6 @@ export function fillInSettingsWithDefaults(settings: Partial<Settings>): Setting
     character: fillInCharacterSettingsWithDefaults(settings.character),
     persona: fillInPersonaSettingsWithDefaults(settings.persona),
     variables: fillInVariablesSettingsWithDefaults(settings.variables),
+    miscellaneous: fillInMiscellaneousSettingsWithDefaults(settings.miscellaneous),
   }
 }
