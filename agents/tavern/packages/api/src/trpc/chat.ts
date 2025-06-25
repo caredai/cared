@@ -302,22 +302,24 @@ export const chatRouter = {
           },
           ...(firstMessage && {
             initialMessages: [
-              {
-                role: 'assistant',
-                content: {
-                  parts: [
-                    {
-                      type: 'text',
-                      text: firstMessage,
-                    },
-                  ],
-                  annotations: [
-                    {
-                      characterId: character.id,
-                    },
-                  ],
+              [
+                {
+                  role: 'assistant',
+                  content: {
+                    parts: [
+                      {
+                        type: 'text',
+                        text: firstMessage,
+                      },
+                    ],
+                    annotations: [
+                      {
+                        characterId: character.id,
+                      },
+                    ],
+                  },
                 },
-              },
+              ],
             ],
           }),
           includeLastMessage: true,
@@ -363,7 +365,9 @@ export const chatRouter = {
         })
       }
 
-      let initialMessages: OwnxTrpcRouterInputs['chat']['create']['initialMessages']
+      let initialMessages:
+        | NonNullable<OwnxTrpcRouterInputs['chat']['create']['initialMessages']>[number]
+        | undefined
       if (group.characters.length) {
         const characters = await ctx.db.query.Character.findMany({
           where: and(
@@ -404,7 +408,7 @@ export const chatRouter = {
           metadata: {
             title: `${group.metadata.name} - ${format(new Date(), "yyyy-MM-dd@HH'h'mm'm'ss's'")}`,
           },
-          initialMessages,
+          initialMessages: initialMessages && [initialMessages],
           includeLastMessage: true,
         })
       ).chat

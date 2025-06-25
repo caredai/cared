@@ -80,7 +80,7 @@ export function useCreateMessage(chatId?: string) {
               // @ts-ignore
               const newMessage: Message = {
                 id: newData.id,
-                parentId: newData.parentId || null,
+                parentId: newData.parentId ?? null,
                 chatId: newData.chatId,
                 role: newData.role,
                 content: newData.content,
@@ -137,6 +137,7 @@ export function useCreateMessage(chatId?: string) {
       return await createMutation.mutateAsync({
         chatId,
         ...args,
+        isRoot: !args.parentId,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,9 +320,12 @@ export function useDeleteMessage(chatId?: string) {
                 return old
               }
 
-              // Check if this is a root message (no parentId)
-              if (!targetMessage.parentId) {
-                // Cannot delete root message without deleteTrailing, return unchanged
+              const directChildrenCount = old.pages
+                .flatMap((page) => page.messages)
+                .filter((message) => message.parentId === newData.id).length
+
+              if (directChildrenCount > 1 && !targetMessage.parentId) {
+                // Cannot delete a root message without deleting its descendant messages
                 return old
               }
 

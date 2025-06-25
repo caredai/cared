@@ -67,38 +67,66 @@ export function Chat({ chat }: { chat?: ReducedChat }) {
     setBranch(nodes.reverse())
   }, [tree])
 
-  const navigate = useCallback((current: MessageNode, previous: boolean) => {
-    const index = current.parent?.descendants.findIndex((m) => m === current)
-    if (index === undefined || index < 0) {
-      return
-    }
-    const newIndex = previous ? index - 1 : index + 1
-    if (newIndex < 0 || newIndex >= (current.parent?.descendants.length ?? 0)) {
-      return
-    }
-    const newCurrent = current.parent?.descendants[newIndex]
-    if (!newCurrent) {
-      return
-    }
-    setBranch((branch) => {
-      if (!branch) {
-        return branch
+  const navigate = useCallback(
+    (current: MessageNode, previous: boolean) => {
+      if (!tree) {
+        return
       }
-      const position = branch.findIndex((m) => m === current)
-      if (position < 0) {
-        return branch
+      const isRoot = tree.tree.find((node) => node === current)
+      const siblings = isRoot ? tree.tree : current.parent?.descendants
+
+      const index = siblings?.findIndex((node) => node === current)
+      if (index === undefined || index < 0) {
+        return
       }
-      const newBranch = [...branch.slice(0, position)]
-      let next: MessageNode | undefined = newCurrent
-      while (next) {
-        newBranch.push(next)
-        next = next.descendants.reduce((latest, node) => {
-          return !latest || latest.message.id < node.message.id ? node : latest
-        }, next.descendants[0])
+      const newIndex = previous ? index - 1 : index + 1
+      if (newIndex < 0 || newIndex >= (siblings?.length ?? 0)) {
+        return
       }
-      return newBranch
-    })
-  }, [])
+      const newCurrent = siblings?.[newIndex]
+      if (!newCurrent) {
+        return
+      }
+      setBranch((branch) => {
+        if (isRoot) {
+          const nodes = []
+          let c: MessageNode | undefined = newCurrent
+          while (c) {
+            nodes.push(c)
+            let latest: MessageNode | undefined = undefined
+            let maxId = ''
+            for (const child of c.descendants) {
+              if (!maxId || child.message.id > maxId) {
+                latest = child
+                maxId = child.message.id
+              }
+            }
+            c = latest
+          }
+          setBranch(nodes)
+          return
+        }
+
+        if (!branch) {
+          return branch
+        }
+        const position = branch.findIndex((m) => m === current)
+        if (position < 0) {
+          return branch
+        }
+        const newBranch = [...branch.slice(0, position)]
+        let next: MessageNode | undefined = newCurrent
+        while (next) {
+          newBranch.push(next)
+          next = next.descendants.reduce((latest, node) => {
+            return !latest || latest.message.id < node.message.id ? node : latest
+          }, next.descendants[0])
+        }
+        return newBranch
+      })
+    },
+    [tree],
+  )
 
   const settings = useSettings()
   const { activeCustomizedPreset: modelPreset } = useCustomizeModelPreset()

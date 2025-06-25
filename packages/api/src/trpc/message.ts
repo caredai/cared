@@ -159,12 +159,21 @@ export const messageRouter = {
         summary: 'Create a new message in a chat',
       },
     })
-    .input(CreateMessageSchema)
+    .input(CreateMessageSchema.extend({
+      isRoot: z.boolean().optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       await getChatById(ctx, input.chatId)
 
       let parent: Message | undefined
       if (input.parentId) {
+        if (input.isRoot) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Cannot specify parentId for root messages',
+          })
+        }
+
         parent = await ctx.db.query.Message.findFirst({
           where: and(eq(Message.chatId, input.chatId), eq(Message.id, input.parentId)),
         })
@@ -174,9 +183,9 @@ export const messageRouter = {
             message: 'Parent message not found',
           })
         }
-      } else {
+      } else if (!input.isRoot) {
         // If no parentId is provided, get the last (newest) message in the chat.
-        // Only empty for the first message to be created.
+        // Only empty for the root message to be created.
         parent = await ctx.db.query.Message.findFirst({
           where: eq(Message.chatId, input.chatId),
           orderBy: desc(Message.id),
@@ -284,13 +293,6 @@ export const messageRouter = {
 
       // If deleteTrailing is not set, only delete the specified message
       if (!input.deleteTrailing) {
-        if (!message.parentId) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Cannot delete a root message without deleting its descendant messages',
-          })
-        }
-
         return await ctx.db.transaction(async (tx) => {
           // Check if there are direct child messages that need parentId update
           const directChildrenCount = await tx
@@ -298,6 +300,13 @@ export const messageRouter = {
             .from(Message)
             .where(and(eq(Message.chatId, message.chatId), eq(Message.parentId, message.id)))
             .then((result) => result[0]?.count ?? 0)
+
+          if (directChildrenCount > 1 && !message.parentId) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Cannot delete a root message without deleting its descendant messages (multiple descendant messages exist)',
+            })
+          }
 
           // Update parentId of direct children to point to the deleted message's parent
           if (directChildrenCount > 0) {

@@ -114,7 +114,7 @@ export const Message = pgTable(
   'message',
   {
     id: text().primaryKey().notNull().$defaultFn(generateMessageId),
-    // Parent message id. Only empty for the first message.
+    // Parent message id. Only empty for the root messages.
     parentId: text().references((): AnyPgColumn => Message.id),
     chatId: text()
       .notNull()

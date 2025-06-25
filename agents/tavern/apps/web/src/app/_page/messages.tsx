@@ -45,7 +45,7 @@ export const Messages = memo(PureMessages)
 
 export function buildMessageTree(allMessages?: Message[]):
   | {
-      tree: MessageNode
+      tree: MessageNode[]
       latest: MessageNode
     }
   | undefined {
@@ -66,11 +66,11 @@ export function buildMessageTree(allMessages?: Message[]):
     }
   })
 
-  // Find root message (message with empty parentId)
-  const rootMessage = allMessages.find((message) => !message.parentId)
+  // Find root messages (message with empty parentId)
+  const rootMessages = allMessages.filter((message) => !message.parentId)
 
   // If no root message found, return empty
-  if (!rootMessage) {
+  if (!rootMessages.length) {
     return
   }
 
@@ -99,7 +99,7 @@ export function buildMessageTree(allMessages?: Message[]):
     return currentNode
   }
 
-  const tree = buildNode(rootMessage)
+  const tree = rootMessages.map(rootMessage => buildNode(rootMessage))
 
   return {
     tree,

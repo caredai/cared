@@ -252,6 +252,7 @@ export const chatRouter = {
    * Create a new chat.
    * Only accessible by authenticated users.
    * @param input - The chat data following the {@link CreateChatSchema}
+   * @param input.initialMessages - Array of message branches, where each branch is an array of messages. Each branch represents a separate conversation thread.
    * @returns The created chat
    */
   create: appUserProtectedProcedure
@@ -271,40 +272,45 @@ export const chatRouter = {
       }).extend({
         initialMessages: z
           .array(
-            CreateMessageSchema.pick({
-              id: true,
-              role: true,
-              agentId: true,
-              content: true,
-              metadata: true,
-            }),
+            z.array(
+              CreateMessageSchema.pick({
+                id: true,
+                role: true,
+                agentId: true,
+                content: true,
+                metadata: true,
+              }),
+            ),
           )
           .refine(
-            (messages) => {
-              // Check if all messages have id or none have id
-              const hasIds = messages.every((msg) => msg.id)
-              const noIds = messages.every((msg) => !msg.id)
-              return hasIds || noIds
-            },
-            {
-              message: 'All messages must either have IDs or none should have IDs',
-            },
-          )
-          .refine(
-            (messages) => {
-              // If messages have IDs, check their order
-              if (!messages.length || messages[0]?.id === undefined) return true
-              for (let i = 1; i < messages.length; i++) {
-                const currentId = messages[i]?.id
-                const prevId = messages[i - 1]?.id
-                if (!currentId || !prevId || currentId <= prevId) {
+            (branches) => {
+              // Check if all branches have valid message structures
+              return branches.every((branch) => {
+                if (branch.length === 0) return false
+
+                // Check if all messages in a branch have id or none have id
+                const hasIds = branch.every((msg) => msg.id)
+                const noIds = branch.every((msg) => !msg.id)
+                if (!(hasIds || noIds)) {
                   return false
                 }
-              }
-              return true
+
+                // If messages have IDs, check their order within the branch
+                if (hasIds) {
+                  for (let i = 1; i < branch.length; i++) {
+                    const currentId = branch[i]?.id
+                    const prevId = branch[i - 1]?.id
+                    if (!currentId || !prevId || currentId <= prevId) {
+                      return false
+                    }
+                  }
+                }
+
+                return true
+              })
             },
             {
-              message: 'Message IDs must be in ascending order',
+              message: 'All messages in each branch must either have IDs or none should have IDs, and IDs must be in ascending order within each branch',
             },
           )
           .optional(),
@@ -354,24 +360,32 @@ export const chatRouter = {
         let messages: Message[] = []
         // Create initial messages if any
         if (input.initialMessages && input.initialMessages.length > 0) {
-          // First pass: generate IDs for all messages
-          const messageIds = input.initialMessages.map((msg) => msg.id ?? generateMessageId())
+          // Process each branch separately and collect all messages
+          const allBranchMessages: (typeof CreateMessageSchema._type)[] = []
+          for (const branch of input.initialMessages) {
+            if (branch.length === 0) continue
 
-          // Second pass: create messages with IDs and parentIds
-          const messagesWithIds = input.initialMessages.map(
-            (msg, index) =>
-              ({
-                ...msg,
-                id: messageIds[index],
-                chatId: chat.id,
-                // Only set parentId for messages after the first one
-                parentId: index === 0 ? undefined : messageIds[index - 1],
-              }) satisfies typeof CreateMessageSchema._type,
-          )
+            // First pass: generate IDs for all messages in this branch
+            const messageIds = branch.map((msg) => msg.id ?? generateMessageId())
 
-          messages = await tx.insert(Message).values(messagesWithIds).returning()
+            // Second pass: build messages with IDs and parentIds for this branch
+            const branchMessages = branch.map(
+              (msg, msgIndex) =>
+                ({
+                  ...msg,
+                  id: messageIds[msgIndex],
+                  chatId: chat.id,
+                  // Only set parentId for messages after the first one in the branch
+                  parentId: msgIndex === 0 ? undefined : messageIds[msgIndex - 1],
+                }) satisfies typeof CreateMessageSchema._type,
+            )
+            allBranchMessages.push(...branchMessages)
+          }
 
-          if (messages.length !== input.initialMessages.length) {
+          // Create messages
+          messages = await tx.insert(Message).values(allBranchMessages).returning()
+
+          if (messages.length !== input.initialMessages.flat().length) {
             throw new TRPCError({
               code: 'INTERNAL_SERVER_ERROR',
               message: 'Failed to create initial messages',

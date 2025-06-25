@@ -40,19 +40,21 @@ export const messageRouter = {
         chatId: z.string(),
         role: z.enum(['user', 'assistant']),
         content: messageContentSchema,
+        isRoot: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const ownx = createOwnxClient(ctx)
       const ownxTrpc = ownx.trpc
 
-      const { id, parentId, chatId, role, content } = input
+      const { id, parentId, chatId, role, content, isRoot } = input
       const { message } = await ownxTrpc.message.create.mutate({
         id,
         parentId,
         chatId,
         role,
         content,
+        isRoot,
       })
 
       return {
