@@ -183,7 +183,9 @@ export function Chat({ chat }: { chat?: ReducedChat }) {
       }
 
       // TODO
-      const nextChar = isCharacter(charOrGroup) ? charOrGroup.content : charOrGroup.characters[0]?.content
+      const nextChar = isCharacter(charOrGroup)
+        ? charOrGroup.content
+        : charOrGroup.characters[0]?.content
       if (!nextChar) {
         throw new Error('No character')
       }
@@ -197,12 +199,7 @@ export function Chat({ chat }: { chat?: ReducedChat }) {
         model,
         persona,
         character: nextChar,
-        group: isCharacterGroup(charOrGroup)
-          ? {
-              characters: charOrGroup.characters,
-              metadata: charOrGroup.metadata,
-            }
-          : undefined,
+        group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
       })
 
       return {

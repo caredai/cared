@@ -148,7 +148,7 @@ export function CharacterAdvancedForm({
   return (
     <Portal.Root
       container={contentAreaRef?.current}
-      className="absolute w-full h-full z-5000 flex flex-col gap-6 p-2 overflow-y-auto bg-background border border-border rounded-lg shadow-lg"
+      className="absolute top-0 w-full h-full z-5000 flex flex-col gap-6 p-2 overflow-y-auto bg-background border border-border rounded-lg shadow-lg"
     >
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-medium">

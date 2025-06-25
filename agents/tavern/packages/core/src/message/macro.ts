@@ -43,15 +43,17 @@ export interface Environment {
   charVersion: StrMaybeFunc
   char_version: StrMaybeFunc
 
+  // Should include the `main` or `jailbreak` prompt from model preset.
+  // Used in character Prompt Overrides fields.
   original: StrMaybeFunc
 
   model: StrMaybeFunc
 
   input?: string
 
-  chat: ReducedChat
-  messages: ReducedMessage[]
-  branch: MessageNode[]
+  chat?: ReducedChat
+  messages?: ReducedMessage[]
+  branch?: MessageNode[]
   modelPreset: ModelPreset
   modelInfo: ModelInfo
 
@@ -98,11 +100,11 @@ export function evaluateMacros(
     { regex: /{{input}}/gi, replace: () => env.input ?? '' },
   ]
 
-  const lastMessage = env.messages.at(-1)
-  const lastUserMessage = env.messages.filter((m) => m.role === 'user').at(-1)
-  const lastCharMessage = env.messages.filter((m) => m.role === 'assistant').at(-1)
+  const lastMessage = env.messages?.at(-1)
+  const lastUserMessage = env.messages?.filter((m) => m.role === 'user').at(-1)
+  const lastCharMessage = env.messages?.filter((m) => m.role === 'assistant').at(-1)
 
-  const lastNode = env.branch.at(-1)
+  const lastNode = env.branch?.at(-1)
 
   const getContent = (message?: ReducedMessage) => {
     return (
@@ -125,11 +127,11 @@ export function evaluateMacros(
     {
       regex: /{{firstIncludedMessageId}}/gi,
       replace: () =>
-        env.messages.find(
+        env.messages?.find(
           (m) => !!(m.content.annotations?.at(0) as MessageAnnotation | undefined)?.modelId,
         )?.id ?? '',
     },
-    { regex: /{{firstDisplayedMessageId}}/gi, replace: () => env.messages.at(0)?.id ?? '' },
+    { regex: /{{firstDisplayedMessageId}}/gi, replace: () => env.messages?.at(0)?.id ?? '' },
     {
       regex: /{{lastSwipeId}}/gi,
       replace: () => String(lastNode?.parent?.descendants.length ?? 1),
@@ -167,7 +169,7 @@ export function evaluateMacros(
     },
     getTimeDiffMacro(),
     getRandomReplaceMacro(),
-    getPickReplaceMacro(rawContent, env.chat.id),
+    ...(env.chat ? [getPickReplaceMacro(rawContent, env.chat.id)] : []),
   ]
 
   const nonce = uuid()
