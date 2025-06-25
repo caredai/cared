@@ -6,7 +6,7 @@ import { v4 as uuid } from 'uuid'
 import type { ModelInfo } from '@ownxai/sdk'
 
 import type { ModelPreset } from '../model-preset'
-import type { ReducedChat, ReducedMessage } from './prompt'
+import type { ReducedChat, ReducedMessage } from '../types'
 import type { MessageAnnotation, MessageNode } from './types'
 import {
   addVariable,

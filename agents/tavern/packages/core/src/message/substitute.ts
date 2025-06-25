@@ -4,14 +4,14 @@ import type { CharacterCardV2 } from '../character'
 import type { CharGroupMetadata } from '../character-group'
 import type { ModelPreset } from '../model-preset'
 import type { Settings } from '../settings'
-import type { Environment } from './macro'
 import type {
   ReducedCharacter,
   ReducedChat,
   ReducedGroup,
   ReducedMessage,
   ReducedPersona,
-} from './prompt'
+} from '../types'
+import type { Environment } from './macro'
 import type { MessageNode } from './types'
 import { GroupGenerationMode } from '../character-group'
 import { parseDialogueExamples } from '../prompt'

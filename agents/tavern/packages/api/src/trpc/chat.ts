@@ -1,10 +1,9 @@
+import { messageContentSchema } from '@tavern/core'
 import { Character, CharacterChat, CharGroup, CharGroupChat } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { format } from 'date-fns'
 import { and, desc, eq, inArray, lt } from 'drizzle-orm'
 import { z } from 'zod'
-
-import type { OwnxTrpcRouterInputs } from '@ownxai/sdk'
 
 import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
@@ -274,6 +273,17 @@ export const chatRouter = {
       z.object({
         characterId: z.string(),
         id: z.string().optional(),
+        initialMessages: z
+          .array(
+            z.array(
+              z.object({
+                id: z.string().optional(),
+                role: z.enum(['system', 'user', 'assistant']),
+                content: messageContentSchema,
+              }),
+            ),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -291,8 +301,6 @@ export const chatRouter = {
         })
       }
 
-      const firstMessage = randomPickFirstMessage(character)
-
       const chat = (
         await ownxTrpc.chat.create.mutate({
           // If id is provided, it will be used; otherwise, a new id will be generated
@@ -300,28 +308,7 @@ export const chatRouter = {
           metadata: {
             title: `${character.content.data.name} - ${format(new Date(), "yyyy-MM-dd@HH'h'mm'm'ss's'")}`,
           },
-          ...(firstMessage && {
-            initialMessages: [
-              [
-                {
-                  role: 'assistant',
-                  content: {
-                    parts: [
-                      {
-                        type: 'text',
-                        text: firstMessage,
-                      },
-                    ],
-                    annotations: [
-                      {
-                        characterId: character.id,
-                      },
-                    ],
-                  },
-                },
-              ],
-            ],
-          }),
+          initialMessages: input.initialMessages,
           includeLastMessage: true,
         })
       ).chat
@@ -348,6 +335,17 @@ export const chatRouter = {
       z.object({
         groupId: z.string(),
         id: z.string().optional(),
+        initialMessages: z
+          .array(
+            z.array(
+              z.object({
+                id: z.string().optional(),
+                role: z.enum(['system', 'user', 'assistant']),
+                content: messageContentSchema,
+              }),
+            ),
+          )
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -365,42 +363,6 @@ export const chatRouter = {
         })
       }
 
-      let initialMessages:
-        | NonNullable<OwnxTrpcRouterInputs['chat']['create']['initialMessages']>[number]
-        | undefined
-      if (group.characters.length) {
-        const characters = await ctx.db.query.Character.findMany({
-          where: and(
-            inArray(Character.id, group.characters),
-            eq(Character.userId, ctx.auth.userId),
-          ),
-        })
-        initialMessages = characters
-          .map((character) => {
-            const firstMessage = randomPickFirstMessage(character)
-            if (!firstMessage) {
-              return
-            }
-            return {
-              role: 'assistant' as const,
-              content: {
-                parts: [
-                  {
-                    type: 'text' as const,
-                    text: firstMessage,
-                  },
-                ],
-                annotations: [
-                  {
-                    characterId: character.id,
-                  },
-                ],
-              },
-            }
-          })
-          .filter((message): message is NonNullable<typeof message> => !!message)
-      }
-
       const chat = (
         await ownxTrpc.chat.create.mutate({
           // If id is provided, it will be used; otherwise, a new id will be generated
@@ -408,7 +370,7 @@ export const chatRouter = {
           metadata: {
             title: `${group.metadata.name} - ${format(new Date(), "yyyy-MM-dd@HH'h'mm'm'ss's'")}`,
           },
-          initialMessages: initialMessages && [initialMessages],
+          initialMessages: input.initialMessages,
           includeLastMessage: true,
         })
       ).chat
@@ -489,13 +451,4 @@ export const chatRouter = {
         })
       })
     }),
-}
-
-function randomPickFirstMessage(character: Character) {
-  const arr = [
-    character.content.data.first_mes,
-    ...character.content.data.alternate_greetings,
-  ]
-  const randomIndex = Math.floor(Math.random() * arr.length)
-  return arr[randomIndex]!
 }

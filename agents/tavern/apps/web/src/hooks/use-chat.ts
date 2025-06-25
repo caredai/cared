@@ -9,9 +9,11 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
+import { getCharFirstMessages, randomPickCharFirstMessage, substituteParams } from '@tavern/core'
 import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
 
+import { useActive } from '@/hooks/use-active'
 import { useCharacters } from '@/hooks/use-character'
 import { useCharacterGroups } from '@/hooks/use-character-group'
 import { useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
@@ -33,21 +35,16 @@ export function useActiveChatId() {
   }
 }
 
-export function useActiveChat(create?: boolean) {
+export function useActiveChat() {
   const { activeChatId, setActiveChat } = useActiveChatId()
 
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { data: chats, isSuccess } = useChatsByCharacterOrGroup(activeCharOrGroup?.id)
 
-  const createChat = useCreateChat()
-
   useEffect(() => {
     const id = chats?.pages[0]?.chats[0]?.id
-    if (create && activeCharOrGroup && isSuccess && !id) {
-      void createChat(activeCharOrGroup.id)
-    }
     setActiveChat(id)
-  }, [create, activeCharOrGroup, chats, isSuccess, createChat, setActiveChat])
+  }, [chats, setActiveChat])
 
   const activeChat = useMemo(() => {
     if (!isSuccess || !activeChatId) return undefined
@@ -250,21 +247,98 @@ export function useCreateChat() {
     }),
   )
 
+  const { settings, modelPreset, model, charOrGroup, persona } = useActive()
+
   return useCallback(
-    async (characterId: string, chatId?: string) => {
-      const character = characters.find((c) => c.id === characterId)
+    async (charOrGroupId: string, chatId?: string) => {
+      if (!model || !charOrGroup || !persona) {
+        return
+      }
+
+      const character = characters.find((c) => c.id === charOrGroupId)
       if (character) {
+        const { evaluateMacros } = substituteParams({
+          settings,
+          modelPreset,
+          model,
+          persona,
+          character: character.content,
+        })
+
+        const firstMsgs = getCharFirstMessages(character)
+
+        const initialMessages = firstMsgs.map((firstMsg) => {
+          return [
+            {
+              role: 'assistant',
+              content: {
+                parts: [
+                  {
+                    type: 'text',
+                    text: evaluateMacros(firstMsg),
+                  },
+                ],
+                annotations: [
+                  {
+                    characterId: character.id,
+                  },
+                ],
+              },
+            },
+          ]
+        })
+
         return await createForCharacterMutation.mutateAsync({
-          characterId: characterId,
+          characterId: charOrGroupId,
           id: chatId,
+          // @ts-ignore
+          initialMessages,
         })
       }
 
-      const group = groups.find((g) => g.id === characterId)
+      const group = groups.find((g) => g.id === charOrGroupId)
       if (group) {
+        const initialMessages = [
+          group.characters
+            .map((character) => {
+              const { evaluateMacros } = substituteParams({
+                settings,
+                modelPreset,
+                model,
+                persona,
+                character: character.content,
+                group,
+              })
+
+              const firstMsg = randomPickCharFirstMessage(character)
+              if (!firstMsg) {
+                return
+              }
+              return {
+                role: 'assistant' as const,
+                content: {
+                  parts: [
+                    {
+                      type: 'text' as const,
+                      text: evaluateMacros(firstMsg),
+                    },
+                  ],
+                  annotations: [
+                    {
+                      characterId: character.id,
+                    },
+                  ],
+                },
+              }
+            })
+            .filter((message): message is NonNullable<typeof message> => !!message),
+        ]
+
         return await createForGroupMutation.mutateAsync({
-          groupId: characterId,
+          groupId: charOrGroupId,
           id: chatId,
+          // @ts-ignore
+          initialMessages,
         })
       }
 
@@ -273,6 +347,23 @@ export function useCreateChat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [characters, groups],
   )
+}
+
+export function useCreateFirstChatIfAbsent() {
+  const { setActiveChat } = useActiveChatId()
+
+  const activeCharOrGroup = useActiveCharacterOrGroup()
+  const { data: chats, isSuccess } = useChatsByCharacterOrGroup(activeCharOrGroup?.id)
+
+  const createChat = useCreateChat()
+
+  useEffect(() => {
+    const id = chats?.pages[0]?.chats[0]?.id
+    if (activeCharOrGroup && isSuccess && !id) {
+      void createChat(activeCharOrGroup.id)
+    }
+    setActiveChat(id)
+  }, [activeCharOrGroup, chats, isSuccess, createChat, setActiveChat])
 }
 
 export function useUpdateChat(characterId?: string, groupId?: string) {

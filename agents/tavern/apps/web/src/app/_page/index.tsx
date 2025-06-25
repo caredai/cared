@@ -7,7 +7,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import { Chat } from '@/app/_page/chat'
 import { backgroundFittings } from '@/app/_panels/background-image'
-import { useActiveChat } from '@/hooks/use-chat'
+import { useCreateFirstChatIfAbsent } from '@/hooks/use-chat'
 import { useBackgroundSettings } from '@/hooks/use-settings'
 import { signIn } from '@/lib/sign-in'
 import { useTRPC } from '@/trpc/client'
@@ -39,7 +39,7 @@ export function PageContent() {
     }
   }, [backgroundSettings.active.url])
 
-  const { activeChat } = useActiveChat(true)
+  useCreateFirstChatIfAbsent()
 
   return (
     <div
@@ -51,7 +51,7 @@ export function PageContent() {
     >
       <div className="w-full lg:w-1/2 h-full flex flex-col relative">
         <Navbar />
-        <Chat chat={activeChat} />
+        <Chat />
       </div>
 
       <WelcomeDialog />

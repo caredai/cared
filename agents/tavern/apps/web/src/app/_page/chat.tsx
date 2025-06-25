@@ -1,4 +1,4 @@
-import type { Message, MessageContent, MessageNode, ReducedChat } from '@tavern/core'
+import type { Message, MessageContent, MessageNode } from '@tavern/core'
 import type { UIMessage } from 'ai'
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -9,20 +9,15 @@ import hash from 'stable-hash'
 import { generateMessageId } from '@ownxai/sdk'
 
 import { MultimodalInput } from '@/app/_page/multimodal-input'
-import {
-  isCharacter,
-  isCharacterGroup,
-  useActiveCharacterOrGroup,
-} from '@/hooks/use-character-or-group'
+import { useActive } from '@/hooks/use-active'
+import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage, useMessages } from '@/hooks/use-message'
-import { useActiveLanguageModel } from '@/hooks/use-model'
-import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
-import { useActivePersona } from '@/hooks/use-persona'
-import { useSettings } from '@/hooks/use-settings'
 import { ContentArea } from './content-area'
 import { buildMessageTree, Messages } from './messages'
 
-export function Chat({ chat }: { chat?: ReducedChat }) {
+export function Chat() {
+  const { settings, modelPreset, model, charOrGroup, persona, chat } = useActive()
+
   const chatId = chat?.id
 
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -128,12 +123,6 @@ export function Chat({ chat }: { chat?: ReducedChat }) {
     [tree],
   )
 
-  const settings = useSettings()
-  const { activeCustomizedPreset: modelPreset } = useCustomizeModelPreset()
-  const { activeLanguageModel: model } = useActiveLanguageModel()
-  const charOrGroup = useActiveCharacterOrGroup()
-  const { activePersona: persona } = useActivePersona()
-
   const { addCachedMessage, updateCachedMessage } = useCachedMessage(chatId)
 
   const prepareRequestBody = useCallback(
@@ -220,7 +209,7 @@ export function Chat({ chat }: { chat?: ReducedChat }) {
 
       const promptMessages = buildPromptMessages({
         messages,
-        branch,
+        branch, // TODO
         chat,
         settings,
         modelPreset,
