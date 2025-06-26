@@ -5,8 +5,15 @@ import { format } from 'date-fns'
 import { and, desc, eq, inArray, lt } from 'drizzle-orm'
 import { z } from 'zod'
 
+import type { Chat as _Chat } from '@ownxai/sdk'
+
 import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
+
+export type Chat = _Chat & {
+  characterId?: string
+  groupId?: string
+}
 
 export const chatRouter = {
   list: userProtectedProcedure
@@ -68,7 +75,7 @@ export const chatRouter = {
             lastMessage,
             characterId: chatToCharacterMap[id],
             groupId: chatToGroupMap[id],
-          }
+          } as Chat
         }),
         hasMore,
         cursor: last,
@@ -143,7 +150,7 @@ export const chatRouter = {
             updatedAt,
             lastMessage,
             characterId: input.characterId,
-          }
+          } as Chat
         }),
         hasMore,
         cursor,
@@ -218,7 +225,7 @@ export const chatRouter = {
             updatedAt,
             lastMessage,
             groupId: input.groupId,
-          }
+          } as Chat
         }),
         hasMore,
         cursor,
@@ -258,13 +265,15 @@ export const chatRouter = {
 
       const { id, metadata, createdAt, updatedAt, lastMessage } = chat
       return {
-        id,
-        metadata,
-        createdAt,
-        updatedAt,
-        lastMessage,
-        characterId: characterChat?.characterId,
-        groupId: groupChat?.groupId,
+        chat: {
+          id,
+          metadata,
+          createdAt,
+          updatedAt,
+          lastMessage,
+          characterId: characterChat?.characterId,
+          groupId: groupChat?.groupId,
+        } as Chat,
       }
     }),
 
@@ -321,12 +330,14 @@ export const chatRouter = {
 
       const { id, metadata, createdAt, updatedAt, lastMessage } = chat
       return {
-        id,
-        metadata,
-        createdAt,
-        updatedAt,
-        lastMessage,
-        characterId: character.id,
+        chat: {
+          id,
+          metadata,
+          createdAt,
+          updatedAt,
+          lastMessage,
+          characterId: character.id,
+        } as Chat,
       }
     }),
 
@@ -383,12 +394,14 @@ export const chatRouter = {
 
       const { id, metadata, createdAt, updatedAt, lastMessage } = chat
       return {
-        id,
-        metadata,
-        createdAt,
-        updatedAt,
-        lastMessage,
-        groupId: group.id,
+        chat: {
+          id,
+          metadata,
+          createdAt,
+          updatedAt,
+          lastMessage,
+          groupId: group.id,
+        } as Chat,
       }
     }),
 
@@ -424,10 +437,12 @@ export const chatRouter = {
 
       const { id, metadata, createdAt, updatedAt } = chat
       return {
-        id,
-        metadata,
-        createdAt,
-        updatedAt,
+        chat: {
+          id,
+          metadata,
+          createdAt,
+          updatedAt,
+        } as Chat,
       }
     }),
 

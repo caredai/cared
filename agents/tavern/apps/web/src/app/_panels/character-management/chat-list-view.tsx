@@ -41,7 +41,7 @@ export function ChatListView() {
     if (!activeCharOrGroup || isCreating) return
     try {
       setIsCreating(true)
-      const chat = await createChat(activeCharOrGroup.id)
+      const chat = (await createChat(activeCharOrGroup.id))?.chat
       if (chat) {
         setActiveChat(chat.id)
       }

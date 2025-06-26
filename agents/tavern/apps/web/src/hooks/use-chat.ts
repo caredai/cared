@@ -48,9 +48,7 @@ export function useActiveChat() {
 
   const activeChat = useMemo(() => {
     if (!isSuccess || !activeChatId) return undefined
-    return chats.pages
-      .flatMap((page) => page.chats as Chat[])
-      .find((chat) => chat.id === activeChatId)
+    return chats.pages.flatMap((page) => page.chats).find((chat) => chat.id === activeChatId)
   }, [activeChatId, chats, isSuccess])
 
   const bypassGet = true
@@ -72,7 +70,7 @@ export function useActiveChat() {
   })
 
   return {
-    activeChat: activeChat ?? activeChat2,
+    activeChat: activeChat ?? activeChat2?.chat,
     refetchActiveChat: refetch,
   }
 }
@@ -220,7 +218,7 @@ export function useCreateChat() {
       onSuccess: (data) => {
         // Convert the mutation result to ChatItem type
         const chatItem: Chat = {
-          ...data,
+          ...data.chat,
           groupId: undefined,
         }
         updateChatLists(chatItem)
@@ -236,7 +234,7 @@ export function useCreateChat() {
       onSuccess: (data) => {
         // Convert the mutation result to ChatItem type
         const chatItem: Chat = {
-          ...data,
+          ...data.chat,
           characterId: undefined,
         }
         updateChatLists(chatItem)
@@ -250,7 +248,7 @@ export function useCreateChat() {
   const { settings, modelPreset, model, charOrGroup, persona } = useActive()
 
   return useCallback(
-    async (charOrGroupId: string, chatId?: string) => {
+    async (charOrGroupId: string, chatId?: string): Promise<{ chat: Chat } | undefined> => {
       if (!model || !charOrGroup || !persona) {
         return
       }
@@ -345,9 +343,11 @@ export function useCreateChat() {
       console.error('Invalid id: neither a character nor a group')
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [characters, groups],
+    [characters, groups, settings, modelPreset, model, charOrGroup, persona],
   )
 }
+
+const hasAttemptedCreateAtom = atom(false)
 
 export function useCreateFirstChatIfAbsent() {
   const { setActiveChat } = useActiveChatId()
@@ -357,13 +357,26 @@ export function useCreateFirstChatIfAbsent() {
 
   const createChat = useCreateChat()
 
+  const [hasAttemptedCreate, setHasAttemptedCreate] = useAtom(hasAttemptedCreateAtom)
+
   useEffect(() => {
     const id = chats?.pages[0]?.chats[0]?.id
-    if (activeCharOrGroup && isSuccess && !id) {
-      void createChat(activeCharOrGroup.id)
+    if (activeCharOrGroup && isSuccess && !id && !hasAttemptedCreate) {
+      setHasAttemptedCreate(true)
+      void createChat(activeCharOrGroup.id).finally(() => {
+        setHasAttemptedCreate(false)
+      })
     }
     setActiveChat(id)
-  }, [activeCharOrGroup, chats, isSuccess, createChat, setActiveChat])
+  }, [
+    activeCharOrGroup,
+    chats,
+    isSuccess,
+    createChat,
+    setActiveChat,
+    hasAttemptedCreate,
+    setHasAttemptedCreate,
+  ])
 }
 
 export function useUpdateChat(characterId?: string, groupId?: string) {
