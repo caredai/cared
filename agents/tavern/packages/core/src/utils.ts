@@ -16,25 +16,3 @@ export function extractAllWords(value: string) {
   }
   return words
 }
-
-/**
- * Rearranges an array in a random order.
- * @param {any[]} array The array to shuffle.
- * @returns {any[]} The shuffled array.
- * @example
- * shuffle([1, 2, 3]); // [2, 3, 1]
- */
-export function shuffle(array) {
-  let currentIndex = array.length,
-    randomIndex;
-
-  while (currentIndex != 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex],
-      array[currentIndex],
-    ];
-  }
-  return array;
-}

@@ -2,6 +2,7 @@ import type { Message, MessageNode } from '@tavern/core'
 import type { RefObject } from 'react'
 import type { VListHandle } from 'virtua'
 import { memo, useMemo } from 'react'
+import { motion } from 'motion/react'
 import { VList } from 'virtua'
 
 import { PreviewMessage } from '@/app/_page/message'
@@ -37,6 +38,8 @@ function PureMessages({
           navigate={(previous) => navigate(message, previous)}
         />
       ))}
+
+      <motion.div className="shrink-0 min-w-[24px] min-h-[24px]" />
     </VList>
   )
 }
@@ -99,7 +102,7 @@ export function buildMessageTree(allMessages?: Message[]):
     return currentNode
   }
 
-  const tree = rootMessages.map(rootMessage => buildNode(rootMessage))
+  const tree = rootMessages.map((rootMessage) => buildNode(rootMessage))
 
   return {
     tree,

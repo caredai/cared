@@ -294,15 +294,19 @@ export function Chat() {
   const ref = useRef<VListHandle>(null)
 
   const scrollToBottom = useCallback(() => {
-    if (!branch?.length) {
-      return
-    }
-    ref.current?.scrollToIndex(branch.length - 1, {
+    // There always exists a `div` at the end of the list, so we can scroll to it.
+    const index = branch?.length ?? 0
+    ref.current?.scrollToIndex(index, {
       align: 'end',
       // Using smooth scrolling over many items can kill performance benefit of virtual scroll.
-      smooth: false,
+      smooth: true,
     })
-  }, [branch?.length])
+  }, [branch])
+
+  useEffect(() => {
+    // Always scroll to bottom when the message list changes.
+    scrollToBottom()
+  }, [scrollToBottom])
 
   return (
     <>
