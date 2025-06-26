@@ -21,8 +21,8 @@ const requestBodySchema = z.object({
     role: z.enum(['user', 'assistant']),
     content: messageContentSchema,
   }),
-  characterId: z.string(),
-  modelId: z.string(),
+  characterId: z.string().min(1),
+  modelId: z.string().min(1),
   preferredLanguage: z.enum(['chinese', 'japanese']).optional(),
 })
 
@@ -108,7 +108,9 @@ export async function POST(request: Request): Promise<Response> {
 
           if (responseMessages.length === 1) {
             assert.equal(newLastMessage.role, 'assistant')
+
             newLastMessage.annotations = [annotation as any]
+
             await ownxTrpc.message.update.mutate({
               id: newLastMessage.id,
               content: newLastMessage as UIMessage,
@@ -117,7 +119,9 @@ export async function POST(request: Request): Promise<Response> {
             assert.equal(responseMessages.length, 2)
             const msg = responseMessages.at(-1)!
             assert.equal(msg.role, 'assistant')
+
             msg.annotations = [annotation as any]
+
             await ownxTrpc.message.create.mutate({
               id: msg.id,
               parentId: lastMessage.id,

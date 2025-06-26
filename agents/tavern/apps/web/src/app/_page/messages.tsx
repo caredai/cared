@@ -3,16 +3,19 @@ import type { RefObject } from 'react'
 import type { VListHandle } from 'virtua'
 import { memo, useMemo } from 'react'
 import { motion } from 'motion/react'
+import hash from 'stable-hash'
 import { VList } from 'virtua'
 
 import { PreviewMessage } from '@/app/_page/message'
 
 function PureMessages({
   ref,
+  endRef,
   messages,
   navigate,
 }: {
   ref: RefObject<VListHandle | null>
+  endRef: RefObject<HTMLDivElement | null>
   messages: MessageNode[]
   navigate: (current: MessageNode, previous: boolean) => void
 }) {
@@ -39,19 +42,23 @@ function PureMessages({
         />
       ))}
 
-      <motion.div className="shrink-0 min-w-[24px] min-h-[24px]" />
+      <motion.div ref={endRef} className="shrink-0 min-w-[24px] min-h-[24px]" />
     </VList>
   )
 }
 
 export const Messages = memo(PureMessages)
 
-export function buildMessageTree(allMessages?: Message[]):
+export type MessageTree =
   | {
       tree: MessageNode[]
       latest: MessageNode
+      allMessages: Message[]
+      isChanged: (oldAllMessages: Message[]) => boolean
     }
-  | undefined {
+  | undefined
+
+export function buildMessageTree(allMessages?: Message[]): MessageTree {
   if (!allMessages) {
     return
   }
@@ -104,8 +111,24 @@ export function buildMessageTree(allMessages?: Message[]):
 
   const tree = rootMessages.map((rootMessage) => buildNode(rootMessage))
 
+  const isChanged = (oldAllMessages: Message[]) => {
+    if (allMessages.length !== oldAllMessages.length) {
+      console.log('Message count changed:', allMessages.length, oldAllMessages.length)
+      return true
+    }
+    for (let i = 0; i < allMessages.length; i++) {
+      if (hash(allMessages[i]) !== hash(oldAllMessages[i])) {
+        console.log('Message content changed at index:', i, allMessages[i], oldAllMessages[i])
+        return true
+      }
+    }
+    return false
+  }
+
   return {
     tree,
     latest: latest!,
+    allMessages,
+    isChanged,
   }
 }

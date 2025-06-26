@@ -425,8 +425,8 @@ export function useCachedMessage(chatId?: string) {
           }
         },
       )
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [chatId],
   )
 
@@ -446,16 +446,14 @@ export function useCachedMessage(chatId?: string) {
           return {
             pages: old.pages.map((page) => ({
               ...page,
-              messages: page.messages.map((msg) =>
-                msg.id === message.id ? { ...msg, ...message } : msg,
-              ),
+              messages: page.messages.map((msg) => (msg.id === message.id ? message : msg)),
             })),
             pageParams: old.pageParams,
           }
         },
       )
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [chatId],
   )
 
@@ -481,8 +479,8 @@ export function useCachedMessage(chatId?: string) {
           }
         },
       )
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [chatId],
   )
 

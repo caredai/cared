@@ -1,19 +1,21 @@
 import type { Message, MessageContent, MessageNode } from '@tavern/core'
 import type { UIMessage } from 'ai'
 import type { VListHandle } from 'virtua'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { buildPromptMessages } from '@tavern/core'
 import hash from 'stable-hash'
 
 import { generateMessageId } from '@ownxai/sdk'
 
-import { MultimodalInput } from '@/app/_page/multimodal-input'
+import type { MessageTree } from './messages'
 import { useActive } from '@/hooks/use-active'
 import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage, useMessages } from '@/hooks/use-message'
 import { ContentArea } from './content-area'
+import { useCallWhenGenerating } from './hooks'
 import { buildMessageTree, Messages } from './messages'
+import { MultimodalInput } from './multimodal-input'
 
 export function Chat() {
   const { settings, modelPreset, model, charOrGroup, persona, chat } = useActive()
@@ -23,44 +25,51 @@ export function Chat() {
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessages(chatId)
 
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false)
+
   useEffect(() => {
     void (async function () {
-      if (hasNextPage && !isFetchingNextPage && !isLoading) {
-        try {
-          await fetchNextPage()
-        } catch (error) {
-          console.error('fetch next page of messages', error)
-        }
+      if (hasNextPage && !isFetchingNextPage && !isLoading && !hasAttemptedFetch) {
+        console.log('Fetching messages...')
+        setHasAttemptedFetch(true)
+        await fetchNextPage().finally(() => setHasAttemptedFetch(false))
       }
     })()
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading])
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, hasAttemptedFetch])
 
-  const tree = useMemo(
-    () =>
-      isSuccess && !hasNextPage
-        ? buildMessageTree(data.pages.flatMap((page) => page.messages))
-        : null,
-    [data, hasNextPage, isSuccess],
-  )
-
-  const [branch, setBranch] = useState<MessageNode[]>()
+  const [tree, setTree] = useState<MessageTree>()
+  const [branch, setBranch] = useState<MessageNode[]>([])
+  const treeRef = useRef<MessageTree>(undefined)
+  const branchRef = useRef<MessageNode[]>([])
 
   useEffect(() => {
-    if (tree === null) {
-      return
-    }
-    if (!tree) {
-      setBranch([])
-      return
-    }
-    const nodes: MessageNode[] = []
-    let current: MessageNode | undefined = tree.latest
-    while (current) {
-      nodes.push(current)
-      current = current.parent
-    }
-    setBranch(nodes.reverse())
-  }, [tree])
+    treeRef.current =
+      isSuccess && !hasNextPage
+        ? buildMessageTree(data.pages.flatMap((page) => page.messages))
+        : undefined
+
+    branchRef.current = (() => {
+      if (!treeRef.current) {
+        return []
+      }
+      const nodes: MessageNode[] = []
+      let current: MessageNode | undefined = treeRef.current.latest
+      while (current) {
+        nodes.push(current)
+        current = current.parent
+      }
+      return nodes.reverse()
+    })()
+
+    setTree((oldTree) => {
+      const newTree = treeRef.current
+      if (newTree && oldTree && !newTree.isChanged(oldTree.allMessages)) {
+        return oldTree
+      }
+      setBranch(branchRef.current)
+      return newTree
+    })
+  }, [data, hasNextPage, isSuccess])
 
   const navigate = useCallback(
     (current: MessageNode, previous: boolean) => {
@@ -82,29 +91,27 @@ export function Chat() {
       if (!newCurrent) {
         return
       }
-      setBranch((branch) => {
-        if (isRoot) {
-          const nodes = []
-          let c: MessageNode | undefined = newCurrent
-          while (c) {
-            nodes.push(c)
-            let latest: MessageNode | undefined = undefined
-            let maxId = ''
-            for (const child of c.descendants) {
-              if (!maxId || child.message.id > maxId) {
-                latest = child
-                maxId = child.message.id
-              }
-            }
-            c = latest
-          }
-          setBranch(nodes)
-          return
-        }
 
-        if (!branch) {
-          return branch
+      if (isRoot) {
+        const nodes = []
+        let c: MessageNode | undefined = newCurrent
+        while (c) {
+          nodes.push(c)
+          let latest: MessageNode | undefined = undefined
+          let maxId = ''
+          for (const child of c.descendants) {
+            if (!maxId || child.message.id > maxId) {
+              latest = child
+              maxId = child.message.id
+            }
+          }
+          c = latest
         }
+        setBranch(nodes)
+        return
+      }
+
+      setBranch((branch) => {
         const position = branch.findIndex((m) => m === current)
         if (position < 0) {
           return branch
@@ -127,7 +134,7 @@ export function Chat() {
 
   const prepareRequestBody = useCallback(
     ({ id, messages: uiMessages }: { id: string; messages: UIMessage[] }) => {
-      if (!chat || !branch || !model || !persona || !charOrGroup) {
+      if (!chat || !model || !persona || !charOrGroup) {
         throw new Error('Not initialized')
       }
 
@@ -200,9 +207,7 @@ export function Chat() {
       }
 
       // TODO
-      const nextChar = isCharacter(charOrGroup)
-        ? charOrGroup.content
-        : charOrGroup.characters[0]?.content
+      const nextChar = isCharacter(charOrGroup) ? charOrGroup : charOrGroup.characters[0]
       if (!nextChar) {
         throw new Error('No character')
       }
@@ -215,7 +220,7 @@ export function Chat() {
         modelPreset,
         model,
         persona,
-        character: nextChar,
+        character: nextChar.content,
         group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
       })
 
@@ -223,7 +228,7 @@ export function Chat() {
         id,
         messages: promptMessages,
         lastMessage,
-        characterId: '',
+        characterId: nextChar.id,
         modelId: model.id,
       }
     },
@@ -251,9 +256,6 @@ export function Chat() {
   })
 
   useEffect(() => {
-    if (!branch) {
-      return
-    }
     const lastUiMessage = messages[messages.length - 1]
     if (lastUiMessage?.role !== 'assistant') {
       return
@@ -289,29 +291,65 @@ export function Chat() {
         content,
       })
     }
-  }, [branch, messages, persona, charOrGroup, model, chatId, addCachedMessage, updateCachedMessage])
+
+    if (status === 'ready' || status === 'error') {
+      setMessages([])
+    }
+  }, [
+    branch,
+    messages,
+    setMessages,
+    status,
+    persona,
+    charOrGroup,
+    model,
+    chatId,
+    addCachedMessage,
+    updateCachedMessage,
+  ])
 
   const ref = useRef<VListHandle>(null)
+  const endRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback((smooth?: boolean) => {
     // There always exists a `div` at the end of the list, so we can scroll to it.
-    const index = branch?.length ?? 0
+    const index = branchRef.current.length
     ref.current?.scrollToIndex(index, {
       align: 'end',
       // Using smooth scrolling over many items can kill performance benefit of virtual scroll.
-      smooth: true,
+      smooth: typeof smooth === 'boolean' ? smooth : true,
     })
-  }, [branch])
+  }, [])
 
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false)
   useEffect(() => {
-    // Always scroll to bottom when the message list changes.
-    scrollToBottom()
-  }, [scrollToBottom])
+    if (isSuccess && !hasNextPage) {
+      setShouldScrollToBottom(true)
+    }
+  }, [isSuccess, hasNextPage])
+  useEffect(() => {
+    if (shouldScrollToBottom) {
+      // Scroll to bottom when the chat is loaded.
+      scrollToBottom(false)
+      setShouldScrollToBottom(false)
+    }
+  }, [scrollToBottom, shouldScrollToBottom])
+
+  useCallWhenGenerating(
+    chatId,
+    status,
+    useCallback(() => {
+      // Always scroll to bottom when the message list changes.
+      if (branch.length) {
+        scrollToBottom()
+      }
+    }, [scrollToBottom, branch]),
+  )
 
   return (
     <>
       <ContentArea>
-        {isSuccess && branch && <Messages ref={ref} messages={branch} navigate={navigate} />}
+        <Messages ref={ref} endRef={endRef} messages={branch} navigate={navigate} />
       </ContentArea>
 
       <MultimodalInput

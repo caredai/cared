@@ -10,12 +10,24 @@ export interface MessageAnnotation {
   modelId?: string // for 'assistant' role & LLM generated message
 }
 
-export const messageAnnotationSchema = z.object({
-  characterId: z.string().optional(),
-  personaId: z.string().optional(),
-  personaName: z.string().optional(),
-  modelId: z.string().optional(),
-})
+export const messageAnnotationSchema = z
+  .object({
+    characterId: z.string().optional(),
+    personaId: z.string().optional(),
+    personaName: z.string().optional(),
+    modelId: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // Either characterId exists, or personaId and personaName both exist
+      const hasCharacter = data.characterId
+      const hasPersonaAndName = data.personaId && data.personaName
+      return hasCharacter ?? hasPersonaAndName
+    },
+    {
+      message: 'Either characterId must exist, or personaId and personaName must both exist',
+    },
+  )
 
 export type MessageContent = z.infer<typeof messageContentSchema>
 
