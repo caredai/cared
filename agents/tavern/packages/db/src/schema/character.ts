@@ -1,6 +1,6 @@
-import type { CharacterCardV2} from '@tavern/core';
-import { characterCardV2Schema } from '@tavern/core'
+import type { CharacterCardV2, CharacterMetadata } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
+import { characterCardV2Schema, characterMetadataSchema } from '@tavern/core'
 import { index, jsonb, pgEnum, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -25,19 +25,6 @@ export const characterSourceEnumValues = [
 ] as const
 
 export const characterSourceEnum = pgEnum('source', characterSourceEnumValues)
-
-export interface CharacterMetadata {
-  url: string // the url of the file stored in the object storage
-  fromUrl?: string // the url of the imported character
-
-  custom?: unknown
-}
-
-export const characterMetadataSchema = z.object({
-  url: z.string(),
-  fromUrl: z.string().optional(),
-  custom: z.unknown().optional(),
-})
 
 export const Character = pgTable(
   'character',

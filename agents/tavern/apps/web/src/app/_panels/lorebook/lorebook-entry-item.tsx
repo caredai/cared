@@ -208,7 +208,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
   return (
     <Form {...form}>
       <form
-        className="flex flex-col justify-center p-1 pb-2 my-0.25 border border-border rounded-md"
+        className="flex flex-col justify-center p-1 my-0.25 border border-border rounded-md"
         onBlur={handleBlur}
         autoComplete="off"
       >

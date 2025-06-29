@@ -11,7 +11,10 @@ import { deleteImage, deleteImages, uploadImage } from './utils'
 
 async function processMetadata(metadata: z.infer<typeof charGroupMetadataSchema>) {
   if (metadata.imageUrl?.startsWith('data:')) {
-    const imageUrl = await uploadImage(metadata.imageUrl, metadata.name, 'character-groups')
+    const imageUrl = await uploadImage(metadata.imageUrl, {
+      name: metadata.name,
+      prefix: 'character-groups'
+    })
     return {
       ...metadata,
       imageUrl,

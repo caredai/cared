@@ -1,107 +1,45 @@
-import { useState } from 'react'
-import classNames from 'classnames'
+import { ChevronDownIcon } from 'lucide-react'
 
-// Mock extensions data
-const mockExtensions = [
+import { Button } from '@ownxai/ui/components/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@ownxai/ui/components/collapsible'
+import { Label } from '@ownxai/ui/components/Label'
+
+import { RegexExtension } from './regex'
+import { SummaryExtension } from './summary'
+
+const extensions = [
   {
-    id: '1',
-    name: 'Image Generation',
-    description: 'Generate images from text descriptions',
-    enabled: true,
-    version: '1.0.0',
+    title: 'Summary',
+    component: SummaryExtension,
   },
   {
-    id: '2',
-    name: 'Voice Chat',
-    description: 'Enable voice interactions with AI',
-    enabled: false,
-    version: '0.9.0',
+    title: 'Regex',
+    component: RegexExtension,
   },
-  // Add more extensions as needed
-]
+] as const
 
-interface ExtensionCardProps {
-  id: string
-  name: string
-  description: string
-  enabled: boolean
-  version: string
-  onToggle: () => void
-}
-
-// Extension card component
-const ExtensionCard = ({ name, description, enabled, version, onToggle }: ExtensionCardProps) => {
-  return (
-    <div className="p-4 border rounded-lg">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-medium">{name}</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">v{version}</span>
-          <button
-            className={classNames(
-              'px-3 py-1 rounded text-sm',
-              enabled ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700',
-            )}
-            onClick={onToggle}
-          >
-            {enabled ? 'Enabled' : 'Disabled'}
-          </button>
-        </div>
-      </div>
-      <p className="text-sm text-gray-600">{description}</p>
-    </div>
-  )
-}
-
-// Extensions Panel Component
 export function ExtensionsPanel() {
-  const [extensions, setExtensions] = useState(mockExtensions)
-  const [searchQuery, setSearchQuery] = useState('')
-
-  // Filter extensions based on search
-  const filteredExtensions = extensions.filter(
-    (ext) =>
-      ext.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ext.description.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
-
-  // Toggle extension enabled state
-  const toggleExtension = (id: string) => {
-    setExtensions((exts) =>
-      exts.map((ext) => (ext.id === id ? { ...ext, enabled: !ext.enabled } : ext)),
-    )
-  }
-
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Extensions</h2>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Search extensions..."
-            className="px-3 py-1 rounded border"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button className="px-3 py-1 rounded bg-green-500 text-white">Install New</button>
-        </div>
-      </div>
-
-      {/* Extensions List */}
-      <div className="grid grid-cols-1 gap-4">
-        {filteredExtensions.map((ext) => (
-          <ExtensionCard key={ext.id} {...ext} onToggle={() => toggleExtension(ext.id)} />
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {filteredExtensions.length === 0 && (
-        <div className="text-center text-gray-500 py-8">
-          No extensions found. Install some to enhance your experience.
-        </div>
-      )}
-    </div>
+    <>
+      {extensions.map(({ title, component: Component }, index) => (
+        <Collapsible key={index}>
+          <CollapsibleTrigger asChild>
+            <div className="flex justify-between items-center cursor-pointer [&[data-state=open]>button>svg]:rotate-180">
+              <Label className="cursor-pointer text-lg">{title}</Label>
+              <Button type="button" variant="outline" size="icon" className="size-6">
+                <ChevronDownIcon className="transition-transform duration-200" />
+              </Button>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden mt-2 p-2 rounded-sm border border-input">
+            <Component />
+          </CollapsibleContent>
+        </Collapsible>
+      ))}
+    </>
   )
 }

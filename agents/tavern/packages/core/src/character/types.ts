@@ -9,6 +9,9 @@ import type {
 } from '@risuai/ccardlib'
 import { z } from 'zod'
 
+import type { RegexScript } from '../regex'
+import { regexScriptSchema } from '../regex'
+
 export type { CharacterCardV1, CharacterCardV2, CharacterCardV3 } from '@risuai/ccardlib'
 export type LorebookV2 = CharacterBook
 export type LorebookV3 = Lorebook
@@ -326,6 +329,7 @@ export const characterCardV2ExtensionsSchema = z.object({
   depth_prompt_prompt: z.string(),
   depth_prompt_depth: z.coerce.number().int().nonnegative().max(999).step(1),
   depth_prompt_role: z.enum(['system', 'user', 'assistant']),
+  regex_scripts: z.array(regexScriptSchema).optional(),
 })
 
 export type CharacterCardV2Extensions = z.infer<typeof characterCardV2ExtensionsSchema>
@@ -339,6 +343,16 @@ export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensi
     depthPromptRole = 'system'
   }
 
+  let regexScripts: RegexScript[] | undefined = undefined
+  {
+    const { success, data } = characterCardV2ExtensionsSchema.shape.regex_scripts.safeParse(
+      extensions.regex_scripts,
+    )
+    if (success) {
+      regexScripts = data
+    }
+  }
+
   return {
     talkativeness: !isNaN(Number(extensions.talkativeness))
       ? Number(extensions.talkativeness)
@@ -348,6 +362,7 @@ export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensi
     depth_prompt_prompt: String(depthPrompt?.prompt ?? ''),
     depth_prompt_depth: !isNaN(Number(depthPrompt?.depth)) ? Number(depthPrompt?.depth) : 4,
     depth_prompt_role: depthPromptRole as 'system' | 'user' | 'assistant',
+    regex_scripts: regexScripts,
   }
 }
 
@@ -361,5 +376,19 @@ export function formatExtensions(extensions: CharacterCardV2Extensions): Record<
       depth: extensions.depth_prompt_depth,
       role: extensions.depth_prompt_role,
     },
+    regex_scripts: extensions.regex_scripts,
   }
 }
+
+export interface CharacterMetadata {
+  url: string // the url of the file stored in the object storage
+  fromUrl?: string // the url of the imported character
+
+  custom?: unknown
+}
+
+export const characterMetadataSchema = z.object({
+  url: z.string(),
+  fromUrl: z.string().optional(),
+  custom: z.unknown().optional(),
+})

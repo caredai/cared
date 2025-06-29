@@ -8,6 +8,7 @@ import type { MiscellaneousSettings } from './miscellaneous'
 import type { ModelSettings } from './model'
 import type { ModelPresetSettings } from './model-preset'
 import type { PersonaSettings } from './persona'
+import type { RegexSettings } from './regex'
 import type { TagsSettings } from './tags'
 import type { VariablesSettings } from './variables'
 import { appearanceSettingsSchema, fillInAppearanceSettingsWithDefaults } from './appearance'
@@ -21,6 +22,7 @@ import {
 import { fillInModelSettingsWithDefaults, modelSettingsSchema } from './model'
 import { fillInModelPresetSettingsWithDefaults, modelPresetSettingsSchema } from './model-preset'
 import { fillInPersonaSettingsWithDefaults, personaSettingsSchema } from './persona'
+import { fillInRegexSettingsWithDefaults, regexSettingsSchema } from './regex'
 import { fillInTagsSettingsWithDefaults, tagsSettingsSchema } from './tags'
 import { fillInVariablesSettingsWithDefaults, variablesSettingsSchema } from './variables'
 
@@ -34,6 +36,7 @@ export * from './character'
 export * from './persona'
 export * from './variables'
 export * from './miscellaneous'
+export * from './regex'
 
 export interface Settings {
   firstRun: boolean
@@ -47,6 +50,7 @@ export interface Settings {
   persona: PersonaSettings
   variables: VariablesSettings
   miscellaneous: MiscellaneousSettings
+  regex: RegexSettings
 }
 
 export const settingsSchema = z.object({
@@ -61,6 +65,7 @@ export const settingsSchema = z.object({
   persona: personaSettingsSchema,
   variables: variablesSettingsSchema,
   miscellaneous: miscellaneousSettingsSchema,
+  regex: regexSettingsSchema,
 })
 
 export function fillInSettingsWithDefaults(settings: Partial<Settings>): Settings {
@@ -76,5 +81,6 @@ export function fillInSettingsWithDefaults(settings: Partial<Settings>): Setting
     persona: fillInPersonaSettingsWithDefaults(settings.persona),
     variables: fillInVariablesSettingsWithDefaults(settings.variables),
     miscellaneous: fillInMiscellaneousSettingsWithDefaults(settings.miscellaneous),
+    regex: fillInRegexSettingsWithDefaults(settings.regex),
   }
 }

@@ -21,7 +21,10 @@ import { deleteImage, deleteImages, uploadImage } from './utils'
 // Helper function to process metadata and handle image upload
 async function processMetadata(metadata: z.infer<typeof personaMetadataSchema>, name: string) {
   if (metadata.imageUrl?.startsWith('data:')) {
-    const imageUrl = await uploadImage(metadata.imageUrl, name, 'personas')
+    const imageUrl = await uploadImage(metadata.imageUrl, {
+      name: name,
+      prefix: 'personas'
+    })
     return {
       ...metadata,
       imageUrl,

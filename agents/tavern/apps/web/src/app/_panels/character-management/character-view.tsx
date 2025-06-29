@@ -35,7 +35,7 @@ import {
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
-import { useUpdateCharacterDebounce, useUpdateCharacterImage } from '@/hooks/use-character'
+import { useUpdateCharacter, useUpdateCharacterImage } from '@/hooks/use-character'
 import { useCharacterSettings, useUpdateCharacterSettings } from '@/hooks/use-settings'
 import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'
 import { CharacterBasicForm } from './character-basic-form'
@@ -135,7 +135,7 @@ export function CharacterView({ character }: { character: Character }) {
     },
   ]
 
-  const updateCharacter = useUpdateCharacterDebounce()
+  const updateCharacter = useUpdateCharacter()
 
   const onSubmit = useCallback(
     async (updates: Partial<CharacterBasicFormValues>) => {

@@ -10,6 +10,7 @@ import hash from 'stable-hash'
 
 import { useClearTagMap } from '@/hooks/use-settings'
 import { debounceTimeout } from '@/lib/debounce'
+import { bytesToBase64DataUrl } from '@/lib/utils'
 import defaultPng from '@/public/images/ai4.png'
 import { useTRPC } from '@/trpc/client'
 
@@ -64,13 +65,12 @@ export function useCreateCharacter() {
         : await (await fetch(defaultPng.src)).bytes()
 
       const bytes = pngWrite(pngBytes, JSON.stringify(content))
+      const dataUrl = await bytesToBase64DataUrl(bytes)
 
-      // Create form data and submit
-      const formData = new FormData()
-      formData.set('source', 'create')
-      formData.set('blob', new Blob([bytes]))
-
-      return await createMutation.mutateAsync(formData)
+      return await createMutation.mutateAsync({
+        source: 'create',
+        dataUrl,
+      })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -107,12 +107,12 @@ export function useImportCharactersFromFiles() {
           return
         }
 
-        // Create form data and submit
-        const formData = new FormData()
-        formData.set('source', 'import-file')
-        formData.set('blob', new Blob([result.bytes]))
+        const dataUrl = await bytesToBase64DataUrl(result.bytes)
 
-        return await createMutation.mutateAsync(formData)
+        return await createMutation.mutateAsync({
+          source: 'import-file',
+          dataUrl,
+        })
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,7 +136,7 @@ export function useImportCharactersFromUrls() {
 
       for (const url of urls) {
         // Always import url locally first
-        let blob
+        let dataUrl: string | undefined
         try {
           const result = await importUrl(url)
           if (
@@ -144,21 +144,17 @@ export function useImportCharactersFromUrls() {
             result.type === 'character' &&
             result.mimeType === 'image/png'
           ) {
-            blob = new Blob([result.bytes])
+            dataUrl = await bytesToBase64DataUrl(result.bytes)
           }
         } catch {
           // If local importing failed, import url again at server side
         }
 
-        // Create form data and submit
-        const formData = new FormData()
-        formData.set('source', 'import-url')
-        formData.set('fromUrl', url)
-        if (blob) {
-          formData.set('blob', blob)
-        }
-
-        return await createMutation.mutateAsync(formData)
+        return await createMutation.mutateAsync({
+          source: 'import-url',
+          fromUrl: url,
+          dataUrl,
+        })
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,35 +162,7 @@ export function useImportCharactersFromUrls() {
   )
 }
 
-export function useUpdateCharacter(char: Character) {
-  const { refetchCharacters } = useCharacters()
-
-  const trpc = useTRPC()
-
-  const updateMutation = useMutation(
-    trpc.character.update.mutationOptions({
-      onSuccess: () => {
-        void refetchCharacters()
-      },
-      onError: (error) => {
-        toast.error(`Failed to update character: ${error.message}`)
-      },
-    }),
-  )
-
-  return useCallback(
-    async (character: CharacterCardV2) => {
-      const formData = new FormData()
-      formData.set('id', char.id)
-      formData.set('content', JSON.stringify(character))
-      await updateMutation.mutateAsync(formData)
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [char.id],
-  )
-}
-
-export function useUpdateCharacterDebounce() {
+export function useUpdateCharacter() {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -212,8 +180,8 @@ export function useUpdateCharacterDebounce() {
         if (!old) {
           return undefined
         }
-        const id = newData.get('id') as string
-        const content: CharacterCardV2 = JSON.parse(newData.get('content') as string)
+        const id = newData.id
+        const content: CharacterCardV2 = newData.content!
         const index = old.characters.findIndex((char) => char.id === id)
         return {
           characters: [
@@ -283,10 +251,10 @@ export function useUpdateCharacterDebounce() {
       if (hash(content) === hash(character.content)) {
         return
       }
-      const formData = new FormData()
-      formData.set('id', character.id)
-      formData.set('content', JSON.stringify(content))
-      await mutation.mutateAsync(formData)
+      await mutation.mutateAsync({
+        id: character.id,
+        content,
+      })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -312,8 +280,8 @@ export function useUpdateCharacterImage() {
           if (!old) {
             return undefined
           }
-          const id = newData.get('id') as string
-          const url = newData.get('url') as string
+          const id = newData.id
+          const url = newData.dataUrl!
           const index = old.characters.findIndex((char) => char.id === id)
           const char = old.characters.at(index)!
           return {
@@ -350,33 +318,76 @@ export function useUpdateCharacterImage() {
     async (char: Character, imageDataUrl: string) => {
       const pngBytes = await fetch(imageDataUrl).then((r) => r.bytes())
       const bytes = pngWrite(pngBytes, JSON.stringify(char.content))
+      const dataUrl = await bytesToBase64DataUrl(bytes)
 
-      const formData = new FormData()
-      formData.set('id', char.id)
-      formData.set('blob', new Blob([bytes]))
-      // Not used by server side, only for optimistic update at client side
-      formData.set('url', imageDataUrl)
-
-      await updateMutation.mutateAsync(formData, {
-        onSuccess: (data) => {
-          queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
-            if (!old) {
-              return undefined
-            }
-            const index = old.characters.findIndex((char) => char.id === data.character.id)
-            return {
-              characters: [
-                ...old.characters.slice(0, index),
-                data.character,
-                ...old.characters.slice(index + 1),
-              ],
-            }
-          })
+      await updateMutation.mutateAsync(
+        {
+          id: char.id,
+          dataUrl,
         },
-      })
+        {
+          onSuccess: (data) => {
+            queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
+              if (!old) {
+                return undefined
+              }
+              const index = old.characters.findIndex((char) => char.id === data.character.id)
+              return {
+                characters: [
+                  ...old.characters.slice(0, index),
+                  data.character,
+                  ...old.characters.slice(index + 1),
+                ],
+              }
+            })
+          },
+        },
+      )
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
+  )
+}
+
+export function useSyncCharacter() {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const syncMutation = useMutation(
+    trpc.character.sync.mutationOptions({
+      onSuccess: (data) => {
+        // Update the character in the cache with the latest data
+        queryClient.setQueryData(trpc.character.list.queryKey(), (old) => {
+          if (!old) {
+            return undefined
+          }
+          const index = old.characters.findIndex((char) => char.id === data.character.id)
+          return {
+            characters: [
+              ...old.characters.slice(0, index),
+              data.character,
+              ...old.characters.slice(index + 1),
+            ],
+          }
+        })
+
+        if (data.synced) {
+          console.log(`Character card for character ${data.character.id} synchronized successfully`)
+        } else {
+          console.log(`Character card for character ${data.character.id} is already in sync`)
+        }
+      },
+      onError: (error) => {
+        toast.error(`Failed to sync character: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (id: string) => {
+      return await syncMutation.mutateAsync({ id })
+    },
+    [syncMutation],
   )
 }
 

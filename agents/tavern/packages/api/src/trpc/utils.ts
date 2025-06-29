@@ -1,4 +1,9 @@
-import { DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand } from '@aws-sdk/client-s3'
+import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+} from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
 import sanitize from 'sanitize-filename'
 import { v7 as uuid } from 'uuid'
@@ -18,15 +23,27 @@ export function imageUrl() {
   return env.NEXT_PUBLIC_IMAGE_URL
 }
 
-export async function uploadImage(dataUrl: string, name: string, prefix: string) {
-  // Convert data URL to buffer
-  const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '')
-  const buffer = Buffer.from(base64Data, 'base64')
+export async function uploadImage(
+  dataUrlOrBytes: string | Uint8Array | Buffer,
+  key:
+    | string
+    | {
+        name: string
+        prefix: string
+      },
+) {
+  let buffer
+  if (typeof dataUrlOrBytes === 'string') {
+    // Convert data URL to buffer
+    const base64Data = dataUrlOrBytes.replace(/^data:image\/\w+;base64,/, '')
+    buffer = Buffer.from(base64Data, 'base64')
+  } else {
+    buffer = dataUrlOrBytes
+  }
 
-  const key = `${prefix}/${uuid()}/${sanitize(name)}.png`
   const command = new PutObjectCommand({
     Bucket: env.S3_BUCKET,
-    Key: key,
+    Key: typeof key === 'string' ? key : `${key.prefix}/${uuid()}/${sanitize(key.name)}.png`,
     Body: buffer,
     ContentType: 'image/png',
   })
@@ -82,4 +99,39 @@ export async function deleteImages(urls: string[]) {
     )
     await s3Client.send(command)
   }
+}
+
+export async function retrieveImage(url: string): Promise<Uint8Array> {
+  if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Invalid image url',
+    })
+  }
+
+  const key = decodeURIComponent(new URL(url).pathname.slice(1)) // Remove leading slash
+  const command = new GetObjectCommand({
+    Bucket: env.S3_BUCKET,
+    Key: key,
+  })
+
+  const [execSeconds, response] = await measure(s3Client.send(command))
+  const { Body } = response
+
+  if (!Body) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Image not found',
+    })
+  }
+
+  const bytes = await Body.transformToByteArray()
+
+  console.log('Retrieved image from object storage', {
+    key,
+    size: bytes.length,
+    execSeconds,
+  })
+
+  return bytes
 }

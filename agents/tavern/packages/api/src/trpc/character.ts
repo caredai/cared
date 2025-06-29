@@ -1,12 +1,6 @@
 import type { CharacterCardV1, CharacterCardV2, CharacterCardV3 } from '@tavern/core'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
 import {
-  DeleteObjectCommand,
-  DeleteObjectsCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-} from '@aws-sdk/client-s3'
-import {
   characterCardV2Schema,
   convertToV2,
   importUrl,
@@ -17,51 +11,36 @@ import {
 import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, asc, eq, inArray } from 'drizzle-orm'
-import sanitize from 'sanitize-filename'
 import hash from 'stable-hash'
-import { v7 as uuid } from 'uuid'
 import { z } from 'zod'
 
-import { env } from '../env'
-import { s3Client } from '../s3'
 import { userProtectedProcedure } from '../trpc'
-import { measure } from '../utils'
-import { imageUrl } from './utils'
+import { deleteImage, deleteImages, retrieveImage, uploadImage } from './utils'
 
 async function getCharacterCard(url: string) {
-  if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: 'Invalid character card url',
-    })
-  }
-  const key = decodeURIComponent(new URL(url).pathname.slice(1)) // Remove leading slash
-  const command = new GetObjectCommand({
-    Bucket: env.S3_BUCKET,
-    Key: key,
-  })
-  const { Body } = await s3Client.send(command)
-  if (!Body) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Character card not found',
-    })
-  }
-  const bytes = await Body.transformToByteArray()
+  const bytes = await retrieveImage(url)
 
   const c = JSON.parse(pngRead(bytes))
-  const charV2 = convertToV2(c)
+  const cardV2 = convertToV2(c)
 
   return {
-    original: c as CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
-    content: charV2,
+    card: c as CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
+    cardV2,
     bytes,
   }
 }
 
-async function uploadCharacterCard(blob: Blob | Uint8Array) {
-  const bytes = blob instanceof Blob ? await blob.bytes() : blob
-  const c = JSON.parse(pngRead(bytes))
+async function processCharacterCard(dataUrlOrBytes: string | Uint8Array | Buffer, key?: string) {
+  let buffer
+  if (typeof dataUrlOrBytes === 'string') {
+    // Convert data URL to buffer
+    const base64Data = dataUrlOrBytes.replace(/^data:image\/\w+;base64,/, '')
+    buffer = Buffer.from(base64Data, 'base64')
+  } else {
+    buffer = dataUrlOrBytes
+  }
+
+  const c = JSON.parse(pngRead(buffer))
   const charV2 = convertToV2(c)
   if (!charV2.data.name) {
     throw new TRPCError({
@@ -69,66 +48,20 @@ async function uploadCharacterCard(blob: Blob | Uint8Array) {
       message: 'Character card name is required',
     })
   }
-  const key = `characters/${uuid()}/${sanitize(charV2.data.name)}.png`
-  const command = new PutObjectCommand({
-    Bucket: env.S3_BUCKET,
-    Key: key,
-    Body: bytes,
-    ContentType: 'image/png',
-  })
-  const [execSeconds] = await measure(s3Client.send(command))
-  console.log('Upload character card to object storage', {
-    key,
-    size: bytes.length,
-    execSeconds,
-  })
+
+  const imageUrl = await uploadImage(
+    buffer,
+    key
+      ? key
+      : {
+          name: charV2.data.name,
+          prefix: 'characters',
+        },
+  )
 
   return {
     content: charV2,
-    url: new URL(key, imageUrl()).toString(),
-  }
-}
-
-async function deleteCharacterCard(url: string) {
-  if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {
-    return
-  }
-  const key = decodeURIComponent(new URL(url).pathname.slice(1)) // Remove leading slash
-  const command = new DeleteObjectCommand({
-    Bucket: env.S3_BUCKET,
-    Key: key,
-  })
-  await s3Client.send(command)
-}
-
-async function deleteCharacterCards(urls: string[]) {
-  // Filter out invalid URLs and extract keys
-  const keys = urls
-    .filter((url) => url.startsWith(env.S3_ENDPOINT) || url.startsWith(imageUrl()))
-    .map((url) => ({
-      Key: decodeURIComponent(new URL(url).pathname.slice(1)), // Remove leading slash
-    }))
-
-  if (keys.length === 0) {
-    return
-  }
-
-  // AWS S3 DeleteObjects has a limit of 1000 objects per request
-  const chunkSize = 1000
-  for (let i = 0; i < keys.length; i += chunkSize) {
-    const chunk = keys.slice(i, i + chunkSize)
-    const command = new DeleteObjectsCommand({
-      Bucket: env.S3_BUCKET,
-      Delete: {
-        Objects: chunk,
-        Quiet: true, // Don't return detailed errors for each object
-      },
-    })
-    console.log(
-      'Deleting character cards from object storage',
-      chunk.map((key) => key.Key),
-    )
-    await s3Client.send(command)
+    url: imageUrl,
   }
 }
 
@@ -163,17 +96,12 @@ export const characterRouter = {
 
   create: userProtectedProcedure
     .input(
-      z
-        .instanceof(FormData)
-        .transform((fd) => Object.fromEntries(fd.entries()))
-        .pipe(
-          z.object({
-            source: z.enum(characterSourceEnumValues),
-            blob: z.instanceof(Blob).optional(),
-            fromUrl: z.string().optional(),
-            nftId: z.string().optional(),
-          }),
-        ),
+      z.object({
+        source: z.enum(characterSourceEnumValues),
+        dataUrl: z.string().optional(),
+        fromUrl: z.string().optional(),
+        nftId: z.string().optional(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const values = {
@@ -184,13 +112,13 @@ export const characterRouter = {
       switch (input.source) {
         case 'create': // passthrough
         case 'import-file': {
-          if (!input.blob) {
+          if (!input.dataUrl) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
-              message: '`blob` is required for `create` or `import-file` source',
+              message: '`dataUrl` is required for `create` or `import-file` source',
             })
           }
-          const { content, url } = await uploadCharacterCard(input.blob)
+          const { content, url } = await processCharacterCard(input.dataUrl)
 
           values.content = content
           values.metadata = {
@@ -206,8 +134,8 @@ export const characterRouter = {
             })
           }
 
-          let blob: Blob | Uint8Array | undefined = input.blob
-          if (!blob) {
+          let dataUrlOrBytes: string | Uint8Array | undefined = input.dataUrl
+          if (!dataUrlOrBytes) {
             const result = await importUrl(input.fromUrl)
             if (typeof result === 'string') {
               throw new TRPCError({
@@ -221,11 +149,10 @@ export const characterRouter = {
                 message: 'Invalid character card',
               })
             }
-
-            blob = result.bytes
+            dataUrlOrBytes = result.bytes
           }
 
-          const { content, url } = await uploadCharacterCard(blob)
+          const { content, url } = await processCharacterCard(dataUrlOrBytes)
 
           values.content = content
           values.metadata = {
@@ -268,21 +195,12 @@ export const characterRouter = {
   update: userProtectedProcedure
     .input(
       z
-        .instanceof(FormData)
-        .transform((fd) => Object.fromEntries(fd.entries()))
-        .pipe(
-          z
-            .object({
-              id: z.string(),
-              blob: z.instanceof(Blob).optional(),
-              content: z
-                .string()
-                .transform((content) => JSON.parse(content))
-                .pipe(characterCardV2Schema)
-                .optional(),
-            })
-            .refine((data) => data.blob ?? data.content, 'Either blob or content is required'),
-        ),
+        .object({
+          id: z.string(),
+          dataUrl: z.string().optional(),
+          content: characterCardV2Schema.optional(),
+        })
+        .refine((data) => data.dataUrl ?? data.content, 'Either dataUrl or content is required'),
     )
     .mutation(async ({ ctx, input }) => {
       let character = await ctx.db.query.Character.findFirst({
@@ -304,35 +222,32 @@ export const characterRouter = {
           })
       }
 
-      let blob: Blob | Uint8Array | undefined = input.blob
-      if (!blob) {
-        const { original, bytes } = await getCharacterCard(character.metadata.url)
-        const content = updateWithV2(original, input.content!)
-        blob = pngWrite(bytes, JSON.stringify(content))
+      let content: z.infer<typeof characterCardV2Schema>
+
+      if (input.dataUrl) {
+        // Extract key from existing URL for re-upload
+        const key = decodeURIComponent(new URL(character.metadata.url).pathname.slice(1))
+
+        // Process new character card data and re-upload
+        const result = await processCharacterCard(input.dataUrl, key)
+        content = result.content
+        if (result.url !== character.metadata.url) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Character card url should not be changed',
+          })
+        }
+      } else {
+        // Update existing character card with new content
+        content = convertToV2(updateWithV2(character.content, input.content!))
       }
 
-      // eslint-disable-next-line prefer-const
-      let { content, url } = await uploadCharacterCard(blob)
-
-      // Actually not needed, but just in case
-      if (input.content && hash(content) !== hash(input.content)) {
-        content = input.content
-      }
-
-      if (url !== character.metadata.url) {
-        await deleteCharacterCard(character.metadata.url)
-      }
-
-      if (hash(content) !== hash(character.content) || url !== character.metadata.url) {
+      if (hash(content) !== hash(character.content)) {
         character = (
           await ctx.db
             .update(Character)
             .set({
               content,
-              metadata: {
-                ...character.metadata,
-                url,
-              },
             })
             .where(eq(Character.id, input.id))
             .returning()
@@ -340,6 +255,54 @@ export const characterRouter = {
       }
 
       return { character }
+    }),
+
+  sync: userProtectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const character = await ctx.db.query.Character.findFirst({
+        where: and(eq(Character.id, input.id), eq(Character.userId, ctx.auth.userId)),
+      })
+      if (!character) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Character not found',
+        })
+      }
+
+      // Check if character source allows syncing
+      switch (character.source) {
+        case 'nft-owned':
+        case 'nft-link':
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Cannot sync character card which has nft-owned or nft-link source',
+          })
+      }
+
+      // Get character card data from image
+      const { card, cardV2, bytes } = await getCharacterCard(character.metadata.url)
+
+      if (hash(character.content) === hash(cardV2)) {
+        // Content is already in sync, no update needed
+        return { character, synced: false }
+      }
+
+      // Content is out of sync, update image with database content
+      const updatedContent = convertToV2(updateWithV2(card, character.content))
+      const updatedBytes = pngWrite(bytes, JSON.stringify(updatedContent))
+
+      // Extract key from existing URL for re-upload
+      const key = decodeURIComponent(new URL(character.metadata.url).pathname.slice(1))
+
+      // Upload updated image using the same key
+      await uploadImage(updatedBytes, key)
+
+      return { character, synced: true }
     }),
 
   delete: userProtectedProcedure
@@ -360,7 +323,7 @@ export const characterRouter = {
         })
       }
 
-      await deleteCharacterCard(character.metadata.url)
+      await deleteImage(character.metadata.url)
 
       return { character }
     }),
@@ -390,7 +353,7 @@ export const characterRouter = {
         .where(and(eq(Character.userId, ctx.auth.userId), inArray(Character.id, input.ids)))
 
       // Delete all character cards from storage
-      await deleteCharacterCards(characters.map((character) => character.metadata.url))
+      await deleteImages(characters.map((character) => character.metadata.url))
 
       return { characters }
     }),

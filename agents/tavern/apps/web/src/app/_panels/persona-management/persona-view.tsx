@@ -384,7 +384,7 @@ export function PersonaView({ personaId }: { personaId: string }) {
       {/* Action Buttons */}
       <div className="flex flex-col gap-1">
         <Label>Connections</Label>
-        <div className="flex flex-row gap-2">
+        <div className="flex flex-row flex-wrap gap-2">
           {/* Default Button */}
           <Button
             variant="outline"

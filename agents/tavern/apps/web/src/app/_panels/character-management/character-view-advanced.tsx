@@ -3,13 +3,13 @@ import { formatExtensions } from '@tavern/core'
 
 import type { CharacterAdvancedFormValues } from './character-advanced-form'
 import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
-import { useUpdateCharacterDebounce } from '@/hooks/use-character'
+import { useUpdateCharacter } from '@/hooks/use-character'
 import { CharacterAdvancedForm } from './character-advanced-form'
 
 export function CharacterViewAdvanced() {
   const character = useActiveCharacterOrGroup()
 
-  const updateCharacter = useUpdateCharacterDebounce()
+  const updateCharacter = useUpdateCharacter()
 
   const onSubmit = useCallback(
     async (values: CharacterAdvancedFormValues) => {
