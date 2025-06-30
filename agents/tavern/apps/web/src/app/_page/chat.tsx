@@ -1,4 +1,4 @@
-import type { Message, MessageContent, MessageNode } from '@tavern/core'
+import type { Message, MessageContent } from '@tavern/core'
 import type { UIMessage } from 'ai'
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -8,13 +8,13 @@ import hash from 'stable-hash'
 
 import { generateMessageId } from '@ownxai/sdk'
 
-import type { MessageTree } from './messages'
 import { useActive } from '@/hooks/use-active'
 import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
-import { useCachedMessage, useMessages } from '@/hooks/use-message'
+import { useCachedMessage } from '@/hooks/use-message'
+import { useMessageTree } from '@/hooks/use-message-tree'
 import { ContentArea } from './content-area'
 import { useCallWhenGenerating } from './hooks'
-import { buildMessageTree, Messages } from './messages'
+import { Messages } from './messages'
 import { MultimodalInput } from './multimodal-input'
 
 export function Chat() {
@@ -22,113 +22,7 @@ export function Chat() {
 
   const chatId = chat?.id
 
-  const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMessages(chatId)
-
-  const [hasAttemptedFetch, setHasAttemptedFetch] = useState(false)
-
-  useEffect(() => {
-    void (async function () {
-      if (hasNextPage && !isFetchingNextPage && !isLoading && !hasAttemptedFetch) {
-        console.log('Fetching messages...')
-        setHasAttemptedFetch(true)
-        await fetchNextPage().finally(() => setHasAttemptedFetch(false))
-      }
-    })()
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, hasAttemptedFetch])
-
-  const [tree, setTree] = useState<MessageTree>()
-  const [branch, setBranch] = useState<MessageNode[]>([])
-  const treeRef = useRef<MessageTree>(undefined)
-  const branchRef = useRef<MessageNode[]>([])
-
-  useEffect(() => {
-    treeRef.current =
-      isSuccess && !hasNextPage
-        ? buildMessageTree(data.pages.flatMap((page) => page.messages))
-        : undefined
-
-    branchRef.current = (() => {
-      if (!treeRef.current) {
-        return []
-      }
-      const nodes: MessageNode[] = []
-      let current: MessageNode | undefined = treeRef.current.latest
-      while (current) {
-        nodes.push(current)
-        current = current.parent
-      }
-      return nodes.reverse()
-    })()
-
-    setTree((oldTree) => {
-      const newTree = treeRef.current
-      if (newTree && oldTree && !newTree.isChanged(oldTree.allMessages)) {
-        return oldTree
-      }
-      setBranch(branchRef.current)
-      return newTree
-    })
-  }, [data, hasNextPage, isSuccess])
-
-  const navigate = useCallback(
-    (current: MessageNode, previous: boolean) => {
-      if (!tree) {
-        return
-      }
-      const isRoot = tree.tree.find((node) => node === current)
-      const siblings = isRoot ? tree.tree : current.parent?.descendants
-
-      const index = siblings?.findIndex((node) => node === current)
-      if (index === undefined || index < 0) {
-        return
-      }
-      const newIndex = previous ? index - 1 : index + 1
-      if (newIndex < 0 || newIndex >= (siblings?.length ?? 0)) {
-        return
-      }
-      const newCurrent = siblings?.[newIndex]
-      if (!newCurrent) {
-        return
-      }
-
-      if (isRoot) {
-        const nodes = []
-        let c: MessageNode | undefined = newCurrent
-        while (c) {
-          nodes.push(c)
-          let latest: MessageNode | undefined = undefined
-          let maxId = ''
-          for (const child of c.descendants) {
-            if (!maxId || child.message.id > maxId) {
-              latest = child
-              maxId = child.message.id
-            }
-          }
-          c = latest
-        }
-        setBranch(nodes)
-        return
-      }
-
-      setBranch((branch) => {
-        const position = branch.findIndex((m) => m === current)
-        if (position < 0) {
-          return branch
-        }
-        const newBranch = [...branch.slice(0, position)]
-        let next: MessageNode | undefined = newCurrent
-        while (next) {
-          newBranch.push(next)
-          next = next.descendants.reduce((latest, node) => {
-            return !latest || latest.message.id < node.message.id ? node : latest
-          }, next.descendants[0])
-        }
-        return newBranch
-      })
-    },
-    [tree],
-  )
+  const { branch, branchRef, navigate, isLoading, isSuccess, hasNextPage } = useMessageTree()
 
   const { addCachedMessage, updateCachedMessage } = useCachedMessage(chatId)
 
@@ -213,8 +107,7 @@ export function Chat() {
       }
 
       const promptMessages = buildPromptMessages({
-        messages,
-        branch, // TODO
+        messages: branch, // TODO
         chat,
         settings,
         modelPreset,

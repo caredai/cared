@@ -1,45 +1,56 @@
-import { ChevronDownIcon } from 'lucide-react'
+import { useState } from 'react'
 
-import { Button } from '@ownxai/ui/components/button'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
-import { Label } from '@ownxai/ui/components/Label'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { RegexExtension } from './regex'
 import { SummaryExtension } from './summary'
 
 const extensions = [
   {
+    id: 'summary',
     title: 'Summary',
     component: SummaryExtension,
   },
   {
+    id: 'regex',
     title: 'Regex',
     component: RegexExtension,
   },
 ] as const
 
 export function ExtensionsPanel() {
+  const [selectedExtension, setSelectedExtension] = useState<string>('summary')
+
+  const Component = extensions.find((ext) => ext.id === selectedExtension)?.component
+
   return (
-    <>
-      {extensions.map(({ title, component: Component }, index) => (
-        <Collapsible key={index}>
-          <CollapsibleTrigger asChild>
-            <div className="flex justify-between items-center cursor-pointer [&[data-state=open]>button>svg]:rotate-180">
-              <Label className="cursor-pointer text-lg">{title}</Label>
-              <Button type="button" variant="outline" size="icon" className="size-6">
-                <ChevronDownIcon className="transition-transform duration-200" />
-              </Button>
+    <div className="flex flex-col gap-6 mb-2">
+      {/* Title */}
+      <div className="flex items-center gap-2">
+        <h1 className="text-lg font-bold">Extensions</h1>
+      </div>
+
+      {/* Main content area */}
+      <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-8">
+        {/* Left side: Extension list */}
+        <div className="flex flex-col gap-2 pr-2">
+          {extensions.map(({ id, title }) => (
+            <div
+              key={id}
+              className={cn(
+                'flex items-center gap-2 p-2 rounded-md border border-border cursor-pointer hover:bg-muted relative',
+                selectedExtension === id && 'border-primary border-e-6',
+              )}
+              onClick={() => setSelectedExtension(id)}
+            >
+              <div className="font-medium text-sm truncate">{title}</div>
             </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden mt-2 p-2 rounded-sm border border-input">
-            <Component />
-          </CollapsibleContent>
-        </Collapsible>
-      ))}
-    </>
+          ))}
+        </div>
+
+        {/* Right side: Extension view */}
+        {Component && <Component />}
+      </div>
+    </div>
   )
 }

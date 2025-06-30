@@ -1,4 +1,10 @@
-import type { ModelPresetSettings, ModelSettings, Settings, TagsSettings, RegexSettings } from '@tavern/core'
+import type {
+  ModelPresetSettings,
+  ModelSettings,
+  RegexSettings,
+  Settings,
+  TagsSettings,
+} from '@tavern/core'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import pDebounce from 'p-debounce'
@@ -345,7 +351,7 @@ export function useUpdateRegexSettings() {
   const updateSettings = useUpdateSettingsMutation()
 
   return useCallback(
-    async (regex: Partial<Settings['regex']>) => {
+    async (regex: Partial<RegexSettings>) => {
       await updateSettings({
         regex: {
           ...regexSettings,

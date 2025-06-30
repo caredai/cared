@@ -6,7 +6,7 @@ import { extractExtensions } from '../character'
 import { extractAllWords } from '../utils'
 import { GroupActivationStrategy } from './types'
 
-export function activateCharacterFromGroup({
+export function activateCharactersFromGroup({
   group,
   messages,
   impersonate,

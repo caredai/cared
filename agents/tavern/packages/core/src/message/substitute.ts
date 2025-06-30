@@ -4,13 +4,7 @@ import type { CharacterCardV2 } from '../character'
 import type { CharGroupMetadata } from '../character-group'
 import type { ModelPreset } from '../model-preset'
 import type { Settings } from '../settings'
-import type {
-  ReducedCharacter,
-  ReducedChat,
-  ReducedGroup,
-  ReducedMessage,
-  ReducedPersona,
-} from '../types'
+import type { ReducedCharacter, ReducedChat, ReducedGroup, ReducedPersona } from '../types'
 import type { Environment } from './macro'
 import type { MessageNode } from './types'
 import { GroupGenerationMode } from '../character-group'
@@ -18,27 +12,30 @@ import { parseDialogueExamples } from '../prompt'
 import { evaluateMacros as _evaluateMacros } from './macro'
 import { collapseNewlines } from './utils'
 
-export function substituteParams({
-  messages,
-  branch,
-  chat,
-  settings,
-  modelPreset,
-  model,
-  persona,
-  character,
-  group,
-}: {
-  messages?: ReducedMessage[]
-  branch?: MessageNode[]
+export interface SubstituteMacrosParams {
+  messages?: MessageNode[]
   chat?: ReducedChat
   settings: Settings
   modelPreset: ModelPreset
-  model: ModelInfo
-  persona: ReducedPersona
-  character: CharacterCardV2 // next character
+  model?: ModelInfo
+  persona?: ReducedPersona
+  character?: CharacterCardV2 // next character
   group?: ReducedGroup
-}) {
+}
+
+export function substituteMacros(
+  {
+    messages,
+    chat,
+    settings,
+    modelPreset,
+    model,
+    persona,
+    character,
+    group,
+  }: SubstituteMacrosParams,
+  postProcessFn?: (s: string) => string,
+) {
   const chatVariables = {
     ...(chat?.metadata.custom as any)?.variables,
   }
@@ -46,10 +43,10 @@ export function substituteParams({
     ...settings.variables,
   }
 
-  function buildCharVariables(character: CharacterCardV2, group?: ReducedGroup) {
+  function buildCharVariables(character?: CharacterCardV2, group?: ReducedGroup) {
     return {
-      user: persona.name,
-      char: character.data.name,
+      user: persona?.name,
+      char: character?.data.name,
       group: getGroupValue(character, group, true),
       charIfNotGroup: getGroupValue(character, group, true),
       groupNotMuted: getGroupValue(character, group, false),
@@ -75,13 +72,12 @@ export function substituteParams({
 
     original: '',
 
-    model: model.name,
+    model: model?.name,
 
     input: '',
 
     chat,
     messages,
-    branch,
     modelPreset,
     modelInfo: model,
 
@@ -94,11 +90,11 @@ export function substituteParams({
     ...buildCharVariables(character, group),
   }
 
-  const evaluateBasicMacros = (content: string, customEnv?: Environment) => {
+  const evaluateBasicMacros = (content?: string, customEnv?: Environment) => {
     if (!content) {
       return ''
     }
-    content = _evaluateMacros(content, (customEnv ?? env) as any)
+    content = _evaluateMacros(content, (customEnv ?? env) as any, postProcessFn)
 
     if (settings.miscellaneous.collapseNewlines) {
       content = collapseNewlines(content)
@@ -111,27 +107,27 @@ export function substituteParams({
   // TODO: chat scenario
   const chatScenario = ''
 
-  envFromChar.persona = evaluateBasicMacros(persona.metadata.description)
-  envFromChar.description = evaluateBasicMacros(character.data.description)
-  envFromChar.personality = evaluateBasicMacros(character.data.personality)
+  envFromChar.persona = evaluateBasicMacros(persona?.metadata.description)
+  envFromChar.description = evaluateBasicMacros(character?.data.description)
+  envFromChar.personality = evaluateBasicMacros(character?.data.personality)
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  envFromChar.scenario = chatScenario || evaluateBasicMacros(character.data.scenario)
-  envFromChar.mesExamplesRaw = evaluateBasicMacros(character.data.mes_example)
+  envFromChar.scenario = chatScenario || evaluateBasicMacros(character?.data.scenario)
+  envFromChar.mesExamplesRaw = evaluateBasicMacros(character?.data.mes_example)
   envFromChar.mesExamples = parseDialogueExamples(envFromChar.mesExamplesRaw).join('')
   envFromChar.charPrompt = settings.miscellaneous.preferCharacterPrompt
-    ? evaluateBasicMacros(character.data.system_prompt, {
+    ? evaluateBasicMacros(character?.data.system_prompt, {
         ...env,
         original: modelPreset.prompts.find((p) => p.identifier === 'main')?.content ?? '',
       })
     : ''
   envFromChar.charInstruction = envFromChar.charJailbreak = settings.miscellaneous
     .preferCharacterJailbreak
-    ? evaluateBasicMacros(character.data.post_history_instructions, {
+    ? evaluateBasicMacros(character?.data.post_history_instructions, {
         ...env,
         original: modelPreset.prompts.find((p) => p.identifier === 'jailbreak')?.content ?? '',
       })
     : ''
-  envFromChar.charVersion = envFromChar.char_version = character.data.character_version
+  envFromChar.charVersion = envFromChar.char_version = character?.data.character_version ?? ''
   if (
     group?.metadata.generationMode === GroupGenerationMode.Append ||
     group?.metadata.generationMode === GroupGenerationMode.AppendDisabled
@@ -216,10 +212,14 @@ export function substituteParams({
   }
 
   const evaluateMacros = (content: string) =>
-    _evaluateMacros(content, {
-      ...env,
-      ...envFromChar,
-    } as any)
+    _evaluateMacros(
+      content,
+      {
+        ...env,
+        ...envFromChar,
+      } as any,
+      postProcessFn,
+    )
 
   return {
     evaluateMacros,
@@ -227,7 +227,7 @@ export function substituteParams({
 }
 
 function getGroupValue(
-  character: CharacterCardV2,
+  character?: CharacterCardV2,
   group?: {
     characters: ReducedCharacter[]
     metadata: CharGroupMetadata
@@ -235,7 +235,7 @@ function getGroupValue(
   includeMuted?: boolean,
 ) {
   if (!group) {
-    return character.data.name
+    return character?.data.name
   }
 
   const including = (x: string) =>

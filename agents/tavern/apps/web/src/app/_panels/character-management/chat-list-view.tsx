@@ -23,7 +23,7 @@ export function ChatListView() {
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useChatsByCharacterOrGroup(activeCharOrGroup?.id)
-  const chats = useMemo(() => data?.pages.flatMap((page) => page.chats as Chat[]) ?? [], [data])
+  const chats = useMemo(() => data?.pages.flatMap((page) => page.chats) ?? [], [data])
   const { activeChatId, setActiveChat } = useActiveChatId()
 
   const createChat = useCreateChat()
@@ -162,9 +162,7 @@ function ChatItem({
   const [showDelete, setShowDelete] = useState(false)
 
   let lastMsg =
-    chat.lastMessage?.content.parts[0]?.type === 'text'
-      ? chat.lastMessage.content.parts[0].text
-      : ''
+    chat.lastMessage?.content.parts.map(part => part.type === 'text' && part.text).filter(Boolean).join('\n') ?? ''
   const len = 400
   lastMsg = lastMsg.length > len ? '...' + lastMsg.substring(lastMsg.length - len) : lastMsg
 

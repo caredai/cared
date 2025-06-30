@@ -18,18 +18,18 @@ import {
 
 type StrMaybeFunc = string | (() => string)
 
-function evaluateStr(str: StrMaybeFunc): () => string {
+function evaluateStr(str?: StrMaybeFunc): () => string {
   return () => {
-    return typeof str === 'function' ? str() : str
+    return typeof str === 'function' ? str() : (str ?? '')
   }
 }
 
 export interface Environment {
-  user: StrMaybeFunc
-  char: StrMaybeFunc
-  charIfNotGroup: StrMaybeFunc
-  group: StrMaybeFunc
-  groupNotMuted: StrMaybeFunc
+  user?: StrMaybeFunc
+  char?: StrMaybeFunc
+  charIfNotGroup?: StrMaybeFunc
+  group?: StrMaybeFunc
+  groupNotMuted?: StrMaybeFunc
 
   charPrompt: StrMaybeFunc
   charInstruction: StrMaybeFunc
@@ -47,15 +47,14 @@ export interface Environment {
   // Used in character Prompt Overrides fields.
   original: StrMaybeFunc
 
-  model: StrMaybeFunc
+  model?: StrMaybeFunc
 
   input?: string
 
   chat?: ReducedChat
-  messages?: ReducedMessage[]
-  branch?: MessageNode[]
+  messages?: MessageNode[]
   modelPreset: ModelPreset
-  modelInfo: ModelInfo
+  modelInfo?: ModelInfo
 
   chatVariables: Record<string, any>
   globalVariables: Record<string, any>
@@ -100,11 +99,12 @@ export function evaluateMacros(
     { regex: /{{input}}/gi, replace: () => env.input ?? '' },
   ]
 
-  const lastMessage = env.messages?.at(-1)
-  const lastUserMessage = env.messages?.filter((m) => m.role === 'user').at(-1)
-  const lastCharMessage = env.messages?.filter((m) => m.role === 'assistant').at(-1)
+  const messages = env.messages?.map((node) => node.message)
+  const lastMessage = messages?.at(-1)
+  const lastUserMessage = messages?.filter((m) => m.role === 'user').at(-1)
+  const lastCharMessage = messages?.filter((m) => m.role === 'assistant').at(-1)
 
-  const lastNode = env.branch?.at(-1)
+  const lastNode = env.messages?.at(-1)
 
   const getContent = (message?: ReducedMessage) => {
     return (
@@ -127,11 +127,11 @@ export function evaluateMacros(
     {
       regex: /{{firstIncludedMessageId}}/gi,
       replace: () =>
-        env.messages?.find(
-          (m) => !!(m.content.annotations?.at(0) as MessageAnnotation | undefined)?.modelId,
+        messages?.find(
+          (m) => !!(m.content.annotations.at(0) as MessageAnnotation | undefined)?.modelId,
         )?.id ?? '',
     },
-    { regex: /{{firstDisplayedMessageId}}/gi, replace: () => env.messages?.at(0)?.id ?? '' },
+    { regex: /{{firstDisplayedMessageId}}/gi, replace: () => messages?.at(0)?.id ?? '' },
     {
       regex: /{{lastSwipeId}}/gi,
       replace: () => String(lastNode?.parent?.descendants.length ?? 1),

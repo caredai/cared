@@ -9,7 +9,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { getCharFirstMessages, randomPickCharFirstMessage, substituteParams } from '@tavern/core'
+import { getCharFirstMessages, randomPickCharFirstMessage, substituteMacros } from '@tavern/core'
 import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
 
@@ -41,10 +41,10 @@ export function useActiveChat() {
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { data: chats, isSuccess } = useChatsByCharacterOrGroup(activeCharOrGroup?.id)
 
+  const firstChatId = chats?.pages[0]?.chats[0]?.id
   useEffect(() => {
-    const id = chats?.pages[0]?.chats[0]?.id
-    setActiveChat(id)
-  }, [chats, setActiveChat])
+    setActiveChat(firstChatId)
+  }, [firstChatId, setActiveChat])
 
   const activeChat = useMemo(() => {
     if (!isSuccess || !activeChatId) return undefined
@@ -255,7 +255,7 @@ export function useCreateChat() {
 
       const character = characters.find((c) => c.id === charOrGroupId)
       if (character) {
-        const { evaluateMacros } = substituteParams({
+        const { evaluateMacros } = substituteMacros({
           settings,
           modelPreset,
           model,
@@ -299,7 +299,7 @@ export function useCreateChat() {
         const initialMessages = [
           group.characters
             .map((character) => {
-              const { evaluateMacros } = substituteParams({
+              const { evaluateMacros } = substituteMacros({
                 settings,
                 modelPreset,
                 model,
@@ -349,11 +349,16 @@ export function useCreateChat() {
 
 const hasAttemptedCreateAtom = atom(false)
 
-export function useCreateFirstChatIfAbsent() {
-  const { setActiveChat } = useActiveChatId()
-
+export function useCheckFirstChat() {
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { data: chats, isSuccess } = useChatsByCharacterOrGroup(activeCharOrGroup?.id)
+
+  const { setActiveChat } = useActiveChatId()
+
+  const firstChatId = chats?.pages[0]?.chats[0]?.id
+  useEffect(() => {
+    setActiveChat(firstChatId)
+  }, [firstChatId, setActiveChat])
 
   const createChat = useCreateChat()
 
@@ -367,13 +372,11 @@ export function useCreateFirstChatIfAbsent() {
         setHasAttemptedCreate(false)
       })
     }
-    setActiveChat(id)
   }, [
     activeCharOrGroup,
     chats,
     isSuccess,
     createChat,
-    setActiveChat,
     hasAttemptedCreate,
     setHasAttemptedCreate,
   ])

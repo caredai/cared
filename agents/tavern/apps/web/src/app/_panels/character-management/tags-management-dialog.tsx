@@ -2,9 +2,9 @@
 
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import type { Tag } from '@tavern/core'
-import { ComponentPropsWithoutRef, useId } from 'react'
+import type { ComponentPropsWithoutRef } from 'react'
 import type { ColorResult } from 'react-color'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useId, useMemo, useState } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -85,56 +85,65 @@ export function TagsManagementDialog() {
     setActiveName(event.active.id as string)
   }, [])
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    setActiveName(undefined)
-    const { active, over } = event
-    if (over && active.id !== over.id) {
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveName(undefined)
+      const { active, over } = event
+      if (over && active.id !== over.id) {
+        setItems((currentItems) => {
+          const oldIndex = currentItems.findIndex((item) => item.name === active.id)
+          const newIndex = currentItems.findIndex((item) => item.name === over.id)
+          const newItems = arrayMove(currentItems, oldIndex, newIndex)
+          void updateTagsSettings({ ...tagsSettings, tags: newItems })
+          return newItems
+        })
+      }
+    },
+    [tagsSettings, updateTagsSettings],
+  )
+
+  const handleDeleteTag = useCallback(
+    (nameToDelete: string) => {
       setItems((currentItems) => {
-        const oldIndex = currentItems.findIndex((item) => item.name === active.id)
-        const newIndex = currentItems.findIndex((item) => item.name === over.id)
-        const newItems = arrayMove(currentItems, oldIndex, newIndex)
-        void updateTagsSettings({ ...tagsSettings, tags: newItems })
+        const newItems = currentItems.filter((item) => item.name !== nameToDelete)
+        // Update tagMap to remove references to the deleted tag
+        const newTagMap = { ...tagMap }
+        for (const [charId, tags] of Object.entries(newTagMap)) {
+          newTagMap[charId] = tags.filter((tag) => tag !== nameToDelete)
+        }
+        void updateTagsSettings({ ...tagsSettings, tags: newItems, tagMap: newTagMap })
         return newItems
       })
-    }
-  }, [tagsSettings, updateTagsSettings])
+    },
+    [tagMap, tagsSettings, updateTagsSettings],
+  )
 
-  const handleDeleteTag = useCallback((nameToDelete: string) => {
-    setItems((currentItems) => {
-      const newItems = currentItems.filter((item) => item.name !== nameToDelete)
-      // Update tagMap to remove references to the deleted tag
-      const newTagMap = { ...tagMap }
-      for (const [charId, tags] of Object.entries(newTagMap)) {
-        newTagMap[charId] = tags.filter(tag => tag !== nameToDelete)
-      }
-      void updateTagsSettings({ ...tagsSettings, tags: newItems, tagMap: newTagMap })
-      return newItems
-    })
-  }, [tagMap, tagsSettings, updateTagsSettings])
-
-  const handleRenameTag = useCallback((oldName: string, newName: string) => {
-    setItems((currentItems) => {
-      // Check if the new name already exists (and it's not the same item)
-      const isNameTaken = currentItems.some(
-        (item) => item.name === newName && item.name !== oldName,
-      )
-      if (isNameTaken) {
-        // Ideally, show a toast or some error message to the user
-        console.warn('Tag name already exists:', newName)
-        return currentItems // Don't update if name is taken
-      }
-      const newItems = currentItems.map((item) =>
-        item.name === oldName ? { ...item, name: newName } : item,
-      )
-      // Update tagMap to reflect the renamed tag
-      const newTagMap = { ...tagMap }
-      for (const [charId, tags] of Object.entries(newTagMap)) {
-        newTagMap[charId] = tags.map(tag => tag === oldName ? newName : tag)
-      }
-      void updateTagsSettings({ ...tagsSettings, tags: newItems, tagMap: newTagMap })
-      return newItems
-    })
-  }, [tagMap, tagsSettings, updateTagsSettings])
+  const handleRenameTag = useCallback(
+    (oldName: string, newName: string) => {
+      setItems((currentItems) => {
+        // Check if the new name already exists (and it's not the same item)
+        const isNameTaken = currentItems.some(
+          (item) => item.name === newName && item.name !== oldName,
+        )
+        if (isNameTaken) {
+          // Ideally, show a toast or some error message to the user
+          console.warn('Tag name already exists:', newName)
+          return currentItems // Don't update if name is taken
+        }
+        const newItems = currentItems.map((item) =>
+          item.name === oldName ? { ...item, name: newName } : item,
+        )
+        // Update tagMap to reflect the renamed tag
+        const newTagMap = { ...tagMap }
+        for (const [charId, tags] of Object.entries(newTagMap)) {
+          newTagMap[charId] = tags.map((tag) => (tag === oldName ? newName : tag))
+        }
+        void updateTagsSettings({ ...tagsSettings, tags: newItems, tagMap: newTagMap })
+        return newItems
+      })
+    },
+    [tagMap, tagsSettings, updateTagsSettings],
+  )
 
   const handleColorChange = useCallback(
     (nameToUpdate: string, newColor: string, type: 'bg' | 'text') => {
@@ -151,26 +160,29 @@ export function TagsManagementDialog() {
     [tagsSettings, updateTagsSettings],
   )
 
-  const handleToggleFolder = useCallback((nameToUpdate: string) => {
-    setItems((currentItems) => {
-      const newItems = currentItems.map((item) => {
-        if (item.name === nameToUpdate) {
-          let newFolderState: Tag['folder'] = 'no'
-          if (item.folder === 'no') {
-            newFolderState = 'open'
-          } else if (item.folder === 'open') {
-            newFolderState = 'closed'
-          } else {
-            newFolderState = 'no'
+  const handleToggleFolder = useCallback(
+    (nameToUpdate: string) => {
+      setItems((currentItems) => {
+        const newItems = currentItems.map((item) => {
+          if (item.name === nameToUpdate) {
+            let newFolderState: Tag['folder'] = 'no'
+            if (item.folder === 'no') {
+              newFolderState = 'open'
+            } else if (item.folder === 'open') {
+              newFolderState = 'closed'
+            } else {
+              newFolderState = 'no'
+            }
+            return { ...item, folder: newFolderState }
           }
-          return { ...item, folder: newFolderState }
-        }
-        return item
+          return item
+        })
+        void updateTagsSettings({ ...tagsSettings, tags: newItems })
+        return newItems
       })
-      void updateTagsSettings({ ...tagsSettings, tags: newItems })
-      return newItems
-    })
-  }, [tagsSettings, updateTagsSettings])
+    },
+    [tagsSettings, updateTagsSettings],
+  )
 
   const characterCountMap = useMemo(() => {
     const map = new Map<string, number>()
@@ -223,17 +235,18 @@ export function TagsManagementDialog() {
                 ))}
               </VList>
             </SortableContext>
-            {(globalThis as any).document && createPortal(
-              <DragOverlay zIndex={7000}>
-                {activeItem ? (
-                  <TagRow
-                    item={activeItem}
-                    characterCount={characterCountMap.get(activeItem.name) ?? 0}
-                  />
-                ) : null}
-              </DragOverlay>,
-              globalThis.document.body,
-            )}
+            {(globalThis as any).document &&
+              createPortal(
+                <DragOverlay zIndex={7000}>
+                  {activeItem ? (
+                    <TagRow
+                      item={activeItem}
+                      characterCount={characterCountMap.get(activeItem.name) ?? 0}
+                    />
+                  ) : null}
+                </DragOverlay>,
+                globalThis.document.body,
+              )}
           </DndContext>
         </div>
 

@@ -1,26 +1,45 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import type { RegexScript } from '@tavern/core'
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { faFileExport, faFileImport, faSquarePlus } from '@fortawesome/free-solid-svg-icons'
 import {
   extractExtensions,
   formatExtensions,
-  RegexScript,
   regexScriptSchema,
   RegexSubstituteMode,
 } from '@tavern/core'
+import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
+import { v7 as uuid } from 'uuid'
 import { VList } from 'virtua'
+import { z } from 'zod'
 
 import { Input } from '@ownxai/ui/components/input'
-import { Separator } from '@ownxai/ui/components/separator'
 
 import { FaButton } from '@/components/fa-button'
 import { useUpdateCharacter } from '@/hooks/use-character'
 import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useRegexSettings, useUpdateRegexSettings } from '@/hooks/use-settings'
+import { useDebugRegex } from './hooks'
 import { RegexScriptItem } from './regex-script-item'
 
-// Common script creation function
 const createNewScript = (): RegexScript => ({
+  id: uuid(),
   name: 'New Script',
   regex: '',
   replaceString: '',
@@ -33,7 +52,6 @@ const createNewScript = (): RegexScript => ({
   substituteMode: RegexSubstituteMode.NONE,
 })
 
-// Common export function
 const exportScripts = (scripts: RegexScript[], filename: string) => {
   if (scripts.length === 0) {
     toast.error('No scripts to export')
@@ -50,266 +68,277 @@ const exportScripts = (scripts: RegexScript[], filename: string) => {
   URL.revokeObjectURL(url)
 }
 
-// Common import validation function
-const validateAndParseScript = async (file: File): Promise<RegexScript> => {
+const validateAndParseScript = async (file: File): Promise<RegexScript[]> => {
   if (!file.name.endsWith('.json')) {
     throw new Error('Please select a JSON file')
   }
 
   const text = await file.text()
-  const script = JSON.parse(text)
-  return regexScriptSchema.parse(script)
+  const data = JSON.parse(text)
+
+  if (Array.isArray(data)) {
+    return z.array(regexScriptSchema).parse(data)
+  } else {
+    return [regexScriptSchema.parse(data)]
+  }
 }
 
-// Scripts section component
-interface ScriptsSectionProps {
-  title: string
-  scripts: RegexScript[]
-  openStates: Record<number, boolean>
-  onOpenChange: (index: number, open: boolean) => void
-  onUpdate: (index: number, script: RegexScript) => void
-  onDelete: (index: number) => void
-  onAdd: () => void
-  onImport: () => void
-  onExport: () => void
-  disabled?: boolean
-}
+const useScriptManager = (
+  scripts: RegexScript[],
+  onUpdateScripts: (scripts: RegexScript[]) => void,
+  onImportSuccess?: () => void,
+) => {
+  const [openStates, setOpenStates] = useState<Record<number, boolean>>({})
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-export function RegexExtension() {
-  const regexSettings = useRegexSettings()
-  const updateRegexSettings = useUpdateRegexSettings()
-  const character = useActiveCharacterOrGroup()
-  const updateCharacter = useUpdateCharacter()
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
 
-  const [globalOpenStates, setGlobalOpenStates] = useState<Record<number, boolean>>({})
-  const [characterOpenStates, setCharacterOpenStates] = useState<Record<number, boolean>>({})
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      setActiveId(event.active.id as string)
+      // Collapse all items when dragging starts
+      const newOpenStates: Record<number, boolean> = {}
+      scripts.forEach((_, index) => {
+        newOpenStates[index] = false
+      })
+      setOpenStates(newOpenStates)
+    },
+    [scripts],
+  )
 
-  const globalFileInputRef = useRef<HTMLInputElement>(null)
-  const characterFileInputRef = useRef<HTMLInputElement>(null)
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveId(null)
+      const { active, over } = event
+      if (over && active.id !== over.id) {
+        const oldIndex = scripts.findIndex((script) => script.id === active.id)
+        const newIndex = scripts.findIndex((script) => script.id === over.id)
+        const newScripts = arrayMove(scripts, oldIndex, newIndex)
+        onUpdateScripts(newScripts)
+      }
+    },
+    [scripts, onUpdateScripts],
+  )
 
-  // Get character regex scripts from extensions
-  const characterRegexScripts = useMemo(() => {
-    if (!isCharacter(character)) return []
-    const extensions = extractExtensions(character.content)
-    return extensions.regex_scripts || []
-  }, [character])
+  const handleAdd = useCallback(() => {
+    onUpdateScripts([...scripts, createNewScript()])
+  }, [scripts, onUpdateScripts])
 
-  // Global scripts handlers
-  const handleAddGlobalScript = useCallback(() => {
-    void updateRegexSettings({
-      scripts: [...regexSettings.scripts, createNewScript()],
-    })
-  }, [regexSettings.scripts, updateRegexSettings])
-
-  const handleImportGlobalScript = useCallback(() => {
-    globalFileInputRef.current?.click()
+  const handleImport = useCallback(() => {
+    fileInputRef.current?.click()
   }, [])
 
-  const handleExportGlobalScripts = useCallback(() => {
-    exportScripts(regexSettings.scripts, 'global-regex-scripts.json')
-  }, [regexSettings.scripts])
+  const handleExport = useCallback(
+    (filename: string) => {
+      exportScripts(scripts, filename)
+    },
+    [scripts],
+  )
 
-  const handleGlobalFileChange = useCallback(
+  const handleFileChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
       if (!file) return
 
       try {
-        const validatedScript = await validateAndParseScript(file)
-        void updateRegexSettings({
-          scripts: [...regexSettings.scripts, validatedScript],
-        })
-        toast.success('Script imported successfully')
+        const validatedScripts = await validateAndParseScript(file)
+        onUpdateScripts([...scripts, ...validatedScripts])
+        onImportSuccess?.()
       } catch (error) {
         console.error(error)
-        toast.error('Failed to import script: invalid file format')
+        toast.error(`Failed to import regex script(s): invalid file format`)
       } finally {
-        if (globalFileInputRef.current) {
-          globalFileInputRef.current.value = ''
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
         }
       }
     },
-    [regexSettings.scripts, updateRegexSettings],
+    [scripts, onUpdateScripts, onImportSuccess],
   )
 
-  const handleGlobalScriptUpdate = useCallback(
+  const handleScriptUpdate = useCallback(
     (index: number, script: RegexScript) => {
-      const scripts = [...regexSettings.scripts]
-      scripts[index] = script
-      void updateRegexSettings({ scripts })
+      const updatedScripts = [...scripts]
+      updatedScripts[index] = script
+      onUpdateScripts(updatedScripts)
     },
-    [regexSettings.scripts, updateRegexSettings],
+    [scripts, onUpdateScripts],
   )
 
-  const handleGlobalScriptDelete = useCallback(
+  const handleScriptDelete = useCallback(
     (index: number) => {
-      const scripts = regexSettings.scripts.filter((_, i) => i !== index)
-      void updateRegexSettings({ scripts })
+      const updatedScripts = scripts.filter((_, i) => i !== index)
+      onUpdateScripts(updatedScripts)
     },
-    [regexSettings.scripts, updateRegexSettings],
+    [scripts, onUpdateScripts],
   )
 
-  const handleGlobalOpenChange = useCallback((index: number, open: boolean) => {
-    setGlobalOpenStates((prev) => ({ ...prev, [index]: open }))
+  const handleScriptMove = useCallback(
+    (index: number) => {
+      const scriptToMove = scripts[index]
+      const updatedScripts = scripts.filter((_, i) => i !== index)
+      onUpdateScripts(updatedScripts)
+      return scriptToMove
+    },
+    [scripts, onUpdateScripts],
+  )
+
+  const handleOpenChange = useCallback((index: number, open: boolean) => {
+    setOpenStates((prev) => ({ ...prev, [index]: open }))
   }, [])
 
-  // Character scripts handlers
-  const handleAddCharacterScript = useCallback(() => {
-    if (!isCharacter(character)) return
+  return {
+    openStates,
+    activeId,
+    sensors,
+    fileInputRef,
+    handleDragStart,
+    handleDragEnd,
+    handleAdd,
+    handleImport,
+    handleExport,
+    handleFileChange,
+    handleScriptUpdate,
+    handleScriptDelete,
+    handleScriptMove,
+    handleOpenChange,
+  }
+}
 
-    const extensions = extractExtensions(character.content)
+export function RegexExtension() {
+  const regexSettings = useRegexSettings()
+  const updateRegexSettings = useUpdateRegexSettings()
+  const charOrGroup = useActiveCharacterOrGroup()
+  const updateCharacter = useUpdateCharacter()
+  const debugRegex = useDebugRegex()
+
+  // Get character regex scripts from extensions
+  const characterRegexScripts = useMemo(() => {
+    if (!isCharacter(charOrGroup)) return []
+    const extensions = extractExtensions(charOrGroup.content)
+    return extensions.regex_scripts ?? []
+  }, [charOrGroup])
+
+  const [globalScripts, setGlobalScripts] = useState(regexSettings.scripts)
+  const [characterScripts, setCharacterScripts] = useState(characterRegexScripts)
+
+  // Update state when props change
+  useEffect(() => {
+    setGlobalScripts(regexSettings.scripts)
+  }, [regexSettings.scripts])
+
+  useEffect(() => {
+    setCharacterScripts(characterRegexScripts)
+  }, [characterRegexScripts])
+
+  // Global scripts manager
+  const globalScriptManager = useScriptManager(globalScripts, (scripts) => {
+    setGlobalScripts(scripts)
+    void updateRegexSettings({ scripts })
+  })
+
+  // Character scripts manager
+  const characterScriptManager = useScriptManager(characterScripts, (scripts) => {
+    if (!isCharacter(charOrGroup)) return
+
+    setCharacterScripts(scripts)
+
+    const extensions = extractExtensions(charOrGroup.content)
     const updatedExtensions = formatExtensions({
       ...extensions,
-      regex_scripts: [...(extensions.regex_scripts || []), createNewScript()],
+      regex_scripts: scripts,
     })
 
-    void updateCharacter(character, {
-      ...character.content,
+    void updateCharacter(charOrGroup, {
+      ...charOrGroup.content,
       data: {
-        ...character.content.data,
+        ...charOrGroup.content.data,
         extensions: updatedExtensions,
       },
     })
-  }, [character, updateCharacter])
+  })
 
-  const handleImportCharacterScript = useCallback(() => {
-    characterFileInputRef.current?.click()
-  }, [])
+  // Handle moving scripts between categories
+  const handleMoveToGlobal = useCallback(
+    (index: number) => {
+      const scriptToMove = characterScriptManager.handleScriptMove(index)
+      if (scriptToMove) {
+        const newGlobalScripts = [...globalScripts, scriptToMove]
+        setGlobalScripts(newGlobalScripts)
+        void updateRegexSettings({ scripts: newGlobalScripts })
+      }
+    },
+    [characterScriptManager, globalScripts, updateRegexSettings],
+  )
 
-  const handleExportCharacterScripts = useCallback(() => {
-    if (!isCharacter(character)) return
-    exportScripts(characterRegexScripts, `${character.content.data.name}-regex-scripts.json`)
-  }, [character, characterRegexScripts])
-
-  const handleCharacterFileChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file || !isCharacter(character)) return
-
-      try {
-        const validatedScript = await validateAndParseScript(file)
-        const extensions = extractExtensions(character.content)
+  const handleMoveToCharacter = useCallback(
+    (index: number) => {
+      const scriptToMove = globalScriptManager.handleScriptMove(index)
+      if (scriptToMove && isCharacter(charOrGroup)) {
+        const newCharacterScripts = [...characterScripts, scriptToMove]
+        setCharacterScripts(newCharacterScripts)
+        const extensions = extractExtensions(charOrGroup.content)
         const updatedExtensions = formatExtensions({
           ...extensions,
-          regex_scripts: [...(extensions.regex_scripts || []), validatedScript],
+          regex_scripts: newCharacterScripts,
         })
 
-        void updateCharacter(character, {
-          ...character.content,
+        void updateCharacter(charOrGroup, {
+          ...charOrGroup.content,
           data: {
-            ...character.content.data,
+            ...charOrGroup.content.data,
             extensions: updatedExtensions,
           },
         })
-
-        toast.success('Script imported successfully')
-      } catch (error) {
-        console.error(error)
-        toast.error('Failed to import script: invalid file format')
-      } finally {
-        if (characterFileInputRef.current) {
-          characterFileInputRef.current.value = ''
-        }
       }
     },
-    [character, updateCharacter],
+    [globalScriptManager, characterScripts, charOrGroup, updateCharacter],
   )
-
-  const handleCharacterScriptUpdate = useCallback(
-    (index: number, script: RegexScript) => {
-      if (!isCharacter(character)) return
-
-      const extensions = extractExtensions(character.content)
-      const scripts = [...(extensions.regex_scripts || [])]
-      scripts[index] = script
-
-      const updatedExtensions = formatExtensions({
-        ...extensions,
-        regex_scripts: scripts,
-      })
-
-      void updateCharacter(character, {
-        ...character.content,
-        data: {
-          ...character.content.data,
-          extensions: updatedExtensions,
-        },
-      })
-    },
-    [character, updateCharacter],
-  )
-
-  const handleCharacterScriptDelete = useCallback(
-    (index: number) => {
-      if (!isCharacter(character)) return
-
-      const extensions = extractExtensions(character.content)
-      const scripts = (extensions.regex_scripts || []).filter((_, i) => i !== index)
-
-      const updatedExtensions = formatExtensions({
-        ...extensions,
-        regex_scripts: scripts,
-      })
-
-      void updateCharacter(character, {
-        ...character.content,
-        data: {
-          ...character.content.data,
-          extensions: updatedExtensions,
-        },
-      })
-    },
-    [character, updateCharacter],
-  )
-
-  const handleCharacterOpenChange = useCallback((index: number, open: boolean) => {
-    setCharacterOpenStates((prev) => ({ ...prev, [index]: open }))
-  }, [])
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-6">
       {/* Global Scripts Section */}
       <RegexScriptsSection
         title="Global Scripts"
-        scripts={regexSettings.scripts}
-        openStates={globalOpenStates}
-        onOpenChange={handleGlobalOpenChange}
-        onUpdate={handleGlobalScriptUpdate}
-        onDelete={handleGlobalScriptDelete}
-        onAdd={handleAddGlobalScript}
-        onImport={handleImportGlobalScript}
-        onExport={handleExportGlobalScripts}
+        scripts={globalScripts}
+        manager={globalScriptManager}
+        exportFilename="global-regex-scripts.json"
+        onMove={handleMoveToCharacter}
+        moveType="moveToCharacter"
+        debugRegex={debugRegex}
       />
-
-      <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 
       {/* Character Scripts Section */}
       <RegexScriptsSection
         title="Character Scripts"
-        scripts={characterRegexScripts}
-        openStates={characterOpenStates}
-        onOpenChange={handleCharacterOpenChange}
-        onUpdate={handleCharacterScriptUpdate}
-        onDelete={handleCharacterScriptDelete}
-        onAdd={handleAddCharacterScript}
-        onImport={handleImportCharacterScript}
-        onExport={handleExportCharacterScripts}
-        disabled={!isCharacter(character)}
+        scripts={characterScripts}
+        manager={characterScriptManager}
+        exportFilename={`${isCharacter(charOrGroup) ? charOrGroup.content.data.name : 'character'}-regex-scripts.json`}
+        disabled={!isCharacter(charOrGroup)}
+        onMove={handleMoveToGlobal}
+        moveType="moveToGlobal"
+        debugRegex={debugRegex}
       />
 
       {/* Hidden file inputs */}
       <Input
-        ref={globalFileInputRef}
+        ref={globalScriptManager.fileInputRef}
         type="file"
         accept=".json"
-        onChange={handleGlobalFileChange}
+        onChange={globalScriptManager.handleFileChange}
         className="hidden"
       />
       <Input
-        ref={characterFileInputRef}
+        ref={characterScriptManager.fileInputRef}
         type="file"
         accept=".json"
-        onChange={handleCharacterFileChange}
+        onChange={characterScriptManager.handleFileChange}
         className="hidden"
       />
     </div>
@@ -319,36 +348,57 @@ export function RegexExtension() {
 function RegexScriptsSection({
   title,
   scripts,
-  openStates,
-  onOpenChange,
-  onUpdate,
-  onDelete,
-  onAdd,
-  onImport,
-  onExport,
+  manager,
+  exportFilename,
   disabled = false,
-}: ScriptsSectionProps) {
+  onMove,
+  moveType,
+  debugRegex,
+}: {
+  title: string
+  scripts: RegexScript[]
+  manager: ReturnType<typeof useScriptManager>
+  exportFilename: string
+  disabled?: boolean
+  onMove?: (index: number) => void
+  moveType: 'moveToGlobal' | 'moveToCharacter'
+  debugRegex?: (script: RegexScript, rawString: string) => string
+}) {
+  const height = useMemo(() => {
+    const openList = scripts.map((_, i) => manager.openStates[i])
+    if (openList.some(Boolean)) {
+      return 590
+    }
+    return Math.min(openList.length * 36, 360)
+  }, [scripts, manager.openStates])
+
+  const activeScript = manager.activeId
+    ? scripts.find((script) => script.id === manager.activeId)
+    : null
+
+  const id = useId()
+
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center justify-between">
         <h2 className="text-md font-semibold">{title}</h2>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2 mr-3">
           <FaButton
             icon={faSquarePlus}
             btnSize="size-6"
             iconSize="1x"
             title="Add script"
             className="text-foreground border-1 border-border hover:bg-muted-foreground rounded-sm"
-            onClick={onAdd}
+            onClick={manager.handleAdd}
             disabled={disabled}
           />
           <FaButton
             icon={faFileImport}
             btnSize="size-6"
             iconSize="1x"
-            title="Import script"
+            title="Import script(s)"
             className="text-foreground border-1 border-border hover:bg-muted-foreground rounded-sm"
-            onClick={onImport}
+            onClick={manager.handleImport}
             disabled={disabled}
           />
           <FaButton
@@ -357,34 +407,62 @@ function RegexScriptsSection({
             iconSize="1x"
             title="Export all scripts"
             className="text-foreground border-1 border-border hover:bg-muted-foreground rounded-sm"
-            onClick={onExport}
+            onClick={() => manager.handleExport(exportFilename)}
             disabled={disabled}
           />
         </div>
       </div>
 
       {scripts.length > 0 && (
-        <VList
-          style={{
-            height: `${scripts.map((_, i) => openStates[i]).reduce((height, open) => height + (open ? 600 : 36), 0)}px`,
-          }}
+        <DndContext
+          id={id}
+          sensors={manager.sensors}
+          collisionDetection={closestCenter}
+          onDragStart={manager.handleDragStart}
+          onDragEnd={manager.handleDragEnd}
         >
-          {scripts.map((script, i) => (
-            <RegexScriptItem
-              key={i}
-              index={i}
-              defaultValues={script}
-              open={openStates[i]}
-              onOpenChange={onOpenChange}
-              onUpdate={onUpdate}
-              onDelete={onDelete}
-            />
-          ))}
-        </VList>
+          <SortableContext
+            items={scripts.map((script) => script.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <VList
+              className="scrollbar-stable"
+              style={{
+                height: `${height}px`,
+              }}
+            >
+              {scripts.map((script, i) => (
+                <RegexScriptItem
+                  key={script.id}
+                  index={i}
+                  defaultValues={script}
+                  open={manager.openStates[i]}
+                  onOpenChange={manager.handleOpenChange}
+                  onUpdate={manager.handleScriptUpdate}
+                  onDelete={manager.handleScriptDelete}
+                  onMove={onMove}
+                  moveType={moveType}
+                  debugRegex={debugRegex}
+                />
+              ))}
+            </VList>
+          </SortableContext>
+          {(globalThis as any).document &&
+            createPortal(
+              <DragOverlay zIndex={7000}>
+                {activeScript ? (
+                  <RegexScriptItem index={0} defaultValues={activeScript} moveType={moveType} />
+                ) : null}
+              </DragOverlay>,
+              globalThis.document.body,
+            )}
+        </DndContext>
       )}
 
       {scripts.length === 0 && (
-        <p className="flex justify-center text-muted-foreground text-sm">No scripts found</p>
+        <p className="flex justify-center text-muted-foreground text-sm">
+          {disabled ? 'No active character' : 'No scripts found'}
+        </p>
       )}
     </div>
   )

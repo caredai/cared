@@ -7,7 +7,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 
 import { Chat } from '@/app/_page/chat'
 import { backgroundFittings } from '@/app/_panels/background-image'
-import { useCreateFirstChatIfAbsent } from '@/hooks/use-chat'
+import { useCheckFirstChat } from '@/hooks/use-chat'
 import { useBackgroundSettings } from '@/hooks/use-settings'
 import { signIn } from '@/lib/sign-in'
 import { useTRPC } from '@/trpc/client'
@@ -39,7 +39,7 @@ export function PageContent() {
     }
   }, [backgroundSettings.active.url])
 
-  useCreateFirstChatIfAbsent()
+  useCheckFirstChat()
 
   return (
     <div

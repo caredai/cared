@@ -1,8 +1,9 @@
 import { z } from 'zod'
 
-import { regexFromString } from './utils'
+import { regexFromString } from './engine'
 
 export interface RegexScript {
+  id: string
   name: string
   regex: string
   replaceString: string
@@ -34,6 +35,7 @@ export enum RegexSubstituteMode {
 }
 
 export const regexScriptSchema = z.object({
+  id: z.string().min(1).max(128),
   name: z.string().min(1).max(128),
   regex: z.string().refine((value) => !value || regexFromString(value), {
     message: 'Invalid regular expression',

@@ -10,15 +10,21 @@ export interface MiscellaneousSettings {
 export const miscellaneousSettingsSchema = z.object({
   preferCharacterPrompt: z.boolean(),
   preferCharacterJailbreak: z.boolean(),
-  collapseNewlines: z.boolean().optional().default(true),
+  collapseNewlines: z.boolean(),
 })
 
-export function fillInMiscellaneousSettingsWithDefaults(settings?: MiscellaneousSettings): MiscellaneousSettings {
-  return (
-    settings ?? {
-      preferCharacterPrompt: true,
-      preferCharacterJailbreak: true,
-      collapseNewlines: false,
-    }
-  )
+export function fillInMiscellaneousSettingsWithDefaults(
+  settings?: MiscellaneousSettings,
+): MiscellaneousSettings {
+  return settings
+    ? {
+        ...settings,
+        collapseNewlines:
+          typeof settings.collapseNewlines === 'boolean' ? settings.collapseNewlines : true,
+      }
+    : {
+        preferCharacterPrompt: true,
+        preferCharacterJailbreak: true,
+        collapseNewlines: false,
+      }
 }
