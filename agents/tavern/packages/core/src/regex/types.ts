@@ -52,6 +52,18 @@ export const regexScriptSchema = z.object({
   promptOnly: z.boolean(),
   runOnEdit: z.boolean(),
   substituteMode: z.nativeEnum(RegexSubstituteMode),
-  minDepth: z.number().optional(),
-  maxDepth: z.number().optional(),
-})
+  minDepth: z.number().int().min(0).step(1).optional(),
+  maxDepth: z.number().int().min(0).step(1).optional(),
+}).refine(
+  (data) => {
+    // If both minDepth and maxDepth are defined, minDepth should not be greater than maxDepth
+    if (data.minDepth !== undefined && data.maxDepth !== undefined) {
+      return data.minDepth <= data.maxDepth
+    }
+    return true
+  },
+  {
+    message: 'Min depth cannot be greater than max depth',
+    path: ['minDepth'],
+  }
+)

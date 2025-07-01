@@ -415,7 +415,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
             />
           </div>
 
-          <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 pt-2">
+          <CollapsibleContent className="overflow-hidden flex flex-col gap-2 pt-2">
             <div className="grid grid-cols-[1fr_92px_1fr] items-center gap-x-2 gap-y-0 mx-[1px]">
               <Label className="text-xs">Primary Keywords</Label>
               <Label className="text-xs">Logic</Label>

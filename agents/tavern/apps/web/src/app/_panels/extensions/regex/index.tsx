@@ -367,7 +367,7 @@ function RegexScriptsSection({
   const height = useMemo(() => {
     const openList = scripts.map((_, i) => manager.openStates[i])
     if (openList.some(Boolean)) {
-      return 590
+      return 626
     }
     return Math.min(openList.length * 36, 360)
   }, [scripts, manager.openStates])

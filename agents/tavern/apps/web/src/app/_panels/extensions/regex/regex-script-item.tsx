@@ -280,234 +280,248 @@ export const RegexScriptItem = memo(
               </div>
             </div>
 
-            <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 pt-2">
-              {/* Debug Button */}
-              <div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'h-7 px-1.5 has-[>svg]:px-1.5 text-xs',
-                    debugOpen && 'bg-muted-foreground text-background',
+            <CollapsibleContent className="overflow-hidden">
+              <div className="flex flex-col gap-2 pt-2">
+                {/* Debug Button */}
+                <div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      'h-7 px-1.5 has-[>svg]:px-1.5 text-xs',
+                      debugOpen &&
+                        'bg-muted-foreground text-background hover:bg-muted-foreground/80 hover:text-background',
+                    )}
+                    onClick={handleDebug}
+                  >
+                    <FontAwesomeIcon icon={faBug} size="1x" className="fa-fw" />
+                    Debug
+                  </Button>
+                </div>
+
+                {/* Debug Panel */}
+                {debugOpen && (
+                  <div className="flex gap-2 mx-[1px]">
+                    <div className="flex-1">
+                      <Label className="text-xs">Input</Label>
+                      <Textarea
+                        value={debugInput}
+                        onChange={(e) => setDebugInput(e.target.value)}
+                        placeholder="Enter text to test the regex script..."
+                        className="h-24"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-xs">Output</Label>
+                      <Textarea
+                        value={debugOutput}
+                        readOnly
+                        placeholder="Output will appear here..."
+                        className="h-24 bg-muted"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="mx-[1px]">
+                      <FormLabel className="text-xs">Script Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} className="h-7 px-2 py-0.5" placeholder="Script name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                  onClick={handleDebug}
-                >
-                  <FontAwesomeIcon icon={faBug} size="1x" className="fa-fw" />
-                  Debug
-                </Button>
-              </div>
+                />
 
-              {/* Debug Panel */}
-              {debugOpen && (
-                <div className="flex gap-2 mx-[1px]">
-                  <div className="flex-1">
-                    <Label className="text-xs">Input</Label>
-                    <Textarea
-                      value={debugInput}
-                      onChange={(e) => setDebugInput(e.target.value)}
-                      placeholder="Enter text to test the regex script..."
-                      className="h-24"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <Label className="text-xs">Output</Label>
-                    <Textarea
-                      value={debugOutput}
-                      readOnly
-                      placeholder="Output will appear here..."
-                      className="h-24 bg-muted"
-                    />
-                  </div>
-                </div>
-              )}
+                <FormField
+                  control={form.control}
+                  name="regex"
+                  render={({ field }) => (
+                    <FormItem className="mx-[1px]">
+                      <FormLabel className="text-xs">Find Regex</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          className="h-16"
+                          placeholder="Regular expression pattern"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="mx-[1px]">
-                    <FormLabel className="text-xs">Script Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} className="h-7 px-2 py-0.5" placeholder="Script name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                {regexInfo && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <CheckCircle2Icon className="size-4" />
+                    {regexInfo}
+                  </div>
                 )}
-              />
 
-              <FormField
-                control={form.control}
-                name="regex"
-                render={({ field }) => (
-                  <FormItem className="mx-[1px]">
-                    <FormLabel className="text-xs">Find Regex</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        className="h-16"
-                        placeholder="Regular expression pattern"
+                <FormField
+                  control={form.control}
+                  name="replaceString"
+                  render={({ field }) => (
+                    <FormItem className="mx-[1px]">
+                      <FormLabel className="text-xs">Replace With</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          className="h-16"
+                          placeholder="Use {{match}} to include the matched text from the Find Regex or $1, $2, etc. for capture groups."
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="trimStrings"
+                  render={({ field }) => (
+                    <FormItem className="mx-[1px]">
+                      <FormLabel className="text-xs">Trim Out</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          value={trimStrings}
+                          onChange={(e) => {
+                            setTrimStrings(e.target.value)
+                          }}
+                          onBlur={(e) => {
+                            const values = e.target.value
+                              .split(',')
+                              .map((s) => s.trim())
+                              .filter(Boolean)
+                            field.onChange(values)
+                            setTrimStrings(values.join(', '))
+                          }}
+                          placeholder="Comma separated strings to trim. Trims any unwanted parts from a regex match before replacement."
+                          className="h-16"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-start gap-4">
+                  <div className="space-y-2">
+                    <CheckboxGroupField
+                      label="Affects"
+                      name="placement"
+                      control={form.control}
+                      options={placementOptions}
+                    />
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex justify-between gap-2 m-[1px]">
+                        <FormField
+                          control={form.control}
+                          name="minDepth"
+                          render={({ field }) => (
+                            <FormItem className="w-24">
+                              <FormLabel className="text-xs">Min Depth</FormLabel>
+                              <FormControl>
+                                <OptionalNumberInput
+                                  min={0}
+                                  step={1}
+                                  placeholder="Unlimited"
+                                  {...field}
+                                  className="h-6.5 px-1.5 py-0.5 rounded-sm text-xs md:text-xs font-mono text-center"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="maxDepth"
+                          render={({ field }) => (
+                            <FormItem className="w-24">
+                              <FormLabel className="text-xs">Max Depth</FormLabel>
+                              <FormControl>
+                                <OptionalNumberInput
+                                  min={0}
+                                  step={1}
+                                  placeholder="Unlimited"
+                                  {...field}
+                                  className="h-6.5 px-1.5 py-0.5 rounded-sm text-xs md:text-xs font-mono text-center"
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Show the error message for minDepth/maxDepth */}
+                      <FormField
+                        control={form.control}
+                        name="minDepth"
+                        render={() => (
+                          <FormItem className="w-48">
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </div>
+                  </div>
 
-              {regexInfo && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2Icon className="size-4" />
-                  {regexInfo}
-                </div>
-              )}
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Other Options</Label>
+                      <CheckboxField label="Disabled" name="disabled" control={form.control} />
+                      <CheckboxField label="Run On Edit" name="runOnEdit" control={form.control} />
+                    </div>
 
-              <FormField
-                control={form.control}
-                name="replaceString"
-                render={({ field }) => (
-                  <FormItem className="mx-[1px]">
-                    <FormLabel className="text-xs">Replace With</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        className="h-16"
-                        placeholder="Use {{match}} to include the matched text from the Find Regex or $1, $2, etc. for capture groups."
+                    <div className="space-y-1">
+                      <Label className="text-xs">Macros in Find Regex</Label>
+                      <FormField
+                        control={form.control}
+                        name="substituteMode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Select
+                              onValueChange={(value) => field.onChange(Number(value))}
+                              value={String(field.value)}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-7 px-2 py-0.5">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="z-6000">
+                                {substituteModeOptions.map((opt) => (
+                                  <SelectItem key={opt.value} value={String(opt.value)}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    </div>
 
-              <FormField
-                control={form.control}
-                name="trimStrings"
-                render={({ field }) => (
-                  <FormItem className="mx-[1px]">
-                    <FormLabel className="text-xs">Trim Out</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        value={trimStrings}
-                        onChange={(e) => {
-                          setTrimStrings(e.target.value)
-                        }}
-                        onBlur={(e) => {
-                          const values = e.target.value
-                            .split(',')
-                            .map((s) => s.trim())
-                            .filter(Boolean)
-                          field.onChange(values)
-                          setTrimStrings(values.join(', '))
-                        }}
-                        placeholder="Comma separated strings to trim. Trims any unwanted parts from a regex match before replacement."
-                        className="h-16"
+                    <div className="space-y-1">
+                      <Label className="text-xs">Ephemerality</Label>
+                      <CheckboxField
+                        label="Alter Chat Display"
+                        name="displayOnly"
+                        control={form.control}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-start gap-4">
-                <div className="space-y-2">
-                  <CheckboxGroupField
-                    label="Affects"
-                    name="placement"
-                    control={form.control}
-                    options={placementOptions}
-                  />
-
-                  <div className="flex justify-between gap-2">
-                    <FormField
-                      control={form.control}
-                      name="minDepth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Min Depth</FormLabel>
-                          <FormControl>
-                            <OptionalNumberInput
-                              min={0}
-                              step={1}
-                              placeholder="Unlimited"
-                              {...field}
-                              className="w-24 h-6.5 px-1.5 py-0.5 rounded-sm text-xs md:text-xs font-mono text-center"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="maxDepth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs">Max Depth</FormLabel>
-                          <FormControl>
-                            <OptionalNumberInput
-                              min={0}
-                              step={1}
-                              placeholder="Unlimited"
-                              {...field}
-                              className="w-24 h-6.5 px-1.5 py-0.5 rounded-sm text-xs md:text-xs font-mono text-center"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Other Options</Label>
-                    <CheckboxField label="Disabled" name="disabled" control={form.control} />
-                    <CheckboxField label="Run On Edit" name="runOnEdit" control={form.control} />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Macros in Find Regex</Label>
-                    <FormField
-                      control={form.control}
-                      name="substituteMode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Select
-                            onValueChange={(value) => field.onChange(Number(value))}
-                            value={String(field.value)}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="h-7 px-2 py-0.5">
-                                <SelectValue />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="z-6000">
-                              {substituteModeOptions.map((opt) => (
-                                <SelectItem key={opt.value} value={String(opt.value)}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label className="text-xs">Ephemerality</Label>
-                    <CheckboxField
-                      label="Alter Chat Display"
-                      name="displayOnly"
-                      control={form.control}
-                    />
-                    <CheckboxField
-                      label="Alter Outgoing Prompt"
-                      name="promptOnly"
-                      control={form.control}
-                    />
+                      <CheckboxField
+                        label="Alter Outgoing Prompt"
+                        name="promptOnly"
+                        control={form.control}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
