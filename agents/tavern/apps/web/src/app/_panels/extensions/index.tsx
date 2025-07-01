@@ -24,7 +24,7 @@ export function ExtensionsPanel() {
   const Component = extensions.find((ext) => ext.id === selectedExtension)?.component
 
   return (
-    <div className="flex flex-col gap-6 mb-2">
+    <div className="flex flex-col gap-4 mb-2">
       {/* Title */}
       <div className="flex items-center gap-2">
         <h1 className="text-lg font-bold">Extensions</h1>

@@ -26,13 +26,13 @@ export function CheckboxField({
       control={control}
       name={name}
       render={({ field }) => (
-        <FormItem className={cn('flex flex-row items-start space-x-3 space-y-0', className)}>
+        <FormItem className={cn('flex flex-row items-start space-x-2 space-y-0', className)}>
           <FormControl>
             <Checkbox checked={field.value} onCheckedChange={field.onChange} className="bg-muted" />
           </FormControl>
           <div className="flex flex-col gap-1 leading-none">
             <FormLabel>{label}</FormLabel>
-            <FormDescription>{description}</FormDescription>
+            {description && <FormDescription>{description}</FormDescription>}
           </div>
         </FormItem>
       )}

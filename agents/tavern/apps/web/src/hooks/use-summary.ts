@@ -1,4 +1,4 @@
-import type { MessageAnnotation } from '@tavern/core'
+import type { Message, MessageAnnotation } from '@tavern/core'
 import { useCallback, useMemo } from 'react'
 
 import { useActiveChat } from '@/hooks/use-chat'
@@ -11,11 +11,15 @@ export function useSummaries() {
   return useMemo(
     () =>
       branch
-        .map((node) => ({
+        .map((node, index) => ({
           id: node.message.id, // treat message id as summary id
           summary: node.message.content.annotations[0].summary,
+          msg: node.message,
+          msgIndex: index,
         }))
-        .filter((s): s is { id: string; summary: string } => !!s.summary),
+        .filter(
+          (s): s is { id: string; summary: string; msg: Message; msgIndex: number } => !!s.summary,
+        ),
     [branch],
   )
 }

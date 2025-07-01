@@ -35,6 +35,7 @@ import { NumberInput } from '@/components/number-input'
 import { SliderInputField } from '@/components/slider-input-field'
 import { useSummarySettings, useUpdateSummarySettings } from '@/hooks/use-settings'
 import { useCurrentSummary, useUpdateSummary } from '@/hooks/use-summary'
+import { SummariesDialog } from './summaries-dialog'
 
 const injectionPositionOptions = [
   { value: 'none', label: 'None (not injected)', position: SummaryPosition.NONE },
@@ -75,6 +76,7 @@ export function SummaryExtension() {
   const updateSummary = useUpdateSummary()
 
   const [showSettings, setShowSettings] = useState(false)
+  const [showSummariesDialog, setShowSummariesDialog] = useState(false)
   const [currentSummaryText, setCurrentSummaryText] = useState(currentSummary?.summary ?? '')
 
   useEffect(() => {
@@ -92,7 +94,8 @@ export function SummaryExtension() {
 
   const isInjectionPositionAtDepth = form.watch('injectionPosition') === SummaryPosition.IN_CHAT
 
-  const handleSummarizeNow = () => {
+  const handleSummarizeNow = (e: React.MouseEvent) => {
+    e.preventDefault()
     // TODO: Implement summarize now functionality
     console.log('Summarize now clicked')
   }
@@ -112,7 +115,17 @@ export function SummaryExtension() {
     <div className="space-y-4">
       {/* Current summary textarea */}
       <div className="space-y-2">
-        <Label>Current Summary</Label>
+        <div className="flex items-center justify-between">
+          <Label>Current Summary</Label>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 px-1.5 has-[>svg]:px-1.5 text-xs"
+            onClick={() => setShowSummariesDialog(true)}
+          >
+            Summaries
+          </Button>
+        </div>
         <Textarea
           value={currentSummaryText}
           onChange={(e) => setCurrentSummaryText(e.target.value)}
@@ -124,33 +137,34 @@ export function SummaryExtension() {
 
       <Form {...form}>
         <form onBlur={handleFormBlur} className="space-y-4">
-          <div className="flex justify-between items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 px-1.5 has-[>svg]:px-1.5 text-xs"
-              onClick={handleSummarizeNow}
-            >
-              Summarize Now
-            </Button>
-            <div className="flex items-center gap-4">
-              <CheckboxField label="Auto" name="auto" control={form.control} />
-              <CheckboxField label="No WI/AN" name="skipWIAN" control={form.control} />
-            </div>
-          </div>
-
           {/* Summary Settings */}
           <Collapsible open={showSettings} onOpenChange={setShowSettings}>
-            <CollapsibleTrigger asChild>
+            <div className="flex justify-between items-center gap-4">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 px-1.5 has-[>svg]:px-1.5 text-xs w-fit justify-between"
+                className="h-7 px-1.5 has-[>svg]:px-1.5 text-xs"
+                onClick={handleSummarizeNow}
               >
-                Summary Settings
-                <ChevronDownIcon className="transition-transform duration-200" />
+                Summarize Now
               </Button>
-            </CollapsibleTrigger>
+              <div className="flex items-center gap-6">
+                <CheckboxField label="Auto" name="auto" control={form.control} />
+                <CheckboxField label="No WI/AN" name="skipWIAN" control={form.control} />
+
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-1.5 has-[>svg]:px-1.5 text-xs w-fit justify-between [&[data-state=open]>svg]:rotate-180"
+                  >
+                    Settings
+                    <ChevronDownIcon className="transition-transform duration-200" />
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+            </div>
+
             <CollapsibleContent className="space-y-4 pt-4">
               {/* Building Mode */}
               <FormField
@@ -414,6 +428,8 @@ export function SummaryExtension() {
           </Collapsible>
         </form>
       </Form>
+
+      <SummariesDialog open={showSummariesDialog} onOpenChange={setShowSummariesDialog} />
     </div>
   )
 }

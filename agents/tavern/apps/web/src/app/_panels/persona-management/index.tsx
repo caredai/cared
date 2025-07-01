@@ -223,17 +223,7 @@ export function PersonaManagementPanel() {
   ]
 
   return (
-    <div className="flex flex-col gap-6 mb-2">
-      {/* Hidden file input for import */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        accept=".json"
-        onChange={handleImport}
-        disabled={isImporting}
-        className="hidden"
-      />
-
+    <div className="flex flex-col gap-4 mb-2">
       {/* Title */}
       <div className="flex items-center gap-2">
         <h1 className="text-lg font-bold">Persona</h1>
@@ -305,6 +295,16 @@ export function PersonaManagementPanel() {
       </div>
 
       <SelectPersonaDialog />
+
+      {/* Hidden file input for import */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept=".json"
+        onChange={handleImport}
+        disabled={isImporting}
+        className="hidden"
+      />
     </div>
   )
 }

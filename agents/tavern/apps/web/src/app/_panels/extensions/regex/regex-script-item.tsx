@@ -72,7 +72,7 @@ const substituteModeOptions = [
 export const RegexScriptItem = memo(
   function RegexScriptItem({
     index,
-    defaultValues,
+    script,
     open,
     onOpenChange,
     onUpdate,
@@ -82,7 +82,7 @@ export const RegexScriptItem = memo(
     debugRegex,
   }: {
     index: number
-    defaultValues: RegexScript
+    script: RegexScript
     open?: boolean
     onOpenChange?: (index: number, open: boolean) => void
     onUpdate?: (index: number, script: RegexScript) => void
@@ -91,23 +91,20 @@ export const RegexScriptItem = memo(
     moveType: 'moveToGlobal' | 'moveToCharacter'
     debugRegex?: (script: RegexScript, rawString: string) => string
   } & ComponentPropsWithoutRef<'div'>) {
-    const [trimStrings, setTrimStrings] = useState<string>(defaultValues.trimStrings.join(', '))
-    const [debugOpen, setDebugOpen] = useState(false)
-    const [debugInput, setDebugInput] = useState('')
-    const [debugOutput, setDebugOutput] = useState('')
+    const [trimStrings, setTrimStrings] = useState<string>(script.trimStrings.join(', '))
 
     const form = useForm<RegexScript>({
       resolver: zodResolver(regexScriptSchema),
-      defaultValues,
+      defaultValues: script,
     })
 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-      id: defaultValues.id,
+      id: script.id,
     })
 
     useEffect(() => {
-      form.reset(defaultValues)
-    }, [defaultValues, form])
+      form.reset(script)
+    }, [script, form])
 
     const handleBlur = useCallback(async () => {
       if (!(await form.trigger())) {
@@ -148,20 +145,6 @@ export const RegexScriptItem = memo(
       },
       [onMove, index],
     )
-
-    const handleDebug = useCallback(
-      (e: React.MouseEvent) => {
-        e.preventDefault()
-        setDebugOpen(!debugOpen)
-      },
-      [debugOpen],
-    )
-
-    useEffect(() => {
-      const script = form.watch()
-      const output = debugRegex?.(script, debugInput)
-      setDebugOutput(output ?? debugInput)
-    }, [debugInput, debugRegex, form.watch()])
 
     const regexInfo = useMemo(() => {
       const regex = regexFromString(form.watch('regex'))
@@ -282,46 +265,7 @@ export const RegexScriptItem = memo(
 
             <CollapsibleContent className="overflow-hidden">
               <div className="flex flex-col gap-2 pt-2">
-                {/* Debug Button */}
-                <div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      'h-7 px-1.5 has-[>svg]:px-1.5 text-xs',
-                      debugOpen &&
-                        'bg-muted-foreground text-background hover:bg-muted-foreground/80 hover:text-background',
-                    )}
-                    onClick={handleDebug}
-                  >
-                    <FontAwesomeIcon icon={faBug} size="1x" className="fa-fw" />
-                    Debug
-                  </Button>
-                </div>
-
-                {/* Debug Panel */}
-                {debugOpen && (
-                  <div className="flex gap-2 mx-[1px]">
-                    <div className="flex-1">
-                      <Label className="text-xs">Input</Label>
-                      <Textarea
-                        value={debugInput}
-                        onChange={(e) => setDebugInput(e.target.value)}
-                        placeholder="Enter text to test the regex script..."
-                        className="h-24"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <Label className="text-xs">Output</Label>
-                      <Textarea
-                        value={debugOutput}
-                        readOnly
-                        placeholder="Output will appear here..."
-                        className="h-24 bg-muted"
-                      />
-                    </div>
-                  </div>
-                )}
+                <RegexDebugPanel script={form.watch()} debugRegex={debugRegex} />
 
                 <FormField
                   control={form.control}
@@ -533,9 +477,80 @@ export const RegexScriptItem = memo(
   (prevProps, nextProps) => {
     return (
       prevProps.index === nextProps.index &&
-      hash(prevProps.defaultValues) === hash(nextProps.defaultValues) &&
+      hash(prevProps.script) === hash(nextProps.script) &&
       prevProps.open === nextProps.open &&
       prevProps.moveType === nextProps.moveType
     )
   },
 )
+
+function RegexDebugPanel({
+  script,
+  debugRegex,
+}: {
+  script: RegexScript
+  debugRegex?: (script: RegexScript, rawString: string) => string
+}) {
+  const [debugOpen, setDebugOpen] = useState(false)
+  const [debugInput, setDebugInput] = useState('')
+  const [debugOutput, setDebugOutput] = useState('')
+
+  const handleDebug = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      setDebugOpen(!debugOpen)
+    },
+    [debugOpen],
+  )
+
+  // Only calculate output when debug is open and input changes
+  useEffect(() => {
+    if (debugOpen) {
+      const output = debugRegex?.(script, debugInput)
+      setDebugOutput(output ?? debugInput)
+    } else {
+      setDebugOutput('')
+    }
+  }, [debugInput, debugRegex, script, debugOpen])
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className={cn(
+          'w-fit h-7 px-1.5 has-[>svg]:px-1.5 text-xs',
+          debugOpen &&
+            'bg-muted-foreground text-background hover:bg-muted-foreground/80 hover:text-background',
+        )}
+        onClick={handleDebug}
+      >
+        <FontAwesomeIcon icon={faBug} size="1x" className="fa-fw" />
+        Debug
+      </Button>
+
+      {debugOpen && (
+        <div className="flex gap-2 mx-[1px]">
+          <div className="flex-1">
+            <Label className="text-xs">Input</Label>
+            <Textarea
+              value={debugInput}
+              onChange={(e) => setDebugInput(e.target.value)}
+              placeholder="Enter text to test the regex script..."
+              className="h-24"
+            />
+          </div>
+          <div className="flex-1">
+            <Label className="text-xs">Output</Label>
+            <Textarea
+              value={debugOutput}
+              readOnly
+              placeholder="Output will appear here..."
+              className="h-24 bg-muted"
+            />
+          </div>
+        </div>
+      )}
+    </>
+  )
+}

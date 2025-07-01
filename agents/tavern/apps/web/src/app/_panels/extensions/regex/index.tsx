@@ -435,7 +435,7 @@ function RegexScriptsSection({
                 <RegexScriptItem
                   key={script.id}
                   index={i}
-                  defaultValues={script}
+                  script={script}
                   open={manager.openStates[i]}
                   onOpenChange={manager.handleOpenChange}
                   onUpdate={manager.handleScriptUpdate}
@@ -451,7 +451,7 @@ function RegexScriptsSection({
             createPortal(
               <DragOverlay zIndex={7000}>
                 {activeScript ? (
-                  <RegexScriptItem index={0} defaultValues={activeScript} moveType={moveType} />
+                  <RegexScriptItem index={0} script={activeScript} moveType={moveType} />
                 ) : null}
               </DragOverlay>,
               globalThis.document.body,
