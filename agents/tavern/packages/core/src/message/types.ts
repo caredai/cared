@@ -8,6 +8,8 @@ export interface MessageAnnotation {
   personaId?: string // for 'user' role
   personaName?: string // for 'user' role; will be used when the persona is deleted
   modelId?: string // for 'assistant' role & LLM generated message
+
+  summary?: string
 }
 
 export const messageAnnotationSchema = z
@@ -16,6 +18,7 @@ export const messageAnnotationSchema = z
     personaId: z.string().optional(),
     personaName: z.string().optional(),
     modelId: z.string().optional(),
+    summary: z.string().optional(),
   })
   .refine(
     (data) => {

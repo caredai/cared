@@ -10,10 +10,9 @@ const hasAttemptedFetchAtom = atom(false)
 
 export function useMessageTree() {
   const { activeChat: chat } = useActiveChat()
-  const chatId = chat?.id
 
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMessages(chatId)
+    useMessages(chat?.id)
 
   const [hasAttemptedFetch, setHasAttemptedFetch] = useAtom(hasAttemptedFetchAtom)
 

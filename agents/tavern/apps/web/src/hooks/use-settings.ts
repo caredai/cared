@@ -3,6 +3,7 @@ import type {
   ModelSettings,
   RegexSettings,
   Settings,
+  SummarySettings,
   TagsSettings,
 } from '@tavern/core'
 import { useCallback, useMemo, useRef } from 'react'
@@ -361,5 +362,32 @@ export function useUpdateRegexSettings() {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [regexSettings],
+  )
+}
+
+export function useSummarySettings() {
+  const trpc = useTRPC()
+  const { data } = useSuspenseQuery({
+    ...trpc.settings.get.queryOptions(),
+    select: useCallback(({ settings }: { settings: Settings }) => settings.summary, []),
+  })
+  return data
+}
+
+export function useUpdateSummarySettings() {
+  const summarySettings = useSummarySettings()
+  const updateSettings = useUpdateSettingsMutation()
+
+  return useCallback(
+    async (summary: Partial<SummarySettings>) => {
+      await updateSettings({
+        summary: {
+          ...summarySettings,
+          ...summary,
+        },
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [summarySettings],
   )
 }

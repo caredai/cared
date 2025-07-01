@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react'
+
 import { FormControl, FormField, FormItem, FormLabel } from '@ownxai/ui/components/form'
 import { Slider } from '@ownxai/ui/components/slider'
+
 import { NumberInput } from './number-input'
 
 export function SliderInputField({
@@ -10,7 +13,7 @@ export function SliderInputField({
   max,
   step,
 }: {
-  label: string
+  label: ReactNode
   name: string
   control: any
   min: number

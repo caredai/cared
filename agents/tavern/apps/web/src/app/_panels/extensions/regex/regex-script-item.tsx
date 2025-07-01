@@ -285,7 +285,6 @@ export const RegexScriptItem = memo(
                 {/* Debug Button */}
                 <div>
                   <Button
-                    type="button"
                     variant="outline"
                     size="sm"
                     className={cn(
