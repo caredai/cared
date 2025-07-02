@@ -4,6 +4,7 @@ import type { VListHandle } from 'virtua'
 import { memo, useMemo } from 'react'
 import { motion } from 'motion/react'
 import { VList } from 'virtua'
+import type { UseChatHelpers } from '@ai-sdk/react';
 
 import { PreviewMessage } from '@/app/_page/message'
 
@@ -11,11 +12,13 @@ function PureMessages({
   ref,
   endRef,
   messages,
+  status,
   navigate,
 }: {
   ref: RefObject<VListHandle | null>
   endRef: RefObject<HTMLDivElement | null>
   messages: MessageNode[]
+  status: UseChatHelpers['status'];
   navigate: (current: MessageNode, previous: boolean) => void
 }) {
   const indices = useMemo(() => {
@@ -35,6 +38,7 @@ function PureMessages({
         <PreviewMessage
           key={message.message.id}
           message={message.message}
+          isLoading={status === 'streaming' && messages.length - 1 === i}
           index={indices[i]!.index}
           count={indices[i]!.count}
           navigate={(previous) => navigate(message, previous)}

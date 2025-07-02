@@ -249,7 +249,7 @@ export function Chat() {
             <CircleSpinner />
           </div>
         )}
-        <Messages ref={ref} endRef={endRef} messages={branch} navigate={navigate} />
+        <Messages ref={ref} endRef={endRef} messages={branch} status={status} navigate={navigate} />
       </ContentArea>
 
       <MultimodalInput

@@ -21,14 +21,18 @@ import { Markdown } from '@/components/markdown'
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useActivePersona } from '@/hooks/use-persona'
 import defaultPng from '@/public/images/user-default.png'
+import { formatMessage } from './utils'
+import { MessageReasoning } from './message-reasoning'
 
 const PurePreviewMessage = ({
   message,
+  isLoading,
   index,
   count,
   navigate,
 }: {
   message: Message
+  isLoading: boolean;
   index: number
   count: number
   navigate: (previous: boolean) => void
@@ -156,15 +160,25 @@ const PurePreviewMessage = ({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 w-full">
+          <div className="flex flex-col gap-2 w-full text-[rgb(220,220,210)]">
             {parts.map((part, index) => {
               const { type } = part
               const key = `message-${message.id}-part-${index}`
 
+              if (type === 'reasoning') {
+                return (
+                  <MessageReasoning
+                    key={key}
+                    isLoading={isLoading}
+                    reasoning={part.reasoning}
+                  />
+                );
+              }
+
               if (type === 'text') {
                 if (mode === 'view') {
                   return (
-                    <div key={key}>
+                    <div key={key} className="flex flex-col gap-2">
                       <Markdown>{formatMessage(part.text)}</Markdown>
                     </div>
                   )
@@ -179,33 +193,3 @@ const PurePreviewMessage = ({
 }
 
 export const PreviewMessage = memo(PurePreviewMessage)
-
-function formatMessage(message: string) {
-  return message.replace(
-    /```[\s\S]*?```|``[\s\S]*?``|`[\s\S]*?`|(".*?")|(\u201C.*?\u201D)|(\u00AB.*?\u00BB)|(\u300C.*?\u300D)|(\u300E.*?\u300F)|(\uFF02.*?\uFF02)/gm,
-    function (match, p1, p2, p3, p4, p5, p6) {
-      if (p1) {
-        // English double quotes
-        return `<q>"${p1.slice(1, -1)}"</q>`;
-      } else if (p2) {
-        // Curly double quotes “ ”
-        return `<q>“${p2.slice(1, -1)}”</q>`;
-      } else if (p3) {
-        // Guillemets « »
-        return `<q>«${p3.slice(1, -1)}»</q>`;
-      } else if (p4) {
-        // Corner brackets 「 」
-        return `<q>「${p4.slice(1, -1)}」</q>`;
-      } else if (p5) {
-        // White corner brackets 『 』
-        return `<q>『${p5.slice(1, -1)}』</q>`;
-      } else if (p6) {
-        // Fullwidth quotes ＂ ＂
-        return `<q>＂${p6.slice(1, -1)}＂</q>`;
-      } else {
-        // Return the original match if no quotes are found
-        return match;
-      }
-    },
-  )
-}
