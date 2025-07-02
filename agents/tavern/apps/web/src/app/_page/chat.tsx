@@ -8,6 +8,7 @@ import hash from 'stable-hash'
 
 import { generateMessageId } from '@ownxai/sdk'
 
+import { CircleSpinner } from '@/components/spinner'
 import { useActive } from '@/hooks/use-active'
 import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage } from '@/hooks/use-message'
@@ -22,9 +23,10 @@ export function Chat() {
 
   const chatId = chat?.id
 
-  const { branch, branchRef, navigate, isLoading, isSuccess, hasNextPage } = useMessageTree()
+  const { branch, branchRef, navigate, isLoading, isSuccess, hasNextPage, isChatLoading } =
+    useMessageTree()
 
-  const { addCachedMessage, updateCachedMessage } = useCachedMessage(chatId)
+  const { addCachedMessage, updateCachedMessage } = useCachedMessage(chat)
 
   const prepareRequestBody = useCallback(
     ({ id, messages: uiMessages }: { id: string; messages: UIMessage[] }) => {
@@ -242,6 +244,11 @@ export function Chat() {
   return (
     <>
       <ContentArea>
+        {(isChatLoading || isLoading || hasNextPage) /* TODO */ && (
+          <div className="flex h-full items-center justify-center text-muted-foreground">
+            <CircleSpinner />
+          </div>
+        )}
         <Messages ref={ref} endRef={endRef} messages={branch} navigate={navigate} />
       </ContentArea>
 

@@ -6,10 +6,19 @@ import hash from 'stable-hash'
 import { useActiveChat } from '@/hooks/use-chat'
 import { useMessages } from '@/hooks/use-message'
 
+export type MessageTree =
+  | {
+      tree: MessageNode[]
+      latest: MessageNode
+      allMessages: Message[]
+      isChanged: (oldAllMessages: Message[]) => boolean
+    }
+  | undefined
+
 const hasAttemptedFetchAtom = atom(false)
 
 export function useMessageTree() {
-  const { activeChat: chat } = useActiveChat()
+  const { activeChat: chat, isLoading: isChatLoading, isSuccess: isChatSuccess } = useActiveChat()
 
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessages(chat?.id)
@@ -127,6 +136,8 @@ export function useMessageTree() {
   )
 
   return {
+    isChatLoading,
+    isChatSuccess,
     isLoading,
     isSuccess,
     hasNextPage,
@@ -138,15 +149,6 @@ export function useMessageTree() {
     navigate,
   }
 }
-
-export type MessageTree =
-  | {
-      tree: MessageNode[]
-      latest: MessageNode
-      allMessages: Message[]
-      isChanged: (oldAllMessages: Message[]) => boolean
-    }
-  | undefined
 
 export function buildMessageTree(allMessages?: Message[]): MessageTree {
   if (!allMessages) {
@@ -162,7 +164,7 @@ export function buildMessageTree(allMessages?: Message[]): MessageTree {
       if (!childrenMap.has(message.parentId)) {
         childrenMap.set(message.parentId, [])
       }
-      childrenMap.get(message.parentId)!.push(message)
+      childrenMap.get(message.parentId)?.push(message)
     }
   })
 
@@ -178,7 +180,7 @@ export function buildMessageTree(allMessages?: Message[]): MessageTree {
   let latest: MessageNode
   let maxId = ''
 
-  // Recursive function to build the tree structure and track latest
+  // Recursive function to build the tree structure and track the latest
   function buildNode(message: Message, parent?: MessageNode): MessageNode {
     const children: Message[] = childrenMap.get(message.id) ?? []
     const currentNode: MessageNode = {
@@ -187,13 +189,13 @@ export function buildMessageTree(allMessages?: Message[]): MessageTree {
       descendants: [],
     }
 
-    // Check if current node is the latest
+    // Check if the current node is the latest
     if (!maxId || message.id > maxId) {
       maxId = message.id
       latest = currentNode
     }
 
-    // Build descendants and set their parent to current node
+    // Build descendants and set their parent to the current node
     currentNode.descendants = children.map((child) => buildNode(child, currentNode))
 
     return currentNode

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronRightIcon } from 'lucide-react'
 
 import { cn } from '@ownxai/ui/lib/utils'
 
@@ -31,19 +32,20 @@ export function ExtensionsPanel() {
       </div>
 
       {/* Main content area */}
-      <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-4">
         {/* Left side: Extension list */}
         <div className="flex flex-col gap-2 pr-2">
           {extensions.map(({ id, title }) => (
             <div
               key={id}
               className={cn(
-                'flex items-center gap-2 p-2 rounded-md border border-border cursor-pointer hover:bg-muted relative',
-                selectedExtension === id && 'border-primary border-e-6',
+                'flex items-center p-2 pr-1 rounded-md border border-border cursor-pointer hover:bg-muted relative',
+                selectedExtension === id && 'justify-between border-ring',
               )}
               onClick={() => setSelectedExtension(id)}
             >
-              <div className="font-medium text-sm truncate">{title}</div>
+              <span className="font-medium text-sm truncate">{title}</span>
+              {selectedExtension === id && <ChevronRightIcon className="w-3 h-3" />}
             </div>
           ))}
         </div>

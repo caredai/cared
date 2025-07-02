@@ -7,12 +7,14 @@ import { skipToken, useInfiniteQuery, useMutation, useQueryClient } from '@tanst
 import { toast } from 'sonner'
 import hash from 'stable-hash'
 
+import type { Chat } from './use-chat'
 import { useTRPC } from '@/trpc/client'
+import { useSetFirstChat } from './use-chat'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 type MessageListOutput = RouterOutput['message']['list']
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 10 // TODO
 
 export function useMessages(chatId?: string) {
   const trpc = useTRPC()
@@ -393,7 +395,11 @@ export function useDeleteMessage(chatId?: string) {
   )
 }
 
-export function useCachedMessage(chatId?: string) {
+export function useCachedMessage(chat?: Chat) {
+  const chatId = chat?.id
+
+  const setFirstChat = useSetFirstChat(chat?.characterId ?? chat?.groupId)
+
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -401,7 +407,7 @@ export function useCachedMessage(chatId?: string) {
     (message: Message) => {
       if (!chatId) return
 
-      // Add message to the infinite query cache
+      // Add the message to the infinite query cache
       queryClient.setQueryData<InfiniteData<MessageListOutput>>(
         trpc.message.list.infiniteQueryKey({
           chatId,
@@ -425,6 +431,8 @@ export function useCachedMessage(chatId?: string) {
           }
         },
       )
+
+      void setFirstChat(chatId)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [chatId],
@@ -434,7 +442,7 @@ export function useCachedMessage(chatId?: string) {
     (message: Message) => {
       if (!chatId) return
 
-      // Update message in the infinite query cache
+      // Update the message in the infinite query cache
       queryClient.setQueryData<InfiniteData<MessageListOutput>>(
         trpc.message.list.infiniteQueryKey({
           chatId,
@@ -452,6 +460,8 @@ export function useCachedMessage(chatId?: string) {
           }
         },
       )
+
+      void setFirstChat(chatId)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [chatId],
@@ -461,7 +471,7 @@ export function useCachedMessage(chatId?: string) {
     (messageId: string) => {
       if (!chatId) return
 
-      // Remove message from the infinite query cache
+      // Remove the message from the infinite query cache
       queryClient.setQueryData<InfiniteData<MessageListOutput>>(
         trpc.message.list.infiniteQueryKey({
           chatId,
@@ -479,6 +489,8 @@ export function useCachedMessage(chatId?: string) {
           }
         },
       )
+
+      void setFirstChat(chatId)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [chatId],

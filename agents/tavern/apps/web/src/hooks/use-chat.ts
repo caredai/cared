@@ -2,13 +2,7 @@ import type { InfiniteData } from '@tanstack/react-query'
 import type { AppRouter } from '@tavern/api'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback, useEffect, useMemo } from 'react'
-import {
-  skipToken,
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query'
+import { skipToken, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getCharFirstMessages, randomPickCharFirstMessage, substituteMacros } from '@tavern/core'
 import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
@@ -23,7 +17,7 @@ type RouterOutput = inferRouterOutputs<AppRouter>
 type ChatListOutput = RouterOutput['chat']['list']
 export type Chat = ChatListOutput['chats'][number]
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 10 // TODO
 
 const activeChatIdAtom = atom<string | undefined>(undefined)
 
@@ -36,42 +30,20 @@ export function useActiveChatId() {
 }
 
 export function useActiveChat() {
-  const { activeChatId, setActiveChat } = useActiveChatId()
+  const { activeChatId } = useActiveChatId()
 
   const activeCharOrGroup = useActiveCharacterOrGroup()
-  const { data: chats, isSuccess } = useChatsByCharacterOrGroup(activeCharOrGroup?.id)
-
-  const firstChatId = chats?.pages[0]?.chats[0]?.id
-  useEffect(() => {
-    setActiveChat(firstChatId)
-  }, [firstChatId, setActiveChat])
+  const { data: chats, isLoading, isSuccess } = useChatsByCharacterOrGroup(activeCharOrGroup?.id)
 
   const activeChat = useMemo(() => {
     if (!isSuccess || !activeChatId) return undefined
     return chats.pages.flatMap((page) => page.chats).find((chat) => chat.id === activeChatId)
   }, [activeChatId, chats, isSuccess])
 
-  const bypassGet = true
-
-  const trpc = useTRPC()
-
-  const { data: activeChat2, refetch } = useQuery({
-    ...trpc.chat.get.queryOptions(
-      activeChatId &&
-        isSuccess &&
-        !activeChat &&
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        !bypassGet
-        ? {
-            id: activeChatId,
-          }
-        : skipToken,
-    ),
-  })
-
   return {
-    activeChat: activeChat ?? activeChat2?.chat,
-    refetchActiveChat: refetch,
+    activeChat: activeChat,
+    isLoading,
+    isSuccess,
   }
 }
 
@@ -443,13 +415,69 @@ export function useUpdateChat(characterId?: string, groupId?: string) {
             if (!old) {
               return undefined
             }
-            return {
-              pages: old.pages.map((page) => ({
-                ...page,
-                chats: page.chats.map((chat) =>
-                  chat.id === newData.id ? { ...chat, ...newData } : chat,
+
+            // Find the page and index of the chat to update
+            let targetPageIndex = -1
+            let targetChatIndex = -1
+            let targetChat: Chat | undefined
+            for (let pageIndex = 0; pageIndex < old.pages.length; pageIndex++) {
+              const page = old.pages[pageIndex]!
+              const chatIndex = page.chats.findIndex((chat) => chat.id === newData.id)
+              if (chatIndex >= 0) {
+                targetPageIndex = pageIndex
+                targetChatIndex = chatIndex
+                targetChat = page.chats[chatIndex]
+                break
+              }
+            }
+
+            if (!targetChat || targetPageIndex === -1 || targetChatIndex === -1) {
+              return old
+            }
+
+            const updatedChat: Chat = {
+              ...targetChat,
+              ...newData,
+              updatedAt: new Date(),
+            }
+
+            // If the chat is already in the first page and first position, just update it
+            if (targetPageIndex === 0 && targetChatIndex === 0) {
+              return {
+                pages: old.pages.map((page, pageIndex) =>
+                  pageIndex === 0
+                    ? {
+                        ...page,
+                        chats: page.chats.map((chat, chatIndex) =>
+                          chatIndex === 0 ? updatedChat : chat,
+                        ),
+                      }
+                    : page,
                 ),
-              })),
+                pageParams: old.pageParams,
+              }
+            }
+
+            // Remove the chat from its original position
+            const newPages = old.pages.map((page, pageIndex) =>
+              pageIndex === targetPageIndex
+                ? {
+                    ...page,
+                    chats: page.chats.filter((_, chatIndex) => chatIndex !== targetChatIndex),
+                  }
+                : page,
+            )
+
+            // Add the updated chat to the first position of the first page
+            if (newPages[0]) {
+              newPages[0] = {
+                ...newPages[0],
+                chats: [updatedChat, ...newPages[0].chats],
+              }
+            }
+
+            return {
+              pages: newPages,
               pageParams: old.pageParams,
             }
           })
@@ -516,7 +544,7 @@ export function useUpdateChat(characterId?: string, groupId?: string) {
   )
 
   return useCallback(
-    async (id: string, data: Partial<Chat>) => {
+    async (id: string, data?: Partial<Chat>) => {
       return await updateMutation.mutateAsync({
         id,
         ...data,
@@ -666,5 +694,26 @@ export function useDeleteChat(characterId?: string, groupId?: string) {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
+  )
+}
+
+export function useSetFirstChat(characterId?: string, groupId?: string) {
+  const { data: chats } = useChatsByCharacterOrGroup(characterId ?? groupId)
+  const updateChat = useUpdateChat(characterId, groupId)
+
+  return useCallback(
+    async (id: string) => {
+      if (!chats?.pages[0]?.chats[0]) {
+        return
+      }
+
+      const firstChat = chats.pages[0].chats[0]
+      if (firstChat.id === id) {
+        return
+      }
+
+      return await updateChat(id)
+    },
+    [chats, updateChat],
   )
 }

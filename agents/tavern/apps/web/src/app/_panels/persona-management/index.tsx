@@ -286,7 +286,7 @@ export function PersonaManagementPanel() {
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 
       {/* Main content area */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Left side: Persona list */}
         <PersonaList personas={filteredAndSortedPersonas} />
 
