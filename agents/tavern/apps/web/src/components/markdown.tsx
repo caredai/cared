@@ -2,6 +2,7 @@ import type { Components } from 'react-markdown'
 import React, { memo } from 'react'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
 import remarkGfm from 'remark-gfm'
 
 import { CodeBlock } from './code-block'
@@ -90,7 +91,7 @@ const components: Partial<Components> = {
   },
   q: ({ node: _, children, ...props }) => {
     return (
-      <q className="text-orange-500" {...props}>
+      <q className="text-amber-500" {...props}>
         {children}
       </q>
     )
@@ -98,10 +99,15 @@ const components: Partial<Components> = {
 }
 
 const remarkPlugins = [remarkGfm]
+const rehypePlugins = [rehypeRaw]
 
 const NonMemoizedMarkdown = ({ children }: { children: string }) => {
   return (
-    <ReactMarkdown remarkPlugins={remarkPlugins} components={components}>
+    <ReactMarkdown
+      remarkPlugins={remarkPlugins}
+      rehypePlugins={rehypePlugins}
+      components={components}
+    >
       {children}
     </ReactMarkdown>
   )
