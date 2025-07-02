@@ -1,3 +1,5 @@
+import { cyrb53 } from '@tavern/core'
+
 let worker: Worker | undefined = undefined
 
 const getWorker = () => {
@@ -7,11 +9,18 @@ const getWorker = () => {
   return worker
 }
 
+const countCache = new Map<string, number>()
 let idCounter = 0
 
 export async function countTokens(text: string, modelId?: string): Promise<number> {
   if (!modelId) {
     return 0
+  }
+
+  const cacheKey = `${modelId}-${cyrb53(text)}`;
+  const cachedCount = countCache.get(cacheKey)
+  if (cachedCount !== undefined) {
+    return cachedCount
   }
 
   const id = idCounter++
@@ -35,6 +44,8 @@ export async function countTokens(text: string, modelId?: string): Promise<numbe
       if (data.id === id) {
         worker.removeEventListener('message', handleMessage)
         if (typeof data.tokenCount === 'number') {
+          countCache.set(cacheKey, data.tokenCount)
+
           resolve(data.tokenCount)
         } else {
           reject(new Error(data.error))
