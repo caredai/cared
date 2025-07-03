@@ -8,8 +8,8 @@ export class ChatContext {
   collection: PromptCollection[] = []
   tokenBudget = 0
 
-  setTokenBudget(promptTokens: number) {
-    this.tokenBudget = promptTokens
+  setTokenBudget(maxPromptTokens: number) {
+    this.tokenBudget = maxPromptTokens
   }
 
   canAffordAll(messages: PromptMessage[]) {

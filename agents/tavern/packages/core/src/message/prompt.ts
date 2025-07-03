@@ -23,7 +23,7 @@ export function buildPromptMessages(params: BuildPromptMessagesParams) {
   const { messages, chat, settings, modelPreset, model, persona, character, group } = params
 
   const { evaluateMacros } = substituteMacros({
-    messages: messages,
+    messages,
     chat,
     settings,
     modelPreset,

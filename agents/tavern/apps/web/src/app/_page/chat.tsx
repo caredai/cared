@@ -109,7 +109,10 @@ export function Chat() {
       }
 
       const promptMessages = buildPromptMessages({
-        messages: branch, // TODO
+        messages: [...branch, {
+          message: lastMessage,
+          descendants: [],
+        }], // TODO
         chat,
         settings,
         modelPreset,
@@ -188,7 +191,7 @@ export function Chat() {
     }
 
     if (status === 'ready' || status === 'error') {
-      setMessages([])
+      setMessages(msgs => msgs.slice(msgs.length - 2))
     }
   }, [
     branch,
