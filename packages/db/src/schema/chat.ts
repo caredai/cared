@@ -11,7 +11,7 @@ import {
   text,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 import { relations } from 'drizzle-orm'
 
 import type { MessageContent } from '@ownxai/shared'
@@ -123,7 +123,6 @@ export const Message = pgTable(
     // Agent id. Only set for assistant role messages.
     agentId: text().references(() => Agent.id),
     content: jsonb().$type<MessageContent>().notNull(),
-    metadata: jsonb(),
     ...timestamps,
   },
   (table) => [
@@ -163,7 +162,6 @@ export const CreateMessageSchema = z.object({
   role: uiMessageSchema.shape.role,
   agentId: z.string().optional(),
   content: messageContentSchema,
-  metadata: z.record(z.unknown()).optional(),
 })
 
 // Message summary table to store periodic summaries of chat messages
@@ -201,7 +199,7 @@ export const CreateMessageSummarySchema = createInsertSchema(MessageSummary, {
 
 export const UpdateMessageSummarySchema = createUpdateSchema(MessageSummary, {
   id: z.string(),
-  content: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   chatId: true,
   checkpoint: true,

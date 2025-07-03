@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server'
 import { and, count, desc, eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { Transaction } from '@ownxai/db/client'
 import {

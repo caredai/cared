@@ -1,6 +1,6 @@
 import { index, timestamp } from 'drizzle-orm/pg-core'
 import { v7 } from 'uuid'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 export function generateId(prefix: string) {
   const uuid = v7() // time based, monotonically increasing order
@@ -19,20 +19,22 @@ export function parseTimestampFromId(id: string) {
 }
 
 export function makeIdValid(prefix: string) {
-  return z.string().superRefine((id, ctx) => {
-    const prefix_ = id.split('_')[0]
+  return z.string().check((ctx) => {
+    const prefix_ = ctx.value.split('_')[0]
     if (prefix_ !== prefix) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: 'custom',
         message: `Invalid ID prefix: should be '${prefix}_'`,
+        input: ctx.value,
       })
       return z.NEVER
     }
-    const timestamp = parseTimestampFromId(id)
+    const timestamp = parseTimestampFromId(ctx.value)
     if (timestamp - Date.now() > 1000 * 10) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+      ctx.issues.push({
+        code: 'custom',
         message: 'Invalid ID timestamp: should be within 10 seconds of current time',
+        input: ctx.value,
       })
     }
   })

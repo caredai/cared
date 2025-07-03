@@ -1,4 +1,4 @@
-import type { Message, MessageAnnotation } from '@tavern/core'
+import type { Message, MessageMetadata } from '@tavern/core'
 import { useCallback, useMemo } from 'react'
 
 import { useActiveChat } from '@/hooks/use-chat'
@@ -55,7 +55,7 @@ export function useUpdateSummary() {
             ...message.content.annotations[0],
             summary,
           },
-        ] as [MessageAnnotation],
+        ] as [MessageMetadata],
       }
 
       return await updateMessage(id, updatedContent)
@@ -90,7 +90,7 @@ export function useDeleteSummary() {
             ...message.content.annotations[0],
             summary: undefined,
           },
-        ] as [MessageAnnotation],
+        ] as [MessageMetadata],
       }
 
       return await updateMessage(id, updatedContent)

@@ -1,4 +1,10 @@
-import type { LanguageModelV1, LanguageModelV1CallOptions, LanguageModelV1StreamPart } from 'ai'
+import type {
+  LanguageModelV2,
+  LanguageModelV2CallOptions,
+  LanguageModelV2StreamPart,
+} from '@ai-sdk/provider'
+
+import { regexFromString } from '@ownxai/shared'
 
 import type { OwnxClientOptions } from '../client'
 import { makeHeaders } from '../client'
@@ -20,7 +26,7 @@ function concatChunks(chunks: Uint8Array[], totalLength: number) {
 
 async function* processStream(
   responseBody: ReadableStream<Uint8Array>,
-): AsyncGenerator<LanguageModelV1StreamPart | { type: 'metadata'; [key: string]: any }> {
+): AsyncGenerator<LanguageModelV2StreamPart | { type: 'metadata'; [key: string]: any }> {
   const reader = responseBody.getReader()
   const decoder = new TextDecoder()
   const chunks: Uint8Array[] = []
@@ -60,41 +66,32 @@ async function* processStream(
 export async function createLanguageModel(
   modelId: string,
   opts: OwnxClientOptions,
-): Promise<LanguageModelV1> {
-  const url = opts.apiUrl + '/api/v1/model/language'
+): Promise<LanguageModelV2> {
+  const url = opts.apiUrl + '/api/V2/model/language'
 
   const getUrl = new URL(url)
   getUrl.searchParams.set('modelId', modelId)
-  const attributes = await (
+  const { supportedUrls, ...attributes } = await (
     await fetch(getUrl, {
       headers: await makeHeaders(opts),
     })
   ).json()
-
-  const [providerId] = modelId.split(':', 2)
 
   type NonMethodProperties<T> = {
     [K in keyof T as T[K] extends (...args: any[]) => any ? never : K]: T[K]
   }
 
   return {
-    ...(attributes as NonMethodProperties<LanguageModelV1>),
+    ...(attributes as NonMethodProperties<LanguageModelV2>),
 
-    supportsUrl: (url: URL) => {
-      // TODO
-      switch (providerId) {
-        case 'google':
-          return url
-            .toString()
-            .startsWith('https://generativelanguage.googleapis.com/v1beta/files/')
-        case 'mistral':
-          return url.protocol === 'https:'
-        default:
-          return false
-      }
-    },
+    supportedUrls: Object.fromEntries(
+      (supportedUrls as [string, string[]][]).map(([mediaType, regexArray]) => [
+        mediaType,
+        regexArray.map(regexFromString).filter(Boolean),
+      ]),
+    ) as Record<string, RegExp[]>,
 
-    doGenerate: async (options: LanguageModelV1CallOptions) => {
+    doGenerate: async (options: LanguageModelV2CallOptions) => {
       const headers = await makeHeaders(opts)
       headers.set('Content-Type', 'application/json')
 
@@ -114,7 +111,7 @@ export async function createLanguageModel(
       return await response.json()
     },
 
-    doStream: async (options: LanguageModelV1CallOptions) => {
+    doStream: async (options: LanguageModelV2CallOptions) => {
       const headers = await makeHeaders(opts)
       headers.set('Content-Type', 'application/json')
 
@@ -134,7 +131,7 @@ export async function createLanguageModel(
       }
 
       // Process the stream to extract metadata and forward content
-      let initialMetadata = {} as Omit<Awaited<ReturnType<LanguageModelV1['doStream']>>, 'stream'>
+      let metadata = {} as Omit<Awaited<ReturnType<LanguageModelV2['doStream']>>, 'stream'>
       let contentStreamStarted = false
 
       // Create an async generator that separates metadata and content
@@ -147,13 +144,13 @@ export async function createLanguageModel(
               continue
             }
             const { type: _type, ...meta } = chunk // Remove 'type' field
-            initialMetadata = {
-              ...initialMetadata, // Merge if multiple metadata chunks (unlikely but possible)
+            metadata = {
+              ...metadata, // Merge if multiple metadata chunks (unlikely but possible)
               ...meta,
             }
           } else {
             contentStreamStarted = true
-            // Ensure it matches LanguageModelV1StreamPart before yielding
+            // Ensure it matches LanguageModelV2StreamPart before yielding
             if ('type' in chunk) {
               yield chunk
             } else {
@@ -176,7 +173,7 @@ export async function createLanguageModel(
             }
           },
         }),
-        ...initialMetadata, // Spread the parsed metadata (warnings, usage, rawResponse etc.)
+        ...metadata, // Spread the parsed metadata (warnings, usage, rawResponse etc.)
       }
     },
   }

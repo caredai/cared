@@ -1,6 +1,6 @@
 import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { SQL } from '@ownxai/db'
 import { auth } from '@ownxai/auth'

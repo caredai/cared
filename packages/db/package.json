@@ -27,7 +27,7 @@
     "@ownxai/shared": "workspace:*",
     "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "^0.38.4",
-    "drizzle-zod": "^0.6.1",
+    "drizzle-zod": "^0.8.2",
     "nanoid": "^5.0.9",
     "postgres": "^3.4.5",
     "zod": "catalog:"

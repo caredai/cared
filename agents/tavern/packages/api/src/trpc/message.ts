@@ -1,6 +1,6 @@
 import type { Message } from '@tavern/core'
 import { messageContentSchema } from '@tavern/core'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'

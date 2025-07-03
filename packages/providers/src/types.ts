@@ -1,11 +1,11 @@
-import type { EmbeddingModelV1, ImageModelV1, LanguageModelV1 } from '@ai-sdk/provider'
+import type { EmbeddingModelV2, ImageModelV2, LanguageModelV2 } from '@ai-sdk/provider'
 
 export interface Provider {
-  languageModel?(modelId: string): LanguageModelV1
+  languageModel?(modelId: string): LanguageModelV2
 
-  textEmbeddingModel?(modelId: string): EmbeddingModelV1<string>
+  textEmbeddingModel?(modelId: string): EmbeddingModelV2<string>
 
-  image?(modelId: string): ImageModelV1
+  image?(modelId: string): ImageModelV2
 }
 
 export const modelTypes = ['language', 'text-embedding', 'image'] as const

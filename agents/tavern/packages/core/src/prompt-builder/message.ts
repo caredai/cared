@@ -1,5 +1,5 @@
-import type { CoreMessage } from 'ai'
-import { convertToCoreMessages } from 'ai'
+import type { ModelMessage } from 'ai'
+import { convertToModelMessages as _convertToModelMessages } from 'ai'
 
 import type { ReducedMessage } from '../types'
 import { TokenCounter } from './token-counter'
@@ -7,19 +7,19 @@ import { TokenCounter } from './token-counter'
 export class PromptMessage {
   constructor(
     readonly identifier: string,
-    readonly message: ReducedMessage | CoreMessage,
+    readonly message: ReducedMessage | ModelMessage,
     readonly tokens: number,
   ) {}
 
   static async fromContent(identifier: string, role: ReducedMessage['role'], content: string) {
-    const message: CoreMessage = { role, content }
+    const message: ModelMessage = { role, content }
 
     const tokens = await TokenCounter.instance.count(identifier, message)
 
     return new PromptMessage(identifier, message, tokens)
   }
 
-  static async fromMessage(identifier: string, message: ReducedMessage | CoreMessage) {
+  static async fromMessage(identifier: string, message: ReducedMessage | ModelMessage) {
     const tokens = await TokenCounter.instance.count(identifier, message)
 
     return new PromptMessage(identifier, message, tokens)
@@ -48,17 +48,16 @@ export class PromptCollection {
   }
 }
 
-export function isModelMessage(message: ReducedMessage | CoreMessage): message is CoreMessage {
+export function isModelMessage(message: ReducedMessage | ModelMessage): message is ModelMessage {
   return !(message as ReducedMessage).content.parts
 }
 
-export function convertToModelMessages(message: ReducedMessage | CoreMessage) {
+export function convertToModelMessages(message: ReducedMessage | ModelMessage) {
   return !isModelMessage(message)
-    ? convertToCoreMessages([
+    ? _convertToModelMessages([
         {
           role: message.role,
           ...message.content,
-          content: '',
         },
       ])
     : [message]

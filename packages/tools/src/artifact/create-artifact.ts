@@ -1,5 +1,5 @@
 import { tool } from 'ai'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { generateArtifactId } from '@ownxai/db/schema'
 
@@ -10,7 +10,7 @@ export const createArtifact = (ctx: Context) =>
   tool({
     description:
       'Create a artifact for a writing or content creation activities. This tool will call other functions that will generate the contents of the artifact based on the title and kind.',
-    parameters: z.object({
+    inputSchema: z.object({
       title: z.string(),
       kind: z.enum(artifactKinds),
     }),
@@ -19,24 +19,28 @@ export const createArtifact = (ctx: Context) =>
 
       const dataStream = ctx.dataStream!
 
-      dataStream.writeData({
-        type: 'kind',
-        content: kind,
+      dataStream.write({
+        type: 'data-kind',
+        data: kind,
+        transient: true,
       })
 
-      dataStream.writeData({
-        type: 'id',
-        content: id,
+      dataStream.write({
+        type: 'data-id',
+        data: id,
+        transient: true,
       })
 
-      dataStream.writeData({
-        type: 'title',
-        content: title,
+      dataStream.write({
+        type: 'data-title',
+        data: title,
+        transient: true,
       })
 
-      dataStream.writeData({
-        type: 'clear',
-        content: '',
+      dataStream.write({
+        type: 'data-clear',
+        data: null,
+        transient: true,
       })
 
       const artifactHandler = getArtifactHandler(kind)
@@ -51,7 +55,7 @@ export const createArtifact = (ctx: Context) =>
         ctx,
       })
 
-      dataStream.writeData({ type: 'finish', content: '' })
+      dataStream.write({ type: 'data-finish', data: null, transient: true })
 
       return {
         id,

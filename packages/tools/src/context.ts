@@ -1,4 +1,4 @@
-import type { DataStreamWriter, Tool } from 'ai'
+import type { UIMessageStreamWriter , Tool } from 'ai'
 
 import type { Agent, App, Chat } from '@ownxai/db/schema'
 import { getModel } from '@ownxai/providers/providers'
@@ -14,7 +14,7 @@ export interface Context {
   agent: Agent
   chat: Chat
 
-  dataStream?: DataStreamWriter
+  dataStream?: UIMessageStreamWriter
 }
 
 export type ContextAwareTool = (context: Context) => Tool

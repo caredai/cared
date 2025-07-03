@@ -7,7 +7,7 @@ import type { ModelInfo } from '@ownxai/sdk'
 
 import type { ModelPreset } from '../model-preset'
 import type { ReducedChat, ReducedMessage } from '../types'
-import type { MessageAnnotation, MessageNode } from './types'
+import type { MessageMetadata, MessageNode } from './types'
 import {
   addVariable,
   decrementVariable,
@@ -127,9 +127,8 @@ export function evaluateMacros(
     {
       regex: /{{firstIncludedMessageId}}/gi,
       replace: () =>
-        messages?.find(
-          (m) => !!(m.content.annotations.at(0) as MessageAnnotation | undefined)?.modelId,
-        )?.id ?? '',
+        messages?.find((m) => !!(m.content.metadata as MessageMetadata | undefined)?.modelId)?.id ??
+        '',
     },
     { regex: /{{firstDisplayedMessageId}}/gi, replace: () => messages?.at(0)?.id ?? '' },
     {

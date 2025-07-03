@@ -1,11 +1,11 @@
-import type { LanguageModelV1 } from 'ai'
+import type { LanguageModelV2 } from '@ai-sdk/provider'
 import type { LLM, LLMResponse, Message } from 'mem0ai/oss'
 import { generateText } from 'ai'
 
 import { getModel } from '@ownxai/providers/providers'
 
 export class OwnxLLM implements LLM {
-  private constructor(private model: LanguageModelV1) {}
+  private constructor(private model: LanguageModelV2) {}
 
   static create(fullModelId: string) {
     const model = getModel(fullModelId, 'language')
@@ -57,7 +57,6 @@ export class OwnxLLM implements LLM {
       messages,
       tools,
       toolChoice: tools ? 'auto' : undefined,
-      maxSteps: 1,
     })
 
     if (response.toolCalls.length) {
@@ -66,7 +65,7 @@ export class OwnxLLM implements LLM {
         role: 'assistant',
         toolCalls: response.toolCalls.map((call) => ({
           name: call.toolName,
-          arguments: typeof call.args === 'string' ? call.args : JSON.stringify(call.args),
+          arguments: typeof call.input === 'string' ? call.input : JSON.stringify(call.input),
         })),
       }
     } else {

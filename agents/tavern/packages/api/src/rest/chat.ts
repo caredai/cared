@@ -1,11 +1,16 @@
 import assert from 'assert'
-import type { MessageAnnotation } from '@tavern/core'
+import type { MessageMetadata } from '@tavern/core'
 import { messageContentSchema } from '@tavern/core'
 import { db } from '@tavern/db/client'
-import { appendResponseMessages, createDataStreamResponse, smoothStream, streamText } from 'ai'
-import { z } from 'zod'
+import {
+  convertToModelMessages,
+  createUIMessageStream,
+  smoothStream,
+  stepCountIs,
+  streamText,
+} from 'ai'
+import { z } from 'zod/v4'
 
-import type { UIMessage } from '@ownxai/sdk'
 import { log } from '@ownxai/log'
 import { generateMessageId, uiMessageSchema } from '@ownxai/sdk'
 
@@ -65,17 +70,17 @@ export async function POST(request: Request): Promise<Response> {
     })
   }
 
-  const annotation: MessageAnnotation = {
+  const metadata: MessageMetadata = {
     characterId,
     modelId,
   }
 
-  return createDataStreamResponse({
-    execute: (dataStream) => {
+  const stream = createUIMessageStream({
+    execute: ({ writer: dataStream }) => {
       const result = streamText({
         model: languageModel,
-        messages: messages.map((msg) => ({ ...msg, content: '' })),
-        maxSteps: 1,
+        messages: convertToModelMessages(messages),
+        stopWhen: stepCountIs(5),
         experimental_transform: smoothStream({
           chunking:
             preferredLanguage === 'chinese'
@@ -84,53 +89,6 @@ export async function POST(request: Request): Promise<Response> {
                 ? /[\u3040-\u309F\u30A0-\u30FF]|\S+\s+/
                 : 'word',
         }),
-        experimental_generateMessageId: generateMessageId,
-        onChunk() {
-          dataStream.writeMessageAnnotation(annotation as any)
-        },
-        onFinish: async ({ response }) => {
-          const responseMessages = appendResponseMessages({
-            // `appendResponseMessages` only use the last message in the input messages
-            messages: [
-              {
-                ...lastMessage,
-                content: '',
-                parts: lastMessage.content.parts,
-                experimental_attachments: lastMessage.content.experimental_attachments,
-                annotations: lastMessage.content.annotations,
-              },
-            ],
-            responseMessages: response.messages,
-          })
-
-          const newLastMessage = responseMessages.at(0)!
-          assert.equal(newLastMessage.id, lastMessage.id)
-
-          if (responseMessages.length === 1) {
-            assert.equal(newLastMessage.role, 'assistant')
-
-            newLastMessage.annotations = [annotation as any]
-
-            await ownxTrpc.message.update.mutate({
-              id: newLastMessage.id,
-              content: newLastMessage as UIMessage,
-            })
-          } else {
-            assert.equal(responseMessages.length, 2)
-            const msg = responseMessages.at(-1)!
-            assert.equal(msg.role, 'assistant')
-
-            msg.annotations = [annotation as any]
-
-            await ownxTrpc.message.create.mutate({
-              id: msg.id,
-              parentId: lastMessage.id,
-              chatId: chat.id,
-              role: msg.role as any,
-              content: msg as UIMessage,
-            })
-          }
-        },
         experimental_telemetry: {
           isEnabled: true,
           functionId: 'stream-text',
@@ -139,14 +97,43 @@ export async function POST(request: Request): Promise<Response> {
 
       void result.consumeStream()
 
-      result.mergeIntoDataStream(dataStream, {
-        sendReasoning: true,
-        sendSources: true,
-      })
+      dataStream.merge(
+        result.toUIMessageStream({
+          messageMetadata: () => metadata,
+          sendReasoning: true,
+          sendSources: true,
+          sendStart: true,
+          sendFinish: true,
+        }),
+      )
+    },
+    generateId: generateMessageId,
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+    onFinish: async ({ responseMessage, isContinuation }) => {
+      assert.equal(responseMessage.role, 'assistant')
+      if (isContinuation) {
+        assert.equal(responseMessage.id, lastMessage.id)
+
+        await ownxTrpc.message.update.mutate({
+          id: responseMessage.id,
+          content: responseMessage,
+        })
+      } else {
+        await ownxTrpc.message.create.mutate({
+          id: responseMessage.id,
+          parentId: lastMessage.id,
+          chatId: chat.id,
+          role: responseMessage.role,
+          content: responseMessage,
+        })
+      }
     },
     onError: (error) => {
       log.error('AI SDK streamText error', error)
       return `Internal server error`
     },
   })
+
+  // @ts-ignore
+  return new Response(stream)
 }

@@ -12,7 +12,7 @@ import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import hash from 'stable-hash'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { userProtectedProcedure } from '../trpc'
 import { deleteImage, deleteImages, retrieveImage, uploadImage } from './utils'

@@ -3,7 +3,7 @@ import type { InferSelectModel } from 'drizzle-orm'
 import { characterCardV2Schema, characterMetadataSchema } from '@tavern/core'
 import { index, jsonb, pgEnum, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import {
   generateId,

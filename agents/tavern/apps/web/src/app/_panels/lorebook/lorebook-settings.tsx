@@ -1,4 +1,4 @@
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 import { memo, useEffect } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { lorebookSettingsSchema } from '@tavern/core'

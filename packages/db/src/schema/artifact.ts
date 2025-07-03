@@ -11,7 +11,7 @@ import {
   text,
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { User } from '.'
 import { Chat } from './chat'
@@ -58,7 +58,7 @@ export const CreateArtifactSchema = createInsertSchema(Artifact, {
   chatId: z.string(),
   kind: z.string(),
   title: z.string(),
-  content: z.record(z.unknown()),
+  content: z.record(z.string(), z.unknown()),
 }).omit({
   ...timestampsOmits,
 })
@@ -67,7 +67,7 @@ export const UpdateArtifactSchema = createUpdateSchema(Artifact, {
   id: z.string(),
   kind: z.string().optional(),
   title: z.string().optional(),
-  content: z.record(z.unknown()).optional(),
+  content: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   userId: true,
   chatId: true,

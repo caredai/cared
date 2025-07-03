@@ -1,5 +1,5 @@
 import { streamObject, tool } from 'ai'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { eq } from '@ownxai/db'
 import { db } from '@ownxai/db/client'
@@ -11,7 +11,7 @@ import { getLanguageModelFromContext } from '../context'
 export const requestSuggestions = (ctx: Context) =>
   tool({
     description: 'Request suggestions for a artifact',
-    parameters: z.object({
+    inputSchema: z.object({
       artifactId: z.string().describe('The ID of the artifact to request edits'),
     }),
     execute: async ({ artifactId }) => {
@@ -59,9 +59,10 @@ export const requestSuggestions = (ctx: Context) =>
           isResolved: false,
         }
 
-        dataStream.writeData({
-          type: 'suggestion',
-          content: suggestion,
+        dataStream.write({
+          type: 'data-suggestion',
+          data: suggestion,
+          transient: true,
         })
 
         suggestions.push(suggestion)

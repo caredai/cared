@@ -1,4 +1,4 @@
-import type { CoreMessage } from 'ai'
+import type { ModelMessage } from 'ai'
 
 import type { ReducedMessage } from '../types'
 import { convertToModelMessages } from './message'
@@ -12,7 +12,7 @@ export class TokenCounter {
     this.counts.clear()
   }
 
-  async count(type: string, message: string | ReducedMessage | CoreMessage): Promise<number> {
+  async count(type: string, message: string | ReducedMessage | ModelMessage): Promise<number> {
     let text: string
     if (typeof message !== 'string') {
       const coreMessages = convertToModelMessages(message)

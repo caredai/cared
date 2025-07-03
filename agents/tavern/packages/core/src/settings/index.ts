@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { AppearanceSettings } from './appearance'
 import type { BackgroundSettings } from './background'

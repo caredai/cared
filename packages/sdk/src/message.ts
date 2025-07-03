@@ -13,7 +13,6 @@ export function toUIMessages(messages: Message[]): UIMessage[] {
       id: msg.id,
       role: msg.role,
       ...msg.content,
-      createdAt: msg.createdAt,
     }
   })
 }

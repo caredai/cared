@@ -1,5 +1,5 @@
 import type { Prompt } from '@tavern/core'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 import { useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'

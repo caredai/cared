@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { SQL } from '@ownxai/db'
 import { and, asc, count, desc, eq, gt, gte, inArray, lt } from '@ownxai/db'
@@ -159,9 +159,11 @@ export const messageRouter = {
         summary: 'Create a new message in a chat',
       },
     })
-    .input(CreateMessageSchema.extend({
-      isRoot: z.boolean().optional(),
-    }))
+    .input(
+      CreateMessageSchema.extend({
+        isRoot: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await getChatById(ctx, input.chatId)
 
@@ -232,7 +234,6 @@ export const messageRouter = {
       z.object({
         id: z.string().min(32),
         content: messageContentSchema.optional(),
-        metadata: z.record(z.unknown()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -242,7 +243,6 @@ export const messageRouter = {
         .update(Message)
         .set({
           ...(input.content && { content: input.content }),
-          ...(input.metadata && { metadata: input.metadata }),
         })
         .where(eq(Message.id, message.id))
         .returning()
@@ -304,7 +304,8 @@ export const messageRouter = {
           if (directChildrenCount > 1 && !message.parentId) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
-              message: 'Cannot delete a root message without deleting its descendant messages (multiple descendant messages exist)',
+              message:
+                'Cannot delete a root message without deleting its descendant messages (multiple descendant messages exist)',
             })
           }
 

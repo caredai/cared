@@ -1,5 +1,5 @@
 import type { JSONValue } from 'ai'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 export const jsonValueSchema: z.ZodType<JSONValue> = z.lazy(() =>
   z.union([
@@ -12,4 +12,4 @@ export const jsonValueSchema: z.ZodType<JSONValue> = z.lazy(() =>
   ]),
 )
 
-export const providerMetadataSchema = z.record(z.string(), z.record(z.string(), jsonValueSchema))
+export const sharedV2ProviderOptionsSchema = z.record(z.string(), z.record(z.string(), jsonValueSchema))

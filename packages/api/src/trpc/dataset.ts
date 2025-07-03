@@ -1,6 +1,6 @@
 import { DeleteObjectCommand, DeleteObjectsCommand, HeadObjectCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { SQL } from '@ownxai/db'
 import type { DatasetMetadata } from '@ownxai/db/schema'

@@ -21,7 +21,6 @@
     "@icons-pack/react-simple-icons": "^12.2.0",
     "@ownxai/api": "workspace:*",
     "@ownxai/auth": "workspace:*",
-    "@ownxai/chatbot": "workspace:*",
     "@ownxai/db": "workspace:*",
     "@ownxai/i18n": "workspace:*",
     "@ownxai/providers": "workspace:*",

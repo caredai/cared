@@ -3,7 +3,7 @@ import { UserSettings } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import hash from 'stable-hash'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { userProtectedProcedure } from '../trpc'
 

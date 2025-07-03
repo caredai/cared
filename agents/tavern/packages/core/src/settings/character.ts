@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 export interface CharacterSettings {
   favorites: string[] // array of char id or group id

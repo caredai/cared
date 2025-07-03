@@ -2,7 +2,7 @@ import { defaultModelPreset, modelPresetSchema } from '@tavern/core'
 import { ModelPreset } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, count, desc, eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { userProtectedProcedure } from '../trpc'
 

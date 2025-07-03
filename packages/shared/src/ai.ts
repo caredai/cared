@@ -1,109 +1,118 @@
-import type { UIMessage as _UIMessage, ToolCall, ToolResult } from 'ai'
-import { z } from 'zod'
+import { UIMessage } from 'ai'
+import { z } from 'zod/v4'
 
-import { jsonValueSchema, providerMetadataSchema } from './schema'
+export type { UIMessage } from 'ai'
 
-export type UIMessage = Pick<
-  _UIMessage,
-  'id' | 'createdAt' | 'parts' | 'experimental_attachments' | 'annotations'
-> & {
-  role: 'system' | 'user' | 'assistant'
-}
+export type MessageContent = Pick<UIMessage, 'parts' | 'metadata'>
 
-export type MessageContent = Pick<
-  UIMessage,
-  'parts' | 'experimental_attachments' | 'annotations'
->
+// Text part schema
+const textUIPartSchema = z.object({
+  type: z.literal('text'),
+  text: z.string(),
+  state: z.union([z.literal('streaming'), z.literal('done')]).optional(),
+})
 
-const toolCallSchema = z.object({
-  toolCallId: z.string(),
-  toolName: z.string(),
-  args: z.any(),
-}) as z.ZodType<ToolCall<string, any>>
+// Reasoning part schema
+const reasoningUIPartSchema = z.object({
+  type: z.literal('reasoning'),
+  text: z.string(),
+  state: z.union([z.literal('streaming'), z.literal('done')]).optional(),
+  providerMetadata: z.record(z.string(), z.any()).optional(),
+})
 
-const toolResultSchema = toolCallSchema.and(
-  z.object({
-    result: z.any(),
-  }),
-) as z.ZodType<ToolResult<string, any, any>>
+// Source URL part schema
+const sourceUrlUIPartSchema = z.object({
+  type: z.literal('source-url'),
+  sourceId: z.string(),
+  url: z.string(),
+  title: z.string().optional(),
+  providerMetadata: z.record(z.string(), z.any()).optional(),
+})
+
+// Source document part schema
+const sourceDocumentUIPartSchema = z.object({
+  type: z.literal('source-document'),
+  sourceId: z.string(),
+  mediaType: z.string(),
+  title: z.string(),
+  filename: z.string().optional(),
+  providerMetadata: z.record(z.string(), z.any()).optional(),
+})
+
+// File part schema
+const fileUIPartSchema = z.object({
+  type: z.literal('file'),
+  mediaType: z.string(),
+  filename: z.string().optional(),
+  url: z.string(),
+})
+
+// Step start part schema
+const stepStartUIPartSchema = z.object({
+  type: z.literal('step-start'),
+})
+
+// Data part schema (generic for any data types)
+const dataUIPartSchema = z.object({
+  type: z.templateLiteral(['data-', z.string()]),
+  id: z.string().optional(),
+  data: z.any(),
+})
+
+// Tool part schema (generic for any tool types)
+const toolUIPartSchema = z
+  .object({
+    type: z.templateLiteral(['tool-', z.string()]),
+    toolCallId: z.string(),
+  })
+  .and(
+    z.discriminatedUnion('state', [
+      z.object({
+        state: z.literal('input-streaming'),
+        input: z.any(),
+        providerExecuted: z.boolean().optional(),
+      }),
+      z.object({
+        state: z.literal('input-available'),
+        input: z.any(),
+        providerExecuted: z.boolean().optional(),
+      }),
+      z.object({
+        state: z.literal('output-available'),
+        input: z.any(),
+        output: z.any(),
+        providerExecuted: z.boolean().optional(),
+      }),
+      z.object({
+        state: z.literal('output-error'),
+        input: z.any(),
+        errorText: z.string(),
+        providerExecuted: z.boolean().optional(),
+      }),
+    ]),
+  )
+
+// Union of all message part schemas
+const uiMessagePartSchema = z.union([
+  textUIPartSchema,
+  reasoningUIPartSchema,
+  sourceUrlUIPartSchema,
+  sourceDocumentUIPartSchema,
+  fileUIPartSchema,
+  stepStartUIPartSchema,
+  dataUIPartSchema,
+  toolUIPartSchema,
+])
 
 export const messageContentSchema = z.object({
-  parts: z.array(
-    z.union([
-      z.object({ type: z.literal('text'), text: z.string() }),
-      z.object({
-        type: z.literal('reasoning'),
-        reasoning: z.string(),
-        details: z.array(
-          z.union([
-            z.object({
-              type: z.literal('text'),
-              text: z.string(),
-              signature: z.string().optional(),
-            }),
-            z.object({ type: z.literal('redacted'), data: z.string() }),
-          ]),
-        ),
-      }),
-      z.object({
-        type: z.literal('tool-invocation'),
-        toolInvocation: z.union([
-          z
-            .object({
-              state: z.literal('partial-call'),
-              step: z.number().optional(),
-            })
-            .and(toolCallSchema),
-          z
-            .object({
-              state: z.literal('call'),
-              step: z.number().optional(),
-            })
-            .and(toolCallSchema),
-          z
-            .object({
-              state: z.literal('result'),
-              step: z.number().optional(),
-            })
-            .and(toolResultSchema),
-        ]),
-      }),
-      z.object({
-        type: z.literal('source'),
-        source: z.object({
-          sourceType: z.literal('url'),
-          id: z.string(),
-          url: z.string(),
-          title: z.string().optional(),
-          providerMetadata: providerMetadataSchema.optional(),
-        }),
-      }),
-      z.object({
-        type: z.literal('file'),
-        mimeType: z.string(),
-        data: z.string(),
-      }),
-      z.object({ type: z.literal('step-start') }),
-    ]),
-  ),
-  experimental_attachments: z
-    .array(
-      z.object({
-        name: z.string().optional(),
-        contentType: z.string().optional(),
-        url: z.string(),
-      }),
-    )
-    .optional(),
-  annotations: z.array(jsonValueSchema).optional(),
+  parts: z.array(uiMessagePartSchema),
+  metadata: z.any().optional(),
 })
 
 export const messageRoleEnumValues = ['system', 'user', 'assistant'] as const
 
-export const uiMessageSchema = z
-  .object({
-    id: z.string(),
-    createdAt: z.coerce.date().optional(),
-    role: z.enum(messageRoleEnumValues),
-  })
-  .merge(messageContentSchema)
+export const uiMessageSchema = z.object({
+  id: z.string(),
+  role: z.enum(messageRoleEnumValues),
+  ...messageContentSchema.shape,
+})

@@ -10,7 +10,7 @@ import {
 } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { makeObjectNonempty } from '@ownxai/sdk'
 

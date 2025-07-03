@@ -1,6 +1,6 @@
 import fs from 'fs/promises'
 import path from 'path'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { tokenizerCount, tokenizerDecode, tokenizerEncode } from '@ownxai/tokenizer'
 
@@ -32,7 +32,7 @@ export const tokenizerRouter = {
   count: publicProcedure
     .input(
       z.object({
-        messages: z.array(z.record(z.string())).min(1),
+        messages: z.array(z.record(z.string(), z.string())).min(1),
         modelId: z.string().min(1),
       }),
     )

@@ -37,7 +37,7 @@ export function activateCharactersFromGroup({
     const bannedChar =
       !metadata.allowSelfResponses && // ...unless allowed to do so
       lastMessage?.role === 'assistant'
-        ? enabledCharacters.find((c) => c.id === lastMessage.content.annotations[0].characterId)
+        ? enabledCharacters.find((c) => c.id === lastMessage.content.metadata.characterId)
         : undefined
 
     const content = lastMessage?.content.parts
@@ -96,7 +96,7 @@ export function activateCharactersFromGroup({
       }
       if (message.message.role === 'assistant') {
         const char = enabledCharacters.find(
-          (c) => c.id === message.message.content.annotations[0].characterId,
+          (c) => c.id === message.message.content.metadata.characterId,
         )
         if (char) {
           spokenSinceUser.push(char)
@@ -109,7 +109,7 @@ export function activateCharactersFromGroup({
     } else {
       const randomPool =
         lastMessage?.role === 'assistant'
-          ? enabledCharacters.filter((c) => c.id !== lastMessage.content.annotations[0].characterId)
+          ? enabledCharacters.filter((c) => c.id !== lastMessage.content.metadata.characterId)
           : enabledCharacters
       const randomChar = shuffle(randomPool)[0]
       if (randomChar) {

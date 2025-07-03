@@ -7,7 +7,7 @@ import { Lorebook } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import sanitize from 'sanitize-filename'
 import { v7 as uuid } from 'uuid'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { env } from '../env'
 import { s3Client } from '../s3'

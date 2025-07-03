@@ -13,7 +13,6 @@ const config = {
   transpilePackages: [
     '@ownxai/api',
     '@ownxai/auth',
-    '@ownxai/chatbot',
     '@ownxai/db',
     '@ownxai/i18n',
     '@ownxai/kv',

@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { tool } from 'ai'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { AgentMetadata, AppMetadata } from '@ownxai/db/schema'
 import type { Document } from '@ownxai/vdb'
@@ -116,7 +116,7 @@ function listKnowledgeBases(ctx: Context) {
   return tool({
     description:
       'Lists available knowledge bases with their IDs, names and descriptions. Each knowledge base contains specific domain knowledge. Use this tool to discover which knowledge base is most relevant for your current information need, then use the searchKnowledge tool with the appropriate knowledge base ID to retrieve information.',
-    parameters: z.object({
+    inputSchema: z.object({
       scope: z
         .enum(['app', 'agent'])
         .describe(
@@ -189,7 +189,7 @@ function searchKnowledge(_ctx: Context) {
   return tool({
     description:
       'Search within a specific knowledge base using natural language queries or keywords. This tool allows you to retrieve relevant information from the selected knowledge base to help answer questions and provide accurate responses.',
-    parameters: z.object({
+    inputSchema: z.object({
       query: z
         .string()
         .describe(

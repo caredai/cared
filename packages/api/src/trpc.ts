@@ -2,7 +2,7 @@ import type { OpenApiMeta } from 'trpc-to-openapi'
 import { connection } from 'next/server'
 import * as trpc from '@trpc/server'
 import superjson from 'superjson'
-import { ZodError } from 'zod'
+import { ZodError } from 'zod/v4'
 
 import type { DB } from '@ownxai/db/client'
 import { db } from '@ownxai/db/client'

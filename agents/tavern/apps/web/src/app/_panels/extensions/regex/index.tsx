@@ -27,7 +27,7 @@ import { createPortal } from 'react-dom'
 import { toast } from 'sonner'
 import { v7 as uuid } from 'uuid'
 import { VList } from 'virtua'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { Input } from '@ownxai/ui/components/input'
 

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 export interface SummarySettings {
   disabled: boolean // Whether the summary feature is disabled.

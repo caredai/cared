@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 export interface LorebookSettings {
   active: string[] // active lorebooks for all chats

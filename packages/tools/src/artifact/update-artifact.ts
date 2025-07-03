@@ -1,5 +1,5 @@
 import { tool } from 'ai'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { eq } from '@ownxai/db'
 import { db } from '@ownxai/db/client'
@@ -11,7 +11,7 @@ import { getArtifactHandler } from './server'
 export const updateArtifact = (ctx: Context) =>
   tool({
     description: 'Update a artifact with the given description.',
-    parameters: z.object({
+    inputSchema: z.object({
       id: z.string().describe('The ID of the artifact to update'),
       description: z.string().describe('The description of changes that need to be made'),
     }),
@@ -27,9 +27,10 @@ export const updateArtifact = (ctx: Context) =>
         }
       }
 
-      dataStream.writeData({
-        type: 'clear',
-        content: artifact.title,
+      dataStream.write({
+        type: 'data-clear',
+        data: null,
+        transient: true,
       })
 
       const artifactHandler = getArtifactHandler(artifact.kind)
@@ -43,7 +44,7 @@ export const updateArtifact = (ctx: Context) =>
         ctx,
       })
 
-      dataStream.writeData({ type: 'finish', content: '' })
+      dataStream.write({ type: 'data-finish', data: null, transient: true })
 
       return {
         id,

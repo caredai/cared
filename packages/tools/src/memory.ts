@@ -1,5 +1,5 @@
 import { tool } from 'ai'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { and, eq } from '@ownxai/db'
 import { db } from '@ownxai/db/client'
@@ -66,7 +66,7 @@ function storeMemory(ctx: Context) {
   return tool({
     description:
       'Store a new memory into the long-term memory database. This tool allows you to save important information or knowledge about the user, which can be retrieved later. If the user provides a random piece of knowledge unprompted, use this tool without asking for confirmation.',
-    parameters: z.object({
+    inputSchema: z.object({
       content: z.string().describe('The memory content to add to the long-term memory database'),
       scope: z
         .enum(['chat', 'app'])
@@ -122,7 +122,7 @@ function retrieveMemory(ctx: Context) {
   return tool({
     description:
       'Retrieve memories from the long-term memory database based on specified criteria. You can search for memories associated with the user. This tool helps you access previously stored information to maintain context and provide more relevant responses.',
-    parameters: z.object({
+    inputSchema: z.object({
       query: z.string().describe('The query to search for in the long-term memory database'),
       scope: z
         .enum(['chat', 'app'])

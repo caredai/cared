@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { SQL } from '@ownxai/db'
 import { and, asc, desc, eq, gt, inArray, lt } from '@ownxai/db'
@@ -278,7 +278,6 @@ export const chatRouter = {
                 role: true,
                 agentId: true,
                 content: true,
-                metadata: true,
               }),
             ),
           )
@@ -310,7 +309,8 @@ export const chatRouter = {
               })
             },
             {
-              message: 'All messages in each branch must either have IDs or none should have IDs, and IDs must be in ascending order within each branch',
+              message:
+                'All messages in each branch must either have IDs or none should have IDs, and IDs must be in ascending order within each branch',
             },
           )
           .optional(),
@@ -361,7 +361,7 @@ export const chatRouter = {
         // Create initial messages if any
         if (input.initialMessages && input.initialMessages.length > 0) {
           // Process each branch separately and collect all messages
-          const allBranchMessages: (typeof CreateMessageSchema._type)[] = []
+          const allBranchMessages: z.infer<typeof CreateMessageSchema>[] = []
           for (const branch of input.initialMessages) {
             if (branch.length === 0) continue
 
@@ -377,7 +377,7 @@ export const chatRouter = {
                   chatId: chat.id,
                   // Only set parentId for messages after the first one in the branch
                   parentId: msgIndex === 0 ? undefined : messageIds[msgIndex - 1],
-                }) satisfies typeof CreateMessageSchema._type,
+                }) satisfies z.infer<typeof CreateMessageSchema>,
             )
             allBranchMessages.push(...branchMessages)
           }

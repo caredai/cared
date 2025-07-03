@@ -1,7 +1,7 @@
 import type { ModelPreset } from '@tavern/core'
 import type { UseFormReturn } from 'react-hook-form'
 import { ChevronDownIcon, HelpCircle } from 'lucide-react'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { Button } from '@ownxai/ui/components/button'
 import {

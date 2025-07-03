@@ -1,13 +1,13 @@
+import type { LanguageModelV2StreamPart } from '@ai-sdk/provider'
 import type { ToolCallPart, ToolResultPart } from 'ai'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
-import { convertBase64ToUint8Array } from '@ai-sdk/provider-utils'
 import Ajv from 'ajv'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import log from '@ownxai/log'
 import { getModel } from '@ownxai/providers/providers'
-import { providerMetadataSchema } from '@ownxai/shared'
+import { jsonValueSchema, sharedV2ProviderOptionsSchema } from '@ownxai/shared'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -15,23 +15,22 @@ const jsonSchema7Schema = z
   .object({})
   .refine((schema) => ajv.validateSchema(schema), 'Invalid JSON Schema')
 
-const languageModelV1FunctionToolSchema = z.object({
+const languageModelV2FunctionToolSchema = z.object({
   type: z.literal('function'),
   name: z.string(),
   description: z.string().optional(),
-  parameters: jsonSchema7Schema,
+  inputSchema: jsonSchema7Schema,
+  providerOptions: sharedV2ProviderOptionsSchema.optional(),
 })
 
-const languageModelV1ProviderDefinedToolSchema = z.object({
+const languageModelV2ProviderDefinedToolSchema = z.object({
   type: z.literal('provider-defined'),
-  id: z.custom<`${string}.${string}`>((val) => {
-    return typeof val === 'string' ? /^\w+\.\w+$/.test(val) : false
-  }),
+  id: z.templateLiteral([z.string(), '.', z.string()]),
   name: z.string(),
-  args: z.record(z.unknown()),
+  args: z.record(z.string(), z.unknown()),
 })
 
-const languageModelV1ToolChoiceSchema = z.union([
+const languageModelV2ToolChoiceSchema = z.union([
   z.object({
     type: z.enum(['auto', 'none', 'required']),
   }),
@@ -44,79 +43,65 @@ const languageModelV1ToolChoiceSchema = z.union([
 const textPartSchema = z.object({
   type: z.literal('text'),
   text: z.string(),
-  providerMetadata: providerMetadataSchema.optional(),
-})
-
-const imagePartSchema = z.object({
-  type: z.literal('image'),
-  image: z.union([
-    z.string().transform(convertBase64ToUint8Array),
-    z
-      .string()
-      .url()
-      .transform((url) => new URL(url)),
-  ]),
-  mimeType: z.string().optional(),
-  providerMetadata: providerMetadataSchema.optional(),
+  providerOptions: sharedV2ProviderOptionsSchema.optional(),
 })
 
 const filePartSchema = z.object({
   type: z.literal('file'),
   data: z.union([
     z.string(),
-    z
-      .string()
-      .url()
-      .transform((url) => new URL(url)),
+    z.url().transform((url) => new URL(url)),
+    z.array(z.uint32().max(255)).transform((array) => Uint8Array.from(array)),
   ]),
   filename: z.string().optional(),
-  mimeType: z.string(),
-  providerMetadata: providerMetadataSchema.optional(),
+  mediaType: z.string(),
+  providerOptions: sharedV2ProviderOptionsSchema.optional(),
 })
 
 const reasoningPartSchema = z.object({
   type: z.literal('reasoning'),
   text: z.string(),
-  signature: z.string().optional(),
-  providerMetadata: providerMetadataSchema.optional(),
-})
-
-const redactedReasoningPartSchema = z.object({
-  type: z.literal('redacted-reasoning'),
-  data: z.string(),
-  providerMetadata: providerMetadataSchema.optional(),
+  providerOptions: sharedV2ProviderOptionsSchema.optional(),
 })
 
 const toolCallPartSchema = z.object({
   type: z.literal('tool-call'),
   toolCallId: z.string(),
   toolName: z.string(),
-  args: z.unknown(),
-  providerMetadata: providerMetadataSchema.optional(),
+  input: z.unknown(),
+  providerExecuted: z.boolean().optional(),
+  providerOptions: sharedV2ProviderOptionsSchema.optional(),
 }) as z.ZodType<ToolCallPart>
 
-const toolResultContentSchema = z.array(
-  z.union([
-    z.object({ type: z.literal('text'), text: z.string() }),
-    z.object({
-      type: z.literal('image'),
-      data: z.string(),
-      mimeType: z.string().optional(),
-    }),
-  ]),
-)
+const toolResultContentSchema = z.union([
+  z.object({ type: z.literal('text'), value: z.string() }),
+  z.object({ type: z.literal('json'), value: jsonValueSchema }),
+  z.object({ type: z.literal('error-text'), value: z.string() }),
+  z.object({ type: z.literal('error-json'), value: jsonValueSchema }),
+  z.object({
+    type: z.literal('content'),
+    value: z.array(
+      z.union([
+        z.object({ type: z.literal('text'), text: z.string() }),
+        z.object({
+          type: z.literal('media'),
+          data: z.string(),
+          mediaType: z.string(),
+        }),
+      ]),
+    ),
+  }),
+])
 
 const toolResultPartSchema = z.object({
   type: z.literal('tool-result'),
   toolCallId: z.string(),
   toolName: z.string(),
-  result: z.unknown(),
-  content: toolResultContentSchema.optional(),
-  isError: z.boolean().optional(),
-  providerMetadata: providerMetadataSchema.optional(),
+  output: toolResultContentSchema,
+  providerOptions: sharedV2ProviderOptionsSchema.optional(),
 }) as z.ZodType<ToolResultPart>
 
-const languageModelV1MessageSchema = z
+const languageModelV2MessageSchema = z
   .union([
     z.object({
       role: z.literal('system'),
@@ -124,7 +109,7 @@ const languageModelV1MessageSchema = z
     }),
     z.object({
       role: z.literal('user'),
-      content: z.array(z.union([textPartSchema, imagePartSchema, filePartSchema])),
+      content: z.array(z.union([textPartSchema, filePartSchema])),
     }),
     z.object({
       role: z.literal('assistant'),
@@ -133,8 +118,8 @@ const languageModelV1MessageSchema = z
           textPartSchema,
           filePartSchema,
           reasoningPartSchema,
-          redactedReasoningPartSchema,
           toolCallPartSchema,
+          toolResultPartSchema,
         ]),
       ),
     }),
@@ -145,7 +130,7 @@ const languageModelV1MessageSchema = z
   ])
   .and(
     z.object({
-      providerMetadata: providerMetadataSchema.optional(),
+      providerOptions: sharedV2ProviderOptionsSchema.optional(),
     }),
   )
 
@@ -153,36 +138,9 @@ const requestArgsSchema = z.object({
   modelId: z.string(),
   stream: z.boolean(),
 
-  prompt: z.array(languageModelV1MessageSchema),
+  prompt: z.array(languageModelV2MessageSchema),
 
-  inputFormat: z.enum(['messages', 'prompt']),
-  mode: z.union([
-    z.object({
-      type: z.literal('regular'),
-      tools: z
-        .array(
-          z.union([
-            languageModelV1FunctionToolSchema,
-            languageModelV1ProviderDefinedToolSchema,
-          ]),
-        )
-        .optional(),
-      toolChoice: languageModelV1ToolChoiceSchema.optional(),
-    }),
-    z.object({
-      type: z.literal('object-json'),
-      schema: jsonSchema7Schema.optional(),
-      name: z.string().optional(),
-      description: z.string().optional(),
-    }),
-    z.object({
-      type: z.literal('object-tool'),
-      tool: languageModelV1FunctionToolSchema,
-    }),
-  ]),
-
-  // fields from LanguageModelV1CallSettings
-  maxTokens: z.number().optional(),
+  maxOutputTokens: z.number().optional(),
   temperature: z.number().optional(),
   stopSequences: z.array(z.string()).optional(),
   topP: z.number().optional(),
@@ -203,13 +161,23 @@ const requestArgsSchema = z.object({
     ])
     .optional(),
   seed: z.number().optional(),
-  abortSignal: z.any().optional(), // AbortSignal
-  headers: z.record(z.string().or(z.undefined())).optional(),
+  tools: z
+    .array(
+      z.union([
+        languageModelV2FunctionToolSchema,
+        languageModelV2ProviderDefinedToolSchema,
+      ]),
+    )
+    .optional(),
+  toolChoice: languageModelV2ToolChoiceSchema.optional(),
+  includeRawChunks: z.boolean().optional(),
 
-  providerMetadata: providerMetadataSchema.optional(),
+  headers: z.record(z.string(), z.string().or(z.undefined())).optional(),
+
+  providerOptions: sharedV2ProviderOptionsSchema.optional(),
 })
 
-export function GET(req: NextRequest): Response {
+export async function GET(req: NextRequest): Promise<Response> {
   const searchParams = req.nextUrl.searchParams
   const modelId = searchParams.get('modelId')
   if (!modelId) {
@@ -225,22 +193,22 @@ export function GET(req: NextRequest): Response {
     })
   }
 
-  const url = searchParams.get('supportsUrl')
-  if (url) {
-    const supports = model.supportsUrl?.(new URL(url)) ?? false
-    return NextResponse.json({ supports })
-  }
-
   const {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    doGenerate: _doGenerate,
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    doStream: _doStream,
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    supportsUrl: _supportsUrl,
+    // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
+    doGenerate,
+    // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
+    doStream,
+    supportedUrls,
     ...modelConfig
   } = model
-  return NextResponse.json(modelConfig)
+
+  return NextResponse.json({
+    ...modelConfig,
+    supportedUrls: Object.entries(await supportedUrls).map(([mediaType, regexArray]) => [
+      mediaType,
+      regexArray.map((regex) => regex.toString()),
+    ]),
+  })
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -260,7 +228,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       )
     }
 
-    const { modelId, stream: doStream, ...languageModelV1CallOptions } = validatedArgs.data
+    const { modelId, stream: doStream, ...languageModelV2CallOptions } = validatedArgs.data
 
     const model = getModel(modelId, 'language')
     if (!model) {
@@ -271,7 +239,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     if (doStream) {
       const { stream, ...metadata } = await model.doStream({
-        ...languageModelV1CallOptions,
+        ...languageModelV2CallOptions,
         abortSignal: req.signal,
       })
 
@@ -282,6 +250,9 @@ export async function POST(req: NextRequest): Promise<Response> {
       async function write(data: any) {
         await writer.write(`${JSON.stringify(data)}\n`)
       }
+
+      // @ts-expect-error: type 'metadata' must not be in LanguageModelV2StreamPart
+      const _: LanguageModelV2StreamPart['type'] = 'metadata'
 
       void write({
         type: 'metadata',
@@ -316,7 +287,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       })
     } else {
       const result = await model.doGenerate({
-        ...languageModelV1CallOptions,
+        ...languageModelV2CallOptions,
         abortSignal: req.signal,
       })
       return NextResponse.json(result)

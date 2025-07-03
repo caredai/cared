@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 export interface ThemeSettings {
   // Active theme label; if conflicted, use the first one.

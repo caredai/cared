@@ -1,7 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import { bigint, index, jsonb, pgTable, primaryKey, text, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { App, DRAFT_VERSION } from './app'
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'

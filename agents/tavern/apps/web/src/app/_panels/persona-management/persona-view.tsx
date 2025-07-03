@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { PersonaPosition } from '@tavern/core'
 import { useForm } from 'react-hook-form'
 import { VList } from 'virtua'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { Button } from '@ownxai/ui/components/button'
 import {

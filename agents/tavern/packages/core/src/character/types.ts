@@ -7,7 +7,7 @@ import type {
   Lorebook,
   LorebookEntry,
 } from '@risuai/ccardlib'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { RegexScript } from '../regex'
 import { regexScriptSchema } from '../regex'
@@ -27,10 +27,12 @@ export const characterCardV1Schema = z.object({
   mes_example: z.string(),
 })
 
+const characterCardV1PartialSchema = characterCardV1Schema.partial()
+
 export const lorebookEntryV2Schema = z.object({
   keys: z.array(z.string()),
   content: z.string(),
-  extensions: z.record(z.any()),
+  extensions: z.record(z.string(), z.any()),
   enabled: z.boolean(),
   insertion_order: z.coerce.number(),
   name: z.string().optional(),
@@ -44,15 +46,24 @@ export const lorebookEntryV2Schema = z.object({
   case_sensitive: z.boolean().optional(),
 })
 
+const lorebookEntryV2PartialSchema = lorebookEntryV2Schema.partial()
+
 export const lorebookV2Schema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   scan_depth: z.coerce.number().optional(),
   token_budget: z.coerce.number().optional(),
   recursive_scanning: z.boolean().optional(),
-  extensions: z.record(z.any()),
+  extensions: z.record(z.string(), z.any()),
   entries: z.array(lorebookEntryV2Schema),
 })
+
+export const lorebookV2PartialSchema = z
+  .object({
+    ...lorebookV2Schema.shape,
+    entries: z.array(lorebookEntryV2PartialSchema),
+  })
+  .partial()
 
 export const characterCardV2Schema = z.object({
   spec: z.literal('chara_card_v2'),
@@ -72,14 +83,26 @@ export const characterCardV2Schema = z.object({
     tags: z.array(z.string()),
     creator: z.string(),
     character_version: z.string(),
-    extensions: z.record(z.any()),
+    extensions: z.record(z.string(), z.any()),
   }),
 })
+
+const characterCardV2PartialSchema = z
+  .object({
+    ...characterCardV2Schema.shape,
+    data: z
+      .object({
+        ...characterCardV2Schema.shape.data.shape,
+        character_book: lorebookV2PartialSchema,
+      })
+      .partial(),
+  })
+  .partial()
 
 export const lorebookEntryV3Schema = z.object({
   keys: z.array(z.string()),
   content: z.string(),
-  extensions: z.record(z.any()),
+  extensions: z.record(z.string(), z.any()),
   enabled: z.boolean(),
   insertion_order: z.coerce.number(),
   case_sensitive: z.boolean().optional(),
@@ -94,15 +117,24 @@ export const lorebookEntryV3Schema = z.object({
   position: z.enum(['before_char', 'after_char']).optional(),
 })
 
+const lorebookEntryV3PartialSchema = lorebookEntryV3Schema.partial()
+
 export const lorebookV3Schema = z.object({
   name: z.string().optional(),
   description: z.string().optional(),
   scan_depth: z.coerce.number().optional(),
   token_budget: z.coerce.number().optional(),
   recursive_scanning: z.boolean().optional(),
-  extensions: z.record(z.any()),
+  extensions: z.record(z.string(), z.any()),
   entries: z.array(lorebookEntryV3Schema),
 })
+
+export const lorebookV3PartialSchema = z
+  .object({
+    ...lorebookV3Schema.shape,
+    entries: z.array(lorebookEntryV3PartialSchema),
+  })
+  .partial()
 
 export const characterCardV3Schema = z.object({
   spec: z.literal('chara_card_v3'),
@@ -114,7 +146,7 @@ export const characterCardV3Schema = z.object({
     creator: z.string(),
     character_version: z.string(),
     mes_example: z.string(),
-    extensions: z.record(z.any()),
+    extensions: z.record(z.string(), z.any()),
     system_prompt: z.string(),
     post_history_instructions: z.string(),
     first_mes: z.string(),
@@ -134,7 +166,7 @@ export const characterCardV3Schema = z.object({
       )
       .optional(),
     nickname: z.string().optional(),
-    creator_notes_multilingual: z.record(z.string()).optional(),
+    creator_notes_multilingual: z.record(z.string(), z.string()).optional(),
     source: z.array(z.string()).optional(),
     group_only_greetings: z.array(z.string()),
     creation_date: z.coerce.number().optional(),
@@ -142,12 +174,24 @@ export const characterCardV3Schema = z.object({
   }),
 })
 
+export const characterCardV3PartialSchema = z
+  .object({
+    ...characterCardV3Schema.shape,
+    data: z
+      .object({
+        ...characterCardV3Schema.shape.data.shape,
+        character_book: lorebookV3PartialSchema,
+      })
+      .partial(),
+  })
+  .partial()
+
 export function convertToV2(
   card: CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
 ): CharacterCardV2 {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if ((card as CharacterCardV2).spec === 'chara_card_v2') {
-    const { data, spec_version } = characterCardV2Schema.deepPartial().parse(card)
+    const { data, spec_version } = characterCardV2PartialSchema.parse(card)
     assert(spec_version === '2.0', 'invalid spec_version')
 
     const book = data?.character_book
@@ -202,7 +246,7 @@ export function convertToV2(
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if ((card as CharacterCardV3).spec === 'chara_card_v3') {
-    const { data, spec_version } = characterCardV3Schema.deepPartial().parse(card)
+    const { data, spec_version } = characterCardV3PartialSchema.parse(card)
     assert(spec_version === '3.0', 'invalid spec_version')
 
     const book = data?.character_book
@@ -255,7 +299,7 @@ export function convertToV2(
     }
   }
 
-  const data = characterCardV1Schema.deepPartial().parse(card)
+  const data = characterCardV1PartialSchema.parse(card)
   if (data.name) {
     return {
       spec: 'chara_card_v2' as const,

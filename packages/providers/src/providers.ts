@@ -1,4 +1,4 @@
-import type { EmbeddingModelV1, ImageModelV1, LanguageModelV1 } from '@ai-sdk/provider'
+import type { EmbeddingModelV2, ImageModelV2, LanguageModelV2 } from '@ai-sdk/provider'
 // import { bedrock, createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
 // import { azure, createAzure } from '@ai-sdk/azure'
@@ -13,14 +13,23 @@ import { createGroq, groq } from '@ai-sdk/groq'
 import { createLuma, luma } from '@ai-sdk/luma'
 import { createMistral, mistral } from '@ai-sdk/mistral'
 import { createOpenAI, openai } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { createPerplexity, perplexity } from '@ai-sdk/perplexity'
 import { createReplicate, replicate } from '@ai-sdk/replicate'
 import { createTogetherAI, togetherai } from '@ai-sdk/togetherai'
 import { createXai, xai } from '@ai-sdk/xai'
-import { createOpenRouter, openrouter } from '@openrouter/ai-sdk-provider'
 
 import type { ModelType, Provider, ProviderId } from './types'
+import { env } from './env'
 import { splitModelFullId } from './index'
+
+function createOpenRouter({ apiKey }: { apiKey?: string }) {
+  return createOpenAICompatible({
+    name: 'openrouter',
+    apiKey,
+    baseURL: 'https://openrouter.ai/api/v1',
+  })
+}
 
 export const providers: Record<ProviderId, Provider> = {
   openai: openai,
@@ -41,7 +50,9 @@ export const providers: Record<ProviderId, Provider> = {
   replicate: replicate,
   perplexity: perplexity,
   luma: luma,
-  openrouter: openrouter,
+  openrouter: createOpenRouter({
+    apiKey: env.OPENROUTER_API_KEY,
+  }),
 }
 
 export {
@@ -99,11 +110,11 @@ export function getModel<T extends ModelType>(
   modelType: T,
   keys?: Record<string, string>,
 ): T extends 'language'
-  ? LanguageModelV1 | undefined
+  ? LanguageModelV2 | undefined
   : T extends 'text-embedding'
-    ? EmbeddingModelV1<string> | undefined
+    ? EmbeddingModelV2<string> | undefined
     : T extends 'image'
-      ? ImageModelV1 | undefined
+      ? ImageModelV2 | undefined
       : never {
   const { providerId, modelId } = splitModelFullId(fullId)
   let provider = providers[providerId]

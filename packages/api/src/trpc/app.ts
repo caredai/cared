@@ -1,7 +1,7 @@
 import type { SQL } from 'drizzle-orm'
 import { HeadObjectCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { AppMetadata } from '@ownxai/db/schema'
 import { and, count, desc, eq, gt, inArray, lt, sql } from '@ownxai/db'

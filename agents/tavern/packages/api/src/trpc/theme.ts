@@ -2,7 +2,7 @@ import { themeSchema } from '@tavern/core'
 import { Theme } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { userProtectedProcedure } from '../trpc'
 

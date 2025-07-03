@@ -3,7 +3,7 @@ import { Character, CharacterChat, CharGroup, CharGroupChat } from '@tavern/db/s
 import { TRPCError } from '@trpc/server'
 import { format } from 'date-fns'
 import { and, desc, eq, inArray, lt } from 'drizzle-orm'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { Chat as _Chat } from '@ownxai/sdk'
 

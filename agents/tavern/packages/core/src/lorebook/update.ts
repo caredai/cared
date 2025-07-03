@@ -1,5 +1,5 @@
 import hash from 'stable-hash'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { LorebookContent } from './types'
 import { lorebookEntrySchema } from './types'

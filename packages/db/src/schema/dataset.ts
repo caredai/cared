@@ -1,7 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import { index, integer, jsonb, pgTable, text, uniqueIndex, varchar } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { Workspace } from './workspace'
@@ -185,7 +185,7 @@ export const CreateDocumentSegmentSchema = createInsertSchema(DocumentSegment, {
   documentId: z.string(),
   index: z.number().int(),
   content: z.string(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -194,7 +194,7 @@ export const CreateDocumentSegmentSchema = createInsertSchema(DocumentSegment, {
 export const UpdateDocumentSegmentSchema = createUpdateSchema(DocumentSegment, {
   id: z.string(),
   content: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   workspaceId: true,
   datasetId: true,
@@ -256,7 +256,7 @@ export const CreateDocumentChunkSchema = createInsertSchema(DocumentChunk, {
   segmentId: z.string(),
   index: z.number().int(),
   content: z.string(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   id: true,
   ...timestampsOmits,
@@ -265,7 +265,7 @@ export const CreateDocumentChunkSchema = createInsertSchema(DocumentChunk, {
 export const UpdateDocumentChunkSchema = createUpdateSchema(DocumentChunk, {
   id: z.string(),
   content: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   workspaceId: true,
   datasetId: true,

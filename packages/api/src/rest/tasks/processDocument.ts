@@ -1,7 +1,7 @@
 import { serve } from '@upstash/workflow/nextjs'
 import { generateObject } from 'ai'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { CreateDocumentChunkSchema } from '@ownxai/db/schema'
 import { db } from '@ownxai/db/client'

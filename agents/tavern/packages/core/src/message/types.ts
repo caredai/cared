@@ -1,9 +1,9 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { Message as _Message } from '@ownxai/sdk'
 import { messageContentSchema as _messageContentSchema } from '@ownxai/sdk'
 
-export interface MessageAnnotation {
+export interface MessageMetadata {
   characterId?: string // for 'assistant' role
   personaId?: string // for 'user' role
   personaName?: string // for 'user' role; will be used when the persona is deleted
@@ -12,7 +12,7 @@ export interface MessageAnnotation {
   summary?: string
 }
 
-export const messageAnnotationSchema = z
+export const messageMetadataSchema = z
   .object({
     characterId: z.string().optional(),
     personaId: z.string().optional(),
@@ -36,10 +36,10 @@ export type MessageContent = z.infer<typeof messageContentSchema>
 
 export const messageContentSchema = _messageContentSchema
   .omit({
-    annotations: true,
+    metadata: true,
   })
   .extend({
-    annotations: z.tuple([messageAnnotationSchema]),
+    metadata: messageMetadataSchema,
   })
 
 export type Message = Omit<_Message, 'content'> & {

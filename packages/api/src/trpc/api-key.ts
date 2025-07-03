@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { auth } from '@ownxai/auth'
 import { App } from '@ownxai/db/schema'

@@ -11,7 +11,7 @@ import type { inferAsyncReturnType } from '@trpc/server'
 import { db } from '@tavern/db/client'
 import { initTRPC, TRPCError } from '@trpc/server'
 import superjson from 'superjson'
-import { ZodError } from 'zod'
+import { ZodError } from 'zod/v4'
 
 import type { Auth } from './auth'
 import { authWithHeaders } from './auth'

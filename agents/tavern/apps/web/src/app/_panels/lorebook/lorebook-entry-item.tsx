@@ -1,5 +1,5 @@
 import type { Lorebook } from '@/hooks/use-lorebook'
-import type { z } from 'zod'
+import type { z } from 'zod/v4'
 import { memo, useCallback, useEffect, useState } from 'react'
 import { faComments, faPaste, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

@@ -1,6 +1,6 @@
 import { deepmerge } from 'deepmerge-ts'
 import isEqual from 'lodash/isEqual'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { ModelPreset } from '../model-preset'
 import type { Prompt } from '../prompt'
@@ -45,14 +45,14 @@ export const modelPresetCustomizationSchema: z.ZodType<ModelPresetCustomization>
   .partial()
   .extend({
     utilityPrompts: modelPresetSchema.shape.utilityPrompts.partial().optional(),
-    prompts: z.record(promptSchema.omit({ identifier: true }).partial().nullable()).optional(),
+    prompts: z.record(z.string(), promptSchema.omit({ identifier: true }).partial().nullable()).optional(),
     promptOrder: z.array(z.string()).optional(),
-    vendor: modelPresetSchema.required({ vendor: true }).shape.vendor.deepPartial().optional(),
+    vendor: modelPresetSchema.shape.vendor,
   })
 
 export const modelPresetSettingsSchema: z.ZodType<ModelPresetSettings> = z.object({
   preset: z.string(),
-  customizations: z.record(modelPresetCustomizationSchema).optional(),
+  customizations: z.record(z.string(), modelPresetCustomizationSchema).optional(),
 })
 
 export function fillInModelPresetSettingsWithDefaults(

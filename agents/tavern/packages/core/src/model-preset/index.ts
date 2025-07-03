@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { Prompt } from '../prompt'
 import { promptListSchema } from '../prompt'
@@ -117,6 +117,21 @@ export interface ModelPreset {
   }
 }
 
+export const modelPresetVendorSchema = z.object({
+  openrouter: z
+    .object({
+      middleout: z.enum(['on', 'off', 'auto']).optional(),
+    })
+    .optional(),
+  claude: z
+    .object({
+      assistantPrefill: z.string().optional(),
+      assistantImpersonation: z.string().optional(),
+      useSysPrompt: z.boolean().optional(),
+    })
+    .optional(),
+})
+
 export const modelPresetSchema = z.object({
   maxContext: z.number().int().min(512).max(2000000).optional(),
   maxTokens: z.number().int().min(0).max(2000000).optional(),
@@ -152,20 +167,5 @@ export const modelPresetSchema = z.object({
 
   prompts: promptListSchema,
 
-  vendor: z
-    .object({
-      openrouter: z
-        .object({
-          middleout: z.enum(['on', 'off', 'auto']).optional(),
-        })
-        .optional(),
-      claude: z
-        .object({
-          assistantPrefill: z.string().optional(),
-          assistantImpersonation: z.string().optional(),
-          useSysPrompt: z.boolean().optional(),
-        })
-        .optional(),
-    })
-    .optional(),
+  vendor: modelPresetVendorSchema.optional(),
 })
