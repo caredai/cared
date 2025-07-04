@@ -65,7 +65,7 @@ export function FaButtonWithBadge({
       <FontAwesomeIcon
         icon={badgeIcon}
         size={badgeSize}
-        className={cn("absolute -top-1 -right-1 fa-fw", badgeClassName)}
+        className={cn('absolute -top-1 -right-1 fa-fw', badgeClassName)}
       />
     </button>
   )

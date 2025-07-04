@@ -18,13 +18,14 @@ export function Tag({ className, children, ...props }: ComponentProps<typeof Bad
   )
 }
 
-export function ClosableTag({ className, children, onClick, ...props }: ComponentProps<typeof Tag>) {
+export function ClosableTag({
+  className,
+  children,
+  onClick,
+  ...props
+}: ComponentProps<typeof Tag>) {
   return (
-    <Tag
-      className={cn('py-0.5', className)}
-      asChild
-      {...props}
-    >
+    <Tag className={cn('py-0.5', className)} asChild {...props}>
       <div className="flex justify-between items-center gap-2">
         <span>{children}</span>
         <FaButton icon={faCircleXmark} btnSize="size-4" iconSize="sm" onClick={onClick} />

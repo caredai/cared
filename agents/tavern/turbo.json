@@ -47,7 +47,8 @@
   },
   "globalEnv": [
     "POSTGRES_URL",
-    "PORT"
+    "PORT",
+    "NEXT_RUNTIME"
   ],
   "globalPassThroughEnv": [
     "NODE_ENV",

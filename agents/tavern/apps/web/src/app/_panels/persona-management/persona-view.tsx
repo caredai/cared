@@ -457,9 +457,7 @@ export function PersonaView({ personaId }: { personaId: string }) {
             return (
               <div
                 key={item.id}
-                className={cn(
-                  'flex items-center justify-center',
-                )}
+                className={cn('flex items-center justify-center')}
                 onClick={() => {
                   setActiveCharacterOrGroup(item.id)
                   clearAllFlags()

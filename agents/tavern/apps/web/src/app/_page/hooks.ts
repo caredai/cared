@@ -1,7 +1,8 @@
 import type { UseChatHelpers } from '@ai-sdk/react'
+import type { UIMessage } from '@tavern/core'
 import { useEffect, useState } from 'react'
 
-type Status = UseChatHelpers['status']
+type Status = UseChatHelpers<UIMessage>['status']
 
 export function useCallWhenGenerating(
   chatId: string | undefined,

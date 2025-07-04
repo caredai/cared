@@ -35,3 +35,20 @@ export function formatMessage(message: string) {
 export function sanitizeText(text: string) {
   return text.replace('<has_function_call>', '')
 }
+
+export async function fetchWithErrorHandlers(input: RequestInfo | URL, init?: RequestInit) {
+  try {
+    const response = await fetch(input, init)
+
+    // TODO: error handling
+
+    return response
+  } catch (error: unknown) {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      // TODO: error handling
+      throw new Error('Offline')
+    }
+
+    throw error
+  }
+}

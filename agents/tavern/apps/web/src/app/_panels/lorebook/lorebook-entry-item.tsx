@@ -122,9 +122,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
   const [secondaryKeys, setSecondaryKeys] = useState<string>(
     defaultValues.secondaryKeys?.join(', ') ?? '',
   )
-  const [primaryKeys, setPrimaryKeys] = useState<string>(
-    defaultValues.keys?.join(', ') ?? '',
-  )
+  const [primaryKeys, setPrimaryKeys] = useState<string>(defaultValues.keys?.join(', ') ?? '')
 
   const form = useForm<EntryFormValues>({
     resolver: zodResolver(entryFormSchema),

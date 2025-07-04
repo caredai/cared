@@ -44,11 +44,11 @@ import {
   useModelPresets,
 } from '@/hooks/use-model-preset'
 import { useAppearanceSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
+import { ImportPresetDialog } from './import-preset-dialog'
 import { ModelConf } from './model-conf'
 import { PromptEdit } from './prompt-edit'
 import { PromptInspect } from './prompt-inspect'
 import { PromptList } from './prompt-list'
-import { ImportPresetDialog } from './import-preset-dialog'
 
 export function ModelConfigurationPanel() {
   const appearanceSettings = useAppearanceSettings()

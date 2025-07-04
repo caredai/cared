@@ -38,14 +38,13 @@ import {
   useCharactersAndGroups,
   useSetActiveCharacterOrGroup,
 } from '@/hooks/use-character-or-group'
-import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
+import { useCharacterSettings, useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'
 import { CharacterItem } from './character-item'
 import { DeleteCharactersOrGroupsDialog } from './delete-characters-or-groups-dialog'
 import { useClearAllFlags, useSetIsCreateCharacter, useSetIsCreateCharacterGroup } from './hooks'
 import { ImportFileInput } from './import-file-input'
 import { ImportUrlDialog } from './import-url-dialog'
 import { useOpenTagsManagementDialog } from './tags-management-dialog'
-import { useCharacterSettings, useUpdateCharacterSettings } from '@/hooks/use-settings'
 
 export function CharacterList() {
   const charactersAndGroups = useCharactersAndGroups()
@@ -170,7 +169,14 @@ export function CharacterList() {
               return 0
           }
         }),
-    [charactersAndGroups, searchQuery, searchResults, sortBy, showFavoritesOnly, characterSettings.favorites],
+    [
+      charactersAndGroups,
+      searchQuery,
+      searchResults,
+      sortBy,
+      showFavoritesOnly,
+      characterSettings.favorites,
+    ],
   )
 
   const openTagsManagementDialog = useOpenTagsManagementDialog()

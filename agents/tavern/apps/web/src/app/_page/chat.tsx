@@ -1,9 +1,10 @@
-import type { Message, MessageContent } from '@tavern/core'
-import type { UIMessage } from 'ai'
+import type { Message, MessageContent, UIMessage } from '@tavern/core'
+import type { PrepareSendMessagesRequest } from 'ai'
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useChat } from '@ai-sdk/react'
+import { Chat as AIChat, useChat } from '@ai-sdk/react'
 import { buildPromptMessages } from '@tavern/core'
+import { DefaultChatTransport } from 'ai'
 import hash from 'stable-hash'
 
 import { generateMessageId } from '@ownxai/sdk'
@@ -17,6 +18,7 @@ import { ContentArea } from './content-area'
 import { useCallWhenGenerating } from './hooks'
 import { Messages } from './messages'
 import { MultimodalInput } from './multimodal-input'
+import { fetchWithErrorHandlers } from './utils'
 
 export function Chat() {
   const { settings, modelPreset, model, charOrGroup, persona, chat } = useActive()
@@ -28,133 +30,122 @@ export function Chat() {
 
   const { addCachedMessage, updateCachedMessage } = useCachedMessage(chat)
 
-  const prepareRequestBody = useCallback(
-    ({ id, messages: uiMessages }: { id: string; messages: UIMessage[] }) => {
-      if (!chat || !model || !persona || !charOrGroup) {
-        throw new Error('Not initialized')
+  const prepareSendMessagesRequest = ({
+    id,
+    messages: uiMessages,
+    body,
+  }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
+    if (!chat || !model || !persona || !charOrGroup) {
+      throw new Error('Not initialized')
+    }
+
+    const lastUiMessage = uiMessages.at(-1)
+    if (!lastUiMessage) {
+      throw new Error('No messages')
+    }
+
+    const content = {
+      parts: lastUiMessage.parts,
+    } as MessageContent
+
+    const messages = branch.map((node) => node.message)
+    const last = messages[messages.length - 1]
+    const secondLast = messages[messages.length - 2]
+
+    let lastMessage: Message
+
+    if (lastUiMessage.id === last?.id || lastUiMessage.id === secondLast?.id) {
+      let msg = {} as Message
+      if (lastUiMessage.id === last?.id) {
+        msg = last
+      } else if (lastUiMessage.id === secondLast?.id) {
+        msg = secondLast
+        // Remove the last message
+        messages.splice(messages.length - 1, 1)
       }
 
-      const lastUiMessage = uiMessages[uiMessages.length - 1]
-      if (!lastUiMessage) {
-        throw new Error('No messages')
+      content.metadata = {
+        // TODO
+        characterId: isCharacter(charOrGroup) ? charOrGroup.id : charOrGroup.characters[0]?.id,
+        modelId: model.id,
       }
 
-      let content = {
-        parts: lastUiMessage.parts,
-        experimental_attachments: lastUiMessage.experimental_attachments,
-      } as MessageContent
-
-      const messages = branch.map((node) => node.message)
-      const last = messages[messages.length - 1]
-      const secondLast = messages[messages.length - 2]
-
-      let lastMessage: Message
-
-      if (lastUiMessage.id === last?.id || lastUiMessage.id === secondLast?.id) {
-        let msg = {} as Message
-        if (lastUiMessage.id === last?.id) {
-          msg = last
-        } else if (lastUiMessage.id === secondLast?.id) {
-          msg = secondLast
-          // Remove the last message
-          messages.splice(messages.length - 1, 1)
-        }
-
-        content = {
-          ...content,
-          annotations: [
-            {
-              // TODO
-              characterId: isCharacter(charOrGroup)
-                ? charOrGroup.id
-                : charOrGroup.characters[0]?.id,
-              modelId: model.id,
-            },
-          ],
-        }
-
-        lastMessage = {
-          ...msg,
-          content,
-        }
-        messages[messages.length - 1] = lastMessage
-        updateCachedMessage(lastMessage)
-      } else {
-        content = {
-          ...content,
-          annotations: [
-            {
-              personaId: persona.id,
-              personaName: persona.name,
-            },
-          ],
-        }
-
-        lastMessage = {
-          id: lastUiMessage.id,
-          chatId: id,
-          parentId: last?.id ?? null,
-          role: lastUiMessage.role as any,
-          content,
-          createdAt: lastUiMessage.createdAt ?? new Date(),
-        } as Message
-        messages.push(lastMessage)
-        addCachedMessage(lastMessage)
+      lastMessage = {
+        ...msg,
+        content,
+      }
+      messages[messages.length - 1] = lastMessage
+      updateCachedMessage(lastMessage)
+    } else {
+      content.metadata = {
+        personaId: persona.id,
+        personaName: persona.name,
       }
 
-      // TODO
-      const nextChar = isCharacter(charOrGroup) ? charOrGroup : charOrGroup.characters[0]
-      if (!nextChar) {
-        throw new Error('No character')
-      }
+      lastMessage = {
+        id: lastUiMessage.id,
+        chatId: id,
+        parentId: last?.id ?? null,
+        role: lastUiMessage.role,
+        content,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Message
+      messages.push(lastMessage)
+      addCachedMessage(lastMessage)
+    }
 
-      const promptMessages = buildPromptMessages({
-        messages: [...branch, {
+    // TODO
+    const nextChar = isCharacter(charOrGroup) ? charOrGroup : charOrGroup.characters[0]
+    if (!nextChar) {
+      throw new Error('No character')
+    }
+
+    const promptMessages = buildPromptMessages({
+      messages: [
+        ...branch,
+        {
           message: lastMessage,
           descendants: [],
-        }], // TODO
-        chat,
-        settings,
-        modelPreset,
-        model,
-        persona,
-        character: nextChar.content,
-        group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
-      })
+        },
+      ], // TODO
+      chat,
+      settings,
+      modelPreset,
+      model,
+      persona,
+      character: nextChar.content,
+      group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
+    })
 
-      return {
+    return {
+      body: {
         id,
         messages: promptMessages,
         lastMessage,
         characterId: nextChar.id,
         modelId: model.id,
-      }
-    },
-    [
-      chat,
-      branch,
-      model,
-      settings,
-      modelPreset,
-      charOrGroup,
-      updateCachedMessage,
-      persona,
-      addCachedMessage,
-    ],
+        ...body,
+      },
+    }
+  }
+
+  const aiChat = useRef(
+    new AIChat({
+      id: chatId,
+      generateId: generateMessageId,
+      transport: new DefaultChatTransport({
+        api: '/api/chat',
+        fetch: fetchWithErrorHandlers,
+        prepareSendMessagesRequest,
+      }),
+      onFinish: (...args) => console.log('onFinish', ...args),
+      onError: (error) => console.error('onError', error),
+    }),
   )
 
-  const { messages, setMessages, handleSubmit, input, setInput, append, status, stop } = useChat({
-    id: chatId,
-    experimental_throttle: 100,
-    sendExtraMessageFields: true,
-    generateId: generateMessageId,
-    experimental_prepareRequestBody: prepareRequestBody,
-    onFinish: (...args) => console.log('onFinish', ...args),
-    onError: (error) => console.error('onError', error),
-  })
-
-  useEffect(() => {
-    const lastUiMessage = messages[messages.length - 1]
+  const onMessagesChange = () => {
+    const lastUiMessage = aiChat.current.messages.at(-1)
     if (lastUiMessage?.role !== 'assistant') {
       return
     }
@@ -164,14 +155,11 @@ export function Chat() {
 
     const content = {
       parts: lastUiMessage.parts,
-      experimental_attachments: lastUiMessage.experimental_attachments,
-      annotations: [
-        {
-          // TODO
-          characterId: isCharacter(charOrGroup) ? charOrGroup.id : charOrGroup?.characters[0]?.id,
-          modelId: model?.id,
-        },
-      ],
+      metadata: {
+        // TODO
+        characterId: isCharacter(charOrGroup) ? charOrGroup.id : charOrGroup?.characters[0]?.id,
+        modelId: model?.id,
+      },
     } as MessageContent
 
     if (!last || lastUiMessage.id > last.id) {
@@ -179,9 +167,10 @@ export function Chat() {
         id: lastUiMessage.id,
         chatId: chatId,
         parentId: last?.id ?? null,
-        role: lastUiMessage.role as any,
+        role: lastUiMessage.role,
         content,
-        createdAt: lastUiMessage.createdAt ?? new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       } as Message)
     } else if (lastUiMessage.id === last.id && hash(content) !== hash(last.content)) {
       updateCachedMessage({
@@ -189,22 +178,17 @@ export function Chat() {
         content,
       })
     }
+  }
 
-    if (status === 'ready' || status === 'error') {
-      setMessages(msgs => msgs.slice(msgs.length - 2))
-    }
-  }, [
-    branch,
-    messages,
-    setMessages,
-    status,
-    persona,
-    charOrGroup,
-    model,
-    chatId,
-    addCachedMessage,
-    updateCachedMessage,
-  ])
+  useEffect(() => {
+    return aiChat.current['~registerMessagesCallback'](onMessagesChange, 100)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const { messages, setMessages, sendMessage, status, stop } = useChat<UIMessage>({
+    chat: aiChat.current,
+    experimental_throttle: 100,
+  })
 
   const ref = useRef<VListHandle>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -217,6 +201,7 @@ export function Chat() {
       // Using smooth scrolling over many items can kill performance benefit of virtual scroll.
       smooth: typeof smooth === 'boolean' ? smooth : true,
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false)
@@ -244,6 +229,8 @@ export function Chat() {
     }, [scrollToBottom, branch]),
   )
 
+  const [input, setInput] = useState('')
+
   return (
     <>
       <ContentArea>
@@ -262,8 +249,7 @@ export function Chat() {
         stop={stop}
         messages={messages}
         setMessages={setMessages}
-        append={append}
-        handleSubmit={handleSubmit}
+        sendMessage={sendMessage}
         scrollToBottom={scrollToBottom}
         disabled={isLoading}
       />

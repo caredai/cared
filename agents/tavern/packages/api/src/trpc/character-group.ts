@@ -13,7 +13,7 @@ async function processMetadata(metadata: z.infer<typeof charGroupMetadataSchema>
   if (metadata.imageUrl?.startsWith('data:')) {
     const imageUrl = await uploadImage(metadata.imageUrl, {
       name: metadata.name,
-      prefix: 'character-groups'
+      prefix: 'character-groups',
     })
     return {
       ...metadata,

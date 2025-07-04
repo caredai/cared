@@ -1,5 +1,4 @@
 import type { Persona } from '@/hooks/use-persona'
-import { useCreatePersona } from '@/hooks/use-persona'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@ownxai/ui/components/button'
@@ -10,11 +9,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@ownxai/ui/components/dialog'
 import { Input } from '@ownxai/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
+import { useCreatePersona } from '@/hooks/use-persona'
 import { useUpdatePersonaSettings } from '@/hooks/use-settings'
 
 export function DuplicatePersonaDialog({

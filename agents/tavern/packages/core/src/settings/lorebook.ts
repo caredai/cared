@@ -37,26 +37,26 @@ export const lorebookSettingsSchema = z.object({
 })
 
 export function fillInLorebookSettingsWithDefaults(settings?: LorebookSettings): LorebookSettings {
-  return (
-    settings ? {
-      ...settings,
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      active: settings.active ?? [],
-    }: {
-      active: [],
-      scanDepth: 2,
-      context: 25,
-      budgetCap: 0,
-      minActivations: 0,
-      maxDepth: 0,
-      maxRecursionSteps: 0,
-      insertionStrategy: 'character_first',
-      includeNames: true,
-      recursiveScan: true,
-      caseSensitive: false,
-      matchWholeWords: true,
-      useGroupScoring: false,
-      alertOnOverflow: false,
-    }
-  )
+  return settings
+    ? {
+        ...settings,
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        active: settings.active ?? [],
+      }
+    : {
+        active: [],
+        scanDepth: 2,
+        context: 25,
+        budgetCap: 0,
+        minActivations: 0,
+        maxDepth: 0,
+        maxRecursionSteps: 0,
+        insertionStrategy: 'character_first',
+        includeNames: true,
+        recursiveScan: true,
+        caseSensitive: false,
+        matchWholeWords: true,
+        useGroupScoring: false,
+        alertOnOverflow: false,
+      }
 }

@@ -415,7 +415,6 @@ export function useDeleteCharacter() {
         id,
       })
       await clearTagMap([id])
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
     [clearTagMap],
   )

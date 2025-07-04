@@ -6,10 +6,10 @@ import { Button } from '@ownxai/ui/components/button'
 import { Input } from '@ownxai/ui/components/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@ownxai/ui/components/popover'
 import { Separator } from '@ownxai/ui/components/separator'
+import { cn } from '@ownxai/ui/lib/utils'
 
 import { useModels } from '@/hooks/use-model'
 import { useModelSettings, useUpdateModelSettings } from '@/hooks/use-settings'
-import { cn } from '@ownxai/ui/lib/utils'
 
 interface Group {
   label: string
@@ -36,8 +36,8 @@ function useModelGroups() {
         label: provider.name,
         items: provider.models.map((model: { name: string; id: string }) => ({
           label: model.name,
-          value: model.id
-        }))
+          value: model.id,
+        })),
       }))
     }
 
@@ -63,14 +63,14 @@ function useModelGroups() {
       languageModelItems.unshift({
         label: 'Favorites',
         items: favoriteLanguageModelItems,
-        isFavorites: true
+        isFavorites: true,
       })
     }
 
     return {
       languageModelItems,
       embeddingModelItems,
-      imageModelItems
+      imageModelItems,
     }
   }, [models, modelSettings])
 }
@@ -81,10 +81,10 @@ function useModelGroups() {
  * Includes search functionality to filter models by label or value
  */
 export function ModelSelect({
-                              label,
-                              description,
-                              type = 'language'
-                            }: {
+  label,
+  description,
+  type = 'language',
+}: {
   label: string
   description: string
   type?: 'language' | 'text-embedding' | 'image'
@@ -124,7 +124,7 @@ export function ModelSelect({
       if (item) {
         return {
           provider: group.label,
-          model: item.label
+          model: item.label,
         }
       }
     }
@@ -169,7 +169,7 @@ export function ModelSelect({
       : [...modelSettings.favoriteLanguageModels, modelId]
 
     await updateModelSettings({
-      favoriteLanguageModels: newFavorites
+      favoriteLanguageModels: newFavorites,
     })
   }
 
@@ -201,42 +201,49 @@ export function ModelSelect({
             <div className="p-2 text-sm text-muted-foreground">No models found</div>
           )}
           <VList count={filtered.length}>
-            {filtered.flatMap((group, index) => [
-              index > 0 && <Separator key={`separator-${group.label}`} className="bg-ring/50 my-2" />,
-              <div
-                key={group.label}
-                className="px-1.5 py-1.5 text-sm font-semibold text-muted-foreground"
-              >
-                {group.label}
-              </div>,
-              ...group.items.map((item) => (
+            {filtered.flatMap((group, index) => {
+              return [
+                index > 0 && (
+                  <Separator key={`separator-${group.label}`} className="bg-ring/50 my-2" />
+                ),
                 <div
-                  key={`${group.label}-${item.value}`}
-                  className="w-full flex items-center justify-between px-1.5 py-1.5 h-auto group cursor-pointer hover:bg-background hover:text-foreground text-sm"
-                  onClick={() => {
-                    handleModelChange(item.value)
-                    setOpen(false)
-                  }}
+                  key={group.label}
+                  className="px-1.5 py-1.5 text-sm font-semibold text-muted-foreground"
                 >
-                  <span>{item.label}</span>
-                  <div className="flex items-center gap-2">
-                    {item.value === selectedModel && <Check className="h-4 w-4 text-green-500" />}
-                    <Star
-                      className={cn('h-4 w-4 invisible group-hover:visible',
-                        modelSettings.favoriteLanguageModels.includes(item.value)
-                          ? 'text-yellow-500 fill-yellow-500'
-                          : 'text-muted-foreground',
-                        !group.isFavorites && modelSettings.favoriteLanguageModels.includes(item.value) && 'visible'
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        void toggleFavorite(item.value)
-                      }}
-                    />
+                  {group.label}
+                </div>,
+                ...group.items.map((item) => (
+                  <div
+                    key={`${group.label}-${item.value}`}
+                    className="w-full flex items-center justify-between px-1.5 py-1.5 h-auto group cursor-pointer hover:bg-background hover:text-foreground text-sm"
+                    onClick={() => {
+                      handleModelChange(item.value)
+                      setOpen(false)
+                    }}
+                  >
+                    <span>{item.label}</span>
+                    <div className="flex items-center gap-2">
+                      {item.value === selectedModel && <Check className="h-4 w-4 text-green-500" />}
+                      <Star
+                        className={cn(
+                          'h-4 w-4 invisible group-hover:visible',
+                          modelSettings.favoriteLanguageModels.includes(item.value)
+                            ? 'text-yellow-500 fill-yellow-500'
+                            : 'text-muted-foreground',
+                          !group.isFavorites &&
+                            modelSettings.favoriteLanguageModels.includes(item.value) &&
+                            'visible',
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void toggleFavorite(item.value)
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))
-            ])}
+                )),
+              ]
+            })}
           </VList>
         </PopoverContent>
       </Popover>

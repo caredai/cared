@@ -12,4 +12,7 @@ export const jsonValueSchema: z.ZodType<JSONValue> = z.lazy(() =>
   ]),
 )
 
-export const sharedV2ProviderOptionsSchema = z.record(z.string(), z.record(z.string(), jsonValueSchema))
+export const sharedV2ProviderOptionsSchema = z.record(
+  z.string(),
+  z.record(z.string(), jsonValueSchema),
+)

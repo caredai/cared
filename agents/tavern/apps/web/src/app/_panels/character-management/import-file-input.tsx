@@ -14,12 +14,14 @@ export function ImportFileInput({
 
   // Handle file selection
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const character  = (await importCharacters(event.target.files).finally(() => {
-      // Reset file input to allow selecting the same file again
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    }))?.character
+    const character = (
+      await importCharacters(event.target.files).finally(() => {
+        // Reset file input to allow selecting the same file again
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
+      })
+    )?.character
 
     if (character) {
       await importTags(character, true)

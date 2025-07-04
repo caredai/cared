@@ -54,7 +54,11 @@ function resolveMonorepoPath(importPath: string): string {
 }
 
 // Helper function to extract type definitions from source files
-async function extractTypeDefinition(importPath: string, processedFiles: Set<string> = new Set(), resolvedPath?: string): Promise<string | null> {
+async function extractTypeDefinition(
+  importPath: string,
+  processedFiles: Set<string> = new Set(),
+  resolvedPath?: string,
+): Promise<string | null> {
   // Resolve the actual file path in monorepo
   const filePath = !resolvedPath ? resolveMonorepoPath(importPath) : resolvedPath
 
@@ -114,7 +118,11 @@ async function extractTypeDefinition(importPath: string, processedFiles: Set<str
 
         if (fs.existsSync(actualModulePath)) {
           console.log(`Found re-export from: ${actualModulePath}`)
-          const reExportedTypes = await extractTypeDefinition(importPath, processedFiles, actualModulePath)
+          const reExportedTypes = await extractTypeDefinition(
+            importPath,
+            processedFiles,
+            actualModulePath,
+          )
           if (reExportedTypes) {
             typeDefinition += reExportedTypes
           }

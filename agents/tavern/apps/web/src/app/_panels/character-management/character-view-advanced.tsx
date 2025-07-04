@@ -2,8 +2,8 @@ import { useCallback } from 'react'
 import { formatExtensions } from '@tavern/core'
 
 import type { CharacterAdvancedFormValues } from './character-advanced-form'
-import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useUpdateCharacter } from '@/hooks/use-character'
+import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { CharacterAdvancedForm } from './character-advanced-form'
 
 export function CharacterViewAdvanced() {

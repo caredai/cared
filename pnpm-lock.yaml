@@ -95,12 +95,15 @@ importers:
 
   apps/web:
     dependencies:
+      '@ai-sdk/react':
+        specifier: 2.0.0-beta.7
+        version: 2.0.0-beta.7(react@19.1.0)(zod@3.25.51)
       '@daveyplate/better-auth-tanstack':
         specifier: ^1.2.31
         version: 1.3.4(@tanstack/query-core@5.74.4)(@tanstack/react-query@5.74.4(react@19.1.0))(better-auth@1.2.7)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@daveyplate/better-auth-ui':
         specifier: ^1.2.37
-        version: 1.5.5(ynesxh5zjbcrxz4fdlxb4cls7e)
+        version: 1.5.5(ie3jidrd6ul2mrr56uyeob4a2q)
       '@icons-pack/react-simple-icons':
         specifier: ^12.2.0
         version: 12.7.0(react@19.1.0)
@@ -944,8 +947,8 @@ importers:
   packages/ui:
     dependencies:
       '@hookform/resolvers':
-        specifier: ^4.1.3
-        version: 4.1.3(react-hook-form@7.56.1(react@19.1.0))
+        specifier: ^5.1.1
+        version: 5.1.1(react-hook-form@7.56.1(react@19.1.0))
       '@radix-ui/react-accordion':
         specifier: ^1.2.3
         version: 1.2.8(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1449,6 +1452,16 @@ packages:
 
   '@ai-sdk/react@1.2.8':
     resolution: {integrity: sha512-S2FzCSi4uTF0JuSN6zYMXyiAWVAzi/Hho8ISYgHpGZiICYLNCP2si4DuXQOsnWef3IXzQPLVoE11C63lILZIkw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: ^18 || ^19 || ^19.0.0-rc
+      zod: 3.25.51
+    peerDependenciesMeta:
+      zod:
+        optional: true
+
+  '@ai-sdk/react@2.0.0-beta.7':
+    resolution: {integrity: sha512-gdwYlzo0TGzMtFElljHDW3njwJGV4HBxi8Y1pS1bF4rKRNqFXtjLquRvJ2khjFsZYimbBNx2F+ZmEa3KPytzMA==}
     engines: {node: '>=18'}
     peerDependencies:
       react: ^18 || ^19 || ^19.0.0-rc
@@ -2707,10 +2720,10 @@ packages:
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
 
-  '@hookform/resolvers@4.1.3':
-    resolution: {integrity: sha512-Jsv6UOWYTrEFJ/01ZrnwVXs7KDvP8XIo115i++5PWvNkNvkrsTfGiLS6w+eJ57CYtUtDQalUWovCZDHFJ8u1VQ==}
+  '@hookform/resolvers@5.1.1':
+    resolution: {integrity: sha512-J/NVING3LMAEvexJkyTLjruSm7aOFx7QX21pzkiJfMoNG0wl5aFEjLTl7ay7IQb9EWY6AkrBy7tHL2Alijpdcg==}
     peerDependencies:
-      react-hook-form: ^7.0.0
+      react-hook-form: ^7.55.0
 
   '@hpke/common@1.7.2':
     resolution: {integrity: sha512-x8wGc1S3ANyQpbTXxhDuzQwzZn9IDaOARpEq/QzDyWFBEhOFyN8mJd6oMnvFkxe0H96JFgIU6eI4G2aaNxgFJQ==}
@@ -5855,6 +5868,12 @@ packages:
 
   ai@5.0.0-beta.6:
     resolution: {integrity: sha512-0VqcqbWiF2XwWBgNfrEr05QrB0bJqctwLyuk7xfy7g8OBSqyJ4OV95HGTzrBvN8/iU/4u+eNTlF5nAG5Qx3utw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: 3.25.51
+
+  ai@5.0.0-beta.7:
+    resolution: {integrity: sha512-oC4KzUJCQPMB7v9rCqL/rVk2ogZvI6lYiXfKjzPYHwa1zIgy329qqRLmAd3mKEDTTG6By1r0zasQu7FKmG+4gw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: 3.25.51
@@ -11382,6 +11401,16 @@ snapshots:
     optionalDependencies:
       zod: 3.25.51
 
+  '@ai-sdk/react@2.0.0-beta.7(react@19.1.0)(zod@3.25.51)':
+    dependencies:
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.51)
+      ai: 5.0.0-beta.7(zod@3.25.51)
+      react: 19.1.0
+      swr: 2.3.3(react@19.1.0)
+      throttleit: 2.1.0
+    optionalDependencies:
+      zod: 3.25.51
+
   '@ai-sdk/replicate@1.0.0-beta.2(zod@3.25.51)':
     dependencies:
       '@ai-sdk/provider': 2.0.0-beta.1
@@ -12417,11 +12446,11 @@ snapshots:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
-  '@daveyplate/better-auth-ui@1.5.5(ynesxh5zjbcrxz4fdlxb4cls7e)':
+  '@daveyplate/better-auth-ui@1.5.5(ie3jidrd6ul2mrr56uyeob4a2q)':
     dependencies:
       '@better-fetch/fetch': 1.1.18
       '@daveyplate/better-auth-tanstack': 1.3.4(@tanstack/query-core@5.74.4)(@tanstack/react-query@5.74.4(react@19.1.0))(better-auth@1.2.7)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      '@hookform/resolvers': 4.1.3(react-hook-form@7.56.1(react@19.1.0))
+      '@hookform/resolvers': 5.1.1(react-hook-form@7.56.1(react@19.1.0))
       '@instantdb/react': 0.18.9(react@19.1.0)
       '@radix-ui/react-avatar': 1.1.7(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@radix-ui/react-checkbox': 1.2.3(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -13076,7 +13105,7 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
-  '@hookform/resolvers@4.1.3(react-hook-form@7.56.1(react@19.1.0))':
+  '@hookform/resolvers@5.1.1(react-hook-form@7.56.1(react@19.1.0))':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.56.1(react@19.1.0)
@@ -16715,6 +16744,14 @@ snapshots:
       '@opentelemetry/api': 1.9.0
       zod: 3.25.51
 
+  ai@5.0.0-beta.7(zod@3.25.51):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.0-beta.3(zod@3.25.51)
+      '@ai-sdk/provider': 2.0.0-beta.1
+      '@ai-sdk/provider-utils': 3.0.0-beta.2(zod@3.25.51)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.51
+
   ai@5.0.0-canary.24(zod@3.25.51):
     dependencies:
       '@ai-sdk/provider': 2.0.0-canary.14
@@ -18896,7 +18933,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.9.0(debug@4.4.0))
+      retry-axios: 2.6.0(axios@1.9.0)
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -21059,7 +21096,7 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  retry-axios@2.6.0(axios@1.9.0(debug@4.4.0)):
+  retry-axios@2.6.0(axios@1.9.0):
     dependencies:
       axios: 1.9.0(debug@4.4.0)
 

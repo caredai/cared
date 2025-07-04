@@ -6,8 +6,8 @@ import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
 
-import { debounceTimeout } from '@/lib/debounce'
 import { useModelPresetSettings, useUpdateModelPresetSettings } from '@/hooks/use-settings'
+import { debounceTimeout } from '@/lib/debounce'
 import { useTRPC } from '@/trpc/client'
 
 export function useModelPresets() {

@@ -1,4 +1,4 @@
-import { UIMessage } from 'ai'
+import type { UIMessage } from 'ai'
 import { z } from 'zod/v4'
 
 export type { UIMessage } from 'ai'

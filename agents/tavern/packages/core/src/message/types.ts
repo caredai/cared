@@ -1,3 +1,4 @@
+import type { UIMessage as _UIMessage } from 'ai'
 import { z } from 'zod/v4'
 
 import type { Message as _Message } from '@ownxai/sdk'
@@ -45,6 +46,8 @@ export const messageContentSchema = _messageContentSchema
 export type Message = Omit<_Message, 'content'> & {
   content: MessageContent
 }
+
+export type UIMessage = _UIMessage<MessageMetadata>
 
 export interface MessageNode {
   message: Message

@@ -248,11 +248,9 @@ export function useCreateChat() {
                     text: evaluateMacros(firstMsg),
                   },
                 ],
-                annotations: [
-                  {
-                    characterId: character.id,
-                  },
-                ],
+                metadata: {
+                  characterId: character.id,
+                },
               },
             },
           ]
@@ -293,11 +291,9 @@ export function useCreateChat() {
                       text: evaluateMacros(firstMsg),
                     },
                   ],
-                  annotations: [
-                    {
-                      characterId: character.id,
-                    },
-                  ],
+                  metadata: {
+                    characterId: character.id,
+                  },
                 },
               }
             })

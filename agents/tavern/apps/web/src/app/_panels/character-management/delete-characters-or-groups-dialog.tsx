@@ -12,8 +12,7 @@ import {
 
 import { CircleSpinner } from '@/components/spinner'
 import { useDeleteCharacters } from '@/hooks/use-character'
-import { useDeleteCharacterGroups } from '@/hooks/use-character-group'
-import { useCharacterGroups } from '@/hooks/use-character-group'
+import { useCharacterGroups, useDeleteCharacterGroups } from '@/hooks/use-character-group'
 
 export function DeleteCharactersOrGroupsDialog({
   open,
@@ -32,8 +31,8 @@ export function DeleteCharactersOrGroupsDialog({
   const [isLoading, setIsLoading] = useState(false)
 
   // Split IDs into character IDs and group IDs
-  const groupIds = ids.filter(id => groups.some(group => group.id === id))
-  const characterIds = ids.filter(id => !groupIds.includes(id))
+  const groupIds = ids.filter((id) => groups.some((group) => group.id === id))
+  const characterIds = ids.filter((id) => !groupIds.includes(id))
 
   const handleConfirm = async () => {
     setIsLoading(true)

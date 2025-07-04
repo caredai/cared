@@ -1,7 +1,8 @@
 'use client'
 
 import type { UseChatHelpers } from '@ai-sdk/react'
-import type { UIMessage } from 'ai'
+import type { UIMessage } from '@tavern/core'
+import type { Dispatch, SetStateAction } from 'react'
 import { useCallback, useEffect } from 'react'
 import {
   faBars,
@@ -20,19 +21,17 @@ export function MultimodalInput({
   stop,
   messages,
   setMessages,
-  append: _,
-  handleSubmit,
+  sendMessage,
   scrollToBottom,
   disabled,
 }: {
-  input: UseChatHelpers['input']
-  setInput: UseChatHelpers['setInput']
-  status: UseChatHelpers['status']
+  input: string
+  setInput: Dispatch<SetStateAction<string>>
+  status: UseChatHelpers<UIMessage>['status']
   stop: () => void
   messages: UIMessage[]
-  setMessages: UseChatHelpers['setMessages']
-  append: UseChatHelpers['append']
-  handleSubmit: UseChatHelpers['handleSubmit']
+  setMessages: UseChatHelpers<UIMessage>['setMessages']
+  sendMessage: UseChatHelpers<UIMessage>['sendMessage']
   scrollToBottom: () => void
   disabled: boolean
 }) {
@@ -52,27 +51,21 @@ export function MultimodalInput({
     } else if (status !== 'ready') {
       return
     }
-    handleSubmit(undefined, {
-      allowEmptySubmit: false,
-    })
-    // setInput('')
-  }, [handleSubmit, messages, setMessages, status, disabled])
+    void sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] })
+    setInput('')
+  }, [input, setInput, sendMessage, messages, setMessages, status, disabled])
 
   return (
     <div className="pt-[1px] pb-[5px] bg-transparent">
       <div className="flex flex-row items-center rounded-b-lg px-1 text-sm bg-background focus-within:ring-1 focus-within:ring-ring">
-        <button className="inline-flex"
-                disabled={disabled}
-        >
+        <button className="inline-flex" disabled={disabled}>
           <FontAwesomeIcon
             icon={faBars}
             size="2x"
             className="fa-fw text-muted-foreground hover:text-foreground transition-colors duration-200"
           />
         </button>
-        <button className="inline-flex"
-                disabled={disabled}
-        >
+        <button className="inline-flex" disabled={disabled}>
           <FontAwesomeIcon
             icon={faMagicWandSparkles}
             size="2x"

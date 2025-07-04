@@ -21,8 +21,8 @@ import { Markdown } from '@/components/markdown'
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useActivePersona } from '@/hooks/use-persona'
 import defaultPng from '@/public/images/user-default.png'
-import { formatMessage } from './utils'
 import { MessageReasoning } from './message-reasoning'
+import { formatMessage } from './utils'
 
 const PurePreviewMessage = ({
   message,
@@ -32,14 +32,14 @@ const PurePreviewMessage = ({
   navigate,
 }: {
   message: Message
-  isLoading: boolean;
+  isLoading: boolean
   index: number
   count: number
   navigate: (previous: boolean) => void
 }) => {
   const role = message.role
   const parts = message.content.parts
-  const annotation = message.content.annotations[0]
+  const metadata = message.content.metadata
 
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { activePersona } = useActivePersona()
@@ -99,20 +99,20 @@ const PurePreviewMessage = ({
 
   if (role === 'assistant') {
     if (isCharacterGroup(activeCharOrGroup)) {
-      char = activeCharOrGroup.characters.find((c) => c.id === annotation.characterId)
-      if (!annotation.characterId || !char) {
+      char = activeCharOrGroup.characters.find((c) => c.id === metadata.characterId)
+      if (!metadata.characterId || !char) {
         return null
       }
     } else {
       char = activeCharOrGroup
     }
   } else if (role === 'user') {
-    if (annotation.personaId !== activePersona.id) {
-      if (!annotation.personaName) {
+    if (metadata.personaId !== activePersona.id) {
+      if (!metadata.personaName) {
         return null
       }
       persona = {
-        name: annotation.personaName,
+        name: metadata.personaName,
       }
     } else {
       persona = {
@@ -166,13 +166,7 @@ const PurePreviewMessage = ({
               const key = `message-${message.id}-part-${index}`
 
               if (type === 'reasoning') {
-                return (
-                  <MessageReasoning
-                    key={key}
-                    isLoading={isLoading}
-                    reasoning={part.reasoning}
-                  />
-                );
+                return <MessageReasoning key={key} isLoading={isLoading} reasoning={part.text} />
               }
 
               if (type === 'text') {

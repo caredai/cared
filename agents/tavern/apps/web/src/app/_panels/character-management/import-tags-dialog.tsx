@@ -80,7 +80,7 @@ export function useImportTags() {
     if (useRememberedImportOption && tagsSettings.importOption !== 'ask') {
       const embeddedTags = character.content.data.tags
       const existingTagNames = tagsSettings.tags.map((t) => t.name)
-      const existingTags = embeddedTags.filter(tag => existingTagNames.includes(tag))
+      const existingTags = embeddedTags.filter((tag) => existingTagNames.includes(tag))
 
       await importTags(
         character,
@@ -90,7 +90,7 @@ export function useImportTags() {
         [],
         tagsSettings,
         updateSettings,
-        false
+        false,
       )
 
       return
@@ -154,7 +154,7 @@ export function ImportTagsDialog() {
       selectedTags,
       tagsSettings,
       updateSettings,
-      rememberChoice
+      rememberChoice,
     )
   }
 

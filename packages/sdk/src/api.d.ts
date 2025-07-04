@@ -586,7 +586,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     emailVerified: boolean;
                     createdAt: Date;
                     updatedAt: Date;
-                    image?: string | null | undefined | undefined;
+                    image?: string | null | undefined  ;
                     twoFactorEnabled: boolean | null | undefined;
                     banned: boolean | null | undefined;
                     role?: string | null | undefined;
@@ -600,8 +600,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     userId: string;
                     expiresAt: Date;
                     token: string;
-                    ipAddress?: string | null | undefined | undefined;
-                    userAgent?: string | null | undefined | undefined;
+                    ipAddress?: string | null | undefined  ;
+                    userAgent?: string | null | undefined  ;
                     geolocation: string;
                     impersonatedBy?: string | null | undefined;
                     activeOrganizationId?: string | null | undefined;
@@ -618,7 +618,7 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     emailVerified: boolean;
                     createdAt: Date;
                     updatedAt: Date;
-                    image?: string | null | undefined | undefined;
+                    image?: string | null | undefined  ;
                     twoFactorEnabled: boolean | null | undefined;
                     banned: boolean | null | undefined;
                     role?: string | null | undefined;
@@ -663,8 +663,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     userId: string;
                     expiresAt: Date;
                     token: string;
-                    ipAddress?: string | null | undefined | undefined;
-                    userAgent?: string | null | undefined | undefined;
+                    ipAddress?: string | null | undefined  ;
+                    userAgent?: string | null | undefined  ;
                     impersonatedBy?: string | null | undefined;
                     activeOrganizationId?: string | null | undefined;
                 }[];

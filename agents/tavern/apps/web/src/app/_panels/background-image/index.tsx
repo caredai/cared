@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
-import classNames from 'classnames'
 
 import {
   Select,
@@ -14,6 +13,7 @@ import {
 } from '@ownxai/ui/components/select'
 
 import { useBackgroundSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
+import { cn } from '@/lib/utils'
 
 export const backgroundFittings = {
   classic: 'bg-cover',
@@ -36,7 +36,7 @@ const BackgroundItem = ({
 }) => {
   return (
     <div
-      className={classNames(
+      className={cn(
         'relative aspect-3/2 rounded-lg overflow-hidden cursor-pointer transition-all',
         'hover:ring-2 hover:ring-ring',
         selected && 'ring-2 ring-ring',

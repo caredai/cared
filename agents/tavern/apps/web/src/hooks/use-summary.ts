@@ -13,7 +13,7 @@ export function useSummaries() {
       branch
         .map((node, index) => ({
           id: node.message.id, // treat message id as summary id
-          summary: node.message.content.annotations[0].summary,
+          summary: node.message.content.metadata.summary,
           msg: node.message,
           msgIndex: index,
         }))
@@ -50,12 +50,10 @@ export function useUpdateSummary() {
 
       const updatedContent = {
         ...message.content,
-        annotations: [
-          {
-            ...message.content.annotations[0],
-            summary,
-          },
-        ] as [MessageMetadata],
+        metadata: {
+          ...message.content.metadata,
+          summary,
+        } as MessageMetadata,
       }
 
       return await updateMessage(id, updatedContent)
@@ -85,12 +83,10 @@ export function useDeleteSummary() {
 
       const updatedContent = {
         ...message.content,
-        annotations: [
-          {
-            ...message.content.annotations[0],
-            summary: undefined,
-          },
-        ] as [MessageMetadata],
+        metadata: {
+          ...message.content.metadata,
+          summary: undefined,
+        } as MessageMetadata,
       }
 
       return await updateMessage(id, updatedContent)

@@ -162,7 +162,10 @@ function ChatItem({
   const [showDelete, setShowDelete] = useState(false)
 
   let lastMsg =
-    chat.lastMessage?.content.parts.map(part => part.type === 'text' && part.text).filter(Boolean).join('\n') ?? ''
+    chat.lastMessage?.content.parts
+      .map((part) => part.type === 'text' && part.text)
+      .filter(Boolean)
+      .join('\n') ?? ''
   const len = 400
   lastMsg = lastMsg.length > len ? '...' + lastMsg.substring(lastMsg.length - len) : lastMsg
 

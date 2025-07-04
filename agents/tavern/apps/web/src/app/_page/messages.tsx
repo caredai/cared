@@ -1,10 +1,10 @@
-import type { MessageNode } from '@tavern/core'
+import type { UseChatHelpers } from '@ai-sdk/react'
+import type { MessageNode, UIMessage } from '@tavern/core'
 import type { RefObject } from 'react'
 import type { VListHandle } from 'virtua'
 import { memo, useMemo } from 'react'
 import { motion } from 'motion/react'
 import { VList } from 'virtua'
-import type { UseChatHelpers } from '@ai-sdk/react';
 
 import { PreviewMessage } from '@/app/_page/message'
 
@@ -18,7 +18,7 @@ function PureMessages({
   ref: RefObject<VListHandle | null>
   endRef: RefObject<HTMLDivElement | null>
   messages: MessageNode[]
-  status: UseChatHelpers['status'];
+  status: UseChatHelpers<UIMessage>['status']
   navigate: (current: MessageNode, previous: boolean) => void
 }) {
   const indices = useMemo(() => {

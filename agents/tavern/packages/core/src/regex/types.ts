@@ -34,36 +34,38 @@ export enum RegexSubstituteMode {
   ESCAPED,
 }
 
-export const regexScriptSchema = z.object({
-  id: z.string().min(1).max(128),
-  name: z.string().min(1).max(128),
-  regex: z.string().refine((value) => !value || regexFromString(value), {
-    message: 'Invalid regular expression',
-  }),
-  replaceString: z.string(),
-  trimStrings: z.array(z.string()),
-  placement: z
-    .array(z.nativeEnum(RegexPlacement))
-    .refine((arr) => arr.length === new Set(arr).size, {
-      message: 'Placement values must be unique',
+export const regexScriptSchema = z
+  .object({
+    id: z.string().min(1).max(128),
+    name: z.string().min(1).max(128),
+    regex: z.string().refine((value) => !value || regexFromString(value), {
+      message: 'Invalid regular expression',
     }),
-  disabled: z.boolean(),
-  displayOnly: z.boolean(),
-  promptOnly: z.boolean(),
-  runOnEdit: z.boolean(),
-  substituteMode: z.nativeEnum(RegexSubstituteMode),
-  minDepth: z.number().int().min(0).step(1).optional(),
-  maxDepth: z.number().int().min(0).step(1).optional(),
-}).refine(
-  (data) => {
-    // If both minDepth and maxDepth are defined, minDepth should not be greater than maxDepth
-    if (data.minDepth !== undefined && data.maxDepth !== undefined) {
-      return data.minDepth <= data.maxDepth
-    }
-    return true
-  },
-  {
-    message: 'Min depth cannot be greater than max depth',
-    path: ['minDepth'],
-  }
-)
+    replaceString: z.string(),
+    trimStrings: z.array(z.string()),
+    placement: z
+      .array(z.nativeEnum(RegexPlacement))
+      .refine((arr) => arr.length === new Set(arr).size, {
+        message: 'Placement values must be unique',
+      }),
+    disabled: z.boolean(),
+    displayOnly: z.boolean(),
+    promptOnly: z.boolean(),
+    runOnEdit: z.boolean(),
+    substituteMode: z.nativeEnum(RegexSubstituteMode),
+    minDepth: z.number().int().min(0).step(1).optional(),
+    maxDepth: z.number().int().min(0).step(1).optional(),
+  })
+  .refine(
+    (data) => {
+      // If both minDepth and maxDepth are defined, minDepth should not be greater than maxDepth
+      if (data.minDepth !== undefined && data.maxDepth !== undefined) {
+        return data.minDepth <= data.maxDepth
+      }
+      return true
+    },
+    {
+      message: 'Min depth cannot be greater than max depth',
+      path: ['minDepth'],
+    },
+  )

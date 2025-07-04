@@ -45,7 +45,9 @@ export const modelPresetCustomizationSchema: z.ZodType<ModelPresetCustomization>
   .partial()
   .extend({
     utilityPrompts: modelPresetSchema.shape.utilityPrompts.partial().optional(),
-    prompts: z.record(z.string(), promptSchema.omit({ identifier: true }).partial().nullable()).optional(),
+    prompts: z
+      .record(z.string(), promptSchema.omit({ identifier: true }).partial().nullable())
+      .optional(),
     promptOrder: z.array(z.string()).optional(),
     vendor: modelPresetSchema.shape.vendor,
   })

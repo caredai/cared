@@ -1,5 +1,6 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import type { AnyPgColumn } from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
 import {
   boolean,
   foreignKey,
@@ -12,7 +13,6 @@ import {
 } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod/v4'
-import { relations } from 'drizzle-orm'
 
 import type { MessageContent } from '@ownxai/shared'
 import { messageContentSchema, messageRoleEnumValues, uiMessageSchema } from '@ownxai/shared'
@@ -45,16 +45,15 @@ export interface ChatMetadata {
   custom?: unknown
 }
 
-const chatMetadataSchema = z
-  .object({
-    title: z.string().default(''),
-    visibility: z.enum(visibilityEnumValues).default('public'),
-    languageModel: z.string().optional(),
-    embeddingModel: z.string().optional(),
-    rerankModel: z.string().optional(),
-    imageModel: z.string().optional(),
-    custom: z.unknown().optional(),
-  })
+const chatMetadataSchema = z.object({
+  title: z.string().default(''),
+  visibility: z.enum(visibilityEnumValues).default('public'),
+  languageModel: z.string().optional(),
+  embeddingModel: z.string().optional(),
+  rerankModel: z.string().optional(),
+  imageModel: z.string().optional(),
+  custom: z.unknown().optional(),
+})
 
 export function generateChatId() {
   return generateId('chat')

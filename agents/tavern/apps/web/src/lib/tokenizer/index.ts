@@ -17,7 +17,7 @@ export async function countTokens(text: string, modelId?: string): Promise<numbe
     return 0
   }
 
-  const cacheKey = `${modelId}-${cyrb53(text)}`;
+  const cacheKey = `${modelId}-${cyrb53(text)}`
   const cachedCount = countCache.get(cacheKey)
   if (cachedCount !== undefined) {
     return cachedCount

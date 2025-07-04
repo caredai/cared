@@ -184,12 +184,12 @@
   /* Remove the default quotation marks added by the HTML <q> tag */
   q {
     quotes: none;
-    quotes: "" "";
+    quotes: '' '';
   }
 
   q::before,
   q::after {
-    content: "";
+    content: '';
   }
 }
 

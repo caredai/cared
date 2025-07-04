@@ -10,8 +10,12 @@ export const characterSettingsSchema = z.object({
   regexScriptsEnabled: z.array(z.string()).optional(),
 })
 
-export function fillInCharacterSettingsWithDefaults(settings?: CharacterSettings): CharacterSettings {
-  return settings ?? {
-    favorites: [],
-  }
+export function fillInCharacterSettingsWithDefaults(
+  settings?: CharacterSettings,
+): CharacterSettings {
+  return (
+    settings ?? {
+      favorites: [],
+    }
+  )
 }

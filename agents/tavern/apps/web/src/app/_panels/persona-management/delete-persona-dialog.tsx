@@ -1,3 +1,4 @@
+import type { Persona } from '@/hooks/use-persona'
 import { useState } from 'react'
 
 import { Button } from '@ownxai/ui/components/button'
@@ -13,7 +14,6 @@ import {
 
 import { CircleSpinner } from '@/components/spinner'
 import { useDeletePersona, usePersonas } from '@/hooks/use-persona'
-import type { Persona } from '@/hooks/use-persona'
 import { usePersonaSettings, useUpdatePersonaSettings } from '@/hooks/use-settings'
 
 export function DeletePersonaDialog({
@@ -37,9 +37,9 @@ export function DeletePersonaDialog({
 
       // If the deleted persona was active, set the first remaining persona as active
       if (personaSettings.active === persona.id) {
-        const remainingPersonas = personas.filter(p => p.id !== persona.id)
+        const remainingPersonas = personas.filter((p) => p.id !== persona.id)
         const newActivePersona = remainingPersonas[0]
-        
+
         await updatePersonaSettings({
           active: newActivePersona?.id,
         })

@@ -212,7 +212,9 @@ export function CharacterBasicForm({
                       </Button>
                     </div>
                     {field.value.length === 0 ? (
-                      <p className="text-sm text-muted-foreground mb-2">No alternate greetings yet</p>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        No alternate greetings yet
+                      </p>
                     ) : (
                       field.value.map((greeting, index) => (
                         <GreetingItem

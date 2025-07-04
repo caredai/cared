@@ -23,7 +23,7 @@ async function processMetadata(metadata: z.infer<typeof personaMetadataSchema>, 
   if (metadata.imageUrl?.startsWith('data:')) {
     const imageUrl = await uploadImage(metadata.imageUrl, {
       name: name,
-      prefix: 'personas'
+      prefix: 'personas',
     })
     return {
       ...metadata,
