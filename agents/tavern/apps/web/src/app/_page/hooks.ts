@@ -1,6 +1,6 @@
 import type { UseChatHelpers } from '@ai-sdk/react'
 import type { UIMessage } from '@tavern/core'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 
 type Status = UseChatHelpers<UIMessage>['status']
 
@@ -14,7 +14,7 @@ export function useCallWhenGenerating(
     setLastStatus(undefined)
   }, [chatId])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (status !== lastStatus || status === 'submitted' || status === 'streaming') {
       setLastStatus(status)
       func(status)

@@ -19,7 +19,6 @@ export function MultimodalInput({
   setInput,
   status,
   stop,
-  messages,
   setMessages,
   sendMessage,
   scrollToBottom,
@@ -29,7 +28,6 @@ export function MultimodalInput({
   setInput: Dispatch<SetStateAction<string>>
   status: UseChatHelpers<UIMessage>['status']
   stop: () => void
-  messages: UIMessage[]
   setMessages: UseChatHelpers<UIMessage>['setMessages']
   sendMessage: UseChatHelpers<UIMessage>['sendMessage']
   scrollToBottom: () => void
@@ -46,14 +44,13 @@ export function MultimodalInput({
       return
     }
     if (status === 'error') {
-      // remove last message
-      setMessages(messages.slice(0, -1))
+      // TODO
     } else if (status !== 'ready') {
       return
     }
     void sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] })
     setInput('')
-  }, [input, setInput, sendMessage, messages, setMessages, status, disabled])
+  }, [input, setInput, sendMessage, status, disabled])
 
   return (
     <div className="pt-[1px] pb-[5px] bg-transparent">

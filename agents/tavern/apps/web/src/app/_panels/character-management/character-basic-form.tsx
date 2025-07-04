@@ -44,9 +44,11 @@ export const defaultCharacterBasicFormValues: CharacterBasicFormValues = {
 export function CharacterBasicForm({
   onChange,
   ref,
+  editName = false,
 }: {
   onChange?: (values: CharacterBasicFormValues) => void
   ref?: RefObject<(() => Promise<CharacterBasicFormValues | false>) | null>
+  editName?: boolean
 }) {
   const [showAlternateGreetings, setShowAlternateGreetings] = useState(false)
   const character = useActiveCharacterOrGroup()
@@ -100,7 +102,7 @@ export function CharacterBasicForm({
           }
         }}
       >
-        {isCreateCharacter && (
+        {(isCreateCharacter || editName) && (
           <FormField
             control={form.control}
             name="name"

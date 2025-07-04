@@ -1,8 +1,7 @@
 'use client'
 
 import type { Character } from '@/hooks/use-character'
-import type { ReactNode } from 'react'
-import { useCallback, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useState } from 'react'
 import {
   faBook,
   faClone,
@@ -16,6 +15,7 @@ import {
   faSkull,
   faStar,
 } from '@fortawesome/free-solid-svg-icons'
+import { atom, useAtom } from 'jotai'
 
 import {
   DropdownMenu,
@@ -52,6 +52,12 @@ export function CharacterView({ character }: { character: Character }) {
     useIsShowCharacterAdvancedView()
   const characterSettings = useCharacterSettings()
   const updateCharacterSettings = useUpdateCharacterSettings()
+  const [editName, setEditName] = useAtom(editNameAtom)
+
+  useEffect(() => {
+    setEditName(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [character.id])
 
   const handleToggleShowChatList = () => {
     setShowChatList()
@@ -191,7 +197,7 @@ export function CharacterView({ character }: { character: Character }) {
 
       <CharacterTagsView />
 
-      <CharacterBasicForm onChange={onSubmit} />
+      <CharacterBasicForm onChange={onSubmit} editName={editName} />
 
       {isShowCharacterAdvancedView && <CharacterViewAdvanced />}
 
@@ -206,6 +212,8 @@ export function CharacterView({ character }: { character: Character }) {
   )
 }
 
+const editNameAtom = atom(false)
+
 export function MoreActionsDropdownMenu({
   trigger,
   character,
@@ -213,6 +221,7 @@ export function MoreActionsDropdownMenu({
   trigger: ReactNode
   character: Character
 }) {
+  const [editName, setEditName] = useAtom(editNameAtom)
   const importTags = useImportTags()
 
   return (
@@ -221,6 +230,9 @@ export function MoreActionsDropdownMenu({
       <DropdownMenuContent className="w-56 z-5000" side="bottom" align="end">
         <DropdownMenuLabel>More Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem className="cursor-pointer" onClick={() => setEditName(!editName)}>
+          Edit Name
+        </DropdownMenuItem>
         <DropdownMenuItem className="cursor-pointer" onClick={() => importTags(character)}>
           Import Tags
         </DropdownMenuItem>

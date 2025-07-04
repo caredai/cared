@@ -5,6 +5,7 @@ import { db } from '@tavern/db/client'
 import {
   convertToModelMessages,
   createUIMessageStream,
+  createUIMessageStreamResponse,
   smoothStream,
   stepCountIs,
   streamText,
@@ -22,7 +23,10 @@ const requestBodySchema = z.object({
   messages: z.array(uiMessageSchema).min(1),
   lastMessage: z.object({
     id: z.string(),
-    parentId: z.string().optional(),
+    parentId: z
+      .string()
+      .nullish()
+      .transform((value) => value ?? undefined),
     role: z.enum(['user', 'assistant']),
     content: messageContentSchema,
   }),
@@ -38,6 +42,7 @@ export async function POST(request: Request): Promise<Response> {
     const json = await request.json()
     requestBody = requestBodySchema.parse(json)
   } catch {
+    // console.log(error)
     return new Response('Invalid request', { status: 400 })
   }
 
@@ -134,6 +139,5 @@ export async function POST(request: Request): Promise<Response> {
     },
   })
 
-  // @ts-ignore
-  return new Response(stream)
+  return createUIMessageStreamResponse({ stream })
 }

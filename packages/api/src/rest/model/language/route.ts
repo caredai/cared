@@ -276,7 +276,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         )
         .catch(async (err) => {
           log.error('Error piping original stream', err)
-          await writer.abort(err) // Abort the transformer if the source errors
+          await writer.abort(err instanceof Error ? err.message : err?.toString()) // Abort the transformer if the source errors
         })
 
       // Return the transformed stream (metadata + original content)

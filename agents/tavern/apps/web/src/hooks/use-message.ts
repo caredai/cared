@@ -404,8 +404,15 @@ export function useCachedMessage(chat?: Chat) {
   const queryClient = useQueryClient()
 
   const addCachedMessage = useCallback(
-    (message: Message) => {
+    async (message: Message) => {
       if (!chatId) return
+
+      await queryClient.cancelQueries({
+        queryKey: trpc.message.list.infiniteQueryKey({
+          chatId,
+          limit: PAGE_SIZE,
+        }),
+      })
 
       // Add the message to the infinite query cache
       queryClient.setQueryData<InfiniteData<MessageListOutput>>(
@@ -435,12 +442,19 @@ export function useCachedMessage(chat?: Chat) {
       void setFirstChat(chatId)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chatId],
+    [chatId, setFirstChat],
   )
 
   const updateCachedMessage = useCallback(
-    (message: Message) => {
+    async (message: Message) => {
       if (!chatId) return
+
+      await queryClient.cancelQueries({
+        queryKey: trpc.message.list.infiniteQueryKey({
+          chatId,
+          limit: PAGE_SIZE,
+        }),
+      })
 
       // Update the message in the infinite query cache
       queryClient.setQueryData<InfiniteData<MessageListOutput>>(
@@ -450,6 +464,13 @@ export function useCachedMessage(chat?: Chat) {
         }),
         (old) => {
           if (!old) return undefined
+
+          const oldMsg = old.pages
+            .flatMap((page) => page.messages)
+            .find((msg) => msg.id === message.id)
+          if (hash(oldMsg) === hash(message)) {
+            return old
+          }
 
           return {
             pages: old.pages.map((page) => ({
@@ -464,12 +485,19 @@ export function useCachedMessage(chat?: Chat) {
       void setFirstChat(chatId)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chatId],
+    [chatId, setFirstChat],
   )
 
   const removeCachedMessage = useCallback(
-    (messageId: string) => {
+    async (messageId: string) => {
       if (!chatId) return
+
+      await queryClient.cancelQueries({
+        queryKey: trpc.message.list.infiniteQueryKey({
+          chatId,
+          limit: PAGE_SIZE,
+        }),
+      })
 
       // Remove the message from the infinite query cache
       queryClient.setQueryData<InfiniteData<MessageListOutput>>(
@@ -493,7 +521,7 @@ export function useCachedMessage(chat?: Chat) {
       void setFirstChat(chatId)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [chatId],
+    [chatId, setFirstChat],
   )
 
   return {

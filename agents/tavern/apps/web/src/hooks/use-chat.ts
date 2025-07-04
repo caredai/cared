@@ -693,23 +693,30 @@ export function useDeleteChat(characterId?: string, groupId?: string) {
   )
 }
 
+const hasAttemptedSetFirstAtom = atom(false)
+
 export function useSetFirstChat(characterId?: string, groupId?: string) {
   const { data: chats } = useChatsByCharacterOrGroup(characterId ?? groupId)
   const updateChat = useUpdateChat(characterId, groupId)
 
+  const [hasAttemptedSetFirst, setHasAttemptedSetFirst] = useAtom(hasAttemptedSetFirstAtom)
+
   return useCallback(
     async (id: string) => {
-      if (!chats?.pages[0]?.chats[0]) {
+      const firstChat = chats?.pages[0]?.chats[0]
+      if (firstChat?.id === id) {
         return
       }
 
-      const firstChat = chats.pages[0].chats[0]
-      if (firstChat.id === id) {
+      if (hasAttemptedSetFirst) {
         return
       }
 
-      return await updateChat(id)
+      setHasAttemptedSetFirst(true)
+      return await updateChat(id).finally(() => {
+        setHasAttemptedSetFirst(false)
+      })
     },
-    [chats, updateChat],
+    [chats, updateChat, hasAttemptedSetFirst, setHasAttemptedSetFirst],
   )
 }

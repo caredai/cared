@@ -67,7 +67,7 @@ export async function createLanguageModel(
   modelId: string,
   opts: OwnxClientOptions,
 ): Promise<LanguageModelV2> {
-  const url = opts.apiUrl + '/api/V2/model/language'
+  const url = opts.apiUrl + '/api/v1/model/language'
 
   const getUrl = new URL(url)
   getUrl.searchParams.set('modelId', modelId)
@@ -137,6 +137,7 @@ export async function createLanguageModel(
       // Create an async generator that separates metadata and content
       const generator = async function* () {
         for await (const chunk of processStream(response.body!)) {
+          // console.log('processStream chunk:', chunk)
           if (chunk.type === 'metadata') {
             if (contentStreamStarted) {
               // Metadata should only come at the beginning

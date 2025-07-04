@@ -1,4 +1,4 @@
-import type { UIMessage as _UIMessage } from 'ai'
+import type { UIMessage as _UIMessage, UIDataTypes, UITools } from 'ai'
 import { z } from 'zod/v4'
 
 import type { Message as _Message } from '@ownxai/sdk'
@@ -47,7 +47,10 @@ export type Message = Omit<_Message, 'content'> & {
   content: MessageContent
 }
 
-export type UIMessage = _UIMessage<MessageMetadata>
+export type UIMessage<
+  DATA_PARTS extends UIDataTypes = UIDataTypes,
+  TOOLS extends UITools = UITools,
+> = _UIMessage<MessageMetadata, DATA_PARTS, TOOLS>
 
 export interface MessageNode {
   message: Message

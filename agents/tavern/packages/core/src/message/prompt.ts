@@ -46,6 +46,5 @@ export function buildPromptMessages(params: BuildPromptMessagesParams) {
       }
       return p
     }),
-    content: '',
   }))
 }
