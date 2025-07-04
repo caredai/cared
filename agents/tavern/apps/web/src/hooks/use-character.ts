@@ -181,6 +181,7 @@ export function useUpdateCharacter() {
           return undefined
         }
         const id = newData.id
+        // @ts-ignore
         const content: CharacterCardV2 = newData.content!
         const index = old.characters.findIndex((char) => char.id === id)
         return {

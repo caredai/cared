@@ -240,11 +240,11 @@ export function useCreateChat() {
         const initialMessages = firstMsgs.map((firstMsg) => {
           return [
             {
-              role: 'assistant',
+              role: 'assistant' as const,
               content: {
                 parts: [
                   {
-                    type: 'text',
+                    type: 'text' as const,
                     text: evaluateMacros(firstMsg),
                   },
                 ],
@@ -259,7 +259,6 @@ export function useCreateChat() {
         return await createForCharacterMutation.mutateAsync({
           characterId: charOrGroupId,
           id: chatId,
-          // @ts-ignore
           initialMessages,
         })
       }
@@ -303,7 +302,6 @@ export function useCreateChat() {
         return await createForGroupMutation.mutateAsync({
           groupId: charOrGroupId,
           id: chatId,
-          // @ts-ignore
           initialMessages,
         })
       }

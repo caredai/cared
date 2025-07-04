@@ -382,6 +382,9 @@ export function useDeleteMessage(chatId?: string) {
       }: {
         deleteTrailing?: boolean
         excludeSelf?: boolean
+      } = {
+        deleteTrailing: false,
+        excludeSelf: false,
       },
     ) => {
       return await deleteMutation.mutateAsync({

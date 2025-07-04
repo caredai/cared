@@ -50,7 +50,7 @@ export function useMessageTree() {
   useEffect(() => {
     treeRef.current =
       isSuccess && !hasNextPage
-        ? buildMessageTree(data.pages.flatMap((page) => page.messages))
+        ? buildMessageTree(data.pages.flatMap((page) => page.messages).reverse())
         : undefined
 
     branchRef.current = (() => {
@@ -150,8 +150,8 @@ export function useMessageTree() {
   }
 }
 
-export function buildMessageTree(allMessages?: Message[]): MessageTree {
-  if (!allMessages) {
+export function buildMessageTree(allOrderedMessages?: Message[]): MessageTree {
+  if (!allOrderedMessages) {
     return
   }
 
@@ -159,7 +159,7 @@ export function buildMessageTree(allMessages?: Message[]): MessageTree {
   const childrenMap = new Map<string, Message[]>()
 
   // Group messages by their parentId
-  allMessages.forEach((message) => {
+  allOrderedMessages.forEach((message) => {
     if (message.parentId) {
       if (!childrenMap.has(message.parentId)) {
         childrenMap.set(message.parentId, [])
@@ -169,7 +169,7 @@ export function buildMessageTree(allMessages?: Message[]): MessageTree {
   })
 
   // Find root messages (message with empty parentId)
-  const rootMessages = allMessages.filter((message) => !message.parentId)
+  const rootMessages = allOrderedMessages.filter((message) => !message.parentId)
 
   // If no root message found, return empty
   if (!rootMessages.length) {
@@ -204,13 +204,13 @@ export function buildMessageTree(allMessages?: Message[]): MessageTree {
   const tree = rootMessages.map((rootMessage) => buildNode(rootMessage))
 
   const isChanged = (oldAllMessages: Message[]) => {
-    if (allMessages.length !== oldAllMessages.length) {
-      console.log('Message count changed:', allMessages.length, oldAllMessages.length)
+    if (allOrderedMessages.length !== oldAllMessages.length) {
+      console.log('Message count changed:', allOrderedMessages.length, oldAllMessages.length)
       return true
     }
-    for (let i = 0; i < allMessages.length; i++) {
-      if (hash(allMessages[i]) !== hash(oldAllMessages[i])) {
-        console.log('Message content changed at index:', i, allMessages[i], oldAllMessages[i])
+    for (let i = 0; i < allOrderedMessages.length; i++) {
+      if (hash(allOrderedMessages[i]) !== hash(oldAllMessages[i])) {
+        console.log('Message content changed at index:', i, allOrderedMessages[i], oldAllMessages[i])
         return true
       }
     }
@@ -220,7 +220,7 @@ export function buildMessageTree(allMessages?: Message[]): MessageTree {
   return {
     tree,
     latest: latest!,
-    allMessages,
+    allMessages: allOrderedMessages,
     isChanged,
   }
 }
