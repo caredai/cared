@@ -1,4 +1,5 @@
-import type { Message, UIMessage } from '@tavern/core'
+import type { Character } from '@/hooks/use-character'
+import type { Message, MessageMetadata, UIMessage } from '@tavern/core'
 import type { PrepareSendMessagesRequest } from 'ai'
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -12,7 +13,7 @@ import { CircleSpinner } from '@/components/spinner'
 import { useActive } from '@/hooks/use-active'
 import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage } from '@/hooks/use-message'
-import { useMessageTree } from '@/hooks/use-message-tree'
+import { useBuildMessageTree } from '@/hooks/use-message-tree'
 import { ContentArea } from './content-area'
 import { useCallWhenGenerating } from './hooks'
 import { Messages } from './messages'
@@ -25,12 +26,12 @@ export function Chat() {
   const chatId = chat?.id
 
   const { branch, branchRef, navigate, isLoading, isSuccess, hasNextPage, isChatLoading } =
-    useMessageTree()
+    useBuildMessageTree()
 
   const { addCachedMessage, updateCachedMessage } = useCachedMessage(chat)
 
   const buildNewBranch = useCallback(
-    (uiMessages: UIMessage[]) => {
+    (uiMessages: UIMessage[], nextCharacter?: Character) => {
       if (!chat || !model || !persona || !charOrGroup) {
         throw new Error('Not initialized')
       }
@@ -40,23 +41,29 @@ export function Chat() {
         throw new Error('No messages')
       }
 
-      const lastMessage = branchRef.current.at(-1)?.message
+      const lastNode = branchRef.current.at(-1)
+      const lastMessage = lastNode?.message
       const newBranch = [...branchRef.current]
       let newLastMessage
       let isAdd
+
+      const metadata: MessageMetadata =
+        newUiMessage.role === 'user'
+          ? {
+              personaId: persona.id,
+              personaName: persona.name,
+            }
+          : {
+              characterId: nextCharacter?.id,
+              modelId: model.id,
+            }
 
       if (newUiMessage.id === lastMessage?.id) {
         newLastMessage = {
           ...lastMessage,
           content: {
             parts: newUiMessage.parts,
-            metadata: {
-              // TODO
-              characterId: isCharacter(charOrGroup)
-                ? charOrGroup.id
-                : charOrGroup.characters[0]?.id,
-              modelId: model.id,
-            },
+            metadata: (newUiMessage as any).metadata ?? lastMessage.content.metadata ?? metadata,
           },
         }
         newBranch[newBranch.length - 1]!.message = newLastMessage
@@ -69,16 +76,14 @@ export function Chat() {
           role: newUiMessage.role,
           content: {
             parts: newUiMessage.parts,
-            metadata: {
-              personaId: persona.id,
-              personaName: persona.name,
-            },
+            metadata: (newUiMessage as any).metadata ?? metadata,
           },
           createdAt: new Date(),
           updatedAt: new Date(),
         } as Message
         newBranch.push({
           message: newLastMessage,
+          parent: lastNode ?? { descendants: [] },
           descendants: [],
         })
         isAdd = true
@@ -100,13 +105,13 @@ export function Chat() {
         throw new Error('Not initialized')
       }
 
-      const { branch, lastMessage } = buildNewBranch(uiMessages)
-
       // TODO
       const nextChar = isCharacter(charOrGroup) ? charOrGroup : charOrGroup.characters[0]
       if (!nextChar) {
         throw new Error('No character')
       }
+
+      const { branch, lastMessage } = buildNewBranch(uiMessages, nextChar)
 
       const promptMessages = buildPromptMessages({
         messages: branch, // TODO
@@ -154,19 +159,17 @@ export function Chat() {
   )
 
   useEffect(() => {
-    // @ts-ignore
-    aiChat.current.id = chatId
+    ;(aiChat.current as any).id = chatId
   }, [chatId])
 
   const onMessagesChange = useCallback(() => {
-    console.log(chat, model, persona, charOrGroup)
     const { lastMessage, isAdd } = buildNewBranch(aiChat.current.messages)
     if (isAdd) {
       void addCachedMessage(lastMessage)
     } else {
       void updateCachedMessage(lastMessage)
     }
-  }, [chat, model, persona, charOrGroup, addCachedMessage, updateCachedMessage, buildNewBranch])
+  }, [addCachedMessage, updateCachedMessage, buildNewBranch])
 
   useEffect(() => {
     return aiChat.current['~registerMessagesCallback'](onMessagesChange, 100)
@@ -226,7 +229,14 @@ export function Chat() {
             <CircleSpinner />
           </div>
         )}
-        <Messages ref={ref} endRef={endRef} messages={branch} status={status} navigate={navigate} />
+        <Messages
+          ref={ref}
+          endRef={endRef}
+          chatId={chatId}
+          messages={branch}
+          status={status}
+          navigate={navigate}
+        />
       </ContentArea>
 
       <MultimodalInput

@@ -54,6 +54,12 @@ export type UIMessage<
 
 export interface MessageNode {
   message: Message
-  parent?: MessageNode
+  parent:
+    | MessageNode
+    // pseudo parent node for root messages
+    | {
+        message?: undefined
+        descendants: MessageNode[]
+      }
   descendants: MessageNode[]
 }

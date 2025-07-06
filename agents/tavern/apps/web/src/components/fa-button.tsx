@@ -20,7 +20,8 @@ export function FaButton({
   return (
     <button
       className={cn(
-        'inline-flex items-center justify-center text-[0.9375rem] text-ring hover:text-foreground transition-colors duration-200',
+        'inline-flex items-center justify-center text-[0.9375rem] text-ring transition-colors duration-200',
+        !props.disabled && 'hover:text-foreground',
         isActive && 'text-foreground',
         btnSize,
         className,

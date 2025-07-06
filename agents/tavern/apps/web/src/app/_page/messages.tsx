@@ -11,20 +11,22 @@ import { PreviewMessage } from '@/app/_page/message'
 function PureMessages({
   ref,
   endRef,
+  chatId,
   messages,
   status,
   navigate,
 }: {
   ref: RefObject<VListHandle | null>
   endRef: RefObject<HTMLDivElement | null>
+  chatId?: string
   messages: MessageNode[]
   status: UseChatHelpers<UIMessage>['status']
   navigate: (current: MessageNode, previous: boolean) => void
 }) {
   const indices = useMemo(() => {
     return messages.map((message) => {
-      const index = message.parent?.descendants.findIndex((m) => m === message) ?? 0
-      const count = message.parent?.descendants.length ?? 0
+      const index = message.parent.descendants.findIndex((m) => m === message)
+      const count = message.parent.descendants.length
       return {
         index: index >= 0 ? index : 0,
         count,
@@ -36,11 +38,12 @@ function PureMessages({
     <VList ref={ref}>
       {messages.map((message, i) => (
         <PreviewMessage
-          key={message.message.id}
+          key={`${chatId ?? ''}-${i}`}
           message={message.message}
           isLoading={status === 'streaming' && messages.length - 1 === i}
           index={indices[i]!.index}
           count={indices[i]!.count}
+          isRoot={!message.parent.message}
           navigate={(previous) => navigate(message, previous)}
         />
       ))}

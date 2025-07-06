@@ -3,6 +3,8 @@ import type { Message } from '@tavern/core'
 import { memo, useState } from 'react'
 import {
   faBullhorn,
+  faChevronLeft,
+  faChevronRight,
   faCodeBranch,
   faCopy,
   faEye,
@@ -29,12 +31,14 @@ const PurePreviewMessage = ({
   isLoading,
   index,
   count,
+  isRoot,
   navigate,
 }: {
   message: Message
   isLoading: boolean
   index: number
   count: number
+  isRoot: boolean
   navigate: (previous: boolean) => void
 }) => {
   const role = message.role
@@ -44,7 +48,8 @@ const PurePreviewMessage = ({
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { activePersona } = useActivePersona()
 
-  const [mode, setMode] = useState<'view' | 'edit'>('view')
+  const [mode] = useState<'view' | 'edit'>('view')
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null)
 
   const operateActions = [
     {
@@ -84,6 +89,12 @@ const PurePreviewMessage = ({
       tooltip: 'Edit',
     },
   ]
+
+  // Handle navigation with slide animation
+  const handleNavigate = (previous: boolean) => {
+    setSlideDirection(previous ? 'left' : 'right')
+    navigate(previous)
+  }
 
   if (!activeCharOrGroup || !activePersona) {
     return null
@@ -127,25 +138,27 @@ const PurePreviewMessage = ({
   return (
     <AnimatePresence>
       <motion.div
-        className="w-full flex gap-2 px-1.5 pt-2.5 pb-1"
+        className="w-full flex gap-2 px-1.5 pt-2.5 pb-1 overflow-x-hidden"
         initial={{ y: 5, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        {char ? (
-          <CharacterAvatar src={char.metadata.url} alt={char.content.data.name} />
-        ) : (
-          persona && <CharacterAvatar src={persona.imageUrl ?? defaultPng} alt={persona.name} />
-        )}
+        <div>
+          {char ? (
+            <CharacterAvatar src={char.metadata.url} alt={char.content.data.name} />
+          ) : (
+            persona && <CharacterAvatar src={persona.imageUrl ?? defaultPng} alt={persona.name} />
+          )}
+        </div>
 
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex flex-wrap justify-between items-center gap-2">
-            <div className="w-full md:w-auto flex justify-between items-center gap-2">
+            <div className="w-full md:w-auto flex justify-start md:justify-between items-center gap-2">
               <span>{char ? char.content.data.name : persona ? persona.name : ''}</span>
               <span className="text-xs text-muted-foreground">
                 {format(new Date(message.createdAt), 'MMM dd, yyyy hh:mm a')}
               </span>
             </div>
-            <div className="w-full md:w-auto flex justify-between items-center gap-2">
+            <div className="w-full md:w-auto flex justify-end md:justify-between items-center gap-2">
               {operateActions.map(({ icon, tooltip }) => {
                 return (
                   <FaButton
@@ -160,25 +173,85 @@ const PurePreviewMessage = ({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 w-full text-[rgb(220,220,210)]">
-            {parts.map((part, index) => {
-              const { type } = part
-              const key = `message-${message.id}-part-${index}`
+          <div className="flex-1 flex">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${message.id}-${index}`}
+                className="flex-1"
+                initial={{
+                  x: slideDirection === 'left' ? -100 : slideDirection === 'right' ? 100 : 0,
+                  opacity: 0,
+                }}
+                animate={{
+                  x: 0,
+                  opacity: 1,
+                }}
+                exit={{
+                  x: slideDirection === 'left' ? -100 : slideDirection === 'right' ? 100 : 0,
+                  opacity: 0,
+                }}
+                transition={{
+                  duration: 0.1,
+                  ease: 'easeInOut',
+                }}
+                onAnimationComplete={() => {
+                  // setSlideDirection(null)
+                }}
+              >
+                <div className="flex flex-col gap-2 w-full text-[rgb(220,220,210)]">
+                  {parts.map((part, partIndex) => {
+                    const { type } = part
+                    const key = `message-${message.id}-part-${partIndex}`
 
-              if (type === 'reasoning') {
-                return <MessageReasoning key={key} isLoading={isLoading} reasoning={part.text} />
-              }
+                    if (type === 'reasoning') {
+                      return (
+                        <MessageReasoning key={key} isLoading={isLoading} reasoning={part.text} />
+                      )
+                    }
 
-              if (type === 'text') {
-                if (mode === 'view') {
-                  return (
-                    <div key={key} className="flex flex-col gap-2">
-                      <Markdown>{formatMessage(part.text)}</Markdown>
-                    </div>
-                  )
-                }
-              }
-            })}
+                    if (type === 'text') {
+                      if (mode === 'view') {
+                        return (
+                          <div key={key} className="flex flex-col gap-2">
+                            <Markdown>{formatMessage(part.text)}</Markdown>
+                          </div>
+                        )
+                      }
+                    }
+                  })}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+
+            <div className="relative w-15">
+              {role !== 'user' && (
+                <div className="absolute bottom-1 right-0 flex items-center">
+                  <FaButton
+                    icon={faChevronLeft}
+                    title="Swipe left"
+                    btnSize="size-4"
+                    iconSize="1x"
+                    disabled={index === 0}
+                    onClick={() => handleNavigate(true)}
+                  />
+                  <span className="text-xs text-ring">
+                {index + 1}/{count}
+              </span>
+                  <FaButton
+                    icon={faChevronRight}
+                    title="Swipe right"
+                    btnSize="size-4"
+                    iconSize="1x"
+                    disabled={index === count - 1 && isRoot}
+                    onClick={() => {
+                      if (index < count - 1) {
+                        handleNavigate(false)
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>

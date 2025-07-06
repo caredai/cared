@@ -1,29 +1,46 @@
 import type { Message, MessageNode } from '@tavern/core'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { atom, useAtom } from 'jotai'
 import hash from 'stable-hash'
 
 import { useActiveChat } from '@/hooks/use-chat'
 import { useMessages } from '@/hooks/use-message'
 
-export type MessageTree =
-  | {
-      tree: MessageNode[]
-      latest: MessageNode
-      allMessages: Message[]
-      isChanged: (oldAllMessages: Message[]) => boolean
-    }
-  | undefined
+export interface MessageTree {
+  tree: MessageNode[]
+  latest: MessageNode
+  allMessages: Message[]
+}
 
+const treeAtom = atom<MessageTree>()
+const branchAtom = atom<MessageNode[]>([])
+const isReadyAtom = atom(false)
 const hasAttemptedFetchAtom = atom(false)
 
 export function useMessageTree() {
+  const [tree] = useAtom(treeAtom)
+  const [branch] = useAtom(branchAtom)
+  const [isReady] = useAtom(isReadyAtom)
+
+  return {
+    tree,
+    branch,
+    isReady,
+  }
+}
+
+export function useBuildMessageTree() {
   const { activeChat: chat, isLoading: isChatLoading, isSuccess: isChatSuccess } = useActiveChat()
 
   const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useMessages(chat?.id)
 
+  const [, setIsReady] = useAtom(isReadyAtom)
   const [hasAttemptedFetch, setHasAttemptedFetch] = useAtom(hasAttemptedFetchAtom)
+
+  useEffect(() => {
+    setIsReady(isSuccess && !hasNextPage)
+  }, [isSuccess, hasNextPage, setIsReady])
 
   useEffect(() => {
     void (async function () {
@@ -42,8 +59,8 @@ export function useMessageTree() {
     setHasAttemptedFetch,
   ])
 
-  const [tree, setTree] = useState<MessageTree>()
-  const [branch, setBranch] = useState<MessageNode[]>([])
+  const [tree, setTree] = useAtom(treeAtom)
+  const [branch, setBranch] = useAtom(branchAtom)
   const treeRef = useRef<MessageTree>(undefined)
   const branchRef = useRef<MessageNode[]>([])
 
@@ -61,20 +78,20 @@ export function useMessageTree() {
       let current: MessageNode | undefined = treeRef.current.latest
       while (current) {
         nodes.push(current)
-        current = current.parent
+        current = current.parent.message ? current.parent : undefined
       }
       return nodes.reverse()
     })()
 
     setTree((oldTree) => {
       const newTree = treeRef.current
-      if (newTree && oldTree && !newTree.isChanged(oldTree.allMessages)) {
+      if (newTree && oldTree && !isMessagesChanged(newTree.allMessages, oldTree.allMessages)) {
         return oldTree
       }
       setBranch(branchRef.current)
       return newTree
     })
-  }, [data, hasNextPage, isSuccess])
+  }, [data, hasNextPage, isSuccess, setBranch, setTree])
 
   const navigate = useCallback(
     (current: MessageNode, previous: boolean) => {
@@ -82,17 +99,17 @@ export function useMessageTree() {
         return
       }
       const isRoot = tree.tree.find((node) => node === current)
-      const siblings = isRoot ? tree.tree : current.parent?.descendants
+      const siblings = isRoot ? tree.tree : current.parent.descendants
 
-      const index = siblings?.findIndex((node) => node === current)
-      if (index === undefined || index < 0) {
+      const index = siblings.findIndex((node) => node === current)
+      if (index < 0) {
         return
       }
       const newIndex = previous ? index - 1 : index + 1
-      if (newIndex < 0 || newIndex >= (siblings?.length ?? 0)) {
+      if (newIndex < 0 || newIndex >= siblings.length) {
         return
       }
-      const newCurrent = siblings?.[newIndex]
+      const newCurrent = siblings[newIndex]
       if (!newCurrent) {
         return
       }
@@ -112,6 +129,7 @@ export function useMessageTree() {
           }
           c = latest
         }
+        branchRef.current = nodes
         setBranch(nodes)
         return
       }
@@ -129,10 +147,11 @@ export function useMessageTree() {
             return !latest || latest.message.id < node.message.id ? node : latest
           }, next.descendants[0])
         }
+        branchRef.current = newBranch
         return newBranch
       })
     },
-    [tree],
+    [setBranch, tree],
   )
 
   return {
@@ -150,7 +169,7 @@ export function useMessageTree() {
   }
 }
 
-export function buildMessageTree(allOrderedMessages?: Message[]): MessageTree {
+export function buildMessageTree(allOrderedMessages?: Message[]): MessageTree | undefined {
   if (!allOrderedMessages) {
     return
   }
@@ -181,7 +200,10 @@ export function buildMessageTree(allOrderedMessages?: Message[]): MessageTree {
   let maxId = ''
 
   // Recursive function to build the tree structure and track the latest
-  function buildNode(message: Message, parent?: MessageNode): MessageNode {
+  function buildNode(
+    message: Message,
+    parent: MessageNode | { descendants: MessageNode[] },
+  ): MessageNode {
     const children: Message[] = childrenMap.get(message.id) ?? []
     const currentNode: MessageNode = {
       message,
@@ -201,26 +223,33 @@ export function buildMessageTree(allOrderedMessages?: Message[]): MessageTree {
     return currentNode
   }
 
-  const tree = rootMessages.map((rootMessage) => buildNode(rootMessage))
+  const tree = rootMessages.map((rootMessage) =>
+    buildNode(rootMessage, {
+      descendants: [],
+    }),
+  )
 
-  const isChanged = (oldAllMessages: Message[]) => {
-    if (allOrderedMessages.length !== oldAllMessages.length) {
-      console.log('Message count changed:', allOrderedMessages.length, oldAllMessages.length)
-      return true
-    }
-    for (let i = 0; i < allOrderedMessages.length; i++) {
-      if (hash(allOrderedMessages[i]) !== hash(oldAllMessages[i])) {
-        console.log('Message content changed at index:', i, allOrderedMessages[i], oldAllMessages[i])
-        return true
-      }
-    }
-    return false
-  }
+  tree.forEach((rootNode) => {
+    rootNode.parent.descendants = tree
+  })
 
   return {
     tree,
     latest: latest!,
     allMessages: allOrderedMessages,
-    isChanged,
   }
+}
+
+function isMessagesChanged(allNewMessages: Message[], oldAllMessages: Message[]) {
+  if (allNewMessages.length !== oldAllMessages.length) {
+    console.log('Message count changed:', allNewMessages.length, oldAllMessages.length)
+    return true
+  }
+  for (let i = 0; i < allNewMessages.length; i++) {
+    if (hash(allNewMessages[i]) !== hash(oldAllMessages[i])) {
+      console.log('Message content changed at index:', i, allNewMessages[i], oldAllMessages[i])
+      return true
+    }
+  }
+  return false
 }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { getCharFirstMessages, substituteMacros } from '@tavern/core'
 import { atom, useAtom } from 'jotai'
+import hash from 'stable-hash'
 
 import { generateMessageId } from '@ownxai/sdk'
 
@@ -12,7 +13,7 @@ import { useMessageTree } from '@/hooks/use-message-tree'
 const hasAttemptedCheckAtom = atom(false)
 
 export function useCheckFirstMessage() {
-  const { tree, branch, isSuccess, hasNextPage } = useMessageTree()
+  const { tree, isReady } = useMessageTree()
   const { settings, modelPreset, model, charOrGroup, persona, chat } = useActive()
   const createMessage = useCreateMessage(chat?.id)
   const updateMessage = useUpdateMessage(chat?.id)
@@ -21,29 +22,9 @@ export function useCheckFirstMessage() {
   const [hasAttemptedCheck, setHasAttemptedCheck] = useAtom(hasAttemptedCheckAtom)
 
   useEffect(() => {
-    console.log('############### useCheckFirstMessage')
-  }, [
-    branch.length,
-    charOrGroup,
-    createMessage,
-    deleteMessage,
-    hasAttemptedCheck,
-    hasNextPage,
-    isSuccess,
-    model,
-    modelPreset,
-    persona,
-    setHasAttemptedCheck,
-    settings,
-    tree,
-    updateMessage,
-  ])
-
-  useEffect(() => {
-    if (!isSuccess || hasNextPage || !model || !charOrGroup || !persona) {
+    if (!isReady || !model || !charOrGroup || !persona) {
       return
     }
-    console.log('############### OK')
 
     if (isCharacter(charOrGroup)) {
       const character = charOrGroup
@@ -77,15 +58,13 @@ export function useCheckFirstMessage() {
         return
       }
 
-      if (!branch.length || !tree) {
-        if (tree) {
-          return // never happen
-        }
-
+      if (!tree) {
         if (hasAttemptedCheck) {
           return
         }
         setHasAttemptedCheck(true)
+
+        console.log(`Adding ${initialMessages.length} root messages for character: ${character.id}`)
 
         void Promise.all(
           initialMessages.map((msg) =>
@@ -97,22 +76,27 @@ export function useCheckFirstMessage() {
         ).finally(() => {
           setHasAttemptedCheck(false)
         })
-      } else if (!tree.tree.some((rootNode) => rootNode.descendants.length)) {
-        const actions: (() => Promise<any>)[] = []
+      } else if (
+        // Only check if the root messages have no descendants
+        !tree.tree.some((rootNode) => rootNode.descendants.length)
+      ) {
+        const removeActions: (() => Promise<any>)[] = []
+        const addActions: (() => Promise<any>)[] = []
+        const updateActions: (() => Promise<any>)[] = []
 
-        const messages = tree.tree.map((rootNode) => rootNode.message)
+        const rootMessages = tree.tree.map((rootNode) => rootNode.message)
 
-        if (messages.length > initialMessages.length) {
-          const removeMessages = messages.slice(initialMessages.length)
+        if (rootMessages.length > initialMessages.length) {
+          const removeMessages = rootMessages.slice(initialMessages.length)
           removeMessages.forEach((msg) => {
-            actions.push(() => deleteMessage(msg.id))
+            removeActions.push(() => deleteMessage(msg.id))
           })
         }
 
-        if (initialMessages.length > messages.length) {
-          const addMessages = initialMessages.slice(messages.length)
+        if (initialMessages.length > rootMessages.length) {
+          const addMessages = initialMessages.slice(rootMessages.length)
           addMessages.forEach((msg) => {
-            actions.push(() =>
+            addActions.push(() =>
               createMessage({
                 id: generateMessageId(),
                 ...msg,
@@ -121,16 +105,41 @@ export function useCheckFirstMessage() {
           })
         }
 
-        const updateMessages = messages.slice(0, Math.min(messages.length, initialMessages.length))
+        const updateMessages = rootMessages.slice(
+          0,
+          Math.min(rootMessages.length, initialMessages.length),
+        )
         updateMessages.forEach((msg, index) => {
           const initialMsg = initialMessages[index]!
-          actions.push(() => updateMessage(msg.id, initialMsg.content))
+          if (hash(msg.content) === hash(initialMsg.content)) {
+            return
+          }
+          updateActions.push(() => updateMessage(msg.id, initialMsg.content))
         })
+
+        const actions = [...removeActions, ...addActions, ...updateActions]
+        if (!actions.length) {
+          return
+        }
 
         if (hasAttemptedCheck) {
           return
         }
         setHasAttemptedCheck(true)
+
+        if (addActions.length) {
+          console.log(`Adding ${addActions.length} root messages for character: ${character.id}`)
+        }
+        if (removeActions.length) {
+          console.log(
+            `Removing ${removeActions.length} root messages for character: ${character.id}`,
+          )
+        }
+        if (updateActions.length) {
+          console.log(
+            `Updating ${updateActions.length} root messages for character: ${character.id}`,
+          )
+        }
 
         void Promise.all(actions.map((action) => action())).finally(() => {
           setHasAttemptedCheck(false)
@@ -140,13 +149,11 @@ export function useCheckFirstMessage() {
       // TODO
     }
   }, [
-    branch.length,
     charOrGroup,
     createMessage,
     deleteMessage,
     hasAttemptedCheck,
-    hasNextPage,
-    isSuccess,
+    isReady,
     model,
     modelPreset,
     persona,

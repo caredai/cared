@@ -41,7 +41,7 @@ export function PageContent() {
   }, [backgroundSettings.active.url])
 
   useCheckFirstChat()
-  // useCheckFirstMessage()
+  useCheckFirstMessage()
 
   return (
     <div

@@ -133,12 +133,12 @@ export function evaluateMacros(
     { regex: /{{firstDisplayedMessageId}}/gi, replace: () => messages?.at(0)?.id ?? '' },
     {
       regex: /{{lastSwipeId}}/gi,
-      replace: () => String(lastNode?.parent?.descendants.length ?? 1),
+      replace: () => String(lastNode?.parent.descendants.length),
     },
     {
       regex: /{{currentSwipeId}}/gi,
       replace: () =>
-        String((lastNode?.parent?.descendants.findIndex((node) => node === lastNode) ?? 0) + 1),
+        String((lastNode?.parent.descendants.findIndex((node) => node === lastNode) ?? 0) + 1),
     },
     {
       regex: /{{idle_duration}}/gi,

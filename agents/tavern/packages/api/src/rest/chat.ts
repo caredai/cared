@@ -41,9 +41,11 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const json = await request.json()
     requestBody = requestBodySchema.parse(json)
-  } catch {
-    // console.log(error)
-    return new Response('Invalid request', { status: 400 })
+  } catch (error: any) {
+    return new Response(
+      `Invalid request: ${error instanceof Error ? error.message : error.toString()}`,
+      { status: 400 },
+    )
   }
 
   const { id, messages, lastMessage, characterId, modelId, preferredLanguage } = requestBody
