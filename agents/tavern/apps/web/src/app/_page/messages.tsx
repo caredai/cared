@@ -1,6 +1,6 @@
-import type { UseChatHelpers } from '@ai-sdk/react'
-import type { MessageNode, UIMessage } from '@tavern/core'
-import type { RefObject } from 'react'
+import type { Chat as AIChat, UseChatHelpers } from '@ai-sdk/react'
+import type { MessageContent, MessageNode, UIMessage } from '@tavern/core'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
 import type { VListHandle } from 'virtua'
 import { memo, useMemo } from 'react'
 import { motion } from 'motion/react'
@@ -11,17 +11,27 @@ import { PreviewMessage } from '@/app/_page/message'
 function PureMessages({
   ref,
   endRef,
+  chatRef,
   chatId,
   messages,
   status,
   navigate,
+  swipe,
+  edit,
+  editMessageId,
+  setEditMessageId,
 }: {
   ref: RefObject<VListHandle | null>
   endRef: RefObject<HTMLDivElement | null>
+  chatRef: RefObject<AIChat<UIMessage>>
   chatId?: string
   messages: MessageNode[]
   status: UseChatHelpers<UIMessage>['status']
   navigate: (current: MessageNode, previous: boolean) => void
+  swipe: (current: MessageNode) => void
+  edit: (current: MessageNode, content: MessageContent) => void
+  editMessageId: string
+  setEditMessageId: Dispatch<SetStateAction<string>>
 }) {
   const indices = useMemo(() => {
     return messages.map((message) => {
@@ -39,12 +49,17 @@ function PureMessages({
       {messages.map((message, i) => (
         <PreviewMessage
           key={`${chatId ?? ''}-${i}`}
+          chatRef={chatRef}
           message={message.message}
           isLoading={status === 'streaming' && messages.length - 1 === i}
           index={indices[i]!.index}
           count={indices[i]!.count}
           isRoot={!message.parent.message}
           navigate={(previous) => navigate(message, previous)}
+          swipe={() => swipe(message)}
+          edit={(content) => edit(message, content)}
+          editMessageId={editMessageId}
+          setEditMessageId={setEditMessageId}
         />
       ))}
 

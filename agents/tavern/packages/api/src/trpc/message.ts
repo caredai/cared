@@ -38,7 +38,7 @@ export const messageRouter = {
         id: z.string(),
         parentId: z.string().optional(),
         chatId: z.string(),
-        role: z.enum(['user', 'assistant']),
+        role: z.enum(['user', 'assistant', 'system']),
         content: messageContentSchema,
         isRoot: z.boolean().optional(),
       }),

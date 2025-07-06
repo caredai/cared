@@ -129,7 +129,7 @@ export function useCreateMessage(chatId?: string) {
     async (args: {
       id: string
       parentId?: string
-      role: 'user' | 'assistant'
+      role: 'user' | 'assistant' | 'system'
       content: MessageContent
     }) => {
       if (!chatId) {

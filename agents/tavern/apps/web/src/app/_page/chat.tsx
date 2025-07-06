@@ -1,5 +1,5 @@
 import type { Character } from '@/hooks/use-character'
-import type { Message, MessageMetadata, UIMessage } from '@tavern/core'
+import type { Message, MessageContent, MessageMetadata, MessageNode, UIMessage } from '@tavern/core'
 import type { PrepareSendMessagesRequest } from 'ai'
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -12,7 +12,7 @@ import { generateMessageId } from '@ownxai/sdk'
 import { CircleSpinner } from '@/components/spinner'
 import { useActive } from '@/hooks/use-active'
 import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
-import { useCachedMessage } from '@/hooks/use-message'
+import { useCachedMessage, useCreateMessage, useUpdateMessage } from '@/hooks/use-message'
 import { useBuildMessageTree } from '@/hooks/use-message-tree'
 import { ContentArea } from './content-area'
 import { useCallWhenGenerating } from './hooks'
@@ -100,7 +100,12 @@ export function Chat() {
   )
 
   const prepareSendMessagesRequest = useCallback(
-    ({ id, messages: uiMessages, body }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
+    ({
+      id,
+      messages: uiMessages,
+      trigger,
+      body,
+    }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
       if (!chat || !model || !persona || !charOrGroup) {
         throw new Error('Not initialized')
       }
@@ -143,7 +148,7 @@ export function Chat() {
     prepareSendMessagesRequestRef.current = prepareSendMessagesRequest
   }, [prepareSendMessagesRequest])
 
-  const aiChat = useRef(
+  const chatRef = useRef(
     new AIChat({
       id: chatId,
       generateId: generateMessageId,
@@ -159,11 +164,11 @@ export function Chat() {
   )
 
   useEffect(() => {
-    ;(aiChat.current as any).id = chatId
+    ;(chatRef.current as any).id = chatId
   }, [chatId])
 
   const onMessagesChange = useCallback(() => {
-    const { lastMessage, isAdd } = buildNewBranch(aiChat.current.messages)
+    const { lastMessage, isAdd } = buildNewBranch(chatRef.current.messages)
     if (isAdd) {
       void addCachedMessage(lastMessage)
     } else {
@@ -172,11 +177,11 @@ export function Chat() {
   }, [addCachedMessage, updateCachedMessage, buildNewBranch])
 
   useEffect(() => {
-    return aiChat.current['~registerMessagesCallback'](onMessagesChange, 100)
+    return chatRef.current['~registerMessagesCallback'](onMessagesChange, 100)
   }, [onMessagesChange])
 
-  const { setMessages, sendMessage, status, stop } = useChat<UIMessage>({
-    chat: aiChat.current,
+  const { setMessages, status } = useChat<UIMessage>({
+    chat: chatRef.current,
     experimental_throttle: 100,
   })
 
@@ -221,6 +226,58 @@ export function Chat() {
 
   const [input, setInput] = useState('')
 
+  const [editMessageId, setEditMessageId] = useState('')
+
+  const createMessage = useCreateMessage(chatId)
+  const updateMessage = useUpdateMessage(chatId)
+
+  const swipe = useCallback(
+    (node: MessageNode) => {
+      if (!chatId) {
+        return
+      }
+      if (node !== node.parent.descendants.at(-1)) {
+        return
+      }
+      const { personaId, personaName, characterId, modelId, summary } =
+        node.message.content.metadata
+      const metadata: MessageMetadata = {
+        personaId,
+        personaName,
+        characterId,
+        modelId,
+        summary,
+      }
+
+      const id = generateMessageId()
+
+      void createMessage({
+        id,
+        parentId: node.message.parentId ?? undefined,
+        role: node.message.role,
+        content: {
+          parts: [
+            {
+              type: 'text',
+              text: '',
+            },
+          ],
+          metadata: metadata,
+        },
+      })
+
+      setEditMessageId(id)
+    },
+    [chatId, createMessage],
+  )
+
+  const edit = useCallback(
+    (node: MessageNode, content: MessageContent) => {
+      void updateMessage(node.message.id, content)
+    },
+    [updateMessage],
+  )
+
   return (
     <>
       <ContentArea>
@@ -232,20 +289,25 @@ export function Chat() {
         <Messages
           ref={ref}
           endRef={endRef}
+          chatRef={chatRef}
           chatId={chatId}
           messages={branch}
           status={status}
           navigate={navigate}
+          swipe={swipe}
+          edit={edit}
+          editMessageId={editMessageId}
+          setEditMessageId={setEditMessageId}
         />
       </ContentArea>
 
       <MultimodalInput
         input={input}
         setInput={setInput}
+        messagesRef={branchRef}
+        chatRef={chatRef}
         status={status}
-        stop={stop}
         setMessages={setMessages}
-        sendMessage={sendMessage}
         scrollToBottom={scrollToBottom}
         disabled={isLoading}
       />

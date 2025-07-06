@@ -1,9 +1,9 @@
 'use client'
 
-import type { UseChatHelpers } from '@ai-sdk/react'
-import type { UIMessage } from '@tavern/core'
-import type { Dispatch, SetStateAction } from 'react'
-import { useCallback, useEffect } from 'react'
+import type { Chat as AIChat, UseChatHelpers } from '@ai-sdk/react'
+import type { MessageNode, UIMessage } from '@tavern/core'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import {
   faBars,
   faCircleStop,
@@ -13,23 +13,24 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
+import { cn } from '@/lib/utils'
 
 export function MultimodalInput({
   input,
   setInput,
+  messagesRef,
+  chatRef,
   status,
-  stop,
   setMessages,
-  sendMessage,
   scrollToBottom,
   disabled,
 }: {
   input: string
   setInput: Dispatch<SetStateAction<string>>
+  messagesRef: RefObject<MessageNode[]>
+  chatRef: RefObject<AIChat<UIMessage>>
   status: UseChatHelpers<UIMessage>['status']
-  stop: () => void
   setMessages: UseChatHelpers<UIMessage>['setMessages']
-  sendMessage: UseChatHelpers<UIMessage>['sendMessage']
   scrollToBottom: () => void
   disabled: boolean
 }) {
@@ -38,6 +39,14 @@ export function MultimodalInput({
       scrollToBottom()
     }
   }, [status, scrollToBottom])
+
+  const lastIsUserMessage = useMemo(() => {
+    const lastMessage = messagesRef.current.at(-1)?.message
+    const hasContent = !!lastMessage?.content.parts.filter(
+      (p) => p.type === 'text' && p.text.trim(),
+    ).length
+    return lastMessage?.role === 'user' && hasContent
+  }, [messagesRef.current])
 
   const submit = useCallback(() => {
     if (disabled) {
@@ -48,9 +57,21 @@ export function MultimodalInput({
     } else if (status !== 'ready') {
       return
     }
-    void sendMessage({ role: 'user', parts: [{ type: 'text', text: input }] })
+    if (!input.trim()) {
+      if (lastIsUserMessage) {
+        // If the last message is user message
+        void chatRef.current.regenerate()
+      }
+      return
+    }
+    void chatRef.current.sendMessage({
+      role: 'user',
+      parts: [{ type: 'text', text: input.trim() }],
+    })
     setInput('')
-  }, [input, setInput, sendMessage, status, disabled])
+  }, [disabled, status, input, setInput, lastIsUserMessage, chatRef])
+
+  const disabledSend = disabled || (!input.trim() && !lastIsUserMessage)
 
   return (
     <div className="pt-[1px] pb-[5px] bg-transparent">
@@ -83,13 +104,13 @@ export function MultimodalInput({
         />
         <button
           className="inline-flex ml-1"
-          disabled={disabled || status === 'submitted' || status === 'streaming'}
+          disabled={disabledSend}
           onClick={(event) => {
             event.preventDefault()
             if (status === 'ready' || status === 'error') {
               submit()
             } else {
-              stop()
+              void chatRef.current.stop()
               setMessages((messages) => messages)
             }
           }}
@@ -97,7 +118,10 @@ export function MultimodalInput({
           <FontAwesomeIcon
             icon={status === 'ready' || status === 'error' ? faPaperPlane : faCircleStop}
             size="2x"
-            className="fa-fw text-muted-foreground hover:text-foreground transition-colors duration-200"
+            className={cn(
+              'fa-fw text-muted-foreground  transition-colors duration-200',
+              !disabledSend && 'hover:text-foreground',
+            )}
           />
         </button>
       </div>

@@ -1,5 +1,7 @@
 import type { Character } from '@/hooks/use-character'
-import type { Message } from '@tavern/core'
+import type { Chat as AIChat } from '@ai-sdk/react'
+import type { Message, MessageContent, UIMessage } from '@tavern/core'
+import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { memo, useState } from 'react'
 import {
   faBullhorn,
@@ -17,6 +19,7 @@ import {
 import { format } from 'date-fns'
 import { AnimatePresence, motion } from 'motion/react'
 
+import { MessageTextEdit } from '@/app/_page/message-edit'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { Markdown } from '@/components/markdown'
@@ -27,19 +30,29 @@ import { MessageReasoning } from './message-reasoning'
 import { formatMessage } from './utils'
 
 const PurePreviewMessage = ({
+  chatRef,
   message,
   isLoading,
   index,
   count,
   isRoot,
   navigate,
+  swipe,
+  edit,
+  editMessageId,
+  setEditMessageId,
 }: {
+  chatRef: RefObject<AIChat<UIMessage>>
   message: Message
   isLoading: boolean
   index: number
   count: number
   isRoot: boolean
   navigate: (previous: boolean) => void
+  swipe: () => void
+  edit: (content: MessageContent) => void
+  editMessageId: string
+  setEditMessageId: Dispatch<SetStateAction<string>>
 }) => {
   const role = message.role
   const parts = message.content.parts
@@ -48,7 +61,7 @@ const PurePreviewMessage = ({
   const activeCharOrGroup = useActiveCharacterOrGroup()
   const { activePersona } = useActivePersona()
 
-  const [mode] = useState<'view' | 'edit'>('view')
+  const mode = editMessageId === message.id ? 'edit' : 'view'
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null)
 
   const operateActions = [
@@ -87,13 +100,18 @@ const PurePreviewMessage = ({
     {
       icon: faPencil,
       tooltip: 'Edit',
+      action: () => setEditMessageId(message.id),
     },
   ]
 
-  // Handle navigation with slide animation
   const handleNavigate = (previous: boolean) => {
     setSlideDirection(previous ? 'left' : 'right')
     navigate(previous)
+  }
+
+  const handleSwipe = () => {
+    setSlideDirection('right')
+    swipe()
   }
 
   if (!activeCharOrGroup || !activePersona) {
@@ -159,7 +177,7 @@ const PurePreviewMessage = ({
               </span>
             </div>
             <div className="w-full md:w-auto flex justify-end md:justify-between items-center gap-2">
-              {operateActions.map(({ icon, tooltip }) => {
+              {operateActions.map(({ icon, tooltip, action }) => {
                 return (
                   <FaButton
                     key={tooltip}
@@ -167,6 +185,7 @@ const PurePreviewMessage = ({
                     title={tooltip}
                     btnSize="size-4"
                     iconSize="1x"
+                    onClick={action}
                   />
                 )
               })}
@@ -216,6 +235,28 @@ const PurePreviewMessage = ({
                             <Markdown>{formatMessage(part.text)}</Markdown>
                           </div>
                         )
+                      } else {
+                        return (
+                          <MessageTextEdit
+                            key={key}
+                            text={part.text}
+                            onTextChange={(text) => {
+                              edit({
+                                parts: [
+                                  ...parts.slice(0, partIndex),
+                                  {
+                                    ...part,
+                                    text,
+                                  },
+                                  ...parts.slice(partIndex + 1),
+                                ],
+                                metadata,
+                              })
+
+                              setEditMessageId('')
+                            }}
+                          />
+                        )
                       }
                     }
                   })}
@@ -224,33 +265,33 @@ const PurePreviewMessage = ({
             </AnimatePresence>
 
             <div className="relative w-15">
-              {role !== 'user' && (
-                <div className="absolute bottom-1 right-0 flex items-center">
-                  <FaButton
-                    icon={faChevronLeft}
-                    title="Swipe left"
-                    btnSize="size-4"
-                    iconSize="1x"
-                    disabled={index === 0}
-                    onClick={() => handleNavigate(true)}
-                  />
-                  <span className="text-xs text-ring">
-                {index + 1}/{count}
-              </span>
-                  <FaButton
-                    icon={faChevronRight}
-                    title="Swipe right"
-                    btnSize="size-4"
-                    iconSize="1x"
-                    disabled={index === count - 1 && isRoot}
-                    onClick={() => {
-                      if (index < count - 1) {
-                        handleNavigate(false)
-                      }
-                    }}
-                  />
-                </div>
-              )}
+              <div className="absolute bottom-1 right-0 flex items-center">
+                <FaButton
+                  icon={faChevronLeft}
+                  title="Swipe left"
+                  btnSize="size-4"
+                  iconSize="1x"
+                  disabled={index === 0}
+                  onClick={() => handleNavigate(true)}
+                />
+                <span className="text-xs text-ring">
+                  {index + 1}/{count}
+                </span>
+                <FaButton
+                  icon={faChevronRight}
+                  title="Swipe right"
+                  btnSize="size-4"
+                  iconSize="1x"
+                  disabled={index === count - 1 && isRoot && role !== 'user'}
+                  onClick={() => {
+                    if (index < count - 1) {
+                      handleNavigate(false)
+                    } else if (!isRoot || role === 'user') {
+                      handleSwipe()
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
