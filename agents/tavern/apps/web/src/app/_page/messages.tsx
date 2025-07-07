@@ -20,6 +20,7 @@ function PureMessages({
   edit,
   editMessageId,
   setEditMessageId,
+  scrollTo,
 }: {
   ref: RefObject<VListHandle | null>
   endRef: RefObject<HTMLDivElement | null>
@@ -32,6 +33,7 @@ function PureMessages({
   edit: (current: MessageNode, content: MessageContent) => void
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
+  scrollTo: (index?: number | 'bottom') => void
 }) {
   const indices = useMemo(() => {
     return messages.map((message) => {
@@ -52,14 +54,16 @@ function PureMessages({
           chatRef={chatRef}
           message={message.message}
           isLoading={status === 'streaming' && messages.length - 1 === i}
-          index={indices[i]!.index}
-          count={indices[i]!.count}
+          index={i}
+          siblingIndex={indices[i]!.index}
+          siblingCount={indices[i]!.count}
           isRoot={!message.parent.message}
           navigate={(previous) => navigate(message, previous)}
           swipe={() => swipe(message)}
           edit={(content) => edit(message, content)}
           editMessageId={editMessageId}
           setEditMessageId={setEditMessageId}
+          scrollTo={scrollTo}
         />
       ))}
 

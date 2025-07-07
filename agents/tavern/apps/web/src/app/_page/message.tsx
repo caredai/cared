@@ -2,7 +2,7 @@ import type { Character } from '@/hooks/use-character'
 import type { Chat as AIChat } from '@ai-sdk/react'
 import type { Message, MessageContent, UIMessage } from '@tavern/core'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { memo, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import {
   faBullhorn,
   faChevronLeft,
@@ -15,6 +15,7 @@ import {
   faPaintbrush,
   faPaperclip,
   faPencil,
+  faTrashCan,
 } from '@fortawesome/free-solid-svg-icons'
 import { format } from 'date-fns'
 import { AnimatePresence, motion } from 'motion/react'
@@ -26,33 +27,40 @@ import { Markdown } from '@/components/markdown'
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useActivePersona } from '@/hooks/use-persona'
 import defaultPng from '@/public/images/user-default.png'
+import { DeleteMessageDialog } from './delete-message-dialog'
 import { MessageReasoning } from './message-reasoning'
 import { formatMessage } from './utils'
 
+const SLIDE_OFFSET = '50dvw'
+
 const PurePreviewMessage = ({
-  chatRef,
+  chatRef: _,
   message,
   isLoading,
   index,
-  count,
+  siblingIndex,
+  siblingCount,
   isRoot,
   navigate,
   swipe,
   edit,
   editMessageId,
   setEditMessageId,
+  scrollTo,
 }: {
   chatRef: RefObject<AIChat<UIMessage>>
   message: Message
   isLoading: boolean
   index: number
-  count: number
+  siblingIndex: number
+  siblingCount: number
   isRoot: boolean
   navigate: (previous: boolean) => void
   swipe: () => void
   edit: (content: MessageContent) => void
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
+  scrollTo: (index?: number | 'bottom') => void
 }) => {
   const role = message.role
   const parts = message.content.parts
@@ -63,6 +71,20 @@ const PurePreviewMessage = ({
 
   const mode = editMessageId === message.id ? 'edit' : 'view'
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null)
+  const firstTextEditRef = useRef<HTMLTextAreaElement>(null)
+  const firstTextEditIndex = parts.findIndex((part) => part.type === 'text')
+
+  const handleCopyText = async () => {
+    // Extract all text content from message parts
+    const textContent = parts
+      .filter((part) => part.type === 'text')
+      .map((part) => part.text)
+      .join('\n\n')
+
+    if (textContent) {
+      await navigator.clipboard.writeText(textContent)
+    }
+  }
 
   const operateActions = [
     {
@@ -75,7 +97,7 @@ const PurePreviewMessage = ({
     },
     {
       icon: faBullhorn,
-      tooltip: 'Narrate',
+      tooltip: 'Read aloud',
     },
     {
       icon: faEye,
@@ -95,7 +117,13 @@ const PurePreviewMessage = ({
     },
     {
       icon: faCopy,
-      tooltip: 'Copy message',
+      tooltip: 'Copy text',
+      action: handleCopyText,
+    },
+    {
+      icon: faTrashCan,
+      tooltip: 'Delete message',
+      wrapper: DeleteMessageDialog,
     },
     {
       icon: faPencil,
@@ -113,6 +141,19 @@ const PurePreviewMessage = ({
     setSlideDirection('right')
     swipe()
   }
+
+  // Focus the first text edit when entering edit mode
+  useEffect(() => {
+    if (mode === 'edit') {
+      // Use setTimeout to ensure the component is fully rendered
+      setTimeout(() => {
+        firstTextEditRef.current?.focus()
+        setTimeout(() => {
+          scrollTo(index + 1)
+        }, 3)
+      }, 100)
+    }
+  }, [index, mode, scrollTo])
 
   if (!activeCharOrGroup || !activePersona) {
     return null
@@ -153,6 +194,14 @@ const PurePreviewMessage = ({
     return null
   }
 
+  const slideOffset =
+    slideDirection === 'left' ? '-' + SLIDE_OFFSET : slideDirection === 'right' ? SLIDE_OFFSET : 0
+  const slideOpacity = slideDirection ? 0 : 1
+
+  const noContent = !parts.some(
+    (part) => (part.type === 'reasoning' || part.type === 'text') && part.text,
+  )
+
   return (
     <AnimatePresence>
       <motion.div
@@ -177,8 +226,8 @@ const PurePreviewMessage = ({
               </span>
             </div>
             <div className="w-full md:w-auto flex justify-end md:justify-between items-center gap-2">
-              {operateActions.map(({ icon, tooltip, action }) => {
-                return (
+              {operateActions.map(({ icon, tooltip, action, wrapper: Wrapper }) => {
+                const btn = (
                   <FaButton
                     key={tooltip}
                     icon={icon}
@@ -188,36 +237,47 @@ const PurePreviewMessage = ({
                     onClick={action}
                   />
                 )
+                return Wrapper ? <Wrapper key={tooltip} trigger={btn} message={message} /> : btn
               })}
             </div>
           </div>
 
           <div className="flex-1 flex">
-            <AnimatePresence mode="wait">
+            <AnimatePresence
+              mode="wait"
+              onExitComplete={() => {
+                setTimeout(() => {
+                  setSlideDirection(null)
+                  scrollTo()
+                }, 100)
+              }}
+            >
               <motion.div
-                key={`${message.id}-${index}`}
+                key={`${message.id}-${siblingIndex}`}
                 className="flex-1"
                 initial={{
-                  x: slideDirection === 'left' ? -100 : slideDirection === 'right' ? 100 : 0,
-                  opacity: 0,
+                  x: slideOffset,
+                  opacity: slideOpacity,
                 }}
                 animate={{
                   x: 0,
                   opacity: 1,
                 }}
                 exit={{
-                  x: slideDirection === 'left' ? -100 : slideDirection === 'right' ? 100 : 0,
-                  opacity: 0,
+                  x: slideOffset,
+                  opacity: slideOpacity,
                 }}
                 transition={{
                   duration: 0.1,
                   ease: 'easeInOut',
                 }}
-                onAnimationComplete={() => {
-                  // setSlideDirection(null)
-                }}
               >
                 <div className="flex flex-col gap-2 w-full text-[rgb(220,220,210)]">
+                  {isLoading && noContent && (
+                    <span className="inline-block bg-gradient-to-r from-primary-foreground via-muted-foreground to-accent-foreground bg-clip-text text-transparent animate-text">
+                      . . .
+                    </span>
+                  )}
                   {parts.map((part, partIndex) => {
                     const { type } = part
                     const key = `message-${message.id}-part-${partIndex}`
@@ -239,6 +299,7 @@ const PurePreviewMessage = ({
                         return (
                           <MessageTextEdit
                             key={key}
+                            ref={partIndex === firstTextEditIndex ? firstTextEditRef : undefined}
                             text={part.text}
                             onTextChange={(text) => {
                               edit({
@@ -271,20 +332,20 @@ const PurePreviewMessage = ({
                   title="Swipe left"
                   btnSize="size-4"
                   iconSize="1x"
-                  disabled={index === 0}
+                  disabled={siblingIndex === 0}
                   onClick={() => handleNavigate(true)}
                 />
                 <span className="text-xs text-ring">
-                  {index + 1}/{count}
+                  {siblingIndex + 1}/{siblingCount}
                 </span>
                 <FaButton
                   icon={faChevronRight}
                   title="Swipe right"
                   btnSize="size-4"
                   iconSize="1x"
-                  disabled={index === count - 1 && isRoot && role !== 'user'}
+                  disabled={siblingIndex === siblingCount - 1 && isRoot && role !== 'user'}
                   onClick={() => {
-                    if (index < count - 1) {
+                    if (siblingIndex < siblingCount - 1) {
                       handleNavigate(false)
                     } else if (!isRoot || role === 'user') {
                       handleSwipe()

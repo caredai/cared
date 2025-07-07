@@ -7,7 +7,7 @@ export function generateMessageId() {
   return generateId('msg')
 }
 
-export function toUIMessages(messages: Message[]): UIMessage[] {
+export function toUIMessages(messages: Pick<Message, 'id' | 'role' | 'content'>[]): UIMessage[] {
   return messages.map((msg) => {
     return {
       id: msg.id,

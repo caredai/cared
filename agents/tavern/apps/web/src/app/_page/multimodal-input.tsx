@@ -11,6 +11,7 @@ import {
   faPaperPlane,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { toUIMessages } from '@tavern/core'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
 import { cn } from '@/lib/utils'
@@ -40,12 +41,12 @@ export function MultimodalInput({
     }
   }, [status, scrollToBottom])
 
-  const lastIsUserMessage = useMemo(() => {
+  const [lastIsUserMessage, lastMessage] = useMemo(() => {
     const lastMessage = messagesRef.current.at(-1)?.message
     const hasContent = !!lastMessage?.content.parts.filter(
       (p) => p.type === 'text' && p.text.trim(),
     ).length
-    return lastMessage?.role === 'user' && hasContent
+    return [lastMessage?.role === 'user' && hasContent, lastMessage]
   }, [messagesRef.current])
 
   const submit = useCallback(() => {
@@ -58,8 +59,9 @@ export function MultimodalInput({
       return
     }
     if (!input.trim()) {
-      if (lastIsUserMessage) {
+      if (lastIsUserMessage && lastMessage) {
         // If the last message is user message
+        setMessages(toUIMessages([lastMessage]))
         void chatRef.current.regenerate()
       }
       return
@@ -69,7 +71,7 @@ export function MultimodalInput({
       parts: [{ type: 'text', text: input.trim() }],
     })
     setInput('')
-  }, [disabled, status, input, setInput, lastIsUserMessage, chatRef])
+  }, [disabled, status, input, chatRef, setInput, lastIsUserMessage, lastMessage, setMessages])
 
   const disabledSend = disabled || (!input.trim() && !lastIsUserMessage)
 

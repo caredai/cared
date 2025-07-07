@@ -1,4 +1,5 @@
 import type { UIMessage as _UIMessage, UIDataTypes, UITools } from 'ai'
+import { toUIMessages as _toUIMessages } from '@ownxai/sdk'
 import { z } from 'zod/v4'
 
 import type { Message as _Message } from '@ownxai/sdk'
@@ -62,4 +63,8 @@ export interface MessageNode {
         descendants: MessageNode[]
       }
   descendants: MessageNode[]
+}
+
+export function toUIMessages(messages: Pick<Message, 'id' | 'role' | 'content'>[]): UIMessage[] {
+  return _toUIMessages(messages) as UIMessage[]
 }

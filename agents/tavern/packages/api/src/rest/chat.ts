@@ -13,7 +13,7 @@ import {
 import { z } from 'zod/v4'
 
 import { log } from '@ownxai/log'
-import { generateMessageId, uiMessageSchema } from '@ownxai/sdk'
+import { generateMessageId, toUIMessages, uiMessageSchema } from '@ownxai/sdk'
 
 import { auth } from '../auth'
 import { createOwnxClient } from '../ownx'
@@ -30,6 +30,9 @@ const requestBodySchema = z.object({
     role: z.enum(['user', 'assistant']),
     content: messageContentSchema,
   }),
+  isLastNew: z.boolean().optional(),
+  isContinuation: z.boolean().optional(),
+  deleteTrailing: z.boolean().optional(),
   characterId: z.string().min(1),
   modelId: z.string().min(1),
   preferredLanguage: z.enum(['chinese', 'japanese']).optional(),
@@ -48,7 +51,17 @@ export async function POST(request: Request): Promise<Response> {
     )
   }
 
-  const { id, messages, lastMessage, characterId, modelId, preferredLanguage } = requestBody
+  const {
+    id,
+    messages,
+    lastMessage,
+    isLastNew,
+    isContinuation,
+    deleteTrailing,
+    characterId,
+    modelId,
+    preferredLanguage,
+  } = requestBody
   console.log('messages:', JSON.stringify(messages, undefined, 2))
 
   const { userId } = await auth()
@@ -70,7 +83,15 @@ export async function POST(request: Request): Promise<Response> {
 
   const chat = (await ownxTrpc.chat.byId.query({ id })).chat
 
-  if (lastMessage.role === 'user') {
+  if (deleteTrailing) {
+    assert.ok(!isLastNew, 'deleteTrailing should not be used with isLastNew')
+    await ownxTrpc.message.delete.mutate({
+      id: lastMessage.id,
+      deleteTrailing: true,
+      excludeSelf: true,
+    })
+  }
+  if (isLastNew) {
     await ownxTrpc.message.create.mutate({
       chatId: chat.id,
       ...lastMessage,
@@ -115,6 +136,7 @@ export async function POST(request: Request): Promise<Response> {
       )
     },
     generateId: generateMessageId,
+    originalMessages: isContinuation && lastMessage.role === 'assistant' ? toUIMessages([lastMessage]) : undefined,
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     onFinish: async ({ responseMessage, isContinuation }) => {
       assert.equal(responseMessage.role, 'assistant')

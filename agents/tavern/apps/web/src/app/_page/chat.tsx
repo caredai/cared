@@ -1,10 +1,10 @@
-import type { Character } from '@/hooks/use-character'
+import assert from 'assert'
 import type { Message, MessageContent, MessageMetadata, MessageNode, UIMessage } from '@tavern/core'
 import type { PrepareSendMessagesRequest } from 'ai'
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat as AIChat, useChat } from '@ai-sdk/react'
-import { buildPromptMessages } from '@tavern/core'
+import { buildPromptMessages, toUIMessages } from '@tavern/core'
 import { DefaultChatTransport } from 'ai'
 
 import { generateMessageId } from '@ownxai/sdk'
@@ -28,86 +28,89 @@ export function Chat() {
   const { branch, branchRef, navigate, isLoading, isSuccess, hasNextPage, isChatLoading } =
     useBuildMessageTree()
 
-  const { addCachedMessage, updateCachedMessage } = useCachedMessage(chat)
+  const { addCachedMessage, updateCachedMessage, deleteCachedMessage } = useCachedMessage(chat)
 
-  const buildNewBranch = useCallback(
-    (uiMessages: UIMessage[], nextCharacter?: Character) => {
+  const prepareSendMessagesRequest = useCallback(
+    ({ id, messages, trigger, body }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
       if (!chat || !model || !persona || !charOrGroup) {
         throw new Error('Not initialized')
       }
 
-      const newUiMessage = uiMessages.at(-1)
-      if (!newUiMessage) {
+      const uiMessage = messages.at(-1)
+      if (!uiMessage) {
         throw new Error('No messages')
       }
 
-      const lastNode = branchRef.current.at(-1)
-      const lastMessage = lastNode?.message
-      const newBranch = [...branchRef.current]
-      let newLastMessage
-      let isAdd
+      const nodeIndex = branchRef.current.findIndex((node) => node.message.id === uiMessage.id)
+      const node = nodeIndex >= 0 ? branchRef.current[nodeIndex] : undefined
 
-      const metadata: MessageMetadata =
-        newUiMessage.role === 'user'
-          ? {
-              personaId: persona.id,
-              personaName: persona.name,
+      let newBranch = [...branchRef.current]
+
+      let lastMessage
+      let isLastNew = false
+      let isContinuation = false
+      const deleteTrailing = !!node?.descendants.length
+
+      switch (trigger) {
+        case 'submit-user-message':
+          {
+            assert.equal(uiMessage.role, 'user')
+
+            if (!node) {
+              const lastNode = branchRef.current.at(-1)
+              const parentId = lastNode?.message.id
+
+              isLastNew = true
+
+              lastMessage = {
+                id: uiMessage.id,
+                chatId: chat.id,
+                parentId: parentId ?? null,
+                role: uiMessage.role,
+                content: {
+                  parts: uiMessage.parts,
+                  metadata: uiMessage.metadata ?? {
+                    personaId: persona.id,
+                    personaName: persona.name,
+                  },
+                },
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              } as Message
+
+              newBranch.push({
+                message: lastMessage,
+                parent: lastNode ?? { descendants: [] },
+                descendants: [],
+              })
+            } else {
+              lastMessage = {
+                ...node.message,
+                content: {
+                  parts: uiMessage.parts,
+                  metadata: uiMessage.metadata ?? node.message.content.metadata,
+                },
+              }
+
+              newBranch = newBranch.slice(0, nodeIndex + 1)
             }
-          : {
-              characterId: nextCharacter?.id,
-              modelId: model.id,
+          }
+          break
+        case 'regenerate-assistant-message':
+        case 'submit-tool-result': // fallthrough
+          {
+            if (!node) {
+              throw new Error(`Message with id ${uiMessage.id} not found`)
+            }
+            lastMessage = node.message
+
+            if (lastMessage.role === 'assistant') {
+              isContinuation = true
             }
 
-      if (newUiMessage.id === lastMessage?.id) {
-        newLastMessage = {
-          ...lastMessage,
-          content: {
-            parts: newUiMessage.parts,
-            metadata: (newUiMessage as any).metadata ?? lastMessage.content.metadata ?? metadata,
-          },
-        }
-        newBranch[newBranch.length - 1]!.message = newLastMessage
-        isAdd = false
-      } else {
-        newLastMessage = {
-          id: newUiMessage.id,
-          chatId: chat.id,
-          parentId: lastMessage?.id ?? null,
-          role: newUiMessage.role,
-          content: {
-            parts: newUiMessage.parts,
-            metadata: (newUiMessage as any).metadata ?? metadata,
-          },
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as Message
-        newBranch.push({
-          message: newLastMessage,
-          parent: lastNode ?? { descendants: [] },
-          descendants: [],
-        })
-        isAdd = true
-      }
-
-      return {
-        branch: newBranch,
-        lastMessage: newLastMessage,
-        isAdd,
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [charOrGroup, chat, model, persona],
-  )
-
-  const prepareSendMessagesRequest = useCallback(
-    ({
-      id,
-      messages: uiMessages,
-      trigger,
-      body,
-    }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
-      if (!chat || !model || !persona || !charOrGroup) {
-        throw new Error('Not initialized')
+            newBranch = newBranch.slice(0, nodeIndex + 1)
+          }
+          break
       }
 
       // TODO
@@ -116,10 +119,8 @@ export function Chat() {
         throw new Error('No character')
       }
 
-      const { branch, lastMessage } = buildNewBranch(uiMessages, nextChar)
-
       const promptMessages = buildPromptMessages({
-        messages: branch, // TODO
+        messages: newBranch, // TODO
         chat,
         settings,
         modelPreset,
@@ -134,13 +135,16 @@ export function Chat() {
           id,
           messages: promptMessages,
           lastMessage,
+          isLastNew,
+          isContinuation,
+          deleteTrailing,
           characterId: nextChar.id,
           modelId: model.id,
           ...body,
         },
       }
     },
-    [buildNewBranch, charOrGroup, chat, model, modelPreset, persona, settings],
+    [branchRef, charOrGroup, chat, model, modelPreset, persona, settings],
   )
 
   const prepareSendMessagesRequestRef = useRef(prepareSendMessagesRequest)
@@ -168,17 +172,69 @@ export function Chat() {
   }, [chatId])
 
   const onMessagesChange = useCallback(() => {
-    const { lastMessage, isAdd } = buildNewBranch(chatRef.current.messages)
-    if (isAdd) {
-      void addCachedMessage(lastMessage)
-    } else {
-      void updateCachedMessage(lastMessage)
+    if (!chat || !persona) {
+      throw new Error('Not initialized')
     }
-  }, [addCachedMessage, updateCachedMessage, buildNewBranch])
+
+    let lastUIMessage = chatRef.current.messages.at(-1)
+    if (pseudoMessageId && lastUIMessage?.id === pseudoMessageId) {
+      lastUIMessage = chatRef.current.messages.at(-2)
+    }
+    if (!lastUIMessage) {
+      throw new Error('No messages')
+    }
+
+    const foundNode = branchRef.current.find((node) => node.message.id === lastUIMessage.id)
+
+    if (!foundNode) {
+      const parentId = branchRef.current.at(-1)?.message.id
+
+      const newLastMessage = {
+        id: lastUIMessage.id,
+        chatId: chat.id,
+        parentId: parentId ?? null,
+        role: lastUIMessage.role,
+        content: {
+          parts: lastUIMessage.parts,
+          metadata:
+            (lastUIMessage.metadata ?? lastUIMessage.role === 'user')
+              ? {
+                  personaId: persona.id,
+                  personaName: persona.name,
+                }
+              : // should never happen
+                {},
+        },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Message
+
+      void addCachedMessage(newLastMessage)
+    } else {
+      if (foundNode.descendants.length) {
+        void deleteCachedMessage(lastUIMessage.id)
+      }
+
+      const newLastMessage = {
+        ...foundNode.message,
+        content: {
+          parts: lastUIMessage.parts,
+          metadata: lastUIMessage.metadata ?? foundNode.message.content.metadata,
+        },
+      }
+
+      void updateCachedMessage(newLastMessage)
+    }
+  }, [addCachedMessage, updateCachedMessage, deleteCachedMessage, branchRef, chat, persona])
+
+  const onMessagesChangeRef = useRef(onMessagesChange)
+  useEffect(() => {
+    onMessagesChangeRef.current = onMessagesChange
+  }, [onMessagesChange])
 
   useEffect(() => {
-    return chatRef.current['~registerMessagesCallback'](onMessagesChange, 100)
-  }, [onMessagesChange])
+    return chatRef.current['~registerMessagesCallback'](() => onMessagesChangeRef.current(), 100)
+  }, [])
 
   const { setMessages, status } = useChat<UIMessage>({
     chat: chatRef.current,
@@ -188,10 +244,10 @@ export function Chat() {
   const ref = useRef<VListHandle>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = useCallback((smooth?: boolean) => {
+  const scrollTo = useCallback((index?: number | 'bottom', smooth?: boolean) => {
     // There always exists a `div` at the end of the list, so we can scroll to it.
-    const index = branchRef.current.length
-    ref.current?.scrollToIndex(index, {
+    const targetIndex = typeof index !== 'number' ? branchRef.current.length : index
+    ref.current?.scrollToIndex(targetIndex, {
       align: 'end',
       // Using smooth scrolling over many items can kill performance benefit of virtual scroll.
       smooth: typeof smooth === 'boolean' ? smooth : true,
@@ -208,10 +264,10 @@ export function Chat() {
   useEffect(() => {
     if (shouldScrollToBottom) {
       // Scroll to bottom when the chat is loaded.
-      scrollToBottom(false)
+      scrollTo('bottom', false)
       setShouldScrollToBottom(false)
     }
-  }, [scrollToBottom, shouldScrollToBottom])
+  }, [scrollTo, shouldScrollToBottom])
 
   useCallWhenGenerating(
     chatId,
@@ -219,9 +275,9 @@ export function Chat() {
     useCallback(() => {
       // Always scroll to bottom when the message list changes.
       if (branch.length) {
-        setTimeout(scrollToBottom, 3)
+        setTimeout(scrollTo, 3)
       }
-    }, [scrollToBottom, branch]),
+    }, [scrollTo, branch]),
   )
 
   const [input, setInput] = useState('')
@@ -231,12 +287,14 @@ export function Chat() {
   const createMessage = useCreateMessage(chatId)
   const updateMessage = useUpdateMessage(chatId)
 
+  const [pseudoMessageId, setPseudoMessageId] = useState('')
+
   const swipe = useCallback(
     (node: MessageNode) => {
       if (!chatId) {
         return
       }
-      if (node !== node.parent.descendants.at(-1)) {
+      if (node !== node.parent.descendants.at(-1) || !node.parent.message) {
         return
       }
       const { personaId, personaName, characterId, modelId, summary } =
@@ -249,26 +307,46 @@ export function Chat() {
         summary,
       }
 
-      const id = generateMessageId()
-
-      void createMessage({
-        id,
+      const newMessage = {
+        id: generateMessageId(),
         parentId: node.message.parentId ?? undefined,
         role: node.message.role,
         content: {
           parts: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: '',
             },
           ],
           metadata: metadata,
         },
+      }
+
+      void createMessage(newMessage).then(() => {
+        if (node.message.role === 'assistant') {
+          // regenerate() will remove the last assistant message, so we add a pseudo message
+          const pseudoMessage = {
+            ...structuredClone(newMessage),
+            id: generateMessageId(),
+            parentId: newMessage.parentId ?? undefined,
+          }
+          setPseudoMessageId(pseudoMessage.id)
+          setMessages(
+            toUIMessages([
+              newMessage,
+              pseudoMessage,
+            ]),
+          )
+
+          void chatRef.current.regenerate()
+        }
       })
 
-      setEditMessageId(id)
+      if (node.message.role === 'user') {
+        setEditMessageId(newMessage.id)
+      }
     },
-    [chatId, createMessage],
+    [chatId, createMessage, setMessages],
   )
 
   const edit = useCallback(
@@ -298,6 +376,7 @@ export function Chat() {
           edit={edit}
           editMessageId={editMessageId}
           setEditMessageId={setEditMessageId}
+          scrollTo={scrollTo}
         />
       </ContentArea>
 
@@ -308,7 +387,7 @@ export function Chat() {
         chatRef={chatRef}
         status={status}
         setMessages={setMessages}
-        scrollToBottom={scrollToBottom}
+        scrollToBottom={scrollTo}
         disabled={isLoading}
       />
     </>

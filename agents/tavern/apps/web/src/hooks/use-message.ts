@@ -471,7 +471,7 @@ export function useCachedMessage(chat?: Chat) {
           const oldMsg = old.pages
             .flatMap((page) => page.messages)
             .find((msg) => msg.id === message.id)
-          if (hash(oldMsg) === hash(message)) {
+          if (!oldMsg || hash(oldMsg) === hash(message)) {
             return old
           }
 
@@ -491,8 +491,17 @@ export function useCachedMessage(chat?: Chat) {
     [chatId, setFirstChat],
   )
 
-  const removeCachedMessage = useCallback(
-    async (messageId: string) => {
+  const deleteCachedMessage = useCallback(
+    async (id: string, {
+      deleteTrailing,
+      excludeSelf,
+    }: {
+      deleteTrailing?: boolean
+      excludeSelf?: boolean
+    } = {
+      deleteTrailing: false,
+      excludeSelf: false,
+    }) => {
       if (!chatId) return
 
       await queryClient.cancelQueries({
@@ -502,7 +511,7 @@ export function useCachedMessage(chat?: Chat) {
         }),
       })
 
-      // Remove the message from the infinite query cache
+      // Update the message list in the infinite query cache
       queryClient.setQueryData<InfiniteData<MessageListOutput>>(
         trpc.message.list.infiniteQueryKey({
           chatId,
@@ -511,10 +520,78 @@ export function useCachedMessage(chat?: Chat) {
         (old) => {
           if (!old) return undefined
 
+          // If deleteTrailing is true, we need to handle cascading deletion
+          if (deleteTrailing) {
+            // Get all messages from all pages
+            const allMessages = old.pages.flatMap((page) => page.messages)
+
+            // Create a map of parentId to children for efficient lookup
+            const parentToChildren = new Map<string, string[]>()
+            allMessages.forEach((msg) => {
+              if (msg.parentId) {
+                if (!parentToChildren.has(msg.parentId)) {
+                  parentToChildren.set(msg.parentId, [])
+                }
+                parentToChildren.get(msg.parentId)!.push(msg.id)
+              }
+            })
+
+            // Recursively collect all descendant message IDs
+            const descendantIds = new Set<string>()
+            const collectDescendants = (msgId: string) => {
+              if (!excludeSelf || msgId !== id) {
+                descendantIds.add(msgId)
+              }
+              const children = parentToChildren.get(msgId) ?? []
+              children.forEach((childId) => collectDescendants(childId))
+            }
+            collectDescendants(id)
+
+            // Filter out all messages that should be deleted
+            return {
+              pages: old.pages.map((page) => ({
+                ...page,
+                messages: page.messages.filter((message) => !descendantIds.has(message.id)),
+              })),
+              pageParams: old.pageParams,
+            }
+          }
+
+          // If deleteTrailing is false, handle single message deletion with parentId updates
+          const targetMessage = old.pages
+            .flatMap((page) => page.messages)
+            .find((message) => message.id === id)
+
+          if (!targetMessage) {
+            return old
+          }
+
+          const directChildrenCount = old.pages
+            .flatMap((page) => page.messages)
+            .filter((message) => message.parentId === id).length
+
+          if (directChildrenCount > 1 && !targetMessage.parentId) {
+            // Cannot delete a root message without deleting its descendant messages
+            return old
+          }
+
+          // Update parentId of direct children to point to the deleted message's parent
+          // and remove the target message
           return {
             pages: old.pages.map((page) => ({
               ...page,
-              messages: page.messages.filter((msg) => msg.id !== messageId),
+              messages: page.messages
+                .map((message) => {
+                  // Update direct children's parentId
+                  if (message.parentId === id) {
+                    return {
+                      ...message,
+                      parentId: targetMessage.parentId,
+                    }
+                  }
+                  return message
+                })
+                .filter((message) => message.id !== id), // Remove the target message
             })),
             pageParams: old.pageParams,
           }
@@ -530,6 +607,6 @@ export function useCachedMessage(chat?: Chat) {
   return {
     addCachedMessage,
     updateCachedMessage,
-    removeCachedMessage,
+    deleteCachedMessage,
   }
 }
