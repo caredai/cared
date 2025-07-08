@@ -466,4 +466,69 @@ export const chatRouter = {
         })
       })
     }),
+
+  clone: userProtectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        messages: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const ownx = createOwnxClient(ctx)
+      const ownxTrpc = ownx.trpc
+
+      // Check if user has access to this chat
+      const characterChat = await ctx.db.query.CharacterChat.findFirst({
+        where: and(eq(CharacterChat.chatId, input.id), eq(CharacterChat.userId, ctx.auth.userId)),
+      })
+
+      const groupChat = await ctx.db.query.CharGroupChat.findFirst({
+        where: and(eq(CharGroupChat.chatId, input.id), eq(CharGroupChat.userId, ctx.auth.userId)),
+      })
+
+      if (!characterChat && !groupChat) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Chat not found',
+        })
+      }
+
+      // Use ownx SDK's clone functionality
+      const { chat: newChat } = await ownxTrpc.chat.clone.mutate({
+        id: input.id,
+        messages: input.messages,
+        includeLastMessage: true,
+      })
+
+      // Link new chat to character or group if the original was linked
+      if (characterChat) {
+        await ctx.db.insert(CharacterChat).values({
+          characterId: characterChat.characterId,
+          chatId: newChat.id,
+          userId: ctx.auth.userId,
+        })
+      }
+
+      if (groupChat) {
+        await ctx.db.insert(CharGroupChat).values({
+          groupId: groupChat.groupId,
+          chatId: newChat.id,
+          userId: ctx.auth.userId,
+        })
+      }
+
+      const { id, metadata, createdAt, updatedAt, lastMessage } = newChat
+      return {
+        chat: {
+          id,
+          metadata,
+          createdAt,
+          updatedAt,
+          lastMessage,
+          characterId: characterChat?.characterId,
+          groupId: groupChat?.groupId,
+        } as Chat,
+      }
+    }),
 }

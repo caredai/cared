@@ -222,8 +222,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     updatedAt: Date;
                     metadata: AppMetadata;
                     type: "single-agent" | "multiple-agents";
-                    version: number;
                     appId: string;
+                    version: number;
                 }[];
                 hasMore: boolean;
                 first: number | undefined;
@@ -839,8 +839,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     updatedAt: Date;
                     metadata: AppMetadata;
                     type: "single-agent" | "multiple-agents";
-                    version: number;
                     appId: string;
+                    version: number;
                 }[];
                 hasMore: boolean;
                 first: number | undefined;
@@ -875,8 +875,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     updatedAt: Date;
                     metadata: AppMetadata;
                     type: "single-agent" | "multiple-agents";
-                    version: number;
                     appId: string;
+                    version: number;
                 };
             };
         }>;
@@ -916,8 +916,8 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     updatedAt: Date;
                     metadata: AppMetadata;
                     type: "single-agent" | "multiple-agents";
-                    version: number;
                     appId: string;
+                    version: number;
                 };
             };
         }>;
@@ -2181,11 +2181,11 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                         })) | {
                             type: "text";
                             text: string;
-                            state?: "done" | "streaming" | undefined;
+                            state?: "streaming" | "done" | undefined;
                         } | {
                             type: "reasoning";
                             text: string;
-                            state?: "done" | "streaming" | undefined;
+                            state?: "streaming" | "done" | undefined;
                             providerMetadata?: Record<string, any> | undefined;
                         } | {
                             type: "source-url";
@@ -2284,6 +2284,34 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                 };
             };
         }>;
+        clone: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                id: string;
+                messages: string[];
+                includeLastMessage?: boolean | undefined;
+            };
+            output: {
+                chat: {
+                    lastMessage: {
+                        id: string;
+                        createdAt: Date;
+                        updatedAt: Date;
+                        role: "user" | "system" | "assistant";
+                        agentId: string | null;
+                        parentId: string | null;
+                        chatId: string;
+                        content: import("@ownxai/shared").MessageContent;
+                    } | undefined;
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    userId: string;
+                    metadata: ChatMetadata;
+                    appId: string;
+                    debug: boolean;
+                };
+            };
+        }>;
     };
     message: {
         list: import("@trpc/server").TRPCQueryProcedure<{
@@ -2308,6 +2336,24 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                 hasMore: boolean;
                 first: string | undefined;
                 last: string | undefined;
+            };
+        }>;
+        listByIds: import("@trpc/server").TRPCQueryProcedure<{
+            input: {
+                chatId: string;
+                ids: string[];
+            };
+            output: {
+                messages: {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    role: "user" | "system" | "assistant";
+                    agentId: string | null;
+                    parentId: string | null;
+                    chatId: string;
+                    content: import("@ownxai/shared").MessageContent;
+                }[];
             };
         }>;
         find: import("@trpc/server").TRPCQueryProcedure<{
@@ -2373,11 +2419,11 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     })) | {
                         type: "text";
                         text: string;
-                        state?: "done" | "streaming" | undefined;
+                        state?: "streaming" | "done" | undefined;
                     } | {
                         type: "reasoning";
                         text: string;
-                        state?: "done" | "streaming" | undefined;
+                        state?: "streaming" | "done" | undefined;
                         providerMetadata?: Record<string, any> | undefined;
                     } | {
                         type: "source-url";
@@ -2452,11 +2498,11 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                     })) | {
                         type: "text";
                         text: string;
-                        state?: "done" | "streaming" | undefined;
+                        state?: "streaming" | "done" | undefined;
                     } | {
                         type: "reasoning";
                         text: string;
-                        state?: "done" | "streaming" | undefined;
+                        state?: "streaming" | "done" | undefined;
                         providerMetadata?: Record<string, any> | undefined;
                     } | {
                         type: "source-url";

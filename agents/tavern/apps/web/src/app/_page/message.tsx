@@ -4,20 +4,22 @@ import type { Message, MessageContent, UIMessage } from '@tavern/core'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
 import { memo, useEffect, useRef, useState } from 'react'
 import {
-  faBullhorn,
+  // faBullhorn,
   faChevronLeft,
   faChevronRight,
   faCodeBranch,
   faCopy,
   faEye,
-  faFlagCheckered,
-  faLanguage,
-  faPaintbrush,
-  faPaperclip,
+  faEyeSlash,
+  faGhost,
+  // faLanguage,
+  // faPaintbrush,
+  // faPaperclip,
   faPencil,
   faRotate,
   faTrashCan,
 } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format } from 'date-fns'
 import { AnimatePresence, motion } from 'motion/react'
 
@@ -26,6 +28,7 @@ import { FaButton } from '@/components/fa-button'
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useActivePersona } from '@/hooks/use-persona'
 import defaultPng from '@/public/images/user-default.png'
+import { CloneChatDialog } from './clone-chat-dialog'
 import { DeleteMessageDialog } from './delete-message-dialog'
 import { MessageReasoning } from './message-reasoning'
 import { MessageText } from './message-text'
@@ -91,33 +94,41 @@ const PurePreviewMessage = ({
   }
 
   const operateActions = [
+    // {
+    //   icon: faLanguage,
+    //   tooltip: 'Translate message',
+    // },
+    // {
+    //   icon: faPaintbrush,
+    //   tooltip: 'Generate image',
+    // },
+    // {
+    //   icon: faBullhorn,
+    //   tooltip: 'Read aloud',
+    // },
     {
-      icon: faLanguage,
-      tooltip: 'Translate message',
-    },
-    {
-      icon: faPaintbrush,
-      tooltip: 'Generate image',
-    },
-    {
-      icon: faBullhorn,
-      tooltip: 'Read aloud',
-    },
-    {
-      icon: faEye,
+      icon: !metadata.excluded ? faEye : faEyeSlash,
       tooltip: 'Exclude message from prompt',
+      action: () =>
+        edit(
+          {
+            parts,
+            metadata: {
+              ...metadata,
+              excluded: !metadata.excluded,
+            },
+          },
+          false,
+        ),
     },
-    {
-      icon: faPaperclip,
-      tooltip: 'Embed file or image',
-    },
-    {
-      icon: faFlagCheckered,
-      tooltip: 'Create checkpoint',
-    },
+    // {
+    //   icon: faPaperclip,
+    //   tooltip: 'Embed file or image',
+    // },
     {
       icon: faCodeBranch,
-      tooltip: 'Create branch',
+      tooltip: 'Clone chat over branch',
+      wrapper: CloneChatDialog,
     },
     {
       icon: faCopy,
@@ -229,10 +240,11 @@ const PurePreviewMessage = ({
 
         <div className="flex-1 flex flex-col gap-2">
           <div className="flex flex-wrap justify-between items-center gap-2">
-            <div className="w-full md:w-auto flex justify-start md:justify-between items-center gap-2">
+            <div className="w-full md:w-auto flex justify-start md:justify-between items-center gap-1">
               <span>{char ? char.content.data.name : persona ? persona.name : ''}</span>
+              {metadata.excluded && <FontAwesomeIcon icon={faGhost} size="1x" className="fa-fw" />}
               <span className="text-xs text-muted-foreground">
-                {format(new Date(message.createdAt), 'MMM dd, yyyy hh:mm a')}
+                {format(message.createdAt, 'MMM dd, yyyy hh:mm a')}
               </span>
             </div>
             <div className="w-full md:w-auto flex justify-end md:justify-between items-center gap-2">

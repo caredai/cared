@@ -149,7 +149,7 @@ export const chatRouter = {
     .meta({
       openapi: {
         method: 'POST',
-        path: '/v1/chats/batch',
+        path: '/v1/chats/list-by-ids',
         protect: true,
         tags: ['chats'],
         summary: 'Get multiple chats by their IDs',
@@ -482,5 +482,120 @@ export const chatRouter = {
       }
 
       return { chat: deletedChat }
+    }),
+
+  /**
+   * Clone a chat with specific messages.
+   * Only accessible by authenticated users.
+   * @param input - Object containing the source chat ID and array of message IDs to clone
+   * @returns The cloned chat with messages
+   */
+  clone: appUserProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/chats/{id}/clone',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Clone a chat with specific messages',
+      },
+    })
+    .input(
+      z.object({
+        id: z.string().min(32),
+        messages: z.array(z.string().min(32)).min(1).max(1000),
+        includeLastMessage: z.boolean().default(false),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Get the source chat to verify access and get metadata
+      const sourceChat = await getChatById(ctx, input.id)
+
+      // Query messages in the specified order
+      const messages = await ctx.db.query.Message.findMany({
+        where: and(eq(Message.chatId, input.id), inArray(Message.id, input.messages)),
+        orderBy: asc(Message.id),
+      })
+
+      if (messages.length !== input.messages.length) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Some messages not found in the source chat',
+        })
+      }
+
+      // Check if first message has no parent
+      if (messages[0]!.parentId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'First message must have no parent',
+        })
+      }
+
+      // Validate parent-child relationships for subsequent messages
+      for (let i = 1; i < messages.length; i++) {
+        const currentMessage = messages[i]!
+        const expectedParentId = messages[i - 1]!.id
+
+        if (currentMessage.parentId !== expectedParentId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Message order is invalid: message ${currentMessage.id} should have parent ${expectedParentId}`,
+          })
+        }
+      }
+
+      return await ctx.db.transaction(async (tx) => {
+        // Create new chat with same metadata
+        const [newChat] = await tx
+          .insert(Chat)
+          .values({
+            appId: ctx.auth.appId,
+            userId: ctx.auth.userId,
+            debug: sourceChat.debug,
+            metadata: sourceChat.metadata,
+          })
+          .returning()
+
+        if (!newChat) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create cloned chat',
+          })
+        }
+
+        // Create new message IDs mapping
+        const messageIdMapping = new Map<string, string>()
+        const clonedMessages = messages.map((msg) => {
+          const newMessageId = generateMessageId()
+          messageIdMapping.set(msg.id, newMessageId)
+
+          return {
+            id: newMessageId,
+            parentId: msg.parentId ? messageIdMapping.get(msg.parentId) : undefined,
+            chatId: newChat.id,
+            role: msg.role,
+            agentId: msg.agentId,
+            content: msg.content,
+          }
+        })
+
+        // Insert all messages in one SQL statement
+        const insertedMessages = await tx.insert(Message).values(clonedMessages).returning()
+
+        if (insertedMessages.length !== clonedMessages.length) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to clone all messages',
+          })
+        }
+
+        return {
+          chat: {
+            ...newChat,
+            lastMessage: input.includeLastMessage ? insertedMessages.at(-1) : undefined,
+          },
+        }
+      })
     }),
 }

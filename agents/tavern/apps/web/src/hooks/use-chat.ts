@@ -17,7 +17,7 @@ type RouterOutput = inferRouterOutputs<AppRouter>
 type ChatListOutput = RouterOutput['chat']['list']
 export type Chat = ChatListOutput['chats'][number]
 
-const PAGE_SIZE = 10 // TODO
+const PAGE_SIZE = 100 // TODO
 
 const activeChatIdAtom = atom<string | undefined>(undefined)
 
@@ -684,6 +684,89 @@ export function useDeleteChat(characterId?: string, groupId?: string) {
     async (id: string) => {
       return await deleteMutation.mutateAsync({
         id,
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+}
+
+export function useCloneChat() {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const cloneMutation = useMutation(
+    trpc.chat.clone.mutationOptions({
+      onSuccess: (data) => {
+        const chatItem: Chat = {
+          ...data.chat,
+        }
+
+        // Helper function to update chat lists with new chat
+        const updateChatList = (queryKey: unknown[]) => {
+          queryClient.setQueryData<InfiniteData<ChatListOutput>>(queryKey, (old) => {
+            if (!old?.pages[0]) {
+              return {
+                pages: [
+                  {
+                    chats: [chatItem],
+                    hasMore: false,
+                    cursor: undefined,
+                  },
+                ],
+                pageParams: [undefined],
+              }
+            }
+
+            const firstPage = old.pages[0]
+
+            return {
+              ...old,
+              pages: [
+                {
+                  ...firstPage,
+                  chats: [chatItem, ...firstPage.chats],
+                },
+                ...old.pages.slice(1),
+              ],
+            }
+          })
+        }
+
+        // Update all relevant chat lists
+        updateChatList(
+          trpc.chat.list.infiniteQueryKey({
+            limit: PAGE_SIZE,
+          }),
+        )
+        if (chatItem.characterId) {
+          updateChatList(
+            trpc.chat.listByCharacter.infiniteQueryKey({
+              characterId: chatItem.characterId,
+              limit: PAGE_SIZE,
+            }),
+          )
+        }
+        if (chatItem.groupId) {
+          updateChatList(
+            trpc.chat.listByGroup.infiniteQueryKey({
+              groupId: chatItem.groupId,
+              limit: PAGE_SIZE,
+            }),
+          )
+        }
+      },
+      onError: (error) => {
+        toast.error(`Failed to clone chat: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (id: string, messages: string[]) => {
+      return await cloneMutation.mutateAsync({
+        id,
+        messages,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

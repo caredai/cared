@@ -11,6 +11,8 @@ export interface MessageMetadata {
   personaName?: string // for 'user' role; will be used when the persona is deleted
   modelId?: string // for 'assistant' role & LLM generated message
 
+  excluded?: boolean // whether the message should be excluded from the prompt building
+
   summary?: string
 }
 
@@ -20,6 +22,7 @@ export const messageMetadataSchema = z
     personaId: z.string().optional(),
     personaName: z.string().optional(),
     modelId: z.string().optional(),
+    excluded: z.boolean().optional(),
     summary: z.string().optional(),
   })
   .refine(

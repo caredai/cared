@@ -14,7 +14,7 @@ import { useSetFirstChat } from './use-chat'
 type RouterOutput = inferRouterOutputs<AppRouter>
 type MessageListOutput = RouterOutput['message']['list']
 
-const PAGE_SIZE = 10 // TODO
+const PAGE_SIZE = 1000 // TODO
 
 export function useMessages(chatId?: string) {
   const trpc = useTRPC()

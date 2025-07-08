@@ -103,6 +103,41 @@ export const messageRouter = {
       }
     }),
 
+  /**
+   * List messages by their IDs within a specific chat.
+   * Only accessible by authenticated users.
+   * @param input - Object containing chat ID and array of message IDs
+   * @returns List of messages found by the provided IDs in the specified chat
+   */
+  listByIds: appUserProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/messages/list-by-ids',
+        protect: true,
+        tags: ['chats'],
+        summary: 'List messages by their IDs within a specific chat',
+      },
+    })
+    .input(
+      z.object({
+        chatId: z.string().min(32),
+        ids: z.array(z.string().min(32)).min(1).max(1000),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      await getChatById(ctx, input.chatId)
+
+      const messages = await ctx.db.query.Message.findMany({
+        where: and(
+          eq(Message.chatId, input.chatId),
+          inArray(Message.id, input.ids)
+        ),
+      })
+
+      return { messages }
+    }),
+
   find: appUserProtectedProcedure
     .meta({
       openapi: {
