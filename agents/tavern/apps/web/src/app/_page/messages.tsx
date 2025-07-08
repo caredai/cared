@@ -53,7 +53,9 @@ function PureMessages({
           key={`${chatId ?? ''}-${i}`}
           chatRef={chatRef}
           message={message.message}
-          isLoading={status === 'streaming' && messages.length - 1 === i}
+          isLoading={
+            (status === 'submitted' || status === 'streaming') && messages.length - 1 === i
+          }
           index={i}
           siblingIndex={indices[i]!.index}
           siblingCount={indices[i]!.count}

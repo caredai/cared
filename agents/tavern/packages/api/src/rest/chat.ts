@@ -103,6 +103,9 @@ export async function POST(request: Request): Promise<Response> {
     modelId,
   }
 
+  const originalMessages =
+    isContinuation && lastMessage.role === 'assistant' ? toUIMessages([lastMessage]) : undefined
+
   const stream = createUIMessageStream({
     execute: ({ writer: dataStream }) => {
       const result = streamText({
@@ -127,16 +130,17 @@ export async function POST(request: Request): Promise<Response> {
 
       dataStream.merge(
         result.toUIMessageStream({
+          originalMessages, // message persistence
           messageMetadata: () => metadata,
           sendReasoning: true,
           sendSources: true,
-          sendStart: true,
+          sendStart: true, // message persistence
           sendFinish: true,
         }),
       )
     },
     generateId: generateMessageId,
-    originalMessages: isContinuation && lastMessage.role === 'assistant' ? toUIMessages([lastMessage]) : undefined,
+    originalMessages, // message persistence
     // eslint-disable-next-line @typescript-eslint/no-misused-promises
     onFinish: async ({ responseMessage, isContinuation }) => {
       assert.equal(responseMessage.role, 'assistant')

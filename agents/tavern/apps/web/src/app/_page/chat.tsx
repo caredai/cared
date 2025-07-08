@@ -31,12 +31,17 @@ export function Chat() {
   const { addCachedMessage, updateCachedMessage, deleteCachedMessage } = useCachedMessage(chat)
 
   const prepareSendMessagesRequest = useCallback(
-    ({ id, messages, trigger, body }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
+    ({
+      id,
+      messages: uiMessages,
+      trigger,
+      body,
+    }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
       if (!chat || !model || !persona || !charOrGroup) {
         throw new Error('Not initialized')
       }
 
-      const uiMessage = messages.at(-1)
+      const uiMessage = uiMessages.at(-1)
       if (!uiMessage) {
         throw new Error('No messages')
       }
@@ -44,7 +49,7 @@ export function Chat() {
       const nodeIndex = branchRef.current.findIndex((node) => node.message.id === uiMessage.id)
       const node = nodeIndex >= 0 ? branchRef.current[nodeIndex] : undefined
 
-      let newBranch = [...branchRef.current]
+      let messages = [...branchRef.current]
 
       let lastMessage
       let isLastNew = false
@@ -78,7 +83,7 @@ export function Chat() {
                 updatedAt: new Date(),
               } as Message
 
-              newBranch.push({
+              messages.push({
                 message: lastMessage,
                 parent: lastNode ?? { descendants: [] },
                 descendants: [],
@@ -92,7 +97,7 @@ export function Chat() {
                 },
               }
 
-              newBranch = newBranch.slice(0, nodeIndex + 1)
+              messages = messages.slice(0, nodeIndex + 1)
             }
           }
           break
@@ -108,10 +113,16 @@ export function Chat() {
               isContinuation = true
             }
 
-            newBranch = newBranch.slice(0, nodeIndex + 1)
+            if (trigger === 'regenerate-assistant-message' && lastMessage.role === 'assistant') {
+              messages = messages.slice(0, nodeIndex)
+            } else {
+              messages = messages.slice(0, nodeIndex + 1)
+            }
           }
           break
       }
+
+      // console.log('lastMessage.id', lastMessage.id, 'messages', messages)
 
       // TODO
       const nextChar = isCharacter(charOrGroup) ? charOrGroup : charOrGroup.characters[0]
@@ -120,7 +131,7 @@ export function Chat() {
       }
 
       const promptMessages = buildPromptMessages({
-        messages: newBranch, // TODO
+        messages: messages, // TODO
         chat,
         settings,
         modelPreset,
@@ -177,7 +188,7 @@ export function Chat() {
     }
 
     let lastUIMessage = chatRef.current.messages.at(-1)
-    if (pseudoMessageId && lastUIMessage?.id === pseudoMessageId) {
+    if (pseudoMessageIdRef.current && lastUIMessage?.id === pseudoMessageIdRef.current) {
       lastUIMessage = chatRef.current.messages.at(-2)
     }
     if (!lastUIMessage) {
@@ -185,6 +196,7 @@ export function Chat() {
     }
 
     const foundNode = branchRef.current.find((node) => node.message.id === lastUIMessage.id)
+    // console.log('lastUIMessage.id', lastUIMessage.id, 'foundNode.message.id', foundNode?.message.id)
 
     if (!foundNode) {
       const parentId = branchRef.current.at(-1)?.message.id
@@ -287,7 +299,7 @@ export function Chat() {
   const createMessage = useCreateMessage(chatId)
   const updateMessage = useUpdateMessage(chatId)
 
-  const [pseudoMessageId, setPseudoMessageId] = useState('')
+  const pseudoMessageIdRef = useRef('')
 
   const swipe = useCallback(
     (node: MessageNode) => {
@@ -312,12 +324,15 @@ export function Chat() {
         parentId: node.message.parentId ?? undefined,
         role: node.message.role,
         content: {
-          parts: [
-            {
-              type: 'text' as const,
-              text: '',
-            },
-          ],
+          parts:
+            node.message.role === 'user'
+              ? [
+                  {
+                    type: 'text' as const,
+                    text: '',
+                  },
+                ]
+              : [],
           metadata: metadata,
         },
       }
@@ -330,7 +345,7 @@ export function Chat() {
             id: generateMessageId(),
             parentId: newMessage.parentId ?? undefined,
           }
-          setPseudoMessageId(pseudoMessage.id)
+          pseudoMessageIdRef.current = pseudoMessage.id
           setMessages(
             toUIMessages([
               newMessage,
