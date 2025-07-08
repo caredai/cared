@@ -8,7 +8,6 @@ import { useMessages } from '@/hooks/use-message'
 
 export interface MessageTree {
   tree: MessageNode[]
-  latest: MessageNode
   allMessages: Message[]
 }
 
@@ -63,6 +62,7 @@ export function useBuildMessageTree() {
   const [branch, setBranch] = useAtom(branchAtom)
   const treeRef = useRef<MessageTree>(undefined)
   const branchRef = useRef<MessageNode[]>([])
+  const pathRef = useRef<string[]>([])
 
   useEffect(() => {
     treeRef.current =
@@ -71,16 +71,25 @@ export function useBuildMessageTree() {
         : undefined
 
     branchRef.current = (() => {
-      if (!treeRef.current) {
+      if (!treeRef.current?.tree.length) {
+        pathRef.current = []
         return []
       }
-      const nodes: MessageNode[] = []
-      let current: MessageNode | undefined = treeRef.current.latest
-      while (current) {
-        nodes.push(current)
-        current = current.parent.message ? current.parent : undefined
+
+      const newBranch: MessageNode[] = []
+      let parent = treeRef.current.tree[0]!.parent
+      for (let level = 0; ; ++level) {
+        const id = pathRef.current[level]
+        const node = id ? parent.descendants.find((node) => node.message.id === id) : undefined
+        if (!node) {
+          newBranch.push(...findLatestBranch(parent))
+          pathRef.current = newBranch.map((node) => node.message.id)
+          return newBranch
+        } else {
+          newBranch.push(node)
+          parent = node
+        }
       }
-      return nodes.reverse()
     })()
 
     setTree((oldTree) => {
@@ -94,10 +103,20 @@ export function useBuildMessageTree() {
   }, [data, hasNextPage, isSuccess, setBranch, setTree])
 
   const navigate = useCallback(
-    (current: MessageNode, previous: boolean) => {
+    (currentNodeOrId: MessageNode | string, previous: boolean) => {
+      const tree = treeRef.current
       if (!tree) {
         return
       }
+
+      const current =
+        typeof currentNodeOrId === 'string'
+          ? findNodeById(tree.tree, currentNodeOrId)
+          : currentNodeOrId
+      if (!current) {
+        return
+      }
+
       const isRoot = tree.tree.find((node) => node === current)
       const siblings = isRoot ? tree.tree : current.parent.descendants
 
@@ -115,22 +134,10 @@ export function useBuildMessageTree() {
       }
 
       if (isRoot) {
-        const nodes = []
-        let c: MessageNode | undefined = newCurrent
-        while (c) {
-          nodes.push(c)
-          let latest: MessageNode | undefined = undefined
-          let maxId = ''
-          for (const child of c.descendants) {
-            if (!maxId || child.message.id > maxId) {
-              latest = child
-              maxId = child.message.id
-            }
-          }
-          c = latest
-        }
-        branchRef.current = nodes
-        setBranch(nodes)
+        const newBranch = findLatestBranch(newCurrent, true)
+        pathRef.current = newBranch.map((node) => node.message.id)
+        branchRef.current = newBranch
+        setBranch(newBranch)
         return
       }
 
@@ -140,18 +147,13 @@ export function useBuildMessageTree() {
           return branch
         }
         const newBranch = [...branch.slice(0, position)]
-        let next: MessageNode | undefined = newCurrent
-        while (next) {
-          newBranch.push(next)
-          next = next.descendants.reduce((latest, node) => {
-            return !latest || latest.message.id < node.message.id ? node : latest
-          }, next.descendants[0])
-        }
+        newBranch.push(...findLatestBranch(newCurrent, true))
+        pathRef.current = newBranch.map((node) => node.message.id)
         branchRef.current = newBranch
         return newBranch
       })
     },
-    [setBranch, tree],
+    [setBranch],
   )
 
   return {
@@ -195,10 +197,6 @@ export function buildMessageTree(allOrderedMessages?: Message[]): MessageTree | 
     return
   }
 
-  // Track the latest message node during tree building
-  let latest: MessageNode
-  let maxId = ''
-
   // Recursive function to build the tree structure and track the latest
   function buildNode(
     message: Message,
@@ -211,33 +209,76 @@ export function buildMessageTree(allOrderedMessages?: Message[]): MessageTree | 
       descendants: [],
     }
 
-    // Check if the current node is the latest
-    if (!maxId || message.id > maxId) {
-      maxId = message.id
-      latest = currentNode
-    }
-
     // Build descendants and set their parent to the current node
     currentNode.descendants = children.map((child) => buildNode(child, currentNode))
 
     return currentNode
   }
 
-  const tree = rootMessages.map((rootMessage) =>
-    buildNode(rootMessage, {
-      descendants: [],
-    }),
-  )
+  const rootParent = {
+    descendants: [] as MessageNode[],
+  }
 
-  tree.forEach((rootNode) => {
-    rootNode.parent.descendants = tree
-  })
+  const tree = rootMessages.map((rootMessage) => buildNode(rootMessage, rootParent))
+
+  rootParent.descendants = tree
 
   return {
     tree,
-    latest: latest!,
     allMessages: allOrderedMessages,
   }
+}
+
+function findNodeById(tree: MessageNode[], id: string): MessageNode | undefined {
+  for (const node of tree) {
+    if (node.message.id === id) {
+      return node
+    }
+    const found = findNodeById(node.descendants, id)
+    if (found) {
+      return found
+    }
+  }
+  return undefined
+}
+
+function findLatestBranch(
+  node: { message?: Message; descendants: MessageNode[] },
+  include?: boolean,
+): MessageNode[] {
+  // Find the latest descendant node (node with maximum id)
+  let latest: MessageNode | undefined = undefined
+  let maxId = ''
+
+  // Recursively search through all descendants to find the node with maximum id
+  function findLatest(node: { message?: Message; descendants: MessageNode[] }): void {
+    for (const descendant of node.descendants) {
+      if (descendant.message.id > maxId) {
+        maxId = descendant.message.id
+        latest = descendant
+      }
+      findLatest(descendant)
+    }
+  }
+
+  findLatest(node)
+
+  // Build path from latest node back to input node (excluded)
+  const path: MessageNode[] = []
+  let current = latest as MessageNode | undefined
+
+  while (current && current !== node) {
+    path.push(current)
+    // Navigate up to parent
+    current = current.parent.message ? current.parent : undefined
+  }
+
+  if (include && node.message) {
+    path.push(node as MessageNode)
+  }
+
+  // Reverse the path to get the correct order
+  return path.reverse()
 }
 
 function isMessagesChanged(allNewMessages: Message[], oldAllMessages: Message[]) {

@@ -28,7 +28,7 @@ export function Chat() {
   const { branch, branchRef, navigate, isLoading, isSuccess, hasNextPage, isChatLoading } =
     useBuildMessageTree()
 
-  const { addCachedMessage, updateCachedMessage, deleteCachedMessage } = useCachedMessage(chat)
+  const { addCachedMessage, updateCachedMessage, deleteCachedMessage: _ } = useCachedMessage(chat)
 
   const prepareSendMessagesRequest = useCallback(
     ({
@@ -223,9 +223,9 @@ export function Chat() {
 
       void addCachedMessage(newLastMessage)
     } else {
-      if (foundNode.descendants.length) {
+      /* if (foundNode.descendants.length) {
         void deleteCachedMessage(lastUIMessage.id)
-      }
+      } */
 
       const newLastMessage = {
         ...foundNode.message,
@@ -237,7 +237,7 @@ export function Chat() {
 
       void updateCachedMessage(newLastMessage)
     }
-  }, [addCachedMessage, updateCachedMessage, deleteCachedMessage, branchRef, chat, persona])
+  }, [addCachedMessage, updateCachedMessage, branchRef, chat, persona])
 
   const onMessagesChangeRef = useRef(onMessagesChange)
   useEffect(() => {
@@ -301,11 +301,43 @@ export function Chat() {
 
   const pseudoMessageIdRef = useRef('')
 
-  const swipe = useCallback(
-    (node: MessageNode) => {
-      if (!chatId) {
+  const refresh = useCallback(
+    async (node: MessageNode) => {
+      if (node.message.role !== 'assistant' || !node.parent.message) {
         return
       }
+
+      const newMessage = {
+        ...node.message,
+        content: {
+          parts: [],
+          metadata: node.message.content.metadata,
+        },
+      }
+
+      await updateMessage(node.message.id, newMessage.content)
+
+      // regenerate() will remove the last assistant message, so we add a pseudo message
+      const pseudoMessage = {
+        ...structuredClone(newMessage),
+        id: generateMessageId(),
+        parentId: newMessage.id,
+      }
+      pseudoMessageIdRef.current = pseudoMessage.id
+      setMessages(
+        toUIMessages([
+          newMessage,
+          pseudoMessage,
+        ]),
+      )
+
+      void chatRef.current.regenerate()
+    },
+    [setMessages, updateMessage],
+  )
+
+  const swipe = useCallback(
+    (node: MessageNode) => {
       if (node !== node.parent.descendants.at(-1) || !node.parent.message) {
         return
       }
@@ -337,7 +369,11 @@ export function Chat() {
         },
       }
 
+      setTimeout(() => navigate(node.message.id, false), 10)
+
       void createMessage(newMessage).then(() => {
+        navigate(node.message.id, false)
+
         if (node.message.role === 'assistant') {
           // regenerate() will remove the last assistant message, so we add a pseudo message
           const pseudoMessage = {
@@ -361,14 +397,25 @@ export function Chat() {
         setEditMessageId(newMessage.id)
       }
     },
-    [chatId, createMessage, setMessages],
+    [createMessage, navigate, setMessages],
   )
 
   const edit = useCallback(
-    (node: MessageNode, content: MessageContent) => {
-      void updateMessage(node.message.id, content)
+    async (node: MessageNode, content: MessageContent, regenerate: boolean) => {
+      await updateMessage(node.message.id, content)
+
+      setTimeout(() => {
+        if (regenerate) {
+          const message = branchRef.current.find((m) => m.message.id === node.message.id)?.message
+          if (!message) {
+            return
+          }
+          setMessages(toUIMessages([message]))
+          void chatRef.current.regenerate()
+        }
+      }, 0)
     },
-    [updateMessage],
+    [branchRef, setMessages, updateMessage],
   )
 
   return (
@@ -387,6 +434,7 @@ export function Chat() {
           messages={branch}
           status={status}
           navigate={navigate}
+          refresh={refresh}
           swipe={swipe}
           edit={edit}
           editMessageId={editMessageId}

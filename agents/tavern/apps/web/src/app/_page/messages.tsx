@@ -16,6 +16,7 @@ function PureMessages({
   messages,
   status,
   navigate,
+  refresh,
   swipe,
   edit,
   editMessageId,
@@ -29,8 +30,9 @@ function PureMessages({
   messages: MessageNode[]
   status: UseChatHelpers<UIMessage>['status']
   navigate: (current: MessageNode, previous: boolean) => void
+  refresh: (current: MessageNode) => void
   swipe: (current: MessageNode) => void
-  edit: (current: MessageNode, content: MessageContent) => void
+  edit: (current: MessageNode, content: MessageContent, regenerate: boolean) => Promise<void>
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
   scrollTo: (index?: number | 'bottom') => void
@@ -60,9 +62,11 @@ function PureMessages({
           siblingIndex={indices[i]!.index}
           siblingCount={indices[i]!.count}
           isRoot={!message.parent.message}
+          isLast={!message.descendants.length}
           navigate={(previous) => navigate(message, previous)}
+          refresh={() => refresh(message)}
           swipe={() => swipe(message)}
-          edit={(content) => edit(message, content)}
+          edit={(content, regenerate) => edit(message, content, regenerate)}
           editMessageId={editMessageId}
           setEditMessageId={setEditMessageId}
           scrollTo={scrollTo}

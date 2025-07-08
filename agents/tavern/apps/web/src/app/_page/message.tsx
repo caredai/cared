@@ -15,22 +15,22 @@ import {
   faPaintbrush,
   faPaperclip,
   faPencil,
+  faRotate,
   faTrashCan,
 } from '@fortawesome/free-solid-svg-icons'
 import { format } from 'date-fns'
 import { AnimatePresence, motion } from 'motion/react'
 
-import { MessageTextEdit } from '@/app/_page/message-edit'
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
-import { Markdown } from '@/components/markdown'
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useActivePersona } from '@/hooks/use-persona'
 import defaultPng from '@/public/images/user-default.png'
 import { DeleteMessageDialog } from './delete-message-dialog'
 import { MessageReasoning } from './message-reasoning'
-import { formatMessage } from './utils'
+import { MessageText } from './message-text'
 
+const MAX_SIBLING_COUNT = 8
 const SLIDE_OFFSET = '50dvw'
 
 const PurePreviewMessage = ({
@@ -41,7 +41,9 @@ const PurePreviewMessage = ({
   siblingIndex,
   siblingCount,
   isRoot,
+  isLast,
   navigate,
+  refresh,
   swipe,
   edit,
   editMessageId,
@@ -55,9 +57,11 @@ const PurePreviewMessage = ({
   siblingIndex: number
   siblingCount: number
   isRoot: boolean
+  isLast: boolean
   navigate: (previous: boolean) => void
+  refresh: () => void
   swipe: () => void
-  edit: (content: MessageContent) => void
+  edit: (content: MessageContent, regenerate: boolean) => Promise<void>
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
   scrollTo: (index?: number | 'bottom') => void
@@ -121,14 +125,20 @@ const PurePreviewMessage = ({
       action: handleCopyText,
     },
     {
-      icon: faTrashCan,
-      tooltip: 'Delete message',
-      wrapper: DeleteMessageDialog,
+      icon: faRotate,
+      tooltip: 'Regenerate message',
+      action: refresh,
+      role: 'assistant',
     },
     {
       icon: faPencil,
-      tooltip: 'Edit',
+      tooltip: 'Edit message',
       action: () => setEditMessageId(message.id),
+    },
+    {
+      icon: faTrashCan,
+      tooltip: 'Delete message',
+      wrapper: DeleteMessageDialog,
     },
   ]
 
@@ -226,7 +236,10 @@ const PurePreviewMessage = ({
               </span>
             </div>
             <div className="w-full md:w-auto flex justify-end md:justify-between items-center gap-2">
-              {operateActions.map(({ icon, tooltip, action, wrapper: Wrapper }) => {
+              {operateActions.map(({ icon, tooltip, action, wrapper: Wrapper, role: roleWant }) => {
+                if (roleWant && role !== roleWant) {
+                  return
+                }
                 const btn = (
                   <FaButton
                     key={tooltip}
@@ -289,36 +302,41 @@ const PurePreviewMessage = ({
                     }
 
                     if (type === 'text') {
-                      if (mode === 'view') {
-                        return (
-                          <div key={key} className="flex flex-col gap-2">
-                            <Markdown>{formatMessage(part.text)}</Markdown>
-                          </div>
-                        )
-                      } else {
-                        return (
-                          <MessageTextEdit
-                            key={key}
-                            ref={partIndex === firstTextEditIndex ? firstTextEditRef : undefined}
-                            text={part.text}
-                            onTextChange={(text) => {
-                              edit({
-                                parts: [
-                                  ...parts.slice(0, partIndex),
-                                  {
-                                    ...part,
-                                    text,
-                                  },
-                                  ...parts.slice(partIndex + 1),
-                                ],
-                                metadata,
-                              })
+                      return (
+                        <MessageText
+                          key={key}
+                          ref={partIndex === firstTextEditIndex ? firstTextEditRef : undefined}
+                          mode={mode}
+                          text={part.text}
+                          onTextChange={(text, isEnter) => {
+                            const newParts = [
+                              ...parts.slice(0, partIndex),
+                              {
+                                ...part,
+                                text,
+                              },
+                              ...parts.slice(partIndex + 1),
+                            ]
 
-                              setEditMessageId('')
-                            }}
-                          />
-                        )
-                      }
+                            const regenerate =
+                              (role === 'user' &&
+                                isLast &&
+                                isEnter &&
+                                newParts.some((part) => part.type === 'text' && part.text)) ??
+                              false
+
+                            void edit(
+                              {
+                                parts: newParts,
+                                metadata,
+                              },
+                              regenerate,
+                            )
+
+                            setEditMessageId('')
+                          }}
+                        />
+                      )
                     }
                   })}
                 </div>
@@ -343,11 +361,14 @@ const PurePreviewMessage = ({
                   title="Swipe right"
                   btnSize="size-4"
                   iconSize="1x"
-                  disabled={siblingIndex === siblingCount - 1 && isRoot && role !== 'user'}
+                  disabled={
+                    siblingIndex === siblingCount - 1 &&
+                    ((isRoot && role !== 'user') || siblingCount >= MAX_SIBLING_COUNT)
+                  }
                   onClick={() => {
                     if (siblingIndex < siblingCount - 1) {
                       handleNavigate(false)
-                    } else if (!isRoot || role === 'user') {
+                    } else if ((!isRoot || role === 'user') && siblingCount < MAX_SIBLING_COUNT) {
                       handleSwipe()
                     }
                   }}
