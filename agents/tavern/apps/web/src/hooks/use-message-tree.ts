@@ -117,10 +117,10 @@ export function useBuildMessageTree() {
         return
       }
 
-      const isRoot = tree.tree.find((node) => node === current)
+      const isRoot = tree.tree.find((node) => node.message.id === current.message.id)
       const siblings = isRoot ? tree.tree : current.parent.descendants
 
-      const index = siblings.findIndex((node) => node === current)
+      const index = siblings.findIndex((node) => node.message.id === current.message.id)
       if (index < 0) {
         return
       }
@@ -142,7 +142,7 @@ export function useBuildMessageTree() {
       }
 
       setBranch((branch) => {
-        const position = branch.findIndex((m) => m === current)
+        const position = branch.findIndex((m) => m.message.id === current.message.id)
         if (position < 0) {
           return branch
         }

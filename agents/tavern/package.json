@@ -1,5 +1,5 @@
 {
-  "name": "create-t3-turbo",
+  "name": "cryptotavern",
   "private": true,
   "engines": {
     "node": ">=22.10.0",

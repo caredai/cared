@@ -18,20 +18,20 @@ config.autoAddCss = false
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    env.VERCEL_ENV === 'production' ? 'https://turbo.t3.gg' : 'http://localhost:3000',
+    env.VERCEL_ENV === 'production' ? 'https://cryptotavern.dev' : 'http://localhost:3000',
   ),
-  title: 'Create T3 Turbo',
-  description: 'Simple monorepo with shared backend for web & mobile apps',
+  title: 'CryptoTavern | Immersive Conversational AI Platform',
+  description: 'AI roleplay, lorebook, memory, prompt engineering',
   openGraph: {
-    title: 'Create T3 Turbo',
-    description: 'Simple monorepo with shared backend for web & mobile apps',
-    url: 'https://create-t3-turbo.vercel.app',
-    siteName: 'Create T3 Turbo',
+    title: 'CryptoTavern | Immersive Conversational AI Platform',
+    description: 'AI roleplay, lorebook, memory, prompt engineering',
+    url: 'https://cryptotavern.dev',
+    siteName: 'CryptoTavern',
   },
   twitter: {
     card: 'summary_large_image',
-    site: '@jullerino',
-    creator: '@jullerino',
+    site: '@Crypto_Tavern',
+    creator: '@deckard2079',
   },
 }
 

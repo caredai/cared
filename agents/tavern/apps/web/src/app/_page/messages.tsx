@@ -31,7 +31,7 @@ function PureMessages({
   chatId?: string
   messages: MessageNode[]
   status: UseChatHelpers<UIMessage>['status']
-  navigate: (current: MessageNode, previous: boolean) => void
+  navigate: (current: string, previous: boolean) => void
   refresh: (current: MessageNode) => void
   swipe: (current: MessageNode) => void
   edit: (current: MessageNode, content: MessageContent, regenerate: boolean) => Promise<void>
@@ -75,7 +75,7 @@ function PureMessages({
               siblingCount={indices[i]!.count}
               isRoot={!message.parent.message}
               isLast={!message.descendants.length}
-              navigate={(previous) => navigate(message, previous)}
+              navigate={(previous) => navigate(message.message.id, previous)}
               refresh={() => refresh(message)}
               swipe={() => swipe(message)}
               edit={(content, regenerate) => edit(message, content, regenerate)}
