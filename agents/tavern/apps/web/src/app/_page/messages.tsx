@@ -22,6 +22,8 @@ function PureMessages({
   editMessageId,
   setEditMessageId,
   scrollTo,
+  generatingMessageId,
+  elapsedSeconds,
 }: {
   ref: RefObject<VListHandle | null>
   endRef: RefObject<HTMLDivElement | null>
@@ -36,6 +38,8 @@ function PureMessages({
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
   scrollTo: (index?: number | 'bottom') => void
+  generatingMessageId?: string
+  elapsedSeconds: number
 }) {
   const indices = useMemo(() => {
     return messages.map((message) => {
@@ -49,31 +53,44 @@ function PureMessages({
   }, [messages])
 
   return (
-    <VList ref={ref}>
-      {messages.map((message, i) => (
-        <PreviewMessage
-          key={`${chatId ?? ''}-${i}`}
-          chatRef={chatRef}
-          message={message.message}
-          isLoading={
-            (status === 'submitted' || status === 'streaming') && messages.length - 1 === i
-          }
-          index={i}
-          siblingIndex={indices[i]!.index}
-          siblingCount={indices[i]!.count}
-          isRoot={!message.parent.message}
-          isLast={!message.descendants.length}
-          navigate={(previous) => navigate(message, previous)}
-          refresh={() => refresh(message)}
-          swipe={() => swipe(message)}
-          edit={(content, regenerate) => edit(message, content, regenerate)}
-          editMessageId={editMessageId}
-          setEditMessageId={setEditMessageId}
-          scrollTo={scrollTo}
-        />
-      ))}
+    <VList ref={ref} count={messages.length + 1}>
+      {(i) => {
+        const message = messages[i]
+        const key = `${chatId ?? ''}-${i}`
 
-      <motion.div ref={endRef} className="shrink-0 min-w-[24px] min-h-[24px]" />
+        const isGenerating =
+          (status === 'submitted' || status === 'streaming') &&
+          !!generatingMessageId &&
+          generatingMessageId === message?.message.id
+
+        if (message) {
+          return (
+            <PreviewMessage
+              key={key}
+              chatRef={chatRef}
+              message={message.message}
+              isGenerating={isGenerating}
+              index={i}
+              siblingIndex={indices[i]!.index}
+              siblingCount={indices[i]!.count}
+              isRoot={!message.parent.message}
+              isLast={!message.descendants.length}
+              navigate={(previous) => navigate(message, previous)}
+              refresh={() => refresh(message)}
+              swipe={() => swipe(message)}
+              edit={(content, regenerate) => edit(message, content, regenerate)}
+              editMessageId={editMessageId}
+              setEditMessageId={setEditMessageId}
+              scrollTo={scrollTo}
+              elapsedSeconds={isGenerating ? elapsedSeconds : undefined}
+            />
+          )
+        } else {
+          return (
+            <motion.div key={key} ref={endRef} className="shrink-0 min-w-[24px] min-h-[24px]" />
+          )
+        }
+      }}
     </VList>
   )
 }

@@ -15,7 +15,7 @@ import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage, useCreateMessage, useUpdateMessage } from '@/hooks/use-message'
 import { useBuildMessageTree } from '@/hooks/use-message-tree'
 import { ContentArea } from './content-area'
-import { useCallWhenGenerating } from './hooks'
+import { useCallWhenGenerating, useGeneratingTimer } from './hooks'
 import { Messages } from './messages'
 import { MultimodalInput } from './multimodal-input'
 import { fetchWithErrorHandlers } from './utils'
@@ -25,10 +25,15 @@ export function Chat() {
 
   const chatId = chat?.id
 
-  const { branch, branchRef, navigate, isLoading, isSuccess, hasNextPage, isChatLoading } =
+  const { branch, branchRef, navigate, update, isLoading, isSuccess, hasNextPage, isChatLoading } =
     useBuildMessageTree()
 
+  const createMessage = useCreateMessage(chatId)
+  const updateMessage = useUpdateMessage(chatId)
   const { addCachedMessage, updateCachedMessage, deleteCachedMessage: _ } = useCachedMessage(chat)
+
+  const [generatingMessageId, setGeneratingMessageId] = useState('')
+  const { startTimer, stopTimer, elapsedSeconds } = useGeneratingTimer()
 
   const prepareSendMessagesRequest = useCallback(
     ({
@@ -54,7 +59,7 @@ export function Chat() {
       let lastMessage
       let isLastNew = false
       let isContinuation = false
-      const deleteTrailing = !!node?.descendants.length
+      const deleteTrailing = false
 
       switch (trigger) {
         case 'submit-user-message':
@@ -93,7 +98,7 @@ export function Chat() {
                 ...node.message,
                 content: {
                   parts: uiMessage.parts,
-                  metadata: uiMessage.metadata ?? node.message.content.metadata,
+                  metadata: node.message.content.metadata,
                 },
               }
 
@@ -115,8 +120,14 @@ export function Chat() {
 
             if (trigger === 'regenerate-assistant-message' && lastMessage.role === 'assistant') {
               messages = messages.slice(0, nodeIndex)
+
+              setGeneratingMessageId(lastMessage.id)
             } else {
               messages = messages.slice(0, nodeIndex + 1)
+
+              if (trigger === 'submit-tool-result') {
+                setGeneratingMessageId(lastMessage.id)
+              }
             }
           }
           break
@@ -141,6 +152,8 @@ export function Chat() {
         group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
       })
 
+      startTimer()
+
       return {
         body: {
           id,
@@ -155,13 +168,58 @@ export function Chat() {
         },
       }
     },
-    [branchRef, charOrGroup, chat, model, modelPreset, persona, settings],
+    [branchRef, charOrGroup, chat, model, modelPreset, persona, settings, startTimer],
   )
 
   const prepareSendMessagesRequestRef = useRef(prepareSendMessagesRequest)
   useEffect(() => {
     prepareSendMessagesRequestRef.current = prepareSendMessagesRequest
   }, [prepareSendMessagesRequest])
+
+  const onFinish = useCallback(
+    (message: UIMessage) => {
+      const generationSeconds = stopTimer()
+      update(message.id, (message) => ({
+        ...message,
+        content: {
+          ...message.content,
+          metadata: {
+            ...message.content.metadata,
+            generationSeconds,
+          },
+        },
+      }))
+      void updateMessage(message.id, {
+        parts: message.parts,
+        metadata: {
+          ...message.metadata,
+          generationSeconds,
+        },
+      })
+      setGeneratingMessageId('')
+      console.log('onFinish, message:', message, 'generationSeconds:', generationSeconds)
+    },
+    [update, updateMessage, stopTimer],
+  )
+
+  const onFinishRef = useRef(onFinish)
+  useEffect(() => {
+    onFinishRef.current = onFinish
+  }, [onFinish])
+
+  const onError = useCallback(
+    (error: Error) => {
+      setGeneratingMessageId('')
+      stopTimer()
+      console.error('onError', error)
+    },
+    [stopTimer],
+  )
+
+  const onErrorRef = useRef(onError)
+  useEffect(() => {
+    onErrorRef.current = onError
+  }, [onError])
 
   const chatRef = useRef(
     new AIChat({
@@ -173,8 +231,8 @@ export function Chat() {
         prepareSendMessagesRequest: (args: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) =>
           prepareSendMessagesRequestRef.current(args),
       }),
-      onFinish: (...args) => console.log('onFinish', ...args),
-      onError: (error) => console.error('onError', error),
+      onFinish: ({ message }) => onFinishRef.current(message),
+      onError: (error) => onErrorRef.current(error),
     }),
   )
 
@@ -200,6 +258,10 @@ export function Chat() {
 
     if (!foundNode) {
       const parentId = branchRef.current.at(-1)?.message.id
+
+      if (lastUIMessage.role === 'assistant') {
+        setGeneratingMessageId(lastUIMessage.id)
+      }
 
       const newLastMessage = {
         id: lastUIMessage.id,
@@ -231,13 +293,17 @@ export function Chat() {
         ...foundNode.message,
         content: {
           parts: lastUIMessage.parts,
-          metadata: lastUIMessage.metadata ?? foundNode.message.content.metadata,
+          metadata: {
+            ...lastUIMessage.metadata,
+            ...foundNode.message.content.metadata,
+            ...(lastUIMessage.role === 'assistant' && { generationSeconds: elapsedSeconds }),
+          },
         },
       }
 
       void updateCachedMessage(newLastMessage)
     }
-  }, [addCachedMessage, updateCachedMessage, branchRef, chat, persona])
+  }, [addCachedMessage, updateCachedMessage, branchRef, chat, persona, elapsedSeconds])
 
   const onMessagesChangeRef = useRef(onMessagesChange)
   useEffect(() => {
@@ -245,12 +311,11 @@ export function Chat() {
   }, [onMessagesChange])
 
   useEffect(() => {
-    return chatRef.current['~registerMessagesCallback'](() => onMessagesChangeRef.current(), 100)
+    return chatRef.current['~registerMessagesCallback'](() => onMessagesChangeRef.current())
   }, [])
 
   const { setMessages, status } = useChat<UIMessage>({
     chat: chatRef.current,
-    experimental_throttle: 100,
   })
 
   const ref = useRef<VListHandle>(null)
@@ -295,9 +360,6 @@ export function Chat() {
   const [input, setInput] = useState('')
 
   const [editMessageId, setEditMessageId] = useState('')
-
-  const createMessage = useCreateMessage(chatId)
-  const updateMessage = useUpdateMessage(chatId)
 
   const pseudoMessageIdRef = useRef('')
 
@@ -348,7 +410,7 @@ export function Chat() {
         personaName,
         characterId,
         modelId,
-        summary,
+        summary, // TODO
       }
 
       const newMessage = {
@@ -440,6 +502,8 @@ export function Chat() {
           editMessageId={editMessageId}
           setEditMessageId={setEditMessageId}
           scrollTo={scrollTo}
+          generatingMessageId={generatingMessageId}
+          elapsedSeconds={elapsedSeconds}
         />
       </ContentArea>
 

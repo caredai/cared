@@ -10,11 +10,11 @@ import { Markdown } from '@/components/markdown'
 import { Spinner } from '@/components/spinner'
 
 interface MessageReasoningProps {
-  isLoading: boolean
+  isGenerating: boolean
   reasoning: string
 }
 
-export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps) {
+export function MessageReasoning({ isGenerating, reasoning }: MessageReasoningProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const variants = {
@@ -34,7 +34,7 @@ export function MessageReasoning({ isLoading, reasoning }: MessageReasoningProps
 
   return (
     <div className="flex flex-col text-zinc-400 text-sm">
-      {isLoading ? (
+      {isGenerating ? (
         <div className="flex gap-2 items-center">
           <div className="font-medium">Reasoning</div>
           <Spinner />

@@ -22,11 +22,13 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format } from 'date-fns'
 import { AnimatePresence, motion } from 'motion/react'
+import hash from 'stable-hash'
 
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useActivePersona } from '@/hooks/use-persona'
+import { cn } from '@/lib/utils'
 import defaultPng from '@/public/images/user-default.png'
 import { CloneChatDialog } from './clone-chat-dialog'
 import { DeleteMessageDialog } from './delete-message-dialog'
@@ -39,7 +41,7 @@ const SLIDE_OFFSET = '50dvw'
 const PurePreviewMessage = ({
   chatRef: _,
   message,
-  isLoading,
+  isGenerating,
   index,
   siblingIndex,
   siblingCount,
@@ -52,10 +54,11 @@ const PurePreviewMessage = ({
   editMessageId,
   setEditMessageId,
   scrollTo,
+  elapsedSeconds,
 }: {
   chatRef: RefObject<AIChat<UIMessage>>
   message: Message
-  isLoading: boolean
+  isGenerating: boolean
   index: number
   siblingIndex: number
   siblingCount: number
@@ -68,6 +71,7 @@ const PurePreviewMessage = ({
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
   scrollTo: (index?: number | 'bottom') => void
+  elapsedSeconds?: number
 }) => {
   const role = message.role
   const parts = message.content.parts
@@ -168,9 +172,9 @@ const PurePreviewMessage = ({
     if (mode === 'edit') {
       // Use setTimeout to ensure the component is fully rendered
       setTimeout(() => {
-        firstTextEditRef.current?.focus()
+        scrollTo(index + 1)
         setTimeout(() => {
-          scrollTo(index + 1)
+          firstTextEditRef.current?.focus()
         }, 3)
       }, 100)
     }
@@ -219,7 +223,8 @@ const PurePreviewMessage = ({
     slideDirection === 'left' ? '-' + SLIDE_OFFSET : slideDirection === 'right' ? SLIDE_OFFSET : 0
   const slideOpacity = slideDirection ? 0 : 1
 
-  const noContent = !parts.some(
+  const noContent = !parts.some((part) => part.type === 'text' && part.text)
+  const empty = !parts.some(
     (part) => (part.type === 'reasoning' || part.type === 'text') && part.text,
   )
 
@@ -227,14 +232,21 @@ const PurePreviewMessage = ({
     <AnimatePresence>
       <motion.div
         className="w-full flex gap-2 px-1.5 pt-2.5 pb-1 overflow-x-hidden"
-        initial={{ y: 5, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
       >
-        <div>
+        <div className="flex flex-col gap-0.5">
           {char ? (
             <CharacterAvatar src={char.metadata.url} alt={char.content.data.name} />
           ) : (
             persona && <CharacterAvatar src={persona.imageUrl ?? defaultPng} alt={persona.name} />
+          )}
+
+          <span className="text-xs text-ring text-center">#{index + 1}</span>
+          {(isGenerating || typeof metadata.generationSeconds === 'number') && (
+            <span className="text-xs text-ring text-center">
+              {isGenerating ? (elapsedSeconds ?? 0) : metadata.generationSeconds}s
+            </span>
           )}
         </div>
 
@@ -298,7 +310,7 @@ const PurePreviewMessage = ({
                 }}
               >
                 <div className="flex flex-col gap-2 w-full text-[rgb(220,220,210)]">
-                  {isLoading && noContent && (
+                  {isGenerating && empty && (
                     <span className="inline-block bg-gradient-to-r from-primary-foreground via-muted-foreground to-accent-foreground bg-clip-text text-transparent animate-text">
                       . . .
                     </span>
@@ -309,7 +321,11 @@ const PurePreviewMessage = ({
 
                     if (type === 'reasoning') {
                       return (
-                        <MessageReasoning key={key} isLoading={isLoading} reasoning={part.text} />
+                        <MessageReasoning
+                          key={key}
+                          isGenerating={!part.text && noContent}
+                          reasoning={part.text}
+                        />
                       )
                     }
 
@@ -358,25 +374,31 @@ const PurePreviewMessage = ({
             <div className="relative w-15">
               <div className="absolute bottom-1 right-0 flex items-center">
                 <FaButton
+                  className={cn(siblingIndex === 0 && 'opacity-0')}
+                  disabled={siblingIndex === 0}
                   icon={faChevronLeft}
                   title="Swipe left"
                   btnSize="size-4"
                   iconSize="1x"
-                  disabled={siblingIndex === 0}
                   onClick={() => handleNavigate(true)}
                 />
-                <span className="text-xs text-ring">
+                <span className={cn('text-xs text-ring', siblingCount === 1 && 'opacity-0')}>
                   {siblingIndex + 1}/{siblingCount}
                 </span>
                 <FaButton
-                  icon={faChevronRight}
-                  title="Swipe right"
-                  btnSize="size-4"
-                  iconSize="1x"
+                  className={cn(
+                    siblingIndex === siblingCount - 1 &&
+                      ((isRoot && role !== 'user') || siblingCount >= MAX_SIBLING_COUNT) &&
+                      'opacity-0',
+                  )}
                   disabled={
                     siblingIndex === siblingCount - 1 &&
                     ((isRoot && role !== 'user') || siblingCount >= MAX_SIBLING_COUNT)
                   }
+                  icon={faChevronRight}
+                  title="Swipe right"
+                  btnSize="size-4"
+                  iconSize="1x"
                   onClick={() => {
                     if (siblingIndex < siblingCount - 1) {
                       handleNavigate(false)
@@ -394,4 +416,16 @@ const PurePreviewMessage = ({
   )
 }
 
-export const PreviewMessage = memo(PurePreviewMessage)
+export const PreviewMessage = memo(PurePreviewMessage, (prevProps, nextProps) => {
+  if (hash(prevProps.message) !== hash(nextProps.message)) return false
+  if (prevProps.isGenerating !== nextProps.isGenerating) return false
+  if (prevProps.index !== nextProps.index) return false
+  if (prevProps.siblingIndex !== nextProps.siblingIndex) return false
+  if (prevProps.siblingCount !== nextProps.siblingCount) return false
+  if (prevProps.isRoot !== nextProps.isRoot) return false
+  if (prevProps.isLast !== nextProps.isLast) return false
+  if (prevProps.editMessageId !== nextProps.editMessageId) return false
+  if (prevProps.elapsedSeconds !== nextProps.elapsedSeconds) return false
+
+  return true
+})
