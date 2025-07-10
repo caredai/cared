@@ -1,9 +1,9 @@
 import type { Chat as AIChat, UseChatHelpers } from '@ai-sdk/react'
 import type { MessageContent, MessageNode, UIMessage } from '@tavern/core'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-import type { VListHandle } from 'virtua'
+import type { ScrollToIndexAlign, VListHandle } from 'virtua'
 import { memo, useMemo } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { VList } from 'virtua'
 
 import { PreviewMessage } from '@/app/_page/message'
@@ -37,7 +37,13 @@ function PureMessages({
   edit: (current: MessageNode, content: MessageContent, regenerate: boolean) => Promise<void>
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
-  scrollTo: (index?: number | 'bottom') => void
+  scrollTo: (
+    index?: number,
+    opts?: {
+      align?: ScrollToIndexAlign
+      smooth?: boolean
+    },
+  ) => void
   generatingMessageId?: string
   elapsedSeconds: number
 }) {
@@ -53,45 +59,62 @@ function PureMessages({
   }, [messages])
 
   return (
-    <VList ref={ref} count={messages.length + 1}>
-      {(i) => {
-        const message = messages[i]
-        const key = `${chatId ?? ''}-${i}`
-
-        const isGenerating =
-          (status === 'submitted' || status === 'streaming') &&
-          !!generatingMessageId &&
-          generatingMessageId === message?.message.id
-
-        if (message) {
-          return (
-            <PreviewMessage
-              key={key}
-              chatRef={chatRef}
-              message={message.message}
-              isGenerating={isGenerating}
-              index={i}
-              siblingIndex={indices[i]!.index}
-              siblingCount={indices[i]!.count}
-              isRoot={!message.parent.message}
-              isLast={!message.descendants.length}
-              navigate={(previous) => navigate(message.message.id, previous)}
-              refresh={() => refresh(message)}
-              swipe={() => swipe(message)}
-              edit={(content, regenerate) => edit(message, content, regenerate)}
-              editMessageId={editMessageId}
-              setEditMessageId={setEditMessageId}
-              scrollTo={scrollTo}
-              elapsedSeconds={isGenerating ? elapsedSeconds : undefined}
-            />
-          )
-        } else {
-          return (
-            <motion.div key={key} ref={endRef} className="shrink-0 min-w-[24px] min-h-[24px]" />
-          )
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={chatId}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        onAnimationStart={() =>
+          scrollTo(undefined, {
+            smooth: false,
+          })
         }
-      }}
-    </VList>
+        className="w-full h-full"
+      >
+        <VList ref={ref} count={messages.length + 1} className="scrollbar-stable">
+          {(i) => {
+            const message = messages[i]
+            const key = `${chatId ?? ''}-${i}`
+
+            const isGenerating =
+              (status === 'submitted' || status === 'streaming') &&
+              !!generatingMessageId &&
+              generatingMessageId === message?.message.id
+
+            if (message) {
+              return (
+                <PreviewMessage
+                  key={key}
+                  chatRef={chatRef}
+                  message={message.message}
+                  status={status}
+                  isGenerating={isGenerating}
+                  index={i}
+                  siblingIndex={indices[i]!.index}
+                  siblingCount={indices[i]!.count}
+                  isRoot={!message.parent.message}
+                  isLast={!message.descendants.length}
+                  navigate={(previous) => navigate(message.message.id, previous)}
+                  refresh={() => refresh(message)}
+                  swipe={() => swipe(message)}
+                  edit={(content, regenerate) => edit(message, content, regenerate)}
+                  editMessageId={editMessageId}
+                  setEditMessageId={setEditMessageId}
+                  scrollTo={scrollTo}
+                  elapsedSeconds={isGenerating ? elapsedSeconds : undefined}
+                />
+              )
+            } else {
+              return (
+                <motion.div key={key} ref={endRef} className="shrink-0 min-w-[24px] min-h-[24px]" />
+              )
+            }
+          }}
+        </VList>
+      </motion.div>
+    </AnimatePresence>
   )
 }
 

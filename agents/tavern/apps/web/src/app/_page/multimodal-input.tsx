@@ -3,7 +3,7 @@
 import type { Chat as AIChat, UseChatHelpers } from '@ai-sdk/react'
 import type { MessageNode, UIMessage } from '@tavern/core'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
   faBars,
   faCircleStop,
@@ -23,7 +23,6 @@ export function MultimodalInput({
   chatRef,
   status,
   setMessages,
-  scrollToBottom,
   disabled,
 }: {
   input: string
@@ -32,15 +31,8 @@ export function MultimodalInput({
   chatRef: RefObject<AIChat<UIMessage>>
   status: UseChatHelpers<UIMessage>['status']
   setMessages: UseChatHelpers<UIMessage>['setMessages']
-  scrollToBottom: () => void
   disabled: boolean
 }) {
-  useEffect(() => {
-    if (status === 'submitted') {
-      scrollToBottom()
-    }
-  }, [status, scrollToBottom])
-
   const [lastIsUserMessage, lastMessage] = useMemo(() => {
     const lastMessage = messagesRef.current.at(-1)?.message
     const hasContent = !!lastMessage?.content.parts.filter(

@@ -1,7 +1,7 @@
 import assert from 'assert'
 import type { Message, MessageContent, MessageMetadata, MessageNode, UIMessage } from '@tavern/core'
 import type { PrepareSendMessagesRequest } from 'ai'
-import type { VListHandle } from 'virtua'
+import type { ScrollToIndexAlign, VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat as AIChat, useChat } from '@ai-sdk/react'
 import { buildPromptMessages, toUIMessages } from '@tavern/core'
@@ -15,7 +15,7 @@ import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage, useCreateMessage, useUpdateMessage } from '@/hooks/use-message'
 import { useBuildMessageTree } from '@/hooks/use-message-tree'
 import { ContentArea } from './content-area'
-import { useCallWhenGenerating, useGeneratingTimer } from './hooks'
+import { useGeneratingTimer } from './hooks'
 import { Messages } from './messages'
 import { MultimodalInput } from './multimodal-input'
 import { fetchWithErrorHandlers } from './utils'
@@ -25,14 +25,14 @@ export function Chat() {
 
   const chatId = chat?.id
 
-  const { branch, branchRef, navigate, update, isLoading, isSuccess, hasNextPage, isChatLoading } =
+  const { branch, branchRef, navigate, update, isLoading, hasNextPage, isChatLoading } =
     useBuildMessageTree()
 
   const createMessage = useCreateMessage(chatId)
   const updateMessage = useUpdateMessage(chatId)
   const { addCachedMessage, updateCachedMessage, deleteCachedMessage: _ } = useCachedMessage(chat)
 
-  const [generatingMessageId, setGeneratingMessageId] = useState('')
+  const generatingMessageIdRef = useRef('')
   const { startTimer, stopTimer, elapsedSeconds } = useGeneratingTimer()
 
   const prepareSendMessagesRequest = useCallback(
@@ -121,12 +121,12 @@ export function Chat() {
             if (trigger === 'regenerate-assistant-message' && lastMessage.role === 'assistant') {
               messages = messages.slice(0, nodeIndex)
 
-              setGeneratingMessageId(lastMessage.id)
+              generatingMessageIdRef.current = lastMessage.id
             } else {
               messages = messages.slice(0, nodeIndex + 1)
 
               if (trigger === 'submit-tool-result') {
-                setGeneratingMessageId(lastMessage.id)
+                generatingMessageIdRef.current = lastMessage.id
               }
             }
           }
@@ -196,7 +196,7 @@ export function Chat() {
           generationSeconds,
         },
       })
-      setGeneratingMessageId('')
+      generatingMessageIdRef.current = ''
       console.log('onFinish, message:', message, 'generationSeconds:', generationSeconds)
     },
     [update, updateMessage, stopTimer],
@@ -209,7 +209,7 @@ export function Chat() {
 
   const onError = useCallback(
     (error: Error) => {
-      setGeneratingMessageId('')
+      generatingMessageIdRef.current = ''
       stopTimer()
       console.error('onError', error)
     },
@@ -260,7 +260,7 @@ export function Chat() {
       const parentId = branchRef.current.at(-1)?.message.id
 
       if (lastUIMessage.role === 'assistant') {
-        setGeneratingMessageId(lastUIMessage.id)
+        generatingMessageIdRef.current = lastUIMessage.id
       }
 
       const newLastMessage = {
@@ -321,40 +321,27 @@ export function Chat() {
   const ref = useRef<VListHandle>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
-  const scrollTo = useCallback((index?: number | 'bottom', smooth?: boolean) => {
-    // There always exists a `div` at the end of the list, so we can scroll to it.
-    const targetIndex = typeof index !== 'number' ? branchRef.current.length : index
-    ref.current?.scrollToIndex(targetIndex, {
-      align: 'end',
-      // Using smooth scrolling over many items can kill performance benefit of virtual scroll.
-      smooth: typeof smooth === 'boolean' ? smooth : true,
-    })
+  const scrollTo = useCallback(
+    (
+      index?: number,
+      {
+        align = 'end',
+        smooth = true,
+      }: {
+        align?: ScrollToIndexAlign
+        smooth?: boolean
+      } = { align: 'end', smooth: true },
+    ) => {
+      // There always exists a `div` at the end of the list, so we can scroll to it.
+      const targetIndex = typeof index !== 'number' ? branchRef.current.length : index
+      ref.current?.scrollToIndex(targetIndex, {
+        align,
+        // Using smooth scrolling over many items can kill performance benefit of virtual scroll.
+        smooth,
+      })
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(false)
-  useEffect(() => {
-    if (isSuccess && !hasNextPage) {
-      setShouldScrollToBottom(true)
-    }
-  }, [isSuccess, hasNextPage])
-  useEffect(() => {
-    if (shouldScrollToBottom) {
-      // Scroll to bottom when the chat is loaded.
-      scrollTo('bottom', false)
-      setShouldScrollToBottom(false)
-    }
-  }, [scrollTo, shouldScrollToBottom])
-
-  useCallWhenGenerating(
-    chatId,
-    status,
-    useCallback(() => {
-      // Always scroll to bottom when the message list changes.
-      if (branch.length) {
-        setTimeout(scrollTo, 3)
-      }
-    }, [scrollTo, branch]),
+    [],
   )
 
   const [input, setInput] = useState('')
@@ -418,15 +405,7 @@ export function Chat() {
         parentId: node.message.parentId ?? undefined,
         role: node.message.role,
         content: {
-          parts:
-            node.message.role === 'user'
-              ? [
-                  {
-                    type: 'text' as const,
-                    text: '',
-                  },
-                ]
-              : [],
+          parts: node.message.role === 'user' ? node.message.content.parts : [],
           metadata: metadata,
         },
       }
@@ -483,28 +462,29 @@ export function Chat() {
   return (
     <>
       <ContentArea>
-        {(isChatLoading || isLoading || hasNextPage) /* TODO */ && (
+        {isChatLoading || isLoading || hasNextPage /* TODO */ ? (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             <CircleSpinner />
           </div>
+        ) : (
+          <Messages
+            ref={ref}
+            endRef={endRef}
+            chatRef={chatRef}
+            chatId={chatId}
+            messages={branch}
+            status={status}
+            navigate={navigate}
+            refresh={refresh}
+            swipe={swipe}
+            edit={edit}
+            editMessageId={editMessageId}
+            setEditMessageId={setEditMessageId}
+            scrollTo={scrollTo}
+            generatingMessageId={generatingMessageIdRef.current}
+            elapsedSeconds={elapsedSeconds}
+          />
         )}
-        <Messages
-          ref={ref}
-          endRef={endRef}
-          chatRef={chatRef}
-          chatId={chatId}
-          messages={branch}
-          status={status}
-          navigate={navigate}
-          refresh={refresh}
-          swipe={swipe}
-          edit={edit}
-          editMessageId={editMessageId}
-          setEditMessageId={setEditMessageId}
-          scrollTo={scrollTo}
-          generatingMessageId={generatingMessageId}
-          elapsedSeconds={elapsedSeconds}
-        />
       </ContentArea>
 
       <MultimodalInput
@@ -514,7 +494,6 @@ export function Chat() {
         chatRef={chatRef}
         status={status}
         setMessages={setMessages}
-        scrollToBottom={scrollTo}
         disabled={isLoading}
       />
     </>

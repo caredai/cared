@@ -98,13 +98,13 @@ export function ChatListView() {
         </Button>
       </div>
 
-      <Virtualizer startMargin={40}>
-        {isLoading && (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
-            <CircleSpinner />
-          </div>
-        )}
+      {isLoading && (
+        <div className="flex h-full items-center justify-center text-muted-foreground">
+          <CircleSpinner />
+        </div>
+      )}
 
+      <Virtualizer startMargin={40}>
         {isSuccess && chats.length === 0 && (
           <div className="flex h-full items-center justify-center text-muted-foreground">
             No chats yet

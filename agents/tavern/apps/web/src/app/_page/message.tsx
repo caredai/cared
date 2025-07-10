@@ -1,7 +1,8 @@
 import type { Character } from '@/hooks/use-character'
-import type { Chat as AIChat } from '@ai-sdk/react'
+import type { Chat as AIChat, UseChatHelpers } from '@ai-sdk/react'
 import type { Message, MessageContent, UIMessage } from '@tavern/core'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
+import type { ScrollToIndexAlign } from 'virtua'
 import { memo, useEffect, useRef, useState } from 'react'
 import {
   // faBullhorn,
@@ -41,6 +42,7 @@ const SLIDE_OFFSET = '50dvw'
 const PurePreviewMessage = ({
   chatRef: _,
   message,
+  status,
   isGenerating,
   index,
   siblingIndex,
@@ -58,6 +60,7 @@ const PurePreviewMessage = ({
 }: {
   chatRef: RefObject<AIChat<UIMessage>>
   message: Message
+  status: UseChatHelpers<UIMessage>['status']
   isGenerating: boolean
   index: number
   siblingIndex: number
@@ -70,7 +73,13 @@ const PurePreviewMessage = ({
   edit: (content: MessageContent, regenerate: boolean) => Promise<void>
   editMessageId: string
   setEditMessageId: Dispatch<SetStateAction<string>>
-  scrollTo: (index?: number | 'bottom') => void
+  scrollTo: (
+    index?: number,
+    opts?: {
+      align?: ScrollToIndexAlign
+      smooth?: boolean
+    },
+  ) => void
   elapsedSeconds?: number
 }) => {
   const role = message.role
@@ -172,13 +181,43 @@ const PurePreviewMessage = ({
     if (mode === 'edit') {
       // Use setTimeout to ensure the component is fully rendered
       setTimeout(() => {
-        scrollTo(index + 1)
+        firstTextEditRef.current?.focus()
         setTimeout(() => {
-          firstTextEditRef.current?.focus()
+          scrollTo(index, {
+            align: 'nearest',
+            smooth: false,
+          })
         }, 3)
       }, 100)
     }
   }, [index, mode, scrollTo])
+
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isGenerating || !contentRef.current) {
+      return
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      scrollTo(isLast ? index + 1 : index, {
+        align: isLast ? 'end' : 'nearest',
+        smooth: false,
+      })
+    })
+    resizeObserver.observe(contentRef.current)
+
+    return () => resizeObserver.disconnect()
+  }, [index, isLast, isGenerating, scrollTo])
+
+  useEffect(() => {
+    if (isLast && role === 'user' && (status === 'submitted' || status === 'streaming')) {
+      scrollTo(index + 1, {
+        align: 'end',
+        smooth: false,
+      })
+    }
+  }, [isLast, role, status, index, scrollTo])
 
   if (!activeCharOrGroup || !activePersona) {
     return null
@@ -285,7 +324,10 @@ const PurePreviewMessage = ({
               onExitComplete={() => {
                 setTimeout(() => {
                   setSlideDirection(null)
-                  scrollTo()
+                  scrollTo(isLast ? index + 1 : index, {
+                    align: isLast ? 'end' : 'nearest',
+                    smooth: false,
+                  })
                 }, 100)
               }}
             >
@@ -309,7 +351,10 @@ const PurePreviewMessage = ({
                   ease: 'easeInOut',
                 }}
               >
-                <div className="flex flex-col gap-2 w-full text-[rgb(220,220,210)]">
+                <div
+                  ref={contentRef}
+                  className="flex flex-col gap-2 w-full text-[rgb(220,220,210)]"
+                >
                   {isGenerating && empty && (
                     <span className="inline-block bg-gradient-to-r from-primary-foreground via-muted-foreground to-accent-foreground bg-clip-text text-transparent animate-text">
                       . . .
@@ -418,6 +463,7 @@ const PurePreviewMessage = ({
 
 export const PreviewMessage = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (hash(prevProps.message) !== hash(nextProps.message)) return false
+  if (prevProps.status !== nextProps.status) return false
   if (prevProps.isGenerating !== nextProps.isGenerating) return false
   if (prevProps.index !== nextProps.index) return false
   if (prevProps.siblingIndex !== nextProps.siblingIndex) return false

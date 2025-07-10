@@ -32,6 +32,8 @@ export function useMessages(chatId?: string) {
           if (!lastPage.hasMore) return undefined
           return lastPage.cursor
         },
+        staleTime: 300 * 1000,
+        gcTime: 3600 * 1000,
       },
     ),
   )
