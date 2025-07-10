@@ -70,25 +70,26 @@ export function PromptInspect() {
       container={contentAreaRef?.current}
       className="absolute top-0 w-full h-full z-5000 flex flex-col gap-6 p-4 overflow-y-auto bg-background border border-border rounded-lg shadow-lg"
     >
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-medium">
-          <span className="truncate">{prompt.name}</span>{' '}
-          <span className="text-md text-muted-foreground">
-            - Prompt Inspect
-            {prompt.system_prompt || prompt.marker ? (
-              <span className="text-sm">
-                {' '}
-                ({prompt.system_prompt ? `System prompt: ${prompt.identifier}` : ''}
-                {prompt.system_prompt && prompt.marker ? '; ' : ''}
-                {prompt.marker ? `Marker: true` : ''})
-              </span>
-            ) : null}
-          </span>
-        </h1>
+      <div className="flex flex-col">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-medium">
+            <span className="truncate">{prompt.name}</span>{' '}
+            <span className="text-md text-muted-foreground">- Prompt Inspect</span>
+          </h1>
 
-        <Button variant="outline" size="icon" className="size-6" onClick={closePromptInspect}>
-          <XIcon />
-        </Button>
+          <Button variant="outline" size="icon" className="size-6" onClick={closePromptInspect}>
+            <XIcon />
+          </Button>
+        </div>
+
+        {prompt.system_prompt || prompt.marker ? (
+          <span className="text-sm text-ring">
+            {' '}
+            ({prompt.system_prompt ? `System prompt: ${prompt.identifier}` : ''}
+            {prompt.system_prompt && prompt.marker ? '; ' : ''}
+            {prompt.marker ? `Marker: true` : ''})
+          </span>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-4">

@@ -10,16 +10,17 @@ import {
   CollapsibleTrigger,
 } from '@ownxai/ui/components/collapsible'
 
-import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
+import { useActive } from '@/hooks/use-active'
+import { isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { usePromptInspect } from './prompt-inspect'
 
 export function PromptContentList() {
   const { prompt } = usePromptInspect()
-  const characterOrGroup = useActiveCharacterOrGroup()
-  const character = isCharacterGroup(characterOrGroup)
-    ? characterOrGroup.characters[0] // TODO
-    : characterOrGroup
+  const { persona, charOrGroup } = useActive()
+  const character = isCharacterGroup(charOrGroup)
+    ? charOrGroup.characters[0] // TODO
+    : charOrGroup
 
   const list:
     | {
@@ -45,9 +46,19 @@ export function PromptContentList() {
     }
     switch (prompt.identifier) {
       case 'worldInfoBefore':
-        return
+        return [
+          {
+            ...mainItem,
+            content: '', // TODO
+          },
+        ]
       case 'personaDescription':
-        return
+        return [
+          {
+            ...mainItem,
+            content: persona?.metadata.description ?? '',
+          },
+        ]
       case 'charDescription':
         return [
           {
@@ -70,7 +81,12 @@ export function PromptContentList() {
           },
         ]
       case 'worldInfoAfter':
-        return
+        return [
+          {
+            ...mainItem,
+            content: '', // TODO
+          },
+        ]
       case 'dialogueExamples':
         return [
           {
@@ -79,9 +95,14 @@ export function PromptContentList() {
           },
         ]
       case 'chatHistory':
-        return
+        return [
+          {
+            ...mainItem,
+            content: '', // TODO
+          },
+        ]
     }
-  }, [prompt, character])
+  }, [prompt, persona, character])
 
   if (!prompt) {
     return null
@@ -119,9 +140,11 @@ function PromptContentItem({
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent className="data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down overflow-hidden flex flex-col gap-2 p-[1px] pt-2">
-        {item.content.split('\n').map((line, index) => (
-          <p key={index}>{line}</p>
-        ))}
+        {item.content.trim() ? (
+          item.content.split('\n').map((line, index) => <p key={index}>{line}</p>)
+        ) : (
+          <p>No content</p>
+        )}
       </CollapsibleContent>
     </Collapsible>
   )

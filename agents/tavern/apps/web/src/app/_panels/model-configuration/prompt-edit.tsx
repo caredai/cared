@@ -116,7 +116,7 @@ export function PromptEdit() {
 
   const { customization, saveCustomization } = useCustomizeModelPreset()
 
-  const onSubmit = (values: typeof promptEditFormSchema._type) => {
+  const onSubmit = (values: z.infer<typeof promptEditFormSchema>) => {
     if (!prompt) {
       return
     }
@@ -146,25 +146,26 @@ export function PromptEdit() {
       container={contentAreaRef?.current}
       className="absolute top-0 w-full h-full z-5000 p-4 flex flex-col gap-6 overflow-y-auto bg-background border border-border rounded-lg shadow-lg"
     >
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-medium">
-          <span className="truncate">{prompt.name}</span>{' '}
-          <span className="text-md text-muted-foreground">
-            - Prompt Edit
-            {prompt.system_prompt || prompt.marker ? (
-              <span className="text-sm">
-                {' '}
-                ({prompt.system_prompt ? `System prompt: ${prompt.identifier}` : ''}
-                {prompt.system_prompt && prompt.marker ? '; ' : ''}
-                {prompt.marker ? `Marker: true` : ''})
-              </span>
-            ) : null}
-          </span>
-        </h1>
+      <div className="flex flex-col">
+        <div className="flex justify-between items-center">
+          <h1 className="text-xl font-medium">
+            <span className="truncate">{prompt.name}</span>{' '}
+            <span className="text-md text-muted-foreground">- Prompt Edit</span>
+          </h1>
 
-        <Button variant="outline" size="icon" className="size-6" onClick={closePromptEdit}>
-          <XIcon />
-        </Button>
+          <Button variant="outline" size="icon" className="size-6" onClick={closePromptEdit}>
+            <XIcon />
+          </Button>
+        </div>
+
+        {prompt.system_prompt || prompt.marker ? (
+          <span className="text-sm text-ring">
+            {' '}
+            ({prompt.system_prompt ? `System prompt: ${prompt.identifier}` : ''}
+            {prompt.system_prompt && prompt.marker ? '; ' : ''}
+            {prompt.marker ? `Marker: true` : ''})
+          </span>
+        ) : null}
       </div>
 
       <Form {...form}>

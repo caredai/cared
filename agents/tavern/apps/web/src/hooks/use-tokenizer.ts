@@ -22,7 +22,7 @@ export function useTextTokens(text: string) {
     } else {
       void countTokens(text, activeLanguageModelId).then(setTokens)
     }
-  }, [activeLanguageModelId, text, tokens])
+  }, [activeLanguageModelId, debouncedCountTokens, text, tokens])
 
   return tokens
 }
