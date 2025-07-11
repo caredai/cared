@@ -39,6 +39,13 @@ const components: Partial<Components> = {
       </span>
     )
   },
+  em: ({ node: _, children, ...props }) => {
+    return (
+      <span className="text-muted-foreground italic" {...props}>
+        {children}
+      </span>
+    )
+  },
   a: ({ node: _, children, ...props }) => {
     return (
       // @ts-expect-error

@@ -41,9 +41,11 @@ export async function uploadImage(
     buffer = dataUrlOrBytes
   }
 
+  key = typeof key === 'string' ? key : `${key.prefix}/${uuid()}/${sanitize(key.name)}.png`
+
   const command = new PutObjectCommand({
     Bucket: env.S3_BUCKET,
-    Key: typeof key === 'string' ? key : `${key.prefix}/${uuid()}/${sanitize(key.name)}.png`,
+    Key: key,
     Body: buffer,
     ContentType: 'image/png',
   })
