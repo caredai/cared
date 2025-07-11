@@ -1,12 +1,12 @@
 import type { ModelInfo } from '@ownxai/sdk'
-import { toUIMessages } from '@ownxai/sdk'
+import { toUIMessages } from '../message'
 
 import type { CharacterCardV2 } from '../character'
+import type { MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
 import type { Settings } from '../settings'
 import type { ReducedChat, ReducedGroup, ReducedPersona } from '../types'
-import type { MessageNode } from './types'
-import { substituteMacros } from './substitute'
+import { substituteMacros } from '../macro'
 
 export interface BuildPromptMessagesParams {
   messages: MessageNode[]

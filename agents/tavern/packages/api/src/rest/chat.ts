@@ -34,6 +34,7 @@ const requestBodySchema = z.object({
   isContinuation: z.boolean().optional(),
   deleteTrailing: z.boolean().optional(),
   characterId: z.string().min(1),
+  characterName: z.string().min(1),
   modelId: z.string().min(1),
   preferredLanguage: z.enum(['chinese', 'japanese']).optional(),
 })
@@ -59,6 +60,7 @@ export async function POST(request: Request): Promise<Response> {
     isContinuation,
     deleteTrailing,
     characterId,
+    characterName,
     modelId,
     preferredLanguage,
   } = requestBody
@@ -100,6 +102,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const metadata: MessageMetadata = {
     characterId,
+    characterName,
     modelId,
   }
 

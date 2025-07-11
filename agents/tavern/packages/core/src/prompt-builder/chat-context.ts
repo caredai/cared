@@ -10,6 +10,8 @@ export class ChatContext {
 
   setTokenBudget(maxPromptTokens: number) {
     this.tokenBudget = maxPromptTokens
+
+    console.log(`Token budget: ${this.tokenBudget}`)
   }
 
   canAffordAll(messages: PromptMessage[]) {

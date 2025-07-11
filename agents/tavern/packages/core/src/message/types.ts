@@ -7,6 +7,7 @@ import { messageContentSchema as _messageContentSchema } from '@ownxai/sdk'
 
 export interface MessageMetadata {
   characterId?: string // for 'assistant' role
+  characterName?: string // for 'assistant' role; will be used when the character is deleted
   personaId?: string // for 'user' role
   personaName?: string // for 'user' role; will be used when the persona is deleted
   modelId?: string // for 'assistant' role & LLM generated message
@@ -21,6 +22,7 @@ export interface MessageMetadata {
 export const messageMetadataSchema = z
   .object({
     characterId: z.string().optional(),
+    characterName: z.string().optional(),
     personaId: z.string().optional(),
     personaName: z.string().optional(),
     modelId: z.string().optional(),
@@ -30,13 +32,12 @@ export const messageMetadataSchema = z
   })
   .refine(
     (data) => {
-      // Either characterId exists, or personaId and personaName both exist
-      const hasCharacter = data.characterId
-      const hasPersonaAndName = data.personaId && data.personaName
-      return hasCharacter ?? hasPersonaAndName
+      const hasCharacter = data.characterId && data.characterName
+      const hasPersona = data.personaId && data.personaName
+      return hasCharacter ?? hasPersona
     },
     {
-      message: 'Either characterId must exist, or personaId and personaName must both exist',
+      message: 'Either characterId/characterName must exist, or personaId/personaName must exist',
     },
   )
 

@@ -1,7 +1,8 @@
-import type { Chat, Message } from '@ownxai/sdk'
+import type { Chat } from '@ownxai/sdk'
 
 import type { CharacterCardV2 } from './character'
 import type { CharGroupMetadata } from './character-group'
+import type { Message } from './message'
 import type { PersonaMetadata } from './persona'
 
 export type ReducedChat = Pick<Chat, 'id' | 'metadata' | 'createdAt'>

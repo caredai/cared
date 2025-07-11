@@ -1,5 +1,4 @@
 import type { RefObject } from 'react'
-import type { z } from 'zod/v4'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
@@ -10,6 +9,7 @@ import {
 } from '@tavern/core'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { z } from 'zod/v4'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -43,8 +43,8 @@ import { useContentAreaRef, useIsShowCharacterAdvancedView } from '@/hooks/use-s
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { useIsCreateCharacter } from './hooks'
 
-export const characterAdvancedFormSchema = characterCardV2Schema.shape.data
-  .pick({
+export const characterAdvancedFormSchema = z.object({
+  ...characterCardV2Schema.shape.data.pick({
     name: true,
     personality: true,
     scenario: true,
@@ -55,8 +55,9 @@ export const characterAdvancedFormSchema = characterCardV2Schema.shape.data
     tags: true,
     creator: true,
     character_version: true,
-  })
-  .merge(characterCardV2ExtensionsSchema)
+  }).shape,
+  ...characterCardV2ExtensionsSchema.shape,
+})
 
 export type CharacterAdvancedFormValues = z.infer<typeof characterAdvancedFormSchema>
 

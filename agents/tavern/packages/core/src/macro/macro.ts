@@ -7,7 +7,7 @@ import type { ModelInfo } from '@ownxai/sdk'
 
 import type { ModelPreset } from '../model-preset'
 import type { ReducedChat, ReducedMessage } from '../types'
-import type { MessageMetadata, MessageNode } from './types'
+import type { MessageMetadata, MessageNode } from '../message/types'
 import {
   addVariable,
   decrementVariable,

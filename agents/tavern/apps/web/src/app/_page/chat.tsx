@@ -163,6 +163,7 @@ export function Chat() {
           isContinuation,
           deleteTrailing,
           characterId: nextChar.id,
+          characterName: nextChar.content.data.name,
           modelId: model.id,
           ...body,
         },
@@ -390,12 +391,13 @@ export function Chat() {
       if (node !== node.parent.descendants.at(-1) || !node.parent.message) {
         return
       }
-      const { personaId, personaName, characterId, modelId, summary } =
+      const { personaId, personaName, characterId, characterName, modelId, summary } =
         node.message.content.metadata
       const metadata: MessageMetadata = {
         personaId,
         personaName,
         characterId,
+        characterName,
         modelId,
         summary, // TODO
       }
