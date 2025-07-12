@@ -324,14 +324,9 @@ export const LorebookPanelUpperPart = memo(function LorebookPanelUpperPart({
         <h1 className="text-lg font-bold">Worlds / Lorebooks</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          <SelectActiveLorebooks />
-        </div>
-        <div>
-          <LorebookSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
-        </div>
-      </div>
+      <SelectActiveLorebooks />
+
+      <LorebookSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       <Separator className="bg-gradient-to-r from-transparent via-ring/50 to-transparent" />
 

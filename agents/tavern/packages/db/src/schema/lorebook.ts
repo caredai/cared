@@ -1,6 +1,7 @@
 import type { LorebookEntry } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, jsonb, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
+import { relations } from 'drizzle-orm'
+import { boolean, index, jsonb, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
 
 import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
 
@@ -35,7 +36,7 @@ export const LorebookToChat = pgTable(
   {
     lorebookId: text()
       .notNull()
-      .references(() => Lorebook.id),
+      .references(() => Lorebook.id, { onDelete: 'cascade' }),
     chatId: text().notNull(),
     userId: text()
       .notNull()
@@ -57,13 +58,14 @@ export const LorebookToCharacter = pgTable(
   {
     lorebookId: text()
       .notNull()
-      .references(() => Lorebook.id),
+      .references(() => Lorebook.id, { onDelete: 'cascade' }),
     characterId: text()
       .notNull()
-      .references(() => Character.id),
+      .references(() => Character.id, { onDelete: 'cascade' }),
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
+    primary: boolean(),
     ...timestamps,
   },
   (table) => [
@@ -81,10 +83,10 @@ export const LorebookToGroup = pgTable(
   {
     lorebookId: text()
       .notNull()
-      .references(() => Lorebook.id),
+      .references(() => Lorebook.id, { onDelete: 'cascade' }),
     groupId: text()
       .notNull()
-      .references(() => CharGroup.id),
+      .references(() => CharGroup.id, { onDelete: 'cascade' }),
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
@@ -105,10 +107,10 @@ export const LorebookToPersona = pgTable(
   {
     lorebookId: text()
       .notNull()
-      .references(() => Lorebook.id),
+      .references(() => Lorebook.id, { onDelete: 'cascade' }),
     personaId: text()
       .notNull()
-      .references(() => Persona.id),
+      .references(() => Persona.id, { onDelete: 'cascade' }),
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
@@ -123,3 +125,75 @@ export const LorebookToPersona = pgTable(
 )
 
 export type LorebookToPersona = InferSelectModel<typeof LorebookToPersona>
+
+// Relations for Lorebook
+export const lorebookRelations = relations(Lorebook, ({ one, many }) => ({
+  user: one(User, {
+    fields: [Lorebook.userId],
+    references: [User.id],
+  }),
+  lorebookToChats: many(LorebookToChat),
+  lorebookToCharacters: many(LorebookToCharacter),
+  lorebookToGroups: many(LorebookToGroup),
+  lorebookToPersonas: many(LorebookToPersona),
+}))
+
+// Relations for LorebookToChat
+export const lorebookToChatRelations = relations(LorebookToChat, ({ one }) => ({
+  lorebook: one(Lorebook, {
+    fields: [LorebookToChat.lorebookId],
+    references: [Lorebook.id],
+  }),
+  user: one(User, {
+    fields: [LorebookToChat.userId],
+    references: [User.id],
+  }),
+}))
+
+// Relations for LorebookToCharacter
+export const lorebookToCharacterRelations = relations(LorebookToCharacter, ({ one }) => ({
+  lorebook: one(Lorebook, {
+    fields: [LorebookToCharacter.lorebookId],
+    references: [Lorebook.id],
+  }),
+  character: one(Character, {
+    fields: [LorebookToCharacter.characterId],
+    references: [Character.id],
+  }),
+  user: one(User, {
+    fields: [LorebookToCharacter.userId],
+    references: [User.id],
+  }),
+}))
+
+// Relations for LorebookToGroup
+export const lorebookToGroupRelations = relations(LorebookToGroup, ({ one }) => ({
+  lorebook: one(Lorebook, {
+    fields: [LorebookToGroup.lorebookId],
+    references: [Lorebook.id],
+  }),
+  group: one(CharGroup, {
+    fields: [LorebookToGroup.groupId],
+    references: [CharGroup.id],
+  }),
+  user: one(User, {
+    fields: [LorebookToGroup.userId],
+    references: [User.id],
+  }),
+}))
+
+// Relations for LorebookToPersona
+export const lorebookToPersonaRelations = relations(LorebookToPersona, ({ one }) => ({
+  lorebook: one(Lorebook, {
+    fields: [LorebookToPersona.lorebookId],
+    references: [Lorebook.id],
+  }),
+  persona: one(Persona, {
+    fields: [LorebookToPersona.personaId],
+    references: [Persona.id],
+  }),
+  user: one(User, {
+    fields: [LorebookToPersona.userId],
+    references: [User.id],
+  }),
+}))

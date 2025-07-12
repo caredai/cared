@@ -115,9 +115,11 @@ export function Navbar() {
       // Skip if no panels are open
       if (openPanels.size === 0) return
 
-      // Check if click is within any dialog
+      // Check if click is within any dialog or popper
       const target = event.target as HTMLElement
-      const isWithinDialog = target.closest('[role="dialog"]') !== null
+      const isWithinDialog =
+        target.closest('[role="dialog"]') !== null ||
+        target.closest('[data-radix-popper-content-wrapper]') !== null
       if (isWithinDialog) return
 
       // Check if click is within any panel (not just the open ones)

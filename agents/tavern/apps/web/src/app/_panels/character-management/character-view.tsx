@@ -1,7 +1,8 @@
 'use client'
 
 import type { Character } from '@/hooks/use-character'
-import { ReactNode, useCallback, useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   faBook,
   faClone,
@@ -9,11 +10,11 @@ import {
   faEllipsisVertical,
   faFaceSmile,
   faFileExport,
-  faGlobe,
+  faCommentDots,
   faLeftLong,
-  faPassport,
   faSkull,
   faStar,
+  faBookAtlas,
 } from '@fortawesome/free-solid-svg-icons'
 import { atom, useAtom } from 'jotai'
 
@@ -33,7 +34,7 @@ import {
   useSetShowChatList,
 } from '@/app/_panels/character-management/hooks'
 import { CharacterAvatar } from '@/components/avatar'
-import { FaButton } from '@/components/fa-button'
+import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
 import { ImageCropDialog } from '@/components/image-crop-dialog'
 import { useUpdateCharacter, useUpdateCharacterImage } from '@/hooks/use-character'
 import { useCharacterSettings, useUpdateCharacterSettings } from '@/hooks/use-settings'
@@ -41,6 +42,8 @@ import { useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area
 import { CharacterBasicForm } from './character-basic-form'
 import { CharacterTagsView } from './character-tags-view'
 import { CharacterViewAdvanced } from './character-view-advanced'
+import { CharacterLorebookDialog } from './character-lorebook-dialog'
+import { ChatLorebookDialog } from './chat-lorebook-dialog'
 import { DeleteCharacterDialog } from './delete-character-or-group-dialog'
 import { DuplicateCharacterDialog } from './duplicate-character-dialog'
 import { useImportTags } from './import-tags-dialog'
@@ -104,14 +107,15 @@ export function CharacterView({ character }: { character: Character }) {
       tooltip: 'Advanced Definitions',
     },
     {
-      action: handleAddToFavorites,
-      icon: faGlobe,
+      icon: faBookAtlas,
       tooltip: 'Character Lore',
+      wrapper: CharacterLorebookDialog,
     },
     {
-      action: handleAddToFavorites,
-      icon: faPassport,
+      icon: faBookAtlas,
+      badgeIcon: faCommentDots,
       tooltip: 'Chat Lore',
+      wrapper: ChatLorebookDialog,
     },
     {
       action: handleAddToFavorites,
@@ -174,8 +178,9 @@ export function CharacterView({ character }: { character: Character }) {
         />
 
         <div className="flex flex-row flex-wrap justify-end gap-1">
-          {operateActions.map(({ action, icon, tooltip, className, wrapper: Wrapper }, index) => {
+          {operateActions.map(({ action, icon, badgeIcon, tooltip, className, wrapper: Wrapper }, index) => {
             const btn = (
+              !badgeIcon ? (
               <FaButton
                 key={index}
                 icon={icon}
@@ -188,6 +193,22 @@ export function CharacterView({ character }: { character: Character }) {
                 )}
                 onClick={action}
               />
+              ) : (
+                <FaButtonWithBadge
+                  key={index}
+                  icon={icon}
+                  badgeIcon={badgeIcon}
+                  btnSize="size-7"
+                  iconSize="1x"
+                  title={tooltip}
+                  className={cn(
+                    'text-foreground border-1 hover:bg-muted-foreground rounded-sm',
+                    className,
+                  )}
+                  badgeClassName="-top-0 -right-0"
+                  onClick={action}
+                />
+              )
             )
 
             return Wrapper ? <Wrapper key={index} trigger={btn} character={character} /> : btn

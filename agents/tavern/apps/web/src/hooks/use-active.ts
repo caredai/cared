@@ -1,5 +1,6 @@
 import { useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useActiveChat } from '@/hooks/use-chat'
+import { useActiveLorebooks } from '@/hooks/use-lorebook'
 import { useActiveLanguageModel } from '@/hooks/use-model'
 import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
 import { useActivePersona } from '@/hooks/use-persona'
@@ -12,6 +13,12 @@ export function useActive() {
   const charOrGroup = useActiveCharacterOrGroup()
   const { activePersona: persona } = useActivePersona()
   const { activeChat: chat } = useActiveChat()
+  const { lorebooks } = useActiveLorebooks(
+    chat?.id,
+    charOrGroup?.id,
+    persona?.id,
+    settings.lorebook.active,
+  )
 
   return {
     settings,
@@ -20,5 +27,6 @@ export function useActive() {
     charOrGroup,
     persona,
     chat,
+    lorebooks,
   }
 }

@@ -1,6 +1,6 @@
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { faClone, faCrown, faLock, faSkull, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { faClone, faCrown, faLock, faSkull, faUnlock, faBookAtlas } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PersonaPosition } from '@tavern/core'
@@ -44,6 +44,7 @@ import { useLinkPersona, usePersona, useUnlinkPersona, useUpdatePersona } from '
 import { usePersonaSettings, useUpdatePersonaSettings } from '@/hooks/use-settings'
 import { DeletePersonaDialog } from './delete-persona-dialog'
 import { DuplicatePersonaDialog } from './duplicate-persona-dialog'
+import { PersonaLorebookDialog } from './persona-lorebook-dialog'
 
 const personaFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -227,6 +228,11 @@ export function PersonaView({ personaId }: { personaId: string }) {
 
   const operateActions = [
     {
+      icon: faBookAtlas,
+      tooltip: 'Persona Lore%0AShift+Click to open the lorebook',
+      wrapper: PersonaLorebookDialog,
+    },
+    {
       icon: faClone,
       tooltip: 'Duplicate Persona',
       wrapper: DuplicatePersonaDialog,
@@ -257,7 +263,7 @@ export function PersonaView({ personaId }: { personaId: string }) {
                 icon={icon}
                 btnSize="size-7"
                 iconSize="1x"
-                title={tooltip}
+                title={decodeURI(tooltip)}
                 className={cn(
                   'text-foreground border-1 hover:bg-muted-foreground rounded-sm',
                   className,
