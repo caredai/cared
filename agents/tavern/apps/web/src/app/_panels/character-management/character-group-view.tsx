@@ -2,7 +2,14 @@ import type { Character } from '@/hooks/use-character'
 import type { CharacterGroup } from '@/hooks/use-character-group'
 import type { CharGroupMetadata } from '@tavern/core'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { faCheck, faLeftLong, faSkull, faStar, faXmark } from '@fortawesome/free-solid-svg-icons'
+import {
+  faCheck,
+  faFaceSmile,
+  faLeftLong,
+  faSkull,
+  faStar,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { charGroupMetadataSchema, GroupActivationStrategy, GroupGenerationMode } from '@tavern/core'
 import { ChevronDownIcon } from 'lucide-react'
@@ -40,6 +47,7 @@ import { useSetActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useCharacterSettings, useUpdateCharacterSettings } from '@/hooks/use-settings'
 import { CharacterGroupItem } from './character-group-item'
 import { DeleteCharacterOrGroupDialog } from './delete-character-or-group-dialog'
+import { PersonaConnectionsDialog } from './persona-connections-dialog'
 
 export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
   const isCreate = !group
@@ -175,13 +183,18 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
         : '',
     },
     {
-      action: !isCreate && handleDelete,
+      icon: faFaceSmile,
+      tooltip: 'Connected Personas',
+      wrapper: PersonaConnectionsDialog,
+    },
+    {
+      action: !isCreate ? handleDelete : undefined,
       icon: faSkull,
       tooltip: 'Delete character group',
       className: 'bg-destructive/50 hover:bg-destructive',
     },
     {
-      action: isCreate && handleCreate,
+      action: isCreate ? handleCreate : undefined,
       icon: faCheck,
       tooltip: 'Create character group',
     },
@@ -282,16 +295,9 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
               />
 
               <div className="flex flex-row flex-wrap justify-end gap-1">
-                {operateActions
-                  .filter(
-                    (
-                      value,
-                    ): value is (typeof operateActions)[number] & {
-                      action: () => void
-                    } => !!value.action,
-                  )
-                  .map(({ action, icon, tooltip, className }, index) => {
-                    return (
+                {operateActions.map(
+                  ({ action, icon, tooltip, className, wrapper: Wrapper }, index) => {
+                    const btn = (
                       <FaButton
                         key={index}
                         icon={icon}
@@ -305,7 +311,14 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
                         onClick={action}
                       />
                     )
-                  })}
+
+                    return Wrapper ? (
+                      <Wrapper key={index} trigger={btn} character={undefined} group={group} />
+                    ) : (
+                      btn
+                    )
+                  },
+                )}
               </div>
             </div>
 

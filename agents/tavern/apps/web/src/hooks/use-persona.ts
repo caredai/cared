@@ -723,3 +723,22 @@ export function useUnlinkPersona() {
     [],
   )
 }
+
+export function usePersonasByCharacterOrGroup(charOrGroupId?: string) {
+  const { personas } = usePersonas()
+
+  const linkedPersonas = useMemo(() => {
+    if (!charOrGroupId) {
+      return []
+    }
+    return personas.filter(
+      (persona) =>
+        persona.characters.includes(charOrGroupId) ||
+        persona.groups.includes(charOrGroupId),
+    )
+  }, [personas, charOrGroupId])
+
+  return {
+    linkedPersonas,
+  }
+}

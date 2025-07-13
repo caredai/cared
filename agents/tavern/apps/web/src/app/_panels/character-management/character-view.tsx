@@ -46,6 +46,7 @@ import { CharacterLorebookDialog } from './character-lorebook-dialog'
 import { ChatLorebookDialog } from './chat-lorebook-dialog'
 import { DeleteCharacterDialog } from './delete-character-or-group-dialog'
 import { DuplicateCharacterDialog } from './duplicate-character-dialog'
+import { PersonaConnectionsDialog } from './persona-connections-dialog'
 import { useImportTags } from './import-tags-dialog'
 
 export function CharacterView({ character }: { character: Character }) {
@@ -118,9 +119,9 @@ export function CharacterView({ character }: { character: Character }) {
       wrapper: ChatLorebookDialog,
     },
     {
-      action: handleAddToFavorites,
       icon: faFaceSmile,
       tooltip: 'Connected Personas',
+      wrapper: PersonaConnectionsDialog,
     },
     {
       action: handleAddToFavorites,
@@ -211,7 +212,7 @@ export function CharacterView({ character }: { character: Character }) {
               )
             )
 
-            return Wrapper ? <Wrapper key={index} trigger={btn} character={character} /> : btn
+            return Wrapper ? <Wrapper key={index} trigger={btn} character={character} group={undefined} /> : btn
           })}
         </div>
       </div>

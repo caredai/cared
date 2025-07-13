@@ -250,6 +250,7 @@ export function useCreateChat() {
                 ],
                 metadata: {
                   characterId: character.id,
+                  characterName: character.content.data.name,
                 },
               },
             },
@@ -292,6 +293,7 @@ export function useCreateChat() {
                   ],
                   metadata: {
                     characterId: character.id,
+                    characterName: character.content.data.name,
                   },
                 },
               }
