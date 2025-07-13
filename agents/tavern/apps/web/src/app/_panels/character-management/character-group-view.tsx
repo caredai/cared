@@ -185,7 +185,7 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
     {
       icon: faFaceSmile,
       tooltip: 'Connected Personas',
-      wrapper: PersonaConnectionsDialog,
+      wrapper: !isCreate ? PersonaConnectionsDialog : undefined,
     },
     {
       action: !isCreate ? handleDelete : undefined,
@@ -295,8 +295,9 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
               />
 
               <div className="flex flex-row flex-wrap justify-end gap-1">
-                {operateActions.map(
-                  ({ action, icon, tooltip, className, wrapper: Wrapper }, index) => {
+                {operateActions
+                  .filter(({ action, wrapper }) => !!action || !!wrapper)
+                  .map(({ action, icon, tooltip, className, wrapper: Wrapper }, index) => {
                     const btn = (
                       <FaButton
                         key={index}
@@ -317,8 +318,7 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
                     ) : (
                       btn
                     )
-                  },
-                )}
+                  })}
               </div>
             </div>
 

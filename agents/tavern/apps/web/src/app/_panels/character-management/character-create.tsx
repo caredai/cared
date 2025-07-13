@@ -4,7 +4,6 @@ import {
   faBook,
   faCheck,
   faEllipsisVertical,
-  faGlobe,
   faStar,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
@@ -115,12 +114,6 @@ export function CharacterCreate() {
       action: handleShowAdvancedDefinitions,
       icon: faBook,
       tooltip: 'Advanced definitions',
-    },
-
-    {
-      action: handleAddToFavorites,
-      icon: faGlobe,
-      tooltip: 'Add to favorites',
     },
     {
       action: handleCreate,

@@ -5,9 +5,11 @@ import type { VListHandle } from 'virtua'
 import { useCallback, useRef, useState } from 'react'
 import { VList } from 'virtua'
 
+import { Button } from '@ownxai/ui/components/button'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -15,10 +17,9 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { CharacterAvatar } from '@/components/avatar'
-import { useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
+import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { usePersonasByCharacterOrGroup, useUnlinkPersona } from '@/hooks/use-persona'
 import { usePersonaSettings, useUpdatePersonaSettings } from '@/hooks/use-settings'
-import { isCharacterGroup } from '@/hooks/use-character-or-group'
 import defaultPng from '@/public/images/user-default.png'
 
 interface PersonaConnectionsDialogProps {
@@ -27,11 +28,15 @@ interface PersonaConnectionsDialogProps {
   group?: CharacterGroup
 }
 
-export function PersonaConnectionsDialog({ trigger, character, group }: PersonaConnectionsDialogProps) {
+export function PersonaConnectionsDialog({
+  trigger,
+  character,
+  group,
+}: PersonaConnectionsDialogProps) {
   const { active: activePersonaId } = usePersonaSettings()
   const updatePersonaSettings = useUpdatePersonaSettings()
   const activeCharOrGroup = useActiveCharacterOrGroup()
-  
+
   // Use provided character/group or fall back to active character/group
   const targetCharOrGroup = character || group || activeCharOrGroup
   const { linkedPersonas } = usePersonasByCharacterOrGroup(targetCharOrGroup?.id)
@@ -45,38 +50,57 @@ export function PersonaConnectionsDialog({ trigger, character, group }: PersonaC
     vlistRef.current?.scrollBy(e.deltaY)
   }
 
-  const handleSelect = useCallback((personaId: string) => {
-    void updatePersonaSettings({
-      active: personaId,
-    })
-    setIsOpen(false)
-  }, [updatePersonaSettings])
+  const handleSelect = useCallback(
+    (personaId: string) => {
+      void updatePersonaSettings({
+        active: personaId,
+      })
+      setIsOpen(false)
+    },
+    [updatePersonaSettings],
+  )
 
-  const handleUnlink = useCallback(async (personaId: string) => {
-    if (!targetCharOrGroup) return
+  const handleUnlink = useCallback(
+    async (personaId: string) => {
+      if (!targetCharOrGroup) return
+
+      const params = isCharacterGroup(targetCharOrGroup)
+        ? { groupId: targetCharOrGroup.id }
+        : { characterId: targetCharOrGroup.id }
+
+      await unlinkPersona(personaId, params)
+    },
+    [targetCharOrGroup, unlinkPersona],
+  )
+
+  const handleRemoveAll = useCallback(async () => {
+    if (!targetCharOrGroup || !linkedPersonas.length) {
+      setIsOpen(false)
+      return
+    }
 
     const params = isCharacterGroup(targetCharOrGroup)
       ? { groupId: targetCharOrGroup.id }
       : { characterId: targetCharOrGroup.id }
 
-    await unlinkPersona(personaId, params)
-  }, [targetCharOrGroup, unlinkPersona])
+    // Remove all linked personas
+    await Promise.all(linkedPersonas.map((persona) => unlinkPersona(persona.id, params)))
 
-  const handlePersonaClick = useCallback((e: React.MouseEvent, persona: Persona) => {
-    if (e.shiftKey) {
-      // Shift + Click to unlink
-      void handleUnlink(persona.id)
-    } else {
-      // Normal click to select
-      handleSelect(persona.id)
-    }
-  }, [handleSelect, handleUnlink])
+    setIsOpen(false)
+  }, [targetCharOrGroup, linkedPersonas, unlinkPersona])
 
-
-
-  if (!linkedPersonas.length) {
-    return null
-  }
+  const handlePersonaClick = useCallback(
+    (e: React.MouseEvent, persona: Persona) => {
+      if (e.shiftKey) {
+        // Shift + Click to unlink
+        void handleUnlink(persona.id)
+      } else {
+        // Normal click to select
+        handleSelect(persona.id)
+      }
+    },
+    [handleSelect, handleUnlink],
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -96,31 +120,41 @@ export function PersonaConnectionsDialog({ trigger, character, group }: PersonaC
           </p>
 
           {/* Horizontal virtual list of persona avatars */}
-          <VList
-            horizontal
-            count={linkedPersonas.length}
-            className="h-15 no-scrollbar"
-            style={{
-              height: '60px',
-            }}
-            ref={vlistRef}
-            onWheel={handleWheel}
-          >
-            {linkedPersonas.map((persona) => (
-              <div
-                key={persona.id}
-                className={cn('flex items-center justify-center cursor-pointer')}
-                onClick={(e) => handlePersonaClick(e, persona)}
-                title={`${persona.name}${activePersonaId === persona.id ? ' (Active)' : ''}`}
-              >
-                <CharacterAvatar
-                  src={persona.metadata.imageUrl ?? defaultPng}
-                  alt={persona.name}
-                  outline={activePersonaId === persona.id}
-                />
-              </div>
-            ))}
-          </VList>
+          {linkedPersonas.length > 0 ? (
+            <VList
+              horizontal
+              count={linkedPersonas.length}
+              className="h-15 no-scrollbar"
+              style={{
+                height: '60px',
+              }}
+              ref={vlistRef}
+              onWheel={handleWheel}
+            >
+              {linkedPersonas.map((persona) => (
+                <div
+                  key={persona.id}
+                  className={cn('flex items-center justify-center cursor-pointer')}
+                  onClick={(e) => handlePersonaClick(e, persona)}
+                  title={`${persona.name}${activePersonaId === persona.id ? ' (Active)' : ''}`}
+                >
+                  <CharacterAvatar
+                    src={persona.metadata.imageUrl ?? defaultPng}
+                    alt={persona.name}
+                    outline={activePersonaId === persona.id}
+                  />
+                </div>
+              ))}
+            </VList>
+          ) : (
+            <p className="text-sm text-muted-foreground">[Currently no personas connected]</p>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleRemoveAll}>
+              Remove All Connections
+            </Button>
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

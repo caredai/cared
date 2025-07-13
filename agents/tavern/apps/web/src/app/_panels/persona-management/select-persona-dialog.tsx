@@ -73,7 +73,7 @@ export function SelectPersonaDialog() {
     setIsOpen(false)
   }
 
-  const handleRemove = () => {
+  const handleRemoveAll = () => {
     if (linkedPersonas?.length) {
       void Promise.all(
         linkedPersonas.map((p) => {
@@ -132,7 +132,7 @@ export function SelectPersonaDialog() {
           </VList>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleRemove}>
+            <Button type="button" variant="outline" onClick={handleRemoveAll}>
               Remove All Connections
             </Button>
             <Button type="button" onClick={handleClose}>

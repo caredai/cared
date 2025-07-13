@@ -47,7 +47,7 @@ const PurePreviewMessage = ({
   index,
   siblingIndex,
   siblingCount,
-  isRoot,
+  isRoot: __,
   isLast,
   navigate,
   refresh,
@@ -267,6 +267,8 @@ const PurePreviewMessage = ({
     (part) => (part.type === 'reasoning' || part.type === 'text') && part.text,
   )
 
+  const isAssistantFirstMessage = !metadata.modelId && role === 'assistant'
+
   return (
     <AnimatePresence>
       <motion.div
@@ -433,12 +435,12 @@ const PurePreviewMessage = ({
                 <FaButton
                   className={cn(
                     siblingIndex === siblingCount - 1 &&
-                      ((isRoot && role !== 'user') || siblingCount >= MAX_SIBLING_COUNT) &&
+                      (isAssistantFirstMessage || siblingCount >= MAX_SIBLING_COUNT) &&
                       'opacity-0',
                   )}
                   disabled={
                     siblingIndex === siblingCount - 1 &&
-                    ((isRoot && role !== 'user') || siblingCount >= MAX_SIBLING_COUNT)
+                    (isAssistantFirstMessage || siblingCount >= MAX_SIBLING_COUNT)
                   }
                   icon={faChevronRight}
                   title="Swipe right"
@@ -447,7 +449,7 @@ const PurePreviewMessage = ({
                   onClick={() => {
                     if (siblingIndex < siblingCount - 1) {
                       handleNavigate(false)
-                    } else if ((!isRoot || role === 'user') && siblingCount < MAX_SIBLING_COUNT) {
+                    } else if (!isAssistantFirstMessage && siblingCount < MAX_SIBLING_COUNT) {
                       handleSwipe()
                     }
                   }}
