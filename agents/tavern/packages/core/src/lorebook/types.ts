@@ -83,6 +83,12 @@ export interface LorebookEntry {
   useProbability: boolean
   /** Whether the comment should be added to the entry */
   addMemo: boolean
+  matchPersonaDescription?: boolean
+  matchCharacterDescription?: boolean
+  matchCharacterPersonality?: boolean
+  matchCharacterDepthPrompt?: boolean
+  matchScenario?: boolean
+  matchCreatorNotes?: boolean
 }
 
 export enum SelectiveLogic {
@@ -141,6 +147,12 @@ export const lorebookEntrySchema = z.object({
   selective: z.boolean(),
   useProbability: z.boolean(),
   addMemo: z.boolean(),
+  matchPersonaDescription: z.boolean().optional(),
+  matchCharacterDescription: z.boolean().optional(),
+  matchCharacterPersonality: z.boolean().optional(),
+  matchCharacterDepthPrompt: z.boolean().optional(),
+  matchScenario: z.boolean().optional(),
+  matchCreatorNotes: z.boolean().optional(),
 })
 
 export const lorebookEntriesSchema = z.array(lorebookEntrySchema).superRefine((entries, ctx) => {
