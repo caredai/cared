@@ -26,11 +26,12 @@ export function ImportUrlDialog({ open, onOpenChange }: ImportUrlDialogProps) {
 
     setIsLoading(true)
     try {
-      const character = (await importCharacters(urls))?.character
+      const characters = (await importCharacters(urls))?.characters
       onOpenChange(false)
       setUrls('')
-      if (character) {
-        void importTags(character, true)
+      if (characters?.length) {
+        // TODO
+        void importTags(characters[0]!, true)
       }
     } finally {
       setIsLoading(false)

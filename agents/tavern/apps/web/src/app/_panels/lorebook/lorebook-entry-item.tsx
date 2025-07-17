@@ -731,6 +731,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                       <FormLabel>Names (comma separated)</FormLabel>
                       <FormControl>
                         <Input
+                          /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
                           value={field.value?.join(', ')}
                           onChange={(e) =>
                             field.onChange(
@@ -754,6 +755,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                       <FormLabel>Tags (comma separated)</FormLabel>
                       <FormControl>
                         <Input
+                          /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
                           value={field.value?.join(', ')}
                           onChange={(e) =>
                             field.onChange(

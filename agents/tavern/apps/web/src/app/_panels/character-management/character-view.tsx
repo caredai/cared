@@ -46,6 +46,7 @@ import { CharacterLorebookDialog } from './character-lorebook-dialog'
 import { ChatLorebookDialog } from './chat-lorebook-dialog'
 import { DeleteCharacterDialog } from './delete-character-or-group-dialog'
 import { DuplicateCharacterDialog } from './duplicate-character-dialog'
+import { ExportCharacterDialog } from './export-character-dialog'
 import { PersonaConnectionsDialog } from './persona-connections-dialog'
 import { useImportTags } from './import-tags-dialog'
 
@@ -124,9 +125,9 @@ export function CharacterView({ character }: { character: Character }) {
       wrapper: PersonaConnectionsDialog,
     },
     {
-      action: handleAddToFavorites,
       icon: faFileExport,
       tooltip: 'Export Character',
+      wrapper: ExportCharacterDialog,
     },
     {
       icon: faClone,

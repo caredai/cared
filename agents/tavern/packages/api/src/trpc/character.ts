@@ -1,16 +1,30 @@
-import type { CharacterCardV1, CharacterCardV2, CharacterCardV3 } from '@tavern/core'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
 import {
+  CharacterCardV1,
+  CharacterCardV2,
+  CharacterCardV3,
   characterCardV3Schema,
   convertToV3,
   importUrl,
+  lorebookEntriesSchema,
+  LorebookEntry,
+  LorebookV3,
+  lorebookV3Schema,
   pngRead,
   pngWrite,
+  Position,
+  SelectiveLogic,
   updateWithV3,
 } from '@tavern/core'
-import { Character, characterSourceEnumValues } from '@tavern/db/schema'
+import {
+  Character,
+  characterSourceEnumValues,
+  Lorebook,
+  LorebookToCharacter,
+} from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, asc, eq, inArray } from 'drizzle-orm'
+import sanitize from 'sanitize-filename'
 import hash from 'stable-hash'
 import { z } from 'zod/v4'
 
@@ -62,6 +76,210 @@ async function processCharacterCard(dataUrlOrBytes: string | Uint8Array | Buffer
   return {
     content: charV3,
     url: imageUrl,
+  }
+}
+
+// Helper function to convert character book entries to lorebook entries
+function convertCharacterBookToLorebookEntries(
+  characterBook: z.infer<typeof lorebookV3Schema>,
+): LorebookEntry[] {
+  return characterBook.entries.map((entry, index) => {
+    const extensions = entry.extensions
+
+    let position = 0
+    // Try to get position from extensions first, then from entry
+    if (extensions.position !== undefined) {
+      position = extensions.position
+    } else {
+      switch (entry.position) {
+        case 'before_char':
+          position = 0 // Position.Before
+          break
+        case 'after_char':
+          position = 1 // Position.After
+          break
+        default:
+          break
+      }
+    }
+
+    let selectiveLogic = SelectiveLogic.AND_ANY
+    if (extensions.selectiveLogic !== undefined) {
+      switch (extensions.selectiveLogic) {
+        case 0:
+          selectiveLogic = SelectiveLogic.AND_ANY
+          break
+        case 1:
+          selectiveLogic = SelectiveLogic.NOT_ALL
+          break
+        case 2:
+          selectiveLogic = SelectiveLogic.NOT_ANY
+          break
+        case 3:
+          selectiveLogic = SelectiveLogic.AND_ALL
+          break
+        default:
+          break
+      }
+    }
+
+    let role: 'system' | 'user' | 'assistant' | undefined = undefined
+    if (extensions.role !== undefined) {
+      switch (extensions.role) {
+        case 0:
+          role = 'system'
+          break
+        case 1:
+          role = 'user'
+          break
+        case 2:
+          role = 'assistant'
+          break
+        default:
+          break
+      }
+    }
+
+    return {
+      uid: entry.id ?? index,
+      disabled: !entry.enabled,
+      keys: entry.keys,
+      secondaryKeys: entry.secondary_keys ?? [],
+      comment: entry.comment ?? '',
+      content: entry.content,
+      constant: entry.constant ?? false,
+      vectorized: extensions.vectorized ?? false,
+      selectiveLogic,
+      order: entry.insertion_order,
+      position,
+      excludeRecursion: extensions.exclude_recursion ?? false,
+      preventRecursion: extensions.prevent_recursion ?? false,
+      delayUntilRecursion: extensions.delay_until_recursion ?? false,
+      probability: extensions.probability ?? entry.priority ?? 100,
+      depth: extensions.depth ?? undefined,
+      group: extensions.group ?? '',
+      groupOverride: extensions.group_override ?? false,
+      groupWeight: extensions.group_weight ?? 100,
+      sticky: extensions.sticky ?? 0,
+      cooldown: extensions.cooldown ?? 0,
+      delay: extensions.delay ?? 0,
+      scanDepth: extensions.scan_depth ?? undefined,
+      caseSensitive: extensions.case_sensitive ?? entry.case_sensitive,
+      matchWholeWords: extensions.match_whole_words ?? false,
+      useGroupScoring: extensions.use_group_scoring ?? false,
+      automationId: extensions.automation_id ?? undefined,
+      role,
+      selective: entry.selective ?? false,
+      useProbability: extensions.useProbability ?? false,
+      addMemo: false, // Character book doesn't have this field
+      characterFilter: undefined, // Character book doesn't have this field
+      matchPersonaDescription: extensions.match_persona_description ?? undefined,
+      matchCharacterDescription: extensions.match_character_description ?? undefined,
+      matchCharacterPersonality: extensions.match_character_personality ?? undefined,
+      matchCharacterDepthPrompt: extensions.match_character_depth_prompt ?? undefined,
+      matchScenario: extensions.match_scenario ?? undefined,
+      matchCreatorNotes: extensions.match_creator_notes ?? undefined,
+    }
+  })
+}
+
+function convertLorebookEntriesToCharacterBook(
+  entries: LorebookEntry[],
+  name?: string,
+): LorebookV3 {
+  return {
+    name,
+    entries: entries.map((entry, index) => {
+      let position: 'before_char' | 'after_char' | undefined = undefined
+      if (entry.position === Position.Before) {
+        position = 'before_char'
+      } else if (entry.position === Position.After) {
+        position = 'after_char'
+      }
+
+      // Convert selective logic back to numeric format
+      let selectiveLogic: number | undefined = undefined
+      switch (entry.selectiveLogic) {
+        case SelectiveLogic.AND_ANY:
+          selectiveLogic = 0
+          break
+        case SelectiveLogic.NOT_ALL:
+          selectiveLogic = 1
+          break
+        case SelectiveLogic.NOT_ANY:
+          selectiveLogic = 2
+          break
+        case SelectiveLogic.AND_ALL:
+          selectiveLogic = 3
+          break
+        default:
+          break
+      }
+
+      // Convert role back to numeric format
+      let role: number | undefined = undefined
+      if (entry.role) {
+        switch (entry.role) {
+          case 'system':
+            role = 0
+            break
+          case 'user':
+            role = 1
+            break
+          case 'assistant':
+            role = 2
+            break
+          default:
+            break
+        }
+      }
+
+      return {
+        id: entry.uid,
+        keys: entry.keys,
+        secondary_keys: entry.secondaryKeys ?? [],
+        comment: entry.comment,
+        content: entry.content,
+        constant: entry.constant,
+        selective: entry.selective,
+        insertion_order: entry.order,
+        enabled: !entry.disabled,
+        position,
+        case_sensitive: entry.caseSensitive,
+        use_regex: true, // Default value for character book
+        extensions: {
+          position: entry.position,
+          exclude_recursion: entry.excludeRecursion,
+          display_index: index, // sorting
+          probability: entry.probability,
+          useProbability: entry.useProbability,
+          depth: entry.depth,
+          selectiveLogic,
+          group: entry.group,
+          group_override: entry.groupOverride,
+          group_weight: entry.groupWeight,
+          prevent_recursion: entry.preventRecursion,
+          delay_until_recursion: entry.delayUntilRecursion,
+          scan_depth: entry.scanDepth,
+          match_whole_words: entry.matchWholeWords,
+          use_group_scoring: entry.useGroupScoring,
+          case_sensitive: entry.caseSensitive,
+          automation_id: entry.automationId,
+          role,
+          vectorized: entry.vectorized,
+          sticky: entry.sticky,
+          cooldown: entry.cooldown,
+          delay: entry.delay,
+          match_persona_description: entry.matchPersonaDescription,
+          match_character_description: entry.matchCharacterDescription,
+          match_character_personality: entry.matchCharacterPersonality,
+          match_character_depth_prompt: entry.matchCharacterDepthPrompt,
+          match_scenario: entry.matchScenario,
+          match_creator_notes: entry.matchCreatorNotes,
+        },
+      }
+    }),
+    extensions: {},
   }
 }
 
@@ -187,15 +405,64 @@ export const characterRouter = {
           break
       }
 
-      const [character] = await ctx.db.insert(Character).values(values).returning()
-      if (!character) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create character',
-        })
-      }
+      return await ctx.db.transaction(async (tx) => {
+        const [character] = await tx.insert(Character).values(values).returning()
+        if (!character) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to create character',
+          })
+        }
 
-      return { character }
+        // Check if character has embedded lorebook and create it
+        const characterBook = character.content.data.character_book
+        if (characterBook) {
+          const entries = convertCharacterBookToLorebookEntries(characterBook)
+
+          if (entries.length > 0) {
+            const validatedEntries = lorebookEntriesSchema.parse(entries)
+
+            const lorebookName = characterBook.name || `${character.content.data.name}'s Lorebook`
+
+            const [lorebook] = await tx
+              .insert(Lorebook)
+              .values({
+                userId: ctx.auth.userId,
+                name: lorebookName,
+                description: characterBook.description,
+                entries: validatedEntries,
+              })
+              .returning()
+            if (!lorebook) {
+              throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to create lorebook',
+              })
+            }
+
+            // If there is a primary character already linked, remove it
+            await tx
+              .delete(LorebookToCharacter)
+              .where(
+                and(
+                  eq(LorebookToCharacter.characterId, character.id),
+                  eq(LorebookToCharacter.userId, ctx.auth.userId),
+                  eq(LorebookToCharacter.primary, true),
+                ),
+              )
+
+            // Link the lorebook to the character as primary
+            await tx.insert(LorebookToCharacter).values({
+              lorebookId: lorebook.id,
+              characterId: character.id,
+              userId: ctx.auth.userId,
+              primary: true,
+            })
+          }
+        }
+
+        return { character }
+      })
     }),
 
   update: userProtectedProcedure
@@ -270,7 +537,7 @@ export const characterRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const character = await ctx.db.query.Character.findFirst({
+      let character = await ctx.db.query.Character.findFirst({
         where: and(eq(Character.id, input.id), eq(Character.userId, ctx.auth.userId)),
       })
       if (!character) {
@@ -290,23 +557,90 @@ export const characterRouter = {
           })
       }
 
+      const primaryLorebookLink = await ctx.db.query.LorebookToCharacter.findFirst({
+        where: and(
+          eq(LorebookToCharacter.characterId, character.id),
+          eq(LorebookToCharacter.primary, true),
+        ),
+        with: {
+          lorebook: true,
+        },
+      })
+
+      if (primaryLorebookLink?.lorebook) {
+        const characterBook = convertLorebookEntriesToCharacterBook(
+          primaryLorebookLink.lorebook.entries,
+          primaryLorebookLink.lorebook.name,
+        )
+        if (hash(character.content.data.character_book) !== hash(characterBook)) {
+          const updatedContent = {
+            ...character.content,
+            data: {
+              ...character.content.data,
+              character_book: characterBook,
+            },
+          }
+          character = (
+            await ctx.db
+              .update(Character)
+              .set({
+                content: updatedContent,
+              })
+              .where(eq(Character.id, character.id))
+              .returning()
+          ).at(0)!
+        }
+      }
+
+      const keySuffix = `/${sanitize(character.content.data.name)}.png`
+
+      // Extract key from existing URL
+      const key = decodeURIComponent(new URL(character.metadata.url).pathname.slice(1))
+
+      const isUrlChanged = !key.endsWith(keySuffix)
+
       // Get character card data from image
       const { card, cardV3, bytes } = await getCharacterCard(character.metadata.url)
 
-      if (hash(character.content) === hash(cardV3)) {
+      if (hash(character.content) === hash(cardV3) && !isUrlChanged) {
         // Content is already in sync, no update needed
         return { character, synced: false }
       }
 
       // Content is out of sync, update image with database content
       const updatedContent = convertToV3(updateWithV3(card, character.content))
+
       const updatedBytes = pngWrite(bytes, JSON.stringify(updatedContent))
 
-      // Extract key from existing URL for re-upload
-      const key = decodeURIComponent(new URL(character.metadata.url).pathname.slice(1))
+      // Upload updated image
+      const imageUrl = await uploadImage(
+        updatedBytes,
+        !isUrlChanged
+          ? key
+          : {
+              name: character.content.data.name,
+              prefix: 'characters',
+            },
+      )
 
-      // Upload updated image using the same key
-      await uploadImage(updatedBytes, key)
+      if (isUrlChanged) {
+        const oldImageUrl = character.metadata.url
+
+        character = (
+          await ctx.db
+            .update(Character)
+            .set({
+              metadata: {
+                ...character.metadata,
+                url: imageUrl,
+              },
+            })
+            .where(eq(Character.id, character.id))
+            .returning()
+        ).at(0)!
+
+        await deleteImage(oldImageUrl)
+      }
 
       return { character, synced: true }
     }),

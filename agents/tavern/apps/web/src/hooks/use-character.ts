@@ -8,6 +8,7 @@ import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
 
+import { useLorebooks } from '@/hooks/use-lorebook'
 import { useClearTagMap } from '@/hooks/use-settings'
 import { debounceTimeout } from '@/lib/debounce'
 import { bytesToBase64DataUrl } from '@/lib/utils'
@@ -79,6 +80,7 @@ export function useCreateCharacter() {
 
 export function useImportCharactersFromFiles() {
   const createMutation = useCreateCharacterMutation()
+  const { refetchLorebooks } = useLorebooks()
 
   return useCallback(
     async (files: FileList | null) => {
@@ -109,10 +111,18 @@ export function useImportCharactersFromFiles() {
 
         const dataUrl = await bytesToBase64DataUrl(result.bytes)
 
-        return await createMutation.mutateAsync({
+        const { character } = await createMutation.mutateAsync({
           source: 'import-file',
           dataUrl,
         })
+
+        if (character.content.data.character_book?.entries.length) {
+          void refetchLorebooks()
+        }
+
+        return {
+          character,
+        }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,6 +132,7 @@ export function useImportCharactersFromFiles() {
 
 export function useImportCharactersFromUrls() {
   const createMutation = useCreateCharacterMutation()
+  const { refetchLorebooks } = useLorebooks()
 
   return useCallback(
     async (str: string) => {
@@ -134,6 +145,7 @@ export function useImportCharactersFromUrls() {
         return
       }
 
+      const promises = []
       for (const url of urls) {
         // Always import url locally first
         let dataUrl: string | undefined
@@ -150,11 +162,21 @@ export function useImportCharactersFromUrls() {
           // If local importing failed, import url again at server side
         }
 
-        return await createMutation.mutateAsync({
+        promises.push(createMutation.mutateAsync({
           source: 'import-url',
           fromUrl: url,
           dataUrl,
-        })
+        }))
+      }
+
+      const characters = (await Promise.all(promises)).map(r => r.character)
+
+      if (characters.some(c => c.content.data.character_book?.entries.length)) {
+        void refetchLorebooks()
+      }
+
+      return {
+        characters
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
