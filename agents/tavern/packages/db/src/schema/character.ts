@@ -1,6 +1,6 @@
-import type { CharacterCardV2, CharacterMetadata } from '@tavern/core'
+import type { CharacterCardV3, CharacterMetadata } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
-import { characterCardV2Schema, characterMetadataSchema } from '@tavern/core'
+import { characterCardV3Schema, characterMetadataSchema } from '@tavern/core'
 import { index, jsonb, pgEnum, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod/v4'
@@ -39,7 +39,7 @@ export const Character = pgTable(
     source: characterSourceEnum().notNull().default('create'),
     // the nft token id of the character (if the character is nft)
     nftId: text(),
-    content: jsonb().$type<CharacterCardV2>().notNull(),
+    content: jsonb().$type<CharacterCardV3>().notNull(),
     metadata: jsonb().$type<CharacterMetadata>().notNull(),
     ...timestamps,
   },
@@ -57,7 +57,7 @@ export const CreateCharacterSchema = createInsertSchema(Character, {
   userId: z.string(),
   source: z.enum(characterSourceEnumValues),
   nftId: z.string().optional(),
-  content: characterCardV2Schema,
+  content: characterCardV3Schema,
   metadata: characterMetadataSchema,
 }).omit({
   ...timestampsOmits,

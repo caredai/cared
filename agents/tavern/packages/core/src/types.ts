@@ -1,6 +1,6 @@
 import type { Chat } from '@ownxai/sdk'
 
-import type { CharacterCardV2 } from './character'
+import type { CharacterCardV3 } from './character'
 import type { CharGroupMetadata } from './character-group'
 import type { Message } from './message'
 import type { PersonaMetadata } from './persona'
@@ -17,7 +17,7 @@ export interface ReducedPersona {
 
 export interface ReducedCharacter {
   id: string
-  content: CharacterCardV2
+  content: CharacterCardV3
 }
 
 export interface ReducedGroup {

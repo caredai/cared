@@ -4,7 +4,7 @@ import { unzip } from 'unzipit'
 
 import type { CharacterCardV3 } from './types'
 import { pngRead, pngWrite } from './png-chunks'
-import { convertToV2 } from './types'
+import { convertToV3 } from './types'
 
 export interface ImportFileResult {
   bytes: Uint8Array
@@ -30,7 +30,7 @@ export async function importFile(
 async function importPng(file: File) {
   const bytes = new Uint8Array(await file.arrayBuffer())
   const card = JSON.parse(pngRead(bytes))
-  const cardV2 = convertToV2(card)
+  const cardV2 = convertToV3(card)
   console.log('importPng:', {
     card,
     cardV2,
@@ -43,7 +43,7 @@ async function importPng(file: File) {
 
 async function importJson(file: File, defaultPngBytes: Uint8Array) {
   const data = await file.text()
-  const _ = convertToV2(JSON.parse(data))
+  const _ = convertToV3(JSON.parse(data))
 
   return {
     bytes: pngWrite(defaultPngBytes, data),
@@ -61,7 +61,7 @@ async function importCharx(file: File, defaultPngBytes: Uint8Array) {
     return 'charx zip file does not contain card.json'
   }
 
-  const cardV2 = convertToV2(card)
+  const cardV2 = convertToV3(card)
 
   const filename = `${sanitize(cardV2.data.name)}.png`
 

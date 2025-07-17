@@ -1,7 +1,7 @@
 import type { ModelInfo } from '@ownxai/sdk'
 import { toUIMessages } from '../message'
 
-import type { CharacterCardV2 } from '../character'
+import type { CharacterCardV3 } from '../character'
 import type { MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
 import type { Settings } from '../settings'
@@ -15,7 +15,7 @@ export interface BuildPromptMessagesParams {
   modelPreset: ModelPreset
   model: ModelInfo
   persona: ReducedPersona
-  character: CharacterCardV2 // next character
+  character: CharacterCardV3 // next character
   group?: ReducedGroup
 }
 

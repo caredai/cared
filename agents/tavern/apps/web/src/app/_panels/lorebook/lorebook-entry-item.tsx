@@ -155,6 +155,15 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
 
   const handleBlur = useCallback(() => {
     const values = form.getValues()
+    const characterFilter = values.characterFilter as Partial<typeof values.characterFilter>
+    values.characterFilter =
+      characterFilter?.isExclude || characterFilter?.names?.length || characterFilter?.tags?.length
+        ? {
+            isExclude: characterFilter.isExclude ?? false,
+            names: characterFilter.names ?? [],
+            tags: characterFilter.tags ?? [],
+          }
+        : undefined
     const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
     if (!lorebook) return
 
@@ -170,6 +179,17 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
     (e: React.MouseEvent) => {
       e.preventDefault()
       const values = form.getValues()
+      const characterFilter = values.characterFilter as Partial<typeof values.characterFilter>
+      values.characterFilter =
+        characterFilter?.isExclude ||
+        characterFilter?.names?.length ||
+        characterFilter?.tags?.length
+          ? {
+              isExclude: characterFilter.isExclude ?? false,
+              names: characterFilter.names ?? [],
+              tags: characterFilter.tags ?? [],
+            }
+          : undefined
       const newUid = maxUid + 1
       const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
       if (!lorebook) return
@@ -711,7 +731,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                       <FormLabel>Names (comma separated)</FormLabel>
                       <FormControl>
                         <Input
-                          value={field.value.join(', ')}
+                          value={field.value?.join(', ')}
                           onChange={(e) =>
                             field.onChange(
                               e.target.value
@@ -734,7 +754,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                       <FormLabel>Tags (comma separated)</FormLabel>
                       <FormControl>
                         <Input
-                          value={field.value.join(', ')}
+                          value={field.value?.join(', ')}
                           onChange={(e) =>
                             field.onChange(
                               e.target.value

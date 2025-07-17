@@ -1,12 +1,12 @@
 import type { CharacterCardV1, CharacterCardV2, CharacterCardV3 } from '@tavern/core'
 import type { CreateCharacterSchema } from '@tavern/db/schema'
 import {
-  characterCardV2Schema,
-  convertToV2,
+  characterCardV3Schema,
+  convertToV3,
   importUrl,
   pngRead,
   pngWrite,
-  updateWithV2,
+  updateWithV3,
 } from '@tavern/core'
 import { Character, characterSourceEnumValues } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
@@ -21,11 +21,11 @@ async function getCharacterCard(url: string) {
   const bytes = await retrieveImage(url)
 
   const c = JSON.parse(pngRead(bytes))
-  const cardV2 = convertToV2(c)
+  const cardV3 = convertToV3(c)
 
   return {
     card: c as CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
-    cardV2,
+    cardV3,
     bytes,
   }
 }
@@ -41,8 +41,8 @@ async function processCharacterCard(dataUrlOrBytes: string | Uint8Array | Buffer
   }
 
   const c = JSON.parse(pngRead(buffer))
-  const charV2 = convertToV2(c)
-  if (!charV2.data.name) {
+  const charV3 = convertToV3(c)
+  if (!charV3.data.name) {
     throw new TRPCError({
       code: 'BAD_REQUEST',
       message: 'Character card name is required',
@@ -54,13 +54,13 @@ async function processCharacterCard(dataUrlOrBytes: string | Uint8Array | Buffer
     key
       ? key
       : {
-          name: charV2.data.name,
+          name: charV3.data.name,
           prefix: 'characters',
         },
   )
 
   return {
-    content: charV2,
+    content: charV3,
     url: imageUrl,
   }
 }
@@ -72,7 +72,13 @@ export const characterRouter = {
       .from(Character)
       .where(eq(Character.userId, ctx.auth.userId))
       .orderBy(asc(Character.id))
-    return { characters }
+    return {
+      characters: characters.map((character) => ({
+        ...character,
+        // TODO: remove this conversion when all characters are in V3 format
+        content: convertToV3(character.content), // Ensure content is always in V3 format
+      })),
+    }
   }),
 
   get: userProtectedProcedure
@@ -198,7 +204,7 @@ export const characterRouter = {
         .object({
           id: z.string(),
           dataUrl: z.string().optional(),
-          content: characterCardV2Schema.optional(),
+          content: characterCardV3Schema.optional(),
         })
         .refine((data) => data.dataUrl ?? data.content, 'Either dataUrl or content is required'),
     )
@@ -222,7 +228,7 @@ export const characterRouter = {
           })
       }
 
-      let content: z.infer<typeof characterCardV2Schema>
+      let content: z.infer<typeof characterCardV3Schema>
 
       if (input.dataUrl) {
         // Extract key from existing URL for re-upload
@@ -239,7 +245,7 @@ export const characterRouter = {
         }
       } else {
         // Update existing character card with new content
-        content = convertToV2(updateWithV2(character.content, input.content!))
+        content = convertToV3(updateWithV3(character.content, input.content!))
       }
 
       if (hash(content) !== hash(character.content)) {
@@ -285,15 +291,15 @@ export const characterRouter = {
       }
 
       // Get character card data from image
-      const { card, cardV2, bytes } = await getCharacterCard(character.metadata.url)
+      const { card, cardV3, bytes } = await getCharacterCard(character.metadata.url)
 
-      if (hash(character.content) === hash(cardV2)) {
+      if (hash(character.content) === hash(cardV3)) {
         // Content is already in sync, no update needed
         return { character, synced: false }
       }
 
       // Content is out of sync, update image with database content
-      const updatedContent = convertToV2(updateWithV2(card, character.content))
+      const updatedContent = convertToV3(updateWithV3(card, character.content))
       const updatedBytes = pngWrite(bytes, JSON.stringify(updatedContent))
 
       // Extract key from existing URL for re-upload

@@ -1,6 +1,6 @@
 import type { ModelInfo } from '@ownxai/sdk'
 
-import type { CharacterCardV2 } from '../character'
+import type { CharacterCardV3 } from '../character'
 import type { CharGroupMetadata } from '../character-group'
 import type { MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
@@ -19,7 +19,7 @@ export interface SubstituteMacrosParams {
   modelPreset: ModelPreset
   model?: ModelInfo
   persona?: ReducedPersona
-  character?: CharacterCardV2 // next character
+  character?: CharacterCardV3 // next character
   group?: ReducedGroup
 }
 
@@ -43,7 +43,7 @@ export function substituteMacros(
     ...settings.variables,
   }
 
-  function buildCharVariables(character?: CharacterCardV2, group?: ReducedGroup) {
+  function buildCharVariables(character?: CharacterCardV3, group?: ReducedGroup) {
     return {
       user: persona?.name,
       char: character?.data.name,
@@ -135,7 +135,7 @@ export function substituteMacros(
     function customEvaluateBasicMacros(
       content: string | undefined,
       fieldName: string,
-      character: CharacterCardV2,
+      character: CharacterCardV3,
     ) {
       content = content?.trim()
       if (!content) {
@@ -152,7 +152,7 @@ export function substituteMacros(
     function replaceAndPrepareForJoin(
       content: string,
       fieldName: string,
-      character: CharacterCardV2,
+      character: CharacterCardV3,
       preprocess?: (s: string) => string,
     ) {
       content = content.trim()
@@ -227,7 +227,7 @@ export function substituteMacros(
 }
 
 function getGroupValue(
-  character?: CharacterCardV2,
+  character?: CharacterCardV3,
   group?: {
     characters: ReducedCharacter[]
     metadata: CharGroupMetadata

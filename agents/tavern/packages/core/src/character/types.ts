@@ -100,32 +100,14 @@ const characterCardV2PartialSchema = z
   .partial()
 
 export const lorebookEntryV3Schema = z.object({
-  keys: z.array(z.string()),
-  content: z.string(),
-  extensions: z.record(z.string(), z.any()),
-  enabled: z.boolean(),
-  insertion_order: z.coerce.number(),
-  case_sensitive: z.boolean().optional(),
+  ...lorebookEntryV2Schema.shape,
   use_regex: z.boolean(),
-  constant: z.boolean().optional(),
-  name: z.string().optional(),
-  priority: z.coerce.number().optional(),
-  id: z.coerce.number().optional(),
-  comment: z.string().optional(),
-  selective: z.boolean().optional(),
-  secondary_keys: z.array(z.string()).optional(),
-  position: z.enum(['before_char', 'after_char']).optional(),
 })
 
 const lorebookEntryV3PartialSchema = lorebookEntryV3Schema.partial()
 
 export const lorebookV3Schema = z.object({
-  name: z.string().optional(),
-  description: z.string().optional(),
-  scan_depth: z.coerce.number().optional(),
-  token_budget: z.coerce.number().optional(),
-  recursive_scanning: z.boolean().optional(),
-  extensions: z.record(z.string(), z.any()),
+  ...lorebookV2Schema.shape,
   entries: z.array(lorebookEntryV3Schema),
 })
 
@@ -140,20 +122,7 @@ export const characterCardV3Schema = z.object({
   spec: z.literal('chara_card_v3'),
   spec_version: z.literal('3.0'),
   data: z.object({
-    name: z.string(),
-    description: z.string(),
-    tags: z.array(z.string()),
-    creator: z.string(),
-    character_version: z.string(),
-    mes_example: z.string(),
-    extensions: z.record(z.string(), z.any()),
-    system_prompt: z.string(),
-    post_history_instructions: z.string(),
-    first_mes: z.string(),
-    alternate_greetings: z.array(z.string()),
-    personality: z.string(),
-    scenario: z.string(),
-    creator_notes: z.string(),
+    ...characterCardV2Schema.shape.data.shape,
     character_book: lorebookV3Schema.optional(),
     assets: z
       .array(
@@ -186,9 +155,9 @@ export const characterCardV3PartialSchema = z
   })
   .partial()
 
-export function convertToV2(
+export function convertToV3(
   card: CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
-): CharacterCardV2 {
+): CharacterCardV3 {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if ((card as CharacterCardV2).spec === 'chara_card_v2') {
     const { data, spec_version } = characterCardV2PartialSchema.parse(card)
@@ -198,8 +167,8 @@ export function convertToV2(
     const entries = book?.entries
 
     return {
-      spec: 'chara_card_v2' as const,
-      spec_version: '2.0' as const,
+      spec: 'chara_card_v3' as const,
+      spec_version: '3.0' as const,
       data: {
         name: data?.name ?? '',
         description: data?.description ?? '',
@@ -234,12 +203,14 @@ export function convertToV2(
               constant: entry.constant,
               position: entry.position,
               case_sensitive: entry.case_sensitive,
+              use_regex: false,
             })) ?? [],
         },
         tags: data?.tags ?? [],
         creator: data?.creator ?? '',
         character_version: data?.character_version ?? '',
         extensions: data?.extensions ?? {},
+        group_only_greetings: [],
       },
     }
   }
@@ -253,8 +224,8 @@ export function convertToV2(
     const entries = book?.entries
 
     return {
-      spec: 'chara_card_v2' as const,
-      spec_version: '2.0' as const,
+      spec: 'chara_card_v3' as const,
+      spec_version: '3.0' as const,
       data: {
         name: data?.name ?? '',
         description: data?.description ?? '',
@@ -289,12 +260,20 @@ export function convertToV2(
               constant: entry.constant,
               position: entry.position,
               case_sensitive: entry.case_sensitive,
+              use_regex: entry.use_regex ?? false,
             })) ?? [],
         },
         tags: data?.tags ?? [],
         creator: data?.creator ?? '',
         character_version: data?.character_version ?? '',
         extensions: data?.extensions ?? {},
+        assets: data?.assets,
+        nickname: data?.nickname,
+        creator_notes_multilingual: data?.creator_notes_multilingual,
+        source: data?.source,
+        group_only_greetings: data?.group_only_greetings ?? [],
+        creation_date: data?.creation_date,
+        modification_date: data?.modification_date,
       },
     }
   }
@@ -302,8 +281,8 @@ export function convertToV2(
   const data = characterCardV1PartialSchema.parse(card)
   if (data.name) {
     return {
-      spec: 'chara_card_v2' as const,
-      spec_version: '2.0' as const,
+      spec: 'chara_card_v3' as const,
+      spec_version: '3.0' as const,
       data: {
         name: data.name,
         description: data.description ?? '',
@@ -320,6 +299,7 @@ export function convertToV2(
         creator: '',
         character_version: '',
         extensions: {},
+        group_only_greetings: [],
       },
     }
   }
@@ -327,9 +307,9 @@ export function convertToV2(
   throw new Error('unknown character card format')
 }
 
-export function updateWithV2(
+export function updateWithV3(
   card: CharacterCardV1 | CharacterCardV2 | CharacterCardV3,
-  newCard: CharacterCardV2,
+  newCard: CharacterCardV3,
 ): CharacterCardV1 | CharacterCardV2 | CharacterCardV3 {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if ((card as CharacterCardV2).spec === 'chara_card_v2') {

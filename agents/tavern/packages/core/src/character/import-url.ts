@@ -2,7 +2,7 @@ import sanitize from 'sanitize-filename'
 
 import { env } from '../env'
 import { pngWrite } from './png-chunks'
-import { convertToV2 } from './types'
+import { convertToV3 } from './types'
 
 export interface ImportUrlResult {
   type: 'character' | 'lorebook'
@@ -98,7 +98,7 @@ async function downloadPygmalionCharacter(id: string): Promise<ImportUrlResult |
     return `failed to fetch Pygmalion character: ${result.statusText}`
   }
   const charData = (await result.json()) as any
-  const _ = convertToV2(charData)
+  const _ = convertToV3(charData)
   const avatarUrl = charData?.data?.avatar as string | undefined
   if (!avatarUrl?.endsWith('.png')) {
     return `no avatar found in Pygmalion character`

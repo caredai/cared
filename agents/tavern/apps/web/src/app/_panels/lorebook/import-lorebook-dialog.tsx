@@ -47,8 +47,78 @@ export function ImportLorebookDialog({ trigger }: { trigger: ReactNode }) {
       const text = await file.text()
       const lorebook = JSON.parse(text)
 
+      let entries: any[]
+      // Auto-detect format: array (CryptoTavern) or object (SillyTavern)
+      if (Array.isArray(lorebook.entries)) {
+        // CryptoTavern format: entries is an array
+        entries = lorebook.entries
+      } else if (typeof lorebook.entries === 'object') {
+        // SillyTavern format: entries is an object
+        // Map SillyTavern fields to local entry fields
+        const selectiveLogicReverseMap = {
+          0: 'andAny',
+          1: 'notAll',
+          2: 'notAny',
+          3: 'andAll',
+        } as const
+        // Convert SillyTavern entries object to array and sort by displayIndex
+        const entriesArray = Object.values(lorebook.entries).map((entry: any) => {
+          return {
+            uid: entry.uid,
+            disabled: entry.disable,
+            keys: entry.key ?? [],
+            secondaryKeys: entry.keysecondary ?? [],
+            comment: entry.comment ?? '',
+            content: entry.content ?? '',
+            constant: entry.constant ?? false,
+            vectorized: entry.vectorized ?? false,
+            // @ts-ignore
+            selectiveLogic: selectiveLogicReverseMap[entry.selectiveLogic ?? 0] ?? 'andAny',
+            order: entry.order ?? 100,
+            position: entry.position ?? 0,
+            excludeRecursion: entry.excludeRecursion ?? false,
+            preventRecursion: entry.preventRecursion ?? false,
+            delayUntilRecursion: entry.delayUntilRecursion ?? false,
+            probability: entry.probability ?? 100,
+            depth: entry.depth ?? undefined,
+            group: entry.group ?? '',
+            groupOverride: entry.groupOverride ?? false,
+            groupWeight: entry.groupWeight ?? 100,
+            sticky: entry.sticky ?? 0,
+            cooldown: entry.cooldown ?? 0,
+            delay: entry.delay ?? 0,
+            scanDepth: entry.scanDepth ?? undefined,
+            caseSensitive: entry.caseSensitive ?? undefined,
+            matchWholeWords: entry.matchWholeWords ?? undefined,
+            useGroupScoring: entry.useGroupScoring ?? undefined,
+            automationId: entry.automationId ?? undefined,
+            role: entry.role ?? undefined,
+            characterFilter: entry.characterFilter ?? undefined,
+            selective: entry.selective ?? false,
+            useProbability: entry.useProbability ?? false,
+            addMemo: entry.addMemo ?? false,
+            matchPersonaDescription: entry.matchPersonaDescription ?? undefined,
+            matchCharacterDescription: entry.matchCharacterDescription ?? undefined,
+            matchCharacterPersonality: entry.matchCharacterPersonality ?? undefined,
+            matchCharacterDepthPrompt: entry.matchCharacterDepthPrompt ?? undefined,
+            matchScenario: entry.matchScenario ?? undefined,
+            matchCreatorNotes: entry.matchCreatorNotes ?? undefined,
+            // Store displayIndex for sorting
+            displayIndex: entry.displayIndex ?? 0,
+          }
+        })
+
+        // Sort entries by displayIndex to preserve SillyTavern ordering
+        entries = entriesArray.sort((a, b) => (a.displayIndex ?? 0) - (b.displayIndex ?? 0))
+
+        // Remove displayIndex from final entries as it's not part of our schema
+        entries = entries.map(({ displayIndex: _displayIndex, ...entry }) => entry)
+      } else {
+        throw new Error('Invalid lorebook format: entries field is missing or invalid')
+      }
+
       // Validate the entries using schema
-      const validatedEntries = lorebookEntriesSchema.parse(lorebook.entries)
+      const validatedEntries = lorebookEntriesSchema.parse(entries)
 
       // Get name from file name without extension
       const name = file.name.replace(/\.json$/, '')

@@ -1,9 +1,9 @@
 import type { AppRouter } from '@tavern/api'
-import type { CharacterCardV2 } from '@tavern/core'
+import type { CharacterCardV3 } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
 import { useCallback, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { characterCardV2Schema, importFile, importUrl, pngWrite } from '@tavern/core'
+import { characterCardV3Schema, importFile, importUrl, pngWrite } from '@tavern/core'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
@@ -59,7 +59,7 @@ export function useCreateCharacter() {
   const createMutation = useCreateCharacterMutation()
 
   return useCallback(
-    async (content: CharacterCardV2, imageDataUrl?: string) => {
+    async (content: CharacterCardV3, imageDataUrl?: string) => {
       const pngBytes = imageDataUrl
         ? await fetch(imageDataUrl).then((r) => r.bytes())
         : await (await fetch(defaultPng.src)).bytes()
@@ -182,7 +182,7 @@ export function useUpdateCharacter() {
         }
         const id = newData.id
         // @ts-ignore
-        const content: CharacterCardV2 = newData.content!
+        const content: CharacterCardV3 = newData.content!
         const index = old.characters.findIndex((char) => char.id === id)
         return {
           characters: [
@@ -245,9 +245,9 @@ export function useUpdateCharacter() {
     })
 
   return useCallback(
-    async (character: Character, content: CharacterCardV2) => {
+    async (character: Character, content: CharacterCardV3) => {
       // Strip out any unnecessary properties
-      content = characterCardV2Schema.parse(content)
+      content = characterCardV3Schema.parse(content)
       // Check if the content is the same as the current one
       if (hash(content) === hash(character.content)) {
         return
