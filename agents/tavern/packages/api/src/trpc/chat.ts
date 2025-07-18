@@ -467,6 +467,30 @@ export const chatRouter = {
       })
     }),
 
+  batchDelete: userProtectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().min(32)).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const ownx = createOwnxClient(ctx)
+      const ownxTrpc = ownx.trpc
+
+      await ctx.db.transaction(async (tx) => {
+        // Delete character chat records for all chat IDs
+        await tx.delete(CharacterChat).where(inArray(CharacterChat.chatId, input.ids))
+
+        // Delete group chat records for all chat IDs
+        await tx.delete(CharGroupChat).where(inArray(CharGroupChat.chatId, input.ids))
+
+        // Call ownx batch delete
+        await ownxTrpc.chat.batchDelete.mutate({
+          ids: input.ids,
+        })
+      })
+    }),
+
   clone: userProtectedProcedure
     .input(
       z.object({

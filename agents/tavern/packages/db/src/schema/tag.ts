@@ -23,10 +23,10 @@ export const CharsToTags = pgTable(
   {
     characterId: text()
       .notNull()
-      .references(() => Character.id),
+      .references(() => Character.id, { onDelete: 'cascade' }),
     tag: text()
       .notNull()
-      .references(() => Tag.name),
+      .references(() => Tag.name, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [

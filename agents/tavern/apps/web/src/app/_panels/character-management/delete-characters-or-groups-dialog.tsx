@@ -37,13 +37,15 @@ export function DeleteCharactersOrGroupsDialog({
   const handleConfirm = async () => {
     setIsLoading(true)
     try {
+      const promises = []
       // Delete both characters and groups if they exist
       if (groupIds.length > 0) {
-        await deleteCharacterGroups(groupIds)
+        promises.push(deleteCharacterGroups(groupIds))
       }
       if (characterIds.length > 0) {
-        await deleteCharacters(characterIds)
+        promises.push(deleteCharacters(characterIds))
       }
+      await Promise.all(promises)
       onOpenChange(false)
       onDelete()
     } finally {

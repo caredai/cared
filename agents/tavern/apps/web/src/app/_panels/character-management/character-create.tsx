@@ -71,12 +71,13 @@ export function CharacterCreate() {
 
     const { character } = await createCharacter(
       {
-        spec: 'chara_card_v2',
-        spec_version: '2.0',
+        spec: 'chara_card_v3',
+        spec_version: '3.0',
         data: {
           ...basic,
           ...advanced,
           name: basic.name, // avoid overriding
+          group_only_greetings: [],
           extensions: formatExtensions(advanced),
         },
       },

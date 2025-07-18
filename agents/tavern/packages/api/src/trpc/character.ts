@@ -1,15 +1,17 @@
-import type { CreateCharacterSchema } from '@tavern/db/schema'
-import {
+import type {
   CharacterCardV1,
   CharacterCardV2,
   CharacterCardV3,
+  LorebookEntry,
+  LorebookV3,
+  lorebookV3Schema,
+} from '@tavern/core'
+import type { CreateCharacterSchema } from '@tavern/db/schema'
+import {
   characterCardV3Schema,
   convertToV3,
   importUrl,
   lorebookEntriesSchema,
-  LorebookEntry,
-  LorebookV3,
-  lorebookV3Schema,
   pngRead,
   pngWrite,
   Position,
@@ -18,6 +20,7 @@ import {
 } from '@tavern/core'
 import {
   Character,
+  CharacterChat,
   characterSourceEnumValues,
   Lorebook,
   LorebookToCharacter,
@@ -28,6 +31,7 @@ import sanitize from 'sanitize-filename'
 import hash from 'stable-hash'
 import { z } from 'zod/v4'
 
+import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
 import { deleteImage, deleteImages, retrieveImage, uploadImage } from './utils'
 
@@ -652,6 +656,28 @@ export const characterRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // First, find all chats associated with this character
+      const characterChats = await ctx.db
+        .select({ chatId: CharacterChat.chatId })
+        .from(CharacterChat)
+        .where(
+          and(eq(CharacterChat.characterId, input.id), eq(CharacterChat.userId, ctx.auth.userId)),
+        )
+
+      // Delete chats in batches of 100
+      if (characterChats.length > 0) {
+        const ownx = createOwnxClient(ctx)
+        const ownxTrpc = ownx.trpc
+
+        const chatIds = characterChats.map((cc) => cc.chatId)
+
+        for (let i = 0; i < chatIds.length; i += 100) {
+          await ownxTrpc.chat.batchDelete.mutate({
+            ids: chatIds.slice(i, i + 100),
+          })
+        }
+      }
+
       const [character] = await ctx.db
         .delete(Character)
         .where(and(eq(Character.id, input.id), eq(Character.userId, ctx.auth.userId)))
@@ -685,6 +711,31 @@ export const characterRouter = {
           code: 'NOT_FOUND',
           message: 'No characters found',
         })
+      }
+
+      // First, find all chats associated with these characters
+      const characterChats = await ctx.db
+        .select({ chatId: CharacterChat.chatId })
+        .from(CharacterChat)
+        .where(
+          and(
+            inArray(CharacterChat.characterId, input.ids),
+            eq(CharacterChat.userId, ctx.auth.userId),
+          ),
+        )
+
+      // Delete chats in batches of 100
+      if (characterChats.length > 0) {
+        const ownx = createOwnxClient(ctx)
+        const ownxTrpc = ownx.trpc
+
+        const chatIds = characterChats.map((cc) => cc.chatId)
+
+        for (let i = 0; i < chatIds.length; i += 100) {
+          await ownxTrpc.chat.batchDelete.mutate({
+            ids: chatIds.slice(i, i + 100),
+          })
+        }
       }
 
       // Delete all characters from the database

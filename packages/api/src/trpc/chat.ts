@@ -485,6 +485,48 @@ export const chatRouter = {
     }),
 
   /**
+   * Delete multiple chats by their IDs.
+   * Only accessible by authenticated users.
+   * @param input - Object containing array of chat IDs to delete
+   * @returns Array of deleted chats
+   */
+  batchDelete: appUserProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'DELETE',
+        path: '/v1/chats/batch-delete',
+        protect: true,
+        tags: ['chats'],
+        summary: 'Delete multiple chats by their IDs',
+      },
+    })
+    .input(z.object({ ids: z.array(z.string().min(32)).min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      await getAppById(ctx, ctx.auth.appId)
+
+      // Delete chats that belong to the user and app
+      const deletedChats = await ctx.db
+        .delete(Chat)
+        .where(
+          and(
+            eq(Chat.appId, ctx.auth.appId),
+            eq(Chat.userId, ctx.auth.userId),
+            inArray(Chat.id, input.ids),
+          ),
+        )
+        .returning()
+
+      if (deletedChats.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No chats found to delete',
+        })
+      }
+
+      return { chats: deletedChats }
+    }),
+
+  /**
    * Clone a chat with specific messages.
    * Only accessible by authenticated users.
    * @param input - Object containing the source chat ID and array of message IDs to clone

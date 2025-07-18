@@ -1,12 +1,15 @@
 import type { AppRouter } from '@tavern/api'
 import type { LorebookEntry } from '@tavern/core'
 import type { inferRouterOutputs } from '@trpc/server'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { atom, useAtom } from 'jotai'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'
 
+import { useCharacters } from '@/hooks/use-character'
+import { useTagsSettings } from '@/hooks/use-settings'
 import { debounceTimeout } from '@/lib/debounce'
 import { useTRPC } from '@/trpc/client'
 
@@ -626,4 +629,85 @@ export function useActiveLorebooks(
   return {
     lorebooks: filteredLorebooks,
   }
+}
+
+const hasAttemptedCheckAtom = atom(false)
+
+export function useCheckLorebooks() {
+  const { lorebooks } = useLorebooks()
+  const { characters } = useCharacters()
+  const { tags } = useTagsSettings()
+  const updateLorebook = useUpdateLorebook()
+
+  const [hasAttemptedCheck, setHasAttemptedCheck] = useAtom(hasAttemptedCheckAtom)
+
+  useEffect(() => {
+    // Collect all valid character ids and tag names
+    const validCharacterIds = new Set(characters.map((c) => c.id))
+    const validTagNames = new Set(tags.map((t) => t.name))
+
+    const actions: (() => Promise<void>)[] = []
+    lorebooks.forEach((lorebook) => {
+      let needUpdate = false
+
+      // Create a new entries array with invalid ids/tags removed
+      const newEntries = lorebook.entries.map((entry) => {
+        const filter = entry.characterFilter
+        if (!filter) {
+          return entry
+        }
+
+        // Filter characterFilter.names (character ids)
+        const filteredNames = filter.names.filter((id) => validCharacterIds.has(id))
+        // Filter characterFilter.tags (tag names)
+        const filteredTags = filter.tags.filter((tag) => validTagNames.has(tag))
+
+        if (
+          filteredNames.length === filter.names.length &&
+          filteredTags.length === filter.tags.length
+        ) {
+          return entry
+        }
+
+        // If any id or tag was removed, mark for update
+        needUpdate = true
+        // Return the entry with filtered characterFilter
+        if (!filter.isExclude && !filteredNames.length && !filteredTags.length) {
+          return {
+            ...entry,
+            characterFilter: undefined,
+          }
+        } else {
+          return {
+            ...entry,
+            characterFilter: {
+              isExclude: filter.isExclude,
+              names: filteredNames,
+              tags: filteredTags,
+            },
+          }
+        }
+      })
+
+      // If any entry was changed, update the lorebook
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (needUpdate) {
+        actions.push(() =>
+          updateLorebook({
+            id: lorebook.id,
+            entries: newEntries,
+          }),
+        )
+      }
+    })
+
+    if (!actions.length || hasAttemptedCheck) {
+      return
+    }
+    setHasAttemptedCheck(true)
+
+    void Promise.all(actions.map((action) => action())).finally(() => {
+      setHasAttemptedCheck(false)
+    })
+  }, [lorebooks, characters, tags, updateLorebook, hasAttemptedCheck, setHasAttemptedCheck])
 }

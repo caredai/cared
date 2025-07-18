@@ -1,11 +1,12 @@
 import { charGroupMetadataSchema } from '@tavern/core'
-import { CharGroup } from '@tavern/db/schema'
+import { CharGroup, CharGroupChat } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 import { makeObjectNonempty } from '@ownxai/sdk'
 
+import { createOwnxClient } from '../ownx'
 import { userProtectedProcedure } from '../trpc'
 import { deleteImage, deleteImages, uploadImage } from './utils'
 
@@ -135,6 +136,28 @@ export const characterGroupRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Find all chats associated with this character group
+      const groupChats = await ctx.db
+        .select({ chatId: CharGroupChat.chatId })
+        .from(CharGroupChat)
+        .where(and(eq(CharGroupChat.groupId, input.id), eq(CharGroupChat.userId, ctx.auth.userId)))
+
+      // Batch delete associated chats if any
+      if (groupChats.length > 0) {
+        const ownx = createOwnxClient(ctx)
+        const ownxTrpc = ownx.trpc
+
+        const chatIds = groupChats.map((gc) => gc.chatId)
+
+        // Delete chats in batches of 100
+        for (let i = 0; i < chatIds.length; i += 100) {
+          await ownxTrpc.chat.batchDelete.mutate({
+            ids: chatIds.slice(i, i + 100),
+          })
+        }
+      }
+
+      // Delete the character group from database
       const [group] = await ctx.db
         .delete(CharGroup)
         .where(and(eq(CharGroup.id, input.id), eq(CharGroup.userId, ctx.auth.userId)))
@@ -171,6 +194,29 @@ export const characterGroupRouter = {
           code: 'NOT_FOUND',
           message: 'No character groups found',
         })
+      }
+
+      // Find all chats associated with these character groups
+      const groupChats = await ctx.db
+        .select({ chatId: CharGroupChat.chatId })
+        .from(CharGroupChat)
+        .where(
+          and(inArray(CharGroupChat.groupId, input.ids), eq(CharGroupChat.userId, ctx.auth.userId)),
+        )
+
+      // Batch delete associated chats if any
+      if (groupChats.length > 0) {
+        const ownx = createOwnxClient(ctx)
+        const ownxTrpc = ownx.trpc
+
+        const chatIds = groupChats.map((gc) => gc.chatId)
+
+        // Delete chats in batches of 100
+        for (let i = 0; i < chatIds.length; i += 100) {
+          await ownxTrpc.chat.batchDelete.mutate({
+            ids: chatIds.slice(i, i + 100),
+          })
+        }
       }
 
       // Delete all character groups from database

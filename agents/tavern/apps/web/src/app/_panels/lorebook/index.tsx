@@ -354,7 +354,7 @@ export const LorebookPanelUpperPart = memo(function LorebookPanelUpperPart({
       </div>
 
       {selectedLorebook && (
-        <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
+        <div className="hidden md:grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
           <Label className="col-start-3 text-xs">Title/Memo</Label>
           <Label className="text-xs">Strategy</Label>
           <Label className="text-xs">Position</Label>

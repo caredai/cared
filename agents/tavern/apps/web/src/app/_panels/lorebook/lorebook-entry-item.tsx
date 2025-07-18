@@ -23,7 +23,7 @@ import {
   FormMessage,
 } from '@ownxai/ui/components/form'
 import { Input } from '@ownxai/ui/components/input'
-import { Label } from '@ownxai/ui/components/label'
+import { MultiSelectVirtual } from '@ownxai/ui/components/multi-select-virtual'
 import {
   Select,
   SelectContent,
@@ -38,7 +38,9 @@ import { cn } from '@ownxai/ui/lib/utils'
 import { CheckboxField } from '@/components/checkbox-field'
 import { FaButton } from '@/components/fa-button'
 import { NumberInput, OptionalNumberInput } from '@/components/number-input'
+import { useCharacters } from '@/hooks/use-character'
 import { useUpdateLorebook } from '@/hooks/use-lorebook'
+import { useTagsSettings } from '@/hooks/use-settings'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 
 const selectiveLogicOptions = [
@@ -223,6 +225,18 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
 
   const contentTokens = useTextTokens(form.watch('content'))
 
+  const { characters } = useCharacters() // Get all characters
+  const tagsSettings = useTagsSettings() // Get all tags settings
+
+  const characterNameOptions = characters.map((char) => ({
+    value: char.id,
+    label: char.content.data.name,
+  }))
+  const tagNameOptions = tagsSettings.tags.map((tag) => ({
+    value: tag.name,
+    label: tag.name,
+  }))
+
   return (
     <Form {...form}>
       <form
@@ -231,7 +245,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
         autoComplete="off"
       >
         <Collapsible open={open} onOpenChange={(open) => onOpenChange?.(uid, open)}>
-          <div className="grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-center gap-2">
+          <div className="flex flex-wrap md:grid grid-cols-[24px_20px_1fr_52px_72px_60px_60px_60px_24px_24px] items-end md:items-center gap-2">
             <CollapsibleTrigger asChild>
               <Button
                 type="button"
@@ -263,7 +277,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
               control={form.control}
               name="comment"
               render={({ field }) => (
-                <FormItem className="flex-1 space-y-0">
+                <FormItem className="md:flex-1 space-y-0">
                   <FormControl>
                     <Textarea
                       {...field}
@@ -305,6 +319,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
               name="position"
               render={() => (
                 <FormItem className="w-fit space-y-0">
+                  <FormLabel className="md:hidden text-xs">Position</FormLabel>
                   <Select
                     onValueChange={(value) => {
                       const selectedOption = positionOptions.find((opt) => opt.value === value)
@@ -330,7 +345,8 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                     <FormControl>
                       <SelectTrigger
                         className="w-18 h-7 px-1 py-0.5"
-                        title="↑Char: Before Character Definitions
+                        title={decodeURI(`
+↑Char: Before Character Definitions
 ↓Char: After Character Definitions
 ↑EM: Before Example Messages
 ↓EM: After Example Messages
@@ -338,7 +354,8 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
 ↓AN: After Author's Note
 @D ⚙️: At Depth (System)
 @D 👤: At Depth (User)
-@D 🤖: At Depth (Assistant)"
+@D 🤖: At Depth (Assistant)
+                        `)}
                       >
                         <SelectValue placeholder="Select position">
                           {(() => {
@@ -371,6 +388,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
               name="depth"
               render={({ field }) => (
                 <FormItem className="w-15 space-y-0">
+                  <FormLabel className="md:hidden text-xs">Depth</FormLabel>
                   <FormControl>
                     <NumberInput
                       min={0}
@@ -389,6 +407,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
               name="order"
               render={({ field }) => (
                 <FormItem className="w-15 space-y-0">
+                  <FormLabel className="md:hidden text-xs">Order</FormLabel>
                   <FormControl>
                     <NumberInput min={0} step={1} {...field} className="h-7 px-2 py-0.5" />
                   </FormControl>
@@ -401,6 +420,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
               name="probability"
               render={({ field }) => (
                 <FormItem className="w-15 space-y-0">
+                  <FormLabel className="md:hidden text-xs">Trigger %</FormLabel>
                   <FormControl>
                     <NumberInput
                       min={0}
@@ -435,14 +455,12 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
 
           <CollapsibleContent className="overflow-hidden flex flex-col gap-2 pt-2">
             <div className="grid grid-cols-[1fr_92px_1fr] items-center gap-x-2 gap-y-0 mx-[1px]">
-              <Label className="text-xs">Primary Keywords</Label>
-              <Label className="text-xs">Logic</Label>
-              <Label className="text-xs">Optional Filter</Label>
               <FormField
                 control={form.control}
                 name="keys"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs">Primary Keywords</FormLabel>
                     <FormControl>
                       <Textarea
                         value={primaryKeys}
@@ -471,6 +489,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                 name="selectiveLogic"
                 render={({ field }) => (
                   <FormItem className="w-fit space-y-0">
+                    <FormLabel className="text-xs">Logic</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger className="w-23 h-7 px-1 py-0.5">
@@ -494,6 +513,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                 name="secondaryKeys"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs">Optional Filter</FormLabel>
                     <FormControl>
                       <Textarea
                         value={secondaryKeys}
@@ -519,17 +539,13 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
               />
             </div>
 
-            <div className="grid grid-cols-5 gap-x-2 gap-y-0 mx-[1px]">
-              <Label className="text-xs">Scan Depth</Label>
-              <Label className="text-xs">Case Sensitive</Label>
-              <Label className="text-xs">Match Whole Words</Label>
-              <Label className="text-xs">Use Group Scoring</Label>
-              <Label className="text-xs">Automation ID</Label>
+            <div className="grid grid-cols-3 md:grid-cols-5 gap-x-2 gap-y-0 mx-[1px]">
               <FormField
                 control={form.control}
                 name="scanDepth"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs">Scan Depth</FormLabel>
                     <FormControl>
                       <OptionalNumberInput
                         min={0}
@@ -549,6 +565,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                 name="caseSensitive"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs">Case Sensitive</FormLabel>
                     <BooleanSelect field={field} />
                   </FormItem>
                 )}
@@ -558,6 +575,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                 name="matchWholeWords"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs">Whole Words</FormLabel>
                     <BooleanSelect field={field} />
                   </FormItem>
                 )}
@@ -567,6 +585,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                 name="useGroupScoring"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs">Group Scoring</FormLabel>
                     <BooleanSelect field={field} />
                   </FormItem>
                 )}
@@ -576,6 +595,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                 name="automationId"
                 render={({ field }) => (
                   <FormItem>
+                    <FormLabel className="text-xs">Automation ID</FormLabel>
                     <FormControl>
                       <Input placeholder="None" {...field} className="h-7 px-2 py-0.5" />
                     </FormControl>
@@ -603,7 +623,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                   control={form.control}
                 />
 
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-wrap justify-end gap-2 gap-y-0">
                   <FormField
                     control={form.control}
                     name="sticky"
@@ -638,7 +658,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                     control={form.control}
                     name="delay"
                     render={({ field }) => (
-                      <FormItem className="w-18 space-y-0">
+                      <FormItem className="w-38 md:w-18 space-y-0">
                         <FormLabel className="text-xs">
                           Delay <FontAwesomeIcon icon={faComments} size="xs" className="fa-fw" />
                         </FormLabel>
@@ -722,25 +742,23 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                   control={form.control}
                 />
               </div>
-              <div className="flex justify-between items-center gap-4">
+              <div className="flex flex-wrap justify-between items-center md:gap-4">
                 <FormField
                   control={form.control}
                   name="characterFilter.names"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Names (comma separated)</FormLabel>
+                    <FormItem className="w-full md:flex-1">
+                      <FormLabel>Characters</FormLabel>
                       <FormControl>
-                        <Input
+                        <MultiSelectVirtual
+                          options={characterNameOptions}
                           /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
-                          value={field.value?.join(', ')}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value
-                                .split(',')
-                                .map((s) => s.trim())
-                                .filter(Boolean),
-                            )
-                          }
+                          values={field.value ?? []}
+                          onValuesChange={field.onChange}
+                          maxCount={5}
+                          placeholder="Select characters"
+                          className="border-input"
+                          contentClassName="z-8000 w-full border-input"
                         />
                       </FormControl>
                       <FormMessage />
@@ -751,20 +769,18 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                   control={form.control}
                   name="characterFilter.tags"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags (comma separated)</FormLabel>
+                    <FormItem className="w-full md:flex-1">
+                      <FormLabel>Tags</FormLabel>
                       <FormControl>
-                        <Input
+                        <MultiSelectVirtual
+                          options={tagNameOptions}
                           /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
-                          value={field.value?.join(', ')}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value
-                                .split(',')
-                                .map((s) => s.trim())
-                                .filter(Boolean),
-                            )
-                          }
+                          values={field.value ?? []}
+                          onValuesChange={field.onChange}
+                          maxCount={5}
+                          placeholder="Select tags"
+                          className="border-input"
+                          contentClassName="z-8000 w-full border-input"
                         />
                       </FormControl>
                       <FormMessage />
@@ -773,6 +789,45 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                 />
               </div>
             </div>
+
+            <Collapsible className="my-1">
+              <CollapsibleTrigger asChild>
+                <Button type="button" variant="outline" className="w-full justify-between">
+                  <span>Additional Matching Sources</span>
+                  <ChevronDownIcon className="transition-transform duration-200" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 pt-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <CheckboxField
+                    label="Character Description"
+                    name="matchCharacterDescription"
+                    control={form.control}
+                  />
+                  <CheckboxField
+                    label="Persona Description"
+                    name="matchPersonaDescription"
+                    control={form.control}
+                  />
+                  <CheckboxField
+                    label="Character Personality"
+                    name="matchCharacterPersonality"
+                    control={form.control}
+                  />
+                  <CheckboxField
+                    label="Character's Note"
+                    name="matchCharacterDepthPrompt"
+                    control={form.control}
+                  />
+                  <CheckboxField label="Scenario" name="matchScenario" control={form.control} />
+                  <CheckboxField
+                    label="Creator's Notes"
+                    name="matchCreatorNotes"
+                    control={form.control}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CollapsibleContent>
         </Collapsible>
       </form>

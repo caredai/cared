@@ -8,6 +8,7 @@ import { cn } from '@ownxai/ui/lib/utils'
 import { Chat } from '@/app/_page/chat'
 import { backgroundFittings } from '@/app/_panels/background-image'
 import { useCheckFirstChat } from '@/hooks/use-chat'
+import { useCheckLorebooks } from '@/hooks/use-lorebook'
 // import { useCheckFirstMessage } from '@/hooks/use-first-message'
 import { useBackgroundSettings } from '@/hooks/use-settings'
 import { signIn } from '@/lib/sign-in'
@@ -42,6 +43,7 @@ export function PageContent() {
 
   useCheckFirstChat()
   // useCheckFirstMessage()
+  useCheckLorebooks()
 
   return (
     <div

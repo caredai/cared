@@ -2284,6 +2284,22 @@ declare const appRouter: import("@trpc/server/unstable-core-do-not-import").Buil
                 };
             };
         }>;
+        batchDelete: import("@trpc/server").TRPCMutationProcedure<{
+            input: {
+                ids: string[];
+            };
+            output: {
+                chats: {
+                    id: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    userId: string;
+                    metadata: ChatMetadata;
+                    appId: string;
+                    debug: boolean;
+                }[];
+            };
+        }>;
         clone: import("@trpc/server").TRPCMutationProcedure<{
             input: {
                 id: string;
