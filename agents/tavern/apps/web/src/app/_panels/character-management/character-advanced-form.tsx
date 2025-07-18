@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
 import {
-  characterCardV2ExtensionsSchema,
+  characterCardV3ExtensionsSchema,
   characterCardV2Schema,
   extractExtensions,
 } from '@tavern/core'
@@ -56,7 +56,7 @@ export const characterAdvancedFormSchema = z.object({
     creator: true,
     character_version: true,
   }).shape,
-  ...characterCardV2ExtensionsSchema.shape,
+  ...characterCardV3ExtensionsSchema.shape,
 })
 
 export type CharacterAdvancedFormValues = z.infer<typeof characterAdvancedFormSchema>

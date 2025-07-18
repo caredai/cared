@@ -1,4 +1,4 @@
-import type { ModelPreset as ModelPresetContent } from '@tavern/core'
+import type { ModelPreset as ModelPresetContent, ModelPresetCustomization } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
 import { jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core'
 
@@ -18,6 +18,7 @@ export const ModelPreset = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     name: text().notNull(),
     preset: jsonb().$type<ModelPresetContent>().notNull(),
+    customization: jsonb().$type<ModelPresetCustomization>(),
     ...timestamps,
   },
   (table) => [

@@ -1,10 +1,17 @@
-import { defaultModelPreset, modelPresetSchema } from '@tavern/core'
+import { defaultModelPreset, modelPresetCustomizationSchema, modelPresetSchema } from '@tavern/core'
 import { ModelPreset } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, count, desc, eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 import { userProtectedProcedure } from '../trpc'
+
+function sanitizeObject(preset: ModelPreset) {
+  return {
+    ...preset,
+    customization: preset.customization ?? undefined,
+  }
+}
 
 export const modelPresetRouter = {
   list: userProtectedProcedure
@@ -38,7 +45,7 @@ export const modelPresetRouter = {
         modelPresets.push(modelPreset)
       }
 
-      return { modelPresets }
+      return { modelPresets: modelPresets.map(sanitizeObject) }
     }),
 
   get: userProtectedProcedure
@@ -63,7 +70,7 @@ export const modelPresetRouter = {
           message: 'Model preset not found',
         })
       }
-      return { modelPreset }
+      return { modelPreset: sanitizeObject(modelPreset) }
     }),
 
   create: userProtectedProcedure
@@ -101,7 +108,7 @@ export const modelPresetRouter = {
         })
       }
 
-      return { modelPreset }
+      return { modelPreset: sanitizeObject(modelPreset) }
     }),
 
   update: userProtectedProcedure
@@ -115,12 +122,31 @@ export const modelPresetRouter = {
       },
     })
     .input(
-      z.object({
-        id: z.string(),
-        preset: modelPresetSchema
-          .partial()
-          .refine((data) => Object.keys(data).length > 0, 'At least one field must be provided'),
-      }),
+      z
+        .object({
+          id: z.string(),
+          preset: modelPresetSchema
+            .partial()
+            .refine((data) => Object.keys(data).length > 0, 'At least one field must be provided')
+            .optional(),
+          customization: modelPresetCustomizationSchema.nullable().optional(),
+        })
+        .refine(
+          (data) => {
+            const hasPreset = data.preset !== undefined
+            const hasCustomization = data.customization !== undefined
+            const clearCustomization = data.customization === null
+            return (
+              (hasPreset && (!hasCustomization || clearCustomization)) ||
+              (!hasPreset && hasCustomization)
+            )
+          },
+          {
+            message:
+              'Either preset or customization must be provided, but not both (unless clearing customization with null value)',
+            path: ['preset', 'customization'],
+          },
+        ),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.auth.userId
@@ -135,12 +161,13 @@ export const modelPresetRouter = {
         })
       }
 
-      const preset = { ...existing.preset, ...input.preset }
-
       const [updatedModelPreset] = await ctx.db
         .update(ModelPreset)
         .set({
-          preset,
+          ...(input.preset && { preset: { ...existing.preset, ...input.preset } }),
+          ...(input.customization !== undefined && {
+            customization: input.customization,
+          }),
         })
         .where(eq(ModelPreset.id, input.id))
         .returning()
@@ -152,7 +179,9 @@ export const modelPresetRouter = {
         })
       }
 
-      return { modelPreset: updatedModelPreset }
+      return {
+        modelPreset: sanitizeObject(updatedModelPreset)
+      }
     }),
 
   delete: userProtectedProcedure

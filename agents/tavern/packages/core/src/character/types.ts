@@ -346,19 +346,19 @@ export function updateWithV3(
   }
 }
 
-export const characterCardV2ExtensionsSchema = z.object({
-  talkativeness: z.coerce.number().min(0).max(1).step(0.05),
+export const characterCardV3ExtensionsSchema = z.object({
+  talkativeness: z.coerce.number<number>().min(0).max(1).step(0.05),
   fav: z.boolean(),
   world: z.string(),
   depth_prompt_prompt: z.string(),
-  depth_prompt_depth: z.coerce.number().int().nonnegative().max(999).step(1),
+  depth_prompt_depth: z.coerce.number<number>().int().nonnegative().max(999).step(1),
   depth_prompt_role: z.enum(['system', 'user', 'assistant']),
   regex_scripts: z.array(regexScriptSchema).optional(),
 })
 
-export type CharacterCardV2Extensions = z.infer<typeof characterCardV2ExtensionsSchema>
+export type CharacterCardV3Extensions = z.infer<typeof characterCardV3ExtensionsSchema>
 
-export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensions {
+export function extractExtensions(card: CharacterCardV3): CharacterCardV3Extensions {
   const extensions = card.data.extensions
   const depthPrompt = extensions.depth_prompt
 
@@ -369,7 +369,7 @@ export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensi
 
   let regexScripts: RegexScript[] | undefined = undefined
   {
-    const { success, data } = characterCardV2ExtensionsSchema.shape.regex_scripts.safeParse(
+    const { success, data } = characterCardV3ExtensionsSchema.shape.regex_scripts.safeParse(
       extensions.regex_scripts,
     )
     if (success) {
@@ -390,7 +390,7 @@ export function extractExtensions(card: CharacterCardV2): CharacterCardV2Extensi
   }
 }
 
-export function formatExtensions(extensions: CharacterCardV2Extensions): Record<string, any> {
+export function formatExtensions(extensions: CharacterCardV3Extensions): Record<string, any> {
   return {
     talkativeness: extensions.talkativeness,
     fav: extensions.fav,

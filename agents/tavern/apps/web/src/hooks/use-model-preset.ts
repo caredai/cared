@@ -106,10 +106,15 @@ export function useUpdateModelPreset() {
             ...old.modelPresets.slice(0, index),
             {
               ...modelPreset,
-              preset: {
-                ...modelPreset.preset,
-                ...newData.preset,
-              },
+              ...(newData.preset && {
+                preset: {
+                  ...modelPreset.preset,
+                  ...newData.preset,
+                },
+              }),
+              ...(newData.customization !== undefined && {
+                customization: newData.customization ?? undefined,
+              }),
             },
             ...old.modelPresets.slice(index + 1),
           ],
@@ -165,10 +170,20 @@ export function useUpdateModelPreset() {
     })
 
   return useCallback(
-    async (id: string, preset: Partial<ModelPreset>) => {
+    async (
+      id: string,
+      {
+        preset,
+        customization,
+      }: {
+        preset?: Partial<ModelPreset>
+        customization?: ModelPresetCustomization | null // null means clear customization
+      },
+    ) => {
       return await mutation.mutateAsync({
         id,
         preset,
+        customization,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -177,12 +192,10 @@ export function useUpdateModelPreset() {
 }
 
 export function useCustomizeModelPreset() {
-  const modelPresetSettings = useModelPresetSettings()
-  const updateModelPresetSettings = useUpdateModelPresetSettings()
-
   const { activePreset } = useActiveModelPreset()
+  const updateModelPreset = useUpdateModelPreset()
 
-  const customization = modelPresetSettings.customizations?.[activePreset.name]
+  const customization = activePreset.customization
 
   const activeCustomizedPreset = useMemo(
     () => modelPresetWithCustomization(activePreset.preset, customization),
@@ -190,10 +203,7 @@ export function useCustomizeModelPreset() {
   )
 
   const saveCustomization = useCallback(
-    (values: ModelPresetCustomization) => {
-      const { [activePreset.name]: customization, ...customizations } =
-        modelPresetSettings.customizations ?? {}
-
+    async (values: ModelPresetCustomization) => {
       let newCustomization: ModelPresetCustomization | undefined = {
         ...customization,
         ...values,
@@ -216,54 +226,39 @@ export function useCustomizeModelPreset() {
         return
       }
 
-      return updateModelPresetSettings({
-        customizations: {
-          ...customizations,
-          ...(newCustomization && { [activePreset.name]: newCustomization }),
-        },
+      return await updateModelPreset(activePreset.id, {
+        customization: newCustomization ?? null, // If newCustomization is empty, clear customization
       })
     },
     [
       activePreset,
-      modelPresetSettings,
-      updateModelPresetSettings,
+      customization,
+      updateModelPreset,
     ],
   )
 
-  const updateModelPreset = useUpdateModelPreset()
-
   const updateModelPresetWithCustomization = useCallback(async () => {
-    const { [activePreset.name]: customization, ...customizations } =
-      modelPresetSettings.customizations ?? {}
-
     if (!customization) {
       return
     }
 
     const modelPreset = modelPresetWithCustomization(activePreset.preset, customization)
 
-    await Promise.all([
-      updateModelPresetSettings({
-        // Delete the customization for the model preset
-        customizations,
-      }),
-      updateModelPreset(activePreset.id, modelPreset),
-    ])
-  }, [activePreset, modelPresetSettings, updateModelPreset, updateModelPresetSettings])
+    await updateModelPreset(activePreset.id, {
+      preset: modelPreset,
+      customization: null, // Clear customization
+    })
+  }, [activePreset, customization, updateModelPreset])
 
   const restoreModelPreset = useCallback(async () => {
-    const { [activePreset.name]: customization, ...customizations } =
-      modelPresetSettings.customizations ?? {}
-
     if (!customization) {
       return
     }
 
-    await updateModelPresetSettings({
-      // Delete the customization for the model preset
-      customizations,
+    await updateModelPreset(activePreset.id, {
+      customization: null, // Clear customization
     })
-  }, [activePreset, modelPresetSettings, updateModelPresetSettings])
+  }, [activePreset, customization, updateModelPreset])
 
   const hasPromptsCustomization = useMemo(() => {
     return Boolean(customization?.prompts ?? customization?.promptOrder)
@@ -306,15 +301,10 @@ export function useDeleteModelPreset() {
     }),
   )
 
-  const { restoreModelPreset } = useCustomizeModelPreset()
-
   return useCallback(async (id: string) => {
-    return await Promise.all([
-      restoreModelPreset(),
-      deleteMutation.mutateAsync({
-        id,
-      }),
-    ])
+    return await deleteMutation.mutateAsync({
+      id,
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }
