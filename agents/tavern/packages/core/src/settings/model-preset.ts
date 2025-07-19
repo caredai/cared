@@ -5,7 +5,7 @@ export interface ModelPresetSettings {
   preset: string
 }
 
-export const modelPresetSettingsSchema: z.ZodType<ModelPresetSettings> = z.object({
+export const modelPresetSettingsSchema = z.object({
   preset: z.string(),
 })
 

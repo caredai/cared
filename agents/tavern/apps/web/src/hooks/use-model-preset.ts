@@ -1,4 +1,4 @@
-import type { ModelPreset, ModelPresetCustomization } from '@tavern/core'
+import { ModelPreset, ModelPresetCustomization, modelPresetCustomizationSchema } from '@tavern/core'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { modelPresetWithCustomization, sanitizeModelPresetCustomization } from '@tavern/core'
@@ -46,7 +46,7 @@ export function useActiveModelPreset() {
     }
   }, [modelPresets, activePreset, setActivePreset])
 
-  // If the active preset doesn't exist, use the first preset and update settings
+  // If the active preset doesn't exist, use the first preset
   if (!activePreset) {
     activePreset = modelPresets[0]!
   }
@@ -204,6 +204,9 @@ export function useCustomizeModelPreset() {
 
   const saveCustomization = useCallback(
     async (values: ModelPresetCustomization) => {
+      // Ensure values are valid
+      values = modelPresetCustomizationSchema.parse(values)
+
       let newCustomization: ModelPresetCustomization | undefined = {
         ...customization,
         ...values,

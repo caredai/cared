@@ -50,7 +50,7 @@ export function usePromptEdit() {
     setIsShowPromptEdit(false)
   }
 
-  const toggleEditPromptEdit = (identifier: string) => {
+  const togglePromptEdit = (identifier: string) => {
     if (editPromptId && editPromptId !== identifier) {
       setEditPromptId(identifier)
       return
@@ -86,7 +86,7 @@ export function usePromptEdit() {
     promptEdit,
     openPromptEdit,
     closePromptEdit,
-    toggleEditPromptEdit,
+    togglePromptEdit,
   }
 }
 
@@ -200,7 +200,9 @@ export function PromptEdit() {
                   <FormDescription>To whom this message will be attributed</FormDescription>
                   <Select
                     value={field.value}
-                    onValueChange={field.onChange}
+                    onValueChange={(v) => {
+                      if (v) field.onChange(v)
+                    }}
                     disabled={prompt.marker}
                   >
                     <FormControl>
@@ -233,7 +235,9 @@ export function PromptEdit() {
                   </FormDescription>
                   <Select
                     value={field.value}
-                    onValueChange={field.onChange}
+                    onValueChange={(v) => {
+                      if (v) field.onChange(v)
+                    }}
                     disabled={prompt.system_prompt && !prompt.marker}
                   >
                     <FormControl>

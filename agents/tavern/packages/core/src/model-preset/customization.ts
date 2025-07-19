@@ -129,19 +129,19 @@ export function sanitizeModelPresetCustomization(
   }
 
   if (utilityPrompts) {
-    const up: ModelPresetCustomization['utilityPrompts'] = {}
+    const upc: ModelPresetCustomization['utilityPrompts'] = {}
 
     for (const [key, value] of Object.entries(utilityPrompts) as [
       keyof ModelPreset['utilityPrompts'],
       any,
     ][]) {
       if (!isEqual(value, modelPreset.utilityPrompts[key])) {
-        up[key] = value
+        upc[key] = value
       }
     }
 
-    if (Object.keys(up).length > 0) {
-      sanitized.utilityPrompts = up
+    if (Object.keys(upc).length > 0) {
+      sanitized.utilityPrompts = upc
     }
   }
 

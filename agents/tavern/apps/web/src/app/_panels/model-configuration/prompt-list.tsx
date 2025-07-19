@@ -42,7 +42,7 @@ import { usePromptEdit } from './prompt-edit'
 import { usePromptInspect } from './prompt-inspect'
 
 export function PromptList() {
-  const { toggleEditPromptEdit } = usePromptEdit()
+  const { togglePromptEdit } = usePromptEdit()
   const { togglePromptInspect } = usePromptInspect()
 
   const {
@@ -234,7 +234,7 @@ export function PromptList() {
                 key={prompt.identifier}
                 prompt={prompt}
                 onTogglePrompt={handleTogglePrompt}
-                onEditPrompt={toggleEditPromptEdit}
+                onEditPrompt={togglePromptEdit}
                 onInspectPrompt={togglePromptInspect}
                 onDeletePrompt={handleDeletePrompt}
               />
