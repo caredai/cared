@@ -100,6 +100,7 @@ export const UpdateChatSchema = createUpdateSchema(Chat, {
 }).omit({
   appId: true,
   userId: true,
+  debug: true,
   ...timestampsOmits,
 })
 

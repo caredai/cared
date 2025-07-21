@@ -1,4 +1,4 @@
-import { cyrb53 } from '@tavern/core'
+import { hashString } from '@tavern/core'
 
 let worker: Worker | undefined = undefined
 

@@ -423,13 +423,13 @@ export const chatRouter = {
     })
     .input(UpdateChatSchema)
     .mutation(async ({ ctx, input }) => {
-      const { id, ...update } = input
+      const { id, metadata, ...update } = input
       const chat = await getChatById(ctx, id)
 
-      const metadata = update.metadata
+      const updatedMetadata = metadata
         ? {
             ...chat.metadata,
-            ...update.metadata,
+            ...metadata,
           }
         : undefined
 
@@ -437,8 +437,9 @@ export const chatRouter = {
         .update(Chat)
         .set({
           ...update,
-          metadata,
-          ...(Object.keys(update).length === 0 && { updatedAt: new Date() }),
+          ...(updatedMetadata && { metadata: updatedMetadata }),
+          // Update timestamp only if no other fields are updated
+          ...(Object.keys(update).length === 0 && !metadata && { updatedAt: new Date() }),
         })
         .where(eq(Chat.id, id))
         .returning()

@@ -5,9 +5,10 @@ import { v4 as uuid } from 'uuid'
 
 import type { ModelInfo } from '@ownxai/sdk'
 
+import type { MessageMetadata, MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
 import type { ReducedChat, ReducedMessage } from '../types'
-import type { MessageMetadata, MessageNode } from '../message/types'
+import { hashString } from '../utils'
 import {
   addVariable,
   decrementVariable,
@@ -319,7 +320,7 @@ function getChatIdHash(chatId: string) {
     return hash
   }
 
-  hash = cyrb53(chatId)
+  hash = hashString(chatId)
   chatIdHashCache.set(chatId, hash)
   return hash
 }
@@ -331,7 +332,7 @@ function getPickReplaceMacro(rawContent: string, chatId: string) {
   // We need to have a consistent chat hash, otherwise we'll lose rolls on chat file rename or branch switches
   // No need to save metadata here - branching and renaming will implicitly do the save for us, and until then loading it like this is consistent
   const chatIdHash = getChatIdHash(chatId)
-  const rawContentHash = cyrb53(rawContent)
+  const rawContentHash = hashString(rawContent)
 
   const pickPattern = /{{pick\s?::?([^}]+)}}/gi
   const pickReplace = (_: any, listString: string, offset: number) => {
@@ -351,7 +352,7 @@ function getPickReplaceMacro(rawContent: string, chatId: string) {
     // We build a hash seed based on: unique chat file, raw content, and the placement inside this content
     // This allows us to get unique but repeatable picks in nearly all cases
     const combinedSeedString = `${chatIdHash}-${rawContentHash}-${offset}`
-    const finalSeed = cyrb53(combinedSeedString)
+    const finalSeed = hashString(combinedSeedString)
     // @ts-ignore - have to use numbers for legacy picks
     const rng = seedrandom(finalSeed)
     const randomIndex = Math.floor(rng() * list.length)
@@ -359,26 +360,6 @@ function getPickReplaceMacro(rawContent: string, chatId: string) {
   }
 
   return { regex: pickPattern, replace: pickReplace }
-}
-
-/**
- * A fast and simple 53-bit string hash function with decent collision resistance.
- * Largely inspired by MurmurHash2/3, but with a focus on speed/simplicity.
- * https://github.com/bryc/code/blob/master/jshash/experimental/cyrb53.js
- */
-export function cyrb53(str: string, seed = 0) {
-  let h1 = 0xdeadbeef ^ seed,
-    h2 = 0x41c6ce57 ^ seed
-  for (let i = 0, ch; i < str.length; i++) {
-    ch = str.charCodeAt(i)
-    h1 = Math.imul(h1 ^ ch, 2654435761)
-    h2 = Math.imul(h2 ^ ch, 1597334677)
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507)
-  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909)
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507)
-  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909)
-  return 4294967296 * (2097151 & h2) + (h1 >>> 0)
 }
 
 /**

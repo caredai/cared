@@ -1,4 +1,4 @@
-import { messageContentSchema } from '@tavern/core'
+import { chatMetadataSchema, messageContentSchema } from '@tavern/core'
 import { Character, CharacterChat, CharGroup, CharGroupChat } from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import { format } from 'date-fns'
@@ -409,6 +409,7 @@ export const chatRouter = {
     .input(
       z.object({
         id: z.string(),
+        metadata: chatMetadataSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -419,6 +420,11 @@ export const chatRouter = {
       const chat = (
         await ownxTrpc.chat.update.mutate({
           id: input.id,
+          ...(input.metadata && {
+            metadata: {
+              custom: input.metadata,
+            },
+          }),
         })
       ).chat
 
