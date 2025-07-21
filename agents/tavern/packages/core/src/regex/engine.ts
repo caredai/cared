@@ -1,5 +1,4 @@
-import type { RegexScript } from './types'
-import { RegexSubstituteMode } from './types'
+import { RegexPlacement, RegexScript, RegexSubstituteMode } from './types'
 
 /**
  * Runs the provided regex script on the given string.
@@ -123,6 +122,79 @@ function filterString(
   trimStrings.forEach((trimString) => {
     const subTrimString = evaluateMacros(trimString)
     finalString = finalString.replaceAll(subTrimString, '')
+  })
+
+  return finalString
+}
+
+export function getRegexedString(
+  regexScripts: RegexScript[],
+  rawString: string,
+  placement: RegexPlacement,
+  evaluateMacros: (content: string, postProcessFn?: (s: string) => string) => string,
+  {
+    isMarkdown,
+    isPrompt,
+    isEdit,
+    depth,
+  }: {
+    isMarkdown?: boolean
+    isPrompt?: boolean
+    isEdit?: boolean
+    depth?: number
+  },
+) {
+  if (!rawString) {
+    return ''
+  }
+
+  let finalString = rawString
+
+  regexScripts.forEach((script) => {
+    if (
+      // Script applies to Markdown and input is Markdown
+      (script.displayOnly && isMarkdown) ||
+      // Script applies to Generate and input is Generate
+      (script.promptOnly && isPrompt) ||
+      // Script applies to all cases when neither "only"s are true, but there's no need to do it when `isMarkdown`, the as source (chat history) should already be changed beforehand
+      (!script.displayOnly && !script.promptOnly && !isMarkdown && !isPrompt)
+    ) {
+      if (isEdit && !script.runOnEdit) {
+        console.debug(
+          `getRegexedString: Skipping script ${script.name} because it does not run on edit`,
+        )
+        return
+      }
+
+      // Check if the depth is within the min/max depth
+      if (typeof depth === 'number') {
+        if (
+          typeof script.minDepth === 'number' &&
+          script.minDepth >= -1 &&
+          depth < script.minDepth
+        ) {
+          console.debug(
+            `getRegexedString: Skipping script ${script.name} because depth ${depth} is less than minDepth ${script.minDepth}`,
+          )
+          return
+        }
+
+        if (
+          typeof script.maxDepth === 'number' &&
+          script.maxDepth >= 0 &&
+          depth > script.maxDepth
+        ) {
+          console.debug(
+            `getRegexedString: Skipping script ${script.name} because depth ${depth} is greater than maxDepth ${script.maxDepth}`,
+          )
+          return
+        }
+      }
+
+      if (script.placement.includes(placement)) {
+        finalString = runRegexScript(script, finalString, evaluateMacros)
+      }
+    }
   })
 
   return finalString

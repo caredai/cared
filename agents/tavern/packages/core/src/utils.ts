@@ -21,7 +21,16 @@ export function hashString(str: string, seed = 0) {
 }
 
 export function hashAny(arg: any, seed = 0) {
-  return hashString(stableHash(arg), seed)
+  return hashString(stableHash(arg), seed).toString()
+}
+
+/**
+ * Escapes a string for use in a regular expression.
+ * @example
+ * escapeRegex('^Hello$'); // '\\^Hello\\$'
+ */
+export function escapeRegex(string: string) {
+  return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&')
 }
 
 /**

@@ -43,7 +43,7 @@ export interface LorebookEntry {
   /** Completely disallows recursive application of the extension */
   preventRecursion: boolean
   /** Will only be checked during recursion */
-  delayUntilRecursion: boolean
+  delayUntilRecursion: boolean | number
   /** The chance (between 0 and 1) of the extension being applied */
   probability: number
   /** The maximum level of nesting allowed for recursive application of the extension */
@@ -122,7 +122,7 @@ export const lorebookEntrySchema = z.object({
   position: z.nativeEnum(Position),
   excludeRecursion: z.boolean(),
   preventRecursion: z.boolean(),
-  delayUntilRecursion: z.boolean(),
+  delayUntilRecursion: z.boolean().or(z.number().int().min(1).step(1)),
   probability: z.number().int().min(0).max(100).step(1),
   depth: z.number().int().min(0).step(1).optional(),
   group: z.string(),

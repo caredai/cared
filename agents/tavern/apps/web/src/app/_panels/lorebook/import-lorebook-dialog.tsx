@@ -63,6 +63,15 @@ export function ImportLorebookDialog({ trigger }: { trigger: ReactNode }) {
         } as const
         // Convert SillyTavern entries object to array and sort by displayIndex
         const entriesArray = Object.values(lorebook.entries).map((entry: any) => {
+          let delayUntilRecursion = entry.delayUntilRecursion
+          if (typeof delayUntilRecursion === 'number') {
+            if (delayUntilRecursion < 1) {
+              delayUntilRecursion = false
+            } else {
+              delayUntilRecursion = Math.round(delayUntilRecursion)
+            }
+          }
+
           return {
             uid: entry.uid,
             disabled: entry.disable,
@@ -78,7 +87,7 @@ export function ImportLorebookDialog({ trigger }: { trigger: ReactNode }) {
             position: entry.position ?? 0,
             excludeRecursion: entry.excludeRecursion ?? false,
             preventRecursion: entry.preventRecursion ?? false,
-            delayUntilRecursion: entry.delayUntilRecursion ?? false,
+            delayUntilRecursion: delayUntilRecursion,
             probability: entry.probability ?? 100,
             depth: entry.depth ?? undefined,
             group: entry.group ?? '',

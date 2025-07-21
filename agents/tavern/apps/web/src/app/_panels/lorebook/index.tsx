@@ -172,9 +172,9 @@ export const LorebookPanelUpperPart = memo(function LorebookPanelUpperPart({
       useGroupScoring: undefined,
       automationId: undefined,
       role: undefined,
-      selective: false,
-      useProbability: false,
-      addMemo: false,
+      selective: true,
+      useProbability: true,
+      addMemo: true,
       characterFilter: { isExclude: false, names: [], tags: [] },
     }
 

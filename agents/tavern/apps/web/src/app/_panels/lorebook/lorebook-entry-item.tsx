@@ -1,5 +1,5 @@
 import type { Lorebook } from '@/hooks/use-lorebook'
-import type { z } from 'zod/v4'
+import type { LorebookEntry } from '@tavern/core'
 import { memo, useCallback, useEffect, useState } from 'react'
 import { faComments, faPaste, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { lorebookEntrySchema, Position, SelectiveLogic } from '@tavern/core'
 import { ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { z } from 'zod/v4'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -90,10 +91,6 @@ const positionOptions = [
   },
 ]
 
-const entryFormSchema = lorebookEntrySchema
-
-export type EntryFormValues = z.infer<typeof entryFormSchema>
-
 type Strategy = 'normal' | 'constant' | 'vectorized'
 
 const strategyOptions = [
@@ -101,6 +98,41 @@ const strategyOptions = [
   { value: 'constant', label: '🔵 Constant', name: '🔵' },
   { value: 'vectorized', label: '🔗 Vectorized', name: '🔗' },
 ]
+
+const entryFormSchema = lorebookEntrySchema.extend({
+  delayUntilRecursionLevel: z.number().optional(),
+})
+
+function entryFormValues(entry: LorebookEntry) {
+  return {
+    ...entry,
+    delayUntilRecursion: !!entry.delayUntilRecursion,
+    delayUntilRecursionLevel:
+      typeof entry.delayUntilRecursion === 'number' ? entry.delayUntilRecursion : undefined,
+  }
+}
+
+function entryFromFormValues(values: z.infer<typeof entryFormSchema>): LorebookEntry {
+  const { delayUntilRecursion, delayUntilRecursionLevel, ...others } = values
+
+  const cf = values.characterFilter as Partial<typeof values.characterFilter>
+  const characterFilter =
+    cf?.isExclude || cf?.names?.length || cf?.tags?.length
+      ? {
+          isExclude: cf.isExclude ?? false,
+          names: cf.names ?? [],
+          tags: cf.tags ?? [],
+        }
+      : undefined
+
+  return {
+    ...others,
+    delayUntilRecursion: delayUntilRecursion
+      ? (delayUntilRecursionLevel ?? delayUntilRecursion)
+      : false,
+    characterFilter,
+  }
+}
 
 export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
   id,
@@ -113,7 +145,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
 }: {
   id: string
   uid: number
-  defaultValues: Partial<EntryFormValues>
+  defaultValues: LorebookEntry
   maxUid: number
   lorebooks: Lorebook[]
   open?: boolean
@@ -124,15 +156,15 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
   const [secondaryKeys, setSecondaryKeys] = useState<string>(
     defaultValues.secondaryKeys?.join(', ') ?? '',
   )
-  const [primaryKeys, setPrimaryKeys] = useState<string>(defaultValues.keys?.join(', ') ?? '')
+  const [primaryKeys, setPrimaryKeys] = useState<string>(defaultValues.keys.join(', '))
 
-  const form = useForm<EntryFormValues>({
+  const form = useForm<z.infer<typeof entryFormSchema>>({
     resolver: zodResolver(entryFormSchema),
-    defaultValues,
+    defaultValues: entryFormValues(defaultValues),
   })
 
   useEffect(() => {
-    form.reset(defaultValues)
+    form.reset(entryFormValues(defaultValues))
   }, [defaultValues, form])
 
   const isPositionAtDepth = form.watch('position') === Position.AtDepth
@@ -156,16 +188,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
   }, [form])
 
   const handleBlur = useCallback(() => {
-    const values = form.getValues()
-    const characterFilter = values.characterFilter as Partial<typeof values.characterFilter>
-    values.characterFilter =
-      characterFilter?.isExclude || characterFilter?.names?.length || characterFilter?.tags?.length
-        ? {
-            isExclude: characterFilter.isExclude ?? false,
-            names: characterFilter.names ?? [],
-            tags: characterFilter.tags ?? [],
-          }
-        : undefined
+    const values = entryFromFormValues(form.getValues())
     const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
     if (!lorebook) return
 
@@ -180,18 +203,7 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
   const handleCopy = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault()
-      const values = form.getValues()
-      const characterFilter = values.characterFilter as Partial<typeof values.characterFilter>
-      values.characterFilter =
-        characterFilter?.isExclude ||
-        characterFilter?.names?.length ||
-        characterFilter?.tags?.length
-          ? {
-              isExclude: characterFilter.isExclude ?? false,
-              names: characterFilter.names ?? [],
-              tags: characterFilter.tags ?? [],
-            }
-          : undefined
+      const values = entryFromFormValues(form.getValues())
       const newUid = maxUid + 1
       const lorebook = lorebooks.find((lorebook) => lorebook.id === id)
       if (!lorebook) return
@@ -539,7 +551,12 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
               />
             </div>
 
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-x-2 gap-y-0 mx-[1px]">
+            <div
+              className={cn(
+                'grid grid-cols-3 md:grid-cols-5 gap-x-2 gap-y-0 mx-[1px]',
+                form.watch('delayUntilRecursion') && 'md:grid-cols-6',
+              )}
+            >
               <FormField
                 control={form.control}
                 name="scanDepth"
@@ -603,6 +620,27 @@ export const LorebookEntryItemEdit = memo(function LorebookEntryItemEdit({
                   </FormItem>
                 )}
               />
+              {form.watch('delayUntilRecursion') && (
+                <FormField
+                  control={form.control}
+                  name="delayUntilRecursionLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-xs">Recursion Level</FormLabel>
+                      <FormControl>
+                        <OptionalNumberInput
+                          min={1}
+                          step={1}
+                          placeholder="1"
+                          {...field}
+                          className="h-7 px-2 py-0.5"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-2 items-start gap-6">

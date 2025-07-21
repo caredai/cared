@@ -8,7 +8,7 @@ import type { ModelInfo } from '@ownxai/sdk'
 import type { MessageMetadata, MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
 import type { ReducedChat, ReducedMessage } from '../types'
-import { hashString } from '../utils'
+import { escapeRegex, hashString } from '../utils'
 import {
   addVariable,
   decrementVariable,
@@ -242,15 +242,6 @@ export function sanitizeMacroValue(value: any) {
   }
 
   return String(value)
-}
-
-/**
- * Escapes a string for use in a regular expression.
- * @example
- * escapeRegex('^Hello$'); // '\\^Hello\\$'
- */
-export function escapeRegex(string: string) {
-  return string.replace(/[/\-\\^$*+?.()|[\]{}]/g, '\\$&')
 }
 
 export function getDiceRollMacro() {
