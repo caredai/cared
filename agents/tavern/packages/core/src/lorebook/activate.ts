@@ -1,9 +1,10 @@
 import type { ModelPreset } from '../model-preset'
-import type { LorebookSettings, TagsSettings } from '../settings'
+import type { LorebookSettings, RegexSettings, TagsSettings } from '../settings'
 import type { ReducedCharacter, ReducedGroup, ReducedLorebook, ReducedMessage } from '../types'
 import type { GlobalScanData } from './scan-buffer'
 import type { LorebookEntryExtended, TimedEffects } from './timed-effects'
 import type { LorebookEntry } from './types'
+import { extractExtensions } from '../character'
 import { getRegexedString, RegexPlacement } from '../regex'
 import { hashAny } from '../utils'
 import { ScanBuffer } from './scan-buffer'
@@ -19,38 +20,34 @@ export enum ScanState {
 
 export const DEFAULT_DEPTH = 4
 
-export async function activateLorebookInfo({
+export async function activateLorebooks({
   lorebooks,
   chatHistory,
+  globalScanData,
   timedEffects,
   character,
   group,
   chatId,
-  characterId,
-  groupId,
   personaId,
-  global,
   modelPreset,
   lorebookSettings,
   tagsSettings,
-  globalScanData,
+  regexSettings,
   substituteMacros,
   countTokens,
 }: {
   lorebooks: ReducedLorebook[]
   chatHistory: ReducedMessage[]
+  globalScanData: GlobalScanData
   timedEffects: TimedEffects
-  character: ReducedCharacter
+  character: ReducedCharacter // the active character (maybe comes from the character group)
   group?: ReducedGroup
   chatId: string
-  characterId: string
-  groupId?: string
   personaId: string
-  global: string[]
   modelPreset: ModelPreset
   lorebookSettings: LorebookSettings
   tagsSettings: TagsSettings
-  globalScanData: GlobalScanData
+  regexSettings: RegexSettings
   substituteMacros: (content: string) => string
   countTokens: (text: string) => Promise<number>
 }) {
@@ -80,14 +77,13 @@ export async function activateLorebookInfo({
     `[Lorebook] Context size: ${modelPreset.maxContext}; Lorebook budget: ${budget} (max% = ${lorebookSettings.context}%, cap = ${lorebookSettings.budgetCap})`,
   )
 
-  const { activatedLorebookEntries: sortedEntries } = activateLorebooks({
+  const { activatedLorebookEntries: sortedEntries } = getActivatedLorebooks({
     lorebooks,
-    chatId,
-    characterId,
-    groupId,
-    personaId,
-    global,
     settings: lorebookSettings,
+    chatId,
+    characterId: character.id,
+    groupId: group?.id,
+    personaId,
   })
   if (!sortedEntries.length) {
     return
@@ -104,6 +100,9 @@ export async function activateLorebookInfo({
   if (group) {
     tagsSettings.tagMap[group.id]?.forEach((tag) => tags.add(tag))
   }
+
+  const characterExtensions = extractExtensions(character.content)
+  const regexScripts = [...regexSettings.scripts, ...(characterExtensions.regex_scripts ?? [])]
 
   let scanState = ScanState.INITIAL
   let count = 0
@@ -339,7 +338,7 @@ export async function activateLorebookInfo({
     const textToScanTokens = await countTokens(allActivatedText)
 
     function filterByInclusionGroups() {
-      console.debug('[WI] --- INCLUSION GROUP CHECKS ---')
+      console.debug('[Lorebook] --- INCLUSION GROUP CHECKS ---')
 
       const grouped = newEntries
         .filter((x) => x.group)
@@ -417,7 +416,7 @@ export async function activateLorebookInfo({
           )
           if (cooldownEntries.length) {
             console.debug(
-              `[WI] Inclusion group '${key}' has entries on cooldown. They will be removed.`,
+              `[Lorebook] Inclusion group '${key}' has entries on cooldown. They will be removed.`,
               cooldownEntries,
             )
             for (const entry of cooldownEntries) {
@@ -428,7 +427,7 @@ export async function activateLorebookInfo({
           const delayEntries = group.filter((x) => timedEffectsManager.isEffectActive('delay', x))
           if (delayEntries.length) {
             console.debug(
-              `[WI] Inclusion group '${key}' has entries with delay. They will be removed.`,
+              `[Lorebook] Inclusion group '${key}' has entries with delay. They will be removed.`,
               delayEntries,
             )
             for (const entry of delayEntries) {
@@ -446,20 +445,22 @@ export async function activateLorebookInfo({
         for (const [key, group] of Object.entries(grouped)) {
           // Group scoring is disabled both globally and for the group entries
           if (!lorebookSettings.useGroupScoring && !group.some((x) => x.useGroupScoring)) {
-            console.debug(`[WI] Skipping group scoring for group '${key}'`)
+            console.debug(`[Lorebook] Skipping group scoring for group '${key}'`)
             continue
           }
 
           // If the group has any sticky entries, the rest are already removed by the timed effects filter
           const hasAnySticky = hasStickyMap.get(key)
           if (hasAnySticky) {
-            console.debug(`[WI] Skipping group scoring check, group '${key}' has sticky entries`)
+            console.debug(
+              `[Lorebook] Skipping group scoring check, group '${key}' has sticky entries`,
+            )
             continue
           }
 
           const scores = group.map((entry) => buffer.getScore(entry, scanState))
           const maxScore = Math.max(...scores)
-          console.debug(`[WI] Group '${key}' max score:`, maxScore)
+          console.debug(`[Lorebook] Group '${key}' max score:`, maxScore)
           //console.table(group.map((entry, i) => ({ uid: entry.uid, key: JSON.stringify(entry.key), score: scores[i] })));
 
           for (let i = 0; i < group.length; i++) {
@@ -471,7 +472,7 @@ export async function activateLorebookInfo({
 
             if (scores[i]! < maxScore) {
               console.debug(
-                `[WI] Entry ${group[i]!.uid}`,
+                `[Lorebook] Entry ${group[i]!.uid}`,
                 `removed as score loser from inclusion group '${key}'`,
                 group[i],
               )
@@ -487,24 +488,31 @@ export async function activateLorebookInfo({
       filterGroupsByScoring()
 
       for (const [key, group] of Object.entries(grouped)) {
-        console.debug(`[WI] Checking inclusion group '${key}' with ${group.length} entries`, group)
+        console.debug(
+          `[Lorebook] Checking inclusion group '${key}' with ${group.length} entries`,
+          group,
+        )
 
         // If the group has any sticky entries, the rest are already removed by the timed effects filter
         const hasAnySticky = hasStickyMap.get(key)
         if (hasAnySticky) {
-          console.debug(`[WI] Skipping inclusion group check, group '${key}' has sticky entries`)
+          console.debug(
+            `[Lorebook] Skipping inclusion group check, group '${key}' has sticky entries`,
+          )
           continue
         }
 
         if (Array.from(allActivatedEntries.values()).some((x) => x.group === key)) {
-          console.debug(`[WI] Skipping inclusion group check, group '${key}' was already activated`)
+          console.debug(
+            `[Lorebook] Skipping inclusion group check, group '${key}' was already activated`,
+          )
           // We need to forcefully deactivate all other entries in the group
           removeAllBut(group, undefined, false)
           continue
         }
 
         if (!Array.isArray(group) || group.length <= 1) {
-          console.debug('[WI] Skipping inclusion group check, only one entry')
+          console.debug('[Lorebook] Skipping inclusion group check, only one entry')
           continue
         }
 
@@ -512,7 +520,7 @@ export async function activateLorebookInfo({
         const prios = group.filter((x) => x.groupOverride).sort(sort)
         if (prios.length) {
           console.debug(
-            `[WI] Entry ${prios[0]!.uid}`,
+            `[Lorebook] Entry ${prios[0]!.uid}`,
             `activated as prio winner from inclusion group '${key}'`,
             prios[0],
           )
@@ -531,7 +539,7 @@ export async function activateLorebookInfo({
 
           if (rollValue <= currentWeight) {
             console.debug(
-              `[WI] Entry ${entry.uid}`,
+              `[Lorebook] Entry ${entry.uid}`,
               `activated as roll winner from inclusion group '${key}'`,
               entry,
             )
@@ -541,7 +549,7 @@ export async function activateLorebookInfo({
         }
 
         if (!winner) {
-          console.debug(`[WI] Failed to activate inclusion group '${key}', no winner found`)
+          console.debug(`[Lorebook] Failed to activate inclusion group '${key}', no winner found`)
           continue
         }
 
@@ -552,28 +560,32 @@ export async function activateLorebookInfo({
 
     filterByInclusionGroups()
 
-    console.debug('[WI] --- PROBABILITY CHECKS ---')
+    console.debug('[Lorebook] --- PROBABILITY CHECKS ---')
     if (!newEntries.length) {
-      console.debug('[WI] No probability checks to do')
+      console.debug('[Lorebook] No probability checks to do')
     }
 
     for (const entry of newEntries) {
       function verifyProbability() {
         // If we don't need to roll, it's always true
         if (!entry.useProbability || entry.probability === 100) {
-          console.debug(`WI entry ${entry.uid} does not use probability`)
+          console.debug(`Lorebook entry ${entry.uid} does not use probability`)
           return true
         }
 
         const isSticky = timedEffectsManager.isEffectActive('sticky', entry)
         if (isSticky) {
-          console.debug(`WI entry ${entry.uid} is sticky, does not need to re-roll probability`)
+          console.debug(
+            `Lorebook entry ${entry.uid} is sticky, does not need to re-roll probability`,
+          )
           return true
         }
 
         const rollValue = Math.random() * 100
         if (rollValue <= entry.probability) {
-          console.debug(`WI entry ${entry.uid} passed probability check of ${entry.probability}%`)
+          console.debug(
+            `Lorebook entry ${entry.uid} passed probability check of ${entry.probability}%`,
+          )
           return true
         }
 
@@ -584,7 +596,7 @@ export async function activateLorebookInfo({
       const success = verifyProbability()
       if (!success) {
         console.debug(
-          `WI entry ${entry.uid} failed probability check, removing from activated entries`,
+          `Lorebook entry ${entry.uid} failed probability check, removing from activated entries`,
           entry,
         )
         continue
@@ -595,14 +607,14 @@ export async function activateLorebookInfo({
       newContent += `${entry.content}\n`
 
       if (textToScanTokens + (await countTokens(newContent)) >= budget) {
-        console.debug('[WI] --- BUDGET OVERFLOW CHECK ---')
+        console.debug('[Lorebook] --- BUDGET OVERFLOW CHECK ---')
         if (lorebookSettings.alertOnOverflow) {
           console.warn(
-            `[WI] budget of ${budget} reached, stopping after ${allActivatedEntries.size} entries`,
+            `[Lorebook] budget of ${budget} reached, stopping after ${allActivatedEntries.size} entries`,
           )
         } else {
           console.debug(
-            `[WI] budget of ${budget} reached, stopping after ${allActivatedEntries.size} entries`,
+            `[Lorebook] budget of ${budget} reached, stopping after ${allActivatedEntries.size} entries`,
           )
         }
         tokenBudgetOverflowed = true
@@ -610,22 +622,22 @@ export async function activateLorebookInfo({
       }
 
       allActivatedEntries.set(`${entry.lorebook}.${entry.uid}`, entry)
-      console.debug(`[WI] Entry ${entry.uid} activation successful, adding to prompt`, entry)
+      console.debug(`[Lorebook] Entry ${entry.uid} activation successful, adding to prompt`, entry)
     }
 
     const successfulNewEntries = newEntries.filter((x) => !failedProbabilityChecks.has(x.hash))
     const successfulNewEntriesForRecursion = successfulNewEntries.filter((x) => !x.preventRecursion)
 
-    console.debug(`[WI] --- LOOP #${count} RESULT ---`)
+    console.debug(`[Lorebook] --- LOOP #${count} RESULT ---`)
     if (!newEntries.length) {
-      console.debug('[WI] No new entries activated.')
+      console.debug('[Lorebook] No new entries activated.')
     } else if (!successfulNewEntries.length) {
       console.debug(
-        '[WI] Probability checks failed for all activated entries. No new entries activated.',
+        '[Lorebook] Probability checks failed for all activated entries. No new entries activated.',
       )
     } else {
       console.debug(
-        `[WI] Successfully activated ${successfulNewEntries.length} new entries to prompt. ${allActivatedEntries.size} total entries activated.`,
+        `[Lorebook] Successfully activated ${successfulNewEntries.length} new entries to prompt. ${allActivatedEntries.size} total entries activated.`,
         successfulNewEntries,
       )
     }
@@ -645,7 +657,7 @@ export async function activateLorebookInfo({
     ) {
       nextScanState = ScanState.RECURSION
       logNextState(
-        '[WI] Found',
+        '[Lorebook] Found',
         successfulNewEntriesForRecursion.length,
         'new entries for recursion',
       )
@@ -661,7 +673,7 @@ export async function activateLorebookInfo({
     ) {
       nextScanState = ScanState.RECURSION
       logNextState(
-        '[WI] Min Activations run done, whill will always be followed by a recursive scan',
+        '[Lorebook] Min Activations run done, whill will always be followed by a recursive scan',
       )
     }
 
@@ -670,7 +682,7 @@ export async function activateLorebookInfo({
       lorebookSettings.minActivations > 0 &&
       allActivatedEntries.size < lorebookSettings.minActivations
     if (nextScanState === ScanState.NONE && !tokenBudgetOverflowed && minActivationsNotSatisfied) {
-      console.debug('[WI] --- MIN ACTIVATIONS CHECK ---')
+      console.debug('[Lorebook] --- MIN ACTIVATIONS CHECK ---')
 
       const over_max =
         (lorebookSettings.maxDepth > 0 && buffer.getDepth() > lorebookSettings.maxDepth) ||
@@ -679,12 +691,12 @@ export async function activateLorebookInfo({
       if (!over_max) {
         nextScanState = ScanState.MIN_ACTIVATIONS // loop
         logNextState(
-          `[WI] Min activations not reached (${allActivatedEntries.size}/${lorebookSettings.minActivations}), advancing depth to ${buffer.getDepth() + 1}, starting another scan`,
+          `[Lorebook] Min activations not reached (${allActivatedEntries.size}/${lorebookSettings.minActivations}), advancing depth to ${buffer.getDepth() + 1}, starting another scan`,
         )
         buffer.advanceScan()
       } else {
         console.debug(
-          `[WI] Min activations not reached (${allActivatedEntries.size}/${lorebookSettings.minActivations}), but reached on of depth. Stopping`,
+          `[Lorebook] Min activations not reached (${allActivatedEntries.size}/${lorebookSettings.minActivations}), but reached on of depth. Stopping`,
         )
       }
     }
@@ -694,14 +706,14 @@ export async function activateLorebookInfo({
       nextScanState = ScanState.RECURSION
       currentRecursionDelayLevel = availableRecursionDelayLevels.shift() ?? 0
       logNextState(
-        '[WI] Open delayed recursion levels left. Preparing next delayed recursion level',
+        '[Lorebook] Open delayed recursion levels left. Preparing next delayed recursion level',
         currentRecursionDelayLevel,
         '. Still delayed:',
         availableRecursionDelayLevels,
       )
     }
 
-    // Final check if we should really continue scan, and extend the current WI recurse buffer
+    // Final check if we should really continue scan, and extend the current lorebook recurse buffer
     scanState = nextScanState
     if (scanState === ScanState.NONE) {
       const text = successfulNewEntriesForRecursion.map((x) => x.content).join('\n')
@@ -714,17 +726,17 @@ export async function activateLorebookInfo({
     }
   }
 
-  console.debug('[WI] --- BUILDING PROMPT ---')
+  console.debug('[Lorebook] --- BUILDING PROMPT ---')
 
-  const WIBeforeEntries: string[] = []
-  const WIAfterEntries: string[] = []
-  const EMEntries: {
+  const lorebookBeforeEntries: string[] = []
+  const lorebookAfterEntries: string[] = []
+  const emEntries: {
     position: 'before' | 'after'
     content: string
   }[] = []
-  const ANTopEntries: string[] = []
-  const ANBottomEntries: string[] = []
-  const WIDepthEntries: {
+  const anBeforeEntries: string[] = []
+  const anAfterEntries: string[] = []
+  const lorebookDepthEntries: {
     depth: number
     entries: string[]
     role: 'system' | 'user' | 'assistant'
@@ -734,51 +746,50 @@ export async function activateLorebookInfo({
   for (const entry of sortedAllActivatedEntries) {
     const regexDepth =
       entry.position === Position.AtDepth ? (entry.depth ?? DEFAULT_DEPTH) : undefined
-    // TODO
     const content = getRegexedString(
-      [],
+      regexScripts,
       entry.content,
-      RegexPlacement.WORLD_INFO,
+      RegexPlacement.LOREBOOK,
       substituteMacros,
       { depth: regexDepth, isPrompt: true },
     )
 
     if (!content) {
       console.debug(
-        `[WI] Entry ${entry.uid}`,
+        `[Lorebook] Entry ${entry.uid}`,
         'skipped adding to prompt due to empty content',
         entry,
       )
-      return
+      continue
     }
 
     switch (entry.position) {
       case Position.Before:
-        WIBeforeEntries.unshift(content)
+        lorebookBeforeEntries.unshift(content)
         break
       case Position.After:
-        WIAfterEntries.unshift(content)
+        lorebookAfterEntries.unshift(content)
         break
       case Position.EMTop:
-        EMEntries.unshift({ position: 'before', content: content })
+        emEntries.unshift({ position: 'before', content: content })
         break
       case Position.EMBottom:
-        EMEntries.unshift({ position: 'after', content: content })
+        emEntries.unshift({ position: 'after', content: content })
         break
       case Position.ANTop:
-        ANTopEntries.unshift(content)
+        anBeforeEntries.unshift(content)
         break
       case Position.ANBottom:
-        ANBottomEntries.unshift(content)
+        anAfterEntries.unshift(content)
         break
       case Position.AtDepth: {
-        const existingDepthIndex = WIDepthEntries.findIndex(
+        const existingDepthIndex = lorebookDepthEntries.findIndex(
           (e) => e.depth === (entry.depth ?? DEFAULT_DEPTH) && e.role === (entry.role ?? 'system'),
         )
         if (existingDepthIndex !== -1) {
-          WIDepthEntries[existingDepthIndex]!.entries.unshift(content)
+          lorebookDepthEntries[existingDepthIndex]!.entries.unshift(content)
         } else {
-          WIDepthEntries.push({
+          lorebookDepthEntries.push({
             depth: entry.depth ?? DEFAULT_DEPTH,
             entries: [content],
             role: entry.role ?? 'system',
@@ -791,8 +802,8 @@ export async function activateLorebookInfo({
     }
   }
 
-  const worldInfoBefore = WIBeforeEntries.length ? WIBeforeEntries.join('\n') : ''
-  const worldInfoAfter = WIAfterEntries.length ? WIAfterEntries.join('\n') : ''
+  const lorebookInfoBefore = lorebookBeforeEntries.length ? lorebookBeforeEntries.join('\n') : ''
+  const lorebookInfoAfter = lorebookAfterEntries.length ? lorebookAfterEntries.join('\n') : ''
 
   // TODO
   const shouldLorebookAddPrompt = false
@@ -800,49 +811,49 @@ export async function activateLorebookInfo({
   if (shouldLorebookAddPrompt) {
     const originalAN = ''
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const ANWithWI =
-      `${ANTopEntries.join('\n')}\n${originalAN}\n${ANBottomEntries.join('\n')}`.replace(
+    const ANWithLorebook =
+      `${anBeforeEntries.join('\n')}\n${originalAN}\n${anAfterEntries.join('\n')}`.replace(
         /(^\n)|(\n$)/g,
         '',
       )
   }
 
   timedEffectsManager.setTimedEffects(Array.from(allActivatedEntries.values()))
+  const updatedTimedEffects = timedEffectsManager.finalizeTimedEffects()
 
   console.log(
-    `[WI] Adding ${allActivatedEntries.size} entries to prompt`,
+    `[Lorebook] Adding ${allActivatedEntries.size} entries to prompt`,
     Array.from(allActivatedEntries.values()),
   )
-  console.debug(`[WI] --- DONE ---`)
+  console.debug(`[Lorebook] --- DONE ---`)
 
   return {
-    worldInfoBefore,
-    worldInfoAfter,
-    EMEntries,
-    WIDepthEntries,
-    ANBeforeEntries: ANTopEntries,
-    ANAfterEntries: ANBottomEntries,
+    updatedTimedEffects,
+    lorebookInfoBefore,
+    lorebookInfoAfter,
+    emEntries,
+    lorebookDepthEntries,
+    anBeforeEntries,
+    anAfterEntries,
     allActivatedEntries: new Set(allActivatedEntries.values()),
     tokenBudgetOverflowed,
   }
 }
 
-export function activateLorebooks({
+export function getActivatedLorebooks({
   lorebooks,
+  settings,
   chatId,
   characterId,
   groupId,
   personaId,
-  global,
-  settings,
 }: {
   lorebooks: ReducedLorebook[]
+  settings: LorebookSettings
   chatId: string
   characterId: string
   groupId?: string
   personaId: string
-  global: string[]
-  settings: LorebookSettings
 }) {
   const globalLorebooks: ReducedLorebook[] = []
   const chatLorebooks: ReducedLorebook[] = []
@@ -852,7 +863,7 @@ export function activateLorebooks({
   const characterPrimaryLorebooks: ReducedLorebook[] = []
 
   for (const lorebook of lorebooks) {
-    if (global.includes(lorebook.id)) {
+    if (settings.active.includes(lorebook.id)) {
       globalLorebooks.push(lorebook)
     } else if (lorebook.chatIds.includes(chatId)) {
       chatLorebooks.push(lorebook)

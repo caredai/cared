@@ -2,15 +2,33 @@ import type { ModelInfo } from '@ownxai/sdk'
 
 import type { CharacterCardV3 } from '../character'
 import type { CharGroupMetadata } from '../character-group'
+import type { ChatMetadata } from '../chat'
 import type { MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
 import type { Settings } from '../settings'
 import type { ReducedCharacter, ReducedChat, ReducedGroup, ReducedPersona } from '../types'
 import type { Environment } from './macro'
+import { extractExtensions } from '../character'
 import { GroupGenerationMode } from '../character-group'
 import { parseDialogueExamples } from '../prompt'
 import { evaluateMacros as _evaluateMacros } from './macro'
 import { collapseNewlines } from './utils'
+
+export interface CharacterFields {
+  charPrompt: string
+  charInstruction: string
+  charJailbreak: string
+  description: string
+  personality: string
+  scenario: string
+  persona: string
+  mesExamples: string
+  mesExamplesRaw: string
+  charVersion: string
+  char_version: string
+  charDepthPrompt: string
+  creatorNotes: string
+}
 
 export interface SubstituteMacrosParams {
   messages?: MessageNode[]
@@ -36,8 +54,10 @@ export function substituteMacros(
   }: SubstituteMacrosParams,
   postProcessFn?: (s: string) => string,
 ) {
+  const chatMetadata = chat?.metadata.custom as ChatMetadata | undefined
+
   const chatVariables = {
-    ...(chat?.metadata.custom as any)?.variables,
+    ...chatMetadata?.variables,
   }
   const globalVariables = {
     ...settings.variables,
@@ -65,6 +85,8 @@ export function substituteMacros(
     mesExamplesRaw: '',
     charVersion: '',
     char_version: '',
+    charDepthPrompt: '',
+    creatorNotes: '',
   }
 
   const baseEnv = {
@@ -104,14 +126,10 @@ export function substituteMacros(
     return content.replace(/\r/g, '')
   }
 
-  // TODO: chat scenario
-  const chatScenario = ''
-
   envFromChar.persona = evaluateBasicMacros(persona?.metadata.description)
   envFromChar.description = evaluateBasicMacros(character?.data.description)
   envFromChar.personality = evaluateBasicMacros(character?.data.personality)
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  envFromChar.scenario = chatScenario || evaluateBasicMacros(character?.data.scenario)
+  envFromChar.scenario = evaluateBasicMacros(chatMetadata?.scenario || character?.data.scenario)
   envFromChar.mesExamplesRaw = evaluateBasicMacros(character?.data.mes_example)
   envFromChar.mesExamples = parseDialogueExamples(envFromChar.mesExamplesRaw).join('')
   envFromChar.charPrompt = settings.miscellaneous.preferCharacterPrompt
@@ -128,6 +146,9 @@ export function substituteMacros(
       })
     : ''
   envFromChar.charVersion = envFromChar.char_version = character?.data.character_version ?? ''
+  const charExtensions = character ? extractExtensions(character) : undefined
+  envFromChar.charDepthPrompt = evaluateBasicMacros(charExtensions?.depth_prompt_prompt)
+  envFromChar.creatorNotes = evaluateBasicMacros(character?.data.creator_notes)
   if (
     group?.metadata.generationMode === GroupGenerationMode.Append ||
     group?.metadata.generationMode === GroupGenerationMode.AppendDisabled
@@ -206,8 +227,7 @@ export function substituteMacros(
 
     envFromChar.description = descriptions.filter((x) => x.length).join('\n')
     envFromChar.personality = personalities.filter((x) => x.length).join('\n')
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    envFromChar.scenario = chatScenario || scenarios.filter((x) => x.length).join('\n')
+    envFromChar.scenario = chatMetadata?.scenario || scenarios.filter((x) => x.length).join('\n')
     envFromChar.mesExamples = mesExamplesArray.filter((x) => x.length).join('\n')
   }
 
@@ -221,8 +241,13 @@ export function substituteMacros(
       postProcessFn,
     )
 
+  const characterFields: CharacterFields = {
+    ...envFromChar,
+  }
+
   return {
     evaluateMacros,
+    characterFields,
   }
 }
 

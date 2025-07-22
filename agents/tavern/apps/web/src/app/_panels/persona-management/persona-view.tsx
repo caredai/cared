@@ -49,7 +49,7 @@ import { PersonaLorebookDialog } from './persona-lorebook-dialog'
 const personaFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string(),
-  injectionPosition: z.nativeEnum(PersonaPosition),
+  injectionPosition: z.enum(PersonaPosition),
   depth: z.number().int().min(0).step(1).optional(),
   role: z.enum(['system', 'user', 'assistant']).optional(),
 })

@@ -43,7 +43,7 @@ export const summarySettingsSchema = z.object({
   auto: z.boolean(),
   skipWIAN: z.boolean(),
 
-  buildingMode: z.nativeEnum(SummaryBuildingMode),
+  buildingMode: z.enum(SummaryBuildingMode),
   prompt: z.string(),
 
   targetWords: z.number().int().min(25).max(1000).step(25),
@@ -56,7 +56,7 @@ export const summarySettingsSchema = z.object({
 
   injectionTemplate: z.string(),
   inWIScan: z.boolean(),
-  injectionPosition: z.nativeEnum(SummaryPosition),
+  injectionPosition: z.enum(SummaryPosition),
   depth: z.number().int().min(0).step(1).optional(),
   role: z.enum(['system', 'user', 'assistant']).optional(),
 })

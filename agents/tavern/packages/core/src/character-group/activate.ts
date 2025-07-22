@@ -119,5 +119,13 @@ export function activateCharactersFromGroup({
   }
 
   // De-duplicate characters
-  return Array.from(new Set(activatedCharacters))
+  const hasMet = new Set<string>()
+  const result = []
+  for (const char of activatedCharacters) {
+    if (!hasMet.has(char.id)) {
+      hasMet.add(char.id)
+      result.push(char)
+    }
+  }
+  return result
 }

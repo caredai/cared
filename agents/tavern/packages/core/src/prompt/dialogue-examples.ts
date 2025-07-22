@@ -25,7 +25,7 @@ export function parseDialogueExamplesAsMessages(
   userName: string,
   characterNameOrGroupMemberNames: string | string[],
 ): {
-  role: string
+  role: 'system' | 'user' | 'assistant'
   content: string
   name: string
 }[][] {
@@ -52,7 +52,7 @@ function parseDialogueExampleIntoIndividual(
   characterNameOrGroupMemberNames: string | string[],
   appendNamesForGroup = true,
 ): {
-  role: string
+  role: 'system' | 'user' | 'assistant'
   content: string
   name: string
 }[] {
@@ -66,7 +66,7 @@ function parseDialogueExampleIntoIndividual(
 
   const groupBotNames = groupMemberNames.map((name) => `${name}:`)
 
-  const result: { role: string; content: string; name: string }[] = [] // array of msgs
+  const result: { role: 'system' | 'user' | 'assistant'; content: string; name: string }[] = [] // array of msgs
   const tmp = messageExampleString.split('\n')
   let cur_msg_lines: string[] = []
   let in_user = false
@@ -74,7 +74,7 @@ function parseDialogueExampleIntoIndividual(
   let botName = characterName
 
   // DRY my cock and balls :)
-  function add_msg(name: string, role: string, system_name: string) {
+  function add_msg(name: string, role: 'system' | 'user' | 'assistant', system_name: string) {
     // join different newlines (we split them by \n and join by \n),
     // remove char name,
     // trim to remove extra spaces

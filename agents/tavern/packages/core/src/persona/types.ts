@@ -19,7 +19,7 @@ export enum PersonaPosition {
 export const personaMetadataSchema = z.object({
   imageUrl: z.string().url().optional(),
   description: z.string(),
-  injectionPosition: z.nativeEnum(PersonaPosition),
+  injectionPosition: z.enum(PersonaPosition),
   depth: z.number().int().min(0).step(1).optional(),
   role: z.enum(['system', 'user', 'assistant']).optional(),
 })

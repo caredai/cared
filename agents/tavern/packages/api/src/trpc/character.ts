@@ -1,17 +1,17 @@
-import type {
+import type { CreateCharacterSchema } from '@tavern/db/schema'
+import {
   CharacterCardV1,
   CharacterCardV2,
   CharacterCardV3,
+  characterCardV3Schema,
+  convertToV3,
+  extractExtensions,
+  formatExtensions,
+  importUrl,
+  lorebookEntriesSchema,
   LorebookEntry,
   LorebookV3,
   lorebookV3Schema,
-} from '@tavern/core'
-import type { CreateCharacterSchema } from '@tavern/db/schema'
-import {
-  characterCardV3Schema,
-  convertToV3,
-  importUrl,
-  lorebookEntriesSchema,
   pngRead,
   pngWrite,
   Position,
@@ -576,12 +576,24 @@ export const characterRouter = {
           primaryLorebookLink.lorebook.entries,
           primaryLorebookLink.lorebook.name,
         )
-        if (hash(character.content.data.character_book) !== hash(characterBook)) {
+
+        const extensions = extractExtensions(character.content)
+
+        if (
+          hash(character.content.data.character_book) !== hash(characterBook) ||
+          extensions.world !== primaryLorebookLink.lorebook.name
+        ) {
+          const updatedExtensions = formatExtensions({
+            ...extensions,
+            world: primaryLorebookLink.lorebook.name,
+          })
+
           const updatedContent = {
             ...character.content,
             data: {
               ...character.content.data,
               character_book: characterBook,
+              extensions: updatedExtensions,
             },
           }
           character = (

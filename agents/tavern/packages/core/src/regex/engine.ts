@@ -1,4 +1,5 @@
-import { RegexPlacement, RegexScript, RegexSubstituteMode } from './types'
+import type { RegexPlacement, RegexScript } from './types'
+import { RegexSubstituteMode } from './types'
 
 /**
  * Runs the provided regex script on the given string.
@@ -133,12 +134,12 @@ export function getRegexedString(
   placement: RegexPlacement,
   evaluateMacros: (content: string, postProcessFn?: (s: string) => string) => string,
   {
-    isMarkdown,
+    isDisplay,
     isPrompt,
     isEdit,
     depth,
   }: {
-    isMarkdown?: boolean
+    isDisplay?: boolean
     isPrompt?: boolean
     isEdit?: boolean
     depth?: number
@@ -151,13 +152,17 @@ export function getRegexedString(
   let finalString = rawString
 
   regexScripts.forEach((script) => {
+    if (script.disabled) {
+      return
+    }
+
     if (
-      // Script applies to Markdown and input is Markdown
-      (script.displayOnly && isMarkdown) ||
-      // Script applies to Generate and input is Generate
+      // Script applies to chat display
+      (script.displayOnly && isDisplay) ||
+      // Script applies to outgoing prompt
       (script.promptOnly && isPrompt) ||
-      // Script applies to all cases when neither "only"s are true, but there's no need to do it when `isMarkdown`, the as source (chat history) should already be changed beforehand
-      (!script.displayOnly && !script.promptOnly && !isMarkdown && !isPrompt)
+      // Script applies to all cases when neither "only"s are true, but there's no need to do it when `isDisplay` or `isPrompt`, as the source (chat history) should already be changed beforehand
+      (!script.displayOnly && !script.promptOnly && !isDisplay && !isPrompt)
     ) {
       if (isEdit && !script.runOnEdit) {
         console.debug(
@@ -168,22 +173,14 @@ export function getRegexedString(
 
       // Check if the depth is within the min/max depth
       if (typeof depth === 'number') {
-        if (
-          typeof script.minDepth === 'number' &&
-          script.minDepth >= -1 &&
-          depth < script.minDepth
-        ) {
+        if (typeof script.minDepth === 'number' && depth < script.minDepth) {
           console.debug(
             `getRegexedString: Skipping script ${script.name} because depth ${depth} is less than minDepth ${script.minDepth}`,
           )
           return
         }
 
-        if (
-          typeof script.maxDepth === 'number' &&
-          script.maxDepth >= 0 &&
-          depth > script.maxDepth
-        ) {
+        if (typeof script.maxDepth === 'number' && depth > script.maxDepth) {
           console.debug(
             `getRegexedString: Skipping script ${script.name} because depth ${depth} is greater than maxDepth ${script.maxDepth}`,
           )

@@ -1,12 +1,17 @@
 import type { ModelInfo } from '@ownxai/sdk'
-import { toUIMessages } from '../message'
 
-import type { CharacterCardV3 } from '../character'
 import type { MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
 import type { Settings } from '../settings'
-import type { ReducedChat, ReducedGroup, ReducedPersona } from '../types'
+import type {
+  ReducedCharacter,
+  ReducedChat,
+  ReducedGroup,
+  ReducedLorebook,
+  ReducedPersona,
+} from '../types'
 import { substituteMacros } from '../macro'
+import { toUIMessages } from '../message'
 
 export interface BuildPromptMessagesParams {
   messages: MessageNode[]
@@ -15,8 +20,9 @@ export interface BuildPromptMessagesParams {
   modelPreset: ModelPreset
   model: ModelInfo
   persona: ReducedPersona
-  character: CharacterCardV3 // next character
+  character: ReducedCharacter // the active character (maybe comes from the character group)
   group?: ReducedGroup
+  lorebooks: ReducedLorebook[]
 }
 
 export function buildPromptMessages(params: BuildPromptMessagesParams) {
@@ -29,7 +35,7 @@ export function buildPromptMessages(params: BuildPromptMessagesParams) {
     modelPreset,
     model,
     persona,
-    character,
+    character: character.content,
     group,
   })
 

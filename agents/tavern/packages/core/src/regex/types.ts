@@ -24,7 +24,7 @@ export enum RegexPlacement {
   AI_OUTPUT = 2,
   SLASH_COMMAND = 3,
   // 4
-  WORLD_INFO = 5,
+  LOREBOOK = 5,
   REASONING = 6,
 }
 
@@ -44,7 +44,7 @@ export const regexScriptSchema = z
     replaceString: z.string(),
     trimStrings: z.array(z.string()),
     placement: z
-      .array(z.nativeEnum(RegexPlacement))
+      .array(z.enum(RegexPlacement))
       .refine((arr) => arr.length === new Set(arr).size, {
         message: 'Placement values must be unique',
       }),
@@ -52,7 +52,7 @@ export const regexScriptSchema = z
     displayOnly: z.boolean(),
     promptOnly: z.boolean(),
     runOnEdit: z.boolean(),
-    substituteMode: z.nativeEnum(RegexSubstituteMode),
+    substituteMode: z.enum(RegexSubstituteMode),
     minDepth: z.number().int().min(0).step(1).optional(),
     maxDepth: z.number().int().min(0).step(1).optional(),
   })

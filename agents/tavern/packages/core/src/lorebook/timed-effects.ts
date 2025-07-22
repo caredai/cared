@@ -26,6 +26,13 @@ export const timedEffectsSchema = z.object({
   cooldown: z.record(z.string(), timedEffectSchema),
 })
 
+export function newTimedEffects(): TimedEffects {
+  return {
+    sticky: {},
+    cooldown: {},
+  }
+}
+
 export type LorebookEntryExtended = LorebookEntry & {
   lorebook: string
   hash: string

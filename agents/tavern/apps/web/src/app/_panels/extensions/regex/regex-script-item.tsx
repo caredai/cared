@@ -59,7 +59,7 @@ const placementOptions = [
   { value: RegexPlacement.USER_INPUT, label: 'User Input' },
   { value: RegexPlacement.AI_OUTPUT, label: 'AI Output' },
   { value: RegexPlacement.SLASH_COMMAND, label: 'Slash Commands' },
-  { value: RegexPlacement.WORLD_INFO, label: 'World Info' },
+  { value: RegexPlacement.LOREBOOK, label: 'Lorebook' },
   { value: RegexPlacement.REASONING, label: 'Reasoning' },
 ]
 

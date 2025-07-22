@@ -29,8 +29,8 @@ export enum GroupGenerationMode {
 export const charGroupMetadataSchema = z.object({
   name: z.string().min(1),
   imageUrl: z.string().url().optional(),
-  activationStrategy: z.nativeEnum(GroupActivationStrategy),
-  generationMode: z.nativeEnum(GroupGenerationMode),
+  activationStrategy: z.enum(GroupActivationStrategy),
+  generationMode: z.enum(GroupGenerationMode),
   generationModePrefix: z.string().optional(),
   generationModeSuffix: z.string().optional(),
   allowSelfResponses: z.boolean(),

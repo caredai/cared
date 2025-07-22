@@ -6,7 +6,7 @@ import { convertToModelMessages } from './message'
 export class TokenCounter {
   counts = new Map<string, number>()
 
-  constructor(private countTokens: (text: string) => Promise<number>) {}
+  constructor(public countTokens: (text: string) => Promise<number>) {}
 
   reset() {
     this.counts.clear()
