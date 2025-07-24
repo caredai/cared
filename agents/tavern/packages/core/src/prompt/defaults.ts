@@ -31,7 +31,7 @@ export const defaultOrderedPrompts = [
   {
     identifier: 'worldInfoBefore',
     enabled: true,
-    name: 'World Info (before)',
+    name: 'Lorebook (before)',
     system_prompt: true,
     marker: true,
   },
@@ -85,7 +85,7 @@ export const defaultOrderedPrompts = [
   {
     identifier: 'worldInfoAfter',
     enabled: true,
-    name: 'World Info (after)',
+    name: 'Lorebook (after)',
     system_prompt: true,
     marker: true,
   },

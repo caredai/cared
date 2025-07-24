@@ -132,17 +132,25 @@ export function substituteMacros(
   envFromChar.scenario = evaluateBasicMacros(chatMetadata?.scenario || character?.data.scenario)
   envFromChar.mesExamplesRaw = evaluateBasicMacros(character?.data.mes_example)
   envFromChar.mesExamples = parseDialogueExamples(envFromChar.mesExamplesRaw).join('')
+  const mainPrompt = evaluateBasicMacros(
+    modelPreset.prompts.find((p) => p.identifier === 'main')?.content ?? '',
+    { ...env },
+  )
   envFromChar.charPrompt = settings.miscellaneous.preferCharacterPrompt
     ? evaluateBasicMacros(character?.data.system_prompt, {
         ...env,
-        original: modelPreset.prompts.find((p) => p.identifier === 'main')?.content ?? '',
+        original: mainPrompt,
       })
     : ''
+  const jailbreakPrompt = evaluateBasicMacros(
+    modelPreset.prompts.find((p) => p.identifier === 'jailbreak')?.content ?? '',
+    { ...env },
+  )
   envFromChar.charInstruction = envFromChar.charJailbreak = settings.miscellaneous
     .preferCharacterJailbreak
     ? evaluateBasicMacros(character?.data.post_history_instructions, {
         ...env,
-        original: modelPreset.prompts.find((p) => p.identifier === 'jailbreak')?.content ?? '',
+        original: jailbreakPrompt,
       })
     : ''
   envFromChar.charVersion = envFromChar.char_version = character?.data.character_version ?? ''
@@ -231,12 +239,13 @@ export function substituteMacros(
     envFromChar.mesExamples = mesExamplesArray.filter((x) => x.length).join('\n')
   }
 
-  const evaluateMacros = (content: string) =>
+  const evaluateMacros = (content: string, additionalMacro?: Record<string, string>) =>
     _evaluateMacros(
       content,
       {
         ...env,
         ...envFromChar,
+        ...additionalMacro,
       } as any,
       postProcessFn,
     )

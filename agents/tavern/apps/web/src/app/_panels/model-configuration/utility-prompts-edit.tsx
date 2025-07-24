@@ -26,9 +26,9 @@ export function UtilityPromptsEdit({ control }: { control: any }) {
     },
     {
       name: 'worldInfoFormat',
-      label: 'World Info Format Template',
+      label: 'Lorebook Format Template',
       description:
-        'Wraps activated World Info entries before inserting into the prompt. Use {0} to mark a place where the content is inserted.',
+        'Wraps activated lorebook entries before inserting into the prompt. Use {0} to mark a place where the content is inserted.',
     },
     {
       name: 'scenarioFormat',

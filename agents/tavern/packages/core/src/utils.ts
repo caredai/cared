@@ -51,3 +51,14 @@ export function extractAllWords(value: string) {
   }
   return words
 }
+
+/**
+ * Formats a string using the specified arguments.
+ * @example
+ * stringFormat('Hello, {0}!', 'world'); // 'Hello, world!'
+ */
+export function stringFormat(format: string, ...args: any[]) {
+  return format.replace(/{(\d+)}/g, function (match, number) {
+    return typeof args[number] != 'undefined' ? args[number] : match
+  })
+}

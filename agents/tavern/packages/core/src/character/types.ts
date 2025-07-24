@@ -382,7 +382,7 @@ export function extractExtensions(card: CharacterCardV3): CharacterCardV3Extensi
       ? Number(extensions.talkativeness)
       : 0.5,
     fav: !!extensions.fav,
-    world: String(extensions.world ?? ''), // TODO: parse world info
+    world: String(extensions.world ?? ''), // primary lorebook name
     depth_prompt_prompt: String(depthPrompt?.prompt ?? ''),
     depth_prompt_depth: !isNaN(Number(depthPrompt?.depth)) ? Number(depthPrompt?.depth) : 4,
     depth_prompt_role: depthPromptRole as 'system' | 'user' | 'assistant',

@@ -14,7 +14,7 @@ export class ChatContext {
     console.log(`Token budget: ${this.tokenBudget}`)
   }
 
-  canAffordAll(messages: PromptMessage[]) {
+  canAffordAll(messages: (PromptCollection | PromptMessage)[]) {
     return (
       this.tokenBudget - messages.reduce((total, message) => total + message.getTokens(), 0) >= 0
     )
@@ -38,12 +38,12 @@ export class ChatContext {
     this.tokenBudget += tokens
   }
 
-  reserveBudget(message: PromptMessage | number) {
+  reserveBudget(message: PromptMessage | PromptCollection | number) {
     const tokens = typeof message === 'number' ? message : message.getTokens()
     this.decreaseTokenBudgetBy(tokens)
   }
 
-  freeBudget(message: PromptMessage | number) {
+  freeBudget(message: PromptMessage | PromptCollection | number) {
     const tokens = typeof message === 'number' ? message : message.getTokens()
     this.increaseTokenBudgetBy(tokens)
   }
@@ -52,17 +52,19 @@ export class ChatContext {
     return this.collection.reduce((total, collection) => total + collection.getTokens(), 0)
   }
 
-  addCollection(collection: PromptCollection, position?: number) {
+  insertCollection(collection: PromptCollection, position?: number) {
     this.checkTokenBudget(collection)
 
     if (typeof position === 'number' && position >= 0) {
       assert(!!this.collection[position], 'Position out of bounds')
-      this.collection[position] = collection
+      this.collection.splice(position, 0, collection)
     } else {
       this.collection.push(collection)
     }
 
     this.decreaseTokenBudgetBy(collection.getTokens())
+
+    console.log(`Added ${collection.identifier}. Remaining tokens: ${this.tokenBudget}`)
   }
 
   insertMessage(
@@ -77,14 +79,7 @@ export class ChatContext {
       throw new Error(`Message collection with identifier ${identifier} not found`)
     }
 
-    if (typeof position === 'number' && position >= 0) {
-      assert(!!this.collection[position], 'Position out of bounds')
-      collection.messages.splice(position, 0, message)
-    } else if (position === 'start') {
-      collection.messages.unshift(message)
-    } else {
-      collection.messages.push(message)
-    }
+    collection.insert(message, position)
 
     this.decreaseTokenBudgetBy(message.tokens)
   }
@@ -96,7 +91,7 @@ export class ChatContext {
   getModelMessages() {
     const messages = []
     for (const collection of this.collection) {
-      messages.push(...collection.messages.map((m) => convertToModelMessages(m.message)))
+      messages.push(...collection.messages.map((m) => convertToModelMessages(m.message).at(0)!))
     }
     return messages
   }

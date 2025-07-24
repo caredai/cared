@@ -60,7 +60,7 @@ export interface LorebookEntry {
   cooldown: number
   /** The entry can't be activated unless there are at least N messages in the chat at the moment of evaluation. */
   delay: number
-  /** Defines how many messages in the chat history should be scanned for World Info keys. */
+  /** Defines how many messages in the chat history should be scanned for Lorebook keys. */
   scanDepth?: number
   /** Controls whether case sensitivity is applied during matching for the extension */
   caseSensitive?: boolean

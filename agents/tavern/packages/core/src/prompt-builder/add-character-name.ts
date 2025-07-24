@@ -35,6 +35,7 @@ export function addCharacterName(
       addPrefix(metadata.personaName ?? metadata.characterName)
       break
     case 'content':
+      addPrefix(metadata.personaName ?? metadata.characterName)
       break
   }
 

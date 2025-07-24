@@ -1,7 +1,11 @@
 import type { SummarySettings } from '@tavern/core'
 import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { SummaryBuildingMode, SummaryPosition, summarySettingsSchema } from '@tavern/core'
+import {
+  ExtensionInjectionPosition,
+  SummaryBuildingMode,
+  summarySettingsSchema,
+} from '@tavern/core'
 import { ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
@@ -38,35 +42,29 @@ import { useCurrentSummary, useUpdateSummary } from '@/hooks/use-summary'
 import { SummariesDialog } from './summaries-dialog'
 
 const injectionPositionOptions = [
-  { value: 'none', label: 'None (not injected)', position: SummaryPosition.NONE },
+  { value: 'none', label: 'None (not injected)', position: ExtensionInjectionPosition.NONE },
   {
     value: 'before-prompt',
     label: 'Before Main Prompt / Story String',
-    position: SummaryPosition.BEFORE_PROMPT,
+    position: ExtensionInjectionPosition.BEFORE_PROMPT,
   },
   {
     value: 'in-prompt',
     label: 'After Main Prompt / Story String',
-    position: SummaryPosition.IN_PROMPT,
+    position: ExtensionInjectionPosition.IN_PROMPT,
   },
   {
-    value: 'at-depth-system',
-    label: 'At Depth (⚙️ System)',
-    position: SummaryPosition.IN_CHAT,
-    role: 'system' as const,
+    value: 'in-chat',
+    label: 'In Chat',
+    position: ExtensionInjectionPosition.IN_CHAT,
   },
-  {
-    value: 'at-depth-user',
-    label: 'At Depth (👤 User)',
-    position: SummaryPosition.IN_CHAT,
-    role: 'user' as const,
-  },
-  {
-    value: 'at-depth-assistant',
-    label: 'At Depth (🤖 Assistant)',
-    position: SummaryPosition.IN_CHAT,
-    role: 'assistant' as const,
-  },
+]
+
+// Role options for summary injection
+const roleOptions = [
+  { value: 'system', label: 'System' },
+  { value: 'user', label: 'User' },
+  { value: 'assistant', label: 'Assistant' },
 ]
 
 export function SummaryExtension() {
@@ -92,7 +90,9 @@ export function SummaryExtension() {
     form.reset(summarySettings)
   }, [summarySettings, form])
 
-  const isInjectionPositionAtDepth = form.watch('injectionPosition') === SummaryPosition.IN_CHAT
+  // Always show role selection, depth only when injectionPosition is IN_CHAT
+  const isInjectionPositionInChat =
+    form.watch('injectionPosition') === ExtensionInjectionPosition.IN_CHAT
 
   const handleSummarizeNow = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -343,14 +343,13 @@ export function SummaryExtension() {
                 )}
               />
 
-              {/* Include in World Info Scanning checkbox */}
+              {/* Include in Lorebook Scanning checkbox */}
               <CheckboxField
-                label="Include in World Info Scanning"
+                label="Include in Lorebook Scanning"
                 name="inWIScan"
                 control={form.control}
               />
 
-              {/* Injection Position */}
               <div className="flex gap-4">
                 <FormField
                   control={form.control}
@@ -361,12 +360,7 @@ export function SummaryExtension() {
                       <Select
                         value={(() => {
                           const pos = form.watch('injectionPosition')
-                          const role = form.watch('role')
-                          const found = injectionPositionOptions.find(
-                            (opt) =>
-                              opt.position === pos &&
-                              (opt.position === SummaryPosition.IN_CHAT ? opt.role === role : true),
-                          )
+                          const found = injectionPositionOptions.find((opt) => opt.position === pos)
                           return found?.value ?? ''
                         })()}
                         onValueChange={(value) => {
@@ -375,14 +369,6 @@ export function SummaryExtension() {
                           )
                           if (!selectedOption) return
                           form.setValue('injectionPosition', selectedOption.position)
-                          if (
-                            selectedOption.position === SummaryPosition.IN_CHAT &&
-                            selectedOption.role
-                          ) {
-                            form.setValue('role', selectedOption.role)
-                          } else {
-                            form.setValue('role', undefined)
-                          }
                         }}
                       >
                         <FormControl>
@@ -402,8 +388,7 @@ export function SummaryExtension() {
                   )}
                 />
 
-                {/* Depth (only show when position is IN_CHAT) */}
-                {isInjectionPositionAtDepth && (
+                {isInjectionPositionInChat && (
                   <FormField
                     control={form.control}
                     name="depth"
@@ -423,6 +408,33 @@ export function SummaryExtension() {
                     )}
                   />
                 )}
+
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role</FormLabel>
+                      <Select
+                        value={field.value ?? 'system'}
+                        onValueChange={(value) => field.onChange(value)}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-auto h-7 px-1 py-0.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="z-6000">
+                          {roleOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
               </div>
             </CollapsibleContent>
           </Collapsible>

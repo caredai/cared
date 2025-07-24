@@ -1,10 +1,12 @@
 import { z } from 'zod/v4'
 
+import { ExtensionInjectionPosition } from '../extension'
+
 export interface SummarySettings {
   disabled: boolean // Whether the summary feature is disabled.
 
   auto: boolean // Whether to automatically build summaries.
-  skipWIAN: boolean // Omit World Info and Author's Note from text to be summarized.
+  skipWIAN: boolean // Omit Lorebook and Author's Note from text to be summarized.
 
   buildingMode: SummaryBuildingMode
   prompt: string
@@ -18,23 +20,16 @@ export interface SummarySettings {
   wordsInterval: number // 0 means disabled
 
   injectionTemplate: string
-  inWIScan: boolean // Include in World Info Scanning
-  injectionPosition: SummaryPosition
-  depth?: number
-  role?: 'system' | 'user' | 'assistant'
+  inWIScan: boolean // Include in Lorebook Scanning
+  injectionPosition: ExtensionInjectionPosition
+  depth: number
+  role: 'system' | 'user' | 'assistant'
 }
 
 export enum SummaryBuildingMode {
   DEFAULT = 0,
   RAW_BLOCKING = 1,
   RAW_NON_BLOCKING = 2,
-}
-
-export enum SummaryPosition {
-  NONE = -1,
-  IN_PROMPT = 0,
-  IN_CHAT = 1,
-  BEFORE_PROMPT = 2,
 }
 
 export const summarySettingsSchema = z.object({
@@ -56,9 +51,9 @@ export const summarySettingsSchema = z.object({
 
   injectionTemplate: z.string(),
   inWIScan: z.boolean(),
-  injectionPosition: z.enum(SummaryPosition),
-  depth: z.number().int().min(0).step(1).optional(),
-  role: z.enum(['system', 'user', 'assistant']).optional(),
+  injectionPosition: z.enum(ExtensionInjectionPosition),
+  depth: z.number().int().min(0).step(1),
+  role: z.enum(['system', 'user', 'assistant']),
 })
 
 const defaultPrompt =
@@ -80,7 +75,7 @@ export function fillInSummarySettingsWithDefaults(settings?: SummarySettings): S
       wordsInterval: 0,
       injectionTemplate: defaultInjectionTemplate,
       inWIScan: false,
-      injectionPosition: SummaryPosition.IN_PROMPT,
+      injectionPosition: ExtensionInjectionPosition.IN_PROMPT,
       depth: 2,
       role: 'system',
     }

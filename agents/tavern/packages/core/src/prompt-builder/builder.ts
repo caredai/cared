@@ -14,6 +14,7 @@ import { substituteMacros } from '../macro'
 import { toUIMessages } from '../message'
 
 export interface BuildPromptMessagesParams {
+  generateType: 'normal' | 'continue' | 'regenerate' | 'impersonate'
   messages: MessageNode[]
   chat: ReducedChat
   settings: Settings
