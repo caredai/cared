@@ -148,7 +148,7 @@ export function Chat() {
         throw new Error('No character')
       }
 
-      const promptMessages = await buildPromptMessages({
+      const { promptMessages } = await buildPromptMessages({
         generateType: 'normal',
         messages: messages, // TODO
         chat,
@@ -160,6 +160,7 @@ export function Chat() {
         group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
         lorebooks,
         countTokens,
+        log: true,
       })
 
       startTimer()

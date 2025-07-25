@@ -5,7 +5,7 @@ import { TokenBudgetExceededError } from './error'
 import { convertToModelMessages } from './message'
 
 export class ChatContext {
-  collection: PromptCollection[] = []
+  collections: PromptCollection[] = []
   tokenBudget = 0
 
   setTokenBudget(maxPromptTokens: number) {
@@ -49,17 +49,17 @@ export class ChatContext {
   }
 
   getTokens() {
-    return this.collection.reduce((total, collection) => total + collection.getTokens(), 0)
+    return this.collections.reduce((total, collection) => total + collection.getTokens(), 0)
   }
 
   insertCollection(collection: PromptCollection, position?: number) {
     this.checkTokenBudget(collection)
 
     if (typeof position === 'number' && position >= 0) {
-      assert(!!this.collection[position], 'Position out of bounds')
-      this.collection.splice(position, 0, collection)
+      assert(!!this.collections[position], 'Position out of bounds')
+      this.collections.splice(position, 0, collection)
     } else {
-      this.collection.push(collection)
+      this.collections.push(collection)
     }
 
     this.decreaseTokenBudgetBy(collection.getTokens())
@@ -74,7 +74,7 @@ export class ChatContext {
   ) {
     this.checkTokenBudget(message)
 
-    const collection = this.collection.find((c) => c.identifier === identifier)
+    const collection = this.collections.find((c) => c.identifier === identifier)
     if (!collection) {
       throw new Error(`Message collection with identifier ${identifier} not found`)
     }
@@ -85,14 +85,50 @@ export class ChatContext {
   }
 
   hasMessage(identifier: string) {
-    return this.collection.some((c) => c.has(identifier))
+    return this.collections.some((c) => c.has(identifier))
   }
 
   getModelMessages() {
     const messages = []
-    for (const collection of this.collection) {
-      messages.push(...collection.messages.map((m) => convertToModelMessages(m.message).at(0)!))
+    for (const collection of this.collections) {
+      if (collection.prompt && !collection.prompt.enabled) {
+        continue
+      }
+      messages.push(
+        ...collection.messages
+          .filter((m) => !m.isEmpty())
+          .map((m) => convertToModelMessages(m.message).at(0)!),
+      )
     }
     return messages
+  }
+
+  log() {
+    // Define ANSI color codes for better readability
+    const RESET = '\x1b[0m'
+    // Background color codes
+    const BG_CYAN = '\x1b[46m'
+    const BG_YELLOW = '\x1b[43m'
+    const BG_GREEN = '\x1b[42m'
+    const BG_MAGENTA = '\x1b[45m'
+    const BG_BLUE = '\x1b[44m'
+    const BG_RED = '\x1b[41m'
+    // Foreground color for contrast
+    const FG_BLACK = '\x1b[30m'
+    const FG_WHITE = '\x1b[97m'
+
+    console.log(`${BG_CYAN}${FG_BLACK} Chat context: ${RESET}`)
+    let i = 0
+    for (const collection of this.collections) {
+      console.log(
+        `${BG_YELLOW}${FG_BLACK} Prompt collection #${++i}: ${RESET} ${BG_GREEN}${FG_BLACK} ${collection.identifier} ${RESET}`,
+      )
+      let j = 0
+      for (const message of collection.messages) {
+        console.log(
+          `${BG_MAGENTA}${FG_WHITE} Prompt identifier #${++j}: ${RESET} ${BG_BLUE}${FG_WHITE} ${message.identifier} ${RESET}, ${BG_RED}${FG_WHITE} tokens: ${message.tokens} ${RESET}, message: ${JSON.stringify(convertToModelMessages(message.message).at(0), null, 2)}`,
+        )
+      }
+    }
   }
 }

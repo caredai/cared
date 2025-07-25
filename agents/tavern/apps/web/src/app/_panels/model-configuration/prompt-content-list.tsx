@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { ChevronDownIcon } from 'lucide-react'
+import { VList } from 'virtua'
 
 import { Button } from '@ownxai/ui/components/button'
 import {
@@ -10,107 +11,46 @@ import {
   CollapsibleTrigger,
 } from '@ownxai/ui/components/collapsible'
 
-import { useActive } from '@/hooks/use-active'
-import { isCharacterGroup } from '@/hooks/use-character-or-group'
-import { useTextTokens } from '@/hooks/use-tokenizer'
+import { usePromptCollections } from '@/hooks/use-prompt-collections'
 import { usePromptInspect } from './prompt-inspect'
 
 export function PromptContentList() {
+  const promptCollections = usePromptCollections()
   const { prompt } = usePromptInspect()
-  const { persona, charOrGroup } = useActive()
-  const character = isCharacterGroup(charOrGroup)
-    ? charOrGroup.characters[0] // TODO
-    : charOrGroup
 
   const list:
     | {
-        name: string
+        identifier: string
         role: string
         content: string
+        tokens: number
       }[]
     | undefined = useMemo(() => {
     if (!prompt) {
       return
     }
-    const mainItem = {
-      name: prompt.name,
-      role: prompt.role ?? 'system',
-    }
-    if (!prompt.system_prompt || !prompt.marker) {
-      return [
-        {
-          ...mainItem,
-          content: prompt.content ?? '',
-        },
-      ]
-    }
-    switch (prompt.identifier) {
-      case 'worldInfoBefore':
-        return [
-          {
-            ...mainItem,
-            content: '', // TODO
-          },
-        ]
-      case 'personaDescription':
-        return [
-          {
-            ...mainItem,
-            content: persona?.metadata.description ?? '',
-          },
-        ]
-      case 'charDescription':
-        return [
-          {
-            ...mainItem,
-            content: character?.content.data.description ?? '',
-          },
-        ]
-      case 'charPersonality':
-        return [
-          {
-            ...mainItem,
-            content: character?.content.data.personality ?? '',
-          },
-        ]
-      case 'scenario':
-        return [
-          {
-            ...mainItem,
-            content: character?.content.data.scenario ?? '',
-          },
-        ]
-      case 'worldInfoAfter':
-        return [
-          {
-            ...mainItem,
-            content: '', // TODO
-          },
-        ]
-      case 'dialogueExamples':
-        return [
-          {
-            ...mainItem,
-            content: character?.content.data.mes_example ?? '',
-          },
-        ]
-      case 'chatHistory':
-        return [
-          {
-            ...mainItem,
-            content: '', // TODO
-          },
-        ]
-    }
-  }, [prompt, persona, character])
-
-  if (!prompt) {
-    return null
-  }
+    const collection = promptCollections.find((c) => c.identifier === prompt.identifier)
+    return collection?.messages.map((item) => ({
+      identifier: item.identifier,
+      role: item.message.role,
+      content: item.getText(),
+      tokens: item.getTokens(),
+    }))
+  }, [prompt, promptCollections])
 
   return (
-    <div className="flex flex-col gap-2 border border-border p-2 rounded-sm bg-black/20 text-sm">
-      {list?.map((item, index) => <PromptContentItem key={index} item={item} />)}
+    <div className="flex-1 flex flex-col gap-2 border border-border p-2 rounded-sm bg-black/20 text-sm">
+      {list && list.length > 0 ? (
+        <VList count={list.length} className="scrollbar-stable">
+          {(i) => {
+            const item = list[i]!
+            const key = `${item.identifier}-${i}`
+            return <PromptContentItem key={key} item={item} />
+          }}
+        </VList>
+      ) : (
+        <p>No list available {prompt?.injection_position === 'absolute' && 'since this prompt is injected into some other prompt'}</p>
+      )}
     </div>
   )
 }
@@ -119,19 +59,18 @@ function PromptContentItem({
   item,
 }: {
   item: {
-    name: string
+    identifier: string
     role: string
     content: string
+    tokens: number
   }
 }) {
-  const tokens = useTextTokens(item.content)
-
   return (
-    <Collapsible>
+    <Collapsible className="px-1.5 py-2 my-1 mr-1 border rounded-sm">
       <CollapsibleTrigger asChild>
-        <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer text-muted-foreground">
+        <div className="flex justify-between items-center [&[data-state=open]_svg]:rotate-180 cursor-pointer">
           <span>
-            Name: {item.name}, Role: {item.role}, Tokens: {tokens ?? 0}
+            Name: {item.identifier}, Role: {item.role}, Tokens: {item.tokens}
           </span>
 
           <Button type="button" variant="outline" size="icon" className="size-6">

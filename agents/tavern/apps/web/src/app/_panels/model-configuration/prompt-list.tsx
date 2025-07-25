@@ -24,8 +24,9 @@ import {
   faPen,
   faPlusSquare,
   faSquarePollHorizontal,
+  faSyringe,
   faTrash,
-  faUserPen,
+  faUserNinja,
 } from '@fortawesome/free-solid-svg-icons'
 import { systemPromptIdentifiers } from '@tavern/core'
 import { createPortal } from 'react-dom'
@@ -35,7 +36,7 @@ import { Button } from '@ownxai/ui/components/button'
 import { Switch } from '@ownxai/ui/components/switch'
 import { cn } from '@ownxai/ui/lib/utils'
 
-import { FaButton } from '@/components/fa-button'
+import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
 import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
 import { useTextTokens } from '@/hooks/use-tokenizer'
 import { usePromptEdit } from './prompt-edit'
@@ -277,6 +278,18 @@ function PromptListItem({
     transition,
   }
 
+  const icon = prompt.system_prompt
+    ? prompt.marker
+      ? faLocationDot
+      : faSquarePollHorizontal
+    : faUserNinja
+
+  const title = prompt.system_prompt
+    ? prompt.marker
+      ? 'System Marker Prompt'
+      : 'System Prompt'
+    : 'User-defined Prompt'
+
   return (
     <div
       ref={setNodeRef}
@@ -288,26 +301,27 @@ function PromptListItem({
       )}
     >
       <span className="flex items-center overflow-x-hidden">
-        <FaButton
-          icon={
-            prompt.system_prompt
-              ? prompt.marker
-                ? faLocationDot
-                : faSquarePollHorizontal
-              : faUserPen
-          }
-          btnSize="size-6"
-          iconSize="lg"
-          className={cn('text-muted-foreground cursor-grab')}
-          title={
-            prompt.system_prompt
-              ? prompt.marker
-                ? 'System Marker Prompt'
-                : 'System Prompt'
-              : 'User-defined Prompt'
-          }
-          {...listeners}
-        />
+        {prompt.injection_position !== 'absolute' ? (
+          <FaButton
+            icon={icon}
+            btnSize="size-6"
+            iconSize="lg"
+            className={cn('text-muted-foreground cursor-grab')}
+            title={title}
+            {...listeners}
+          />
+        ) : (
+          <FaButtonWithBadge
+            icon={icon}
+            badgeIcon={faSyringe}
+            btnSize="size-6"
+            iconSize="lg"
+            className={cn('text-muted-foreground cursor-grab')}
+            badgeClassName="-top-0 -right-0"
+            title={title}
+            {...listeners}
+          />
+        )}
 
         <Button
           variant="link"

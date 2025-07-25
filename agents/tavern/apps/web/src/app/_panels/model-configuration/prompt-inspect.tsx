@@ -92,7 +92,7 @@ export function PromptInspect() {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex-1 flex flex-col gap-4">
         <div className="flex items-center justify-end">
           <Button onClick={() => openPromptEdit(prompt.identifier)}>Edit</Button>
         </div>
@@ -100,7 +100,7 @@ export function PromptInspect() {
         <div className="flex-1 flex flex-col gap-2">
           <Label>Prompt List</Label>
           <div className="text-[0.8rem] text-muted-foreground">
-            The list of prompts associated with this item
+            The list of items associated with this prompt
           </div>
           <PromptContentList />
         </div>

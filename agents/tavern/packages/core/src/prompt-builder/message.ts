@@ -5,6 +5,7 @@ import { convertToModelMessages as _convertToModelMessages } from 'ai'
 import type { ReducedMessage } from '../types'
 import { getMessageText } from '../message'
 import { TokenCounter } from './token-counter'
+import { Prompt } from '../prompt'
 
 export class PromptMessage {
   constructor(
@@ -27,7 +28,7 @@ export class PromptMessage {
     return new PromptMessage(identifier, message, tokens)
   }
 
-  getContent() {
+  getText() {
     if (isModelMessage(this.message)) {
       const content = this.message.content
       if (typeof content === 'string') {
@@ -66,7 +67,7 @@ export class PromptMessage {
 export class PromptCollection {
   messages: PromptMessage[] = []
 
-  constructor(readonly identifier: string) {}
+  constructor(readonly identifier: string, readonly prompt?: Prompt) {}
 
   add(message: PromptMessage) {
     this.messages.push(message)
@@ -83,8 +84,8 @@ export class PromptCollection {
     }
   }
 
-  getContent() {
-    return this.messages.map((message) => message.getContent()).join('\n')
+  getText() {
+    return this.messages.map((message) => message.getText()).join('\n')
   }
 
   getTokens() {

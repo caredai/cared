@@ -41,6 +41,7 @@ export async function populatePromptMessages(
     group,
     lorebooks,
     countTokens,
+    log,
     substituteMacros,
     characterFields,
   } = params
@@ -127,15 +128,15 @@ export async function populatePromptMessages(
   const promptCollectionMap = new Map<string, PromptCollection>()
 
   async function addPromptMessage(
-    prompt: Pick<Prompt, 'identifier' | 'role' | 'content'>,
+    prompt: Prompt,
     content?: string,
   ) {
-    const collection = new PromptCollection(prompt.identifier)
+    const collection = new PromptCollection(prompt.identifier, prompt)
     collection.add(
       await PromptMessage.fromContent(
         prompt.identifier,
         prompt.role ?? 'system',
-        content ?? prompt.content ?? '',
+        substituteMacros(content ?? prompt.content ?? ''),
       ),
     )
     promptCollectionMap.set(prompt.identifier, collection)
@@ -240,6 +241,7 @@ export async function populatePromptMessages(
   const relativePrompts: Prompt[] = modelPreset.prompts.filter(
     (p) => p.injection_position !== 'absolute',
   )
+  // Absolute prompts will always be inserted into the chat history
   const absolutePrompts: [Prompt, PromptCollection][] = modelPreset.prompts
     .filter((p) => p.injection_position === 'absolute')
     .map((p) => {
@@ -256,72 +258,79 @@ export async function populatePromptMessages(
       controlPrompts.add(impersonateMessage)
     }
   }
-
   context.reserveBudget(controlPrompts)
 
+  // Relative prompts will maintain their relative order in the final prompt sequence.
+  // In other words, relative prompts determine the overall order of prompts,
+  // while absolute prompts are actually inserted into specific positions within the relative prompts.
   for (const prompt of relativePrompts) {
     const collection = promptCollectionMap.get(prompt.identifier)
-    if (!collection) {
-      continue
+    if (collection) {
+      context.insertCollection(collection)
+    } else {
+      // Actually, for `dialogueExamples` and `chatHistory`, process them later.
+      context.insertCollection(new PromptCollection(prompt.identifier, prompt))
     }
-    context.insertCollection(collection)
   }
 
-  async function populateChatHistory() {
-    interface InjectedMessage {
-      role: 'system' | 'user' | 'assistant'
-      content: string
-    }
-
-    function isInjectedMessage(
-      message: ReducedMessage | InjectedMessage,
-    ): message is InjectedMessage {
-      return typeof message.content === 'string'
-    }
-
+  function populateInjectionPrompts() {
+    // Inject depth prompts into chat history, from bottom (depth 0) to top
     const reversedMessages: (ReducedMessage | InjectedMessage)[] =
       chatHistoryWithCharacterNames.reverse()
-    {
-      let totalInsertedMessages = 0
 
-      const depthManager = new DepthManager()
-      depthManager.add(...absolutePrompts.map(([p]) => p.injection_depth ?? 0))
-      depthManager.merge(extensionPromptManager.depths)
-      const roles = ['system', 'user', 'assistant'] as const
-      for (const depth of depthManager.values()) {
-        const depthMessages: InjectedMessage[] = []
+    let totalInsertedMessages = 0
 
-        const depthPrompts = absolutePrompts.filter(
-          ([p, c]) => p.injection_depth === depth && !c.isEmpty(),
+    const depthManager = new DepthManager()
+    depthManager.add(...absolutePrompts.map(([p]) => p.injection_depth ?? 0))
+    depthManager.add(...(lorebook?.lorebookDepthEntries.map((item) => item.depth) ?? []))
+    depthManager.merge(extensionPromptManager.depths)
+    const roles = ['system', 'user', 'assistant'] as const
+    for (const depth of depthManager.values()) {
+      const depthPrompts = absolutePrompts.filter(
+        ([p, c]) => p.enabled && p.injection_depth === depth && !c.isEmpty(),
+      )
+
+      const depthMessages: InjectedMessage[] = []
+      for (const role of roles) {
+        const prompt = depthPrompts
+          .filter(([p]) => p.role === role)
+          .map(([, c]) => c.getText())
+          .join('\n')
+        const lorePrompt =
+          lorebook?.lorebookDepthEntries
+            .filter((item) => item.role === role && item.depth === depth)
+            .map((item) => item.entries.filter(Boolean).join('\n'))
+            .filter(Boolean)
+            .join('\n') ?? ''
+        const extensionPrompt = extensionPromptManager.prompt(
+          ExtensionInjectionPosition.IN_CHAT,
+          depth,
+          role,
         )
-
-        for (const role of roles) {
-          const prompt = depthPrompts
-            .filter(([p]) => p.role === role)
-            .map(([, c]) => c.getContent())
-            .join('\n')
-          const extensionPrompt = extensionPromptManager.prompt(
-            ExtensionInjectionPosition.IN_CHAT,
-            depth,
-            role,
-          )
-          const jointPrompt = [substituteMacros(prompt), extensionPrompt].join('\n')
+        const jointPrompt = [substituteMacros(prompt), lorePrompt, extensionPrompt]
+          .filter(Boolean)
+          .join('\n')
+        if (jointPrompt.trim()) {
           depthMessages.push({
             role,
             content: jointPrompt,
           })
         }
+      }
 
-        if (depthMessages.length) {
-          const injectIdx = depth + totalInsertedMessages
-          reversedMessages.splice(injectIdx, 0, ...depthMessages)
-          totalInsertedMessages += depthMessages.length
-        }
+      if (depthMessages.length) {
+        const injectIdx = depth + totalInsertedMessages
+        reversedMessages.splice(injectIdx, 0, ...depthMessages)
+        totalInsertedMessages += depthMessages.length
       }
     }
 
-    context.insertCollection(new PromptCollection('chatHistory'))
+    return reversedMessages
+  }
 
+  const reversedMessages = populateInjectionPrompts()
+
+  async function populateChatHistory() {
     const newChatPrompt = !group ? utilityPrompts.newChatPrompt : utilityPrompts.newGroupChatPrompt
     const newChatMessage = await PromptMessage.fromContent(
       'newMainChat',
@@ -384,11 +393,10 @@ export async function populatePromptMessages(
     let metFirstNonInjected = false
     for (let i = 0; i < reversedMessages.length; i++) {
       const msg = reversedMessages[i]!
-      const chatMessage = await PromptMessage.fromContent(
-        `chatHistory-${reversedMessages.length - i}`,
-        msg.role,
-        isInjectedMessage(msg) ? msg.content : getMessageText(msg),
-      )
+      const identifier = `chatHistory-${reversedMessages.length - i}${isInjectedMessage(msg) ? '-injected' : ''}`
+      const chatMessage = isInjectedMessage(msg)
+        ? await PromptMessage.fromContent(identifier, msg.role, msg.content)
+        : await PromptMessage.fromMessage(identifier, msg)
 
       if (!context.canAfford(chatMessage)) {
         break
@@ -400,28 +408,34 @@ export async function populatePromptMessages(
         !isInjectedMessage(msg) &&
         !metFirstNonInjected
       ) {
+        // Only process the first non-injected message in the reversedMessages array
+        // This ensures that the continue-prefill logic is applied only once
         metFirstNonInjected = true
 
-        const collection = new PromptCollection('continuePrefill')
+        const continuePrefillCollection = new PromptCollection('continuePrefill')
         if (msg.role === 'assistant') {
+          // Only the claude models from Anthropic support assistant prefill
           const supportsAssistantPrefill = model.id.startsWith('anthropic')
           const assistantPrefill = supportsAssistantPrefill
             ? substituteMacros(modelPreset.vendor?.claude?.assistantPrefill ?? '')
             : ''
-          const messageContent = [assistantPrefill, chatMessage.getContent()]
-            .filter((x) => x)
-            .join('\n\n')
-          const continueMessage = await PromptMessage.fromContent(
-            chatMessage.identifier,
-            msg.role,
-            messageContent,
+          const continueMessage = structuredClone(msg)
+          if (assistantPrefill) {
+            // Prepend the assistant prefill to the continue message content
+            continueMessage.content.parts.unshift({
+              type: 'text',
+              text: assistantPrefill,
+            })
+          }
+          continuePrefillCollection.add(
+            await PromptMessage.fromMessage(identifier, continueMessage),
           )
-          collection.add(continueMessage)
         } else {
-          collection.add(chatMessage)
+          continuePrefillCollection.add(chatMessage)
         }
 
-        context.insertCollection(collection)
+        // Insert the continue-prefill collection at the end of the prompt sequence
+        context.insertCollection(continuePrefillCollection)
 
         continue
       }
@@ -430,15 +444,18 @@ export async function populatePromptMessages(
     }
 
     context.freeBudget(newChatMessage)
-    context.insertMessage(newChatMessage, 'chatHistory')
+    // Insert the new chat message at the start of the chat history
+    context.insertMessage(newChatMessage, 'chatHistory', 'start')
 
     if (hasGroupNudge && groupNudgeMessage) {
       context.freeBudget(groupNudgeMessage)
+      // Insert the group nudge message at the end of the chat history
       context.insertMessage(groupNudgeMessage, 'chatHistory')
     }
 
     if (generateType === 'continue' && continueMessageCollection) {
       context.freeBudget(continueMessageCollection)
+      // Insert the continue message collection at the end of the prompt sequence
       context.insertCollection(continueMessageCollection)
     }
   }
@@ -466,8 +483,6 @@ export async function populatePromptMessages(
       persona.name,
       !group ? character.content.data.name : group.characters.map((c) => c.content.data.name),
     )
-
-    context.insertCollection(new PromptCollection('dialogueExamples'))
 
     const newExampleChat = await PromptMessage.fromContent(
       'newChat',
@@ -501,6 +516,8 @@ export async function populatePromptMessages(
     }
   }
 
+  // The reason why dialogue examples and chat history are populated at the end
+  // is that, due to token budget constraints, their length may be too long and thus partially truncated.
   if (emBehavior.pinExample) {
     await populateDialogueExamples()
     await populateChatHistory()
@@ -511,11 +528,26 @@ export async function populatePromptMessages(
 
   context.freeBudget(controlPrompts)
   if (!controlPrompts.isEmpty()) {
+    // Always insert control prompts at the end
     context.insertCollection(controlPrompts)
   }
 
-  return {
-    promptCollection: context.collection,
-    modelMessages: context.getModelMessages(),
+  if (log) {
+    context.log()
   }
+
+  return {
+    promptCollections: context.collections,
+    modelMessages: context.getModelMessages(),
+    updatedTimedEffects: lorebook?.updatedTimedEffects,
+  }
+}
+
+interface InjectedMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+function isInjectedMessage(message: ReducedMessage | InjectedMessage): message is InjectedMessage {
+  return typeof message.content === 'string'
 }

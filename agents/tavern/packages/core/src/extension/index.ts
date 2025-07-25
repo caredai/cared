@@ -56,6 +56,7 @@ export class ExtensionPromptManager {
           (position !== ExtensionInjectionPosition.IN_CHAT || p.depth === depth),
       )
       .map((p) => p.value.trim())
+      .filter(Boolean)
       .join(separator)
   }
 }

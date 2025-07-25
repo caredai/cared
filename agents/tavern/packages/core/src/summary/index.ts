@@ -8,7 +8,7 @@ export function getLatestSummary(messages: ReducedMessage[]) {
   // Start from the second last message, as the last one is usually the current user input
   for (let i = messages.length - 2; i >= 0; i--) {
     const message = messages[i]!
-    const summary = message.content.metadata.summary
+    const summary = message.content.metadata.summary?.trim()
     if (summary) {
       return {
         summary,

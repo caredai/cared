@@ -25,6 +25,7 @@ export interface BuildPromptMessagesParams {
   group?: ReducedGroup
   lorebooks: ReducedLorebook[]
   countTokens: (text: string, modelId?: string) => Promise<number>
+  log?: boolean
 }
 
 export async function buildPromptMessages(params: BuildPromptMessagesParams) {
@@ -41,11 +42,15 @@ export async function buildPromptMessages(params: BuildPromptMessagesParams) {
     group,
   })
 
-  const { modelMessages } = await populatePromptMessages({
+  const { modelMessages, promptCollections, updatedTimedEffects } = await populatePromptMessages({
     ...params,
     substituteMacros: evaluateMacros,
     characterFields,
   })
 
-  return modelMessages ?? []
+  return {
+    promptMessages: modelMessages ?? [],
+    promptCollections,
+    updatedTimedEffects
+  }
 }
