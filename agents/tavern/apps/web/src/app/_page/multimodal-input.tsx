@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils'
 export function MultimodalInput({
   input,
   setInput,
-  messagesRef,
+  messages,
   chatRef,
   status,
   setMessages,
@@ -27,19 +27,19 @@ export function MultimodalInput({
 }: {
   input: string
   setInput: Dispatch<SetStateAction<string>>
-  messagesRef: RefObject<MessageNode[]>
+  messages: MessageNode[]
   chatRef: RefObject<AIChat<UIMessage>>
   status: UseChatHelpers<UIMessage>['status']
   setMessages: UseChatHelpers<UIMessage>['setMessages']
   disabled: boolean
 }) {
   const [lastIsUserMessage, lastMessage] = useMemo(() => {
-    const lastMessage = messagesRef.current.at(-1)?.message
+    const lastMessage = messages.at(-1)?.message
     const hasContent = !!lastMessage?.content.parts.filter(
       (p) => p.type === 'text' && p.text.trim(),
     ).length
     return [lastMessage?.role === 'user' && hasContent, lastMessage]
-  }, [messagesRef.current])
+  }, [messages])
 
   const submit = useCallback(() => {
     if (disabled) {

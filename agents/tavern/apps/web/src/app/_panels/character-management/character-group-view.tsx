@@ -4,6 +4,7 @@ import type { CharGroupMetadata } from '@tavern/core'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   faCheck,
+  faComments,
   faFaceSmile,
   faLeftLong,
   faSkull,
@@ -35,7 +36,11 @@ import {
 import { cn } from '@ownxai/ui/lib/utils'
 
 import { CharacterTagsView } from '@/app/_panels/character-management/character-tags-view'
-import { useClearAllFlags, useSetShowCharacterList } from '@/app/_panels/character-management/hooks'
+import {
+  useClearAllFlags,
+  useSetShowCharacterList,
+  useSetShowChatList,
+} from '@/app/_panels/character-management/hooks'
 import { CharacterGroupAvatar } from '@/components/avatar'
 import { CheckboxField } from '@/components/checkbox-field'
 import { FaButton } from '@/components/fa-button'
@@ -73,6 +78,7 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
 
   const { characters } = useCharacters()
   const setShowCharacterList = useSetShowCharacterList()
+  const setShowChatList = useSetShowChatList()
   const clearAllFlags = useClearAllFlags()
   const setActiveCharacterOrGroup = useSetActiveCharacterOrGroup()
   const createCharacterGroup = useCreateCharacterGroup()
@@ -119,6 +125,10 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
 
   const handleClose = () => {
     setShowCharacterList()
+  }
+
+  const handleToggleShowChatList = () => {
+    setShowChatList()
   }
 
   const handleAddToFavorites = async () => {
@@ -171,6 +181,11 @@ export function CharacterGroupView({ group }: { group?: CharacterGroup }) {
       action: handleClose,
       icon: isCreate ? faXmark : faLeftLong,
       tooltip: 'Cancel',
+    },
+    {
+      action: handleToggleShowChatList,
+      icon: faComments,
+      tooltip: 'Show Chat History',
     },
     {
       action: handleAddToFavorites,

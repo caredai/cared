@@ -4,14 +4,15 @@ import type { PrepareSendMessagesRequest } from 'ai'
 import type { ScrollToIndexAlign, VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat as AIChat, useChat } from '@ai-sdk/react'
-import { activateCharactersFromGroup, buildPromptMessages, toUIMessages } from '@tavern/core'
+import { buildPromptMessages, toUIMessages } from '@tavern/core'
 import { DefaultChatTransport } from 'ai'
 
 import { generateMessageId } from '@ownxai/sdk'
 
 import { CircleSpinner } from '@/components/spinner'
+import { useActivateCharacters, useActivatedCharacters } from '@/hooks/use-activate-characters'
 import { useActive } from '@/hooks/use-active'
-import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
+import { isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage, useCreateMessage, useUpdateMessage } from '@/hooks/use-message'
 import { useBuildMessageTree } from '@/hooks/use-message-tree'
 import { countTokens } from '@/lib/tokenizer'
@@ -26,7 +27,7 @@ export function Chat() {
 
   const chatId = chat?.id
 
-  const { branch, branchRef, navigate, update, isLoading, hasNextPage, isChatLoading } =
+  const { branch, branchRef, navigate, update, isLoading, hasNextPage, refetch, isChatLoading } =
     useBuildMessageTree()
 
   const createMessage = useCreateMessage(chatId)
@@ -35,6 +36,9 @@ export function Chat() {
 
   const generatingMessageIdRef = useRef('')
   const { startTimer, stopTimer, elapsedSeconds } = useGeneratingTimer()
+
+  useActivateCharacters()
+  const { nextActivatedCharacter, advanceActivatedCharacter } = useActivatedCharacters()
 
   const prepareSendMessagesRequest = useCallback(
     async ({
@@ -136,14 +140,7 @@ export function Chat() {
 
       // console.log('lastMessage.id', lastMessage.id, 'messages', messages)
 
-      // TODO
-      const nextChar = isCharacter(charOrGroup)
-        ? charOrGroup
-        : activateCharactersFromGroup({
-            group: charOrGroup,
-            messages,
-            impersonate: false, // TODO
-          })[0]
+      const nextChar = nextActivatedCharacter()
       if (!nextChar) {
         throw new Error('No character')
       }
@@ -180,7 +177,18 @@ export function Chat() {
         },
       }
     },
-    [branchRef, charOrGroup, chat, lorebooks, model, modelPreset, persona, settings, startTimer],
+    [
+      branchRef,
+      charOrGroup,
+      chat,
+      lorebooks,
+      model,
+      modelPreset,
+      nextActivatedCharacter,
+      persona,
+      settings,
+      startTimer,
+    ],
   )
 
   const prepareSendMessagesRequestRef = useRef(prepareSendMessagesRequest)
@@ -209,9 +217,10 @@ export function Chat() {
         },
       })
       generatingMessageIdRef.current = ''
+      advanceActivatedCharacter()
       console.log('onFinish, message:', message, 'generationSeconds:', generationSeconds)
     },
-    [update, updateMessage, stopTimer],
+    [stopTimer, update, updateMessage, advanceActivatedCharacter],
   )
 
   const onFinishRef = useRef(onFinish)
@@ -224,8 +233,9 @@ export function Chat() {
       generatingMessageIdRef.current = ''
       stopTimer()
       console.error('onError', error)
+      void refetch()
     },
-    [stopTimer],
+    [stopTimer, refetch],
   )
 
   const onErrorRef = useRef(onError)
@@ -503,7 +513,7 @@ export function Chat() {
       <MultimodalInput
         input={input}
         setInput={setInput}
-        messagesRef={branchRef}
+        messages={branch}
         chatRef={chatRef}
         status={status}
         setMessages={setMessages}

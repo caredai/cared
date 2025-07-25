@@ -1,15 +1,17 @@
 import type { PromptCollection } from '@tavern/core'
 import { useEffect, useState } from 'react'
-import { activateCharactersFromGroup, buildPromptMessages } from '@tavern/core'
+import { buildPromptMessages } from '@tavern/core'
 
+import { useActivatedCharacters } from '@/hooks/use-activate-characters'
 import { useActive } from '@/hooks/use-active'
-import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
+import { isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useMessageTree } from '@/hooks/use-message-tree'
 import { countTokens } from '@/lib/tokenizer'
 
 export function usePromptCollections() {
   const { settings, modelPreset, model, charOrGroup, persona, chat, lorebooks } = useActive()
   const { branch } = useMessageTree()
+  const { nextActivatedCharacter } = useActivatedCharacters()
 
   const [promptCollections, setPromptCollections] = useState<PromptCollection[]>([])
 
@@ -21,13 +23,7 @@ export function usePromptCollections() {
 
       const messages = [...branch]
 
-      const nextChar = isCharacter(charOrGroup)
-        ? charOrGroup
-        : activateCharactersFromGroup({
-            group: charOrGroup,
-            messages,
-            impersonate: false, // TODO
-          })[0]
+      const nextChar = nextActivatedCharacter()
       if (!nextChar) {
         return
       }
@@ -50,7 +46,17 @@ export function usePromptCollections() {
     }
 
     void build().then((c) => setPromptCollections(c ?? []))
-  }, [branch, charOrGroup, chat, lorebooks, model, modelPreset, persona, settings])
+  }, [
+    branch,
+    charOrGroup,
+    chat,
+    lorebooks,
+    model,
+    modelPreset,
+    nextActivatedCharacter,
+    persona,
+    settings,
+  ])
 
   return promptCollections
 }

@@ -31,7 +31,7 @@ export function useMessageTree() {
 export function useBuildMessageTree() {
   const { activeChat: chat, isLoading: isChatLoading, isSuccess: isChatSuccess } = useActiveChat()
 
-  const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isLoading, isSuccess, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
     useMessages(chat?.id)
 
   const [, setIsReady] = useAtom(isReadyAtom)
@@ -171,6 +171,7 @@ export function useBuildMessageTree() {
     isSuccess,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
     tree,
     treeRef,
     branch,

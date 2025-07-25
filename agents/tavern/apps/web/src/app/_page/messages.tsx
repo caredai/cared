@@ -7,6 +7,8 @@ import { AnimatePresence, motion } from 'motion/react'
 import { VList } from 'virtua'
 
 import { PreviewMessage } from '@/app/_page/message'
+import { useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
+import { useActivePersona } from '@/hooks/use-persona'
 
 function PureMessages({
   ref,
@@ -58,6 +60,9 @@ function PureMessages({
     })
   }, [messages])
 
+  const activeCharOrGroup = useActiveCharacterOrGroup()
+  const { activePersona } = useActivePersona()
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -87,6 +92,8 @@ function PureMessages({
               return (
                 <PreviewMessage
                   key={key}
+                  activeCharOrGroup={activeCharOrGroup}
+                  activePersona={activePersona}
                   chatRef={chatRef}
                   message={message.message}
                   status={status}

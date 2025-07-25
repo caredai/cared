@@ -1,4 +1,6 @@
 import type { Character } from '@/hooks/use-character'
+import type { CharacterGroup } from '@/hooks/use-character-group'
+import type { Persona } from '@/hooks/use-persona'
 import type { Chat as AIChat, UseChatHelpers } from '@ai-sdk/react'
 import type { Message, MessageContent, UIMessage } from '@tavern/core'
 import type { Dispatch, RefObject, SetStateAction } from 'react'
@@ -27,8 +29,7 @@ import hash from 'stable-hash'
 
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'
-import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
-import { useActivePersona } from '@/hooks/use-persona'
+import { isCharacterGroup } from '@/hooks/use-character-or-group'
 import { cn } from '@/lib/utils'
 import defaultPng from '@/public/images/user-default.png'
 import { CloneChatDialog } from './clone-chat-dialog'
@@ -40,6 +41,8 @@ const MAX_SIBLING_COUNT = 8
 const SLIDE_OFFSET = '50dvw'
 
 const PurePreviewMessage = ({
+  activeCharOrGroup,
+  activePersona,
   chatRef: _,
   message,
   status,
@@ -58,6 +61,8 @@ const PurePreviewMessage = ({
   scrollTo,
   elapsedSeconds,
 }: {
+  activeCharOrGroup?: Character | CharacterGroup
+  activePersona?: Persona
   chatRef: RefObject<AIChat<UIMessage>>
   message: Message
   status: UseChatHelpers<UIMessage>['status']
@@ -85,9 +90,6 @@ const PurePreviewMessage = ({
   const role = message.role
   const parts = message.content.parts
   const metadata = message.content.metadata
-
-  const activeCharOrGroup = useActiveCharacterOrGroup()
-  const { activePersona } = useActivePersona()
 
   const mode = editMessageId === message.id ? 'edit' : 'view'
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null)
@@ -270,7 +272,7 @@ const PurePreviewMessage = ({
   const isAssistantFirstMessage = !metadata.modelId && role === 'assistant'
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
         className="w-full flex gap-2 px-1.5 pt-2.5 pb-1 overflow-x-hidden"
         initial={{ opacity: 0 }}

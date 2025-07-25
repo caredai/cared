@@ -1,7 +1,8 @@
 import type { SubstituteMacrosParams } from '@tavern/core'
 import { useCallback, useMemo } from 'react'
-import { activateCharactersFromGroup, substituteMacros } from '@tavern/core'
+import { substituteMacros } from '@tavern/core'
 
+import { useActivatedCharacters } from '@/hooks/use-activate-characters'
 import { useActive } from '@/hooks/use-active'
 import { isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useMessageTree } from '@/hooks/use-message-tree'
@@ -9,14 +10,10 @@ import { useMessageTree } from '@/hooks/use-message-tree'
 export function useSubstituteMacros() {
   const { settings, modelPreset, model, charOrGroup, persona, chat } = useActive()
   const { branch } = useMessageTree()
+  const { nextActivatedCharacter } = useActivatedCharacters()
 
   const substituteMacrosParams: SubstituteMacrosParams = useMemo(() => {
-    const activatedChars = isCharacterGroup(charOrGroup)
-      ? activateCharactersFromGroup({
-          group: charOrGroup,
-          messages: branch,
-        })
-      : []
+    const nextChar = nextActivatedCharacter()
 
     return {
       messages: branch,
@@ -25,10 +22,10 @@ export function useSubstituteMacros() {
       modelPreset,
       model,
       persona,
-      character: activatedChars.at(0)?.content,
+      character: nextChar?.content,
       group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
     }
-  }, [branch, charOrGroup, chat, model, modelPreset, persona, settings])
+  }, [branch, charOrGroup, chat, model, modelPreset, nextActivatedCharacter, persona, settings])
 
   const evaluateMacros = useCallback(
     (content: string, postProcessFn?: (s: string) => string) => {

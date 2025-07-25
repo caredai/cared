@@ -212,7 +212,10 @@ export function CharacterTagsView({
           iconSize="1x"
           title=""
           className="text-foreground border-1 hover:bg-muted-foreground rounded-sm"
-          onClick={openTagsManagementDialog}
+          onClick={(e) => {
+            e.preventDefault()
+            openTagsManagementDialog()
+          }}
         />
       </div>
     </div>
