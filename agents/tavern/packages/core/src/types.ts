@@ -30,7 +30,7 @@ export interface ReducedGroup {
 export interface ReducedLorebook {
   id: string
   name: string
-  description?: string
+  description?: string | null
   entries: LorebookEntry[]
   chatIds: string[]
   characterIds: string[]

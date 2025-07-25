@@ -3,7 +3,6 @@ import type { MessageMetadata } from '@tavern/core'
 import { messageContentSchema } from '@tavern/core'
 import { db } from '@tavern/db/client'
 import {
-  convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
   smoothStream,
@@ -13,14 +12,14 @@ import {
 import { z } from 'zod/v4'
 
 import { log } from '@ownxai/log'
-import { generateMessageId, toUIMessages, uiMessageSchema } from '@ownxai/sdk'
+import { generateMessageId, modelMessageSchema, toUIMessages } from '@ownxai/sdk'
 
 import { auth } from '../auth'
 import { createOwnxClient } from '../ownx'
 
 const requestBodySchema = z.object({
   id: z.string(),
-  messages: z.array(uiMessageSchema).min(1),
+  messages: z.array(modelMessageSchema).min(1),
   lastMessage: z.object({
     id: z.string(),
     parentId: z
@@ -113,7 +112,7 @@ export async function POST(request: Request): Promise<Response> {
     execute: ({ writer: dataStream }) => {
       const result = streamText({
         model: languageModel,
-        messages: convertToModelMessages(messages),
+        messages,
         stopWhen: stepCountIs(5),
         experimental_transform: smoothStream({
           chunking:

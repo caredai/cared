@@ -7,7 +7,7 @@ import { z } from 'zod/v4'
 
 import log from '@ownxai/log'
 import { getModel } from '@ownxai/providers/providers'
-import { jsonValueSchema, sharedV2ProviderOptionsSchema } from '@ownxai/shared'
+import { sharedV2ProviderOptionsSchema } from '@ownxai/shared'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -75,9 +75,9 @@ const toolCallPartSchema = z.object({
 
 const toolResultContentSchema = z.union([
   z.object({ type: z.literal('text'), value: z.string() }),
-  z.object({ type: z.literal('json'), value: jsonValueSchema }),
+  z.object({ type: z.literal('json'), value: z.json() }),
   z.object({ type: z.literal('error-text'), value: z.string() }),
-  z.object({ type: z.literal('error-json'), value: jsonValueSchema }),
+  z.object({ type: z.literal('error-json'), value: z.json() }),
   z.object({
     type: z.literal('content'),
     value: z.array(

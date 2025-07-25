@@ -4,7 +4,7 @@ import type { PrepareSendMessagesRequest } from 'ai'
 import type { ScrollToIndexAlign, VListHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Chat as AIChat, useChat } from '@ai-sdk/react'
-import { buildPromptMessages, toUIMessages } from '@tavern/core'
+import { activateCharactersFromGroup, buildPromptMessages, toUIMessages } from '@tavern/core'
 import { DefaultChatTransport } from 'ai'
 
 import { generateMessageId } from '@ownxai/sdk'
@@ -14,6 +14,7 @@ import { useActive } from '@/hooks/use-active'
 import { isCharacter, isCharacterGroup } from '@/hooks/use-character-or-group'
 import { useCachedMessage, useCreateMessage, useUpdateMessage } from '@/hooks/use-message'
 import { useBuildMessageTree } from '@/hooks/use-message-tree'
+import { countTokens } from '@/lib/tokenizer'
 import { ContentArea } from './content-area'
 import { useGeneratingTimer } from './hooks'
 import { Messages } from './messages'
@@ -21,7 +22,7 @@ import { MultimodalInput } from './multimodal-input'
 import { fetchWithErrorHandlers } from './utils'
 
 export function Chat() {
-  const { settings, modelPreset, model, charOrGroup, persona, chat } = useActive()
+  const { settings, modelPreset, model, charOrGroup, persona, chat, lorebooks } = useActive()
 
   const chatId = chat?.id
 
@@ -36,7 +37,7 @@ export function Chat() {
   const { startTimer, stopTimer, elapsedSeconds } = useGeneratingTimer()
 
   const prepareSendMessagesRequest = useCallback(
-    ({
+    async ({
       id,
       messages: uiMessages,
       trigger,
@@ -136,20 +137,29 @@ export function Chat() {
       // console.log('lastMessage.id', lastMessage.id, 'messages', messages)
 
       // TODO
-      const nextChar = isCharacter(charOrGroup) ? charOrGroup : charOrGroup.characters[0]
+      const nextChar = isCharacter(charOrGroup)
+        ? charOrGroup
+        : activateCharactersFromGroup({
+            group: charOrGroup,
+            messages,
+            impersonate: false, // TODO
+          })[0]
       if (!nextChar) {
         throw new Error('No character')
       }
 
-      const promptMessages = buildPromptMessages({
+      const promptMessages = await buildPromptMessages({
+        generateType: 'normal',
         messages: messages, // TODO
         chat,
         settings,
         modelPreset,
         model,
         persona,
-        character: nextChar.content,
+        character: nextChar,
         group: isCharacterGroup(charOrGroup) ? charOrGroup : undefined,
+        lorebooks,
+        countTokens,
       })
 
       startTimer()
@@ -169,7 +179,7 @@ export function Chat() {
         },
       }
     },
-    [branchRef, charOrGroup, chat, model, modelPreset, persona, settings, startTimer],
+    [branchRef, charOrGroup, chat, lorebooks, model, modelPreset, persona, settings, startTimer],
   )
 
   const prepareSendMessagesRequestRef = useRef(prepareSendMessagesRequest)

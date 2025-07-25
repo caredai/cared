@@ -40,12 +40,15 @@ export async function populatePromptMessages(
     character,
     group,
     lorebooks,
+    countTokens,
     substituteMacros,
     characterFields,
   } = params
 
+  TokenCounter.setup((text: string) => countTokens(text, model.id))
+
   if (!modelPreset.maxContext) {
-    return []
+    return {}
   }
 
   const emBehavior = exampleMessagesBehavior(settings.miscellaneous.exampleMessagesBehavior)
@@ -513,6 +516,6 @@ export async function populatePromptMessages(
 
   return {
     promptCollection: context.collection,
-    messages: context.getModelMessages(),
+    modelMessages: context.getModelMessages(),
   }
 }

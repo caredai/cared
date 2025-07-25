@@ -130,7 +130,9 @@ export function ModelConf() {
       nsfw: quickPromptNsfw,
       jailbreak: quickPromptJailbreak,
     }
-    const prompts = {} as Record<string, PromptCustomization>
+    const prompts = {
+      ...customization?.prompts,
+    } as Record<string, PromptCustomization>
     for (const prompt of preset.prompts) {
       if (['main', 'nsfw', 'jailbreak'].includes(prompt.identifier)) {
         prompts[prompt.identifier] = {

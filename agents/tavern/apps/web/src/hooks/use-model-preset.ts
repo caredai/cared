@@ -1,7 +1,11 @@
-import { ModelPreset, ModelPresetCustomization, modelPresetCustomizationSchema } from '@tavern/core'
+import type { ModelPreset, ModelPresetCustomization } from '@tavern/core'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { modelPresetWithCustomization, sanitizeModelPresetCustomization } from '@tavern/core'
+import {
+  modelPresetCustomizationSchema,
+  modelPresetWithCustomization,
+  sanitizeModelPresetCustomization,
+} from '@tavern/core'
 import pDebounce from 'p-debounce'
 import { toast } from 'sonner'
 import hash from 'stable-hash'

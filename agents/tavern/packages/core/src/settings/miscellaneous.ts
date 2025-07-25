@@ -19,6 +19,7 @@ export const miscellaneousSettingsSchema = z.object({
   preferCharacterPrompt: z.boolean(),
   preferCharacterJailbreak: z.boolean(),
   collapseNewlines: z.boolean(),
+  exampleMessagesBehavior: z.enum(ExampleMessagesBehavior),
 })
 
 export function fillInMiscellaneousSettingsWithDefaults(

@@ -11,7 +11,7 @@ import type {
   ReducedPersona,
 } from '../types'
 import { substituteMacros } from '../macro'
-import { toUIMessages } from '../message'
+import { populatePromptMessages } from './populate'
 
 export interface BuildPromptMessagesParams {
   generateType: 'normal' | 'continue' | 'regenerate' | 'impersonate'
@@ -24,12 +24,13 @@ export interface BuildPromptMessagesParams {
   character: ReducedCharacter // the active character (maybe comes from the character group)
   group?: ReducedGroup
   lorebooks: ReducedLorebook[]
+  countTokens: (text: string, modelId?: string) => Promise<number>
 }
 
-export function buildPromptMessages(params: BuildPromptMessagesParams) {
+export async function buildPromptMessages(params: BuildPromptMessagesParams) {
   const { messages, chat, settings, modelPreset, model, persona, character, group } = params
 
-  const { evaluateMacros } = substituteMacros({
+  const { evaluateMacros, characterFields } = substituteMacros({
     messages,
     chat,
     settings,
@@ -40,18 +41,11 @@ export function buildPromptMessages(params: BuildPromptMessagesParams) {
     group,
   })
 
-  const uiMessages = toUIMessages(messages.map((node) => node.message))
+  const { modelMessages } = await populatePromptMessages({
+    ...params,
+    substituteMacros: evaluateMacros,
+    characterFields,
+  })
 
-  return uiMessages.map((msg) => ({
-    ...msg,
-    parts: msg.parts.map((p) => {
-      if (p.type === 'text') {
-        return {
-          ...p,
-          text: evaluateMacros(p.text),
-        }
-      }
-      return p
-    }),
-  }))
+  return modelMessages ?? []
 }

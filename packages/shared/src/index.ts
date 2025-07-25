@@ -1,5 +1,4 @@
 export * from './utils'
-export * from './schema'
 export * from './db'
 export * from './encryption'
 export * from './key'
