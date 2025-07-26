@@ -92,17 +92,16 @@ export function useActivatedCharacters() {
 
   const nextActivatedCharacter = useCallback(
     (reset?: boolean) => {
-      let nextIndex = readActivatedCharacters().findIndex((c) => !c.accessed)
-      if (reset || nextIndex < 0) {
+      let nextChar = readActivatedCharacters().find((c) => !c.accessed)
+      if (reset || !nextChar) {
         activateCharacters()
 
-        nextIndex = readActivatedCharacters().findIndex((c) => !c.accessed)
-        if (nextIndex < 0) {
+        nextChar = readActivatedCharacters().find((c) => !c.accessed)
+        if (!nextChar) {
           return
         }
       }
 
-      const nextChar = readActivatedCharacters()[nextIndex]!
       const { accessed: _, ...char } = nextChar
       return char
     },
@@ -110,11 +109,16 @@ export function useActivatedCharacters() {
   )
 
   const advanceActivatedCharacter = useCallback(() => {
-    const char = readActivatedCharacters().find((c) => !c.accessed)
-    if (char) {
-      char.accessed = true
-      setActivatedCharacters([...readActivatedCharacters()])
+    const chars = readActivatedCharacters()
+    const index = chars.findIndex((c) => !c.accessed)
+    if (index < 0) {
+      return
     }
+    setActivatedCharacters([
+      ...chars.slice(0, index),
+      { ...chars[index]!, accessed: true },
+      ...chars.slice(index + 1),
+    ])
   }, [readActivatedCharacters, setActivatedCharacters])
 
   return {
