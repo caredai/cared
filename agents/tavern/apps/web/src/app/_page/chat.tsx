@@ -46,6 +46,7 @@ export function Chat() {
       messages: uiMessages,
       trigger,
       body,
+      requestMetadata,
     }: Parameters<PrepareSendMessagesRequest<UIMessage>>[0]) => {
       if (!chat || !model || !persona || !charOrGroup) {
         throw new Error('Not initialized')
@@ -54,6 +55,10 @@ export function Chat() {
       const uiMessage = uiMessages.at(-1)
       if (!uiMessage) {
         throw new Error('No messages')
+      }
+
+      const { generateType } = (requestMetadata ?? {}) as {
+        generateType?: 'continue' | 'impersonate'
       }
 
       const nodeIndex = branchRef.current.findIndex((node) => node.message.id === uiMessage.id)
@@ -119,20 +124,36 @@ export function Chat() {
             }
             lastMessage = node.message
 
-            if (lastMessage.role === 'assistant') {
-              isContinuation = true
+            if (generateType === 'impersonate') {
+              lastMessage = {
+                ...lastMessage,
+                role: 'assistant',
+              }
             }
 
-            if (trigger === 'regenerate-assistant-message' && lastMessage.role === 'assistant') {
-              messages = messages.slice(0, nodeIndex)
+            if (lastMessage.role === 'assistant') {
+              isContinuation = true
 
               generatingMessageIdRef.current = lastMessage.id
+            }
+
+            if (trigger === 'submit-tool-result') {
+              assert.equal(
+                lastMessage.role,
+                'assistant',
+                'Last message must be an assistant message for `submit-tool-result`',
+              )
+            }
+
+            if (
+              trigger === 'regenerate-assistant-message' &&
+              lastMessage.role === 'assistant' &&
+              generateType !== 'continue'
+            ) {
+              // Do not include the last assistant message
+              messages = messages.slice(0, nodeIndex)
             } else {
               messages = messages.slice(0, nodeIndex + 1)
-
-              if (trigger === 'submit-tool-result') {
-                generatingMessageIdRef.current = lastMessage.id
-              }
             }
           }
           break
@@ -146,7 +167,7 @@ export function Chat() {
       }
 
       const { promptMessages } = await buildPromptMessages({
-        generateType: 'normal',
+        generateType: generateType ?? 'normal',
         messages: messages, // TODO
         chat,
         settings,
@@ -169,9 +190,12 @@ export function Chat() {
           lastMessage,
           isLastNew,
           isContinuation,
+          generateType,
           deleteTrailing,
           characterId: nextChar.id,
           characterName: nextChar.content.data.name,
+          personaId: persona.id,
+          personaName: persona.name,
           modelId: model.id,
           ...body,
         },
@@ -196,6 +220,8 @@ export function Chat() {
     prepareSendMessagesRequestRef.current = prepareSendMessagesRequest
   }, [prepareSendMessagesRequest])
 
+  const nextRef = useRef<() => void>(null)
+
   const onFinish = useCallback(
     (message: UIMessage) => {
       const generationSeconds = stopTimer()
@@ -217,7 +243,12 @@ export function Chat() {
         },
       })
       generatingMessageIdRef.current = ''
-      advanceActivatedCharacter()
+      if (!message.metadata?.personaId) { // !== impersonate
+        const hasNextActivated = advanceActivatedCharacter()
+        if (hasNextActivated) {
+          nextRef.current?.()
+        }
+      }
       console.log('onFinish, message:', message, 'generationSeconds:', generationSeconds)
     },
     [stopTimer, update, updateMessage, advanceActivatedCharacter],
@@ -373,16 +404,29 @@ export function Chat() {
   const pseudoMessageIdRef = useRef('')
 
   const refresh = useCallback(
-    async (node: MessageNode) => {
-      if (node.message.role !== 'assistant' || !node.parent.message) {
+    async (node?: MessageNode) => {
+      if (!node) {
+        node = branchRef.current.at(-1)
+        if (!node) {
+          return
+        }
+      }
+      if (!model || node.message.role !== 'assistant' || !node.parent.message) {
         return
       }
+
+      const { characterId, characterName, excluded } = node.message.content.metadata
 
       const newMessage = {
         ...node.message,
         content: {
           parts: [],
-          metadata: node.message.content.metadata,
+          metadata: {
+            characterId,
+            characterName,
+            modelId: model.id,
+            excluded,
+          },
         },
       }
 
@@ -404,23 +448,29 @@ export function Chat() {
 
       void chatRef.current.regenerate()
     },
-    [setMessages, updateMessage],
+    [branchRef, model, setMessages, updateMessage],
   )
 
   const swipe = useCallback(
     (node: MessageNode) => {
-      if (node !== node.parent.descendants.at(-1) || !node.parent.message) {
+      if (!model || node !== node.parent.descendants.at(-1) || !node.parent.message) {
         return
       }
-      const { personaId, personaName, characterId, characterName, modelId, summary } =
-        node.message.content.metadata
+      const {
+        personaId,
+        personaName,
+        characterId,
+        characterName,
+        // Omit `summary` from metadata,
+        // since the content of this message will be changed, and the summary will be invalid
+        summary: _,
+      } = node.message.content.metadata
       const metadata: MessageMetadata = {
         personaId,
         personaName,
         characterId,
         characterName,
-        modelId,
-        summary, // TODO
+        modelId: model.id,
       }
 
       const newMessage = {
@@ -429,7 +479,7 @@ export function Chat() {
         role: node.message.role,
         content: {
           parts: node.message.role === 'user' ? node.message.content.parts : [],
-          metadata: metadata,
+          metadata,
         },
       }
 
@@ -443,7 +493,7 @@ export function Chat() {
           const pseudoMessage = {
             ...structuredClone(newMessage),
             id: generateMessageId(),
-            parentId: newMessage.parentId ?? undefined,
+            parentId: newMessage.id,
           }
           pseudoMessageIdRef.current = pseudoMessage.id
           setMessages(
@@ -461,7 +511,7 @@ export function Chat() {
         setEditMessageId(newMessage.id)
       }
     },
-    [createMessage, navigate, setMessages],
+    [createMessage, model, navigate, setMessages],
   )
 
   const edit = useCallback(
@@ -481,6 +531,165 @@ export function Chat() {
     },
     [branchRef, setMessages, updateMessage],
   )
+
+  const next = useCallback(() => {
+    const lastMessage = branchRef.current.at(-1)?.message
+    const nextChar = nextActivatedCharacter()
+    if (!nextChar || !model) {
+      return
+    }
+
+    const metadata: MessageMetadata = {
+      characterId: nextChar.id,
+      characterName: nextChar.content.data.name,
+      modelId: model.id,
+    }
+
+    const newMessage = {
+      id: generateMessageId(),
+      parentId: lastMessage?.id ?? undefined,
+      role: 'assistant' as const,
+      content: {
+        parts: [],
+        metadata,
+      },
+    }
+
+    void createMessage(newMessage).then(() => {
+      // regenerate() will remove the last assistant message, so we add a pseudo message
+      const pseudoMessage = {
+        ...structuredClone(newMessage),
+        id: generateMessageId(),
+        parentId: newMessage.id,
+      }
+      pseudoMessageIdRef.current = pseudoMessage.id
+      setMessages(
+        toUIMessages([
+          newMessage,
+          pseudoMessage,
+        ]),
+      )
+
+      void chatRef.current.regenerate()
+    })
+  }, [branchRef, createMessage, model, nextActivatedCharacter, setMessages])
+
+  useEffect(() => {
+    nextRef.current = next
+  }, [next])
+
+  const submit = useCallback(
+    (input: string) => {
+      const lastMessage = branchRef.current.at(-1)?.message
+      if (input) {
+        void chatRef.current.sendMessage({
+          role: 'user',
+          parts: [{ type: 'text', text: input.trim() }],
+        })
+      } else if (lastMessage?.role === 'user') {
+        setMessages(toUIMessages([lastMessage]))
+        void chatRef.current.regenerate()
+      } else if (modelPreset.utilityPrompts.sendIfEmpty.trim()) {
+        void chatRef.current.sendMessage({
+          role: 'user',
+          parts: [{ type: 'text', text: modelPreset.utilityPrompts.sendIfEmpty.trim() }],
+        })
+      } else {
+        next()
+      }
+    },
+    [branchRef, modelPreset.utilityPrompts.sendIfEmpty, next, setMessages],
+  )
+
+  const continue_ = useCallback(async () => {
+    const node = branchRef.current.at(-1)
+    if (!model || node?.message.role !== 'assistant' || !node.parent.message) {
+      return
+    }
+
+    const { characterId, characterName, excluded } = node.message.content.metadata
+
+    const newMessage = {
+      ...node.message,
+      content: {
+        parts: node.message.content.parts,
+        metadata: {
+          characterId,
+          characterName,
+          modelId: model.id,
+          excluded,
+        },
+      },
+    }
+
+    await updateMessage(node.message.id, newMessage.content)
+
+    // regenerate() will remove the last assistant message, so we add a pseudo message
+    const pseudoMessage = {
+      ...structuredClone(newMessage),
+      id: generateMessageId(),
+      parentId: newMessage.id,
+    }
+    pseudoMessageIdRef.current = pseudoMessage.id
+    setMessages(
+      toUIMessages([
+        newMessage,
+        pseudoMessage,
+      ]),
+    )
+
+    void chatRef.current.regenerate({
+      metadata: {
+        generateType: 'continue',
+      },
+    })
+  }, [branchRef, model, setMessages, updateMessage])
+
+  const impersonate = useCallback(() => {
+    const lastMessage = branchRef.current.at(-1)?.message
+    if (!persona || !model) {
+      return
+    }
+
+    const metadata: MessageMetadata = {
+      personaId: persona.id,
+      personaName: persona.name,
+      modelId: model.id,
+    }
+
+    const newMessage = {
+      id: generateMessageId(),
+      parentId: lastMessage?.id ?? undefined,
+      role: 'user' as const,
+      content: {
+        parts: [],
+        metadata,
+      },
+    }
+
+    void createMessage(newMessage).then(() => {
+      // regenerate() will remove the last assistant message, so we add a pseudo message
+      const pseudoMessage = {
+        ...structuredClone(newMessage),
+        id: generateMessageId(),
+        parentId: newMessage.id,
+        role: 'assistant' as const,
+      }
+      pseudoMessageIdRef.current = pseudoMessage.id
+      setMessages(
+        toUIMessages([
+          newMessage,
+          pseudoMessage,
+        ]),
+      )
+
+      void chatRef.current.regenerate({
+        metadata: {
+          generateType: 'impersonate',
+        },
+      })
+    })
+  }, [branchRef, createMessage, model, persona, setMessages])
 
   return (
     <>
@@ -513,11 +722,14 @@ export function Chat() {
       <MultimodalInput
         input={input}
         setInput={setInput}
-        messages={branch}
         chatRef={chatRef}
         status={status}
         setMessages={setMessages}
         disabled={isLoading}
+        submit={submit}
+        regenerate={refresh}
+        impersonate={impersonate}
+        continue_={continue_}
       />
     </>
   )

@@ -16,7 +16,7 @@ export interface MessageMetadata {
 
   excluded?: boolean // whether the message should be excluded from the prompt building
 
-  summary?: string
+  summary?: string // summary of all messages (branched) from the first one up to this one (included)
 }
 
 export const messageMetadataSchema = z

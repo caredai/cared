@@ -97,7 +97,7 @@ export class ChatContext {
       messages.push(
         ...collection.messages
           .filter((m) => !m.isEmpty())
-          .map((m) => convertToModelMessages(m.message).at(0)!),
+          .flatMap((m) => convertToModelMessages(m.message)),
       )
     }
     return messages
@@ -126,7 +126,7 @@ export class ChatContext {
       let j = 0
       for (const message of collection.messages) {
         console.log(
-          `${BG_MAGENTA}${FG_WHITE} Prompt identifier #${++j}: ${RESET} ${BG_BLUE}${FG_WHITE} ${message.identifier} ${RESET}, ${BG_RED}${FG_WHITE} tokens: ${message.tokens} ${RESET}, message: ${JSON.stringify(convertToModelMessages(message.message).at(0), null, 2)}`,
+          `${BG_MAGENTA}${FG_WHITE} Prompt identifier #${++j}: ${RESET} ${BG_BLUE}${FG_WHITE} ${message.identifier} ${RESET}, ${BG_RED}${FG_WHITE} tokens: ${message.tokens} ${RESET}, message: ${JSON.stringify(convertToModelMessages(message.message), null, 2)}`,
         )
       }
     }

@@ -112,13 +112,14 @@ export function useActivatedCharacters() {
     const chars = readActivatedCharacters()
     const index = chars.findIndex((c) => !c.accessed)
     if (index < 0) {
-      return
+      return false
     }
     setActivatedCharacters([
       ...chars.slice(0, index),
       { ...chars[index]!, accessed: true },
       ...chars.slice(index + 1),
     ])
+    return index < chars.length - 1 // whether there's a next character
   }, [readActivatedCharacters, setActivatedCharacters])
 
   return {

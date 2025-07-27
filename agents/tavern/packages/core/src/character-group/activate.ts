@@ -90,7 +90,7 @@ export function activateCharactersFromGroup({
     activatedCharacters.push(shuffle(enabledCharacters)[0]!)
   } /* if (activationStrategy === GroupActivationStrategy.Pooled) */ else {
     const spokenSinceUser: ReducedCharacter[] = []
-    for (const message of messages.reverse()) {
+    for (const message of [...messages].reverse()) {
       if (message.message.role === 'user') {
         break
       }

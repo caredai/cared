@@ -22,7 +22,7 @@ export class ScanBuffer {
     private settings: LorebookSettings,
   ) {
     let depth = 0
-    for (const message of messages.reverse()) {
+    for (const message of [...messages].reverse()) {
       this.depthBuffer.push(message)
 
       if (++depth >= MAX_SCAN_DEPTH) {

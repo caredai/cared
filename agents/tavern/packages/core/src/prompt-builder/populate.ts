@@ -276,7 +276,7 @@ export async function populatePromptMessages(
   function populateInjectionPrompts() {
     // Inject depth prompts into chat history, from bottom (depth 0) to top
     const reversedMessages: (ReducedMessage | InjectedMessage)[] =
-      chatHistoryWithCharacterNames.reverse()
+      [...chatHistoryWithCharacterNames].reverse()
 
     let totalInsertedMessages = 0
 
@@ -353,8 +353,10 @@ export async function populatePromptMessages(
 
     let continueMessageCollection
     if (generateType === 'continue' && !modelPreset.continuePrefill) {
-      const continueMessage = chatHistoryWithCharacterNames.splice(-1, 1)[0]
-      if (continueMessage) {
+      const continueMessageIndex = reversedMessages.findIndex(m => !isInjectedMessage(m))
+      if (continueMessageIndex >= 0) {
+        const continueMessage = reversedMessages[continueMessageIndex]! as ReducedMessage
+        reversedMessages.splice(continueMessageIndex, 1)
         continueMessageCollection = new PromptCollection('continueNudge')
 
         continueMessageCollection.add(
@@ -372,21 +374,6 @@ export async function populatePromptMessages(
         )
 
         context.reserveBudget(continueMessageCollection)
-      }
-    }
-
-    if (
-      generateType === 'normal' &&
-      chatHistoryWithCharacterNames.at(-1)?.role === 'assistant' &&
-      modelPreset.utilityPrompts.sendIfEmpty
-    ) {
-      const message = await PromptMessage.fromContent(
-        'emptyUserMessageReplacement',
-        'user',
-        substituteMacros(modelPreset.utilityPrompts.sendIfEmpty),
-      )
-      if (context.canAfford(message)) {
-        context.insertMessage(message, 'chatHistory')
       }
     }
 

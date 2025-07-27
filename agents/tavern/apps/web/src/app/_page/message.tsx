@@ -7,7 +7,6 @@ import type { Dispatch, RefObject, SetStateAction } from 'react'
 import type { ScrollToIndexAlign } from 'virtua'
 import { memo, useEffect, useRef, useState } from 'react'
 import {
-  // faBullhorn,
   faChevronLeft,
   faChevronRight,
   faCodeBranch,
@@ -21,6 +20,8 @@ import {
   faPencil,
   faRotate,
   faTrashCan,
+  // faBullhorn,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { format } from 'date-fns'
@@ -108,6 +109,8 @@ const PurePreviewMessage = ({
     }
   }
 
+  const exitMode = () => setEditMessageId('')
+
   const operateActions = [
     // {
     //   icon: faLanguage,
@@ -153,13 +156,17 @@ const PurePreviewMessage = ({
     {
       icon: faRotate,
       tooltip: 'Regenerate message',
-      action: refresh,
+      action: () => {
+        refresh()
+        exitMode()
+      },
       role: 'assistant',
     },
     {
-      icon: faPencil,
-      tooltip: 'Edit message',
-      action: () => setEditMessageId(message.id),
+      icon: mode === 'view' ? faPencil : faXmark,
+      tooltip: mode === 'view' ? 'Edit message' : 'Exit edit mode',
+      action: () => setEditMessageId(mode === 'view' ? message.id : ''),
+      className: mode === 'edit' && 'text-green-800 hover:text-green-700',
     },
     {
       icon: faTrashCan,
@@ -303,22 +310,25 @@ const PurePreviewMessage = ({
               </span>
             </div>
             <div className="w-full md:w-auto flex justify-end md:justify-between items-center gap-2">
-              {operateActions.map(({ icon, tooltip, action, wrapper: Wrapper, role: roleWant }) => {
-                if (roleWant && role !== roleWant) {
-                  return
-                }
-                const btn = (
-                  <FaButton
-                    key={tooltip}
-                    icon={icon}
-                    title={tooltip}
-                    btnSize="size-4"
-                    iconSize="1x"
-                    onClick={action}
-                  />
-                )
-                return Wrapper ? <Wrapper key={tooltip} trigger={btn} message={message} /> : btn
-              })}
+              {operateActions.map(
+                ({ icon, tooltip, action, wrapper: Wrapper, role: roleWant, className }) => {
+                  if (roleWant && role !== roleWant) {
+                    return
+                  }
+                  const btn = (
+                    <FaButton
+                      key={tooltip}
+                      icon={icon}
+                      title={tooltip}
+                      btnSize="size-4"
+                      iconSize="1x"
+                      onClick={action}
+                      className={cn(className)}
+                    />
+                  )
+                  return Wrapper ? <Wrapper key={tooltip} trigger={btn} message={message} /> : btn
+                },
+              )}
             </div>
           </div>
 
@@ -410,7 +420,9 @@ const PurePreviewMessage = ({
                               regenerate,
                             )
 
-                            setEditMessageId('')
+                            if (regenerate) {
+                              setEditMessageId('')
+                            }
                           }}
                         />
                       )

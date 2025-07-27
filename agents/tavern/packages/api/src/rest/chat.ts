@@ -31,6 +31,7 @@ const requestBodySchema = z.object({
   }),
   isLastNew: z.boolean().optional(),
   isContinuation: z.boolean().optional(),
+  generateType: z.enum(['continue', 'impersonate']).optional(),
   deleteTrailing: z.boolean().optional(),
   characterId: z.string().min(1),
   characterName: z.string().min(1),
@@ -99,11 +100,13 @@ export async function POST(request: Request): Promise<Response> {
     })
   }
 
-  const metadata: MessageMetadata = {
-    characterId,
-    characterName,
-    modelId,
-  }
+  const metadata: MessageMetadata = isContinuation
+    ? lastMessage.content.metadata
+    : {
+        characterId,
+        characterName,
+        modelId,
+      }
 
   const originalMessages =
     isContinuation && lastMessage.role === 'assistant' ? toUIMessages([lastMessage]) : undefined
