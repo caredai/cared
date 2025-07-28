@@ -370,6 +370,7 @@ export function Chat() {
 
   const { setMessages, status } = useChat<UIMessage>({
     chat: chatRef.current,
+    experimental_throttle: 100,
   })
 
   const ref = useRef<VListHandle>(null)

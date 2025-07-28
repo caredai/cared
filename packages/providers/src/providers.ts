@@ -13,23 +13,14 @@ import { createGroq, groq } from '@ai-sdk/groq'
 import { createLuma, luma } from '@ai-sdk/luma'
 import { createMistral, mistral } from '@ai-sdk/mistral'
 import { createOpenAI, openai } from '@ai-sdk/openai'
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { createPerplexity, perplexity } from '@ai-sdk/perplexity'
 import { createReplicate, replicate } from '@ai-sdk/replicate'
 import { createTogetherAI, togetherai } from '@ai-sdk/togetherai'
 import { createXai, xai } from '@ai-sdk/xai'
+import { openrouter, createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 import type { ModelType, Provider, ProviderId } from './types'
-import { env } from './env'
 import { splitModelFullId } from './index'
-
-function createOpenRouter({ apiKey }: { apiKey?: string }) {
-  return createOpenAICompatible({
-    name: 'openrouter',
-    apiKey,
-    baseURL: 'https://openrouter.ai/api/v1',
-  })
-}
 
 export const providers: Record<ProviderId, Provider> = {
   openai: openai,
@@ -50,9 +41,7 @@ export const providers: Record<ProviderId, Provider> = {
   replicate: replicate,
   perplexity: perplexity,
   luma: luma,
-  openrouter: createOpenRouter({
-    apiKey: env.OPENROUTER_API_KEY,
-  }),
+  openrouter: openrouter,
 }
 
 export {
