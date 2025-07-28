@@ -27,7 +27,7 @@
   "dependencies": {
     "@hpke/core": "^1.7.2",
     "@phala/dstack-sdk": "^0.1.11",
-    "@privy-io/react-auth": "^2.10.0",
-    "@privy-io/server-auth": "^1.21.0"
+    "@privy-io/react-auth": "^2.20.0",
+    "@privy-io/server-auth": "^1.28.8"
   }
 }
