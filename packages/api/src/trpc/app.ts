@@ -3,8 +3,8 @@ import { HeadObjectCommand } from '@aws-sdk/client-s3'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { AppMetadata } from '@ownxai/db/schema'
-import { and, count, desc, eq, gt, inArray, lt, sql } from '@ownxai/db'
+import type { AppMetadata } from '@cared/db/schema'
+import { and, count, desc, eq, gt, inArray, lt, sql } from '@cared/db'
 import {
   Agent,
   AgentVersion,
@@ -18,10 +18,10 @@ import {
   DRAFT_VERSION,
   Tag,
   UpdateAppSchema,
-} from '@ownxai/db/schema'
-import log from '@ownxai/log'
-import { defaultModels } from '@ownxai/providers'
-import { mergeWithoutUndefined } from '@ownxai/shared'
+} from '@cared/db/schema'
+import log from '@cared/log'
+import { defaultModels } from '@cared/providers'
+import { mergeWithoutUndefined } from '@cared/shared'
 
 import type { Context } from '../trpc'
 import { cfg } from '../config'

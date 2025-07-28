@@ -6,8 +6,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { BotIcon, FilterIcon, SearchIcon, TagIcon, XIcon } from 'lucide-react'
 
-import { Badge } from '@ownxai/ui/components/badge'
-import { Button } from '@ownxai/ui/components/button'
+import { Badge } from '@cared/ui/components/badge'
+import { Button } from '@cared/ui/components/button'
 import {
   Card,
   CardContent,
@@ -15,8 +15,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@ownxai/ui/components/card'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/card'
+import { Input } from '@cared/ui/components/input'
 import {
   Select,
   SelectContent,
@@ -25,8 +25,8 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Separator } from '@ownxai/ui/components/separator'
+} from '@cared/ui/components/select'
+import { Separator } from '@cared/ui/components/separator'
 
 import { RemoteImage } from '@/components/image'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'

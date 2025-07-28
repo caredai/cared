@@ -10,8 +10,8 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import type { RouterOutputs } from '@ownxai/api'
-import { Button } from '@ownxai/ui/components/button'
+import type { RouterOutputs } from '@cared/api'
+import { Button } from '@cared/ui/components/button'
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@ownxai/ui/components/card'
+} from '@cared/ui/components/card'
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@ownxai/ui/components/dialog'
+} from '@cared/ui/components/dialog'
 import {
   Form,
   FormControl,
@@ -36,10 +36,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
-import { Label } from '@ownxai/ui/components/label'
-import { Switch } from '@ownxai/ui/components/switch'
+} from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
+import { Label } from '@cared/ui/components/label'
+import { Switch } from '@cared/ui/components/switch'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'

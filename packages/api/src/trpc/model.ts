@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { ModelInfo } from '@ownxai/providers'
+import type { ModelInfo } from '@cared/providers'
 import {
   defaultModels,
   getImageModelInfo,
@@ -13,7 +13,7 @@ import {
   getTextEmbeddingModelInfos,
   modelFullId,
   modelTypes,
-} from '@ownxai/providers'
+} from '@cared/providers'
 
 import { publicProcedure } from '../trpc'
 

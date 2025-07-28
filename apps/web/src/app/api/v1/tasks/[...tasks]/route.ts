@@ -1,4 +1,4 @@
-import { tasks } from '@ownxai/api/rest'
+import { tasks } from '@cared/api/rest'
 
 export const POST = tasks.POST
 

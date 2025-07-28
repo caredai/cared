@@ -1,5 +1,5 @@
-import { Skeleton } from '@ownxai/ui/components/skeleton'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Skeleton } from '@cared/ui/components/skeleton'
+import { cn } from '@cared/ui/lib/utils'
 
 export function SkeletonCard() {
   const color = 'bg-gray-100 dark:bg-stone-800'

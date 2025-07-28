@@ -19,18 +19,18 @@ import { Document } from 'flexsearch'
 import { TrashIcon, XIcon } from 'lucide-react'
 import { VList } from 'virtua'
 
-import { Badge } from '@ownxai/ui/components/badge'
-import { Button } from '@ownxai/ui/components/button'
-import { CheckboxIndeterminate } from '@ownxai/ui/components/checkbox-indeterminate'
-import { Input } from '@ownxai/ui/components/input'
+import { Badge } from '@cared/ui/components/badge'
+import { Button } from '@cared/ui/components/button'
+import { CheckboxIndeterminate } from '@cared/ui/components/checkbox-indeterminate'
+import { Input } from '@cared/ui/components/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/select'
+import { cn } from '@cared/ui/lib/utils'
 
 import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
 import {

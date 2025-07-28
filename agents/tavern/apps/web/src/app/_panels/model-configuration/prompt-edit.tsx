@@ -8,7 +8,7 @@ import { atom, useAtom } from 'jotai'
 import { XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Form,
   FormControl,
@@ -17,17 +17,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Textarea } from '@ownxai/ui/components/textarea'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/select'
+import { Textarea } from '@cared/ui/components/textarea'
+import { cn } from '@cared/ui/lib/utils'
 
 import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
 import { usePrompt } from '@/hooks/use-prompt'

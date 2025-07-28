@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ChevronRightIcon } from 'lucide-react'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 import { RegexExtension } from './regex'
 import { SummaryExtension } from './summary'

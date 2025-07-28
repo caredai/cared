@@ -3,16 +3,16 @@ import { faFaceSmile } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { PersonaPosition } from '@tavern/core'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@ownxai/ui/components/dialog'
-import { Input } from '@ownxai/ui/components/input'
-import { Label } from '@ownxai/ui/components/label'
+} from '@cared/ui/components/dialog'
+import { Input } from '@cared/ui/components/input'
+import { Label } from '@cared/ui/components/label'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useCreatePersona, usePersonas } from '@/hooks/use-persona'

@@ -1,5 +1,5 @@
 {
-  "extends": "@ownxai/tsconfig/base.json",
+  "extends": "@cared/tsconfig/base.json",
   "compilerOptions": {
     "lib": ["ES2022", "dom", "dom.iterable"],
     "jsx": "preserve",

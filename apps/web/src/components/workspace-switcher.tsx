@@ -11,10 +11,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@ownxai/ui/components/dropdown-menu'
-import { SidebarMenuButton } from '@ownxai/ui/components/sidebar'
-import { useIsMobile } from '@ownxai/ui/hooks/use-mobile'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/dropdown-menu'
+import { SidebarMenuButton } from '@cared/ui/components/sidebar'
+import { useIsMobile } from '@cared/ui/hooks/use-mobile'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
 import { replaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'

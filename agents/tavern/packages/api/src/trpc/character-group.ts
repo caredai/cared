@@ -4,9 +4,9 @@ import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
-import { makeObjectNonempty } from '@ownxai/sdk'
+import { makeObjectNonempty } from '@cared/sdk'
 
-import { createOwnxClient } from '../ownx'
+import { createCaredClient } from '../cared'
 import { userProtectedProcedure } from '../trpc'
 import { deleteImage, deleteImages, uploadImage } from './utils'
 
@@ -144,14 +144,14 @@ export const characterGroupRouter = {
 
       // Batch delete associated chats if any
       if (groupChats.length > 0) {
-        const ownx = createOwnxClient(ctx)
-        const ownxTrpc = ownx.trpc
+        const cared = createCaredClient(ctx)
+        const caredTrpc = cared.trpc
 
         const chatIds = groupChats.map((gc) => gc.chatId)
 
         // Delete chats in batches of 100
         for (let i = 0; i < chatIds.length; i += 100) {
-          await ownxTrpc.chat.batchDelete.mutate({
+          await caredTrpc.chat.batchDelete.mutate({
             ids: chatIds.slice(i, i + 100),
           })
         }
@@ -206,14 +206,14 @@ export const characterGroupRouter = {
 
       // Batch delete associated chats if any
       if (groupChats.length > 0) {
-        const ownx = createOwnxClient(ctx)
-        const ownxTrpc = ownx.trpc
+        const cared = createCaredClient(ctx)
+        const caredTrpc = cared.trpc
 
         const chatIds = groupChats.map((gc) => gc.chatId)
 
         // Delete chats in batches of 100
         for (let i = 0; i < chatIds.length; i += 100) {
-          await ownxTrpc.chat.batchDelete.mutate({
+          await caredTrpc.chat.batchDelete.mutate({
             ids: chatIds.slice(i, i + 100),
           })
         }

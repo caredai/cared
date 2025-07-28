@@ -1,9 +1,9 @@
 import { Memory } from 'mem0ai/oss'
 
-import { OwnxEmbedder } from './embed'
+import { CaredEmbedder } from './embed'
 import { env } from './env'
-import { OwnxHistoryManager } from './history'
-import { OwnxLLM } from './llm'
+import { CaredHistoryManager } from './history'
+import { CaredLLM } from './llm'
 import { createVectorStore } from './vdb'
 
 export interface Mem0MemoryConfig {
@@ -43,24 +43,24 @@ export class Mem0Memory extends Memory {
     })
 
     const thisAsAny = this as any
-    thisAsAny.embedder = new OwnxEmbedder(config.embeddingModelId)
+    thisAsAny.embedder = new CaredEmbedder(config.embeddingModelId)
     thisAsAny.vectorStore = createVectorStore(config.embeddingModelId)
     if (!thisAsAny.vectorStore) {
       throw new Error('invalid embedding model')
     }
-    thisAsAny.llm = OwnxLLM.create(config.languageModelId)
+    thisAsAny.llm = CaredLLM.create(config.languageModelId)
     if (!thisAsAny.llm) {
       throw new Error('invalid language model')
     }
     if (!config.disableHistory) {
-      thisAsAny.db = new OwnxHistoryManager()
+      thisAsAny.db = new CaredHistoryManager()
     }
     thisAsAny.collectionName = thisAsAny.vectorStore.collectionName
     if (config.enableGraph) {
       const graph = thisAsAny.graphMemory
       graph.embeddingModel = thisAsAny.embedder
       if (config.graphLanguageModelId) {
-        graph.llm = OwnxLLM.create(config.graphLanguageModelId)
+        graph.llm = CaredLLM.create(config.graphLanguageModelId)
       } else {
         graph.llm = thisAsAny.llm
       }

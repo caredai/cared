@@ -2,9 +2,9 @@ import type { LanguageModelV2 } from '@ai-sdk/provider'
 import type { LLM, LLMResponse, Message } from 'mem0ai/oss'
 import { generateText } from 'ai'
 
-import { getModel } from '@ownxai/providers/providers'
+import { getModel } from '@cared/providers/providers'
 
-export class OwnxLLM implements LLM {
+export class CaredLLM implements LLM {
   private constructor(private model: LanguageModelV2) {}
 
   static create(fullModelId: string) {
@@ -12,7 +12,7 @@ export class OwnxLLM implements LLM {
     if (!model) {
       return
     }
-    return new OwnxLLM(model)
+    return new CaredLLM(model)
   }
 
   async generateResponse(

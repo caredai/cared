@@ -13,9 +13,9 @@ import {
   faUserCog,
 } from '@fortawesome/free-solid-svg-icons'
 
-import { Collapsible, CollapsibleTrigger } from '@ownxai/ui/components/collapsible'
-import { CollapsibleContent } from '@ownxai/ui/components/collapsible-content'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Collapsible, CollapsibleTrigger } from '@cared/ui/components/collapsible'
+import { CollapsibleContent } from '@cared/ui/components/collapsible-content'
+import { cn } from '@cared/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
 import { useAppearanceSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'

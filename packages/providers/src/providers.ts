@@ -17,7 +17,7 @@ import { createPerplexity, perplexity } from '@ai-sdk/perplexity'
 import { createReplicate, replicate } from '@ai-sdk/replicate'
 import { createTogetherAI, togetherai } from '@ai-sdk/togetherai'
 import { createXai, xai } from '@ai-sdk/xai'
-import { openrouter, createOpenRouter } from '@openrouter/ai-sdk-provider'
+import { createOpenRouter, openrouter } from '@openrouter/ai-sdk-provider'
 
 import type { ModelType, Provider, ProviderId } from './types'
 import { splitModelFullId } from './index'

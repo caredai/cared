@@ -3,7 +3,13 @@ import type { LorebookContent } from '@tavern/core'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { lorebookEntriesSchema, lorebookEntrySchema } from '@tavern/core'
 import { and, desc, eq } from '@tavern/db'
-import { Lorebook, LorebookToChat, LorebookToCharacter, LorebookToGroup, LorebookToPersona } from '@tavern/db/schema'
+import {
+  Lorebook,
+  LorebookToCharacter,
+  LorebookToChat,
+  LorebookToGroup,
+  LorebookToPersona,
+} from '@tavern/db/schema'
 import { TRPCError } from '@trpc/server'
 import sanitize from 'sanitize-filename'
 import { v7 as uuid } from 'uuid'

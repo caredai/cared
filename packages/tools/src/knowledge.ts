@@ -2,10 +2,10 @@ import assert from 'assert'
 import { tool } from 'ai'
 import { z } from 'zod/v4'
 
-import type { AgentMetadata, AppMetadata } from '@ownxai/db/schema'
-import type { Document } from '@ownxai/vdb'
-import { and, desc, eq, inArray, not } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
+import type { AgentMetadata, AppMetadata } from '@cared/db/schema'
+import type { Document } from '@cared/vdb'
+import { and, desc, eq, inArray, not } from '@cared/db'
+import { db } from '@cared/db/client'
 import {
   Agent,
   AgentVersion,
@@ -15,11 +15,11 @@ import {
   DocumentChunk,
   DocumentSegment,
   DRAFT_VERSION,
-} from '@ownxai/db/schema'
-import { getTextEmbeddingModelInfo } from '@ownxai/providers'
-import { embed } from '@ownxai/providers/embed'
-import { CohereReranker } from '@ownxai/providers/rerank'
-import { QdrantVector } from '@ownxai/vdb'
+} from '@cared/db/schema'
+import { getTextEmbeddingModelInfo } from '@cared/providers'
+import { embed } from '@cared/providers/embed'
+import { CohereReranker } from '@cared/providers/rerank'
+import { QdrantVector } from '@cared/vdb'
 
 import type { Context } from './context'
 

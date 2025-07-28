@@ -1,4 +1,4 @@
-import baseConfig from '@ownxai/eslint-config/base'
+import baseConfig from '@cared/eslint-config/base'
 
 /** @type {import('typescript-eslint').Config} */
 export default [

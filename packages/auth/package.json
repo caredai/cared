@@ -1,7 +1,7 @@
 {
-  "name": "@ownxai/auth",
+  "name": "@cared/auth",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.6",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -18,19 +18,19 @@
     "generate-schema": "pnpm with-env pnpm dlx @better-auth/cli generate -y --config ./src/server.ts --output ../db/src/schema/auth-generated.ts && pnpm prettier --check --write ../db/src/schema/auth-generated.ts"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config",
+  "prettier": "@cared/prettier-config",
   "dependencies": {
     "@better-auth/utils": "^0.2.4",
-    "@ownxai/db": "workspace:*",
-    "@ownxai/kv": "workspace:*",
-    "@ownxai/shared": "workspace:*",
+    "@cared/db": "workspace:*",
+    "@cared/kv": "workspace:*",
+    "@cared/shared": "workspace:*",
     "better-auth": "1.2.5-beta.8",
     "better-auth-harmony": "^1.2.4",
     "validation-better-auth": "^1.1.1"

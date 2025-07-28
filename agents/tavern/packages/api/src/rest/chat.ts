@@ -1,7 +1,6 @@
 import assert from 'assert'
-import type { MessageMetadata} from '@tavern/core';
-import { modelPresetSchema } from '@tavern/core'
-import { messageContentSchema } from '@tavern/core'
+import type { MessageMetadata } from '@tavern/core'
+import { messageContentSchema, modelPresetSchema } from '@tavern/core'
 import { db } from '@tavern/db/client'
 import {
   createUIMessageStream,
@@ -12,11 +11,11 @@ import {
 } from 'ai'
 import { z } from 'zod/v4'
 
-import { log } from '@ownxai/log'
-import { generateMessageId, modelMessageSchema, toUIMessages } from '@ownxai/sdk'
+import { log } from '@cared/log'
+import { generateMessageId, modelMessageSchema, toUIMessages } from '@cared/sdk'
 
 import { auth } from '../auth'
-import { createOwnxClient } from '../ownx'
+import { createCaredClient } from '../cared'
 
 const requestBodySchema = z.object({
   id: z.string(),
@@ -101,23 +100,23 @@ export async function POST(request: Request): Promise<Response> {
     db,
   }
 
-  const ownx = createOwnxClient(ctx)
-  const ownxTrpc = ownx.trpc
+  const cared = createCaredClient(ctx)
+  const caredTrpc = cared.trpc
 
-  const languageModel = await ownx.createLanguageModel(modelId)
+  const languageModel = await cared.createLanguageModel(modelId)
 
-  const chat = (await ownxTrpc.chat.byId.query({ id })).chat
+  const chat = (await caredTrpc.chat.byId.query({ id })).chat
 
   if (deleteTrailing) {
     assert.ok(!isLastNew, 'deleteTrailing should not be used with isLastNew')
-    await ownxTrpc.message.delete.mutate({
+    await caredTrpc.message.delete.mutate({
       id: lastMessage.id,
       deleteTrailing: true,
       excludeSelf: true,
     })
   }
   if (isLastNew) {
-    await ownxTrpc.message.create.mutate({
+    await caredTrpc.message.create.mutate({
       chatId: chat.id,
       ...lastMessage,
     })
@@ -184,12 +183,12 @@ export async function POST(request: Request): Promise<Response> {
       if (isContinuation) {
         assert.equal(responseMessage.id, lastMessage.id)
 
-        await ownxTrpc.message.update.mutate({
+        await caredTrpc.message.update.mutate({
           id: responseMessage.id,
           content: responseMessage,
         })
       } else {
-        await ownxTrpc.message.create.mutate({
+        await caredTrpc.message.create.mutate({
           id: responseMessage.id,
           parentId: lastMessage.id,
           chatId: chat.id,

@@ -1,4 +1,4 @@
-import type { ModelInfo } from '@ownxai/sdk'
+import type { ModelInfo } from '@cared/sdk'
 
 import type { CharacterCardV3 } from '../character'
 import type { CharGroupMetadata } from '../character-group'

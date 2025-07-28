@@ -5,12 +5,12 @@ import { lorebookSettingsSchema } from '@tavern/core'
 import { ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+} from '@cared/ui/components/collapsible'
 import {
   Form,
   FormControl,
@@ -18,14 +18,14 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from '@ownxai/ui/components/form'
+} from '@cared/ui/components/form'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
+} from '@cared/ui/components/select'
 
 import { CheckboxField } from '@/components/checkbox-field'
 import { SliderInputField } from '@/components/slider-input-field'

@@ -5,7 +5,7 @@ import type { VListHandle } from 'virtua'
 import { useCallback, useRef, useState } from 'react'
 import { VList } from 'virtua'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/dialog'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CharacterAvatar } from '@/components/avatar'
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'

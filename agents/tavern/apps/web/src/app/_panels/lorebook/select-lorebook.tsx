@@ -8,7 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
+} from '@cared/ui/components/select'
 
 import { useLorebook, useLorebooks } from '@/hooks/use-lorebook'
 

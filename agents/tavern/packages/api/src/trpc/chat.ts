@@ -5,9 +5,9 @@ import { format } from 'date-fns'
 import { and, desc, eq, inArray, lt } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
-import type { Chat as _Chat } from '@ownxai/sdk'
+import type { Chat as _Chat } from '@cared/sdk'
 
-import { createOwnxClient } from '../ownx'
+import { createCaredClient } from '../cared'
 import { userProtectedProcedure } from '../trpc'
 
 export type Chat = _Chat & {
@@ -24,10 +24,10 @@ export const chatRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
-      const { chats, hasMore, last } = await ownxTrpc.chat.list.query({
+      const { chats, hasMore, last } = await caredTrpc.chat.list.query({
         before: input.cursor,
         limit: input.limit,
         orderBy: 'desc',
@@ -114,16 +114,16 @@ export const chatRouter = {
 
       const cursor = characterChats[characterChats.length - 1]?.updatedAt.toISOString()
 
-      // Get chat IDs for querying ownx service
+      // Get chat IDs for querying cared service
       const chatIds = characterChats.map((chat) => chat.id)
 
-      // Fetch complete chat information from ownx service
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      // Fetch complete chat information from cared service
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       const chats = chatIds.length
         ? (
-            await ownxTrpc.chat.listByIds.query({
+            await caredTrpc.chat.listByIds.query({
               ids: chatIds,
               includeLastMessage: true,
             })
@@ -135,14 +135,14 @@ export const chatRouter = {
 
       return {
         chats: characterChats.map((chat) => {
-          const ownxChat = chatMap[chat.id]
-          if (!ownxChat) {
+          const caredChat = chatMap[chat.id]
+          if (!caredChat) {
             throw new TRPCError({
               code: 'INTERNAL_SERVER_ERROR',
-              message: 'Chat data inconsistency between ownx and local database',
+              message: 'Chat data inconsistency between cared and local database',
             })
           }
-          const { id, metadata, createdAt, updatedAt, lastMessage } = ownxChat
+          const { id, metadata, createdAt, updatedAt, lastMessage } = caredChat
           return {
             id,
             metadata,
@@ -189,16 +189,16 @@ export const chatRouter = {
 
       const cursor = groupChats[groupChats.length - 1]?.updatedAt.toISOString()
 
-      // Get chat IDs for querying ownx service
+      // Get chat IDs for querying cared service
       const chatIds = groupChats.map((chat) => chat.id)
 
-      // Fetch complete chat information from ownx service
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      // Fetch complete chat information from cared service
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       const chats = chatIds.length
         ? (
-            await ownxTrpc.chat.listByIds.query({
+            await caredTrpc.chat.listByIds.query({
               ids: chatIds,
               includeLastMessage: true,
             })
@@ -210,14 +210,14 @@ export const chatRouter = {
 
       return {
         chats: groupChats.map((chat) => {
-          const ownxChat = chatMap[chat.id]
-          if (!ownxChat) {
+          const caredChat = chatMap[chat.id]
+          if (!caredChat) {
             throw new TRPCError({
               code: 'INTERNAL_SERVER_ERROR',
-              message: 'Chat data inconsistency between ownx and local database',
+              message: 'Chat data inconsistency between cared and local database',
             })
           }
-          const { id, metadata, createdAt, updatedAt, lastMessage } = ownxChat
+          const { id, metadata, createdAt, updatedAt, lastMessage } = caredChat
           return {
             id,
             metadata,
@@ -239,11 +239,11 @@ export const chatRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       const chat = (
-        await ownxTrpc.chat.byId.query({
+        await caredTrpc.chat.byId.query({
           id: input.id,
           includeLastMessage: true,
         })
@@ -296,8 +296,8 @@ export const chatRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       // Check if character exists and belongs to user
       const character = await ctx.db.query.Character.findFirst({
@@ -311,7 +311,7 @@ export const chatRouter = {
       }
 
       const chat = (
-        await ownxTrpc.chat.create.mutate({
+        await caredTrpc.chat.create.mutate({
           // If id is provided, it will be used; otherwise, a new id will be generated
           id: input.id,
           metadata: {
@@ -360,8 +360,8 @@ export const chatRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       // Check if group exists and belongs to user
       const group = await ctx.db.query.CharGroup.findFirst({
@@ -375,7 +375,7 @@ export const chatRouter = {
       }
 
       const chat = (
-        await ownxTrpc.chat.create.mutate({
+        await caredTrpc.chat.create.mutate({
           // If id is provided, it will be used; otherwise, a new id will be generated
           id: input.id,
           metadata: {
@@ -413,12 +413,12 @@ export const chatRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       // Update field `updatedAt`
       const chat = (
-        await ownxTrpc.chat.update.mutate({
+        await caredTrpc.chat.update.mutate({
           id: input.id,
           ...(input.metadata && {
             metadata: {
@@ -459,15 +459,15 @@ export const chatRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       await ctx.db.transaction(async (tx) => {
         await tx.delete(CharacterChat).where(eq(CharacterChat.chatId, input.id))
 
         await tx.delete(CharGroupChat).where(eq(CharGroupChat.chatId, input.id))
 
-        await ownxTrpc.chat.delete.mutate({
+        await caredTrpc.chat.delete.mutate({
           id: input.id,
         })
       })
@@ -480,8 +480,8 @@ export const chatRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       await ctx.db.transaction(async (tx) => {
         // Delete character chat records for all chat IDs
@@ -490,8 +490,8 @@ export const chatRouter = {
         // Delete group chat records for all chat IDs
         await tx.delete(CharGroupChat).where(inArray(CharGroupChat.chatId, input.ids))
 
-        // Call ownx batch delete
-        await ownxTrpc.chat.batchDelete.mutate({
+        // Call cared batch delete
+        await caredTrpc.chat.batchDelete.mutate({
           ids: input.ids,
         })
       })
@@ -505,8 +505,8 @@ export const chatRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       // Check if user has access to this chat
       const characterChat = await ctx.db.query.CharacterChat.findFirst({
@@ -524,8 +524,8 @@ export const chatRouter = {
         })
       }
 
-      // Use ownx SDK's clone functionality
-      const { chat: newChat } = await ownxTrpc.chat.clone.mutate({
+      // Use cared SDK's clone functionality
+      const { chat: newChat } = await caredTrpc.chat.clone.mutate({
         id: input.id,
         messages: input.messages,
         includeLastMessage: true,

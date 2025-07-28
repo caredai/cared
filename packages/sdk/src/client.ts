@@ -1,8 +1,8 @@
 import { env } from './env'
 import { createLanguageModel } from './model'
-import { createOwnxTrpcClient } from './trpc'
+import { createCaredTrpcClient } from './trpc'
 
-export type OwnxClientOptions = {
+export type CaredClientOptions = {
   apiUrl?: string
 } & (
   | {
@@ -18,28 +18,28 @@ export type OwnxClientOptions = {
     }
 )
 
-export class OwnxClient {
-  constructor(opts: OwnxClientOptions) {
+export class CaredClient {
+  constructor(opts: CaredClientOptions) {
     this.opts = {
       ...opts,
-      apiUrl: new URL(opts.apiUrl || env.OWNX_API_URL || 'https://ownx.ai').origin,
+      apiUrl: new URL(opts.apiUrl || env.CARED_API_URL || 'https://cared.dev').origin,
     }
 
-    this.trpc = createOwnxTrpcClient(this.opts)
+    this.trpc = createCaredTrpcClient(this.opts)
   }
 
-  private readonly opts: OwnxClientOptions & Required<Pick<OwnxClientOptions, 'apiUrl'>>
+  private readonly opts: CaredClientOptions & Required<Pick<CaredClientOptions, 'apiUrl'>>
 
-  trpc: OwnxTrpcClient
+  trpc: CaredTrpcClient
 
   createLanguageModel(modelId: string) {
     return createLanguageModel(modelId, this.opts)
   }
 }
 
-export type OwnxTrpcClient = ReturnType<typeof createOwnxTrpcClient>
+export type CaredTrpcClient = ReturnType<typeof createCaredTrpcClient>
 
-export async function makeHeaders(opts: OwnxClientOptions) {
+export async function makeHeaders(opts: CaredClientOptions) {
   const headers = new Headers()
 
   const { apiKey, userId } = opts as {

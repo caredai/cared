@@ -1,6 +1,6 @@
 'use client'
 
-import { Separator } from '@ownxai/ui/components/separator'
+import { Separator } from '@cared/ui/components/separator'
 
 import { isCharacterGroup, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { CharacterCreate } from './character-create'

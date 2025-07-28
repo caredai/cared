@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@ownxai/ui/components/dialog'
+} from '@cared/ui/components/dialog'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useDeleteCharacters } from '@/hooks/use-character'

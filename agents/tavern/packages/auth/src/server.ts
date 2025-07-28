@@ -7,8 +7,8 @@ import { nextCookies } from 'better-auth/next-js'
 import { customSession, genericOAuth, openAPI } from 'better-auth/plugins'
 import { decodeJwt } from 'jose'
 
-import { getKV } from '@ownxai/kv'
-import { generateId } from '@ownxai/sdk'
+import { getKV } from '@cared/kv'
+import { generateId } from '@cared/sdk'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
@@ -54,10 +54,10 @@ const options = {
     genericOAuth({
       config: [
         {
-          providerId: 'ownx',
-          clientId: env.OWNX_CLIENT_ID,
-          clientSecret: env.OWNX_CLIENT_SECRET,
-          discoveryUrl: env.OWNX_DISCOVERY_URL,
+          providerId: 'cared',
+          clientId: env.CARED_CLIENT_ID,
+          clientSecret: env.CARED_CLIENT_SECRET,
+          discoveryUrl: env.CARED_DISCOVERY_URL,
           pkce: true,
           accessType: 'offline',
           scopes: ['openid', 'email', 'profile', 'offline_access'],

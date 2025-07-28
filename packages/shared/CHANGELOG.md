@@ -1,19 +1,7 @@
-# @ownxai/shared
+# @cared/shared
 
-## 0.1.3
-
-### Patch Changes
-
-- Add peer dependencies
-
-## 0.1.2
+## 0.1.5
 
 ### Patch Changes
 
-- Update @ownxai/shared
-
-## 0.1.1
-
-### Patch Changes
-
-- Fix build issue
+- rename ownx to cared

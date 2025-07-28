@@ -29,7 +29,7 @@ import { v7 as uuid } from 'uuid'
 import { VList } from 'virtua'
 import { z } from 'zod/v4'
 
-import { Input } from '@ownxai/ui/components/input'
+import { Input } from '@cared/ui/components/input'
 
 import { FaButton } from '@/components/fa-button'
 import { useUpdateCharacter } from '@/hooks/use-character'

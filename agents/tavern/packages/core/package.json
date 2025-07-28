@@ -16,9 +16,9 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "@types/png-chunk-text": "^1.0.3",
     "@types/png-chunks-encode": "^1.0.2",
     "@types/png-chunks-extract": "^1.0.2",
@@ -27,7 +27,7 @@
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config",
+  "prettier": "@cared/prettier-config",
   "dependencies": {
     "@risuai/ccardlib": "^0.4.2",
     "character-card-utils": "^2.0.3",

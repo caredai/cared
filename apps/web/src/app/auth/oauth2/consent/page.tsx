@@ -5,8 +5,8 @@ import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Clock, Mail, UserCircle, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { authClient } from '@ownxai/auth/client'
-import { Button } from '@ownxai/ui/components/button'
+import { authClient } from '@cared/auth/client'
+import { Button } from '@cared/ui/components/button'
 import {
   Card,
   CardContent,
@@ -14,7 +14,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@ownxai/ui/components/card'
+} from '@cared/ui/components/card'
 
 import { useTRPC } from '@/trpc/client'
 

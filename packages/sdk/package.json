@@ -1,6 +1,6 @@
 {
-  "name": "@ownxai/sdk",
-  "version": "0.1.6",
+  "name": "@cared/sdk",
+  "version": "0.1.8",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -28,18 +28,18 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.787.0",
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "@trpc/server": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "tsup": "^8.3.6",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config",
+  "prettier": "@cared/prettier-config",
   "dependencies": {
-    "@ownxai/shared": "workspace:*",
+    "@cared/shared": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@trpc/client": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",

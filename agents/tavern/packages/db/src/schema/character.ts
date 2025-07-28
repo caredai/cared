@@ -12,7 +12,7 @@ import {
   timestamps,
   timestampsIndices,
   timestampsOmits,
-} from '@ownxai/sdk'
+} from '@cared/sdk'
 
 import { User } from '.'
 

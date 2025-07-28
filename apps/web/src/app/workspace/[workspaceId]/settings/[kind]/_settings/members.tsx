@@ -15,10 +15,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@ownxai/ui/components/alert-dialog'
-import { Avatar, AvatarImage } from '@ownxai/ui/components/avatar'
-import { Badge } from '@ownxai/ui/components/badge'
-import { Button } from '@ownxai/ui/components/button'
+} from '@cared/ui/components/alert-dialog'
+import { Avatar, AvatarImage } from '@cared/ui/components/avatar'
+import { Badge } from '@cared/ui/components/badge'
+import { Button } from '@cared/ui/components/button'
 import {
   Card,
   CardContent,
@@ -26,7 +26,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@ownxai/ui/components/card'
+} from '@cared/ui/components/card'
 import {
   Dialog,
   DialogContent,
@@ -35,8 +35,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/dialog'
+import { Input } from '@cared/ui/components/input'
 import {
   Table,
   TableBody,
@@ -44,7 +44,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@ownxai/ui/components/table'
+} from '@cared/ui/components/table'
 
 import { useTRPC } from '@/trpc/client'
 

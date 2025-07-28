@@ -7,9 +7,9 @@ import {
   SelectItem,
   SelectScrollDownButton,
   SelectScrollUpButton,
-} from '@ownxai/ui/components/select'
-import { VirtualizedVirtualizer } from '@ownxai/ui/components/virtualized'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/select'
+import { VirtualizedVirtualizer } from '@cared/ui/components/virtualized'
+import { cn } from '@cared/ui/lib/utils'
 
 export interface Item {
   label: string

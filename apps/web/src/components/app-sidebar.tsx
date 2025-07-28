@@ -9,7 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@ownxai/ui/components/sidebar'
+} from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
 import { NavSecondary } from '@/components/nav-secondary'

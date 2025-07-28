@@ -1,8 +1,8 @@
 import type { Embedder } from 'mem0ai/oss'
 
-import { embed, embedMany } from '@ownxai/providers/embed'
+import { embed, embedMany } from '@cared/providers/embed'
 
-export class OwnxEmbedder implements Embedder {
+export class CaredEmbedder implements Embedder {
   constructor(private fullModelId: string) {}
 
   embed(text: string): Promise<number[]> {

@@ -1,7 +1,7 @@
 import type { ComponentPropsWithoutRef } from 'react'
 import { useEffect, useState } from 'react'
 
-import { Input } from '@ownxai/ui/components/input'
+import { Input } from '@cared/ui/components/input'
 
 export function OptionalNumberInput({
   value,

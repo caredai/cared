@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { z } from 'zod/v4'
 
-import { tokenizerCount, tokenizerDecode, tokenizerEncode } from '@ownxai/tokenizer'
+import { tokenizerCount, tokenizerDecode, tokenizerEncode } from '@cared/tokenizer'
 
 import { publicProcedure } from '../trpc'
 

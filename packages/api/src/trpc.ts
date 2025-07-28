@@ -4,8 +4,8 @@ import * as trpc from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod/v4'
 
-import type { DB } from '@ownxai/db/client'
-import { db } from '@ownxai/db/client'
+import type { DB } from '@cared/db/client'
+import { db } from '@cared/db/client'
 
 import type { Auth } from './auth'
 import { authWithHeaders } from './auth'

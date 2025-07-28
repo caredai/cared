@@ -5,9 +5,9 @@ import { sanitizeKey } from 'next-s3-upload'
 import { POST as APIRoute } from 'next-s3-upload/route'
 import { v7 as uuid } from 'uuid'
 
-import { and, eq } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
-import { App, Chat, Dataset, Membership } from '@ownxai/db/schema'
+import { and, eq } from '@cared/db'
+import { db } from '@cared/db/client'
+import { App, Chat, Dataset, Membership } from '@cared/db/schema'
 
 import { auth } from '../../auth'
 import { env } from '../../env'

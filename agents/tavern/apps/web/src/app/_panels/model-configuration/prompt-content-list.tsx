@@ -4,12 +4,12 @@ import { useMemo } from 'react'
 import { ChevronDownIcon } from 'lucide-react'
 import { VList } from 'virtua'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+} from '@cared/ui/components/collapsible'
 
 import { usePromptCollections } from '@/hooks/use-prompt-collections'
 import { usePromptInspect } from './prompt-inspect'
@@ -49,7 +49,11 @@ export function PromptContentList() {
           }}
         </VList>
       ) : (
-        <p>No list available {prompt?.injection_position === 'absolute' && 'since this prompt is injected into some other prompt'}</p>
+        <p>
+          No list available{' '}
+          {prompt?.injection_position === 'absolute' &&
+            'since this prompt is injected into some other prompt'}
+        </p>
       )}
     </div>
   )

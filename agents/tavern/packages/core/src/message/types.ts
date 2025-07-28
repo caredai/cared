@@ -1,9 +1,11 @@
 import type { UIMessage as _UIMessage, UIDataTypes, UITools } from 'ai'
-import { toUIMessages as _toUIMessages } from '@ownxai/sdk'
 import { z } from 'zod/v4'
 
-import type { Message as _Message } from '@ownxai/sdk'
-import { messageContentSchema as _messageContentSchema } from '@ownxai/sdk'
+import type { Message as _Message } from '@cared/sdk'
+import {
+  messageContentSchema as _messageContentSchema,
+  toUIMessages as _toUIMessages,
+} from '@cared/sdk'
 
 export interface MessageMetadata {
   characterId?: string // for 'assistant' role

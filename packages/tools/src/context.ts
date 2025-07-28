@@ -1,7 +1,7 @@
 import type { Tool, UIMessageStreamWriter } from 'ai'
 
-import type { Agent, App, Chat } from '@ownxai/db/schema'
-import { getModel } from '@ownxai/providers/providers'
+import type { Agent, App, Chat } from '@cared/db/schema'
+import { getModel } from '@cared/providers/providers'
 
 export interface Context {
   userId: string

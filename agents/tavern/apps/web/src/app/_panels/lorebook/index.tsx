@@ -19,9 +19,9 @@ import { toast } from 'sonner'
 import hash from 'stable-hash'
 import { Virtualizer } from 'virtua'
 
-import { Label } from '@ownxai/ui/components/label'
-import { Separator } from '@ownxai/ui/components/separator'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Label } from '@cared/ui/components/label'
+import { Separator } from '@cared/ui/components/separator'
+import { cn } from '@cared/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
 import { useLorebooks, useUpdateLorebook } from '@/hooks/use-lorebook'

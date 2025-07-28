@@ -5,7 +5,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-q
 import { CheckIcon, CopyIcon, RefreshCwIcon, TrashIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Card,
   CardContent,
@@ -13,7 +13,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@ownxai/ui/components/card'
+} from '@cared/ui/components/card'
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@ownxai/ui/components/dialog'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/dialog'
+import { Input } from '@cared/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'

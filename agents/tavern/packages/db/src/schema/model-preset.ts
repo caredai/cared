@@ -2,7 +2,7 @@ import type { ModelPreset as ModelPresetContent, ModelPresetCustomization } from
 import type { InferSelectModel } from 'drizzle-orm'
 import { jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core'
 
-import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
+import { generateId, timestamps, timestampsIndices } from '@cared/sdk'
 
 import { user } from './auth'
 

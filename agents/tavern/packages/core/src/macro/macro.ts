@@ -3,7 +3,7 @@ import droll from 'droll'
 import seedrandom from 'seedrandom'
 import { v4 as uuid } from 'uuid'
 
-import type { ModelInfo } from '@ownxai/sdk'
+import type { ModelInfo } from '@cared/sdk'
 
 import type { MessageMetadata, MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'

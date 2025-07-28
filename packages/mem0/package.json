@@ -1,7 +1,7 @@
 {
-  "name": "@ownxai/mem0",
+  "name": "@cared/mem0",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.4",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
@@ -16,18 +16,18 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config",
+  "prettier": "@cared/prettier-config",
   "dependencies": {
-    "@ownxai/db": "workspace:*",
-    "@ownxai/providers": "workspace:*",
-    "@ownxai/vdb": "workspace:*",
+    "@cared/db": "workspace:*",
+    "@cared/providers": "workspace:*",
+    "@cared/vdb": "workspace:*",
     "mem0ai": "^2.1.16"
   }
 }

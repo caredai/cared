@@ -1,7 +1,7 @@
-# @ownxai/kv
+# @cared/kv
 
-## 0.1.1
+## 0.1.3
 
 ### Patch Changes
 
-- Publish @ownxai/kv
+- rename ownx to cared

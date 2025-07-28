@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { auth } from '@ownxai/api'
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@ownxai/ui/components/sidebar'
+import { auth } from '@cared/api'
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'

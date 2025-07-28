@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { LogIn } from 'lucide-react'
 
-import { SidebarMenuButton } from '@ownxai/ui/components/sidebar'
+import { SidebarMenuButton } from '@cared/ui/components/sidebar'
 
 import { useRedirectWorkspace } from '@/hooks/use-workspace'
 

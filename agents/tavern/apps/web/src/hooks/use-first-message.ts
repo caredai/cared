@@ -3,7 +3,7 @@ import { getCharFirstMessages, substituteMacros } from '@tavern/core'
 import { atom, useAtom } from 'jotai'
 import hash from 'stable-hash'
 
-import { generateMessageId } from '@ownxai/sdk'
+import { generateMessageId } from '@cared/sdk'
 
 import { useActive } from '@/hooks/use-active'
 import { isCharacter } from '@/hooks/use-character-or-group'

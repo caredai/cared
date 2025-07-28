@@ -6,8 +6,8 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Database, Loader2, XCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { Alert, AlertDescription, AlertTitle } from '@ownxai/ui/components/alert'
-import { Button } from '@ownxai/ui/components/button'
+import { Alert, AlertDescription, AlertTitle } from '@cared/ui/components/alert'
+import { Button } from '@cared/ui/components/button'
 import {
   Card,
   CardContent,
@@ -15,7 +15,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@ownxai/ui/components/card'
+} from '@cared/ui/components/card'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useTRPC } from '@/trpc/client'

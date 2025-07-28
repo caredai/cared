@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
-import { Label } from '@ownxai/ui/components/label'
-import { RadioGroup, RadioGroupItem } from '@ownxai/ui/components/radio-group'
+} from '@cared/ui/components/dialog'
+import { Label } from '@cared/ui/components/label'
+import { RadioGroup, RadioGroupItem } from '@cared/ui/components/radio-group'
 
 import { useSelectedLorebook } from './select-lorebook'
 

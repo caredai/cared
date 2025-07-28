@@ -4,7 +4,7 @@ import * as React from 'react'
 import * as CollapsiblePrimitive from '@radix-ui/react-collapsible'
 import { composeRefs } from '@radix-ui/react-compose-refs'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 // https://github.com/radix-ui/primitives/discussions/1481#discussioncomment-11392540
 export function CollapsibleContent({

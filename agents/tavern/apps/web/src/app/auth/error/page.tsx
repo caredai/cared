@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Card } from '@ownxai/ui/components/card'
+import { Button } from '@cared/ui/components/button'
+import { Card } from '@cared/ui/components/card'
 
 import { signIn } from '@/lib/sign-in'
 

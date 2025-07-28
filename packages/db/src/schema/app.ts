@@ -12,7 +12,7 @@ import {
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod/v4'
 
-import { hasWhitespace } from '@ownxai/shared'
+import { hasWhitespace } from '@cared/shared'
 
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
 import { Workspace } from './workspace'

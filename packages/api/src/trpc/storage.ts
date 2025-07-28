@@ -19,7 +19,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
 import { zfd } from 'zod-form-data'
 
-import { log } from '@ownxai/log'
+import { log } from '@cared/log'
 
 import type { Context } from '../trpc'
 import { env } from '../env'

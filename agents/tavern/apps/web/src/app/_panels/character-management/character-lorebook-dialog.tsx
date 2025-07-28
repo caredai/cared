@@ -9,15 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
-import { MultiSelectVirtual } from '@ownxai/ui/components/multi-select-virtual'
+} from '@cared/ui/components/dialog'
+import { MultiSelectVirtual } from '@cared/ui/components/multi-select-virtual'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
+} from '@cared/ui/components/select'
 
 import { CircleSpinner } from '@/components/spinner'
 import {

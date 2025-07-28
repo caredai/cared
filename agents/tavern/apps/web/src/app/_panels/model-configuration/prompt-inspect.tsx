@@ -3,8 +3,8 @@ import * as Portal from '@radix-ui/react-portal'
 import { atom, useAtom } from 'jotai'
 import { XIcon } from 'lucide-react'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Label } from '@ownxai/ui/components/label'
+import { Button } from '@cared/ui/components/button'
+import { Label } from '@cared/ui/components/label'
 
 import { usePrompt } from '@/hooks/use-prompt'
 import { useContentAreaRef, useIsShowPromptInspect } from '@/hooks/use-show-in-content-area'

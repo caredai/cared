@@ -1,8 +1,8 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { SQL } from '@ownxai/db'
-import { and, asc, desc, eq, gt, inArray, lt } from '@ownxai/db'
+import type { SQL } from '@cared/db'
+import { and, asc, desc, eq, gt, inArray, lt } from '@cared/db'
 import {
   Chat,
   CreateChatSchema,
@@ -10,7 +10,7 @@ import {
   generateMessageId,
   Message,
   UpdateChatSchema,
-} from '@ownxai/db/schema'
+} from '@cared/db/schema'
 
 import type { Context } from '../trpc'
 import { appUserProtectedProcedure } from '../trpc'

@@ -5,9 +5,9 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Drawer, DrawerContent, DrawerTrigger } from '@ownxai/ui/components/drawer'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Button } from '@cared/ui/components/button'
+import { Drawer, DrawerContent, DrawerTrigger } from '@cared/ui/components/drawer'
+import { cn } from '@cared/ui/lib/utils'
 
 import { menuConfig } from '@/config/menu'
 import { useMetaColor } from '@/hooks/use-meta-color'

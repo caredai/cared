@@ -1,5 +1,5 @@
 {
-  "name": "@ownxai/ui",
+  "name": "@cared/ui",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -71,9 +71,9 @@
     "virtua": "^0.40.3"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "@types/react": "catalog:react19",
     "eslint": "catalog:",
     "prettier": "catalog:",
@@ -85,5 +85,5 @@
     "react": "catalog:react19",
     "zod": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config"
+  "prettier": "@cared/prettier-config"
 }

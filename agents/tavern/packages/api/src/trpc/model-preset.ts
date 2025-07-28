@@ -180,7 +180,7 @@ export const modelPresetRouter = {
       }
 
       return {
-        modelPreset: sanitizeObject(updatedModelPreset)
+        modelPreset: sanitizeObject(updatedModelPreset),
       }
     }),
 

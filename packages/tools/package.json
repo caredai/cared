@@ -1,7 +1,7 @@
 {
-  "name": "@ownxai/tools",
+  "name": "@cared/tools",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.5",
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -17,18 +17,18 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config",
+  "prettier": "@cared/prettier-config",
   "dependencies": {
-    "@ownxai/db": "workspace:*",
-    "@ownxai/providers": "workspace:*",
-    "@ownxai/vdb": "workspace:*",
+    "@cared/db": "workspace:*",
+    "@cared/providers": "workspace:*",
+    "@cared/vdb": "workspace:*",
     "agent-twitter-client": "^0.0.18",
     "ai": "catalog:"
   }

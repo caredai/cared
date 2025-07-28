@@ -1,13 +1,7 @@
-# @ownxai/mem0
+# @cared/mem0
 
-## 0.1.2
-
-### Patch Changes
-
-- @ownxai/db@0.1.3
-
-## 0.1.1
+## 0.1.4
 
 ### Patch Changes
 
-- @ownxai/db@0.1.2
+- @cared/db@0.1.5

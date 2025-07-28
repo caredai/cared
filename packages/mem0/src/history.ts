@@ -1,12 +1,12 @@
 import type { HistoryManagerFactory } from 'mem0ai/oss'
 
-import { desc, eq } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
-import { Mem0History } from '@ownxai/db/schema'
+import { desc, eq } from '@cared/db'
+import { db } from '@cared/db/client'
+import { Mem0History } from '@cared/db/schema'
 
 type HistoryManager = ReturnType<(typeof HistoryManagerFactory)['create']>
 
-export class OwnxHistoryManager implements HistoryManager {
+export class CaredHistoryManager implements HistoryManager {
   async addHistory(
     memoryId: string,
     previousValue: string | null,

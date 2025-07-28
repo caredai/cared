@@ -9,12 +9,12 @@ import {
 import { ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+} from '@cared/ui/components/collapsible'
 import {
   Form,
   FormControl,
@@ -22,17 +22,17 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from '@ownxai/ui/components/form'
-import { Label } from '@ownxai/ui/components/label'
-import { RadioGroup, RadioGroupItem } from '@ownxai/ui/components/radio-group'
+} from '@cared/ui/components/form'
+import { Label } from '@cared/ui/components/label'
+import { RadioGroup, RadioGroupItem } from '@cared/ui/components/radio-group'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Textarea } from '@ownxai/ui/components/textarea'
+} from '@cared/ui/components/select'
+import { Textarea } from '@cared/ui/components/textarea'
 
 import { CheckboxField } from '@/components/checkbox-field'
 import { NumberInput } from '@/components/number-input'
@@ -399,7 +399,7 @@ export function SummaryExtension() {
                           <NumberInput
                             min={0}
                             step={1}
-                            value={field.value ?? 2}
+                            value={field.value}
                             onChange={(value) => field.onChange(value)}
                             className="w-20 h-7 px-2 py-0.5 rounded-sm text-xs md:text-xs font-mono"
                           />
@@ -416,7 +416,7 @@ export function SummaryExtension() {
                     <FormItem>
                       <FormLabel>Role</FormLabel>
                       <Select
-                        value={field.value ?? 'system'}
+                        value={field.value}
                         onValueChange={(value) => field.onChange(value)}
                       >
                         <FormControl>

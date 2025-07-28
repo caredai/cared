@@ -4,7 +4,7 @@ import { appRouter } from './root'
 
 export function generateOpenApiDocument(baseUrl: string, docsUrl: string) {
   return _generateOpenApiDocument(appRouter, {
-    title: 'OWNX API',
+    title: 'CARED API',
     description: 'OpenAPI compliant REST API built using tRPC with Next.js',
     version: '1.0.0',
     baseUrl,

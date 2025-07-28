@@ -1,12 +1,12 @@
-import { Checkbox } from '@ownxai/ui/components/checkbox'
+import { Checkbox } from '@cared/ui/components/checkbox'
 import {
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
-} from '@ownxai/ui/components/form'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/form'
+import { cn } from '@cared/ui/lib/utils'
 
 export function CheckboxField({
   label,

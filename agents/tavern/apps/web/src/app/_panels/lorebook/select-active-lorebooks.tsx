@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { MultiSelectVirtual } from '@ownxai/ui/components/multi-select-virtual'
+import { MultiSelectVirtual } from '@cared/ui/components/multi-select-virtual'
 
 import { useLorebooks } from '@/hooks/use-lorebook'
 import { useLorebookSettings, useUpdateLorebookSettings } from '@/hooks/use-settings'

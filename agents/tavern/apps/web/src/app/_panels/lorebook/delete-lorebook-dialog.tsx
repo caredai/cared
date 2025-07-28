@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
+} from '@cared/ui/components/dialog'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useDeleteLorebook } from '@/hooks/use-lorebook'

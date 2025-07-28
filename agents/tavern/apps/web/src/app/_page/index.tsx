@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 import { Chat } from '@/app/_page/chat'
 import { backgroundFittings } from '@/app/_panels/background-image'

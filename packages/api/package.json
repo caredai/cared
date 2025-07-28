@@ -1,6 +1,6 @@
 {
-  "name": "@ownxai/api",
-  "version": "0.1.7",
+  "name": "@cared/api",
+  "version": "0.1.9",
   "private": true,
   "type": "module",
   "exports": {
@@ -21,16 +21,16 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@ownxai/auth": "workspace:*",
-    "@ownxai/db": "workspace:*",
-    "@ownxai/etl": "workspace:*",
-    "@ownxai/log": "workspace:*",
-    "@ownxai/providers": "workspace:*",
-    "@ownxai/shared": "workspace:*",
-    "@ownxai/tokenizer": "workspace:*",
-    "@ownxai/tools": "workspace:*",
-    "@ownxai/validators": "workspace:*",
-    "@ownxai/vdb": "workspace:*",
+    "@cared/auth": "workspace:*",
+    "@cared/db": "workspace:*",
+    "@cared/etl": "workspace:*",
+    "@cared/log": "workspace:*",
+    "@cared/providers": "workspace:*",
+    "@cared/shared": "workspace:*",
+    "@cared/tokenizer": "workspace:*",
+    "@cared/tools": "workspace:*",
+    "@cared/validators": "workspace:*",
+    "@cared/vdb": "workspace:*",
     "@trpc/server": "catalog:",
     "@upstash/qstash": "^2.7.21",
     "@upstash/workflow": "^0.2.7",
@@ -42,13 +42,13 @@
     "zod-form-data": "^2.0.7"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "@upstash/qstash-cli": "^2.21.1",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config"
+  "prettier": "@cared/prettier-config"
 }

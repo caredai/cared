@@ -2,7 +2,7 @@ import type { Settings } from '@tavern/core'
 import type { InferSelectModel } from 'drizzle-orm'
 import { jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 
-import { timestamps, timestampsIndices } from '@ownxai/sdk'
+import { timestamps, timestampsIndices } from '@cared/sdk'
 
 import { user } from './auth'
 

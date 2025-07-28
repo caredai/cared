@@ -22,11 +22,11 @@ import {
 import { passkey } from 'better-auth/plugins/passkey'
 import { sha256 } from 'viem'
 
-import { eq } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
-import { Account, User } from '@ownxai/db/schema'
-import { getKV } from '@ownxai/kv'
-import { generateId } from '@ownxai/shared'
+import { eq } from '@cared/db'
+import { db } from '@cared/db/client'
+import { Account, User } from '@cared/db/schema'
+import { getKV } from '@cared/kv'
+import { generateId } from '@cared/shared'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
@@ -44,7 +44,7 @@ export async function headers() {
 }
 
 const options = {
-  appName: 'ownx',
+  appName: 'cared',
   baseURL: getBaseUrl(),
   basePath: '/api/auth',
   secret: env.BETTER_AUTH_SECRET,
@@ -137,7 +137,7 @@ const options = {
     crossSubDomainCookies: {
       enabled: true,
     },
-    cookiePrefix: 'ownx',
+    cookiePrefix: 'cared',
     generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
       generateId(modelPrefix(model)),
     ipAddress: {

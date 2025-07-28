@@ -1,11 +1,11 @@
-import type { ArtifactKind } from '@ownxai/db/schema'
-import { eq } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
-import { Artifact } from '@ownxai/db/schema'
+import type { ArtifactKind } from '@cared/db/schema'
+import { eq } from '@cared/db'
+import { db } from '@cared/db/client'
+import { Artifact } from '@cared/db/schema'
 
 import type { Context } from '../context'
 
-export { artifactKinds } from '@ownxai/db/schema'
+export { artifactKinds } from '@cared/db/schema'
 
 export interface CreateArtifactCallbackProps {
   id: string

@@ -11,7 +11,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-} from '@ownxai/ui/components/form'
+} from '@cared/ui/components/form'
 
 import { CheckboxField } from '@/components/checkbox-field'
 import { OptionalNumberInput } from '@/components/number-input'

@@ -6,7 +6,7 @@ import { lorebookEntriesSchema } from '@tavern/core'
 import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
 
-import { Input } from '@ownxai/ui/components/input'
+import { Input } from '@cared/ui/components/input'
 
 import { useCreateLorebook, useLorebooks } from '@/hooks/use-lorebook'
 import { useSelectedLorebook } from './select-lorebook'

@@ -733,8 +733,7 @@ export function usePersonasByCharacterOrGroup(charOrGroupId?: string) {
     }
     return personas.filter(
       (persona) =>
-        persona.characters.includes(charOrGroupId) ||
-        persona.groups.includes(charOrGroupId),
+        persona.characters.includes(charOrGroupId) || persona.groups.includes(charOrGroupId),
     )
   }, [personas, charOrGroupId])
 

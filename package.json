@@ -10,15 +10,15 @@
     "build": "turbo run build",
     "clean": "git clean -xdf node_modules",
     "clean:workspaces": "turbo run clean",
-    "db:push": "turbo -F @ownxai/db push",
-    "db:studio": "turbo -F @ownxai/db studio",
+    "db:push": "turbo -F @cared/db push",
+    "db:studio": "turbo -F @cared/db studio",
     "dev": "turbo watch dev --continue",
-    "dev:web": "turbo watch dev -F @ownxai/web...",
+    "dev:web": "turbo watch dev -F @cared/web...",
     "format": "turbo run format --continue -- --cache --cache-location .cache/.prettiercache",
     "format:fix": "turbo run format --continue -- --write --cache --cache-location .cache/.prettiercache",
     "lint": "turbo run lint --continue -- --cache --cache-location .cache/.eslintcache",
     "lint:fix": "turbo run lint --continue -- --fix --cache --cache-location .cache/.eslintcache",
-    "lint:ws": "pnpm dlx sherif@latest",
+    "lint:ws": "pnpm dlx sherif@latest -f",
     "postinstall": "pnpm lint:ws",
     "typecheck": "turbo run typecheck",
     "ui-add": "turbo run ui-add",
@@ -26,8 +26,8 @@
     "publish-packages": "turbo run build lint && changeset version && changeset publish"
   },
   "devDependencies": {
+    "@cared/prettier-config": "workspace:*",
     "@changesets/cli": "^2.28.1",
-    "@ownxai/prettier-config": "workspace:*",
     "@turbo/gen": "^2.4.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.4.2",
@@ -35,7 +35,7 @@
     "turbo": "^2.4.0",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config",
+  "prettier": "@cared/prettier-config",
   "pnpm": {
     "overrides": {
       "uuid": "11.1.0",

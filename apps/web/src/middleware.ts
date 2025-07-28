@@ -15,7 +15,7 @@ export default function middleware(request: NextRequest) {
   }
 
   const sessionCookie = getSessionCookie(request, {
-    cookiePrefix: 'ownx',
+    cookiePrefix: 'cared',
   })
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
   if (!sessionCookie && !token) {

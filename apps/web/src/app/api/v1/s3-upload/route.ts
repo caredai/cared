@@ -1,3 +1,3 @@
-import { s3Upload } from '@ownxai/api/rest'
+import { s3Upload } from '@cared/api/rest'
 
 export const POST = s3Upload.POST

@@ -6,8 +6,8 @@ import type {
 } from 'better-auth/social-providers'
 import { socialProviders } from '@daveyplate/better-auth-ui'
 
-import type { Account } from '@ownxai/db/schema'
-import { allowedProviders as _allowedProviders } from '@ownxai/auth/client'
+import type { Account } from '@cared/db/schema'
+import { allowedProviders as _allowedProviders } from '@cared/auth/client'
 
 export const allowedProviders = _allowedProviders
   .map((provider) => socialProviders.find((p) => p.provider === provider)!)

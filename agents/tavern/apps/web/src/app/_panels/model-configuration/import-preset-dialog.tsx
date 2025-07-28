@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { modelPresetSchema } from '@tavern/core'
 import { toast } from 'sonner'
 
-import { Input } from '@ownxai/ui/components/input'
+import { Input } from '@cared/ui/components/input'
 
 import { useCreateModelPreset } from '@/hooks/use-model-preset'
 

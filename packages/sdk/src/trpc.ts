@@ -9,18 +9,18 @@ import {
 } from '@trpc/client'
 import SuperJSON from 'superjson'
 
-import type { OwnxTrpcRouter } from './api'
-import type { OwnxClientOptions } from './client'
+import type { CaredTrpcRouter } from './api'
+import type { CaredClientOptions } from './client'
 import { makeHeaders } from './client'
 
-export type OwnxTrpcRouterInputs = inferRouterInputs<OwnxTrpcRouter>
-export type OwnxTrpcRouterOutputs = inferRouterOutputs<OwnxTrpcRouter>
+export type CaredTrpcRouterInputs = inferRouterInputs<CaredTrpcRouter>
+export type CaredTrpcRouterOutputs = inferRouterOutputs<CaredTrpcRouter>
 
-export type Chat = OwnxTrpcRouterOutputs['chat']['byId']['chat']
-export type Message = OwnxTrpcRouterOutputs['message']['get']['message']
+export type Chat = CaredTrpcRouterOutputs['chat']['byId']['chat']
+export type Message = CaredTrpcRouterOutputs['message']['get']['message']
 
-export function createOwnxTrpcClient(
-  opts: OwnxClientOptions & Required<Pick<OwnxClientOptions, 'apiUrl'>>,
+export function createCaredTrpcClient(
+  opts: CaredClientOptions & Required<Pick<CaredClientOptions, 'apiUrl'>>,
 ) {
   const url = opts.apiUrl + '/api/trpc'
 
@@ -28,7 +28,7 @@ export function createOwnxTrpcClient(
     return makeHeaders(opts)
   }
 
-  return createTRPCClient<OwnxTrpcRouter>({
+  return createTRPCClient<CaredTrpcRouter>({
     links: [
       loggerLink({
         enabled: (op) =>

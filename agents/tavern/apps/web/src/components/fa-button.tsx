@@ -2,7 +2,7 @@ import type { IconProp, SizeProp } from '@fortawesome/fontawesome-svg-core'
 import type { ComponentProps } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 export function FaButton({
   icon,

@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { createCaller } from '@ownxai/api'
-import { db } from '@ownxai/db/client'
+import { createCaller } from '@cared/api'
+import { db } from '@cared/db/client'
 
 import { siteConfig } from '@/config/site'
 import { stripIdPrefix } from '@/lib/utils'

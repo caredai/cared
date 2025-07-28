@@ -1,5 +1,5 @@
 {
-  "extends": "@ownxai/tsconfig/base.json",
+  "extends": "@cared/tsconfig/base.json",
   "include": ["."],
   "exclude": ["templates"]
 }

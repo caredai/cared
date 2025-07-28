@@ -7,7 +7,7 @@ import { Toaster } from '@/components/sonner'
 
 import '@fortawesome/fontawesome-svg-core/styles.css'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 import '@/globals.css'
 

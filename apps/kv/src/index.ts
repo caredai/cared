@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { bearerAuth } from 'hono/bearer-auth'
 
 type Bindings = {
-  OWNX: KVNamespace
+  CARED: KVNamespace
   API_TOKEN: string
 }
 
@@ -27,7 +27,7 @@ app.get('/api/ok', (c) => {
 app.get('/api/kv/:key', async (c) => {
   const key = c.req.param('key')
   try {
-    const value = await c.env.OWNX.get(key)
+    const value = await c.env.CARED.get(key)
     if (value === null) {
       return c.json({ error: 'Key not found' }, 404)
     }
@@ -58,7 +58,7 @@ app.post('/api/kv/:key', async (c) => {
       }
     }
 
-    await c.env.OWNX.put(key, value, {
+    await c.env.CARED.put(key, value, {
       expirationTtl,
     })
 
@@ -73,7 +73,7 @@ app.post('/api/kv/:key', async (c) => {
 app.delete('/api/kv/:key', async (c) => {
   const key = c.req.param('key')
   try {
-    await c.env.OWNX.delete(key)
+    await c.env.CARED.delete(key)
     return c.json({}, 200)
   } catch (error) {
     console.error(error)
@@ -94,7 +94,7 @@ app.get('/api/kv', async (c) => {
       cursor,
     }
 
-    const result = await c.env.OWNX.list(options)
+    const result = await c.env.CARED.list(options)
     return c.json(result)
   } catch (error) {
     console.error(error)

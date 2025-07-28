@@ -14,8 +14,8 @@ import {
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod/v4'
 
-import type { MessageContent } from '@ownxai/shared'
-import { messageContentSchema, messageRoleEnumValues, uiMessageSchema } from '@ownxai/shared'
+import type { MessageContent } from '@cared/shared'
+import { messageContentSchema, messageRoleEnumValues, uiMessageSchema } from '@cared/shared'
 
 import { User } from '.'
 import { Agent } from './agent'

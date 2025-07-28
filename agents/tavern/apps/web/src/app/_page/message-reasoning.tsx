@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { ChevronDownIcon } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 import { Markdown } from '@/components/markdown'
 import { Spinner } from '@/components/spinner'

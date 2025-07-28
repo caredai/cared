@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
+} from '@cared/ui/components/dialog'
 import {
   Form,
   FormControl,
@@ -27,16 +27,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Textarea } from '@ownxai/ui/components/textarea'
+} from '@cared/ui/components/select'
+import { Textarea } from '@cared/ui/components/textarea'
 
 import { ModelSelect } from '@/components/model-select'
 import { stripIdPrefix } from '@/lib/utils'

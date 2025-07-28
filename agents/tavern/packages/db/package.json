@@ -24,7 +24,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@ownxai/sdk": "^0.1.6",
+    "@cared/sdk": "^0.1.8",
     "@tavern/core": "workspace:*",
     "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "^0.38.4",
@@ -33,14 +33,14 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.30.2",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config"
+  "prettier": "@cared/prettier-config"
 }

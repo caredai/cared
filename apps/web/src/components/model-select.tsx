@@ -8,7 +8,7 @@ import {
   ComboboxGroup,
   ComboboxInput,
   ComboboxItem,
-} from '@ownxai/ui/components/combobox'
+} from '@cared/ui/components/combobox'
 import {
   FormControl,
   FormDescription,
@@ -16,8 +16,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Virtualized, VirtualizedVirtualizer } from '@ownxai/ui/components/virtualized'
+} from '@cared/ui/components/form'
+import { Virtualized, VirtualizedVirtualizer } from '@cared/ui/components/virtualized'
 
 interface ModelSelectProps<
   TFieldValues extends {

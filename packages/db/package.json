@@ -1,6 +1,6 @@
 {
-  "name": "@ownxai/db",
-  "version": "0.1.3",
+  "name": "@cared/db",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "exports": {
@@ -24,7 +24,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
-    "@ownxai/shared": "workspace:*",
+    "@cared/shared": "workspace:*",
     "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "^0.38.4",
     "drizzle-zod": "^0.8.2",
@@ -33,14 +33,14 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.30.2",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config"
+  "prettier": "@cared/prettier-config"
 }

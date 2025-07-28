@@ -1,7 +1,7 @@
 import type { ChangeEvent, ComponentProps } from 'react'
 import { useRef } from 'react'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 import { RemoteImage } from '@/components/image'
 import defaultPng from '@/public/images/ai4.png'

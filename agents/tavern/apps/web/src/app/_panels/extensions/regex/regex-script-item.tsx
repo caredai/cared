@@ -25,12 +25,12 @@ import { CheckCircle2Icon, ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import hash from 'stable-hash'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+} from '@cared/ui/components/collapsible'
 import {
   Form,
   FormControl,
@@ -38,17 +38,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
-import { Label } from '@ownxai/ui/components/label'
+} from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
+import { Label } from '@cared/ui/components/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Textarea } from '@ownxai/ui/components/textarea'
+} from '@cared/ui/components/select'
+import { Textarea } from '@cared/ui/components/textarea'
 
 import { CheckboxField, CheckboxGroupField } from '@/components/checkbox-field'
 import { FaButton } from '@/components/fa-button'

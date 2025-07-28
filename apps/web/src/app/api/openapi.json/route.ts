@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
-import { generateOpenApiDocument } from '@ownxai/api'
-import { getBaseUrl } from '@ownxai/auth/client'
+import { generateOpenApiDocument } from '@cared/api'
+import { getBaseUrl } from '@cared/auth/client'
 
 // TODO: fix generateOpenApiDocument error
 export const dynamic = 'force-dynamic'

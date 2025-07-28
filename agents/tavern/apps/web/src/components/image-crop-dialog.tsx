@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { getOrientation } from 'get-orientation/browser'
 import Cropper from 'react-easy-crop'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ownxai/ui/components/dialog'
+import { Button } from '@cared/ui/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@cared/ui/components/dialog'
 
 import { getCroppedImg, getRotatedImage } from '@/lib/canvas-utils'
 

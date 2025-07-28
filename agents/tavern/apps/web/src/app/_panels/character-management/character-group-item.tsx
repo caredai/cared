@@ -10,7 +10,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CharacterAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'

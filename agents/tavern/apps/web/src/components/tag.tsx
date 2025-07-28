@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 import { faCircleXmark } from '@fortawesome/free-solid-svg-icons'
 
-import { Badge } from '@ownxai/ui/components/badge'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Badge } from '@cared/ui/components/badge'
+import { cn } from '@cared/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
 

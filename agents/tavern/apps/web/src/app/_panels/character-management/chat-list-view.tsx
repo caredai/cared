@@ -5,14 +5,14 @@ import { Plus, Trash2 } from 'lucide-react'
 import { useInView } from 'react-intersection-observer'
 import { Virtualizer } from 'virtua'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '@ownxai/ui/components/context-menu'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/context-menu'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'

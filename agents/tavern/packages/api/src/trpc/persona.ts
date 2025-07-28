@@ -12,9 +12,9 @@ import { TRPCError } from '@trpc/server'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
-import { makeObjectNonempty } from '@ownxai/sdk'
+import { makeObjectNonempty } from '@cared/sdk'
 
-import { createOwnxClient } from '../ownx'
+import { createCaredClient } from '../cared'
 import { userProtectedProcedure } from '../trpc'
 import { deleteImage, deleteImages, uploadImage } from './utils'
 
@@ -535,9 +535,9 @@ export const personaRouter = {
         }
 
         // Check if chat exists by querying the external service
-        const ownx = createOwnxClient(ctx)
-        const ownxTrpc = ownx.trpc
-        await ownxTrpc.chat.byId.query({
+        const cared = createCaredClient(ctx)
+        const caredTrpc = cared.trpc
+        await caredTrpc.chat.byId.query({
           id: input.chatId,
         })
 
@@ -590,9 +590,9 @@ export const personaRouter = {
       }
 
       // Check if chat exists by querying the external service
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
-      await ownxTrpc.chat.byId.query({
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
+      await caredTrpc.chat.byId.query({
         id: input.chatId,
       })
 

@@ -1,4 +1,4 @@
-import { ToolCallPart, ToolResultPart } from 'ai'
+import type { ToolCallPart, ToolResultPart } from 'ai'
 import { z } from 'zod/v4'
 
 export type { ModelMessage } from 'ai'

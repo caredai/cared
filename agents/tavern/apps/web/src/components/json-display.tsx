@@ -3,7 +3,7 @@
 import type { ComponentPropsWithoutRef } from 'react'
 import dynamic from 'next/dynamic'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 const ReactJson = dynamic(() => import('react-json-view'), {
   ssr: false,

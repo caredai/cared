@@ -9,12 +9,12 @@ import { ChevronDownIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod/v4'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+} from '@cared/ui/components/collapsible'
 import {
   Form,
   FormControl,
@@ -22,19 +22,19 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
-import { MultiSelectVirtual } from '@ownxai/ui/components/multi-select-virtual'
+} from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
+import { MultiSelectVirtual } from '@cared/ui/components/multi-select-virtual'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Switch } from '@ownxai/ui/components/switch'
-import { Textarea } from '@ownxai/ui/components/textarea'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/select'
+import { Switch } from '@cared/ui/components/switch'
+import { Textarea } from '@cared/ui/components/textarea'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CheckboxField } from '@/components/checkbox-field'
 import { FaButton } from '@/components/fa-button'

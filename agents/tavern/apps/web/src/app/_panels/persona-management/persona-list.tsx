@@ -4,8 +4,8 @@ import { faComments, faLock, faUser } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Virtualizer } from 'virtua'
 
-import { Button } from '@ownxai/ui/components/button'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Button } from '@cared/ui/components/button'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CharacterAvatar } from '@/components/avatar'
 import { ImageCropDialog } from '@/components/image-crop-dialog'

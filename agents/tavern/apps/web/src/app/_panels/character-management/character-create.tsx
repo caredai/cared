@@ -22,8 +22,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@ownxai/ui/components/dropdown-menu'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/dropdown-menu'
+import { cn } from '@cared/ui/lib/utils'
 
 import type { CharacterAdvancedFormValues } from './character-advanced-form'
 import type { CharacterBasicFormValues } from './character-basic-form'

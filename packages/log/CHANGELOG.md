@@ -1,7 +1,7 @@
-# @ownxai/log
+# @cared/log
 
-## 0.1.1
+## 0.1.3
 
 ### Patch Changes
 
-- Fix build issue
+- rename ownx to cared

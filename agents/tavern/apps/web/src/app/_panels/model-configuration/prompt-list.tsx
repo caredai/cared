@@ -32,9 +32,9 @@ import { systemPromptIdentifiers } from '@tavern/core'
 import { createPortal } from 'react-dom'
 import { v7 as uuid } from 'uuid'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Switch } from '@ownxai/ui/components/switch'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Button } from '@cared/ui/components/button'
+import { Switch } from '@cared/ui/components/switch'
+import { cn } from '@cared/ui/lib/utils'
 
 import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
 import { useCustomizeModelPreset } from '@/hooks/use-model-preset'

@@ -11,23 +11,23 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod/v4'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
-import { Form } from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/collapsible'
+import { Form } from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Separator } from '@ownxai/ui/components/separator'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/select'
+import { Separator } from '@cared/ui/components/separator'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CheckboxField } from '@/components/checkbox-field'
 import { FaButton } from '@/components/fa-button'

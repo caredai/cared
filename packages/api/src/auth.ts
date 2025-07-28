@@ -4,10 +4,10 @@ import { base64Url } from '@better-auth/utils/base64'
 import { createHash } from '@better-auth/utils/hash'
 import { TRPCError } from '@trpc/server'
 
-import { auth as authApi } from '@ownxai/auth'
-import { eq } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
-import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@ownxai/db/schema'
+import { auth as authApi } from '@cared/auth'
+import { eq } from '@cared/db'
+import { db } from '@cared/db/client'
+import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@cared/db/schema'
 
 export type Auth =
   // for user auth

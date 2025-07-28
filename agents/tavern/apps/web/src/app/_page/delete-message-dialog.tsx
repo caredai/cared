@@ -2,7 +2,7 @@ import type { Message } from '@tavern/core'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -11,16 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
+} from '@cared/ui/components/dialog'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useDeleteMessage } from '@/hooks/use-message'
 import { useActiveChat } from '@/hooks/use-chat'
+import { useDeleteMessage } from '@/hooks/use-message'
 
-export function DeleteMessageDialog({ 
-  trigger, 
-  message 
-}: { 
+export function DeleteMessageDialog({
+  trigger,
+  message,
+}: {
   trigger: ReactNode
   message: Message
 }) {
@@ -70,4 +70,4 @@ export function DeleteMessageDialog({
       </DialogContent>
     </Dialog>
   )
-} 
+}

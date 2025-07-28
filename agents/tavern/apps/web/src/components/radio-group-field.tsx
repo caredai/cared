@@ -1,19 +1,19 @@
 import { ChevronDownIcon, HelpCircle } from 'lucide-react'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+} from '@cared/ui/components/collapsible'
 import {
   FormControl,
   FormDescription,
   FormField,
   FormItem,
   FormLabel,
-} from '@ownxai/ui/components/form'
-import { RadioGroup, RadioGroupItem } from '@ownxai/ui/components/radio-group'
+} from '@cared/ui/components/form'
+import { RadioGroup, RadioGroupItem } from '@cared/ui/components/radio-group'
 
 import { Tooltip } from '@/components/tooltip'
 

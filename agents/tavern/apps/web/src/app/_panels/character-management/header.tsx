@@ -5,7 +5,7 @@ import { useMemo, useRef } from 'react'
 import { faListUl, faLock, faUnlock } from '@fortawesome/free-solid-svg-icons'
 import { VList } from 'virtua'
 
-import { cn } from '@ownxai/ui/lib/utils'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CharacterAvatar, CharacterGroupAvatar } from '@/components/avatar'
 import { FaButton } from '@/components/fa-button'

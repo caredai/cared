@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { SiDiscord, SiGithub, SiX } from '@icons-pack/react-simple-icons'
 import { GraduationCap } from 'lucide-react'
 
-import { SidebarGroup, SidebarGroupContent, useSidebar } from '@ownxai/ui/components/sidebar'
-import { cn } from '@ownxai/ui/lib/utils'
+import { SidebarGroup, SidebarGroupContent, useSidebar } from '@cared/ui/components/sidebar'
+import { cn } from '@cared/ui/lib/utils'
 
 import { siteConfig } from '@/config/site'
 

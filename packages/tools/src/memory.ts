@@ -1,21 +1,13 @@
 import { tool } from 'ai'
 import { z } from 'zod/v4'
 
-import { and, eq } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
-import {
-  Agent,
-  AgentVersion,
-  App,
-  AppVersion,
-  Chat,
-  DRAFT_VERSION,
-  Memory,
-} from '@ownxai/db/schema'
-import { getTextEmbeddingModelInfo } from '@ownxai/providers'
-import { embed } from '@ownxai/providers/embed'
-import { CohereReranker } from '@ownxai/providers/rerank'
-import { QdrantVector } from '@ownxai/vdb'
+import { and, eq } from '@cared/db'
+import { db } from '@cared/db/client'
+import { Agent, AgentVersion, App, AppVersion, Chat, DRAFT_VERSION, Memory } from '@cared/db/schema'
+import { getTextEmbeddingModelInfo } from '@cared/providers'
+import { embed } from '@cared/providers/embed'
+import { CohereReranker } from '@cared/providers/rerank'
+import { QdrantVector } from '@cared/vdb'
 
 import type { Context } from './context'
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@ownxai/ui/components/dialog'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/dialog'
+import { Input } from '@cared/ui/components/input'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useCreateLorebook, useLorebooks } from '@/hooks/use-lorebook'

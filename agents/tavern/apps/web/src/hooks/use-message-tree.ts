@@ -156,13 +156,16 @@ export function useBuildMessageTree() {
     [setBranch],
   )
 
-  const update = useCallback((id: string, update: (message: Message) => Message) => {
-    const node = branchRef.current.find((node) => node.message.id === id)
-    if (node) {
-      node.message = update(node.message)
-      setBranch(branchRef.current)
-    }
-  }, [setBranch])
+  const update = useCallback(
+    (id: string, update: (message: Message) => Message) => {
+      const node = branchRef.current.find((node) => node.message.id === id)
+      if (node) {
+        node.message = update(node.message)
+        setBranch(branchRef.current)
+      }
+    },
+    [setBranch],
+  )
 
   return {
     isChatLoading,

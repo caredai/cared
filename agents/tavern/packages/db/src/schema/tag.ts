@@ -1,7 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import { index, pgTable, primaryKey, text } from 'drizzle-orm/pg-core'
 
-import { timestamps, timestampsIndices } from '@ownxai/sdk'
+import { timestamps, timestampsIndices } from '@cared/sdk'
 
 import { Character } from './character'
 

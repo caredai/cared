@@ -19,17 +19,17 @@ const OUTPUT_PATH = path.resolve(__dirname, '../../sdk/src/api.d.ts')
 const PACKAGES_ROOT = path.resolve(__dirname, '../../')
 
 // Define special type definitions for external dependencies
-const EXTERNAL_TYPE_DEFINITIONS = `export * from '@ownxai/shared'
+const EXTERNAL_TYPE_DEFINITIONS = `export * from '@cared/shared'
 `
 
 /**
- * Maps a @ownxai import path to actual file path in monorepo
- * Example: @ownxai/db/schema/app -> packages/db/src/schema/app.ts
- *          @ownxai/db/schema -> packages/db/src/schema/index.ts
+ * Maps a @cared import path to actual file path in monorepo
+ * Example: @cared/db/schema/app -> packages/db/src/schema/app.ts
+ *          @cared/db/schema -> packages/db/src/schema/index.ts
  */
 function resolveMonorepoPath(importPath: string): string {
-  // Remove quotes and @ownxai prefix
-  const cleanPath = importPath.replace(/["']/g, '').replace('@ownxai/', '')
+  // Remove quotes and @cared prefix
+  const cleanPath = importPath.replace(/["']/g, '').replace('@cared/', '')
 
   // Split into package name and subpath
   const [pkgName, ...subPaths] = cleanPath.split('/')
@@ -92,7 +92,7 @@ async function extractTypeDefinition(
       const typeName = node.name.getText(parsedSourceFile)
 
       // Only extract the type if it matches one we're looking for
-      if (ownxaiImports.get(importPath)?.has(typeName)) {
+      if (caredImports.get(importPath)?.has(typeName)) {
         typeDefinition +=
           sourceContent.slice(node.getStart(parsedSourceFile), node.getEnd()) + '\n\n'
       }
@@ -144,26 +144,26 @@ async function extractTypeDefinition(
 const content = fs.readFileSync(ROOT_DTS_PATH, 'utf-8')
 const rootSourceFile = ts.createSourceFile('root.d.ts', content, ts.ScriptTarget.Latest, true)
 
-// Find all @ownxai imports and their type references
-const ownxaiImports = new Map<string, Set<string>>()
+// Find all @cared imports and their type references
+const caredImports = new Map<string, Set<string>>()
 const typeReplacements = new Map<string, string>()
 
 function visitNode(node: ts.Node) {
   if (ts.isImportTypeNode(node)) {
     const importPath = node.argument.getText(rootSourceFile)
-    if (importPath.includes('@ownxai')) {
+    if (importPath.includes('@cared')) {
       // Skip DB client type
-      if (importPath.includes('@ownxai/db/client') || importPath.includes('@ownxai/shared')) {
+      if (importPath.includes('@cared/db/client') || importPath.includes('@cared/shared')) {
         return
       }
 
       const qualifier = node.qualifier?.getText(rootSourceFile)
       if (qualifier) {
         const importKey = importPath
-        if (!ownxaiImports.has(importKey)) {
-          ownxaiImports.set(importKey, new Set())
+        if (!caredImports.has(importKey)) {
+          caredImports.set(importKey, new Set())
         }
-        ownxaiImports.get(importKey)!.add(qualifier)
+        caredImports.get(importKey)!.add(qualifier)
 
         // Create replacement mapping
         const fullType = `import(${importPath}).${qualifier}`
@@ -179,7 +179,7 @@ visitNode(rootSourceFile)
 // Extract type definitions for all found imports
 let typeDefinitions = EXTERNAL_TYPE_DEFINITIONS + '\n'
 // @ts-ignore
-for (const [importPath, types] of ownxaiImports) {
+for (const [importPath, types] of caredImports) {
   // @ts-ignore
   const typeDef = await extractTypeDefinition(importPath)
   if (typeDef) {
@@ -187,7 +187,7 @@ for (const [importPath, types] of ownxaiImports) {
   }
 }
 
-// Replace all @ownxai imports with our local type definitions
+// Replace all @cared imports with our local type definitions
 let output = content
 // @ts-ignore
 for (const [fullType, replacement] of typeReplacements) {
@@ -204,7 +204,7 @@ output = output
     '// eslint-disable-next-line @typescript-eslint/no-unused-vars\ndeclare const appRouter',
   )
   .replace(/ctx: \{[^}]+\}/g, 'ctx: any')
-  .replace(/export type AppRouter/g, 'export type OwnxTrpcRouter')
+  .replace(/export type AppRouter/g, 'export type CaredTrpcRouter')
   .replace(
     /errorShape: \{[\s\S]*?data: \{[\s\S]*?\};[\s\S]*?\}/g,
     'errorShape: import("@trpc/server/unstable-core-do-not-import").DefaultErrorShape',

@@ -3,8 +3,8 @@ import type { TagImportOption } from '@tavern/core'
 import { useEffect, useMemo, useState } from 'react'
 import { atom, useAtom } from 'jotai'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Checkbox } from '@ownxai/ui/components/checkbox'
+import { Button } from '@cared/ui/components/button'
+import { Checkbox } from '@cared/ui/components/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@ownxai/ui/components/dialog'
+} from '@cared/ui/components/dialog'
 
 import { Tag } from '@/components/tag'
 import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'

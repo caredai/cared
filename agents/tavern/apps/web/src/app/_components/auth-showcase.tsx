@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { authClient } from '@tavern/auth/client'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 
 import { signIn } from '@/lib/sign-in'
 import { useTRPC } from '@/trpc/client'

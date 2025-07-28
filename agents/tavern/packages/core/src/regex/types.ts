@@ -43,11 +43,9 @@ export const regexScriptSchema = z
     }),
     replaceString: z.string(),
     trimStrings: z.array(z.string()),
-    placement: z
-      .array(z.enum(RegexPlacement))
-      .refine((arr) => arr.length === new Set(arr).size, {
-        message: 'Placement values must be unique',
-      }),
+    placement: z.array(z.enum(RegexPlacement)).refine((arr) => arr.length === new Set(arr).size, {
+      message: 'Placement values must be unique',
+    }),
     disabled: z.boolean(),
     displayOnly: z.boolean(),
     promptOnly: z.boolean(),

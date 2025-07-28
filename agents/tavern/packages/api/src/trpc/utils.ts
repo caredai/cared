@@ -137,4 +137,3 @@ export async function retrieveImage(url: string): Promise<Uint8Array> {
 
   return bytes
 }
-

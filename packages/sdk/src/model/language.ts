@@ -4,9 +4,9 @@ import type {
   LanguageModelV2StreamPart,
 } from '@ai-sdk/provider'
 
-import { regexFromString } from '@ownxai/shared'
+import { regexFromString } from '@cared/shared'
 
-import type { OwnxClientOptions } from '../client'
+import type { CaredClientOptions } from '../client'
 import { makeHeaders } from '../client'
 
 const NEWLINE = '\n'.charCodeAt(0)
@@ -65,7 +65,7 @@ async function* processStream(
 
 export async function createLanguageModel(
   modelId: string,
-  opts: OwnxClientOptions,
+  opts: CaredClientOptions,
 ): Promise<LanguageModelV2> {
   const url = opts.apiUrl + '/api/v1/model/language'
 

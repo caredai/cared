@@ -1,15 +1,15 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { SQL } from '@ownxai/db'
-import { and, asc, count, desc, eq, gt, gte, inArray, lt } from '@ownxai/db'
+import type { SQL } from '@cared/db'
+import { and, asc, count, desc, eq, gt, gte, inArray, lt } from '@cared/db'
 import {
   CreateMessageSchema,
   CreateMessageVoteSchema,
   Message,
   messageContentSchema,
   MessageVote,
-} from '@ownxai/db/schema'
+} from '@cared/db/schema'
 
 import type { Context } from '../trpc'
 import { appUserProtectedProcedure } from '../trpc'
@@ -129,10 +129,7 @@ export const messageRouter = {
       await getChatById(ctx, input.chatId)
 
       const messages = await ctx.db.query.Message.findMany({
-        where: and(
-          eq(Message.chatId, input.chatId),
-          inArray(Message.id, input.ids)
-        ),
+        where: and(eq(Message.chatId, input.chatId), inArray(Message.id, input.ids)),
       })
 
       return { messages }

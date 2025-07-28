@@ -2,9 +2,9 @@ import { DeleteObjectCommand, DeleteObjectsCommand, HeadObjectCommand } from '@a
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { SQL } from '@ownxai/db'
-import type { DatasetMetadata } from '@ownxai/db/schema'
-import { and, desc, eq, gt, lt } from '@ownxai/db'
+import type { SQL } from '@cared/db'
+import type { DatasetMetadata } from '@cared/db/schema'
+import { and, desc, eq, gt, lt } from '@cared/db'
 import {
   CreateDatasetSchema,
   CreateDocumentChunkSchema,
@@ -18,10 +18,10 @@ import {
   UpdateDocumentChunkSchema,
   UpdateDocumentSchema,
   UpdateDocumentSegmentSchema,
-} from '@ownxai/db/schema'
-import { log } from '@ownxai/log'
-import { defaultModels } from '@ownxai/providers'
-import { mergeWithoutUndefined } from '@ownxai/shared'
+} from '@cared/db/schema'
+import { log } from '@cared/log'
+import { defaultModels } from '@cared/providers'
+import { mergeWithoutUndefined } from '@cared/shared'
 
 import type { Context } from '../trpc'
 import { env } from '../env'

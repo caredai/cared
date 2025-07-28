@@ -1,12 +1,12 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { ProviderId } from '@ownxai/providers'
-import { eq } from '@ownxai/db'
-import { db } from '@ownxai/db/client'
-import { UserSecret, WorkspaceSecret } from '@ownxai/db/schema'
-import { providers } from '@ownxai/providers/providers'
-import { decrypt, encrypt } from '@ownxai/shared'
+import type { ProviderId } from '@cared/providers'
+import { eq } from '@cared/db'
+import { db } from '@cared/db/client'
+import { UserSecret, WorkspaceSecret } from '@cared/db/schema'
+import { providers } from '@cared/providers/providers'
+import { decrypt, encrypt } from '@cared/shared'
 
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'

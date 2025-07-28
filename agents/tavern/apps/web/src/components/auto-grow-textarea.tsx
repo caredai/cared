@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react'
 import * as React from 'react'
 
-import { Textarea } from '@ownxai/ui/components/textarea'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Textarea } from '@cared/ui/components/textarea'
+import { cn } from '@cared/ui/lib/utils'
 
 export function AutoGrowTextarea({
   className,

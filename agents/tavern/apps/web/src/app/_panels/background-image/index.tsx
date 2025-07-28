@@ -10,7 +10,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
+} from '@cared/ui/components/select'
 
 import { useBackgroundSettings, useUpdateSettingsMutation } from '@/hooks/use-settings'
 import { cn } from '@/lib/utils'

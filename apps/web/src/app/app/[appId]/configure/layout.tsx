@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { KeyIcon, UsersIcon } from 'lucide-react'
 
-import { TabsContent, TabsList, TabsTrigger } from '@ownxai/ui/components/tabs'
+import { TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
 
 import NavTabs from './nav-tabs'
 

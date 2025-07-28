@@ -3,20 +3,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as Portal from '@radix-ui/react-portal'
 import {
-  characterCardV3ExtensionsSchema,
   characterCardV2Schema,
+  characterCardV3ExtensionsSchema,
   extractExtensions,
 } from '@tavern/core'
 import { ChevronDownIcon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod/v4'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@ownxai/ui/components/collapsible'
+} from '@cared/ui/components/collapsible'
 import {
   Form,
   FormControl,
@@ -25,18 +25,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
+} from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Separator } from '@ownxai/ui/components/separator'
-import { Slider } from '@ownxai/ui/components/slider'
-import { Textarea } from '@ownxai/ui/components/textarea'
+} from '@cared/ui/components/select'
+import { Separator } from '@cared/ui/components/separator'
+import { Slider } from '@cared/ui/components/slider'
+import { Textarea } from '@cared/ui/components/textarea'
 
 import { isCharacter, useActiveCharacterOrGroup } from '@/hooks/use-character-or-group'
 import { useContentAreaRef, useIsShowCharacterAdvancedView } from '@/hooks/use-show-in-content-area'

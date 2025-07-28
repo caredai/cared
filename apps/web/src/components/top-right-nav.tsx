@@ -5,7 +5,7 @@ import { usePrivy } from '@privy-io/react-auth'
 import { FaWallet } from 'react-icons/fa6'
 import { VscDebugDisconnect } from 'react-icons/vsc'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 
 import { ThemeSwitcher } from '@/components/theme'
 import { WalletInfo } from '@/components/wallet-info'

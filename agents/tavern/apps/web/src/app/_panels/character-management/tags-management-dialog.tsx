@@ -35,7 +35,7 @@ import { SketchPicker } from 'react-color'
 import { createPortal } from 'react-dom'
 import { VList } from 'virtua'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -43,10 +43,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@ownxai/ui/components/dialog'
-import { Input } from '@ownxai/ui/components/input'
-import { Popover, PopoverContent, PopoverTrigger } from '@ownxai/ui/components/popover'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/dialog'
+import { Input } from '@cared/ui/components/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
+import { cn } from '@cared/ui/lib/utils'
 
 import { FaButton, FaButtonWithBadge } from '@/components/fa-button'
 import { useTagsSettings, useUpdateTagsSettings } from '@/hooks/use-settings'

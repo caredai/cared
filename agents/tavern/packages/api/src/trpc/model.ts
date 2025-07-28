@@ -1,11 +1,11 @@
-import { createOwnxClient } from '../ownx'
+import { createCaredClient } from '../cared'
 import { userProtectedProcedure } from '../trpc'
 
 export const modelRouter = {
   list: userProtectedProcedure.query(async ({ ctx }) => {
-    const ownx = createOwnxClient(ctx)
-    const ownxTrpc = ownx.trpc
+    const cared = createCaredClient(ctx)
+    const caredTrpc = cared.trpc
 
-    return await ownxTrpc.model.listProvidersModels.query()
+    return await caredTrpc.model.listProvidersModels.query()
   }),
 }

@@ -494,16 +494,19 @@ export function useCachedMessage(chat?: Chat) {
   )
 
   const deleteCachedMessage = useCallback(
-    async (id: string, {
-      deleteTrailing,
-      excludeSelf,
-    }: {
-      deleteTrailing?: boolean
-      excludeSelf?: boolean
-    } = {
-      deleteTrailing: false,
-      excludeSelf: false,
-    }) => {
+    async (
+      id: string,
+      {
+        deleteTrailing,
+        excludeSelf,
+      }: {
+        deleteTrailing?: boolean
+        excludeSelf?: boolean
+      } = {
+        deleteTrailing: false,
+        excludeSelf: false,
+      },
+    ) => {
       if (!chatId) return
 
       await queryClient.cancelQueries({

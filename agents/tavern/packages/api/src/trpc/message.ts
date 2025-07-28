@@ -2,7 +2,7 @@ import type { Message } from '@tavern/core'
 import { messageContentSchema } from '@tavern/core'
 import { z } from 'zod/v4'
 
-import { createOwnxClient } from '../ownx'
+import { createCaredClient } from '../cared'
 import { userProtectedProcedure } from '../trpc'
 
 export const messageRouter = {
@@ -15,10 +15,10 @@ export const messageRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
-      const { messages, hasMore, last } = await ownxTrpc.message.list.query({
+      const { messages, hasMore, last } = await caredTrpc.message.list.query({
         chatId: input.chatId,
         before: input.cursor,
         limit: input.limit,
@@ -44,11 +44,11 @@ export const messageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
       const { id, parentId, chatId, role, content, isRoot } = input
-      const { message } = await ownxTrpc.message.create.mutate({
+      const { message } = await caredTrpc.message.create.mutate({
         id,
         parentId,
         chatId,
@@ -70,10 +70,10 @@ export const messageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
-      const { message } = await ownxTrpc.message.update.mutate({
+      const { message } = await caredTrpc.message.update.mutate({
         id: input.id,
         ...(input.content && { content: input.content }),
       })
@@ -92,10 +92,10 @@ export const messageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const ownx = createOwnxClient(ctx)
-      const ownxTrpc = ownx.trpc
+      const cared = createCaredClient(ctx)
+      const caredTrpc = cared.trpc
 
-      const { messages } = await ownxTrpc.message.delete.mutate(input)
+      const { messages } = await caredTrpc.message.delete.mutate(input)
 
       return { messages: messages as Message[] }
     }),

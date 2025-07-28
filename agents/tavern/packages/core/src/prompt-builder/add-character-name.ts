@@ -1,5 +1,5 @@
-import type { ReducedMessage } from '../types'
 import type { ModelPreset } from '../model-preset'
+import type { ReducedMessage } from '../types'
 
 export function addCharacterName(
   message: ReducedMessage,

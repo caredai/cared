@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
-import { FormControl, FormField, FormItem, FormLabel } from '@ownxai/ui/components/form'
-import { Slider } from '@ownxai/ui/components/slider'
+import { FormControl, FormField, FormItem, FormLabel } from '@cared/ui/components/form'
+import { Slider } from '@cared/ui/components/slider'
 
 import { NumberInput } from './number-input'
 

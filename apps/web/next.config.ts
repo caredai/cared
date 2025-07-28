@@ -11,14 +11,14 @@ const config = {
 
   /** Enables hot reloading for local packages without a build step */
   transpilePackages: [
-    '@ownxai/api',
-    '@ownxai/auth',
-    '@ownxai/db',
-    '@ownxai/i18n',
-    '@ownxai/kv',
-    '@ownxai/providers',
-    '@ownxai/tokenizer',
-    '@ownxai/ui',
+    '@cared/api',
+    '@cared/auth',
+    '@cared/db',
+    '@cared/i18n',
+    '@cared/kv',
+    '@cared/providers',
+    '@cared/tokenizer',
+    '@cared/ui',
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

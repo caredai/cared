@@ -18,20 +18,20 @@
     "format:fix": "turbo run format --continue -- --write --cache --cache-location .cache/.prettiercache",
     "lint": "turbo run lint --continue -- --cache --cache-location .cache/.eslintcache",
     "lint:fix": "turbo run lint --continue -- --fix --cache --cache-location .cache/.eslintcache",
-    "lint:ws": "pnpm dlx sherif@latest",
+    "lint:ws": "pnpm dlx sherif@latest -f",
     "postinstall": "pnpm lint:ws",
     "typecheck": "turbo run typecheck",
     "ui-add": "turbo run ui-add"
   },
   "devDependencies": {
-    "@ownxai/prettier-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
     "@turbo/gen": "^2.3.4",
     "prettier": "catalog:",
     "taze": "^19.0.4",
     "turbo": "^2.3.4",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config",
+  "prettier": "@cared/prettier-config",
   "pnpm": {
     "overrides": {
       "zod": "3.25.51"

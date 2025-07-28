@@ -21,7 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@ownxai/ui/components/dropdown-menu'
+} from '@cared/ui/components/dropdown-menu'
 
 import { AutoGrowTextarea } from '@/components/auto-grow-textarea'
 import { cn } from '@/lib/utils'

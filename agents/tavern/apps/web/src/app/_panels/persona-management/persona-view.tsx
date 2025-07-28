@@ -1,6 +1,13 @@
 import type { VListHandle } from 'virtua'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { faClone, faCrown, faLock, faSkull, faUnlock, faBookAtlas } from '@fortawesome/free-solid-svg-icons'
+import {
+  faBookAtlas,
+  faClone,
+  faCrown,
+  faLock,
+  faSkull,
+  faUnlock,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PersonaPosition } from '@tavern/core'
@@ -8,7 +15,7 @@ import { useForm } from 'react-hook-form'
 import { VList } from 'virtua'
 import { z } from 'zod/v4'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Form,
   FormControl,
@@ -16,18 +23,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
-import { Label } from '@ownxai/ui/components/label'
+} from '@cared/ui/components/form'
+import { Input } from '@cared/ui/components/input'
+import { Label } from '@cared/ui/components/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { Textarea } from '@ownxai/ui/components/textarea'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/select'
+import { Textarea } from '@cared/ui/components/textarea'
+import { cn } from '@cared/ui/lib/utils'
 
 import { useClearAllFlags } from '@/app/_panels/character-management/hooks'
 import { CharacterAvatar, CharacterGroupAvatar } from '@/components/avatar'

@@ -1,5 +1,5 @@
 {
-  "name": "@ownxai/providers",
+  "name": "@cared/providers",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -50,13 +50,13 @@
     "cohere-ai": "^7.16.0"
   },
   "devDependencies": {
-    "@ownxai/eslint-config": "workspace:*",
-    "@ownxai/prettier-config": "workspace:*",
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "tsx": "^4.19.3",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config"
+  "prettier": "@cared/prettier-config"
 }

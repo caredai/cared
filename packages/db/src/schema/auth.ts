@@ -1,6 +1,6 @@
 import { boolean, index, integer, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 
-import { timestampsIndices } from '@ownxai/shared'
+import { timestampsIndices } from '@cared/shared'
 
 export const user = pgTable(
   'user',

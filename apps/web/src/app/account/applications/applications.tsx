@@ -4,8 +4,8 @@ import Image from 'next/image'
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Card, CardContent, CardDescription, CardTitle } from '@ownxai/ui/components/card'
+import { Button } from '@cared/ui/components/button'
+import { Card, CardContent, CardDescription, CardTitle } from '@cared/ui/components/card'
 
 import { RemoteImage } from '@/components/image'
 import { CircleSpinner } from '@/components/spinner'

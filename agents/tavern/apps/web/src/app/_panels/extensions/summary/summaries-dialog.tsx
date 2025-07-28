@@ -4,9 +4,9 @@ import { format } from 'date-fns'
 import { RotateCcw, Trash2 } from 'lucide-react'
 import { Virtualizer } from 'virtua'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ownxai/ui/components/dialog'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Button } from '@cared/ui/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@cared/ui/components/dialog'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useDeleteSummary, useSummaries } from '@/hooks/use-summary'

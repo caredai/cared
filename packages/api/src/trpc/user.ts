@@ -2,8 +2,8 @@ import { headers } from 'next/headers'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import { auth } from '@ownxai/auth'
-import { and, desc, eq, inArray } from '@ownxai/db'
+import { auth } from '@cared/auth'
+import { and, desc, eq, inArray } from '@cared/db'
 import {
   Account,
   App,
@@ -13,7 +13,7 @@ import {
   OAuthConsent,
   User,
   Workspace,
-} from '@ownxai/db/schema'
+} from '@cared/db/schema'
 
 import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { formatOAuthApp } from './oauth-app'

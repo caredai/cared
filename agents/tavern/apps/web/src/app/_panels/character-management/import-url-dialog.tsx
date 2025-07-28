@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-import { Button } from '@ownxai/ui/components/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@ownxai/ui/components/dialog'
-import { Textarea } from '@ownxai/ui/components/textarea'
+import { Button } from '@cared/ui/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@cared/ui/components/dialog'
+import { Textarea } from '@cared/ui/components/textarea'
 
 import { useImportTags } from '@/app/_panels/character-management/import-tags-dialog'
 import { CircleSpinner } from '@/components/spinner'

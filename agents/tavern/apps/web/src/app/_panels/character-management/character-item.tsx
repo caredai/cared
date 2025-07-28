@@ -1,8 +1,8 @@
 import type { Character } from '@/hooks/use-character'
 import type { CharacterGroup } from '@/hooks/use-character-group'
 
-import { Checkbox } from '@ownxai/ui/components/checkbox'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Checkbox } from '@cared/ui/components/checkbox'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CharacterAvatar, CharacterGroupAvatar } from '@/components/avatar'
 import { Tag } from '@/components/tag'

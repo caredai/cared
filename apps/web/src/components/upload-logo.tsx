@@ -7,15 +7,15 @@ import { PencilIcon, UploadIcon, XIcon } from 'lucide-react'
 import { usePresignedUpload } from 'next-s3-upload'
 import { toast } from 'sonner'
 
-import type { s3Upload } from '@ownxai/api/rest'
-import { Button } from '@ownxai/ui/components/button'
+import type { s3Upload } from '@cared/api/rest'
+import { Button } from '@cared/ui/components/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@ownxai/ui/components/dropdown-menu'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/dropdown-menu'
+import { cn } from '@cared/ui/lib/utils'
 
 import { RemoteImage } from '@/components/image'
 import { Spinner } from '@/components/spinner'

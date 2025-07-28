@@ -2,34 +2,34 @@ import { eq } from '@tavern/db'
 import { Account } from '@tavern/db/schema'
 import AsyncLock from 'async-lock'
 
-import { OwnxClient } from '@ownxai/sdk'
+import { CaredClient } from '@cared/sdk'
 
 import type { Context } from './trpc'
 import { env } from './env'
 
 const lock = new AsyncLock()
 
-export function createOwnxClient(ctx: Context, useApiKey?: boolean) {
-  return new OwnxClient(
+export function createCaredClient(ctx: Context, useApiKey?: boolean) {
+  return new CaredClient(
     useApiKey
       ? {
-          apiKey: env.OWNX_API_KEY,
+          apiKey: env.CARED_API_KEY,
           userId: ctx.auth.userId!,
         }
       : {
           accessToken: async () => {
-            return await lock.acquire(ctx.auth.userId!, () => getOwnxUserToken(ctx))
+            return await lock.acquire(ctx.auth.userId!, () => getCaredUserToken(ctx))
           },
         },
   )
 }
 
 // TODO: cache
-async function getOwnxUserToken(ctx: Context) {
+async function getCaredUserToken(ctx: Context) {
   const account = await ctx.db.query.Account.findFirst({
     where: eq(Account.userId, ctx.auth.userId!),
   })
-  if (!account || account.providerId !== 'ownx') {
+  if (!account || account.providerId !== 'cared') {
     throw new Error('Account not found')
   }
 
@@ -38,7 +38,7 @@ async function getOwnxUserToken(ctx: Context) {
   // Refresh token if it's expired
   if (+account.accessTokenExpiresAt! - +new Date() < 1000 * 60) {
     const result = (await (
-      await fetch(env.OWNX_API_URL + '/auth/oauth2/token', {
+      await fetch(env.CARED_API_URL + '/auth/oauth2/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ async function getOwnxUserToken(ctx: Context) {
         body: JSON.stringify({
           grant_type: 'refresh_token',
           refresh_token: account.refreshToken!,
-          client_id: env.OWNX_CLIENT_ID,
+          client_id: env.CARED_CLIENT_ID,
         }),
       })
     ).json()) as any

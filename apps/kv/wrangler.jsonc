@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "ownx-kv",
+  "name": "cared-kv",
   "main": "src/index.ts",
   "compatibility_date": "2025-03-26",
   // "compatibility_flags": [
@@ -9,12 +9,12 @@
   // "vars": {
   //   "MY_VAR": "my-variable"
   // },
-   "kv_namespaces": [
-     {
-       "binding": "OWNX",
-       "id": "97c9fe2e939c49ceb2bbe4ff2ee1d714"
-     }
-   ]
+  "kv_namespaces": [
+    {
+      "binding": "CARED",
+      "id": "97c9fe2e939c49ceb2bbe4ff2ee1d714",
+    },
+  ],
   // "r2_buckets": [
   //   {
   //     "binding": "MY_BUCKET",

@@ -1,5 +1,5 @@
 {
-  "name": "@ownxai/prettier-config",
+  "name": "@cared/prettier-config",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -17,10 +17,10 @@
     "prettier-plugin-tailwindcss": "^0.6.10"
   },
   "devDependencies": {
-    "@ownxai/tsconfig": "workspace:*",
+    "@cared/tsconfig": "workspace:*",
     "prettier-plugin-multiline-arrays": "^4.0.2",
     "prettier-plugin-sort-json": "^4.1.1",
     "typescript": "catalog:"
   },
-  "prettier": "@ownxai/prettier-config"
+  "prettier": "@cared/prettier-config"
 }

@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation'
 import { File, Laptop, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
-import type { Dialog } from '@ownxai/ui/components/dialog'
-import { Button } from '@ownxai/ui/components/button'
+import type { Dialog } from '@cared/ui/components/dialog'
+import { Button } from '@cared/ui/components/button'
 import {
   CommandDialog,
   CommandEmpty,
@@ -15,8 +15,8 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@ownxai/ui/components/command'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/command'
+import { cn } from '@cared/ui/lib/utils'
 
 import { menuConfig } from '@/config/menu'
 

@@ -7,7 +7,7 @@ import { Chat as AIChat, useChat } from '@ai-sdk/react'
 import { buildPromptMessages, toUIMessages } from '@tavern/core'
 import { DefaultChatTransport } from 'ai'
 
-import { generateMessageId } from '@ownxai/sdk'
+import { generateMessageId } from '@cared/sdk'
 
 import { CircleSpinner } from '@/components/spinner'
 import { useActivateCharacters, useActivatedCharacters } from '@/hooks/use-activate-characters'

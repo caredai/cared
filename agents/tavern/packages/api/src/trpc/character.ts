@@ -1,17 +1,18 @@
 import type { CreateCharacterSchema } from '@tavern/db/schema'
-import {
+import type {
   CharacterCardV1,
   CharacterCardV2,
   CharacterCardV3,
+  LorebookEntry,
+  LorebookV3,
+  lorebookV3Schema} from '@tavern/core';
+import {
   characterCardV3Schema,
   convertToV3,
   extractExtensions,
   formatExtensions,
   importUrl,
   lorebookEntriesSchema,
-  LorebookEntry,
-  LorebookV3,
-  lorebookV3Schema,
   pngRead,
   pngWrite,
   Position,
@@ -31,7 +32,7 @@ import sanitize from 'sanitize-filename'
 import hash from 'stable-hash'
 import { z } from 'zod/v4'
 
-import { createOwnxClient } from '../ownx'
+import { createCaredClient } from '../cared'
 import { userProtectedProcedure } from '../trpc'
 import { deleteImage, deleteImages, retrieveImage, uploadImage } from './utils'
 
@@ -678,13 +679,13 @@ export const characterRouter = {
 
       // Delete chats in batches of 100
       if (characterChats.length > 0) {
-        const ownx = createOwnxClient(ctx)
-        const ownxTrpc = ownx.trpc
+        const cared = createCaredClient(ctx)
+        const caredTrpc = cared.trpc
 
         const chatIds = characterChats.map((cc) => cc.chatId)
 
         for (let i = 0; i < chatIds.length; i += 100) {
-          await ownxTrpc.chat.batchDelete.mutate({
+          await caredTrpc.chat.batchDelete.mutate({
             ids: chatIds.slice(i, i + 100),
           })
         }
@@ -738,13 +739,13 @@ export const characterRouter = {
 
       // Delete chats in batches of 100
       if (characterChats.length > 0) {
-        const ownx = createOwnxClient(ctx)
-        const ownxTrpc = ownx.trpc
+        const cared = createCaredClient(ctx)
+        const caredTrpc = cared.trpc
 
         const chatIds = characterChats.map((cc) => cc.chatId)
 
         for (let i = 0; i < chatIds.length; i += 100) {
-          await ownxTrpc.chat.batchDelete.mutate({
+          await caredTrpc.chat.batchDelete.mutate({
             ids: chatIds.slice(i, i + 100),
           })
         }

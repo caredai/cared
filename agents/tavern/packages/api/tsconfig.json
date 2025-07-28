@@ -1,5 +1,5 @@
 {
-  "extends": "@ownxai/tsconfig/internal-package.json",
+  "extends": "@cared/tsconfig/internal-package.json",
   "compilerOptions": {
     "typeRoots": ["../../types"],
     "paths": {

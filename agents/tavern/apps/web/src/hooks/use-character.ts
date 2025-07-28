@@ -162,21 +162,23 @@ export function useImportCharactersFromUrls() {
           // If local importing failed, import url again at server side
         }
 
-        promises.push(createMutation.mutateAsync({
-          source: 'import-url',
-          fromUrl: url,
-          dataUrl,
-        }))
+        promises.push(
+          createMutation.mutateAsync({
+            source: 'import-url',
+            fromUrl: url,
+            dataUrl,
+          }),
+        )
       }
 
-      const characters = (await Promise.all(promises)).map(r => r.character)
+      const characters = (await Promise.all(promises)).map((r) => r.character)
 
-      if (characters.some(c => c.content.data.character_book?.entries.length)) {
+      if (characters.some((c) => c.content.data.character_book?.entries.length)) {
         void refetchLorebooks()
       }
 
       return {
-        characters
+        characters,
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

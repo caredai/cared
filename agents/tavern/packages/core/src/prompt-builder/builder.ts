@@ -1,4 +1,4 @@
-import type { ModelInfo } from '@ownxai/sdk'
+import type { ModelInfo } from '@cared/sdk'
 
 import type { MessageNode } from '../message'
 import type { ModelPreset } from '../model-preset'
@@ -51,6 +51,6 @@ export async function buildPromptMessages(params: BuildPromptMessagesParams) {
   return {
     promptMessages: modelMessages ?? [],
     promptCollections,
-    updatedTimedEffects
+    updatedTimedEffects,
   }
 }

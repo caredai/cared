@@ -13,7 +13,7 @@ import {
   faUnlock,
 } from '@fortawesome/free-solid-svg-icons'
 
-import { Button } from '@ownxai/ui/components/button'
+import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
   DialogContent,
@@ -21,17 +21,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@ownxai/ui/components/dialog'
-import { Input } from '@ownxai/ui/components/input'
-import { Label } from '@ownxai/ui/components/label'
+} from '@cared/ui/components/dialog'
+import { Input } from '@cared/ui/components/input'
+import { Label } from '@cared/ui/components/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ownxai/ui/components/select'
-import { cn } from '@ownxai/ui/lib/utils'
+} from '@cared/ui/components/select'
+import { cn } from '@cared/ui/lib/utils'
 
 import { FaButton } from '@/components/fa-button'
 import { JsonDisplay } from '@/components/json-display'

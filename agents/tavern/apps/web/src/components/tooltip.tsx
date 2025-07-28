@@ -2,8 +2,8 @@ import type { LucideIcon } from 'lucide-react'
 import * as React from 'react'
 import { InfoIcon } from 'lucide-react'
 
-import { Popover, PopoverContent, PopoverTrigger } from '@ownxai/ui/components/popover'
-import { cn } from '@ownxai/ui/lib/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
+import { cn } from '@cared/ui/lib/utils'
 
 interface TooltipProps {
   // Content to be displayed in the tooltip

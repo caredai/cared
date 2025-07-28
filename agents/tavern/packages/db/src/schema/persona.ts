@@ -3,7 +3,7 @@ import type { InferSelectModel } from 'drizzle-orm'
 import { relations } from 'drizzle-orm'
 import { index, jsonb, pgTable, primaryKey, text, unique } from 'drizzle-orm/pg-core'
 
-import { generateId, timestamps, timestampsIndices } from '@ownxai/sdk'
+import { generateId, timestamps, timestampsIndices } from '@cared/sdk'
 
 import { Character, CharGroup, User } from '.'
 

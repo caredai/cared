@@ -1,7 +1,7 @@
 import { Qdrant } from 'mem0ai/oss'
 
-import { getTextEmbeddingModelInfo } from '@ownxai/providers'
-import { QdrantVector } from '@ownxai/vdb'
+import { getTextEmbeddingModelInfo } from '@cared/providers'
+import { QdrantVector } from '@cared/vdb'
 
 export async function createVectorStore(fullModelId: string) {
   const modelInfo = await getTextEmbeddingModelInfo(fullModelId)

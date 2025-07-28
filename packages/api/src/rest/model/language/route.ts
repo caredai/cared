@@ -5,9 +5,9 @@ import { NextResponse } from 'next/server'
 import Ajv from 'ajv'
 import { z } from 'zod/v4'
 
-import log from '@ownxai/log'
-import { getModel } from '@ownxai/providers/providers'
-import { sharedV2ProviderOptionsSchema } from '@ownxai/shared'
+import log from '@cared/log'
+import { getModel } from '@cared/providers/providers'
+import { sharedV2ProviderOptionsSchema } from '@cared/shared'
 
 const ajv = new Ajv({ allErrors: true })
 

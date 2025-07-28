@@ -11,8 +11,8 @@ import {
   ComboboxGroup,
   ComboboxInput,
   ComboboxItem,
-} from '@ownxai/ui/components/combobox'
-import { Virtualized, VirtualizedVirtualizer } from '@ownxai/ui/components/virtualized'
+} from '@cared/ui/components/combobox'
+import { Virtualized, VirtualizedVirtualizer } from '@cared/ui/components/virtualized'
 
 import { FaButton } from '@/components/fa-button'
 import { ClosableTag } from '@/components/tag'
