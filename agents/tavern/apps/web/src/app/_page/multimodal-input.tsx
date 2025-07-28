@@ -2,7 +2,7 @@
 
 import type { Chat as AIChat, UseChatHelpers } from '@ai-sdk/react'
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons'
-import type { UIMessage } from '@tavern/core'
+import type { MessageNode, UIMessage } from '@tavern/core'
 import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react'
 import { useCallback } from 'react'
 import {
@@ -31,6 +31,7 @@ export function MultimodalInput({
   setInput,
   chatRef,
   status,
+  messages,
   setMessages,
   disabled,
   submit,
@@ -42,6 +43,7 @@ export function MultimodalInput({
   setInput: Dispatch<SetStateAction<string>>
   chatRef: RefObject<AIChat<UIMessage>>
   status: UseChatHelpers<UIMessage>['status']
+  messages: MessageNode[]
   setMessages: UseChatHelpers<UIMessage>['setMessages']
   disabled: boolean
   submit: (input: string) => void
@@ -62,11 +64,14 @@ export function MultimodalInput({
     setInput('')
   }, [disabled, status, input, setInput, submit])
 
+  const lastMessage = messages.at(-1)?.message
+
   const menuActions = [
     {
       action: regenerate,
       icon: faRotate,
       title: 'Regenerate',
+      disabled: lastMessage?.role !== 'assistant' || !lastMessage.parentId,
     },
     {
       action: impersonate,
@@ -77,6 +82,10 @@ export function MultimodalInput({
       action: continue_,
       icon: faArrowRight,
       title: 'Continue',
+      disabled:
+        lastMessage?.role !== 'assistant' ||
+        !lastMessage.parentId ||
+        lastMessage.content.metadata.excluded,
     },
   ]
 

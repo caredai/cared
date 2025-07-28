@@ -141,7 +141,7 @@ export const modelPresetSchema = z.object({
   presencePenalty: z.number().min(-1).max(1).step(0.01).optional(),
   frequencyPenalty: z.number().min(-1).max(1).step(0.01).optional(),
   stopSequences: z.array(z.string()).optional(),
-  seed: z.number().optional(),
+  seed: z.number().int().min(-1).step(1).optional(),
   disableSendingAttachments: z.boolean().optional(),
   disableTools: z.boolean().optional(),
   disableSendingReasoning: z.boolean().optional(),

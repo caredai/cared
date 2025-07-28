@@ -1,5 +1,6 @@
 import assert from 'assert'
-import type { MessageMetadata } from '@tavern/core'
+import type { MessageMetadata} from '@tavern/core';
+import { modelPresetSchema } from '@tavern/core'
 import { messageContentSchema } from '@tavern/core'
 import { db } from '@tavern/db/client'
 import {
@@ -33,10 +34,23 @@ const requestBodySchema = z.object({
   isContinuation: z.boolean().optional(),
   generateType: z.enum(['continue', 'impersonate']).optional(),
   deleteTrailing: z.boolean().optional(),
+
   characterId: z.string().min(1),
   characterName: z.string().min(1),
   modelId: z.string().min(1),
+
   preferredLanguage: z.enum(['chinese', 'japanese']).optional(),
+
+  ...modelPresetSchema.pick({
+    maxTokens: true,
+    temperature: true,
+    topP: true,
+    topK: true,
+    presencePenalty: true,
+    frequencyPenalty: true,
+    stopSequences: true,
+    seed: true,
+  }).shape,
 })
 
 export async function POST(request: Request): Promise<Response> {
@@ -63,6 +77,15 @@ export async function POST(request: Request): Promise<Response> {
     characterName,
     modelId,
     preferredLanguage,
+
+    maxTokens: maxOutputTokens,
+    temperature,
+    topP,
+    topK,
+    presencePenalty,
+    frequencyPenalty,
+    stopSequences,
+    seed,
   } = requestBody
   console.log('messages:', JSON.stringify(messages, undefined, 2))
 
@@ -129,6 +152,15 @@ export async function POST(request: Request): Promise<Response> {
           isEnabled: true,
           functionId: 'stream-text',
         },
+
+        maxOutputTokens,
+        temperature,
+        topP,
+        topK,
+        presencePenalty,
+        frequencyPenalty,
+        stopSequences,
+        seed: seed !== -1 ? seed : undefined,
       })
 
       void result.consumeStream()

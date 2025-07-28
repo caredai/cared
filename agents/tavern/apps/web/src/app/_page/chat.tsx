@@ -243,7 +243,8 @@ export function Chat() {
         },
       })
       generatingMessageIdRef.current = ''
-      if (!message.metadata?.personaId) { // !== impersonate
+      if (!message.metadata?.personaId) {
+        // !== impersonate
         const hasNextActivated = advanceActivatedCharacter()
         if (hasNextActivated) {
           nextRef.current?.()
@@ -603,7 +604,12 @@ export function Chat() {
 
   const continue_ = useCallback(async () => {
     const node = branchRef.current.at(-1)
-    if (!model || node?.message.role !== 'assistant' || !node.parent.message) {
+    if (
+      !model ||
+      node?.message.role !== 'assistant' ||
+      !node.parent.message ||
+      node.message.content.metadata.excluded
+    ) {
       return
     }
 
@@ -724,6 +730,7 @@ export function Chat() {
         setInput={setInput}
         chatRef={chatRef}
         status={status}
+        messages={branch}
         setMessages={setMessages}
         disabled={isLoading}
         submit={submit}

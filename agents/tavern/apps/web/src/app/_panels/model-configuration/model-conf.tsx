@@ -12,9 +12,9 @@ import {
   FormItem,
   FormLabel,
 } from '@ownxai/ui/components/form'
-import { Input } from '@ownxai/ui/components/input'
 
 import { CheckboxField } from '@/components/checkbox-field'
+import { OptionalNumberInput } from '@/components/number-input'
 import { RadioGroupField } from '@/components/radio-group-field'
 import { SliderInputField } from '@/components/slider-input-field'
 import { useCustomizeModelPreset } from '@/hooks/use-model-preset'
@@ -34,7 +34,7 @@ const modelConfFormSchema = z
     topK: z.number().min(0).max(500).step(1),
     presencePenalty: z.number().min(-1).max(1).step(0.01),
     frequencyPenalty: z.number().min(-1).max(1).step(0.01),
-    seed: z.number().min(-1).step(1),
+    seed: z.number().int().min(-1).step(1).optional(),
     wrapInQuotes: z.boolean(),
     continuePrefill: z.boolean(),
     squashSystemMessages: z.boolean(),
@@ -73,7 +73,7 @@ export function ModelConf() {
       topK: preset.topK ?? 0,
       presencePenalty: preset.presencePenalty ?? 0,
       frequencyPenalty: preset.frequencyPenalty ?? 0,
-      seed: preset.seed ?? -1,
+      seed: preset.seed,
       wrapInQuotes: preset.wrapInQuotes ?? false,
       continuePrefill: preset.continuePrefill ?? false,
       squashSystemMessages: preset.squashSystemMessages ?? false,
@@ -249,13 +249,11 @@ export function ModelConf() {
                   Set to get deterministic results. Use -1 for random seed.
                 </FormDescription>
                 <FormControl>
-                  <Input
-                    type="number"
+                  <OptionalNumberInput
                     min={-1}
                     step={1}
-                    value={field.value}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
-                    className="w-full h-6.5 px-1.5 py-0.5 rounded-sm text-xs md:text-xs font-mono"
+                    {...field}
+                    className="h-6.5 px-1.5 py-0.5 text-xs font-mono"
                   />
                 </FormControl>
               </FormItem>

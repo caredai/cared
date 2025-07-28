@@ -73,7 +73,12 @@ export async function populatePromptMessages(
             isPrompt: true,
             depth: messages.length - index - 1,
           })
+
           part.text = substituteMacros(part.text)
+
+          if (modelPreset.wrapInQuotes && m.message.role === 'user') {
+            part.text = `"${part.text}"`
+          }
         }
       })
 
@@ -86,7 +91,7 @@ export async function populatePromptMessages(
 
   const extensionPromptManager = new ExtensionPromptManager()
 
-  const summary = getLatestSummary(chatHistory)
+  const summary = getLatestSummary(chatHistory, true)
   if (summary) {
     extensionPromptManager.add({
       name: 'summary',
@@ -127,10 +132,7 @@ export async function populatePromptMessages(
 
   const promptCollectionMap = new Map<string, PromptCollection>()
 
-  async function addPromptMessage(
-    prompt: Prompt,
-    content?: string,
-  ) {
+  async function addPromptMessage(prompt: Prompt, content?: string) {
     const collection = new PromptCollection(prompt.identifier, prompt)
     collection.add(
       await PromptMessage.fromContent(
@@ -275,8 +277,9 @@ export async function populatePromptMessages(
 
   function populateInjectionPrompts() {
     // Inject depth prompts into chat history, from bottom (depth 0) to top
-    const reversedMessages: (ReducedMessage | InjectedMessage)[] =
-      [...chatHistoryWithCharacterNames].reverse()
+    const reversedMessages: (ReducedMessage | InjectedMessage)[] = [
+      ...chatHistoryWithCharacterNames,
+    ].reverse()
 
     let totalInsertedMessages = 0
 
@@ -353,7 +356,7 @@ export async function populatePromptMessages(
 
     let continueMessageCollection
     if (generateType === 'continue' && !modelPreset.continuePrefill) {
-      const continueMessageIndex = reversedMessages.findIndex(m => !isInjectedMessage(m))
+      const continueMessageIndex = reversedMessages.findIndex((m) => !isInjectedMessage(m))
       if (continueMessageIndex >= 0) {
         const continueMessage = reversedMessages[continueMessageIndex]! as ReducedMessage
         reversedMessages.splice(continueMessageIndex, 1)
@@ -380,6 +383,11 @@ export async function populatePromptMessages(
     let metFirstNonInjected = false
     for (let i = 0; i < reversedMessages.length; i++) {
       const msg = reversedMessages[i]!
+
+      if (!isInjectedMessage(msg) && msg.content.metadata.excluded) {
+        continue
+      }
+
       const identifier = `chatHistory-${reversedMessages.length - i}${isInjectedMessage(msg) ? '-injected' : ''}`
       const chatMessage = isInjectedMessage(msg)
         ? await PromptMessage.fromContent(identifier, msg.role, msg.content)
@@ -525,7 +533,7 @@ export async function populatePromptMessages(
 
   return {
     promptCollections: context.collections,
-    modelMessages: context.getModelMessages(),
+    modelMessages: context.getModelMessages(modelPreset.squashSystemMessages),
     updatedTimedEffects: lorebook?.updatedTimedEffects,
   }
 }

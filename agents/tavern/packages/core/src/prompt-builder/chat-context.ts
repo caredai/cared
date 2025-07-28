@@ -1,4 +1,5 @@
 import assert from 'assert'
+import type { ModelMessage, SystemModelMessage } from 'ai'
 
 import type { PromptCollection, PromptMessage } from './message'
 import { TokenBudgetExceededError } from './error'
@@ -88,8 +89,10 @@ export class ChatContext {
     return this.collections.some((c) => c.has(identifier))
   }
 
-  getModelMessages() {
-    const messages = []
+  getModelMessages(squashSystemMessages?: boolean): ModelMessage[] {
+    const messages: (ModelMessage & {
+      identifier: string
+    })[] = []
     for (const collection of this.collections) {
       if (collection.prompt && !collection.prompt.enabled) {
         continue
@@ -97,10 +100,47 @@ export class ChatContext {
       messages.push(
         ...collection.messages
           .filter((m) => !m.isEmpty())
-          .flatMap((m) => convertToModelMessages(m.message)),
+          .flatMap((m) =>
+            convertToModelMessages(m.message).map((msg) => ({
+              ...msg,
+              identifier: m.identifier,
+            })),
+          ),
       )
     }
-    return messages
+    if (!squashSystemMessages) {
+      return messages
+    }
+
+    const excludeList = ['newMainChat', 'newChat', 'groupNudge']
+
+    const shouldSquash = (
+      message: (typeof messages)[number],
+    ): message is SystemModelMessage & {
+      identifier: string
+    } => {
+      return !excludeList.includes(message.identifier) && message.role === 'system'
+    }
+
+    const squashedMessages = []
+    let lastMessage:
+      | (ModelMessage & {
+          identifier: string
+        })
+      | undefined = undefined
+    for (const message of messages) {
+      if (shouldSquash(message)) {
+        if (lastMessage && shouldSquash(lastMessage)) {
+          lastMessage.content += '\n' + message.content
+          continue
+        }
+      }
+
+      squashedMessages.push(message)
+      lastMessage = message
+    }
+
+    return squashedMessages
   }
 
   log() {

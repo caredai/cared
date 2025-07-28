@@ -2,9 +2,9 @@ import assert from 'assert'
 import type { ModelMessage } from 'ai'
 import { convertToModelMessages as _convertToModelMessages } from 'ai'
 
+import type { Prompt } from '../prompt'
 import type { ReducedMessage } from '../types'
 import { getMessageText } from '../message'
-import { Prompt } from '../prompt'
 import { TokenCounter } from './token-counter'
 
 export class PromptMessage {
