@@ -19,7 +19,7 @@ import { generateId, makeIdValid, timestamps, timestampsIndices, timestampsOmits
 
 export const artifactKinds = ['text', 'code', 'image', 'sheet'] as const
 export type ArtifactKind = (typeof artifactKinds)[number]
-export const artifactKindEnum = pgEnum('kind', artifactKinds)
+export const artifactKindEnum = pgEnum('artifact_kind', artifactKinds)
 
 export function generateArtifactId() {
   return generateId('art')

@@ -79,6 +79,7 @@ export const Chat = pgTable(
   (table) => [
     index().on(table.appId),
     index().on(table.userId, table.appId, table.debug),
+    ...timestampsIndices(table),
   ],
 )
 
