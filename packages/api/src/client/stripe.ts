@@ -10,6 +10,12 @@ export function getStripe() {
       message: 'Stripe secret key is not set',
     })
   }
+  if (!env.STRIPE_CREDITS_PRICE_ID) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stripe credits price ID is not set',
+    })
+  }
   return new Stripe(env.STRIPE_SECRET_KEY, {
     maxNetworkRetries: 1,
     timeout: 15000,

@@ -29,7 +29,7 @@ export const authClient = createAuthClient({
 
 export const allowedProviders = ['google', 'twitter', 'discord', 'github'] as const
 
-export function getBaseUrl() {
+export function getBaseUrl(): string {
   if (env.NEXT_PUBLIC_BASE_URL) return env.NEXT_PUBLIC_BASE_URL
   // @ts-ignore
   if (globalThis.location?.origin) return globalThis.location.origin

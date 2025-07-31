@@ -12,6 +12,11 @@ import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 const items = [
   {
+    title: 'Credits',
+    url: '/credits',
+    icon: 'CircleDollarSign',
+  },
+  {
     title: 'Profile',
     url: '/profile',
     icon: 'UserRound',

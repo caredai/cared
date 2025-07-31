@@ -18,6 +18,7 @@ import {
   UserRound,
   WandSparkles,
   Wrench,
+  CircleDollarSign,
 } from 'lucide-react'
 
 import {
@@ -49,6 +50,7 @@ const icons: Record<string, LucideIcon> = {
   ShieldCheck,
   FerrisWheel,
   WandSparkles,
+  CircleDollarSign,
 }
 
 export interface NavItem {

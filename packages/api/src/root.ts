@@ -5,6 +5,7 @@ import { apiKeyRouter } from './trpc/api-key'
 import { appRouter as _appRouter } from './trpc/app'
 import { artifactRouter } from './trpc/artifact'
 import { chatRouter } from './trpc/chat'
+import { creditsRouter } from './trpc/credits'
 import { datasetRouter } from './trpc/dataset'
 import { messageRouter } from './trpc/message'
 import { modelRouter } from './trpc/model'
@@ -31,6 +32,7 @@ export const appRouter = createTRPCRouter({
   chat: chatRouter,
   message: messageRouter,
   artifact: artifactRouter,
+  credits: creditsRouter,
 })
 
 // export type definition of API
