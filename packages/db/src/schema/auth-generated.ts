@@ -4,10 +4,16 @@ export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  emailVerified: boolean('email_verified').notNull(),
+  emailVerified: boolean('email_verified')
+    .$defaultFn(() => false)
+    .notNull(),
   image: text('image'),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .notNull(),
   twoFactorEnabled: boolean('two_factor_enabled'),
   role: text('role'),
   banned: boolean('banned'),
@@ -39,8 +45,8 @@ export const verification = pgTable('verification', {
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at'),
-  updatedAt: timestamp('updated_at'),
+  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
+  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()),
 })
 
 export const jwks = pgTable('jwks', {
@@ -63,6 +69,7 @@ export const passkey = pgTable('passkey', {
   backedUp: boolean('backed_up').notNull(),
   transports: text('transports'),
   createdAt: timestamp('created_at'),
+  aaguid: text('aaguid'),
 })
 
 export const twoFactor = pgTable('two_factor', {
@@ -91,7 +98,7 @@ export const member = pgTable('member', {
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  role: text('role').notNull(),
+  role: text('role').default('member').notNull(),
   createdAt: timestamp('created_at').notNull(),
 })
 
@@ -102,7 +109,7 @@ export const invitation = pgTable('invitation', {
     .references(() => organization.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
   role: text('role'),
-  status: text('status').notNull(),
+  status: text('status').default('pending').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   inviterId: text('inviter_id')
     .notNull()
@@ -159,10 +166,10 @@ export const apikey = pgTable('apikey', {
   refillInterval: integer('refill_interval'),
   refillAmount: integer('refill_amount'),
   lastRefillAt: timestamp('last_refill_at'),
-  enabled: boolean('enabled'),
-  rateLimitEnabled: boolean('rate_limit_enabled'),
-  rateLimitTimeWindow: integer('rate_limit_time_window'),
-  rateLimitMax: integer('rate_limit_max'),
+  enabled: boolean('enabled').default(true),
+  rateLimitEnabled: boolean('rate_limit_enabled').default(true),
+  rateLimitTimeWindow: integer('rate_limit_time_window').default(60000),
+  rateLimitMax: integer('rate_limit_max').default(100),
   requestCount: integer('request_count'),
   remaining: integer('remaining'),
   lastRequest: timestamp('last_request'),

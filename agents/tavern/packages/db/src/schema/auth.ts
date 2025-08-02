@@ -8,10 +8,16 @@ export const user = pgTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     email: text('email').notNull().unique(),
-    emailVerified: boolean('email_verified').notNull(),
+    emailVerified: boolean('email_verified')
+      .$defaultFn(() => false)
+      .notNull(),
     image: text('image'),
-    createdAt: timestamp('created_at').notNull(),
-    updatedAt: timestamp('updated_at').notNull(),
+    createdAt: timestamp('created_at')
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
+    updatedAt: timestamp('updated_at')
+      .$defaultFn(() => /* @__PURE__ */ new Date())
+      .notNull(),
   },
   (table) => [
     index().on(table.name),
@@ -53,8 +59,8 @@ export const verification = pgTable(
     identifier: text('identifier').notNull(),
     value: text('value').notNull(),
     expiresAt: timestamp('expires_at').notNull(),
-    createdAt: timestamp('created_at'),
-    updatedAt: timestamp('updated_at'),
+    createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
+    updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()),
   },
   (table) => [
     index().on(table.identifier),

@@ -228,7 +228,6 @@ export const oauthAppRouter = {
       const _oauthApp = await auth.api.registerOAuthApplication({
         headers: await headers(),
         body: {
-          name: input.appId,
           redirect_uris: input.redirectUris?.map((u) => u.trim()) ?? [],
           scope: 'profile email',
           metadata: { appId: input.appId },
