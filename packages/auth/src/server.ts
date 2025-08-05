@@ -156,7 +156,13 @@ const options = {
   },
   plugins: [
     bearer(),
-    jwt(),
+    jwt({
+      jwks: {
+        keyPairConfig: {
+          alg: 'RS256',
+        },
+      },
+    }),
     passkey(),
     twoFactor(),
     admin(),
@@ -224,6 +230,7 @@ const options = {
         '/link-social',
         '/unlink-account',
         '/error', // TODO
+        '/jwks',
         '/.well-known/openid-configuration',
         '/oauth2/authorize',
         '/oauth2/consent',
