@@ -9,6 +9,7 @@ import {
   Bot,
   Brain,
   ChevronRight,
+  CircleDollarSign,
   Database,
   DatabaseZap,
   FerrisWheel,
@@ -16,9 +17,9 @@ import {
   Settings2,
   ShieldCheck,
   UserRound,
+  Wallet,
   WandSparkles,
   Wrench,
-  CircleDollarSign,
 } from 'lucide-react'
 
 import {
@@ -51,6 +52,7 @@ const icons: Record<string, LucideIcon> = {
   FerrisWheel,
   WandSparkles,
   CircleDollarSign,
+  Wallet,
 }
 
 export interface NavItem {

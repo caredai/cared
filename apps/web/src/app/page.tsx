@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { createCaller } from '@cared/api'
@@ -12,6 +12,7 @@ export default async function Page() {
   const session = await createCaller({
     auth: {},
     db,
+    headers: await headers(),
   }).user.session()
   const userId = session?.user.id
 
@@ -21,6 +22,7 @@ export default async function Page() {
         userId,
       },
       db,
+      headers: await headers(),
     })
     const { workspaces } = await caller.workspace.list()
 

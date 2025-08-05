@@ -17,6 +17,11 @@ const items = [
     icon: 'CircleDollarSign',
   },
   {
+    title: 'Wallet',
+    url: '/wallet',
+    icon: 'Wallet',
+  },
+  {
     title: 'Profile',
     url: '/profile',
     icon: 'UserRound',

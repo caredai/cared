@@ -159,7 +159,7 @@ const options = {
     jwt({
       jwks: {
         keyPairConfig: {
-          alg: 'RS256',
+          alg: 'RS256', // NOTE: Privy requires RS256
         },
       },
     }),
@@ -231,6 +231,7 @@ const options = {
         '/unlink-account',
         '/error', // TODO
         '/jwks',
+        '/token',
         '/.well-known/openid-configuration',
         '/oauth2/authorize',
         '/oauth2/consent',

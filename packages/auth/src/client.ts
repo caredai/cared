@@ -7,6 +7,7 @@ import {
   organizationClient,
   passkeyClient,
   twoFactorClient,
+  jwtClient,
 } from 'better-auth/client/plugins'
 import { createAuthClient } from 'better-auth/react'
 
@@ -18,6 +19,7 @@ export const authClient = createAuthClient({
   plugins: [
     customSessionClient<typeof auth>(),
     oidcClient(),
+    jwtClient(),
     apiKeyClient(),
     twoFactorClient(),
     passkeyClient(),

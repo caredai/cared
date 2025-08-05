@@ -3,6 +3,7 @@
 import { CommandMenu } from '@/components/command-menu'
 import { MainNav } from '@/components/main-nav'
 import { MobileNav } from '@/components/mobile-nav'
+import { TopRightNav } from './top-right-nav'
 
 export function SiteHeader() {
   return (
@@ -15,7 +16,7 @@ export function SiteHeader() {
             <div className="w-full flex-1 md:w-auto md:flex-none">
               <CommandMenu />
             </div>
-            {/*<TopRightNav showThemeSwitcher />*/}
+            <TopRightNav showThemeSwitcher />
           </div>
         </div>
       </div>

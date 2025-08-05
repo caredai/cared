@@ -16,6 +16,7 @@ import { authClient } from '@cared/auth/client'
 import { Logo } from '@/components/logo'
 import { ThemeProvider } from '@/components/theme'
 import { env } from '@/env'
+import { usePrivyJwtAuth } from '@/hooks/use-privy'
 import { TRPCReactProvider } from '@/trpc/client'
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -36,7 +37,6 @@ function InnerProviders({ children }: { children: ReactNode }) {
         theme: resolvedTheme === 'dark' ? 'dark' : 'light',
         accentColor: '#676FFF',
         logo: <Logo />,
-        landingHeader: 'Connect wallet',
         walletChainType: 'ethereum-and-solana',
         walletList: [
           'phantom',
@@ -44,14 +44,16 @@ function InnerProviders({ children }: { children: ReactNode }) {
           'okx_wallet',
           'wallet_connect',
           'coinbase_wallet',
+          'binance',
           'uniswap',
           'rainbow',
           'zerion',
           'rabby_wallet',
           'safe',
+          'backpack',
         ],
       },
-      loginMethods: ['wallet'],
+      loginMethods: ['passkey'], // NOTE: just a placeholder to avoid the "You must enable at least one login method" error
       walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,
       externalWallets: {
         solana: {
@@ -62,6 +64,15 @@ function InnerProviders({ children }: { children: ReactNode }) {
         coinbaseWallet: {
           connectionOptions: 'all',
         },
+      },
+      embeddedWallets: {
+        ethereum: {
+          createOnLogin: 'all-users',
+        },
+        solana: {
+          createOnLogin: 'all-users',
+        },
+        extendedCalldataDecoding: true,
       },
     } as PrivyClientConfig
   }, [resolvedTheme])
@@ -75,7 +86,7 @@ function InnerProviders({ children }: { children: ReactNode }) {
       /* eslint-disable-next-line @typescript-eslint/unbound-method */
       replace={router.replace}
       onSessionChange={() => router.refresh()}
-      LinkComponent={Link}
+      Link={Link}
       signUp={false}
       credentials={false}
       providers={['google', 'twitter', 'discord', 'github']}
@@ -83,10 +94,17 @@ function InnerProviders({ children }: { children: ReactNode }) {
       <TRPCReactProvider>
         <JotaiProvider>
           <PrivyProvider appId={env.NEXT_PUBLIC_PRIVY_APP_ID} config={privyConfig}>
+            <PrivyJwtAuth />
             {children}
           </PrivyProvider>
         </JotaiProvider>
       </TRPCReactProvider>
     </AuthUIProvider>
   )
+}
+
+function PrivyJwtAuth() {
+  usePrivyJwtAuth()
+
+  return null
 }

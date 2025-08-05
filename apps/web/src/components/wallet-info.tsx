@@ -18,12 +18,6 @@ import {
 } from '@cared/ui/components/dialog'
 import { Label } from '@cared/ui/components/label'
 import { Separator } from '@cared/ui/components/separator'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@cared/ui/components/tooltip'
 
 import { shortenString } from '@/lib/utils'
 
@@ -70,7 +64,7 @@ export function WalletInfo() {
               {user.wallet.chainType === 'ethereum' ? 'Ethereum' : 'Solana'}
             </Badge>
             <div className="col-span-2 flex justify-center">
-              <AddressTooltip address={user.wallet.address} copyToClipboard={copyToClipboard} />
+              <WalletAddress address={user.wallet.address} copyToClipboard={copyToClipboard} />
             </div>
           </div>
           <Separator />
@@ -102,13 +96,13 @@ function WalletItem({
         {wallet.type === 'ethereum' ? 'Ethereum' : 'Solana'}
       </Badge>
       <div className="col-span-2 flex justify-center">
-        <AddressTooltip address={wallet.address} copyToClipboard={copyToClipboard} />
+        <WalletAddress address={wallet.address} copyToClipboard={copyToClipboard} />
       </div>
     </>
   )
 }
 
-function AddressTooltip({
+function WalletAddress({
   address,
   copyToClipboard,
 }: {
@@ -127,37 +121,14 @@ function AddressTooltip({
   }, [address, copyToClipboard, setCopied])
 
   return (
-    <TooltipProvider delayDuration={0}>
-      <Tooltip>
-        <TooltipTrigger
-          asChild
-          onClick={(event) => {
-            event.preventDefault()
-          }}
-        >
-          <Button
-            className="py-1 px-2 h-fit text-muted-foreground"
-            variant="outline"
-            onClick={copy}
-          >
-            <p className="font-mono">
-              {shortenString(address, {
-                prefixChars: 4,
-                suffixChars: 6,
-              })}
-            </p>
-            {copied ? <CheckIcon /> : <CopyIcon />}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent
-          align="end"
-          onPointerDownOutside={(event) => {
-            event.preventDefault()
-          }}
-        >
-          {copied ? 'Copied' : 'Copy'}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Button className="py-1 px-2 h-fit text-muted-foreground" variant="outline" onClick={copy}>
+      <p className="font-mono">
+        {shortenString(address, {
+          prefixChars: 4,
+          suffixChars: 6,
+        })}
+      </p>
+      {copied ? <CheckIcon /> : <CopyIcon />}
+    </Button>
   )
 }
