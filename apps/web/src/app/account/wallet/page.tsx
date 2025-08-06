@@ -1,9 +1,15 @@
 'use client'
 
-import type { ConnectedSolanaWallet, ConnectedWallet } from '@privy-io/react-auth'
+import type { Wallet } from '@/hooks/use-wallets'
 import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
-import { useCreateWallet, usePrivy, useSolanaWallets } from '@privy-io/react-auth'
+import {
+  useCreateWallet,
+  useFundWallet as useFundEthereumWallet,
+  usePrivy,
+  useSolanaWallets,
+} from '@privy-io/react-auth'
+import { useFundWallet as useFundSolanaWallet } from '@privy-io/react-auth/solana'
 import { Link1Icon, PlusIcon } from '@radix-ui/react-icons'
 import {
   BadgeAlertIcon,
@@ -14,7 +20,7 @@ import {
   HelpCircleIcon,
   QrCodeIcon,
 } from 'lucide-react'
-import { useCopyToClipboard } from 'react-use'
+import { useAsync, useCopyToClipboard } from 'react-use'
 
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
@@ -32,16 +38,19 @@ import {
   DropdownMenuTrigger,
 } from '@cared/ui/components/dropdown-menu'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner, Spinner } from '@/components/spinner'
 import { Tooltip } from '@/components/tooltip'
 import { WalletAddress } from '@/components/wallet-address'
-import { useWallets } from '@/hooks/use-wallets'
+import { useWallets, walletType } from '@/hooks/use-wallets'
 import { WalletQrDialog } from './wallet-qr-dialog'
 
 export default function WalletPage() {
-  const { ready, authenticated, user, linkWallet } = usePrivy()
+  const { ready, authenticated, user, linkWallet, unlinkWallet } = usePrivy()
 
   const { ethereumWallets, solanaWallets, embeddedWallets, externalWallets } = useWallets()
+
+  const { fundWallet: fundSolanaWallet } = useFundSolanaWallet()
+  const { fundWallet: fundEthereumWallet } = useFundEthereumWallet()
 
   useEffect(() => {
     console.log('User:', user)
@@ -57,19 +66,27 @@ export default function WalletPage() {
   const [inActionWallets, setInActionWallets] = useState<Set<string>>(new Set())
   const [isCreatingWallet, setIsCreatingWallet] = useState(false)
 
-  const [qrDialogOpen, setQrDialogOpen] = useState(false)
-  const [selectedWallet, setSelectedWallet] = useState<
-    ConnectedWallet | ConnectedSolanaWallet | null
-  >(null)
+  const addInActionWallet = (address: string) => {
+    setInActionWallets((prev) => new Set(prev).add(address))
+  }
+  const removeInActionWallet = (address: string) => {
+    setInActionWallets((prev) => {
+      const newSet = new Set(prev)
+      newSet.delete(address)
+      return newSet
+    })
+  }
 
-  const openQrDialog = (wallet: ConnectedWallet | ConnectedSolanaWallet) => {
+  const [qrDialogOpen, setQrDialogOpen] = useState(false)
+  const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null)
+
+  const openQrDialog = (wallet: Wallet) => {
     setSelectedWallet(wallet)
     setQrDialogOpen(true)
   }
 
   const [, copyToClipboard] = useCopyToClipboard()
 
-  // Handle creating Ethereum wallet
   const handleCreateEthereumWallet = useCallback(async () => {
     setIsCreatingWallet(true)
     try {
@@ -83,7 +100,6 @@ export default function WalletPage() {
     }
   }, [createEthereumWallet, ethereumWallets.length])
 
-  // Handle creating Solana wallet
   const handleCreateSolanaWallet = useCallback(async () => {
     setIsCreatingWallet(true)
     try {
@@ -97,66 +113,73 @@ export default function WalletPage() {
     }
   }, [createSolanaWallet, solanaWallets.length])
 
-  // Handle disconnecting external wallet
-  const handleDisconnectWallet = useCallback(
-    async (wallet: ConnectedWallet | ConnectedSolanaWallet) => {
-      if (wallet.walletClientType === 'privy') {
-        return
-      }
-
-      // Add wallet address to inActionWallets set
-      setInActionWallets((prev) => new Set(prev).add(wallet.address))
-
-      try {
-        if (wallet.linked) {
-          await wallet.unlink()
-        }
-        if (await wallet.isConnected()) {
-          wallet.disconnect()
-        }
-      } catch (error) {
-        console.error('Error disconnecting wallet:', error)
-      } finally {
-        // Remove wallet address from inActionWallets set
-        setInActionWallets((prev) => {
-          const newSet = new Set(prev)
-          newSet.delete(wallet.address)
-          return newSet
-        })
-      }
-    },
-    [],
-  )
-
-  // Handle linking external wallet
-  const handleLinkWallet = useCallback(async (wallet: ConnectedWallet | ConnectedSolanaWallet) => {
-    if (wallet.walletClientType === 'privy') {
+  const handleDisconnectWallet = useCallback(async (wallet: Wallet) => {
+    if (wallet.walletClientType === 'privy' || !('isConnected' in wallet)) {
       return
     }
 
-    // Add wallet address to inActionWallets set
-    setInActionWallets((prev) => new Set(prev).add(wallet.address))
+    addInActionWallet(wallet.address)
 
     try {
-      await wallet.loginOrLink()
-    } catch (error) {
-      console.error('Error linking wallet:', error)
+      if (await wallet.isConnected()) {
+        wallet.disconnect()
+      }
     } finally {
-      // Remove wallet address from inActionWallets set
-      setInActionWallets((prev) => {
-        const newSet = new Set(prev)
-        newSet.delete(wallet.address)
-        return newSet
-      })
+      removeInActionWallet(wallet.address)
     }
   }, [])
 
+  const handleLinkWallet = useCallback(async (wallet: Wallet) => {
+    if (wallet.walletClientType === 'privy' || !('loginOrLink' in wallet)) {
+      return
+    }
+
+    addInActionWallet(wallet.address)
+
+    try {
+      await wallet.loginOrLink()
+    } finally {
+      removeInActionWallet(wallet.address)
+    }
+  }, [])
+
+  const handleUnlinkWallet = useCallback(
+    async (wallet: Wallet) => {
+      if (wallet.walletClientType === 'privy' || !wallet.linked) {
+        return
+      }
+
+      addInActionWallet(wallet.address)
+
+      try {
+        if ('unlink' in wallet) {
+          await wallet.unlink()
+        } else {
+          await unlinkWallet(wallet.address)
+        }
+      } finally {
+        removeInActionWallet(wallet.address)
+      }
+    },
+    [unlinkWallet],
+  )
+
+  const handleFundWallet = useCallback(
+    async (wallet: Wallet) => {
+      console.log('fund....', wallet)
+      if (walletType(wallet) === 'ethereum') {
+        await fundEthereumWallet(wallet.address)
+      } else {
+        await fundSolanaWallet(wallet.address)
+      }
+    },
+    [fundEthereumWallet, fundSolanaWallet],
+  )
+
   if (!ready || !authenticated) {
     return (
-      <div className="container mx-auto py-8">
-        <div className="text-center">
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="flex items-center justify-center m-auto">
+        <Spinner />
       </div>
     )
   }
@@ -186,7 +209,10 @@ export default function WalletPage() {
                         hardware (TEE) to ensure only you can control your wallets.
                       </p>
                       <br />
-                      <p>You can create up to 3 Ethereum wallets and 3 Solana wallets.</p>
+                      <p>
+                        You can create up to 3 embedded Ethereum wallets and 3 embedded Solana
+                        wallets.
+                      </p>
                     </>
                   }
                   icon={HelpCircleIcon}
@@ -202,7 +228,7 @@ export default function WalletPage() {
                   ) : (
                     <PlusIcon className="h-4 w-4" />
                   )}
-                  Create Wallet
+                  Create
                   <ChevronDownIcon className="h-4 w-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
@@ -242,6 +268,7 @@ export default function WalletPage() {
                 <WalletItem
                   key={wallet.address}
                   wallet={wallet}
+                  onFund={() => handleFundWallet(wallet)}
                   copyToClipboard={copyToClipboard}
                   onOpenQrDialog={openQrDialog}
                 />
@@ -269,9 +296,10 @@ export default function WalletPage() {
                       stronger proof of ownership than just "connected".
                       <br />
                       <br />
-                      You can always unlink (and may disconnect) these wallets. For some wallet providers (such as MetaMask, Phantom), you cannot truly
-                      disconnect from here. You need to manually disconnect from the DApp connection
-                      management page of those wallets.
+                      You can always unlink (and may disconnect) these wallets. For some wallet
+                      providers (such as MetaMask, Phantom), you cannot truly disconnect from here.
+                      You need to manually disconnect from the DApp connection management page of
+                      those wallets.
                     </p>
                   }
                   icon={HelpCircleIcon}
@@ -281,7 +309,7 @@ export default function WalletPage() {
             </div>
             <Button onClick={() => linkWallet()}>
               <Link1Icon className="h-4 w-4" />
-              Connect Wallet
+              Connect
             </Button>
           </div>
         </CardHeader>
@@ -297,8 +325,10 @@ export default function WalletPage() {
                   key={wallet.address}
                   wallet={wallet}
                   copyToClipboard={copyToClipboard}
-                  onDisconnect={() => handleDisconnectWallet(wallet)}
                   onLink={() => handleLinkWallet(wallet)}
+                  onUnlink={() => handleUnlinkWallet(wallet)}
+                  onDisconnect={() => handleDisconnectWallet(wallet)}
+                  onFund={() => handleFundWallet(wallet)}
                   isExternal={true}
                   onOpenQrDialog={openQrDialog}
                   inAction={inActionWallets.has(wallet.address)}
@@ -323,44 +353,69 @@ export default function WalletPage() {
 function WalletItem({
   wallet,
   copyToClipboard,
-  onDisconnect,
   onLink,
+  onUnlink,
+  onDisconnect,
+  onFund,
   isExternal = false,
   inAction = false,
   onOpenQrDialog,
 }: {
-  wallet: ConnectedWallet | ConnectedSolanaWallet
+  wallet: Wallet
   copyToClipboard: (value: string) => void
-  onDisconnect?: () => void
   onLink?: () => void
+  onUnlink?: () => void
+  onDisconnect?: () => void
+  onFund?: () => void
   isExternal?: boolean
   inAction?: boolean
-  onOpenQrDialog?: (wallet: ConnectedWallet | ConnectedSolanaWallet) => void
+  onOpenQrDialog?: (wallet: Wallet) => void
 }) {
-  // Check if wallet is connected but not linked
-  const isConnectedButNotLinked = isExternal && !wallet.linked
+  const isLinked = wallet.linked
+  const { value: isConnected } = useAsync(
+    async () => 'isConnected' in wallet && (await wallet.isConnected()),
+    [wallet],
+  )
 
   return (
-    <div className="flex flex-wrap items-center justify-end md:justify-between gap-2 p-2 border rounded-lg">
+    <div className="flex flex-wrap items-center justify-between gap-2 p-2 border rounded-lg">
       <div className="flex items-center gap-4">
         <div className="w-24">
-          <Badge variant="secondary">{wallet.type === 'ethereum' ? 'Ethereum' : 'Solana'}</Badge>
+          <Badge variant="secondary">
+            {walletType(wallet) === 'ethereum' ? 'Ethereum' : 'Solana'}
+          </Badge>
         </div>
         <WalletAddress address={wallet.address} copyToClipboard={copyToClipboard} />
       </div>
       <div className="flex items-center gap-2">
-        {isConnectedButNotLinked && (
-          <Badge variant="secondary" className="bg-yellow-500 text-white dark:bg-yellow-600">
-            <BadgeAlertIcon />
-            Connected
-          </Badge>
+        {isExternal && (
+          <>
+            {isLinked ? (
+              <Badge variant="secondary" className="bg-blue-500 text-white dark:bg-blue-600">
+                <BadgeCheckIcon />
+                Linked
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <BadgeAlertIcon />
+                Not linked
+              </Badge>
+            )}
+            {isConnected && (
+              <Badge variant="secondary" className="bg-green-500 text-white dark:bg-green-600">
+                <BadgeCheckIcon />
+                Connected
+              </Badge>
+            )}
+            {isConnected === false && (
+              <Badge variant="secondary">
+                <BadgeAlertIcon />
+                Not connected
+              </Badge>
+            )}
+          </>
         )}
-        {isExternal && wallet.linked && (
-          <Badge variant="secondary" className="bg-blue-500 text-white dark:bg-blue-600">
-            <BadgeCheckIcon />
-            Linked
-          </Badge>
-        )}
+
         <Button
           variant="secondary"
           size="icon"
@@ -369,15 +424,12 @@ function WalletItem({
         >
           <QrCodeIcon />
         </Button>
-        <Button
-          variant="secondary"
-          size="icon"
-          className="size-4"
-          onClick={() => wallet.fund()}
-        >
+
+        <Button variant="secondary" size="icon" className="size-4" onClick={onFund}>
           <BadgeDollarSignIcon />
         </Button>
-        {isExternal && (onDisconnect ?? onLink) && (
+
+        {isExternal && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" disabled={inAction}>
@@ -390,18 +442,26 @@ function WalletItem({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {isConnectedButNotLinked && onLink && (
+              {!isLinked ? (
                 <DropdownMenuItem className="cursor-pointer" onClick={onLink} disabled={inAction}>
-                  {inAction ? 'Linking...' : 'Link Wallet'}
+                  Link Wallet
                 </DropdownMenuItem>
-              )}
-              {onDisconnect && (
+              ) : (
                 <DropdownMenuItem
-                  onClick={onDisconnect}
                   className="text-destructive focus:text-destructive cursor-pointer"
+                  onClick={onUnlink}
                   disabled={inAction}
                 >
-                  {inAction ? 'Disconnecting...' : 'Disconnect Wallet'}
+                  Unlink Wallet
+                </DropdownMenuItem>
+              )}
+              {isConnected && (
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                  onClick={onDisconnect}
+                  disabled={inAction}
+                >
+                  Disconnect Wallet
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

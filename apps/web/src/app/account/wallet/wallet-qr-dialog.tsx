@@ -1,4 +1,4 @@
-import type { ConnectedSolanaWallet, ConnectedWallet } from '@privy-io/react-auth'
+import type { Wallet } from '@/hooks/use-wallets'
 import { AlertCircleIcon } from 'lucide-react'
 
 import { Alert, AlertDescription, AlertTitle } from '@cared/ui/components/alert'
@@ -10,7 +10,7 @@ import { WalletAddress } from '@/components/wallet-address'
 interface WalletQrDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  selectedWallet: ConnectedWallet | ConnectedSolanaWallet | null
+  selectedWallet: Wallet | null
   copyToClipboard: (value: string) => void
 }
 
