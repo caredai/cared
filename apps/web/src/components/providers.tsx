@@ -53,7 +53,7 @@ function InnerProviders({ children }: { children: ReactNode }) {
           'backpack',
         ],
       },
-      loginMethods: ['passkey'], // NOTE: just a placeholder to avoid the "You must enable at least one login method" error
+      loginMethods: ['wallet'], // NOTE: just a placeholder to avoid the "You must enable at least one login method" error
       walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,
       externalWallets: {
         solana: {

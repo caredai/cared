@@ -264,7 +264,7 @@ export default function Page() {
                   >
                     <div className="flex items-center space-x-3 truncate">
                       <div className="w-5 h-5 flex items-center justify-center">
-                        <Icon color />
+                        <Icon variant="color" />
                       </div>
                       <span className="font-normal">{name}</span>
                       {displayUsername && (
@@ -314,7 +314,7 @@ export default function Page() {
                           {isConnecting === provider ? (
                             <CircleSpinner className="h-4 w-4" />
                           ) : (
-                            <Icon color />
+                            <Icon variant="color" />
                           )}
                         </div>
                         <span>{name}</span>

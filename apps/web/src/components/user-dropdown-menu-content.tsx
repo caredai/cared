@@ -1,10 +1,15 @@
 'use client'
 
+import type { User } from '@/hooks/use-user'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from 'lucide-react'
+import {
+  CircleDollarSignIcon,
+  LogOutIcon,
+  SparklesIcon,
+  UserRoundIcon,
+  WalletIcon,
+} from 'lucide-react'
 
-import { authClient } from '@cared/auth/client'
 import {
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -15,25 +20,13 @@ import {
 import { useIsMobile } from '@cared/ui/hooks/use-mobile'
 
 import { ThemeSwitcher } from '@/components/theme'
-import { useLastWorkspace } from '@/hooks/use-workspace'
+import { useSignOut } from '@/hooks/use-signout'
 import { UserInfo } from './user-info'
 
-export function NavUserContent() {
-  const router = useRouter()
+export function UserDropdownMenuContent({ user }: { user: User }) {
   const isMobile = useIsMobile()
 
-  const [, setLastWorkspace] = useLastWorkspace()
-
-  const signOut = async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push('/')
-        },
-      },
-    })
-    setLastWorkspace(undefined)
-  }
+  const { signOut } = useSignOut()
 
   return (
     <DropdownMenuContent
@@ -44,37 +37,40 @@ export function NavUserContent() {
     >
       <DropdownMenuLabel className="p-0 font-normal">
         <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-          <UserInfo showEmail />
+          <UserInfo user={user} showEmail />
           <ThemeSwitcher />
         </div>
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem className="cursor-pointer">
-          <Sparkles />
-          Upgrade to Pro
+        <DropdownMenuItem asChild>
+          <Link href="/account/credits" className="cursor-pointer">
+            <CircleDollarSignIcon />
+            Billing
+          </Link>
         </DropdownMenuItem>
-      </DropdownMenuGroup>
-      <DropdownMenuSeparator />
-      <DropdownMenuGroup>
+        <DropdownMenuItem asChild>
+          <Link href="/account/wallet" className="cursor-pointer">
+            <WalletIcon />
+            Wallet
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/account/profile" className="cursor-pointer">
-            <BadgeCheck />
+            <UserRoundIcon />
             Account
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <CreditCard />
-          Billing
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <Bell />
-          Notifications
+        <DropdownMenuItem asChild>
+          <Link href="/landing" className="cursor-pointer">
+            <SparklesIcon />
+            Landing
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem onSelect={signOut} className="cursor-pointer">
-        <LogOut />
+        <LogOutIcon />
         Log out
       </DropdownMenuItem>
     </DropdownMenuContent>

@@ -1,15 +1,13 @@
 import { useCallback } from 'react'
 import { usePrivy, useSubscribeToJwtAuthWithFlag } from '@privy-io/react-auth'
-import { useQuery } from '@tanstack/react-query'
 
 import { authClient } from '@cared/auth/client'
 
-import { useTRPC } from '@/trpc/client'
+import { useUserMayUndefined } from '@/hooks/use-user'
 
 export function usePrivyJwtAuth() {
-  const trpc = useTRPC()
-  const { data } = useQuery(trpc.user.session.queryOptions())
-  const isAuthenticated = !!data?.session
+  const { user } = useUserMayUndefined()
+  const isAuthenticated = !!user
 
   const { ready, authenticated } = usePrivy()
 

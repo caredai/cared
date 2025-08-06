@@ -14,6 +14,7 @@ import {
 import { Logo } from '@/components/logo'
 import { NavSecondary } from '@/components/nav-secondary'
 import { NavUser } from '@/components/nav-user'
+import { HydrateClient } from '@/trpc/server'
 
 export function AppSidebar({
   baseUrl,
@@ -42,7 +43,9 @@ export function AppSidebar({
           <NavSecondary className="mt-auto" />
         </SidebarContent>
         <SidebarFooter>
-          <NavUser />
+          <HydrateClient>
+            <NavUser />
+          </HydrateClient>
         </SidebarFooter>
       </Sidebar>
     </div>

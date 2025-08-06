@@ -1,6 +1,21 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+import type { AppRouter } from '@cared/api'
+import type { inferRouterOutputs } from '@trpc/server'
 
 import { useTRPC } from '@/trpc/client'
+
+type RouterOutput = inferRouterOutputs<AppRouter>
+export type User = RouterOutput['user']['me']['user']
+
+export function useUserMayUndefined() {
+  const trpc = useTRPC()
+
+  const { data, refetch: refetchUser } = useQuery(trpc.user.session.queryOptions())
+  return {
+    user: data?.user,
+    refetchUser,
+  }
+}
 
 export function useUser() {
   const trpc = useTRPC()

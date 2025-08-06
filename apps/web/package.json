@@ -42,6 +42,7 @@
     "motion": "^12.5.0",
     "next": "15.4.0-canary.35",
     "next-image-export-optimizer": "^1.18.0",
+    "qrcode.react": "^4.2.0",
     "react": "catalog:react19",
     "react-dom": "catalog:react19",
     "react-error-boundary": "^5.0.0",

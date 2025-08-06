@@ -80,7 +80,7 @@ export default function Page() {
                       {isLoading === provider ? (
                         <CircleSpinner className="text-muted-foreground" />
                       ) : (
-                        <Icon color />
+                        <Icon variant="color" />
                       )}
                     </div>
                     <span className="font-normal text-base">{name}</span>

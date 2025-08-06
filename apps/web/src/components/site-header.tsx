@@ -1,6 +1,6 @@
 'use client'
 
-import { CommandMenu } from '@/components/command-menu'
+// import { CommandMenu } from '@/components/command-menu'
 import { MainNav } from '@/components/main-nav'
 import { MobileNav } from '@/components/mobile-nav'
 import { TopRightNav } from './top-right-nav'
@@ -13,10 +13,10 @@ export function SiteHeader() {
           <MainNav />
           <MobileNav />
           <div className="flex flex-1 items-center justify-between gap-4 md:justify-end">
-            <div className="w-full flex-1 md:w-auto md:flex-none">
-              <CommandMenu />
-            </div>
-            <TopRightNav showThemeSwitcher />
+            {/*<div className="w-full flex-1 md:w-auto md:flex-none">*/}
+            {/*  <CommandMenu />*/}
+            {/*</div>*/}
+            <TopRightNav />
           </div>
         </div>
       </div>

@@ -1,9 +1,8 @@
 'use client'
 
 import type { ConnectedSolanaWallet, ConnectedWallet } from '@privy-io/react-auth'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { usePrivy, useSolanaWallets, useWallets } from '@privy-io/react-auth'
-import { CheckIcon, CopyIcon } from '@radix-ui/react-icons'
 import { useCopyToClipboard } from 'react-use'
 
 import { Badge } from '@cared/ui/components/badge'
@@ -20,6 +19,7 @@ import { Label } from '@cared/ui/components/label'
 import { Separator } from '@cared/ui/components/separator'
 
 import { shortenString } from '@/lib/utils'
+import { WalletAddress } from './wallet-address'
 
 export function WalletInfo() {
   const { ready, authenticated, user } = usePrivy()
@@ -102,33 +102,4 @@ function WalletItem({
   )
 }
 
-function WalletAddress({
-  address,
-  copyToClipboard,
-}: {
-  address: string
-  copyToClipboard: (value: string) => void
-}) {
-  const timeoutHandle = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const [copied, setCopied] = useState(false)
-  const copy = useCallback(() => {
-    copyToClipboard(address)
-    clearTimeout(timeoutHandle.current)
-    timeoutHandle.current = setTimeout(() => {
-      setCopied(false)
-    }, 1000)
-    setCopied(true)
-  }, [address, copyToClipboard, setCopied])
 
-  return (
-    <Button className="py-1 px-2 h-fit text-muted-foreground" variant="outline" onClick={copy}>
-      <p className="font-mono">
-        {shortenString(address, {
-          prefixChars: 4,
-          suffixChars: 6,
-        })}
-      </p>
-      {copied ? <CheckIcon /> : <CopyIcon />}
-    </Button>
-  )
-}

@@ -1,12 +1,10 @@
 'use client'
 
+import type { User } from '@/hooks/use-user'
+
 import { Avatar, AvatarImage } from '@cared/ui/components/avatar'
 
-import { useUser } from '@/hooks/use-user'
-
-export function UserInfo({ showEmail }: { showEmail?: boolean }) {
-  const { user } = useUser()
-
+export function UserInfo({ user, showEmail }: { user: User; showEmail?: boolean }) {
   return (
     <>
       {user.image && (
