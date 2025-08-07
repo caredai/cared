@@ -82,11 +82,14 @@ export async function POST(req: Request) {
                 session.payment_status === 'paid' &&
                 order.status !== 'complete'
               ) {
-                const delta = session.line_items?.data.find(
-                  (lineItem) => lineItem.price?.id === env.STRIPE_CREDITS_PRICE_ID,
+                const quantity = session.line_items?.data.find(
+                  (lineItem) => lineItem.price?.id === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
                 )?.quantity
+                const delta = !isNaN(Number(session.metadata?.credits))
+                  ? Number(session.metadata?.credits)
+                  : 0
 
-                if (delta) {
+                if (quantity && delta && quantity >= delta * 100) {
                   const credits = (
                     await tx
                       .select()
@@ -110,10 +113,17 @@ export async function POST(req: Request) {
                     log.error(`Credits not found for user with id ${order.userId}`)
                   }
                 } else {
-                  log.error(
-                    `Line item not found for checkout session with id ${session.id}`,
-                    session,
-                  )
+                  if (!quantity) {
+                    log.error(
+                      `Line item not found for checkout session with id ${session.id}`,
+                      session,
+                    )
+                  } else {
+                    log.error(
+                      `Invalid quantity for checkout session with id ${session.id}: quantity=${quantity}, credits=${delta}`,
+                      session,
+                    )
+                  }
                 }
               }
             } else {
@@ -167,32 +177,42 @@ export async function POST(req: Request) {
                 order.status !== 'paid'
               ) {
                 /* const delta = invoice.lines.data.find(
-          (lineItem) =>
-            lineItem.pricing?.price_details?.price === env.STRIPE_CREDITS_PRICE_ID,
-        )?.quantity */
-                const delta = invoice.amount_paid / 100
+        (lineItem) =>
+          lineItem.pricing?.price_details?.price === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
+      )?.quantity */
+                const quantity = Math.floor(invoice.amount_paid) / 100
+                const delta = !isNaN(Number(invoice.metadata?.credits))
+                  ? Number(invoice.metadata?.credits)
+                  : 0
 
-                const credits = (
-                  await tx
-                    .select()
-                    .from(Credits)
-                    .where(eq(Credits.userId, order.userId))
-                    .for('update')
-                )[0]
+                if (quantity && delta && quantity >= delta * 100) {
+                  const credits = (
+                    await tx
+                      .select()
+                      .from(Credits)
+                      .where(eq(Credits.userId, order.userId))
+                      .for('update')
+                  )[0]
 
-                if (credits) {
-                  await tx
-                    .update(Credits)
-                    .set({
-                      credits: credits.credits + delta,
-                      metadata: {
-                        ...credits.metadata,
-                        isRechargeInProgress: false,
-                      },
-                    })
-                    .where(eq(Credits.userId, order.userId))
+                  if (credits) {
+                    await tx
+                      .update(Credits)
+                      .set({
+                        credits: credits.credits + delta,
+                        metadata: {
+                          ...credits.metadata,
+                          isRechargeInProgress: false,
+                        },
+                      })
+                      .where(eq(Credits.userId, order.userId))
+                  } else {
+                    log.error(`Credits not found for user with id ${order.userId}`)
+                  }
                 } else {
-                  log.error(`Credits not found for user with id ${order.userId}`)
+                  log.error(
+                    `Invalid quantity for invoice with id ${invoice.id}: quantity=${quantity}, credits=${delta}`,
+                    invoice,
+                  )
                 }
               }
             } else {

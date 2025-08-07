@@ -51,6 +51,7 @@ export default async function Layout({
   prefetch(trpc.user.me.queryOptions())
   prefetch(trpc.user.accounts.queryOptions())
   prefetch(trpc.workspace.list.queryOptions())
+  prefetch(trpc.credits.getCredits.queryOptions())
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>

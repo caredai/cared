@@ -2,6 +2,8 @@
 
 @import '../../../packages/ui/src/tailwindcss-animate.css';
 
+@import './helio.css';
+
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 @source "../../../node_modules/@daveyplate/better-auth-ui";

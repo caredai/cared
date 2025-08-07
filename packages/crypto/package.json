@@ -1,5 +1,5 @@
 {
-  "name": "@cared/wallet",
+  "name": "@cared/crypto",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -25,9 +25,17 @@
   },
   "prettier": "@cared/prettier-config",
   "dependencies": {
+    "@heliofi/checkout-react": "^3.1.0",
+    "@heliofi/sdk": "^2.2.5",
     "@hpke/core": "^1.7.2",
     "@phala/dstack-sdk": "^0.1.11",
     "@privy-io/react-auth": "^2.21.1",
-    "@privy-io/server-auth": "^1.28.8"
+    "@privy-io/server-auth": "^1.28.8",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.4",
+    "alchemy-sdk": "^3.6.2",
+    "blo": "^2.0.0",
+    "viem": "^2.33.2",
+    "wagmi": "^2.16.1"
   }
 }

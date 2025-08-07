@@ -39,6 +39,8 @@ export const orderKinds = ['stripe-payment', 'stripe-subscription', 'stripe-invo
 export type OrderKind = (typeof orderKinds)[number]
 export const orderKindEnum = pgEnum('order_kind', orderKinds)
 
+export type OrderStatus = Stripe.Checkout.Session.Status | Stripe.Invoice.Status
+
 export const CreditsOrder = pgTable(
   'credits_order',
   {
@@ -50,7 +52,7 @@ export const CreditsOrder = pgTable(
       .notNull()
       .references(() => User.id),
     kind: orderKindEnum().notNull(),
-    status: text().$type<Stripe.Checkout.Session.Status | Stripe.Invoice.Status>().notNull(),
+    status: text().$type<OrderStatus>().notNull(),
     objectId: text().unique().notNull(),
     object: jsonb().$type<Stripe.Checkout.Session | Stripe.Invoice>().notNull(),
     ...timestamps,
@@ -68,6 +70,8 @@ export const subscriptionKinds = ['stripe-subscription'] as const
 export type SubscriptionKind = (typeof subscriptionKinds)[number]
 export const subscriptionKindEnum = pgEnum('subscription_kind', subscriptionKinds)
 
+export type SubscriptionStatus = Stripe.Subscription.Status
+
 export const CreditsSubscription = pgTable(
   'credits_subscription',
   {
@@ -79,7 +83,7 @@ export const CreditsSubscription = pgTable(
       .notNull()
       .references(() => User.id),
     kind: subscriptionKindEnum().notNull(),
-    status: text().$type<Stripe.Subscription.Status>().notNull(),
+    status: text().$type<SubscriptionStatus>().notNull(),
     objectId: text().unique().notNull(),
     object: jsonb().$type<Stripe.Subscription>().notNull(),
     ...timestamps,

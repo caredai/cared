@@ -21,15 +21,18 @@ export const env = createEnv({
     UPSTASH_WORKFLOW_URL: z.string().min(1),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
-    STRIPE_CREDITS_PRICE_ID: z.string().min(1).optional(),
-    STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID: z.string().min(1).optional(),
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
   client: {
     NEXT_PUBLIC_IMAGE_URL: z.string().url().optional(),
+    NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID: z.string().min(1).optional(),
+    NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID: z.string().min(1).optional(),
   },
   experimental__runtimeEnv: {
     NEXT_PUBLIC_IMAGE_URL: process.env.NEXT_PUBLIC_IMAGE_URL,
+    NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
+    NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID:
+      process.env.NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID,
   },
   skipValidation: !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
 })

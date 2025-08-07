@@ -4,8 +4,9 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
+import type { OrderStatus } from '@cared/db/schema'
 import { getBaseUrl } from '@cared/auth/client'
-import { and, desc, eq, lt } from '@cared/db'
+import { and, desc, eq, inArray, lt } from '@cared/db'
 import { Credits, CreditsOrder, orderKinds, User } from '@cared/db/schema'
 import log from '@cared/log'
 
@@ -13,6 +14,8 @@ import type { Context } from '../trpc'
 import { getStripe } from '../client/stripe'
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
+
+export const creditsFeeRate = 0.05
 
 async function ensureCustomer(ctx: Context, stripe: Stripe) {
   let credits = await ctx.db.query.Credits.findFirst({
@@ -62,15 +65,44 @@ async function ensureCustomer(ctx: Context, stripe: Stripe) {
   }
 }
 
+async function getRechargePrice(stripe: Stripe) {
+  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stripe top-up price ID is not configured',
+    })
+  }
+
+  const price = await stripe.prices.retrieve(env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID, {
+    expand: ['product'],
+  })
+  if (
+    !(
+      price.active &&
+      price.billing_scheme === 'per_unit' &&
+      price.type === 'one_time' &&
+      !!price.unit_amount
+    )
+  ) {
+    log.error(`Stripe top-up price is not configured correctly:`, price)
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stripe top-up price is not configured correctly',
+    })
+  }
+
+  return price
+}
+
 async function getAutoRechargePrice(stripe: Stripe) {
-  if (!env.STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID) {
+  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID) {
     throw new TRPCError({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Stripe auto top-up price ID is not configured',
     })
   }
 
-  const price = await stripe.prices.retrieve(env.STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID, {
+  const price = await stripe.prices.retrieve(env.NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID, {
     expand: ['product'],
   })
   if (
@@ -94,12 +126,11 @@ async function getAutoRechargePrice(stripe: Stripe) {
 
 export const creditsRouter = {
   getCredits: userProtectedProcedure.query(async ({ ctx }) => {
-    const balance = await ctx.db.query.Credits.findFirst({
-      where: eq(Credits.userId, ctx.auth.userId),
-    })
+    const stripe = getStripe()
+    const { credits } = await ensureCustomer(ctx, stripe)
 
     return {
-      credits: balance?.credits ?? 0,
+      credits,
     }
   }),
 
@@ -107,13 +138,19 @@ export const creditsRouter = {
     .input(
       z.object({
         orderKinds: z.array(z.enum(orderKinds)).optional(),
-        status: z.string().optional(),
+        statuses: z.array(z.string()).optional(),
         limit: z.number().min(1).max(100).default(50),
         cursor: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
       const conditions: SQL<unknown>[] = [eq(CreditsOrder.userId, ctx.auth.userId)]
+      if (input.orderKinds) {
+        conditions.push(inArray(CreditsOrder.kind, input.orderKinds))
+      }
+      if (input.statuses) {
+        conditions.push(inArray(CreditsOrder.status, input.statuses as OrderStatus[]))
+      }
       if (input.cursor) {
         conditions.push(lt(CreditsOrder.id, input.cursor))
       }
@@ -160,12 +197,14 @@ export const creditsRouter = {
       const returnUrl = new URL(`${getBaseUrl()}/account/credits`)
       returnUrl.searchParams.set('checkout_session_id', '{CHECKOUT_SESSION_ID}')
 
+      const price = await getRechargePrice(stripe)
+
       const session = await stripe.checkout.sessions.create({
         ui_mode: 'embedded',
         line_items: [
           {
-            price: env.STRIPE_CREDITS_PRICE_ID!,
-            quantity: input.credits,
+            price: price.id,
+            quantity: Math.ceil(input.credits * 100 * (1 + creditsFeeRate)),
           },
         ],
         mode: 'payment',
@@ -177,6 +216,9 @@ export const creditsRouter = {
         },
         saved_payment_method_options: {
           payment_method_save: 'enabled',
+        },
+        metadata: {
+          credits: input.credits.toString(),
         },
       })
 
@@ -208,7 +250,7 @@ export const creditsRouter = {
       }
 
       return {
-        sessionClientSecret: session.client_secret,
+        sessionClientSecret: session.client_secret!,
       }
     }),
 
@@ -320,7 +362,7 @@ export const creditsRouter = {
       }
 
       return {
-        sessionClientSecret: session.client_secret,
+        sessionClientSecret: session.client_secret!,
       }
     }),
 
@@ -382,12 +424,14 @@ export const creditsRouter = {
       })
     }
 
+    const price = await getRechargePrice(stripe)
+
     await stripe.invoiceItems.create({
       customer: customerId,
       pricing: {
-        price: env.STRIPE_CREDITS_PRICE_ID!,
+        price: price.id,
       },
-      quantity: metadata.autoRechargeAmount!,
+      quantity: Math.ceil(metadata.autoRechargeAmount! * 100 * (1 + creditsFeeRate)),
       subscription: credits.metadata.autoRechargeSubscriptionId,
     })
 
@@ -395,6 +439,9 @@ export const creditsRouter = {
       customer: customerId,
       collection_method: 'send_invoice',
       auto_advance: true,
+      metadata: {
+        credits: metadata.autoRechargeAmount!.toString(),
+      },
     })
 
     try {

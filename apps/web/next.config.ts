@@ -19,6 +19,7 @@ const config = {
     '@cared/providers',
     '@cared/tokenizer',
     '@cared/ui',
+    '@cared/crypto',
   ],
 
   /** We already do linting and typechecking as separate tasks in CI */

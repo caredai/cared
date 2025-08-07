@@ -166,7 +166,6 @@ export default function WalletPage() {
 
   const handleFundWallet = useCallback(
     async (wallet: Wallet) => {
-      console.log('fund....', wallet)
       if (walletType(wallet) === 'ethereum') {
         await fundEthereumWallet(wallet.address)
       } else {
