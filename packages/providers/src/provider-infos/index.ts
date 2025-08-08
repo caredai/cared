@@ -82,9 +82,10 @@ export async function getProviderInfos(): Promise<ProviderInfo[]> {
             ...(provider.textEmbeddingModels ?? []),
           ]) {
             if (model.id === modelId) {
-              model.maxInputTokens = modelInfo.max_input_tokens
+              model.contextWindow = modelInfo.max_input_tokens
               model.maxOutputTokens = modelInfo.max_output_tokens
               model.inputTokenPrice = modelInfo.input_cost_per_token?.toString()
+              model.cachedInputTokenPrice = modelInfo.cache_read_input_token_cost?.toString()
               model.outputTokenPrice = modelInfo.output_cost_per_token?.toString()
             }
           }

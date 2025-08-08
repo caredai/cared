@@ -1,0 +1,7 @@
+- OpenAI
+  - https://platform.openai.com/docs/pricing?latest-pricing=standard&legacy-pricing=standard
+  - https://platform.openai.com/docs/models
+- Anthropic
+  - https://docs.anthropic.com/en/docs/about-claude/pricing
+  - https://docs.anthropic.com/en/docs/about-claude/models/overview
+  - https://docs.anthropic.com/en/docs/about-claude/model-deprecations#model-status

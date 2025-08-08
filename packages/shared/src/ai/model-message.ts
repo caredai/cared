@@ -1,9 +1,14 @@
-import type { ToolCallPart, ToolResultPart } from 'ai'
+import type { ModelMessage, ToolCallPart, ToolResultPart } from 'ai'
 import { z } from 'zod/v4'
+
+import { jsonValueSchema } from './json-value'
 
 export type { ModelMessage } from 'ai'
 
-export const sharedV2ProviderOptionsSchema = z.record(z.string(), z.record(z.string(), z.json()))
+export const sharedV2ProviderOptionsSchema = z.record(
+  z.string(),
+  z.record(z.string(), jsonValueSchema),
+)
 
 export const providerOptionsSchema = sharedV2ProviderOptionsSchema
 
@@ -123,3 +128,6 @@ export const modelMessageSchema = z
       providerOptions: providerOptionsSchema.optional(),
     }),
   )
+
+const _: ModelMessage = {} as z.infer<typeof modelMessageSchema>
+const __: z.infer<typeof modelMessageSchema> = {} as ModelMessage

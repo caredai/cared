@@ -4,6 +4,7 @@ export interface LiteLLMModelInfo {
   max_output_tokens?: number
   input_cost_per_token?: number
   output_cost_per_token?: number
+  cache_read_input_token_cost?: number
   litellm_provider: string
   mode?:
     | 'moderation'
