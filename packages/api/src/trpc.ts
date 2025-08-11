@@ -212,6 +212,7 @@ export type UserOrAppUserContext = BaseContext & {
   auth: {
     userId: string
     appId?: string
+    isAdmin?: boolean
   }
 }
 
@@ -227,6 +228,7 @@ export const userOrAppUserProtectedProcedure = t.procedure
         auth: {
           userId: auth.userId,
           appId: auth.type === 'appUser' ? auth.appId : undefined,
+          isAdmin: auth.type === 'user' && auth.isAdmin,
         },
       },
     })

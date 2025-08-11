@@ -36,6 +36,7 @@ export const ProviderKey = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('pak')),
+    isSystem: boolean(),
     userId: text()
       .references(() => User.id, { onDelete: 'cascade' }),
     organizationId: text()
@@ -46,6 +47,7 @@ export const ProviderKey = pgTable(
     ...timestamps,
   },
   (table) => [
+    index().on(table.isSystem, table.providerId),
     index().on(table.userId, table.providerId),
     index().on(table.organizationId, table.providerId),
   ],

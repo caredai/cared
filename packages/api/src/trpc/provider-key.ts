@@ -100,15 +100,17 @@ export const providerKeyRouter = {
     })
     .input(
       z.object({
+        isSystem: z.boolean().optional(),
         organizationId: z.string().optional(),
         providerId: providerIdSchema.optional(),
       }),
     )
     .query(async ({ input, ctx }) => {
-      const { organizationId, providerId } = input
+      const { isSystem, organizationId, providerId } = input
 
       if (
         !(await checkPermissions(ctx, {
+          isSystem,
           organizationId,
         }))
       ) {
@@ -119,9 +121,11 @@ export const providerKeyRouter = {
       }
 
       const conditions: SQL<unknown>[] = [
-        !organizationId
-          ? eq(ProviderKey.userId, ctx.auth.userId)
-          : eq(ProviderKey.organizationId, organizationId),
+        isSystem
+          ? eq(ProviderKey.isSystem, true)
+          : !organizationId
+            ? eq(ProviderKey.userId, ctx.auth.userId)
+            : eq(ProviderKey.organizationId, organizationId),
       ]
 
       if (providerId) {
@@ -157,6 +161,7 @@ export const providerKeyRouter = {
     })
     .input(
       z.object({
+        isSystem: z.boolean().optional(),
         organizationId: z.string().optional(),
         providerId: providerIdSchema,
         key: providerKeySchema, // Use the imported schema instead of manual validation
@@ -164,12 +169,13 @@ export const providerKeyRouter = {
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { organizationId, providerId, key, disabled } = input
+      const { isSystem, organizationId, providerId, key, disabled } = input
 
       if (
         !(await checkPermissions(
           ctx,
           {
+            isSystem,
             organizationId,
           },
           { providerKey: ['create'] },
@@ -188,8 +194,9 @@ export const providerKeyRouter = {
       const [newKey] = await db
         .insert(ProviderKey)
         .values({
-          userId: !organizationId ? ctx.auth.userId : undefined,
-          organizationId,
+          isSystem,
+          userId: !isSystem && !organizationId ? ctx.auth.userId : undefined,
+          organizationId: !isSystem ? organizationId : undefined,
           providerId,
           key: encryptedKey,
           disabled,
@@ -248,6 +255,7 @@ export const providerKeyRouter = {
         !(await checkPermissions(
           ctx,
           {
+            isSystem: existingKey.isSystem,
             userId: existingKey.userId,
             organizationId: existingKey.organizationId,
           },
@@ -323,6 +331,7 @@ export const providerKeyRouter = {
         !(await checkPermissions(
           ctx,
           {
+            isSystem: existingKey.isSystem,
             userId: existingKey.userId,
             organizationId: existingKey.organizationId,
           },
@@ -343,15 +352,22 @@ export const providerKeyRouter = {
 async function checkPermissions(
   ctx: UserOrAppUserContext,
   {
+    isSystem,
     userId,
     organizationId,
   }: {
+    isSystem?: boolean | null
     userId?: string | null
     organizationId?: string | null
   },
   permissions: OrganizationStatementsSubset = {},
 ) {
-  if (organizationId) {
+  if (isSystem) {
+    if (!ctx.auth.isAdmin) {
+      // Only admin users can access system provider keys
+      return false
+    }
+  } else if (organizationId) {
     if (ctx.auth.appId) {
       // App user cannot access organization provider keys
       return false
