@@ -4,7 +4,7 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import { auth } from '@cared/auth'
-import { and, desc, eq, gt, lt, sql } from '@cared/db'
+import { and, desc, eq, gt, lt, sql, asc } from '@cared/db'
 import { user as User } from '@cared/db/schema/auth'
 
 import { adminProcedure } from '../../trpc'
@@ -24,6 +24,7 @@ export const userRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().int().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -45,40 +46,23 @@ export const userRouter = {
       // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(User.id, input.after))
-      } else if (input.before) {
+      }
+      if (input.before) {
         conditions.push(lt(User.id, input.before))
       }
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-
-      // Fetch users with appropriate ordering
-      let users
-      if (isBackwardPagination) {
-        users = await ctx.db
-          .select()
-          .from(User)
-          .where(query)
-          .orderBy(User.id) // Ascending order
-          .limit(input.limit + 1)
-      } else {
-        users = await ctx.db
-          .select()
-          .from(User)
-          .where(query)
-          .orderBy(desc(User.id)) // Descending order
-          .limit(input.limit + 1)
-      }
+      const users = await ctx.db.query.User.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(User.id) : asc(User.id),
+        limit: input.limit + 1,
+      })
 
       const hasMore = users.length > input.limit
       if (hasMore) {
         users.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      users = isBackwardPagination ? users.reverse() : users
 
       // Get first and last user IDs
       const first = users[0]?.id

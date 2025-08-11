@@ -8,7 +8,7 @@ import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@cared/db
 
 import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
-import { verifyWorkspaceOwner } from './workspace'
+import { OrganizationScope } from '../auth/scoped'
 
 // Helper function: Format OAuth application
 export function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
@@ -44,7 +44,8 @@ export const oauthAppRouter = {
       // If appId is provided, verify app ownership
       if (input.appId) {
         const app = await getAppById(ctx, input.appId)
-        await verifyWorkspaceOwner(ctx, app.workspaceId)
+        const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+        await scope.checkPermissions()
 
         const clientId = app.metadata.clientId
         if (!clientId) {
@@ -71,7 +72,8 @@ export const oauthAppRouter = {
 
       // If workspaceId is provided, verify workspace ownership and list all OAuth apps
       if (input.workspaceId) {
-        await verifyWorkspaceOwner(ctx, input.workspaceId)
+        const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+        await scope.checkPermissions()
 
         // Get all apps in the workspace
         const apps = await ctx.db.query.App.findMany({
@@ -116,7 +118,8 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      await verifyWorkspaceOwner(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions()
 
       // Check if clientId exists in application metadata
       const clientId = app.metadata.clientId
@@ -138,7 +141,8 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      await verifyWorkspaceOwner(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions()
 
       // Get clientId from application metadata
       const clientId = app.metadata.clientId
@@ -223,7 +227,10 @@ export const oauthAppRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      await verifyWorkspaceOwner(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['create'] })
+
+      // TODO: check if the app already has an OAuth application
 
       const _oauthApp = await auth.api.registerOAuthApplication({
         headers: await headers(),
@@ -287,7 +294,8 @@ export const oauthAppRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      await verifyWorkspaceOwner(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['update'] })
 
       // Get clientId from application metadata
       const clientId = app.metadata.clientId
@@ -336,7 +344,8 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      await verifyWorkspaceOwner(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['delete'] })
 
       // Get clientId from application metadata
       const clientId = app.metadata.clientId
@@ -370,7 +379,8 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      await verifyWorkspaceOwner(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['update'] })
 
       // Get clientId from application metadata
       const clientId = app.metadata.clientId

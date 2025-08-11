@@ -4,7 +4,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
 import type { AppMetadata } from '@cared/db/schema'
-import { and, count, desc, eq, gt, inArray, lt, sql } from '@cared/db'
+import { and, asc, count, desc, eq, gt, inArray, lt, sql } from '@cared/db'
 import {
   Agent,
   AgentVersion,
@@ -24,12 +24,12 @@ import { defaultModels } from '@cared/providers'
 import { mergeWithoutUndefined } from '@cared/shared'
 
 import type { Context } from '../trpc'
+import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
 import { env } from '../env'
 import { getClient } from '../rest/s3-upload/client'
 import { parseS3Url } from '../rest/s3-upload/route'
 import { publicProcedure, userProtectedProcedure } from '../trpc'
-import { verifyWorkspaceMembership } from './workspace'
 
 /**
  * Get an app by ID.
@@ -66,6 +66,7 @@ export async function getApps(
     limit: number
     after?: string
     before?: string
+    order?: 'desc' | 'asc'
   },
 ) {
   const conditions: SQL<unknown>[] = []
@@ -77,40 +78,24 @@ export async function getApps(
   // Add cursor conditions based on pagination direction
   if (baseQuery.after) {
     conditions.push(gt(App.id, baseQuery.after))
-  } else if (baseQuery.before) {
+  }
+  if (baseQuery.before) {
     conditions.push(lt(App.id, baseQuery.before))
   }
 
   const query = conditions.length > 0 ? and(...conditions) : undefined
 
-  // Determine if this is backward pagination
-  const isBackwardPagination = !!baseQuery.before
-
   // Get paginated apps with appropriate ordering
-  let apps
-  if (isBackwardPagination) {
-    apps = await ctx.db
-      .select()
-      .from(App)
-      .where(query)
-      .orderBy(App.id) // Ascending order
-      .limit(baseQuery.limit + 1) // Get one extra to determine hasMore
-  } else {
-    apps = await ctx.db
-      .select()
-      .from(App)
-      .where(query)
-      .orderBy(desc(App.id)) // Descending order
-      .limit(baseQuery.limit + 1) // Get one extra to determine hasMore
-  }
+  const apps = await ctx.db.query.App.findMany({
+    where: query,
+    orderBy: (baseQuery.order ?? 'desc') === 'desc' ? desc(App.id) : asc(App.id),
+    limit: baseQuery.limit + 1, // Get one extra to determine hasMore
+  })
 
   const hasMore = apps.length > baseQuery.limit
   if (hasMore) {
     apps.pop() // Remove the extra item
   }
-
-  // Reverse results for backward pagination to maintain consistent ordering
-  apps = isBackwardPagination ? apps.reverse() : apps
 
   if (apps.length === 0) {
     return {
@@ -253,16 +238,19 @@ export const appRouter = {
         after: z.string().optional(),
         before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
+        order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
     .query(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions()
 
       const result = await getApps(ctx, {
         where: eq(App.workspaceId, input.workspaceId),
         after: input.after,
         before: input.before,
         limit: input.limit,
+        order: input.order,
       })
 
       return {
@@ -289,10 +277,12 @@ export const appRouter = {
         after: z.string().optional(),
         before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
+        order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
     .query(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions()
 
       const result = await getApps(ctx, {
         where: and(
@@ -302,6 +292,7 @@ export const appRouter = {
         after: input.after,
         before: input.before,
         limit: input.limit,
+        order: input.order,
       })
 
       return {
@@ -328,16 +319,19 @@ export const appRouter = {
         after: z.string().optional(),
         before: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
+        order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
     .query(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions()
 
       const result = await getApps(ctx, {
         where: and(eq(App.workspaceId, input.workspaceId), inArray(AppsToTags.tag, input.tags)),
         after: input.after,
         before: input.before,
         limit: input.limit,
+        order: input.order,
       })
 
       return {
@@ -363,11 +357,13 @@ export const appRouter = {
         after: z.number().optional(),
         before: z.number().optional(),
         limit: z.number().min(1).max(100).default(50),
+        order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(AppVersion.appId, input.id)]
 
@@ -378,12 +374,11 @@ export const appRouter = {
         conditions.push(lt(AppVersion.version, input.before))
       }
 
-      const versions = await ctx.db
-        .select()
-        .from(AppVersion)
-        .where(and(...conditions))
-        .orderBy(desc(AppVersion.version))
-        .limit(input.limit + 1)
+      const versions = await ctx.db.query.AppVersion.findMany({
+        where: and(...conditions),
+        orderBy: input.order === 'desc' ? desc(AppVersion.version) : AppVersion.version,
+        limit: input.limit + 1,
+      })
 
       const hasMore = versions.length > input.limit
       if (hasMore) {
@@ -418,7 +413,8 @@ export const appRouter = {
     )
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions()
       return { app }
     }),
 
@@ -439,7 +435,8 @@ export const appRouter = {
     )
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions()
 
       const version = await ctx.db.query.AppVersion.findFirst({
         where: and(eq(AppVersion.appId, input.id), eq(AppVersion.version, input.version)),
@@ -466,7 +463,8 @@ export const appRouter = {
     .meta({ openapi: { method: 'POST', path: '/v1/apps' } })
     .input(CreateAppSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions({ app: ['create'] })
 
       // Validate imageUrl if provided
       if (input.metadata.imageUrl) {
@@ -566,7 +564,8 @@ export const appRouter = {
     .mutation(async ({ ctx, input }) => {
       const { id, ...update } = input
       const app = await getAppById(ctx, id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['update'] })
 
       const draft = await getAppVersion(ctx, id, 'draft')
       // Check if there's any published version
@@ -663,7 +662,8 @@ export const appRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['delete'] })
 
       return await ctx.db.transaction(async (tx) => {
         // Get all agent IDs for this app
@@ -716,7 +716,8 @@ export const appRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['publish'] })
       const draftVersion = await getAppVersion(ctx, input.id, 'draft')
 
       return ctx.db.transaction(async (tx) => {
@@ -842,57 +843,43 @@ export const appRouter = {
    */
   listTags: publicProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/tags' } })
-    .input(
-      z
-        .object({
-          after: z.string().optional(),
-          before: z.string().optional(),
-          limit: z.number().min(1).max(100).default(50),
-        })
-        .refine(
-          ({ after, before }) => !(after && before),
-          'Cannot use both after and before cursors',
-        )
-        .default({ limit: 50 }),
-    )
+          .input(
+        z
+          .object({
+            after: z.string().optional(),
+            before: z.string().optional(),
+            limit: z.number().min(1).max(100).default(50),
+            order: z.enum(['desc', 'asc']).default('desc'),
+          })
+          .refine(
+            ({ after, before }) => !(after && before),
+            'Cannot use both after and before cursors',
+          )
+          .default({ limit: 50, order: 'desc' }),
+      )
     .query(async ({ ctx, input }) => {
       const conditions: SQL<unknown>[] = []
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Tag.name, input.after))
-      } else if (input.before) {
+      }
+      if (input.before) {
         conditions.push(lt(Tag.name, input.before))
       }
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-      // Fetch tags with appropriate ordering
-      let tags
-      if (isBackwardPagination) {
-        tags = await ctx.db.query.Tag.findMany({
-          where: query,
-          orderBy: Tag.name, // Ascending order
-          limit: input.limit + 1,
-        })
-      } else {
-        tags = await ctx.db.query.Tag.findMany({
-          where: query,
-          orderBy: desc(Tag.name), // Descending order
-          limit: input.limit + 1,
-        })
-      }
+      const tags = await ctx.db.query.Tag.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(Tag.name) : asc(Tag.name),
+        limit: input.limit + 1,
+      })
 
       const hasMore = tags.length > input.limit
       if (hasMore) {
         tags.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      // For example: if forward pagination shows A->B->C, backward pagination should also return results in A->B->C order
-      tags = isBackwardPagination ? tags.reverse() : tags
 
       // Get first and last tag names from the result
       const first = tags[0]?.name
@@ -924,7 +911,8 @@ export const appRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['update'] })
 
       return ctx.db.transaction(async (tx) => {
         // Delete all existing tags
@@ -966,56 +954,43 @@ export const appRouter = {
    */
   listCategories: publicProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/categories' } })
-    .input(
-      z
-        .object({
-          after: z.string().optional(),
-          before: z.string().optional(),
-          limit: z.number().min(1).max(100).default(50),
-        })
-        .refine(
-          ({ after, before }) => !(after && before),
-          'Cannot use both after and before cursors',
+            .input(
+          z
+            .object({
+              after: z.string().optional(),
+              before: z.string().optional(),
+              limit: z.number().min(1).max(100).default(50),
+              order: z.enum(['desc', 'asc']).default('desc'),
+            })
+            .refine(
+              ({ after, before }) => !(after && before),
+              'Cannot use both after and before cursors',
+            )
+            .default({ limit: 50, order: 'desc' }),
         )
-        .default({ limit: 50 }),
-    )
     .query(async ({ ctx, input }) => {
       const conditions: SQL<unknown>[] = []
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Category.id, input.after))
-      } else if (input.before) {
+      }
+      if (input.before) {
         conditions.push(lt(Category.id, input.before))
       }
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-      // Fetch categories with appropriate ordering
-      let categories
-      if (isBackwardPagination) {
-        categories = await ctx.db.query.Category.findMany({
-          where: query,
-          orderBy: Category.id, // Ascending order
-          limit: input.limit + 1,
-        })
-      } else {
-        categories = await ctx.db.query.Category.findMany({
-          where: query,
-          orderBy: desc(Category.id), // Descending order
-          limit: input.limit + 1,
-        })
-      }
+      const categories = await ctx.db.query.Category.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(Category.id) : asc(Category.id),
+        limit: input.limit + 1,
+      })
 
       const hasMore = categories.length > input.limit
       if (hasMore) {
         categories.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      categories = isBackwardPagination ? categories.reverse() : categories
 
       // Get first and last category IDs
       const first = categories[0]?.id
@@ -1048,7 +1023,8 @@ export const appRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      await verifyWorkspaceMembership(ctx, app.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      await scope.checkPermissions({ app: ['update'] })
 
       // Check for same category IDs in both add and remove arrays
       if (input.add?.length && input.remove?.length) {

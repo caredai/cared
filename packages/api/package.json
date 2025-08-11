@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./auth": "./src/auth.ts",
+    "./types": "./src/types/index.ts",
+    "./auth": "./src/auth/index.ts",
     "./rest": "./src/rest/index.ts"
   },
   "license": "MIT",

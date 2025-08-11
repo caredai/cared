@@ -71,27 +71,6 @@ export async function getProviderInfos(): Promise<ProviderInfo[]> {
         languageModels: openrouterModels,
       },
     ]
-
-    for (const provider of providerInfosSingleton) {
-      const info = litellmModels[provider.id]
-      if (info) {
-        for (const [modelId, modelInfo] of Object.entries(info)) {
-          for (const model of [
-            ...(provider.languageModels ?? []),
-            ...(provider.imageModels ?? []),
-            ...(provider.textEmbeddingModels ?? []),
-          ]) {
-            if (model.id === modelId) {
-              model.contextWindow = modelInfo.max_input_tokens
-              model.maxOutputTokens = modelInfo.max_output_tokens
-              model.inputTokenPrice = modelInfo.input_cost_per_token?.toString()
-              model.cachedInputTokenPrice = modelInfo.cache_read_input_token_cost?.toString()
-              model.outputTokenPrice = modelInfo.output_cost_per_token?.toString()
-            }
-          }
-        }
-      }
-    }
   }
 
   return providerInfosSingleton

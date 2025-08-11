@@ -5,11 +5,11 @@ import { sanitizeKey } from 'next-s3-upload'
 import { POST as APIRoute } from 'next-s3-upload/route'
 import { v7 as uuid } from 'uuid'
 
-import { and, eq } from '@cared/db'
+import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
-import { App, Chat, Dataset, Membership } from '@cared/db/schema'
+import { App, Chat, Dataset } from '@cared/db/schema'
 
-import { auth } from '../../auth'
+import { authenticate, OrganizationScope } from '../../auth'
 import { env } from '../../env'
 
 const allowedExtensions = [
@@ -58,8 +58,8 @@ const _APIRoute = APIRoute.configure({
   region: env.S3_REGION,
   endpoint: env.S3_ENDPOINT,
   async key(req, filename) {
-    const { userId } = await auth()
-    if (!userId) {
+    const auth = await authenticate()
+    if (!auth.isAuthenticated()) {
       throw new TRPCError({ code: 'UNAUTHORIZED' })
     }
 
@@ -97,19 +97,10 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        // Verify user is a workspace member
-        const membership = await db.query.Membership.findFirst({
-          where: and(
-            eq(Membership.workspaceId, dataset.workspaceId),
-            eq(Membership.userId, userId),
-          ),
+        const scope = await OrganizationScope.fromWorkspace(db, dataset.workspaceId)
+        await scope.checkPermissions({
+          dataset: ['update'],
         })
-        if (!membership) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You are not a member of this workspace',
-          })
-        }
 
         return `${dataset.workspaceId}/${location.datasetId}/${name}`
       }
@@ -126,16 +117,10 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        // Verify user is a workspace member
-        const membership = await db.query.Membership.findFirst({
-          where: and(eq(Membership.workspaceId, app.workspaceId), eq(Membership.userId, userId)),
+        const scope = await OrganizationScope.fromApp(db, app)
+        await scope.checkPermissions({
+          dataset: ['update'],
         })
-        if (!membership) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You are not a member of this workspace',
-          })
-        }
 
         return `${app.workspaceId}/${location.appId}/${name}`
       }
@@ -163,16 +148,10 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        // Verify user is a workspace member
-        const membership = await db.query.Membership.findFirst({
-          where: and(eq(Membership.workspaceId, app.workspaceId), eq(Membership.userId, userId)),
+        const scope = await OrganizationScope.fromApp(db, app)
+        await scope.checkPermissions({
+          dataset: ['update'],
         })
-        if (!membership) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You are not a member of this workspace',
-          })
-        }
 
         return `${app.workspaceId}/${chat.appId}/${location.chatId}/${name}`
       }

@@ -2,44 +2,54 @@ import { cache } from 'react'
 import { headers } from 'next/headers'
 import { base64Url } from '@better-auth/utils/base64'
 import { createHash } from '@better-auth/utils/hash'
-import { TRPCError } from '@trpc/server'
 
 import { auth as authApi } from '@cared/auth'
 import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@cared/db/schema'
 
-export type Auth =
-  // for user auth
-  | {
-      userId: string
-      isAdmin?: never
-      appId?: never
-    }
-  // for admin user auth
-  | {
-      userId: string
-      isAdmin: true
-      appId?: never
-    }
-  // for app user auth
-  | {
-      userId: string
-      isAdmin?: never
-      appId: string
-    }
-  // for app api key auth
-  | {
-      userId?: never
-      isAdmin?: never
-      appId: string
-    }
+import type { ApiKeyAuth, ApiKeyMetadata } from './api-key'
 
-export async function auth() {
-  return authWithHeaders(await headers())
+export class Auth {
+  constructor(
+    public auth?:
+      | {
+          type: 'user'
+          userId: string
+          isAdmin?: boolean
+        }
+      | {
+          type: 'appUser'
+          userId: string
+          appId: string
+        }
+      | ({
+          type: 'apiKey'
+        } & ApiKeyAuth),
+  ) {}
+
+  type() {
+    return this.auth?.type
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.auth
+  }
+
+  isAdmin(): boolean {
+    const auth = this.auth
+    return (
+      (auth?.type === 'user' && !!auth.isAdmin) ||
+      (auth?.type === 'apiKey' && auth.scope === 'user' && !!auth.isAdmin)
+    )
+  }
 }
 
-export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<Auth>> => {
+export async function authenticate() {
+  return authenticateWithHeaders(await headers())
+}
+
+export const authenticateWithHeaders = cache(async (headers: Headers): Promise<Auth> => {
   const key = headers.get('X-API-KEY')
   if (key) {
     // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
@@ -54,20 +64,29 @@ export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<A
     })
 
     if (apiKey?.metadata) {
-      const appId = JSON.parse(apiKey.metadata).appId! as string
+      const metadata = JSON.parse(apiKey.metadata) as ApiKeyMetadata
 
-      const userId = headers.get('X-USER-ID')
-      if (userId) {
-        const user = await db.query.user.findFirst({
-          where: eq(User.id, userId),
+      const auth = {
+        ...metadata,
+      } as ApiKeyAuth
+
+      if (auth.scope === 'user') {
+        auth.userId = apiKey.userId
+
+        const user = await db.query.User.findFirst({
+          where: eq(User.id, apiKey.userId),
         })
         if (!user) {
-          return {}
+          return new Auth()
         }
-        return { appId, userId }
-      } else {
-        return { appId }
+
+        auth.isAdmin = user.role === 'admin'
       }
+
+      return new Auth({
+        type: 'apiKey',
+        ...auth,
+      })
     }
   }
 
@@ -85,7 +104,11 @@ export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<A
       })
       if (oauthApp?.metadata) {
         const appId = JSON.parse(oauthApp.metadata).appId! as string
-        return { appId, userId: accessToken.userId! }
+        return new Auth({
+          type: 'appUser',
+          appId,
+          userId: accessToken.userId!,
+        })
       }
     }
   }
@@ -95,7 +118,7 @@ export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<A
       headers,
     })) ?? {}
   if (!user || !session) {
-    return {}
+    return new Auth()
   }
 
   {
@@ -105,25 +128,19 @@ export const authWithHeaders = cache(async (headers: Headers): Promise<Partial<A
         where: eq(App.id, appId),
       })
       if (!app) {
-        return {}
+        return new Auth()
       }
-      return { appId, userId: session.userId }
+      return new Auth({
+        type: 'appUser',
+        appId,
+        userId: session.userId,
+      })
     }
   }
 
-  return user.role === 'admin'
-    ? { userId: session.userId, isAdmin: true }
-    : { userId: session.userId }
+  return new Auth({
+    type: 'user',
+    userId: session.userId,
+    isAdmin: user.role === 'admin',
+  })
 })
-
-export function checkAppUser(auth: Auth, appId: string) {
-  if (!auth.userId) {
-    return
-  }
-  if (auth.appId && auth.appId !== appId) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'Accessing the app is not authorized by the user',
-    })
-  }
-}

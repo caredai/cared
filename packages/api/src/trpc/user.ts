@@ -7,10 +7,11 @@ import { and, desc, eq, inArray } from '@cared/db'
 import {
   Account,
   App,
-  Membership,
+  Member,
   OAuthAccessToken,
   OAuthApplication,
   OAuthConsent,
+  Organization,
   User,
   Workspace,
 } from '@cared/db/schema'
@@ -160,24 +161,26 @@ export const userRouter = {
         .select({
           app: App,
           workspace: Workspace,
+          organization: Organization,
           owner: User,
         })
         .from(App)
         .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
-        .innerJoin(Membership, eq(Membership.workspaceId, Workspace.id))
-        .innerJoin(User, eq(User.id, Membership.userId))
+        .innerJoin(Organization, eq(Organization.id, Workspace.organizationId))
+        .innerJoin(Member, eq(Member.organizationId, Workspace.organizationId))
+        .innerJoin(User, eq(User.id, Member.userId))
         .where(
           and(
             inArray(
               App.id,
               oauthApps.map((a) => a.metadata.appId),
             ),
-            eq(Membership.role, 'owner'),
+            eq(Member.role, 'owner'),
           ),
         )
 
       return {
-        apps: apps.map(({ app, workspace, owner }) => ({
+        apps: apps.map(({ app, workspace, organization, owner }) => ({
           clientId: app.metadata.clientId!,
           access: {
             createdAt: oauthApps.find((a) => a.metadata.appId === app.id)?.createdAt,
@@ -189,6 +192,10 @@ export const userRouter = {
           workspace: {
             id: workspace.id,
             name: workspace.name,
+          },
+          organization: {
+            id: organization.id,
+            name: organization.name,
           },
           owner: {
             id: owner.id,

@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
-import { and, desc, eq, gt, inArray, lt } from '@cared/db'
+import { and, asc, desc, eq, gt, inArray, lt } from '@cared/db'
 import {
   AppsToCategories,
   AppsToTags,
@@ -30,6 +30,7 @@ export const appRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -41,6 +42,7 @@ export const appRouter = {
         after: input.after,
         before: input.before,
         limit: input.limit,
+        order: input.order,
       })
 
       return {
@@ -65,6 +67,7 @@ export const appRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -77,6 +80,7 @@ export const appRouter = {
         after: input.after,
         before: input.before,
         limit: input.limit,
+        order: input.order,
       })
 
       return {
@@ -101,6 +105,7 @@ export const appRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -113,6 +118,7 @@ export const appRouter = {
         after: input.after,
         before: input.before,
         limit: input.limit,
+        order: input.order,
       })
 
       return {
@@ -138,6 +144,7 @@ export const appRouter = {
           after: z.number().optional(),
           before: z.number().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -152,40 +159,23 @@ export const appRouter = {
       // Add cursor conditions based on pagination direction
       if (typeof input.after === 'number') {
         conditions.push(gt(AppVersion.version, input.after))
-      } else if (typeof input.before === 'number') {
+      }
+      if (typeof input.before === 'number') {
         conditions.push(lt(AppVersion.version, input.before))
       }
 
       const query = and(...conditions)
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-
-      // Fetch versions with appropriate ordering
-      let versions
-      if (isBackwardPagination) {
-        versions = await ctx.db
-          .select()
-          .from(AppVersion)
-          .where(query)
-          .orderBy(AppVersion.version) // Ascending order
-          .limit(input.limit + 1)
-      } else {
-        versions = await ctx.db
-          .select()
-          .from(AppVersion)
-          .where(query)
-          .orderBy(desc(AppVersion.version)) // Descending order
-          .limit(input.limit + 1)
-      }
+      const versions = await ctx.db.query.AppVersion.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(AppVersion.version) : asc(AppVersion.version),
+        limit: input.limit + 1,
+      })
 
       const hasMore = versions.length > input.limit
       if (hasMore) {
         versions.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      versions = isBackwardPagination ? versions.reverse() : versions
 
       // Get first and last version numbers
       const first = versions[0]?.version

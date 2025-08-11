@@ -4,11 +4,11 @@ import * as trpc from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod/v4'
 
-import type { DB } from '@cared/db/client'
+import type { Database } from '@cared/db/client'
 import { db } from '@cared/db/client'
 
 import type { Auth } from './auth'
-import { authWithHeaders } from './auth'
+import { authenticateWithHeaders } from './auth'
 
 /**
  * 1. CONTEXT
@@ -30,11 +30,11 @@ export const createTRPCContext = async ({
   resHeaders?: Headers
 }): Promise<{
   auth: Partial<Auth>
-  db: DB
+  db: Database
   headers: Headers
   resHeaders?: Headers
 }> => {
-  const auth = await authWithHeaders(headers)
+  const auth = await authenticateWithHeaders(headers)
 
   console.log(
     '>>> tRPC Request from',

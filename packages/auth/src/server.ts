@@ -30,6 +30,7 @@ import { generateId } from '@cared/shared'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
+import { orgAc, orgRoles } from './permissions'
 import { customPlugin } from './plugin'
 
 const kv = getKV('auth', 'upstash')
@@ -166,7 +167,27 @@ const options = {
     passkey(),
     twoFactor(),
     admin(),
-    organization(),
+    organization({
+      ac: orgAc,
+      roles: orgRoles,
+      organizationLimit: 2,
+      membershipLimit: 100,
+      teams: {
+        enabled: true,
+        defaultTeam: {
+          enabled: false,
+        },
+        maximumTeams: 3,
+        maximumMembersPerTeam: undefined,
+        allowRemovingAllTeams: true,
+      },
+      invitationLimit: 100,
+      cancelPendingInvitationsOnReInvite: true,
+      organizationDeletion: {
+        disabled: true, // TODO
+      },
+      autoCreateOrganizationOnSignUp: false,
+    }),
     genericOAuth({
       config: [],
     }),
@@ -358,7 +379,7 @@ function modelPrefix(model: LiteralUnion<Models, string>) {
       return 'ses'
     case 'verification':
       return 'vrf'
-    case 'rate-limit':
+    case 'rateLimit':
       return 'rl'
     case 'organization':
       return 'org'
@@ -366,12 +387,24 @@ function modelPrefix(model: LiteralUnion<Models, string>) {
       return 'member'
     case 'invitation':
       return 'invite'
+    case 'team':
+      return 'team'
+    case 'teamMember':
+      return 'tm'
     case 'jwks':
       return 'jwks'
     case 'passkey':
       return 'passkey'
-    case 'two-factor':
+    case 'twoFactor':
       return '2fa'
+    case 'oauthApplication':
+      return 'oa'
+    case 'oauthAccessToken':
+      return 'oat'
+    case 'oauthConsent':
+      return 'oc'
+    case 'apikey':
+      return 'ak'
     default:
       return model.slice(0, 6)
   }

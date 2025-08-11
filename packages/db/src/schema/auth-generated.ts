@@ -109,11 +109,31 @@ export const invitation = pgTable('invitation', {
     .references(() => organization.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
   role: text('role'),
+  teamId: text('team_id'),
   status: text('status').default('pending').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   inviterId: text('inviter_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
+})
+
+export const team = pgTable('team', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at'),
+})
+
+export const teamMember = pgTable('team_member', {
+  id: text('id').primaryKey(),
+  teamId: text('team_id').notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at'),
 })
 
 export const oauthApplication = pgTable('oauth_application', {

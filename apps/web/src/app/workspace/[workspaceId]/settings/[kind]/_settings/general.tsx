@@ -9,7 +9,7 @@ import { AlertTriangle, Trash2, UserPlus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { UpdateWorkspaceSchema } from '@cared/db/schema'
+import { updateWorkspaceSchema } from '@cared/api/types'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,7 +76,7 @@ export function General({ workspace }: { workspace: Workspace }) {
 
   // Form for updating workspace name
   const form = useForm({
-    resolver: zodResolver(UpdateWorkspaceSchema.omit({ id: true })),
+    resolver: zodResolver(updateWorkspaceSchema.omit({ id: true })),
     defaultValues: {
       name: workspace.name,
     },

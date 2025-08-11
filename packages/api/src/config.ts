@@ -1,13 +1,13 @@
 export const cfg = {
   /**
-   * User-level resource limitations
-   * Defines the maximum resources allocated to each user
+   * Organization-level resource limitations
+   * Defines the maximum resources allocated to each organization
    */
-  perUser: {
+  perOrganization: {
     /**
-     * Maximum number of workspaces a user can create or join
+     * Maximum number of workspaces an organization can create or join
      */
-    maxWorkspaces: 10,
+    maxWorkspaces: 5,
   },
 
   /**
@@ -15,11 +15,6 @@ export const cfg = {
    * Defines the maximum resources allocated to each workspace
    */
   perWorkspace: {
-    /**
-     * Maximum number of members that can be added to a workspace
-     */
-    maxMembers: 100,
-
     /**
      * Maximum number of applications that can be created in a workspace
      */

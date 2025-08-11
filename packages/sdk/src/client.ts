@@ -7,7 +7,6 @@ export type CaredClientOptions = {
 } & (
   | {
       apiKey: string
-      userId: string
     }
   | {
       accessToken: string | (() => string | Promise<string>) // user access token retrieved from the oauth app auth
@@ -42,13 +41,11 @@ export type CaredTrpcClient = ReturnType<typeof createCaredTrpcClient>
 export async function makeHeaders(opts: CaredClientOptions) {
   const headers = new Headers()
 
-  const { apiKey, userId } = opts as {
+  const { apiKey } = opts as {
     apiKey?: string
-    userId: string
   }
   if (apiKey) {
     headers.set('X-API-KEY', apiKey)
-    headers.set('X-USER-ID', userId)
     return headers
   }
 

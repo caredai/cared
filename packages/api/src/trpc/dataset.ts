@@ -4,7 +4,7 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import type { DatasetMetadata } from '@cared/db/schema'
-import { and, desc, eq, gt, lt } from '@cared/db'
+import { and, asc, desc, eq, gt, lt } from '@cared/db'
 import {
   CreateDatasetSchema,
   CreateDocumentChunkSchema,
@@ -24,14 +24,15 @@ import { defaultModels } from '@cared/providers'
 import { mergeWithoutUndefined } from '@cared/shared'
 
 import type { Context } from '../trpc'
+import { OrganizationScope } from '../auth'
 import { env } from '../env'
 import { getClient } from '../rest/s3-upload/client'
 import { taskTrigger } from '../rest/tasks'
 import { userProtectedProcedure } from '../trpc'
-import { verifyWorkspaceMembership } from './workspace'
 
 /**
- * Get a dataset by ID and verify workspace access.
+ * Get a dataset by ID.
+ * Note: Workspace access verification is handled by the calling function using OrganizationScope.
  */
 async function getDatasetById(ctx: Context, id: string, workspaceId?: string) {
   const query = workspaceId
@@ -67,61 +68,46 @@ export const datasetRouter = {
         summary: 'List all datasets in a workspace',
       },
     })
-    .input(
-      z
-        .object({
-          workspaceId: z.string().min(32),
-          after: z.string().optional(),
-          before: z.string().optional(),
-          limit: z.number().min(1).max(100).default(50),
-        })
-        .refine(
-          ({ after, before }) => !(after && before),
-          'Cannot use both after and before cursors',
-        ),
-    )
+            .input(
+          z
+            .object({
+              workspaceId: z.string().min(32),
+              after: z.string().optional(),
+              before: z.string().optional(),
+              limit: z.number().min(1).max(100).default(50),
+              order: z.enum(['desc', 'asc']).default('desc'),
+            })
+            .refine(
+              ({ after, before }) => !(after && before),
+              'Cannot use both after and before cursors',
+            ),
+        )
     .query(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(Dataset.workspaceId, input.workspaceId)]
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Dataset.id, input.after))
-      } else if (input.before) {
+      }
+      if (input.before) {
         conditions.push(lt(Dataset.id, input.before))
       }
 
       const query = and(...conditions)
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-
-      // Fetch datasets with appropriate ordering
-      let datasets
-      if (isBackwardPagination) {
-        datasets = await ctx.db
-          .select()
-          .from(Dataset)
-          .where(query)
-          .orderBy(Dataset.id) // Ascending order
-          .limit(input.limit + 1)
-      } else {
-        datasets = await ctx.db
-          .select()
-          .from(Dataset)
-          .where(query)
-          .orderBy(desc(Dataset.id)) // Descending order
-          .limit(input.limit + 1)
-      }
+      const datasets = await ctx.db.query.Dataset.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(Dataset.id) : asc(Dataset.id),
+        limit: input.limit + 1,
+      })
 
       const hasMore = datasets.length > input.limit
       if (hasMore) {
         datasets.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      datasets = isBackwardPagination ? datasets.reverse() : datasets
 
       // Get first and last dataset IDs
       const first = datasets[0]?.id
@@ -162,7 +148,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      await scope.checkPermissions()
 
       return { dataset }
     }),
@@ -183,7 +170,9 @@ export const datasetRouter = {
     })
     .input(CreateDatasetSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions({ dataset: ['create'] })
+
       const values = {
         ...input,
         metadata: mergeWithoutUndefined<DatasetMetadata>(
@@ -226,7 +215,8 @@ export const datasetRouter = {
       const { id, ...updates } = input
 
       const dataset = await getDatasetById(ctx, id)
-      await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
 
       // Merge new metadata with existing metadata
       const update = {
@@ -269,7 +259,8 @@ export const datasetRouter = {
     .mutation(async ({ ctx, input }) => {
       const dataset = await getDatasetById(ctx, input)
 
-      await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      await scope.checkPermissions({ dataset: ['delete'] })
 
       const documentUrls = await ctx.db
         .select({
@@ -345,7 +336,9 @@ export const datasetRouter = {
     })
     .input(CreateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
+
       const dataset = await getDatasetById(ctx, input.datasetId, input.workspaceId)
 
       // If document has S3 URL, get file size and update dataset metadata
@@ -434,7 +427,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
 
       const [updatedDocument] = await ctx.db
         .update(Document)
@@ -482,7 +476,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
 
       const dataset = await ctx.db.query.Dataset.findFirst({
         where: eq(Dataset.id, document.datasetId),
@@ -581,6 +576,7 @@ export const datasetRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -599,47 +595,31 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(Document.datasetId, input.datasetId)]
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(Document.id, input.after))
-      } else if (input.before) {
+      }
+      if (input.before) {
         conditions.push(lt(Document.id, input.before))
       }
 
       const query = and(...conditions)
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-
-      // Fetch documents with appropriate ordering
-      let documents
-      if (isBackwardPagination) {
-        documents = await ctx.db
-          .select()
-          .from(Document)
-          .where(query)
-          .orderBy(Document.id) // Ascending order
-          .limit(input.limit + 1)
-      } else {
-        documents = await ctx.db
-          .select()
-          .from(Document)
-          .where(query)
-          .orderBy(desc(Document.id)) // Descending order
-          .limit(input.limit + 1)
-      }
+      const documents = await ctx.db.query.Document.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(Document.id) : asc(Document.id),
+        limit: input.limit + 1,
+      })
 
       const hasMore = documents.length > input.limit
       if (hasMore) {
         documents.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      documents = isBackwardPagination ? documents.reverse() : documents
 
       // Get first and last document IDs
       const first = documents[0]?.id
@@ -680,7 +660,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      await scope.checkPermissions()
 
       return { document }
     }),
@@ -701,7 +682,9 @@ export const datasetRouter = {
     })
     .input(CreateDocumentSegmentSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
+
       await getDatasetById(ctx, input.datasetId, input.workspaceId)
 
       const document = await ctx.db.query.Document.findFirst({
@@ -763,7 +746,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, segment.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, segment.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
 
       const [updatedSegment] = await ctx.db
         .update(DocumentSegment)
@@ -808,7 +792,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, segment.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, segment.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
 
       return await ctx.db.transaction(async (tx) => {
         // Delete all chunks
@@ -842,6 +827,7 @@ export const datasetRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -860,47 +846,31 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(DocumentSegment.documentId, input.documentId)]
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(DocumentSegment.id, input.after))
-      } else if (input.before) {
+      }
+      if (input.before) {
         conditions.push(lt(DocumentSegment.id, input.before))
       }
 
       const query = and(...conditions)
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-
-      // Fetch segments with appropriate ordering
-      let segments
-      if (isBackwardPagination) {
-        segments = await ctx.db
-          .select()
-          .from(DocumentSegment)
-          .where(query)
-          .orderBy(DocumentSegment.id) // Ascending order
-          .limit(input.limit + 1)
-      } else {
-        segments = await ctx.db
-          .select()
-          .from(DocumentSegment)
-          .where(query)
-          .orderBy(desc(DocumentSegment.id)) // Descending order
-          .limit(input.limit + 1)
-      }
+      const segments = await ctx.db.query.DocumentSegment.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(DocumentSegment.id) : asc(DocumentSegment.id),
+        limit: input.limit + 1,
+      })
 
       const hasMore = segments.length > input.limit
       if (hasMore) {
         segments.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      segments = isBackwardPagination ? segments.reverse() : segments
 
       // Get first and last segment IDs
       const first = segments[0]?.id
@@ -930,7 +900,9 @@ export const datasetRouter = {
     })
     .input(CreateDocumentChunkSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyWorkspaceMembership(ctx, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
+
       await getDatasetById(ctx, input.datasetId, input.workspaceId)
 
       const segment = await ctx.db.query.DocumentSegment.findFirst({
@@ -1000,7 +972,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, chunk.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, chunk.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
 
       const [updatedChunk] = await ctx.db
         .update(DocumentChunk)
@@ -1045,7 +1018,8 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, chunk.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, chunk.workspaceId)
+      await scope.checkPermissions({ dataset: ['update'] })
 
       await ctx.db.delete(DocumentChunk).where(eq(DocumentChunk.id, input))
 
@@ -1073,6 +1047,7 @@ export const datasetRouter = {
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
         })
         .refine(
           ({ after, before }) => !(after && before),
@@ -1091,47 +1066,31 @@ export const datasetRouter = {
         })
       }
 
-      await verifyWorkspaceMembership(ctx, segment.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx.db, segment.workspaceId)
+      await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(DocumentChunk.segmentId, input.segmentId)]
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
         conditions.push(gt(DocumentChunk.id, input.after))
-      } else if (input.before) {
+      }
+      if (input.before) {
         conditions.push(lt(DocumentChunk.id, input.before))
       }
 
       const query = and(...conditions)
 
-      // Determine if this is backward pagination
-      const isBackwardPagination = !!input.before
-
-      // Fetch chunks with appropriate ordering
-      let chunks
-      if (isBackwardPagination) {
-        chunks = await ctx.db
-          .select()
-          .from(DocumentChunk)
-          .where(query)
-          .orderBy(DocumentChunk.id) // Ascending order
-          .limit(input.limit + 1)
-      } else {
-        chunks = await ctx.db
-          .select()
-          .from(DocumentChunk)
-          .where(query)
-          .orderBy(desc(DocumentChunk.id)) // Descending order
-          .limit(input.limit + 1)
-      }
+      const chunks = await ctx.db.query.DocumentChunk.findMany({
+        where: query,
+        orderBy: input.order === 'desc' ? desc(DocumentChunk.id) : asc(DocumentChunk.id),
+        limit: input.limit + 1,
+      })
 
       const hasMore = chunks.length > input.limit
       if (hasMore) {
         chunks.pop()
       }
-
-      // Reverse results for backward pagination to maintain consistent ordering
-      chunks = isBackwardPagination ? chunks.reverse() : chunks
 
       // Get first and last chunk IDs
       const first = chunks[0]?.id

@@ -8,7 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { CreateWorkspaceSchema } from '@cared/db/schema'
+import { createWorkspaceSchema } from '@cared/api/types'
 import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
@@ -33,13 +33,17 @@ import { CircleSpinner } from '@/components/spinner'
 import { replaceRouteWithWorkspaceId } from '@/hooks/use-workspace'
 import { useTRPC } from '@/trpc/client'
 
-interface CreateWorkspaceDialogProps {
+export function CreateWorkspaceDialog({
+  organizationId,
+  menu,
+  trigger,
+  onSuccess,
+}: {
+  organizationId: string
   menu?: (props: { trigger: (props: { children: ReactNode }) => ReactNode }) => ReactNode
   trigger?: ReactNode
   onSuccess?: () => void
-}
-
-export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorkspaceDialogProps) {
+}) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -47,9 +51,10 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
   const queryClient = useQueryClient()
 
   const form = useForm({
-    resolver: zodResolver(CreateWorkspaceSchema),
+    resolver: zodResolver(createWorkspaceSchema),
     defaultValues: {
       name: '',
+      organizationId,
     },
   })
 
@@ -67,7 +72,11 @@ export function CreateWorkspaceDialog({ menu, trigger, onSuccess }: CreateWorksp
 
         toast.success('Workspace created successfully')
 
-        await queryClient.invalidateQueries(trpc.workspace.list.queryOptions())
+        await queryClient.invalidateQueries(
+          trpc.workspace.list.queryOptions({
+            organizationId,
+          }),
+        )
 
         // Redirect to new workspace or call success callback
         if (onSuccess) {

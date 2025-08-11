@@ -175,6 +175,7 @@ export const invitation = pgTable(
       .references(() => organization.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
     role: text('role'),
+    teamId: text('team_id'),
     status: text('status').default('pending').notNull(),
     expiresAt: timestamp('expires_at').notNull(),
     inviterId: text('inviter_id')
@@ -182,10 +183,44 @@ export const invitation = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
   },
   (table) => [
-    index().on(table.organizationId),
+    index().on(table.organizationId, table.teamId),
     index().on(table.email),
     index().on(table.expiresAt),
     index().on(table.inviterId),
+  ],
+)
+
+export const team = pgTable(
+  'team',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    organizationId: text('organization_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull(),
+    updatedAt: timestamp('updated_at'),
+  },
+  (table) => [
+    index().on(table.organizationId),
+    ...timestampsIndices(table),
+  ],
+)
+
+export const teamMember = pgTable(
+  'team_member',
+  {
+    id: text('id').primaryKey(),
+    teamId: text('team_id').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at'),
+  },
+  (table) => [
+    index().on(table.teamId, table.userId),
+    index().on(table.userId),
+    index().on(table.createdAt),
   ],
 )
 

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { auth } from '@cared/api'
+import { authenticate } from '@cared/api'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
@@ -40,8 +40,8 @@ export default async function Layout({
 }: Readonly<{
   children: ReactNode
 }>) {
-  const { isAdmin } = await auth()
-  if (!isAdmin) {
+  const auth = await authenticate()
+  if (!auth.isAdmin()) {
     redirect('/')
   }
 

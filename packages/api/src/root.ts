@@ -10,6 +10,7 @@ import { datasetRouter } from './trpc/dataset'
 import { messageRouter } from './trpc/message'
 import { modelRouter } from './trpc/model'
 import { oauthAppRouter } from './trpc/oauth-app'
+import { organizationRouter } from './trpc/organization'
 import { secretRouter } from './trpc/secret'
 import { storageRouter } from './trpc/storage'
 import { tokenizerRouter } from './trpc/tokenizer'
@@ -18,6 +19,7 @@ import { workspaceRouter } from './trpc/workspace'
 
 export const appRouter = createTRPCRouter({
   admin: adminRouter,
+  organization: organizationRouter,
   workspace: workspaceRouter,
   user: userRouter,
   secret: secretRouter,

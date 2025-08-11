@@ -7,11 +7,11 @@ import { drizzle as drizzleVercel } from 'drizzle-orm/vercel-postgres'
 
 import * as schema from './schema'
 
-export type DB = PostgresJsDatabase<typeof schema> | VercelPgDatabase<typeof schema>
+export type Database = PostgresJsDatabase<typeof schema> | VercelPgDatabase<typeof schema>
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 declare namespace globalThis {
-  let db: DB
+  let db: Database
 }
 
 function createDB() {
@@ -45,6 +45,6 @@ if (process.env.NODE_ENV === 'development' && !globalThis.db) {
 }
 
 // https://github.com/drizzle-team/drizzle-orm/issues/928#issuecomment-1739105895
-export const db: DB = process.env.NODE_ENV === 'development' ? globalThis.db : createDB()
+export const db: Database = process.env.NODE_ENV === 'development' ? globalThis.db : createDB()
 
-export type Transaction = Parameters<Parameters<DB['transaction']>[0]>[0]
+export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0]
