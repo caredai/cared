@@ -52,7 +52,7 @@ export interface ProviderInfo {
   name: string
   icon: string
   description: string
-  languageModels?: ModelInfo[]
+  languageModels?: LanguageModelInfo[]
   imageModels?: ImageModelInfo[]
   speechModels?: SpeechModelInfo[]
   transcriptionModels?: TranscriptionModelInfo[]
@@ -65,14 +65,13 @@ export interface BaseModelInfo {
   description: string
 }
 
-export interface ModelInfo extends BaseModelInfo {
+export interface LanguageModelInfo extends BaseModelInfo {
   contextWindow?: number // max tokens including input and output tokens
   maxOutputTokens?: number // max output tokens
   inputTokenPrice?: string // decimal string, in $USD/M input token
   cachedInputTokenPrice?: string // read; decimal string, in $USD/M cached input token
   cacheInputTokenPrice?: string | Record<string, string> // write; ttl => price; decimal string, in $USD/M cached input token
   outputTokenPrice?: string // decimal string, in $USD/M input token
-  dimensions?: number // for embedding models
 }
 
 export interface ImageModelInfo extends BaseModelInfo {

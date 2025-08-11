@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { ModelInfo } from '@cared/providers'
+import type { BaseModelInfo } from '@cared/providers'
 import {
   defaultModels,
   getImageModelInfo,
@@ -92,7 +92,7 @@ export const modelRouter = {
         name: string
         description?: string
         icon?: string
-        models: ModelInfo[]
+        models: BaseModelInfo[]
       }[]
 
       const models: Record<string, Models> = {}
