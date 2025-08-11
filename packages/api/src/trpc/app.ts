@@ -23,13 +23,13 @@ import log from '@cared/log'
 import { defaultModels } from '@cared/providers'
 import { mergeWithoutUndefined } from '@cared/shared'
 
-import type { Context } from '../trpc'
+import type { BaseContext, Context } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
 import { env } from '../env'
 import { getClient } from '../rest/s3-upload/client'
 import { parseS3Url } from '../rest/s3-upload/route'
-import { publicProcedure, userProtectedProcedure } from '../trpc'
+import { protectedProcedure, publicProcedure } from '../trpc'
 
 /**
  * Get an app by ID.
@@ -38,7 +38,7 @@ import { publicProcedure, userProtectedProcedure } from '../trpc'
  * @returns The app if found
  * @throws {TRPCError} If app not found
  */
-export async function getAppById(ctx: Context, id: string) {
+export async function getAppById(ctx: BaseContext, id: string) {
   const app = await ctx.db.query.App.findFirst({
     where: eq(App.id, id),
   })
@@ -60,7 +60,7 @@ export async function getAppById(ctx: Context, id: string) {
  * @returns Array of apps with their associated categories and tags, hasMore flag, and first/last IDs
  */
 export async function getApps(
-  ctx: Context,
+  ctx: BaseContext,
   baseQuery: {
     where?: SQL<unknown>
     limit: number
@@ -230,7 +230,7 @@ export const appRouter = {
    * @returns List of apps with their categories and tags
    * @throws {TRPCError} If workspace access verification fails
    */
-  list: userProtectedProcedure
+  list: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/apps' } })
     .input(
       z.object({
@@ -242,7 +242,7 @@ export const appRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions()
 
       const result = await getApps(ctx, {
@@ -268,7 +268,7 @@ export const appRouter = {
    * @returns List of apps in the category
    * @throws {TRPCError} If workspace access verification fails
    */
-  listByCategory: userProtectedProcedure
+  listByCategory: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/apps/by-category/{categoryId}' } })
     .input(
       z.object({
@@ -281,7 +281,7 @@ export const appRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions()
 
       const result = await getApps(ctx, {
@@ -310,7 +310,7 @@ export const appRouter = {
    * @returns List of apps with matching tags
    * @throws {TRPCError} If workspace access verification fails
    */
-  listByTags: userProtectedProcedure
+  listByTags: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/apps/by-tags' } })
     .input(
       z.object({
@@ -323,7 +323,7 @@ export const appRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions()
 
       const result = await getApps(ctx, {
@@ -349,7 +349,7 @@ export const appRouter = {
    * @returns List of app versions sorted by version number
    * @throws {TRPCError} If app not found or access verification fails
    */
-  listVersions: userProtectedProcedure
+  listVersions: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/apps/{id}/versions' } })
     .input(
       z.object({
@@ -361,8 +361,7 @@ export const appRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const app = await getAppById(ctx, input.id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, input.id)
       await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(AppVersion.appId, input.id)]
@@ -404,7 +403,7 @@ export const appRouter = {
    * @returns The app if found
    * @throws {TRPCError} If app not found or access verification fails
    */
-  byId: userProtectedProcedure
+  byId: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/apps/{id}' } })
     .input(
       z.object({
@@ -413,7 +412,7 @@ export const appRouter = {
     )
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions()
       return { app }
     }),
@@ -425,7 +424,7 @@ export const appRouter = {
    * @returns The app version if found
    * @throws {TRPCError} If app version not found or access verification fails
    */
-  getVersion: userProtectedProcedure
+  getVersion: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/apps/{id}/versions/{version}' } })
     .input(
       z.object({
@@ -434,8 +433,7 @@ export const appRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const app = await getAppById(ctx, input.id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, input.id)
       await scope.checkPermissions()
 
       const version = await ctx.db.query.AppVersion.findFirst({
@@ -459,11 +457,11 @@ export const appRouter = {
    * @returns The created app and its draft version
    * @throws {TRPCError} If app creation fails
    */
-  create: userProtectedProcedure
+  create: protectedProcedure
     .meta({ openapi: { method: 'POST', path: '/v1/apps' } })
     .input(CreateAppSchema)
     .mutation(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions({ app: ['create'] })
 
       // Validate imageUrl if provided
@@ -558,13 +556,13 @@ export const appRouter = {
    * @returns The updated app and its draft version
    * @throws {TRPCError} If app update fails
    */
-  update: userProtectedProcedure
+  update: protectedProcedure
     .meta({ openapi: { method: 'PATCH', path: '/v1/apps/{id}' } })
     .input(UpdateAppSchema)
     .mutation(async ({ ctx, input }) => {
       const { id, ...update } = input
       const app = await getAppById(ctx, id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions({ app: ['update'] })
 
       const draft = await getAppVersion(ctx, id, 'draft')
@@ -653,7 +651,7 @@ export const appRouter = {
    * @returns Success status
    * @throws {TRPCError} If app deletion fails
    */
-  delete: userProtectedProcedure
+  delete: protectedProcedure
     .meta({ openapi: { method: 'DELETE', path: '/v1/apps/{id}' } })
     .input(
       z.object({
@@ -661,8 +659,7 @@ export const appRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const app = await getAppById(ctx, input.id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, input.id)
       await scope.checkPermissions({ app: ['delete'] })
 
       return await ctx.db.transaction(async (tx) => {
@@ -707,7 +704,7 @@ export const appRouter = {
    * @returns The updated app and new version number
    * @throws {TRPCError} If publishing fails
    */
-  publish: userProtectedProcedure
+  publish: protectedProcedure
     .meta({ openapi: { method: 'POST', path: '/v1/apps/{id}/publish' } })
     .input(
       z.object({
@@ -716,7 +713,7 @@ export const appRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions({ app: ['publish'] })
       const draftVersion = await getAppVersion(ctx, input.id, 'draft')
 
@@ -843,20 +840,20 @@ export const appRouter = {
    */
   listTags: publicProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/tags' } })
-          .input(
-        z
-          .object({
-            after: z.string().optional(),
-            before: z.string().optional(),
-            limit: z.number().min(1).max(100).default(50),
-            order: z.enum(['desc', 'asc']).default('desc'),
-          })
-          .refine(
-            ({ after, before }) => !(after && before),
-            'Cannot use both after and before cursors',
-          )
-          .default({ limit: 50, order: 'desc' }),
-      )
+    .input(
+      z
+        .object({
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        )
+        .default({ limit: 50, order: 'desc' }),
+    )
     .query(async ({ ctx, input }) => {
       const conditions: SQL<unknown>[] = []
 
@@ -901,7 +898,7 @@ export const appRouter = {
    * @returns The updated tags
    * @throws {TRPCError} If tag update fails
    */
-  updateTags: userProtectedProcedure
+  updateTags: protectedProcedure
     .meta({ openapi: { method: 'PATCH', path: '/v1/apps/{id}/tags' } })
     .input(
       z.object({
@@ -911,7 +908,7 @@ export const appRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions({ app: ['update'] })
 
       return ctx.db.transaction(async (tx) => {
@@ -954,20 +951,20 @@ export const appRouter = {
    */
   listCategories: publicProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/categories' } })
-            .input(
-          z
-            .object({
-              after: z.string().optional(),
-              before: z.string().optional(),
-              limit: z.number().min(1).max(100).default(50),
-              order: z.enum(['desc', 'asc']).default('desc'),
-            })
-            .refine(
-              ({ after, before }) => !(after && before),
-              'Cannot use both after and before cursors',
-            )
-            .default({ limit: 50, order: 'desc' }),
+    .input(
+      z
+        .object({
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
         )
+        .default({ limit: 50, order: 'desc' }),
+    )
     .query(async ({ ctx, input }) => {
       const conditions: SQL<unknown>[] = []
 
@@ -1012,7 +1009,7 @@ export const appRouter = {
    * @returns The updated categories
    * @throws {TRPCError} If category update fails
    */
-  updateCategories: userProtectedProcedure
+  updateCategories: protectedProcedure
     .meta({ openapi: { method: 'PATCH', path: '/v1/apps/{id}/categories' } })
     .input(
       z.object({
@@ -1023,7 +1020,7 @@ export const appRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions({ app: ['update'] })
 
       // Check for same category IDs in both add and remove arrays

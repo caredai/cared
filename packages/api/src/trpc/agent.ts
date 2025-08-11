@@ -12,10 +12,10 @@ import {
   UpdateAgentSchema,
 } from '@cared/db/schema'
 
-import type { Context } from '../trpc'
+import type { BaseContext } from '../trpc'
+import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
-import { userProtectedProcedure } from '../trpc'
-import { getAppById } from './app'
+import { protectedProcedure } from '../trpc'
 
 /**
  * Get an agent by ID.
@@ -24,7 +24,7 @@ import { getAppById } from './app'
  * @returns The agent if found
  * @throws {TRPCError} If agent not found
  */
-export async function getAgentById(ctx: Context, id: string) {
+export async function getAgentById(ctx: BaseContext, id: string) {
   const result = await ctx.db.query.Agent.findFirst({
     where: eq(Agent.id, id),
   })
@@ -48,7 +48,7 @@ export async function getAgentById(ctx: Context, id: string) {
  * @throws {TRPCError} If agent version not found
  */
 export async function getAgentVersion(
-  ctx: Context,
+  ctx: BaseContext,
   agentId: string,
   version?: number | 'latest' | 'draft',
 ) {
@@ -89,10 +89,12 @@ export async function getAgentVersion(
 export const agentRouter = {
   /**
    * List all agents for an app.
+   * Only accessible by workspace members.
    * @param input - Object containing app ID and pagination parameters
    * @returns List of agents with hasMore flag
+   * @throws {TRPCError} If app access verification fails
    */
-  listByApp: userProtectedProcedure
+  listByApp: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -117,6 +119,9 @@ export const agentRouter = {
         ),
     )
     .query(async ({ ctx, input }) => {
+      const scope = await OrganizationScope.fromApp(ctx, input.appId)
+      await scope.checkPermissions()
+
       const conditions: SQL<unknown>[] = [eq(Agent.appId, input.appId)]
 
       // Add cursor conditions based on pagination direction
@@ -154,10 +159,12 @@ export const agentRouter = {
 
   /**
    * List all agent versions for a specific app version.
+   * Only accessible by workspace members.
    * @param input - Object containing app ID and version
    * @returns List of agent versions bound to the specified app version
+   * @throws {TRPCError} If app access verification fails
    */
-  listByAppVersion: userProtectedProcedure
+  listByAppVersion: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -174,8 +181,8 @@ export const agentRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Verify app exists
-      await getAppById(ctx, input.appId)
+      const scope = await OrganizationScope.fromApp(ctx, input.appId)
+      await scope.checkPermissions()
 
       const agents = await ctx.db.query.Agent.findMany({
         where: eq(Agent.appId, input.appId),
@@ -198,10 +205,12 @@ export const agentRouter = {
 
   /**
    * List all versions of an agent.
+   * Only accessible by workspace members.
    * @param input - Object containing agent ID and pagination parameters
    * @returns List of agent versions sorted by version number
+   * @throws {TRPCError} If agent access verification fails
    */
-  listVersions: userProtectedProcedure
+  listVersions: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -226,7 +235,9 @@ export const agentRouter = {
         ),
     )
     .query(async ({ ctx, input }) => {
-      await getAgentById(ctx, input.agentId)
+      const agent = await getAgentById(ctx, input.agentId)
+      const scope = await OrganizationScope.fromApp(ctx, agent.appId)
+      await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(AgentVersion.agentId, input.agentId)]
 
@@ -265,10 +276,12 @@ export const agentRouter = {
 
   /**
    * Get a single agent by ID.
+   * Only accessible by workspace members.
    * @param input - The agent ID
    * @returns The agent if found
+   * @throws {TRPCError} If agent not found or access verification fails
    */
-  byId: userProtectedProcedure
+  byId: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -285,15 +298,19 @@ export const agentRouter = {
     )
     .query(async ({ ctx, input }) => {
       const agent = await getAgentById(ctx, input.id)
+      const scope = await OrganizationScope.fromApp(ctx, agent.appId)
+      await scope.checkPermissions()
       return { agent }
     }),
 
   /**
    * Create a new agent for an app.
+   * Only accessible by workspace members.
    * @param input - The agent data following the {@link CreateAgentSchema}
    * @returns The created agent and its draft version
+   * @throws {TRPCError} If agent creation fails
    */
-  create: userProtectedProcedure
+  create: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -305,8 +322,8 @@ export const agentRouter = {
     })
     .input(CreateAgentSchema)
     .mutation(async ({ ctx, input }) => {
-      // Verify app exists
-      await getAppById(ctx, input.appId)
+      const scope = await OrganizationScope.fromApp(ctx, input.appId)
+      await scope.checkPermissions({ app: ['update'] })
 
       // Check if the app has reached its agent limit
       const agentCount = await ctx.db
@@ -361,10 +378,12 @@ export const agentRouter = {
   /**
    * Update an existing agent.
    * Only updates the draft version.
+   * Only accessible by workspace members.
    * @param input - The agent data following the {@link UpdateAgentSchema}
    * @returns The updated agent and its draft version
+   * @throws {TRPCError} If agent update fails
    */
-  update: userProtectedProcedure
+  update: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -379,6 +398,9 @@ export const agentRouter = {
       const { id, ...update } = input
 
       const agent = await getAgentById(ctx, id)
+      const scope = await OrganizationScope.fromApp(ctx, agent.appId)
+      await scope.checkPermissions({ app: ['update'] })
+
       const draft = await getAgentVersion(ctx, id, 'draft')
       // Check if there's any published version
       const publishedVersion = await getAgentVersion(ctx, id, 'latest').catch(() => undefined)

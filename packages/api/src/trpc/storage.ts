@@ -21,13 +21,13 @@ import { zfd } from 'zod-form-data'
 
 import { log } from '@cared/log'
 
-import type { Context } from '../trpc'
+import type { AppContext, BaseContext } from '../trpc'
 import { env } from '../env'
 import { getClient } from '../rest/s3-upload/client'
 import { appProtectedProcedure } from '../trpc'
 
-function getKeyPrefixByApp(ctx: Context) {
-  const appId = ctx.auth.appId!
+function getKeyPrefixByApp(ctx: AppContext) {
+  const appId = ctx.auth.appId
   return `${appId}/`
 }
 
@@ -46,12 +46,12 @@ function getKeyWithPrefix(prefix: string, inputKey?: string) {
   return key
 }
 
-function getKeyByApp(ctx: Context, inputKey?: string) {
+function getKeyByApp(ctx: AppContext, inputKey?: string) {
   const prefix = getKeyPrefixByApp(ctx)
   return getKeyWithPrefix(prefix, inputKey)
 }
 
-function getQueryHeaders(ctx: Context) {
+function getQueryHeaders(ctx: BaseContext) {
   return {
     IfMatch: ctx.headers.get('If-Match') ?? undefined,
     IfModifiedSince: z.coerce.date().safeParse(ctx.headers.get('If-Modified-Since') ?? undefined)
@@ -65,7 +65,7 @@ function getQueryHeaders(ctx: Context) {
   }
 }
 
-function getMutateHeaders(ctx: Context) {
+function getMutateHeaders(ctx: BaseContext) {
   const metadata: Record<string, string> = {}
   for (const [key, value] of ctx.headers) {
     if (key.startsWith('x-amz-meta-')) {
@@ -87,7 +87,7 @@ function getMutateHeaders(ctx: Context) {
 }
 
 function setResponseHeaders(
-  ctx: Context,
+  ctx: BaseContext,
   response: HeadObjectCommandOutput | GetObjectCommandOutput,
 ) {
   if (response.AcceptRanges) {

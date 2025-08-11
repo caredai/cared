@@ -28,7 +28,7 @@ import { OrganizationScope } from '../auth'
 import { env } from '../env'
 import { getClient } from '../rest/s3-upload/client'
 import { taskTrigger } from '../rest/tasks'
-import { userProtectedProcedure } from '../trpc'
+import { protectedProcedure } from '../trpc'
 
 /**
  * Get a dataset by ID.
@@ -58,7 +58,7 @@ export const datasetRouter = {
    * List all datasets in a workspace.
    * Only accessible by workspace members.
    */
-  list: userProtectedProcedure
+  list: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -83,7 +83,7 @@ export const datasetRouter = {
             ),
         )
     .query(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(Dataset.workspaceId, input.workspaceId)]
@@ -125,7 +125,7 @@ export const datasetRouter = {
    * Get a single dataset by ID within a workspace.
    * Only accessible by workspace members.
    */
-  byId: userProtectedProcedure
+  byId: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -148,7 +148,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, dataset.workspaceId)
       await scope.checkPermissions()
 
       return { dataset }
@@ -158,7 +158,7 @@ export const datasetRouter = {
    * Create a new dataset in a workspace.
    * Only accessible by workspace members.
    */
-  create: userProtectedProcedure
+  create: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -170,7 +170,7 @@ export const datasetRouter = {
     })
     .input(CreateDatasetSchema)
     .mutation(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions({ dataset: ['create'] })
 
       const values = {
@@ -200,7 +200,7 @@ export const datasetRouter = {
    * Update an existing dataset in a workspace.
    * Only accessible by workspace members.
    */
-  update: userProtectedProcedure
+  update: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -215,7 +215,7 @@ export const datasetRouter = {
       const { id, ...updates } = input
 
       const dataset = await getDatasetById(ctx, id)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, dataset.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       // Merge new metadata with existing metadata
@@ -245,7 +245,7 @@ export const datasetRouter = {
    * Also deletes all associated documents, segments, chunks and S3 files.
    * Only accessible by workspace members.
    */
-  delete: userProtectedProcedure
+  delete: protectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
@@ -259,7 +259,7 @@ export const datasetRouter = {
     .mutation(async ({ ctx, input }) => {
       const dataset = await getDatasetById(ctx, input)
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, dataset.workspaceId)
       await scope.checkPermissions({ dataset: ['delete'] })
 
       const documentUrls = await ctx.db
@@ -324,7 +324,7 @@ export const datasetRouter = {
    * Create a new document in a dataset.
    * Only accessible by workspace members.
    */
-  createDocument: userProtectedProcedure
+  createDocument: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -336,7 +336,7 @@ export const datasetRouter = {
     })
     .input(CreateDocumentSchema)
     .mutation(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       const dataset = await getDatasetById(ctx, input.datasetId, input.workspaceId)
@@ -403,7 +403,7 @@ export const datasetRouter = {
    * Update an existing document.
    * Only accessible by workspace members.
    */
-  updateDocument: userProtectedProcedure
+  updateDocument: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -427,7 +427,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, document.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       const [updatedDocument] = await ctx.db
@@ -451,7 +451,7 @@ export const datasetRouter = {
    * Also deletes the associated S3 file if it exists.
    * Only accessible by workspace members.
    */
-  deleteDocument: userProtectedProcedure
+  deleteDocument: protectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
@@ -476,7 +476,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, document.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       const dataset = await ctx.db.query.Dataset.findFirst({
@@ -568,7 +568,7 @@ export const datasetRouter = {
    * List all documents in a dataset.
    * Only accessible by workspace members.
    */
-  listDocuments: userProtectedProcedure
+  listDocuments: protectedProcedure
     .input(
       z
         .object({
@@ -595,7 +595,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, dataset.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, dataset.workspaceId)
       await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(Document.datasetId, input.datasetId)]
@@ -637,7 +637,7 @@ export const datasetRouter = {
    * Get a single document by ID.
    * Only accessible by workspace members.
    */
-  getDocument: userProtectedProcedure
+  getDocument: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -660,7 +660,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, document.workspaceId)
       await scope.checkPermissions()
 
       return { document }
@@ -670,7 +670,7 @@ export const datasetRouter = {
    * Create a new document segment.
    * Only accessible by workspace members.
    */
-  createSegment: userProtectedProcedure
+  createSegment: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -682,7 +682,7 @@ export const datasetRouter = {
     })
     .input(CreateDocumentSegmentSchema)
     .mutation(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       await getDatasetById(ctx, input.datasetId, input.workspaceId)
@@ -721,7 +721,7 @@ export const datasetRouter = {
    * Update an existing document segment.
    * Only accessible by workspace members.
    */
-  updateSegment: userProtectedProcedure
+  updateSegment: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -746,7 +746,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, segment.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, segment.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       const [updatedSegment] = await ctx.db
@@ -769,7 +769,7 @@ export const datasetRouter = {
    * Delete a document segment and all its chunks.
    * Only accessible by workspace members.
    */
-  deleteSegment: userProtectedProcedure
+  deleteSegment: protectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
@@ -792,7 +792,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, segment.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, segment.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       return await ctx.db.transaction(async (tx) => {
@@ -810,7 +810,7 @@ export const datasetRouter = {
    * List all segments in a document.
    * Only accessible by workspace members.
    */
-  listSegments: userProtectedProcedure
+  listSegments: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -846,7 +846,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, document.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, document.workspaceId)
       await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(DocumentSegment.documentId, input.documentId)]
@@ -888,7 +888,7 @@ export const datasetRouter = {
    * Create a new document chunk.
    * Only accessible by workspace members.
    */
-  createChunk: userProtectedProcedure
+  createChunk: protectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -900,7 +900,7 @@ export const datasetRouter = {
     })
     .input(CreateDocumentChunkSchema)
     .mutation(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       await getDatasetById(ctx, input.datasetId, input.workspaceId)
@@ -943,7 +943,7 @@ export const datasetRouter = {
    * Update an existing document chunk.
    * Only accessible by workspace members.
    */
-  updateChunk: userProtectedProcedure
+  updateChunk: protectedProcedure
     .meta({
       openapi: {
         method: 'PATCH',
@@ -972,7 +972,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, chunk.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, chunk.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       const [updatedChunk] = await ctx.db
@@ -995,7 +995,7 @@ export const datasetRouter = {
    * Delete a document chunk.
    * Only accessible by workspace members.
    */
-  deleteChunk: userProtectedProcedure
+  deleteChunk: protectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',
@@ -1018,7 +1018,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, chunk.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, chunk.workspaceId)
       await scope.checkPermissions({ dataset: ['update'] })
 
       await ctx.db.delete(DocumentChunk).where(eq(DocumentChunk.id, input))
@@ -1030,7 +1030,7 @@ export const datasetRouter = {
    * List all chunks in a document segment.
    * Only accessible by workspace members.
    */
-  listChunks: userProtectedProcedure
+  listChunks: protectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -1066,7 +1066,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, segment.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, segment.workspaceId)
       await scope.checkPermissions()
 
       const conditions: SQL<unknown>[] = [eq(DocumentChunk.segmentId, input.segmentId)]

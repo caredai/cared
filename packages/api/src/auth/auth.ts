@@ -8,7 +8,7 @@ import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@cared/db/schema'
 
-import type { ApiKeyAuth, ApiKeyMetadata } from './api-key'
+import type { ApiKeyAuth, ApiKeyMetadata } from '../types'
 
 export class Auth {
   constructor(
@@ -25,6 +25,7 @@ export class Auth {
         }
       | ({
           type: 'apiKey'
+          ownerId: string
         } & ApiKeyAuth),
   ) {}
 
@@ -36,12 +37,112 @@ export class Auth {
     return !!this.auth
   }
 
+  userId(): string | undefined {
+    const auth = this.auth
+    return auth?.type === 'user' ||
+      auth?.type === 'appUser' ||
+      (auth?.type === 'apiKey' && auth.scope === 'user')
+      ? auth.userId
+      : undefined
+  }
+
   isAdmin(): boolean {
     const auth = this.auth
     return (
       (auth?.type === 'user' && !!auth.isAdmin) ||
       (auth?.type === 'apiKey' && auth.scope === 'user' && !!auth.isAdmin)
     )
+  }
+
+  ownerId(): string | undefined {
+    const auth = this.auth
+    if (auth?.type === 'user' || auth?.type === 'appUser') {
+      return auth.userId
+    } else if (auth?.type === 'apiKey') {
+      return auth.ownerId
+    }
+  }
+
+  checkOrganization({ organizationId }: { organizationId: string }): boolean {
+    const auth = this.auth
+    return (
+      auth?.type === 'user' ||
+      (auth?.type === 'apiKey' &&
+        auth.scope === 'organization' &&
+        auth.organizationId === organizationId)
+    )
+  }
+
+  checkWorkspace({
+    workspaceId,
+    organizationId,
+  }: {
+    workspaceId: string
+    organizationId: string
+  }): boolean {
+    const auth = this.auth
+    if (auth?.type === 'user') {
+      return true
+    }
+    if (auth?.type === 'apiKey') {
+      switch (auth.scope) {
+        case 'workspace':
+          return auth.workspaceId === workspaceId
+        case 'organization':
+          return auth.organizationId === organizationId
+      }
+    }
+    return false
+  }
+
+  checkApp({
+    appId,
+    workspaceId,
+    organizationId,
+  }: {
+    appId: string
+    workspaceId: string
+    organizationId: string
+  }): boolean {
+    const auth = this.auth
+    if (auth?.type === 'user') {
+      return true
+    }
+    if (auth?.type === 'apiKey') {
+      switch (auth.scope) {
+        case 'app':
+          return auth.appId === appId
+        case 'workspace':
+          return auth.workspaceId === workspaceId
+        case 'organization':
+          return auth.organizationId === organizationId
+      }
+    }
+    return false
+  }
+
+  by() {
+    const auth = this.auth
+    switch (auth?.type) {
+      case 'user':
+        return `${auth.userId}${auth.isAdmin ? ' (admin)' : ''}`
+      case 'appUser':
+        return `${auth.appId}:${auth.userId}`
+      case 'apiKey':
+        switch (auth.scope) {
+          case 'user':
+            return `${auth.userId}${auth.isAdmin ? ' (admin)' : ''} api key`
+          case 'organization':
+            return `${auth.organizationId} api key`
+          case 'workspace':
+            return `${auth.workspaceId} api key`
+          case 'app':
+            return `${auth.appId} api key`
+        }
+        break
+      default:
+        return 'Anonymous'
+    }
   }
 }
 
@@ -85,6 +186,7 @@ export const authenticateWithHeaders = cache(async (headers: Headers): Promise<A
 
       return new Auth({
         type: 'apiKey',
+        ownerId: apiKey.userId,
         ...auth,
       })
     }

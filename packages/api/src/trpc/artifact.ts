@@ -5,10 +5,10 @@ import type { SQL } from '@cared/db'
 import { and, asc, desc, eq, gt, lt } from '@cared/db'
 import { Artifact, ArtifactSuggestion, Chat } from '@cared/db/schema'
 
-import type { Context } from '../trpc'
+import type { UserContext } from '../trpc'
 import { userProtectedProcedure } from '../trpc'
 
-async function verifyUserChat(ctx: Context, chatId: string) {
+async function verifyUserChat(ctx: UserContext, chatId: string) {
   const chat = await ctx.db.query.Chat.findFirst({
     where: eq(Chat.id, chatId),
   })
@@ -23,7 +23,7 @@ async function verifyUserChat(ctx: Context, chatId: string) {
   return chat
 }
 
-async function verifyUserArtifact(ctx: Context, artifactId: string) {
+async function verifyUserArtifact(ctx: UserContext, artifactId: string) {
   const artifact = await ctx.db.query.Artifact.findFirst({
     where: eq(Artifact.id, artifactId),
     with: {
@@ -56,20 +56,20 @@ export const artifactRouter = {
         summary: 'List all artifacts (of only latest version) for a chat',
       },
     })
-            .input(
-          z
-            .object({
-              chatId: z.string().min(32),
-              after: z.string().optional(),
-              before: z.string().optional(),
-              limit: z.number().min(1).max(100).default(50),
-              order: z.enum(['desc', 'asc']).default('desc'),
-            })
-            .refine(
-              ({ after, before }) => !(after && before),
-              'Cannot use both after and before cursors',
-            ),
-        )
+    .input(
+      z
+        .object({
+          chatId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
+    )
     .query(async ({ ctx, input }) => {
       await verifyUserChat(ctx, input.chatId)
 
@@ -125,20 +125,20 @@ export const artifactRouter = {
         summary: 'List all versions of an artifact by ID',
       },
     })
-            .input(
-          z
-            .object({
-              id: z.string(),
-              after: z.number().optional(),
-              before: z.number().optional(),
-              limit: z.number().min(1).max(100).default(50),
-              order: z.enum(['desc', 'asc']).default('desc'),
-            })
-            .refine(
-              ({ after, before }) => !(after && before),
-              'Cannot use both after and before cursors',
-            ),
-        )
+    .input(
+      z
+        .object({
+          id: z.string(),
+          after: z.number().optional(),
+          before: z.number().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
+    )
     .query(async ({ ctx, input }) => {
       await verifyUserArtifact(ctx, input.id)
 
@@ -237,21 +237,21 @@ export const artifactRouter = {
         summary: 'List suggestions for an artifact',
       },
     })
-            .input(
-          z
-            .object({
-              artifactId: z.string(),
-              artifactVersion: z.number().optional(),
-              after: z.string().optional(),
-              before: z.string().optional(),
-              limit: z.number().min(1).max(100).default(50),
-              order: z.enum(['desc', 'asc']).default('desc'),
-            })
-            .refine(
-              ({ after, before }) => !(after && before),
-              'Cannot use both after and before cursors',
-            ),
-        )
+    .input(
+      z
+        .object({
+          artifactId: z.string(),
+          artifactVersion: z.number().optional(),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
+    )
     .query(async ({ ctx, input }) => {
       await verifyUserArtifact(ctx, input.artifactId)
 

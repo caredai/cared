@@ -12,7 +12,7 @@ import {
   UpdateChatSchema,
 } from '@cared/db/schema'
 
-import type { Context } from '../trpc'
+import type { AppUserContext } from '../trpc'
 import { appUserProtectedProcedure } from '../trpc'
 import { getAppById } from './app'
 
@@ -23,7 +23,7 @@ import { getAppById } from './app'
  * @returns The chat if found
  * @throws {TRPCError} If chat not found
  */
-export async function getChatById(ctx: Context, id: string) {
+export async function getChatById(ctx: AppUserContext, id: string) {
   const chat = await ctx.db.query.Chat.findFirst({
     where: eq(Chat.id, id),
   })

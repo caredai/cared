@@ -11,17 +11,17 @@ import {
   MessageVote,
 } from '@cared/db/schema'
 
-import type { Context } from '../trpc'
+import type { BaseContext } from '../trpc'
 import { appUserProtectedProcedure } from '../trpc'
 import { getChatById } from './chat'
 
-async function findMessageById(ctx: Context, id: string) {
+async function findMessageById(ctx: BaseContext, id: string) {
   return await ctx.db.query.Message.findFirst({
     where: eq(Message.id, id),
   })
 }
 
-async function getMessageById(ctx: Context, id: string) {
+async function getMessageById(ctx: BaseContext, id: string) {
   const message = await ctx.db.query.Message.findFirst({
     where: eq(Message.id, id),
   })

@@ -29,19 +29,14 @@ export const createTRPCContext = async ({
   headers: Headers
   resHeaders?: Headers
 }): Promise<{
-  auth: Partial<Auth>
+  auth: Auth
   db: Database
   headers: Headers
   resHeaders?: Headers
 }> => {
   const auth = await authenticateWithHeaders(headers)
 
-  console.log(
-    '>>> tRPC Request from',
-    headers.get('x-trpc-source') ?? 'unknown',
-    'by',
-    auth.userId && auth.appId ? `${auth.appId}:${auth.userId}` : (auth.userId ?? auth.appId),
-  )
+  console.log('>>> tRPC Request from', headers.get('x-trpc-source') ?? 'unknown', 'by', auth.by())
 
   return {
     auth,
@@ -51,6 +46,7 @@ export const createTRPCContext = async ({
   }
 }
 
+export type BaseContext = Omit<Context, 'auth'>
 export type Context = trpc.inferAsyncReturnType<typeof createTRPCContext>
 
 /**
@@ -133,73 +129,102 @@ export const publicProcedure = t.procedure.use(timingMiddleware)
  *
  * @see https://trpc.io/docs/procedures
  */
+
+export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
+  if (!ctx.auth.isAuthenticated()) {
+    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next()
+})
+
+export type UserContext = BaseContext & {
+  auth: {
+    userId: string
+    useApiKey: boolean
+  }
+}
+
 export const userProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.auth.userId) {
+  const auth = ctx.auth.auth
+  if (!(auth?.type === 'user' || (auth?.type === 'apiKey' && auth.scope === 'user'))) {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
       auth: {
-        userId: ctx.auth.userId,
+        userId: auth.userId,
+        useApiKey: auth.type === 'apiKey',
       },
     },
   })
 })
+
+export const userPlainProtectedProcedure = userProtectedProcedure.use(({ ctx, next }) => {
+  if (ctx.auth.useApiKey) {
+    throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next()
+})
+
+export type AppContext = BaseContext & {
+  auth: {
+    appId: string
+  }
+}
 
 export const appProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.auth.appId) {
+  const auth = ctx.auth.auth
+  if (auth?.type !== 'apiKey' || auth.scope !== 'app') {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
       auth: {
-        appId: ctx.auth.appId,
+        appId: auth.appId,
       },
     },
   })
 })
+
+export type AppUserContext = BaseContext & {
+  auth: {
+    appId: string
+    userId: string
+  }
+}
 
 export const appUserProtectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.auth.appId || !ctx.auth.userId) {
+  const auth = ctx.auth.auth
+  if (auth?.type !== 'appUser') {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
       auth: {
-        appId: ctx.auth.appId,
-        userId: ctx.auth.userId,
+        appId: auth.appId,
+        userId: auth.userId,
       },
     },
   })
 })
 
-export const appOrUserProtectedProcedure = t.procedure
-  .use(timingMiddleware)
-  .use(({ ctx, next }) => {
-    if (!ctx.auth.appId && !ctx.auth.userId) {
-      throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
-    }
-    return next({
-      ctx: {
-        auth: {
-          appId: ctx.auth.appId,
-          userId: ctx.auth.userId,
-        },
-      },
-    })
-  })
+export type AdminContext = BaseContext & {
+  auth: {
+    userId: string
+  }
+}
 
 export const adminProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.auth.userId) {
+  if (!ctx.auth.isAuthenticated()) {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
-  if (!ctx.auth.isAdmin) {
+  if (!ctx.auth.isAdmin()) {
     throw new trpc.TRPCError({ code: 'FORBIDDEN' })
   }
   return next({
     ctx: {
       auth: {
-        userId: ctx.auth.userId,
+        userId: ctx.auth.userId()!,
       },
     },
   })

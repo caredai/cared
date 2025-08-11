@@ -6,9 +6,9 @@ import { auth, generateRandomString } from '@cared/auth'
 import { desc, eq } from '@cared/db'
 import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@cared/db/schema'
 
-import { publicProcedure, userProtectedProcedure } from '../trpc'
+import { OrganizationScope } from '../auth'
+import { protectedProcedure, publicProcedure } from '../trpc'
 import { getAppById } from './app'
-import { OrganizationScope } from '../auth/scoped'
 
 // Helper function: Format OAuth application
 export function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
@@ -28,7 +28,7 @@ export function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
 
 export const oauthAppRouter = {
   // List all OAuth apps in a workspace or for a specific app
-  list: userProtectedProcedure
+  list: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps' } })
     .input(
       z
@@ -44,7 +44,7 @@ export const oauthAppRouter = {
       // If appId is provided, verify app ownership
       if (input.appId) {
         const app = await getAppById(ctx, input.appId)
-        const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+        const scope = await OrganizationScope.fromApp(ctx, app)
         await scope.checkPermissions()
 
         const clientId = app.metadata.clientId
@@ -72,7 +72,7 @@ export const oauthAppRouter = {
 
       // If workspaceId is provided, verify workspace ownership and list all OAuth apps
       if (input.workspaceId) {
-        const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+        const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
         await scope.checkPermissions()
 
         // Get all apps in the workspace
@@ -113,12 +113,12 @@ export const oauthAppRouter = {
     }),
 
   // Check if the application has OAuth app
-  has: userProtectedProcedure
+  has: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/{appId}/exists' } })
     .input(z.object({ appId: z.string().min(32) }))
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions()
 
       // Check if clientId exists in application metadata
@@ -136,12 +136,12 @@ export const oauthAppRouter = {
     }),
 
   // Get OAuth application
-  get: userProtectedProcedure
+  get: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/oauth-apps/{appId}' } })
     .input(z.object({ appId: z.string().min(32) }))
     .query(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions()
 
       // Get clientId from application metadata
@@ -204,7 +204,7 @@ export const oauthAppRouter = {
     }),
 
   // Create new OAuth app
-  create: userProtectedProcedure
+  create: protectedProcedure
     .meta({ openapi: { method: 'POST', path: '/v1/oauth-apps' } })
     .input(
       z.object({
@@ -227,8 +227,8 @@ export const oauthAppRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
-      await scope.checkPermissions({ app: ['create'] })
+      const scope = await OrganizationScope.fromApp(ctx, app)
+      await scope.checkPermissions({ app: ['update'] })
 
       // TODO: check if the app already has an OAuth application
 
@@ -270,7 +270,7 @@ export const oauthAppRouter = {
     }),
 
   // Update OAuth application
-  update: userProtectedProcedure
+  update: protectedProcedure
     .meta({ openapi: { method: 'PATCH', path: '/v1/oauth-apps/{appId}' } })
     .input(
       z.object({
@@ -294,7 +294,7 @@ export const oauthAppRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions({ app: ['update'] })
 
       // Get clientId from application metadata
@@ -339,13 +339,13 @@ export const oauthAppRouter = {
     }),
 
   // Delete OAuth application
-  delete: userProtectedProcedure
+  delete: protectedProcedure
     .meta({ openapi: { method: 'DELETE', path: '/v1/oauth-apps/{appId}' } })
     .input(z.object({ appId: z.string().min(32) }))
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
-      await scope.checkPermissions({ app: ['delete'] })
+      const scope = await OrganizationScope.fromApp(ctx, app)
+      await scope.checkPermissions({ app: ['update'] })
 
       // Get clientId from application metadata
       const clientId = app.metadata.clientId
@@ -374,12 +374,12 @@ export const oauthAppRouter = {
     }),
 
   // Rotate client secret
-  rotateSecret: userProtectedProcedure
+  rotateSecret: protectedProcedure
     .meta({ openapi: { method: 'POST', path: '/v1/oauth-apps/{appId}/rotate-secret' } })
     .input(z.object({ appId: z.string().min(32) }))
     .mutation(async ({ ctx, input }) => {
       const app = await getAppById(ctx, input.appId)
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, app.workspaceId)
+      const scope = await OrganizationScope.fromApp(ctx, app)
       await scope.checkPermissions({ app: ['update'] })
 
       // Get clientId from application metadata

@@ -10,16 +10,16 @@ import { and, desc, eq, inArray, lt } from '@cared/db'
 import { Credits, CreditsOrder, orderKinds, User } from '@cared/db/schema'
 import log from '@cared/log'
 
-import type { Context } from '../trpc'
+import type { UserContext } from '../trpc'
 import { getStripe } from '../client/stripe'
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
 
 export const creditsFeeRate = 0.05
 
-async function ensureCustomer(ctx: Context, stripe: Stripe) {
+async function ensureCustomer(ctx: UserContext, stripe: Stripe) {
   let credits = await ctx.db.query.Credits.findFirst({
-    where: eq(Credits.userId, ctx.auth.userId!),
+    where: eq(Credits.userId, ctx.auth.userId),
   })
   if (credits?.metadata.customerId) {
     return {
@@ -29,7 +29,7 @@ async function ensureCustomer(ctx: Context, stripe: Stripe) {
   }
 
   const user = await ctx.db.query.User.findFirst({
-    where: eq(User.id, ctx.auth.userId!),
+    where: eq(User.id, ctx.auth.userId),
   })
   if (!user) {
     throw new TRPCError({
@@ -50,7 +50,7 @@ async function ensureCustomer(ctx: Context, stripe: Stripe) {
     await ctx.db
       .insert(Credits)
       .values({
-        userId: ctx.auth.userId!,
+        userId: ctx.auth.userId,
         credits: 0,
         metadata: {
           customerId: customer.id,

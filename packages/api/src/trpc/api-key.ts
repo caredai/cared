@@ -3,10 +3,10 @@ import { z } from 'zod/v4'
 
 import { auth } from '@cared/auth'
 
-import type { ApiKeyMetadata, ApiKeyScope } from '../auth'
-import type { Context } from '../trpc'
+import type { UserContext } from '../trpc'
+import type { ApiKeyMetadata, ApiKeyScope } from '../types'
 import { OrganizationScope } from '../auth'
-import { userProtectedProcedure } from '../trpc'
+import { userPlainProtectedProcedure } from '../trpc'
 
 const metadataSchema = z.discriminatedUnion('scope', [
   z.object({
@@ -82,7 +82,7 @@ async function listApiKeys(input: z.infer<typeof optionalMetadataSchema>) {
   return filteredKeys
 }
 
-async function checkCreationPermission(ctx: Context, metadata: ApiKeyMetadata) {
+async function checkCreationPermission(ctx: UserContext, metadata: ApiKeyMetadata) {
   // User scoped API keys always allow creation
   if (metadata.scope === 'user') {
     return
@@ -93,14 +93,20 @@ async function checkCreationPermission(ctx: Context, metadata: ApiKeyMetadata) {
 
   switch (metadata.scope) {
     case 'organization':
-      organizationScope = new OrganizationScope(metadata.organizationId)
+      organizationScope = OrganizationScope.fromOrganization(
+        { db: ctx.db },
+        metadata.organizationId,
+      )
       break
     case 'workspace': {
-      organizationScope = await OrganizationScope.fromWorkspace(ctx.db, metadata.workspaceId)
+      organizationScope = await OrganizationScope.fromWorkspace(
+        { db: ctx.db },
+        metadata.workspaceId,
+      )
       break
     }
     case 'app': {
-      organizationScope = await OrganizationScope.fromApp(ctx.db, metadata.appId)
+      organizationScope = await OrganizationScope.fromApp({ db: ctx.db }, metadata.appId)
       break
     }
   }
@@ -129,7 +135,7 @@ export const apiKeyRouter = {
    * @returns List of API keys
    * @throws {TRPCError} If user doesn't have permission for the requested scope
    */
-  list: userProtectedProcedure
+  list: userPlainProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -161,7 +167,7 @@ export const apiKeyRouter = {
    * @returns Boolean indicating if the entity has an API key
    * @throws {TRPCError} If user doesn't have permission or entity not found
    */
-  has: userProtectedProcedure
+  has: userPlainProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -185,7 +191,7 @@ export const apiKeyRouter = {
    * @returns The API key if found
    * @throws {TRPCError} If user doesn't have permission or entity not found
    */
-  get: userProtectedProcedure
+  get: userPlainProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -228,7 +234,7 @@ export const apiKeyRouter = {
    * @returns The created API key
    * @throws {TRPCError} If user doesn't have permission, entity not found, or if trying to create duplicate for workspace/app scope
    */
-  create: userProtectedProcedure
+  create: userPlainProtectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -306,7 +312,7 @@ export const apiKeyRouter = {
    * @returns The new API key
    * @throws {TRPCError} If user doesn't have permission or entity not found
    */
-  rotate: userProtectedProcedure
+  rotate: userPlainProtectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -362,7 +368,7 @@ export const apiKeyRouter = {
    * @param input - Object containing key to verify
    * @returns Boolean indicating if the key is valid
    */
-  verify: userProtectedProcedure
+  verify: userPlainProtectedProcedure
     .meta({
       openapi: {
         method: 'POST',
@@ -396,7 +402,7 @@ export const apiKeyRouter = {
    * @returns Success status
    * @throws {TRPCError} If user doesn't have permission or entity not found
    */
-  delete: userProtectedProcedure
+  delete: userPlainProtectedProcedure
     .meta({
       openapi: {
         method: 'DELETE',

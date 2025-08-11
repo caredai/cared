@@ -1,3 +1,2 @@
-export * from './authenticate'
+export * from './auth'
 export * from './scoped'
-export * from './api-key'

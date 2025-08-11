@@ -4,10 +4,10 @@ import { z } from 'zod/v4'
 
 import { Workspace } from '@cared/db/schema'
 
-import type { Context } from '../trpc'
+import type { BaseContext } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
-import { userProtectedProcedure } from '../trpc'
+import { protectedProcedure } from '../trpc'
 import { createWorkspaceSchema, updateWorkspaceSchema } from '../types'
 
 /**
@@ -16,7 +16,7 @@ import { createWorkspaceSchema, updateWorkspaceSchema } from '../types'
  * @param _ctx - The context object
  * @param _workspaceId - The workspace ID to verify ownership for
  */
-export function verifyWorkspaceOwner(_ctx: Context, _workspaceId: string) {
+export function verifyWorkspaceOwner(_ctx: BaseContext, _workspaceId: string) {
   // Note: Ownership verification is now handled by the organization system
   // This function is kept for backward compatibility but should be updated
   // to use organization-based permission checks
@@ -30,7 +30,7 @@ export const workspaceRouter = {
    * @param input - Pagination parameters
    * @returns List of workspaces
    */
-  list: userProtectedProcedure
+  list: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/workspaces' } })
     .input(
       z.object({
@@ -38,7 +38,7 @@ export const workspaceRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const scope = new OrganizationScope(input.organizationId)
+      const scope = OrganizationScope.fromOrganization(ctx, input.organizationId)
       await scope.checkPermissions()
 
       const workspaces = await ctx.db
@@ -59,7 +59,7 @@ export const workspaceRouter = {
    * @returns The workspace if found
    * @throws {TRPCError} If workspace not found or user is not a member
    */
-  get: userProtectedProcedure
+  get: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/workspaces/{id}' } })
     .input(
       z.object({
@@ -78,17 +78,17 @@ export const workspaceRouter = {
         })
       }
 
-      const scope = new OrganizationScope(workspace.organizationId)
+      const scope = OrganizationScope.fromOrganization(ctx, workspace.organizationId)
       await scope.checkPermissions()
 
       return { workspace }
     }),
 
-  create: userProtectedProcedure
+  create: protectedProcedure
     .meta({ openapi: { method: 'POST', path: '/v1/workspaces' } })
     .input(createWorkspaceSchema)
     .mutation(async ({ input, ctx }) => {
-      const scope = new OrganizationScope(input.organizationId)
+      const scope = OrganizationScope.fromOrganization(ctx, input.organizationId)
       await scope.checkPermissions({ workspace: ['create'] })
 
       // Check if user has reached the maximum number of workspaces
@@ -118,11 +118,11 @@ export const workspaceRouter = {
       }
     }),
 
-  update: userProtectedProcedure
+  update: protectedProcedure
     .meta({ openapi: { method: 'PATCH', path: '/v1/workspaces/{id}' } })
     .input(updateWorkspaceSchema)
     .mutation(async ({ input, ctx }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.id)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.id)
       await scope.checkPermissions({ workspace: ['update'] })
 
       const [workspace] = await ctx.db
@@ -147,7 +147,7 @@ export const workspaceRouter = {
    * @param input - The workspace ID
    * @throws {TRPCError} If user doesn't have delete permission
    */
-  delete: userProtectedProcedure
+  delete: protectedProcedure
     .meta({ openapi: { method: 'DELETE', path: '/v1/workspaces/{id}' } })
     .input(
       z.object({
@@ -155,7 +155,7 @@ export const workspaceRouter = {
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.id)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.id)
       await scope.checkPermissions({ workspace: ['delete'] })
 
       // TODO: check other resources
@@ -168,7 +168,7 @@ export const workspaceRouter = {
    * @param input - Object containing workspaceId and userId
    * @throws {TRPCError} If user doesn't have update permission
    */
-  transferOwnership: userProtectedProcedure
+  transferOwnership: protectedProcedure
     .meta({ openapi: { method: 'POST', path: '/v1/workspaces/{workspaceId}/transfer-ownership' } })
     .input(
       z.object({
@@ -177,11 +177,11 @@ export const workspaceRouter = {
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx.db, input.workspaceId)
+      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions({ workspace: ['transfer'] })
 
       // Ensure the target organization exists and user has permission to create workspaces there
-      const targetScope = new OrganizationScope(input.organizationId)
+      const targetScope = OrganizationScope.fromOrganization(ctx, input.organizationId)
       await targetScope.checkPermissions({ workspace: ['create'] })
 
       const [workspace] = await ctx.db

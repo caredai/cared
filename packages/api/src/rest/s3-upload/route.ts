@@ -97,7 +97,7 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        const scope = await OrganizationScope.fromWorkspace(db, dataset.workspaceId)
+        const scope = await OrganizationScope.fromWorkspace({ auth, db }, dataset.workspaceId)
         await scope.checkPermissions({
           dataset: ['update'],
         })
@@ -117,7 +117,7 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        const scope = await OrganizationScope.fromApp(db, app)
+        const scope = await OrganizationScope.fromApp({ auth, db }, app)
         await scope.checkPermissions({
           dataset: ['update'],
         })
@@ -148,7 +148,7 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        const scope = await OrganizationScope.fromApp(db, app)
+        const scope = await OrganizationScope.fromApp({ auth, db }, app)
         await scope.checkPermissions({
           dataset: ['update'],
         })
