@@ -11,7 +11,7 @@ import { messageRouter } from './trpc/message'
 import { modelRouter } from './trpc/model'
 import { oauthAppRouter } from './trpc/oauth-app'
 import { organizationRouter } from './trpc/organization'
-import { secretRouter } from './trpc/secret'
+import { providerKeyRouter } from './trpc/provider-key'
 import { storageRouter } from './trpc/storage'
 import { tokenizerRouter } from './trpc/tokenizer'
 import { userRouter } from './trpc/user'
@@ -22,7 +22,7 @@ export const appRouter = createTRPCRouter({
   organization: organizationRouter,
   workspace: workspaceRouter,
   user: userRouter,
-  secret: secretRouter,
+  providerKey: providerKeyRouter,
   app: _appRouter,
   apiKey: apiKeyRouter,
   oauthApp: oauthAppRouter,

@@ -5,6 +5,7 @@ import type {
   SpeechModelV2,
   TranscriptionModelV2,
 } from '@ai-sdk/provider'
+import { z } from 'zod/v4'
 
 export interface Provider {
   languageModel?(modelId: string): LanguageModelV2
@@ -21,26 +22,30 @@ export interface Provider {
 export const modelTypes = ['language', 'text-embedding', 'image'] as const
 export type ModelType = (typeof modelTypes)[number]
 
-export type ProviderId =
-  | 'openai'
-  | 'anthropic'
-  | 'deepseek'
-  // | 'azure'
-  // | 'bedrock'
-  | 'google'
-  | 'vertex'
-  | 'mistral'
-  | 'xai'
-  | 'togetherai'
-  | 'cohere'
-  | 'fireworks'
-  | 'deepinfra'
-  | 'cerebras'
-  | 'groq'
-  | 'replicate'
-  | 'perplexity'
-  | 'luma'
-  | 'openrouter'
+export const providerIds = [
+  'openai',
+  'anthropic',
+  'google',
+  'vertex',
+  'azure',
+  'bedrock',
+  'deepseek',
+  'mistral',
+  'xai',
+  'togetherai',
+  'cohere',
+  'fireworks',
+  'deepinfra',
+  'cerebras',
+  'groq',
+  'replicate',
+  'perplexity',
+  'luma',
+  'openrouter',
+] as const
+
+export const providerIdSchema = z.enum(providerIds)
+export type ProviderId = (typeof providerIds)[number]
 
 export interface ProviderInfo {
   id: ProviderId
@@ -98,3 +103,53 @@ export interface EmbeddingModelInfo extends BaseModelInfo {
   tokenPrice?: string
   dimensions?: number
 }
+
+export interface ProviderSettings {
+  // TODO
+  providers: Record<ProviderId, any>
+}
+
+export type ProviderKey = z.infer<typeof providerKeySchema>
+
+export const providerKeySchema = z
+  .object({
+    apiKey: z.string(), // encrypted in db
+    baseUrl: z.string().optional(),
+  })
+  .and(
+    z.discriminatedUnion('providerId', [
+      z.object({
+        providerId: z.enum(providerIds).exclude(['azure', 'bedrock', 'vertex', 'replicate']),
+      }),
+
+      z.object({
+        providerId: z.literal('azure'),
+        baseUrl: z.string(),
+        apiVersion: z.string().optional(),
+      }),
+
+      z.object({
+        providerId: z.literal('bedrock'),
+        apiKey: z.never(),
+        region: z.string(),
+        accessKeyId: z.string(), // encrypted in db
+        secretAccessKey: z.string(), // encrypted in db
+      }),
+
+      z.object({
+        providerId: z.literal('vertex'),
+        apiKey: z.never(),
+        project: z.string().optional(),
+        location: z.string().optional(),
+        clientEmail: z.string(), // encrypted in db
+        privateKey: z.string(), // encrypted in db
+        privateKeyId: z.string().optional(), // encrypted in db
+      }),
+
+      z.object({
+        providerId: z.literal('replicate'),
+        apiKey: z.never(),
+        apiToken: z.string(), // encrypted in db
+      }),
+    ]),
+  )

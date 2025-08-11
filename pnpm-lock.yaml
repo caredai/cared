@@ -519,6 +519,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@cared/providers':
+        specifier: workspace:*
+        version: link:../providers
       '@cared/shared':
         specifier: workspace:*
         version: link:../shared

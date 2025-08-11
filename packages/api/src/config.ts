@@ -1,5 +1,21 @@
 export const cfg = {
   /**
+   * User-level resource limitations
+   * Defines the maximum resources allocated to each user
+   */
+  perUser: {
+    /**
+     * Provider-level resource limitations
+     * Defines the maximum resources allocated to each provider
+     */
+    perProvider: {
+      /**
+       * Maximum number of API keys that can be created for a provider
+       */
+      maxApiKeys: 10,
+    }
+  },
+  /**
    * Organization-level resource limitations
    * Defines the maximum resources allocated to each organization
    */
@@ -8,6 +24,16 @@ export const cfg = {
      * Maximum number of workspaces an organization can create or join
      */
     maxWorkspaces: 5,
+    /**
+     * Provider-level resource limitations
+     * Defines the maximum resources allocated to each provider
+     */
+    perProvider: {
+      /**
+       * Maximum number of API keys that can be created for a provider
+       */
+      maxApiKeys: 10,
+    }
   },
 
   /**

@@ -24,6 +24,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "@cared/providers": "workspace:*",
     "@cared/shared": "workspace:*",
     "@vercel/postgres": "^0.10.0",
     "drizzle-orm": "^0.38.4",

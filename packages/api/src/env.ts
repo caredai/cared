@@ -21,6 +21,15 @@ export const env = createEnv({
     UPSTASH_WORKFLOW_URL: z.string().min(1),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+    WHITELIST_CARED_APPS: z
+      .string()
+      .transform((s) =>
+        s
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      )
+      .optional(),
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
   client: {

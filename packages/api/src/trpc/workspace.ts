@@ -4,24 +4,10 @@ import { z } from 'zod/v4'
 
 import { Workspace } from '@cared/db/schema'
 
-import type { BaseContext } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
 import { protectedProcedure } from '../trpc'
 import { createWorkspaceSchema, updateWorkspaceSchema } from '../types'
-
-/**
- * Verify if the user is the owner of the workspace.
- * Note: This function is deprecated and kept for backward compatibility
- * @param _ctx - The context object
- * @param _workspaceId - The workspace ID to verify ownership for
- */
-export function verifyWorkspaceOwner(_ctx: BaseContext, _workspaceId: string) {
-  // Note: Ownership verification is now handled by the organization system
-  // This function is kept for backward compatibility but should be updated
-  // to use organization-based permission checks
-  return true
-}
 
 export const workspaceRouter = {
   /**

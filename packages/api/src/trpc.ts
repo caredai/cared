@@ -208,6 +208,30 @@ export const appUserProtectedProcedure = t.procedure.use(timingMiddleware).use((
   })
 })
 
+export type UserOrAppUserContext = BaseContext & {
+  auth: {
+    userId: string
+    appId?: string
+  }
+}
+
+export const userOrAppUserProtectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(({ ctx, next }) => {
+    const auth = ctx.auth.auth
+    if (!(auth?.type === 'user' || auth?.type === 'appUser')) {
+      throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
+    }
+    return next({
+      ctx: {
+        auth: {
+          userId: auth.userId,
+          appId: auth.type === 'appUser' ? auth.appId : undefined,
+        },
+      },
+    })
+  })
+
 export type AdminContext = BaseContext & {
   auth: {
     userId: string

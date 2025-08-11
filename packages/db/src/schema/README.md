@@ -26,14 +26,12 @@
 # Workspace scoped resources
 
 - API Key (only one)
-- AI Provider API Keys
 - Apps
 - Datasets
 
 # App scoped resources
 
 - API Key (only one)
-- AI Provider API Keys
 - App Users
 - Chats, Messages, Artifacts, etc.
 - Memories
