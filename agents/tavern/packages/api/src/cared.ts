@@ -1,8 +1,7 @@
+import { CaredClient } from '@cared/sdk'
 import { eq } from '@tavern/db'
 import { Account } from '@tavern/db/schema'
 import AsyncLock from 'async-lock'
-
-import { CaredClient } from '@cared/sdk'
 
 import type { Context } from './trpc'
 import { env } from './env'
@@ -14,7 +13,6 @@ export function createCaredClient(ctx: Context, useApiKey?: boolean) {
     useApiKey
       ? {
           apiKey: env.CARED_API_KEY,
-          userId: ctx.auth.userId!,
         }
       : {
           accessToken: async () => {

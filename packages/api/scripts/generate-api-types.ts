@@ -28,8 +28,9 @@ const EXTERNAL_TYPE_DEFINITIONS = `export * from '@cared/shared'
  *          @cared/db/schema -> packages/db/src/schema/index.ts
  */
 function resolveMonorepoPath(importPath: string): string {
-  // Remove quotes and @cared prefix
-  const cleanPath = importPath.replace(/["']/g, '').replace('@cared/', '')
+  const cleanPath = importPath
+    .replace(/["']/g, '') // Remove quotes
+    .replace('@cared/', '') // Remove @cared prefix
 
   // Split into package name and subpath
   const [pkgName, ...subPaths] = cleanPath.split('/')
@@ -75,6 +76,7 @@ async function extractTypeDefinition(
 
   processedFiles.add(filePath)
 
+  console.log(`Absolute filepath: ${filePath}`)
   const sourceContent = fs.readFileSync(filePath, 'utf-8')
   const parsedSourceFile = ts.createSourceFile(
     filePath,
@@ -176,10 +178,15 @@ function visitNode(node: ts.Node) {
 
 visitNode(rootSourceFile)
 
+for (const type of ['ProviderId', 'ModelFullId', 'BaseModelInfo']) {
+  caredImports.get('"@cared/providers"')?.add(type)
+}
+
 // Extract type definitions for all found imports
 let typeDefinitions = EXTERNAL_TYPE_DEFINITIONS + '\n'
 // @ts-ignore
 for (const [importPath, types] of caredImports) {
+  console.log(`Extract type definitions from ${importPath}`, Array.from(types))
   // @ts-ignore
   const typeDef = await extractTypeDefinition(importPath)
   if (typeDef) {

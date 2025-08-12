@@ -932,6 +932,9 @@ importers:
         specifier: 2.2.2
         version: 2.2.2
     devDependencies:
+      '@ai-sdk/provider':
+        specifier: 2.0.0
+        version: 2.0.0
       '@aws-sdk/client-s3':
         specifier: ^3.787.0
         version: 3.797.0
@@ -953,6 +956,12 @@ importers:
       prettier:
         specifier: 'catalog:'
         version: 3.5.3
+      stripe:
+        specifier: ^18.3.0
+        version: 18.3.0(@types/node@24.2.0)
+      trpc-to-openapi:
+        specifier: ^2.1.4
+        version: 2.2.0(@trpc/server@11.1.1(typescript@5.8.3))(zod-openapi@4.2.4(zod@3.25.51))(zod@3.25.51)
       tsup:
         specifier: ^8.3.6
         version: 8.4.0(jiti@2.4.2)(postcss@8.5.3)(tsx@4.19.3)(typescript@5.8.3)(yaml@2.7.1)
@@ -22761,7 +22770,7 @@ snapshots:
 
   extension-port-stream@3.0.0:
     dependencies:
-      readable-stream: 3.6.2
+      readable-stream: 4.7.0
       webextension-polyfill: 0.10.0
 
   external-editor@3.1.0:

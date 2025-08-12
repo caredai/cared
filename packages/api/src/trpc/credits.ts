@@ -170,7 +170,10 @@ export const creditsRouter = {
       const cursor = orders.at(-1)?.id
 
       return {
-        orders,
+        orders: orders.map((order) => ({
+          ...order,
+          status: order.status as Stripe.Checkout.Session.Status | Stripe.Invoice.Status,
+        })),
         hasMore,
         cursor,
       }

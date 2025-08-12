@@ -27,6 +27,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
+    "@ai-sdk/provider": "2.0.0",
     "@aws-sdk/client-s3": "^3.787.0",
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
@@ -34,6 +35,8 @@
     "@trpc/server": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "stripe": "^18.3.0",
+    "trpc-to-openapi": "^2.1.4",
     "tsup": "^8.3.6",
     "typescript": "catalog:"
   },
@@ -47,7 +50,7 @@
     "superjson": "2.2.2"
   },
   "peerDependencies": {
-    "ai": ">=5.0.0-beta.6",
+    "ai": ">=5.0.8",
     "react": ">=19.0.0"
   }
 }

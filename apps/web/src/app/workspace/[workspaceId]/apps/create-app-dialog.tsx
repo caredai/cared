@@ -88,7 +88,7 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
 
     // Process different types of model data
     const languageModelItems = processModelsToGroups(modelsData.models.language)
-    const embeddingModelItems = processModelsToGroups(modelsData.models['text-embedding'])
+    const embeddingModelItems = processModelsToGroups(modelsData.models.textEmbedding)
     const imageModelItems = processModelsToGroups(modelsData.models.image)
 
     return {

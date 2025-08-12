@@ -24,12 +24,12 @@ import {
 import { useTRPC } from '@/trpc/client'
 
 // Model type definition
-type ModelType = 'language' | 'text-embedding' | 'image'
+type ModelType = 'language' | 'textEmbedding' | 'image'
 
 // Model type display configuration
 const MODEL_TYPE_CONFIG: Record<ModelType, { title: string }> = {
   language: { title: 'Language Models' },
-  'text-embedding': { title: 'Text Embedding Models' },
+  textEmbedding: { title: 'Text Embedding Models' },
   image: { title: 'Image Models' },
 }
 
@@ -62,7 +62,7 @@ export function Models() {
   }
 
   // All model types to display
-  const allModelTypes: ModelType[] = ['language', 'text-embedding', 'image']
+  const allModelTypes: ModelType[] = ['language', 'textEmbedding', 'image']
 
   return (
     <div className="container mx-auto py-6">

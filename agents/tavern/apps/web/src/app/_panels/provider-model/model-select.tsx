@@ -87,7 +87,7 @@ export function ModelSelect({
 }: {
   label: string
   description: string
-  type?: 'language' | 'text-embedding' | 'image'
+  type?: 'language' | 'textEmbedding' | 'image'
 }) {
   const { languageModelItems, embeddingModelItems, imageModelItems } = useModelGroups()
   const modelSettings = useModelSettings()
@@ -98,7 +98,7 @@ export function ModelSelect({
     switch (type) {
       case 'language':
         return languageModelItems
-      case 'text-embedding':
+      case 'textEmbedding':
         return embeddingModelItems
       case 'image':
         return imageModelItems

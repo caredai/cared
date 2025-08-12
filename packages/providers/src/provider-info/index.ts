@@ -2,9 +2,9 @@ import hash from 'stable-hash'
 
 import type { LiteLLMModelInfo } from '../litellm'
 import type { OpenRouterModelInfo } from '../openrouter'
-import type { ProviderInfo } from '../types'
 import { getLiteLLMModels } from '../litellm'
 import { getOpenRouterModels } from '../openrouter'
+import { modelFullId, ProviderInfo } from '../types'
 import anthropicProvider from './anthropic'
 import azureProvider from './azure'
 import bedrockProvider from './bedrock'
@@ -30,6 +30,7 @@ let providerInfosSingleton: ProviderInfo[]
 
 /**
  * Get all provider information including dynamically fetched OpenRouter models
+ * TODO: deprecated
  * @returns Promise resolving to an array of provider information
  */
 export async function getProviderInfos(): Promise<ProviderInfo[]> {
@@ -74,4 +75,21 @@ export async function getProviderInfos(): Promise<ProviderInfo[]> {
   }
 
   return providerInfosSingleton
+}
+
+export async function getTextEmbeddingModelInfos() {
+  const providerInfos = await getProviderInfos()
+  return providerInfos.flatMap(
+    (provider) =>
+      provider.textEmbeddingModels?.map((model) => ({
+        ...model,
+        id: modelFullId(provider.id, model.id),
+      })) ?? [],
+  )
+}
+
+// TODO: deprecated
+export async function getTextEmbeddingModelInfo(fullId: string) {
+  const textEmbeddingModelInfos = await getTextEmbeddingModelInfos()
+  return textEmbeddingModelInfos.find((model) => model.id === fullId)
 }

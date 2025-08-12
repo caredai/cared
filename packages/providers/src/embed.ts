@@ -3,7 +3,7 @@ import { embed as _embed, embedMany as _embedMany } from 'ai'
 import { getModel } from './providers'
 
 export async function embed(text: string, modelFullId: string): Promise<number[]> {
-  const embeddingModel = getModel(modelFullId, 'text-embedding')
+  const embeddingModel = getModel(modelFullId, 'textEmbedding')
   if (!embeddingModel) {
     throw new Error(`Embedding model ${modelFullId} not found`)
   }
@@ -15,7 +15,7 @@ export async function embed(text: string, modelFullId: string): Promise<number[]
 }
 
 export async function embedMany(texts: string[], modelFullId: string): Promise<number[][]> {
-  const embeddingModel = getModel(modelFullId, 'text-embedding')
+  const embeddingModel = getModel(modelFullId, 'textEmbedding')
   if (!embeddingModel) {
     throw new Error(`Embedding model ${modelFullId} not found`)
   }

@@ -10,17 +10,44 @@ import { z } from 'zod/v4'
 export interface Provider {
   languageModel?(modelId: string): LanguageModelV2
 
-  textEmbeddingModel?(modelId: string): EmbeddingModelV2<string>
-
   image?(modelId: string): ImageModelV2
+
+  speechModel?(modelId: string): SpeechModelV2
 
   transcriptionModel?(modelId: string): TranscriptionModelV2
 
-  speechModel?(modelId: string): SpeechModelV2
+  textEmbeddingModel?(modelId: string): EmbeddingModelV2<string>
 }
 
-export const modelTypes = ['language', 'text-embedding', 'image'] as const
+export const modelTypes = [
+  'language',
+  'image',
+  'speech',
+  'transcription',
+  'textEmbedding',
+] as const
 export type ModelType = (typeof modelTypes)[number]
+
+export type ProviderId =
+  | 'openai'
+  | 'anthropic'
+  | 'google'
+  | 'vertex'
+  | 'azure'
+  | 'bedrock'
+  | 'deepseek'
+  | 'mistral'
+  | 'xai'
+  | 'togetherai'
+  | 'cohere'
+  | 'fireworks'
+  | 'deepinfra'
+  | 'cerebras'
+  | 'groq'
+  | 'replicate'
+  | 'perplexity'
+  | 'luma'
+  | 'openrouter'
 
 export const providerIds = [
   'openai',
@@ -45,13 +72,38 @@ export const providerIds = [
 ] as const
 
 export const providerIdSchema = z.enum(providerIds)
-export type ProviderId = (typeof providerIds)[number]
 
-export interface ProviderInfo {
+const _: ProviderId = '' as z.infer<typeof providerIdSchema>
+const __: z.infer<typeof providerIdSchema> = '' as ProviderId
+
+export type ModelFullId = `${ProviderId}:${string}`
+export const modelFullIdSchema = z.templateLiteral([
+  providerIdSchema,
+  ':',
+  z.string().min(1),
+])
+
+export function modelFullId(providerId: ProviderId, modelId: string): ModelFullId {
+  return `${providerId}:${modelId}`
+}
+
+export function splitModelFullId(fullId: ModelFullId | string) {
+  const index = fullId.indexOf(':')
+  const providerId = fullId.slice(0, index)
+  const modelId = fullId.slice(index + 1)
+  return { providerId, modelId } as { providerId: ProviderId; modelId: string }
+}
+
+export type ProviderInfo = BaseProviderInfo & ModelInfos
+
+export interface BaseProviderInfo {
   id: ProviderId
   name: string
   icon: string
   description: string
+}
+
+export interface ModelInfos {
   languageModels?: LanguageModelInfo[]
   imageModels?: ImageModelInfo[]
   speechModels?: SpeechModelInfo[]
@@ -63,6 +115,8 @@ export interface BaseModelInfo {
   id: string
   name: string
   description: string
+  deprecated?: boolean
+  retired?: boolean
 }
 
 export interface LanguageModelInfo extends BaseModelInfo {
@@ -103,6 +157,61 @@ export interface EmbeddingModelInfo extends BaseModelInfo {
   dimensions?: number
 }
 
+export const baseModelInfoSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  deprecated: z.boolean().optional(),
+  retired: z.boolean().optional(),
+})
+
+export const languageModelInfoSchema = baseModelInfoSchema.extend({
+  contextWindow: z.number().optional(),
+  maxOutputTokens: z.number().optional(),
+  inputTokenPrice: z.string().optional(),
+  cachedInputTokenPrice: z.string().optional(),
+  cacheInputTokenPrice: z.string().or(z.record(z.string(), z.string())).optional(),
+  outputTokenPrice: z.string().optional(),
+})
+
+export const imageModelInfoSchema = baseModelInfoSchema.extend({
+  imageInputTokenPrice: z.string().optional(),
+  imageCachedInputTokenPrice: z.string().optional(),
+  imageOutputTokenPrice: z.string().optional(),
+  textInputTokenPrice: z.string().optional(),
+  textCachedInputTokenPrice: z.string().optional(),
+  pricePerImage: z
+    .string()
+    .or(z.record(z.string(), z.string()))
+    .or(z.record(z.string(), z.record(z.string(), z.string())))
+    .optional(),
+})
+
+export const speechModelInfoSchema = baseModelInfoSchema.extend({
+  maxInputTokens: z.number().optional(),
+  textTokenPrice: z.string().optional(),
+  audioTokenPrice: z.string().optional(),
+})
+
+export const transcriptionModelInfoSchema = baseModelInfoSchema.extend({
+  audioTokenPrice: z.string().optional(),
+  textInputTokenPrice: z.string().optional(),
+  textOutputTokenPrice: z.string().optional(),
+})
+
+export const embeddingModelInfoSchema = baseModelInfoSchema.extend({
+  tokenPrice: z.string().optional(),
+  dimensions: z.number().optional(),
+})
+
+export const modelInfosSchema = z.object({
+  languageModels: z.array(languageModelInfoSchema).optional(),
+  imageModels: z.array(imageModelInfoSchema).optional(),
+  speechModels: z.array(speechModelInfoSchema).optional(),
+  transcriptionModels: z.array(transcriptionModelInfoSchema).optional(),
+  textEmbeddingModels: z.array(embeddingModelInfoSchema).optional(),
+})
+
 export interface ProviderSettings {
   // TODO
   providers: Record<ProviderId, any>
@@ -118,7 +227,7 @@ export const providerKeySchema = z
   .and(
     z.discriminatedUnion('providerId', [
       z.object({
-        providerId: z.enum(providerIds).exclude(['azure', 'bedrock', 'vertex', 'replicate']),
+        providerId: providerIdSchema.exclude(['azure', 'bedrock', 'vertex', 'replicate']),
       }),
 
       z.object({

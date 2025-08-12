@@ -52,4 +52,4 @@ export const orgRoles = {
   member: memberAc,
 }
 
-export type OrganizationRole = keyof typeof orgRoles
+export type OrganizationRole = 'owner' | 'admin' | 'member'

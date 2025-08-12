@@ -1,4 +1,3 @@
-import type { InvitationStatus } from 'better-auth/plugins'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
@@ -8,6 +7,8 @@ import { auth, headers } from '@cared/auth'
 import { generateId } from '@cared/shared'
 
 import { userProtectedProcedure } from '../trpc'
+
+type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'canceled'
 
 function formatOrganization(org: Pick<Organization, 'id' | 'name' | 'createdAt'>) {
   const { id, name, createdAt } = org

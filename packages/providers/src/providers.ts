@@ -25,11 +25,11 @@ import { splitModelFullId } from './index'
 export const providers: Record<ProviderId, Provider> = {
   openai: openai,
   anthropic: anthropic,
-  deepseek: deepseek,
-  azure: azure,
-  bedrock: bedrock,
   google: google,
   vertex: vertex,
+  azure: azure,
+  bedrock: bedrock,
+  deepseek: deepseek,
   mistral: mistral,
   xai: xai,
   togetherai: togetherai,
@@ -47,11 +47,11 @@ export const providers: Record<ProviderId, Provider> = {
 export {
   createOpenAI,
   createAnthropic,
-  createDeepSeek,
-  // createAzure,
-  // createAmazonBedrock,
   createGoogleGenerativeAI,
   createVertex,
+  createAzure,
+  createAmazonBedrock,
+  createDeepSeek,
   createMistral,
   createXai,
   createTogetherAI,
@@ -100,7 +100,7 @@ export function getModel<T extends ModelType>(
   keys?: Record<string, string>,
 ): T extends 'language'
   ? LanguageModelV2 | undefined
-  : T extends 'text-embedding'
+  : T extends 'textEmbedding'
     ? EmbeddingModelV2<string> | undefined
     : T extends 'image'
       ? ImageModelV2 | undefined
@@ -121,7 +121,7 @@ export function getModel<T extends ModelType>(
   }
   if (modelType === 'language') {
     return provider.languageModel?.(modelId) as any
-  } else if (modelType === 'text-embedding') {
+  } else if (modelType === 'textEmbedding') {
     return provider.textEmbeddingModel?.(modelId) as any
   } else {
     return provider.image?.(modelId) as any
