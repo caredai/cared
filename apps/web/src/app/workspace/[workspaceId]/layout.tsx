@@ -10,7 +10,7 @@ import { NavMain } from '@/components/nav-main'
 import { RememberWorkspace } from '@/components/remember-workspace'
 import { WorkspaceSwitcher } from '@/components/workspace-switcher'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 const items = [
   {
@@ -55,14 +55,18 @@ export default async function WorkspaceLayout({
   const { workspaceId: workspaceIdNoPrefix } = await params
   const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
 
-  prefetch(trpc.user.me.queryOptions())
+  prefetch(trpc.user.session.queryOptions())
   prefetch(trpc.user.accounts.queryOptions())
-  prefetch(
+  const { workspace } = await fetch(
     trpc.workspace.get.queryOptions({
       id: workspaceId,
     }),
   )
-  prefetch(trpc.workspace.list.queryOptions())
+  prefetch(
+    trpc.workspace.list.queryOptions({
+      organizationId: workspace.organizationId,
+    }),
+  )
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>

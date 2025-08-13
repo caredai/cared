@@ -7,8 +7,8 @@ import { SidebarMenuButton } from '@cared/ui/components/sidebar'
 
 import { useRedirectWorkspace } from '@/hooks/use-workspace'
 
-export function WorkspaceEnterButton() {
-  const redirect = useRedirectWorkspace()
+export function WorkspaceEnterButton({ workspaceId }: { workspaceId: string }) {
+  const redirect = useRedirectWorkspace(workspaceId)
   const [isActive, setIsActive] = useState(false)
 
   return (

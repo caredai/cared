@@ -8,7 +8,7 @@ import { ErrorFallback } from '@/components/error-fallback'
 import { NavMain } from '@/components/nav-main'
 import { WorkspaceEnterButton } from '@/components/workspace-enter-button'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 const items = [
   {
@@ -40,9 +40,9 @@ export default async function Layout({
   const { appId: appIdNoPrefix } = await params
   const appId = addIdPrefix(appIdNoPrefix, 'app')
 
-  prefetch(trpc.workspace.list.queryOptions())
-  prefetch(trpc.user.me.queryOptions())
-  prefetch(
+  prefetch(trpc.user.session.queryOptions())
+
+  const { app } = await fetch(
     trpc.app.byId.queryOptions({
       id: appId,
     }),
@@ -54,7 +54,7 @@ export default async function Layout({
         <AppSidebar collapsible="icon" baseUrl="/">
           <NavMain items={items} baseUrl={`/app/${appIdNoPrefix}`}>
             <HydrateClient>
-              <WorkspaceEnterButton />
+              <WorkspaceEnterButton workspaceId={app.workspaceId} />
             </HydrateClient>
           </NavMain>
         </AppSidebar>

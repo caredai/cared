@@ -1,13 +1,14 @@
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
-import type { AppRouter } from '@cared/api'
 import type { inferRouterOutputs } from '@trpc/server'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
+
+import type { AppRouter } from '@cared/api'
 
 import { useTRPC } from '@/trpc/client'
 
 type RouterOutput = inferRouterOutputs<AppRouter>
 export type User = RouterOutput['user']['me']['user']
 
-export function useUserMayUndefined() {
+export function useUserPublic() {
   const trpc = useTRPC()
 
   const { data, refetch: refetchUser } = useQuery(trpc.user.session.queryOptions())
@@ -18,15 +19,25 @@ export function useUserMayUndefined() {
 }
 
 export function useUser() {
-  const trpc = useTRPC()
-
-  const {
-    data: { user },
-    refetch: refetchUser,
-  } = useSuspenseQuery(trpc.user.me.queryOptions())
+  const { user, refetchSession } = useSession()
   return {
     user,
-    refetchUser,
+    refetchUser: refetchSession,
+  }
+}
+
+export function useSession() {
+  const trpc = useTRPC()
+
+  const { data, refetch: refetchSession } = useSuspenseQuery(
+    trpc.user.session.queryOptions({
+      authenticated: true,
+    }),
+  )
+  return {
+    session: data!.session,
+    user: data!.user,
+    refetchSession,
   }
 }
 

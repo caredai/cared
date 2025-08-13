@@ -1,20 +1,21 @@
 import { TRPCError } from '@trpc/server'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 import type { OrganizationRole } from '@cared/auth'
-import type { Invitation, Organization } from '@cared/db/schema'
 import { auth, headers } from '@cared/auth'
-import { generateId } from '@cared/shared'
+import { Invitation, Member, Organization } from '@cared/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
 
 type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'canceled'
 
-function formatOrganization(org: Pick<Organization, 'id' | 'name' | 'createdAt'>) {
-  const { id, name, createdAt } = org
+function formatOrganization(org: Pick<Organization, 'id' | 'name' | 'slug' | 'createdAt'>) {
+  const { id, name, slug, createdAt } = org
   return {
     id,
     name,
+    slug,
     createdAt,
   }
 }
@@ -49,9 +50,9 @@ export const organizationRouter = {
       const org = await auth.api.createOrganization({
         body: {
           name: input.name,
-          slug: generateId('slug'), // we do not use slug, but better-auth requires it to be unique
+          slug: '', // slug will be set in `organizationCreation.beforeCreate`
           logo: input.logo,
-          keepCurrentActiveOrganization: true,
+          keepCurrentActiveOrganization: false,
         },
       })
       if (!org) {
@@ -68,9 +69,23 @@ export const organizationRouter = {
     .meta({
       openapi: { method: 'GET', path: '/v1/organizations', protect: true, tags: ['organization'] },
     })
-    .query(async () => {
-      const orgs = await auth.api.listOrganizations({})
-      return { organizations: orgs.map((org) => formatOrganization(org)) }
+    .query(async ({ ctx }) => {
+      const orgs = await ctx.db
+        .select({
+          org: Organization,
+          role: Member.role,
+        })
+        .from(Organization)
+        .innerJoin(Member, eq(Member.organizationId, Organization.id))
+        .where(eq(Member.userId, ctx.auth.userId))
+        .orderBy(Organization.createdAt)
+
+      return {
+        organizations: orgs.map(({ org, role }) => ({
+          ...formatOrganization(org),
+          role: role as OrganizationRole,
+        })),
+      }
     }),
 
   setActive: userProtectedProcedure
@@ -110,11 +125,12 @@ export const organizationRouter = {
         tags: ['organization'],
       },
     })
-    .input(z.object({ organizationId: z.string().min(1) }))
+    .input(z.object({
+      id: z.string().min(1) }))
     .query(async ({ input }) => {
       const organization = await auth.api.getFullOrganization({
         headers: await headers(),
-        query: { organizationId: input.organizationId },
+        query: { organizationId: input.id },
       })
       if (!organization) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Organization not found' })
@@ -141,7 +157,7 @@ export const organizationRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().min(1),
+        id: z.string().min(1),
         name: z.string().min(1).max(128),
       }),
     )
@@ -149,7 +165,7 @@ export const organizationRouter = {
       const org = await auth.api.updateOrganization({
         headers: await headers(),
         body: {
-          organizationId: input.organizationId,
+          organizationId: input.id,
           data: {
             name: input.name,
           },
@@ -175,13 +191,13 @@ export const organizationRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().min(1),
+        id: z.string().min(1),
       }),
     )
     .mutation(async ({ input }) => {
       await auth.api.deleteOrganization({
         headers: await headers(),
-        body: { organizationId: input.organizationId },
+        body: { organizationId: input.id },
       })
     }),
 

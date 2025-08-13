@@ -3,13 +3,13 @@ import { useLogout } from '@privy-io/react-auth'
 
 import { authClient } from '@cared/auth/client'
 
-import { useUserMayUndefined } from '@/hooks/use-user'
+import { useUserPublic } from '@/hooks/use-user'
 import { useLastWorkspace } from '@/hooks/use-workspace'
 
 export function useSignOut() {
   const router = useRouter()
 
-  const { refetchUser } = useUserMayUndefined()
+  const { refetchUser } = useUserPublic()
   const { logout } = useLogout()
 
   const [, setLastWorkspace] = useLastWorkspace()

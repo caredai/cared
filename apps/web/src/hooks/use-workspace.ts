@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import Cookies from 'js-cookie'
 import { toast } from 'sonner'
 
-import { siteConfig } from '@/config/site'
+import { lastWorkspaceCookieName } from '@/lib/cookie'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 
@@ -20,7 +20,10 @@ export function useWorkspace() {
   const id = useWorkspaceId()
 
   const trpc = useTRPC()
-  const { data, error } = useSuspenseQuery({
+  const {
+    data: { workspace },
+    error,
+  } = useSuspenseQuery({
     ...trpc.workspace.get.queryOptions({
       id,
     }),
@@ -28,14 +31,6 @@ export function useWorkspace() {
       return !(id.length < 32 || error.data?.code === 'NOT_FOUND')
     },
   })
-
-  const workspace = useMemo(
-    () => ({
-      ...data.workspace,
-      role: data.role,
-    }),
-    [data],
-  )
 
   useEffect(() => {
     if (id.length < 32 || error?.data?.code === 'NOT_FOUND') {
@@ -48,14 +43,17 @@ export function useWorkspace() {
   return workspace
 }
 
-const cookieName = `${siteConfig.name}.lastWorkspace`
-
 export function useLastWorkspace() {
-  const lastWorkspace = Cookies.get(cookieName)
+  const lastWorkspace = Cookies.get(lastWorkspaceCookieName)
 
   const setLastWorkspace = useCallback(
     (id?: string) =>
-      id ? Cookies.set(cookieName, id, { expires: 30, secure: true }) : Cookies.remove(cookieName),
+      id
+        ? Cookies.set(lastWorkspaceCookieName, id, {
+            expires: 30,
+            secure: true,
+          })
+        : Cookies.remove(lastWorkspaceCookieName),
     [],
   )
 
@@ -64,15 +62,12 @@ export function useLastWorkspace() {
 
 export type Workspace = ReturnType<typeof useWorkspaces>[number]
 
-export function useWorkspaces() {
+export function useWorkspaces(organizationId: string) {
   const trpc = useTRPC()
 
-  const { data } = useSuspenseQuery(trpc.workspace.list.queryOptions())
-
-  const workspaces = useMemo(
-    () => data.workspaces.map(({ workspace, role }) => ({ ...workspace, role })),
-    [data],
-  )
+  const {
+    data: { workspaces },
+  } = useSuspenseQuery(trpc.workspace.list.queryOptions({ organizationId }))
 
   const [workspace, setWorkspace] = useLastWorkspace()
   useEffect(() => {
@@ -80,7 +75,7 @@ export function useWorkspaces() {
       // Set last workspace if it's not already set
       setWorkspace(workspaces.at(0)?.id)
     } else if (!workspaces.some((w) => w.id === workspace)) {
-      // If last workspace is not in the list of workspaces, reset it
+      // If the last workspace is not in the list of workspaces, reset it
       setWorkspace(workspaces.at(0)?.id)
     }
   }, [workspaces, workspace, setWorkspace])
@@ -92,21 +87,15 @@ export function replaceRouteWithWorkspaceId(route: string, id: string) {
   return route.replace(/^\/workspace\/[^/]+/, `/workspace/${stripIdPrefix(id)}`)
 }
 
-export function useRouteWithWorkspaceId(id: string) {
+export function useReplaceRouteWithWorkspaceId() {
   const pathname = usePathname()
-  return replaceRouteWithWorkspaceId(pathname, id)
+  return useCallback((id: string) => replaceRouteWithWorkspaceId(pathname, id), [pathname])
 }
 
-export function useRedirectWorkspace() {
+export function useRedirectWorkspace(id: string) {
   const router = useRouter()
 
-  useWorkspaces()
-
-  const [workspace] = useLastWorkspace()
-
   return useCallback(() => {
-    if (workspace) {
-      router.replace(`/workspace/${stripIdPrefix(workspace)}/apps`)
-    }
-  }, [router, workspace])
+    router.replace(`/workspace/${stripIdPrefix(id)}/apps`)
+  }, [router, id])
 }

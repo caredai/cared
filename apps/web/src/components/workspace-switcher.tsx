@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Blocks, ChevronsUpDown, Plus } from 'lucide-react'
 
 import {
@@ -17,7 +17,7 @@ import { useIsMobile } from '@cared/ui/hooks/use-mobile'
 import { cn } from '@cared/ui/lib/utils'
 
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
-import { replaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
+import { useReplaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
 
 export function WorkspaceSwitcherInner({
   trigger,
@@ -27,7 +27,7 @@ export function WorkspaceSwitcherInner({
   const workspaces = useWorkspaces()
   const workspace = useWorkspace()
   const router = useRouter()
-  const pathname = usePathname()
+  const replaceRouteWithWorkspaceId = useReplaceRouteWithWorkspaceId()
 
   const isMobile = useIsMobile()
 
@@ -59,7 +59,7 @@ export function WorkspaceSwitcherInner({
       >
         <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
         {workspaces.map((space) => {
-          const route = replaceRouteWithWorkspaceId(pathname, space.id)
+          const route = replaceRouteWithWorkspaceId(space.id)
           return (
             <DropdownMenuItem
               key={space.id}

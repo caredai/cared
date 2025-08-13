@@ -45,7 +45,7 @@ export default async function Layout({
     redirect('/')
   }
 
-  prefetch(trpc.user.me.queryOptions())
+  prefetch(trpc.user.session.queryOptions())
   prefetch(trpc.user.accounts.queryOptions())
 
   return (

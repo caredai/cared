@@ -186,6 +186,20 @@ const options = {
       organizationDeletion: {
         disabled: true, // TODO
       },
+      organizationCreation: {
+        disabled: false,
+        // eslint-disable-next-line @typescript-eslint/require-await
+        beforeCreate: async ({ organization, user: _ }, _request) => {
+          const id = generateId('org')
+          return {
+            data: {
+              ...organization,
+              id,
+              slug: id, // better-auth requires slug to be unique
+            },
+          }
+        },
+      },
       autoCreateOrganizationOnSignUp: false,
     }),
     genericOAuth({

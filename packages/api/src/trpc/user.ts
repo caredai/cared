@@ -16,7 +16,7 @@ import {
   Workspace,
 } from '@cared/db/schema'
 
-import { publicProcedure, userProtectedProcedure } from '../trpc'
+import { publicProcedure, userOrAppUserProtectedProcedure, userProtectedProcedure } from '../trpc'
 import { formatOAuthApp } from './oauth-app'
 
 export const userRouter = {
@@ -30,13 +30,25 @@ export const userRouter = {
         summary: 'Get current session of current user',
       },
     })
-    .query(async () => {
+    .input(
+      z.object({
+        authenticated: z.boolean().optional(),
+      }).optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      if (input?.authenticated) {
+        const auth = ctx.auth.auth
+        if (!(auth?.type === 'user' || auth?.type === 'appUser')) {
+          throw new TRPCError({ code: 'UNAUTHORIZED' })
+        }
+      }
+
       return await auth.api.getSession({
         headers: await headers(),
       })
     }),
 
-  me: userProtectedProcedure
+  me: userOrAppUserProtectedProcedure
     .meta({
       openapi: {
         method: 'GET',
@@ -46,14 +58,7 @@ export const userRouter = {
         summary: 'Get current user information',
       },
     })
-    .query(async ({ ctx }) => {
-      if (!ctx.auth.userId) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'This api is only available for authenticated users',
-        })
-      }
-
+    .query(async () => {
       const { user } = (await auth.api.getSession({
         headers: await headers(),
       }))!

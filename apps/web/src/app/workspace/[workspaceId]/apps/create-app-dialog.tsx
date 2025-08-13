@@ -119,10 +119,14 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
 
     // Use API-provided default models or fallback to first available models
     const defaultLanguageModel =
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       defaultModelsData.defaultModels.app.languageModel || firstLanguageModel
     const defaultEmbeddingModel =
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       defaultModelsData.defaultModels.app.embeddingModel || firstEmbeddingModel
-    const defaultImageModel = defaultModelsData.defaultModels.app.imageModel || firstImageModel
+    const defaultImageModel =
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      defaultModelsData.defaultModels.app.imageModel || firstImageModel
 
     return {
       name: '',

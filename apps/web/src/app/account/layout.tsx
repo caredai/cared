@@ -7,7 +7,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/compone
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { NavMain } from '@/components/nav-main'
-import { WorkspaceEnterButton } from '@/components/workspace-enter-button'
+import { ForgetOrganization } from '@/components/remember-organization'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 const items = [
@@ -48,20 +48,15 @@ export default async function Layout({
     redirect('/auth/sign-in')
   }
 
-  prefetch(trpc.user.me.queryOptions())
+  prefetch(trpc.user.session.queryOptions())
   prefetch(trpc.user.accounts.queryOptions())
-  prefetch(trpc.workspace.list.queryOptions())
   prefetch(trpc.credits.getCredits.queryOptions())
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <SidebarProvider>
         <AppSidebar baseUrl="/">
-          <NavMain items={items} baseUrl="/account">
-            <HydrateClient>
-              <WorkspaceEnterButton />
-            </HydrateClient>
-          </NavMain>
+          <NavMain items={items} baseUrl="/account" />
         </AppSidebar>
 
         <SidebarInset>
@@ -71,6 +66,7 @@ export default async function Layout({
             </div>
           </header>
 
+          <ForgetOrganization />
           <HydrateClient>{children}</HydrateClient>
         </SidebarInset>
       </SidebarProvider>

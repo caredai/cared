@@ -31,7 +31,7 @@ interface ModelSelectProps<
   description: string
   groups: Group[]
   control: UseControllerProps<TFieldValues>['control']
-  defaultValue: string
+  defaultValue?: string
 }
 
 interface Group {

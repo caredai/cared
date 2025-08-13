@@ -8,11 +8,11 @@ import { Button } from '@cared/ui/components/button'
 import { DropdownMenu, DropdownMenuTrigger } from '@cared/ui/components/dropdown-menu'
 
 import { UserDropdownMenuContent } from '@/components/user-dropdown-menu-content'
-import { useUserMayUndefined } from '@/hooks/use-user'
+import { useUserPublic } from '@/hooks/use-user'
 
 export function TopRightNav() {
   const router = useRouter()
-  const { user } = useUserMayUndefined()
+  const { user } = useUserPublic()
 
   return (
     <nav className="flex items-center gap-4">
