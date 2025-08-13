@@ -5,28 +5,10 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/compone
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
-import { NavMain } from '@/components/nav-main'
 import { WorkspaceEnterButton } from '@/components/workspace-enter-button'
 import { addIdPrefix } from '@/lib/utils'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
-
-const items = [
-  {
-    title: 'Design',
-    url: '/',
-    icon: 'WandSparkles',
-  },
-  {
-    title: 'Logs',
-    url: '/logs',
-    icon: 'FerrisWheel',
-  },
-  {
-    title: 'Configure',
-    url: '/configure/api-key',
-    icon: 'Settings2',
-  },
-]
+import { AppNavMain } from './nav-main'
 
 export default async function Layout({
   params,
@@ -52,11 +34,11 @@ export default async function Layout({
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <SidebarProvider defaultOpen={false}>
         <AppSidebar collapsible="icon" baseUrl="/">
-          <NavMain items={items} baseUrl={`/app/${appIdNoPrefix}`}>
+          <AppNavMain baseUrl={`/app/${appIdNoPrefix}`}>
             <HydrateClient>
               <WorkspaceEnterButton workspaceId={app.workspaceId} />
             </HydrateClient>
-          </NavMain>
+          </AppNavMain>
         </AppSidebar>
 
         <SidebarInset>

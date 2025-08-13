@@ -20,16 +20,24 @@ import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
 import { useReplaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
 
 export function WorkspaceSwitcherInner({
+  organizationId,
   trigger,
 }: {
+  organizationId: string
   trigger?: (props: { children: ReactNode }) => ReactNode
 }) {
-  const workspaces = useWorkspaces()
-  const workspace = useWorkspace()
   const router = useRouter()
+
+  const workspaces = useWorkspaces(organizationId)
+  const workspace = useWorkspace()
   const replaceRouteWithWorkspaceId = useReplaceRouteWithWorkspaceId()
 
   const isMobile = useIsMobile()
+
+  if (!workspace) {
+    router.replace('/')
+    return null
+  }
 
   const addWorkspaceMenuItem = (
     <DropdownMenuItem className="gap-2 p-2 cursor-pointer">
@@ -86,6 +94,6 @@ export function WorkspaceSwitcherInner({
   )
 }
 
-export function WorkspaceSwitcher() {
-  return <CreateWorkspaceDialog menu={WorkspaceSwitcherInner} />
+export function WorkspaceSwitcher({ organizationId }: { organizationId: string }) {
+  return <CreateWorkspaceDialog organizationId={organizationId} menu={WorkspaceSwitcherInner} />
 }

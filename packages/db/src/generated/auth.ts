@@ -81,6 +81,27 @@ export const twoFactor = pgTable('two_factor', {
     .references(() => user.id, { onDelete: 'cascade' }),
 })
 
+export const team = pgTable('team', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organization.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull(),
+  updatedAt: timestamp('updated_at'),
+})
+
+export const teamMember = pgTable('team_member', {
+  id: text('id').primaryKey(),
+  teamId: text('team_id')
+    .notNull()
+    .references(() => team.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at'),
+})
+
 export const organization = pgTable('organization', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -115,25 +136,6 @@ export const invitation = pgTable('invitation', {
   inviterId: text('inviter_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-})
-
-export const team = pgTable('team', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  organizationId: text('organization_id')
-    .notNull()
-    .references(() => organization.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at'),
-})
-
-export const teamMember = pgTable('team_member', {
-  id: text('id').primaryKey(),
-  teamId: text('team_id').notNull(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at'),
 })
 
 export const oauthApplication = pgTable('oauth_application', {

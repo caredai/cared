@@ -40,7 +40,10 @@ export function CreateWorkspaceDialog({
   onSuccess,
 }: {
   organizationId: string
-  menu?: (props: { trigger: (props: { children: ReactNode }) => ReactNode }) => ReactNode
+  menu?: (props: {
+    organizationId: string
+    trigger: (props: { children: ReactNode }) => ReactNode
+  }) => ReactNode
   trigger?: ReactNode
   onSuccess?: () => void
 }) {
@@ -72,11 +75,7 @@ export function CreateWorkspaceDialog({
 
         toast.success('Workspace created successfully')
 
-        await queryClient.invalidateQueries(
-          trpc.workspace.list.queryOptions({
-            organizationId,
-          }),
-        )
+        await queryClient.invalidateQueries(trpc.workspace.list.queryOptions())
 
         // Redirect to new workspace or call success callback
         if (onSuccess) {
@@ -109,15 +108,17 @@ export function CreateWorkspaceDialog({
       }}
     >
       {Menu && (
-        <Menu trigger={({ children }) => <DialogTrigger asChild>{children}</DialogTrigger>} />
+        <Menu
+          organizationId={organizationId}
+          trigger={({ children }) => <DialogTrigger asChild>{children}</DialogTrigger>}
+        />
       )}
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create workspace</DialogTitle>
           <DialogDescription>
-            Create a new workspace to organize your applications and agents, and collaborate with
-            team members.
+            Create a new workspace to organize your knowledge base, applications and agents.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

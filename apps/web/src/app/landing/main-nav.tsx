@@ -12,7 +12,7 @@ export function MainNav() {
 
   return (
     <div className="mr-4 hidden md:flex">
-      <Link href="/" className="mr-4 flex items-center gap-2 lg:mr-6">
+      <Link href="/apps/web/public" className="mr-4 flex items-center gap-2 lg:mr-6">
         <Logo />
       </Link>
       <nav className="flex items-center gap-4 text-sm xl:gap-6">

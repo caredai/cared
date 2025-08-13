@@ -1,10 +1,11 @@
 import { TRPCError } from '@trpc/server'
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 import type { OrganizationRole } from '@cared/auth'
+import type { Invitation } from '@cared/db/schema'
 import { auth, headers } from '@cared/auth'
-import { Invitation, Member, Organization } from '@cared/db/schema'
+import { Member, Organization } from '@cared/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
 
@@ -42,8 +43,8 @@ export const organizationRouter = {
     })
     .input(
       z.object({
-        name: z.string().min(1).max(128),
-        logo: z.url().optional(),
+        name: z.string().min(1).max(64),
+        // logo: z.url().optional(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -51,7 +52,7 @@ export const organizationRouter = {
         body: {
           name: input.name,
           slug: '', // slug will be set in `organizationCreation.beforeCreate`
-          logo: input.logo,
+          // logo: input.logo,
           keepCurrentActiveOrganization: false,
         },
       })
@@ -78,7 +79,7 @@ export const organizationRouter = {
         .from(Organization)
         .innerJoin(Member, eq(Member.organizationId, Organization.id))
         .where(eq(Member.userId, ctx.auth.userId))
-        .orderBy(Organization.createdAt)
+        .orderBy(desc(Organization.createdAt))
 
       return {
         organizations: orgs.map(({ org, role }) => ({
@@ -99,7 +100,7 @@ export const organizationRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().min(1),
+        organizationId: z.string().min(1).nullable(),
       }),
     )
     .mutation(async ({ input }) => {
@@ -125,8 +126,11 @@ export const organizationRouter = {
         tags: ['organization'],
       },
     })
-    .input(z.object({
-      id: z.string().min(1) }))
+    .input(
+      z.object({
+        id: z.string().min(1),
+      }),
+    )
     .query(async ({ input }) => {
       const organization = await auth.api.getFullOrganization({
         headers: await headers(),

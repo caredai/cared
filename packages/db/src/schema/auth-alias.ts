@@ -18,6 +18,24 @@ import {
   verification,
 } from './auth'
 
+export {
+  account,
+  apikey,
+  invitation,
+  jwks,
+  member,
+  oauthAccessToken,
+  oauthApplication,
+  oauthConsent,
+  organization,
+  passkey,
+  team,
+  teamMember,
+  twoFactor,
+  user,
+  verification,
+} from './auth'
+
 export const User = user
 export type User = InferSelectModel<typeof User>
 export const Account = account

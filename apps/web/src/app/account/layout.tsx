@@ -6,37 +6,10 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/compone
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
-import { NavMain } from '@/components/nav-main'
 import { ForgetOrganization } from '@/components/remember-organization'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
-
-const items = [
-  {
-    title: 'Credits',
-    url: '/credits',
-    icon: 'CircleDollarSign',
-  },
-  {
-    title: 'Wallet',
-    url: '/wallet',
-    icon: 'Wallet',
-  },
-  {
-    title: 'Profile',
-    url: '/profile',
-    icon: 'UserRound',
-  },
-  {
-    title: 'Security',
-    url: '/security',
-    icon: 'ShieldCheck',
-  },
-  {
-    title: 'Applications',
-    url: '/applications',
-    icon: 'Bot',
-  },
-]
+import { AccountNavMain } from './nav-main'
+import { AppTopBar } from '@/components/app-topbar'
 
 export default async function Layout({
   children,
@@ -51,12 +24,17 @@ export default async function Layout({
   prefetch(trpc.user.session.queryOptions())
   prefetch(trpc.user.accounts.queryOptions())
   prefetch(trpc.credits.getCredits.queryOptions())
+  prefetch(trpc.organization.list.queryOptions())
+  prefetch(trpc.workspace.list.queryOptions())
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <HydrateClient>
+        <AppTopBar />
+      </HydrateClient>
       <SidebarProvider>
         <AppSidebar baseUrl="/">
-          <NavMain items={items} baseUrl="/account" />
+          <AccountNavMain />
         </AppSidebar>
 
         <SidebarInset>

@@ -5,7 +5,7 @@ import {
   memberAc as defaultMemberAc,
   ownerAc as defaultOwnerAc,
   defaultStatements,
-} from 'better-auth/plugins/organization'
+} from 'better-auth/plugins/organization/access'
 
 export type StatementsSubset<TStatements extends Statements> = {
   [P in keyof TStatements]?: TStatements[P][number][]

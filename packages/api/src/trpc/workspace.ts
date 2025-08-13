@@ -2,7 +2,7 @@ import { TRPCError } from '@trpc/server'
 import { count, desc, eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
-import { Workspace } from '@cared/db/schema'
+import { Member, Workspace } from '@cared/db/schema'
 
 import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
@@ -20,18 +20,42 @@ export const workspaceRouter = {
     .meta({ openapi: { method: 'GET', path: '/v1/workspaces' } })
     .input(
       z.object({
-        organizationId: z.string().min(1),
-      }),
+        organizationId: z.string().min(1).optional(),
+      }).optional(),
     )
     .query(async ({ ctx, input }) => {
-      const scope = OrganizationScope.fromOrganization(ctx, input.organizationId)
-      await scope.checkPermissions()
+      let workspaces
+      if (input?.organizationId) {
+        const scope = OrganizationScope.fromOrganization(ctx, input.organizationId)
+        await scope.checkPermissions()
 
-      const workspaces = await ctx.db
-        .select()
-        .from(Workspace)
-        .where(eq(Workspace.organizationId, scope.organizationId))
-        .orderBy(desc(Workspace.id))
+        workspaces = await ctx.db
+          .select()
+          .from(Workspace)
+          .where(eq(Workspace.organizationId, scope.organizationId))
+          .orderBy(desc(Workspace.id))
+      } else {
+        const auth = ctx.auth.auth
+        if (auth?.type !== 'user') {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'You must be authenticated to access workspaces',
+          })
+        }
+
+        workspaces = (
+          await ctx.db
+            .select({
+              workspace: Workspace,
+            })
+            .from(Workspace)
+            .innerJoin(Member, eq(Member.organizationId, Workspace.organizationId))
+            .where(eq(Member.userId, auth.userId))
+            .orderBy(desc(Workspace.id))
+        ).map(({ workspace }) => ({
+          ...workspace,
+        }))
+      }
 
       return {
         workspaces,

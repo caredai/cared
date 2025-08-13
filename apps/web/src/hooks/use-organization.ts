@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { toast } from 'sonner'
 
 import { authClient } from '@cared/auth/client'
 
@@ -16,34 +15,12 @@ export function useOrganizationId() {
 }
 
 export function useOrganization() {
-  const router = useRouter()
-
   const id = useOrganizationId()
 
-  const trpc = useTRPC()
-  const {
-    data: { organization },
-    error,
-  } = useSuspenseQuery({
-    ...trpc.organization.get.queryOptions({
-      id,
-    }),
-    retry: (failureCount, error) => {
-      return !(id.length < 32 || error.data?.code === 'NOT_FOUND')
-    },
-  })
+  const organizations = useOrganizations()
 
-  useEffect(() => {
-    if (id.length < 32 || error?.data?.code === 'NOT_FOUND') {
-      console.error('Organization not found', { id, error })
-      toast.error('Organization not found')
-      router.replace('/')
-    }
-  }, [id, error, router])
-
-  return organization
+  return organizations.find((org) => org.id === id)
 }
-
 
 export type Organization = ReturnType<typeof useOrganization>
 
@@ -72,8 +49,8 @@ export function useOrganizations() {
 
   useEffect(() => {
     if (
-      !lastOrganization || // set last organization if it is not set
-      !organizations.some((org) => org.id === lastOrganization) // or if the last organization is not in the list
+      (!lastOrganization && organizations.length) || // set last organization if it is not set
+      (lastOrganization && !organizations.some((org) => org.id === lastOrganization)) // or if the last organization is not in the list
     ) {
       void setLastOrganization(organizations.at(0)?.id)
     }

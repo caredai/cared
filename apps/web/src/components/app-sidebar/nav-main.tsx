@@ -5,22 +5,7 @@ import type { ReactNode } from 'react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  Bot,
-  Brain,
-  ChevronRight,
-  CircleDollarSign,
-  Database,
-  DatabaseZap,
-  FerrisWheel,
-  Puzzle,
-  Settings2,
-  ShieldCheck,
-  UserRound,
-  Wallet,
-  WandSparkles,
-  Wrench,
-} from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 import {
   Collapsible,
@@ -39,26 +24,10 @@ import {
   SidebarSeparator,
 } from '@cared/ui/components/sidebar'
 
-const icons: Record<string, LucideIcon> = {
-  Bot,
-  Brain,
-  Database,
-  Puzzle,
-  Settings2,
-  Wrench,
-  DatabaseZap,
-  UserRound,
-  ShieldCheck,
-  FerrisWheel,
-  WandSparkles,
-  CircleDollarSign,
-  Wallet,
-}
-
 export interface NavItem {
   title: string
   url: string
-  icon: string
+  icon: LucideIcon
   isRoute?: boolean
   items?: {
     title: string
@@ -101,7 +70,7 @@ export function NavMain({
 
         {items.map((item) => {
           const active = isItemActive(item.url)
-          const Icon = icons[item.icon]!
+          const Icon = item.icon
           return (
             <Collapsible key={item.title} asChild defaultOpen={active} className="my-1">
               <SidebarMenuItem>

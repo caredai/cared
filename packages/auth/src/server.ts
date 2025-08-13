@@ -139,8 +139,10 @@ const options = {
       enabled: true,
     },
     cookiePrefix: 'cared',
-    generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
-      generateId(modelPrefix(model)),
+    database: {
+      generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
+        generateId(modelPrefix(model)),
+    },
     ipAddress: {
       ipAddressHeaders: [
         'cf-connecting-ip', // get real client ip from Cloudflare
@@ -330,6 +332,7 @@ const options = {
       }
     }),
   },
+  telemetry: { enabled: false },
 } satisfies BetterAuthOptions
 
 export const auth = betterAuth({

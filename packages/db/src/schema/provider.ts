@@ -1,4 +1,4 @@
-import { InferSelectModel } from 'drizzle-orm'
+import type { InferSelectModel } from 'drizzle-orm'
 import { boolean, index, jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core'
 
 import type {

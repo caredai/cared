@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import { SiteHeader } from '@/components/site-header'
+import { SiteHeader } from './site-header'
 
 export default function Page() {
   return (

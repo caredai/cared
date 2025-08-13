@@ -30,9 +30,7 @@ export function useSession() {
   const trpc = useTRPC()
 
   const { data, refetch: refetchSession } = useSuspenseQuery(
-    trpc.user.session.queryOptions({
-      authenticated: true,
-    }),
+    trpc.user.session.queryOptions(),
   )
   return {
     session: data!.session,

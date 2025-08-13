@@ -1,8 +1,7 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import Cookies from 'js-cookie'
-import { toast } from 'sonner'
 
 import { lastWorkspaceCookieName } from '@/lib/cookie'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
@@ -15,30 +14,11 @@ export function useWorkspaceId() {
 }
 
 export function useWorkspace() {
-  const router = useRouter()
-
   const id = useWorkspaceId()
 
-  const trpc = useTRPC()
-  const {
-    data: { workspace },
-    error,
-  } = useSuspenseQuery({
-    ...trpc.workspace.get.queryOptions({
-      id,
-    }),
-    retry: (failureCount, error) => {
-      return !(id.length < 32 || error.data?.code === 'NOT_FOUND')
-    },
-  })
+  const workspaces = useAllWorkspaces()
 
-  useEffect(() => {
-    if (id.length < 32 || error?.data?.code === 'NOT_FOUND') {
-      console.error('Workspace not found', { id, error })
-      toast.error('Workspace not found')
-      router.replace('/')
-    }
-  }, [id, error, router])
+  const workspace = useMemo(() => workspaces.find((w) => w.id === id), [workspaces, id])
 
   return workspace
 }
@@ -62,12 +42,12 @@ export function useLastWorkspace() {
 
 export type Workspace = ReturnType<typeof useWorkspaces>[number]
 
-export function useWorkspaces(organizationId: string) {
+export function useAllWorkspaces() {
   const trpc = useTRPC()
 
   const {
     data: { workspaces },
-  } = useSuspenseQuery(trpc.workspace.list.queryOptions({ organizationId }))
+  } = useSuspenseQuery(trpc.workspace.list.queryOptions())
 
   const [workspace, setWorkspace] = useLastWorkspace()
   useEffect(() => {
@@ -81,6 +61,14 @@ export function useWorkspaces(organizationId: string) {
   }, [workspaces, workspace, setWorkspace])
 
   return workspaces
+}
+
+export function useWorkspaces(organizationId: string) {
+  const allWorkspaces = useAllWorkspaces()
+  return useMemo(
+    () => allWorkspaces.filter((w) => w.organizationId === organizationId),
+    [allWorkspaces],
+  )
 }
 
 export function replaceRouteWithWorkspaceId(route: string, id: string) {

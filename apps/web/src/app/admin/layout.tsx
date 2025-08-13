@@ -7,33 +7,8 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/compone
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
-import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
-import { NavMain } from '@/components/nav-main'
 import { prefetch, trpc } from '@/trpc/server'
-
-const items = [
-  {
-    title: 'Apps',
-    url: '/apps',
-    icon: 'Bot',
-    isRoute: true,
-    items: [
-      {
-        title: 'Categories',
-        url: '/categories',
-      },
-      {
-        title: 'Tags',
-        url: '/tags',
-      },
-    ],
-  },
-  {
-    title: 'Mock',
-    url: '/mock',
-    icon: 'DatabaseZap',
-  },
-]
+import { AdminMenuBreadcrumb, AdminNavMain } from './nav-main'
 
 export default async function Layout({
   children,
@@ -52,14 +27,14 @@ export default async function Layout({
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <SidebarProvider>
         <AppSidebar baseUrl="/admin">
-          <NavMain items={items} baseUrl="/admin" />
+          <AdminNavMain />
         </AppSidebar>
 
         <SidebarInset>
           <header className="flex h-16 shrink-0 items-center gap-2">
             <div className="flex items-center gap-2 px-4">
               <SidebarTrigger className="-ml-1" />
-              <MenuBreadcrumb items={items} baseUrl="/admin" />
+              <AdminMenuBreadcrumb />
             </div>
           </header>
           {children}

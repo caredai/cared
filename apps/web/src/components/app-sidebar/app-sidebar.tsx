@@ -12,9 +12,9 @@ import {
 } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
-import { NavSecondary } from '@/components/nav-secondary'
-import { NavUser } from '@/components/nav-user'
 import { HydrateClient } from '@/trpc/server'
+import { NavSecondary } from './nav-secondary'
+import { NavUser } from './nav-user'
 
 export function AppSidebar({
   baseUrl,
@@ -39,11 +39,15 @@ export function AppSidebar({
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
+          {/* nav main */}
           {children}
+
+          {/* nav secondary */}
           <NavSecondary className="mt-auto" />
         </SidebarContent>
         <SidebarFooter>
           <HydrateClient>
+            {/* nav user */}
             <NavUser />
           </HydrateClient>
         </SidebarFooter>

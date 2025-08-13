@@ -7,7 +7,7 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@cared/ui/compo
 
 import { UserDropdownMenuContent } from '@/components/user-dropdown-menu-content'
 import { useUser } from '@/hooks/use-user'
-import { UserInfo } from './user-info'
+import { UserInfo } from '../user-info'
 
 export function NavUser() {
   const { user } = useUser()

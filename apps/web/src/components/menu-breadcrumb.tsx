@@ -13,7 +13,7 @@ import {
 } from '@cared/ui/components/breadcrumb'
 import { Separator } from '@cared/ui/components/separator'
 
-import type { NavItem } from './nav-main'
+import type { NavItem } from './app-sidebar/nav-main'
 
 export function MenuBreadcrumb({ items, baseUrl }: { items: NavItem[]; baseUrl: string }) {
   const pathname = usePathname()
