@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} overflow-y-hidden`}>
         <Suspense fallback={<></>}>
           <I18nServer>
             <Providers>{children}</Providers>

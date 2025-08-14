@@ -21,31 +21,32 @@ export default async function Layout({
     redirect('/auth/sign-in')
   }
 
-  prefetch(trpc.user.accounts.queryOptions())
-  prefetch(trpc.credits.getCredits.queryOptions())
   prefetch(trpc.organization.list.queryOptions())
   prefetch(trpc.workspace.list.queryOptions())
 
   return (
     <HydrateClient>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <AppTopBar />
-        <SidebarProvider>
-          <AppSidebar baseUrl="/">
-            <AccountNavMain />
-          </AppSidebar>
+        <SidebarProvider className="flex flex-col">
+          <AppTopBar />
 
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2">
-              <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-              </div>
-            </header>
+          <div className="flex flex-1">
+            <AppSidebar baseUrl="/">
+              <AccountNavMain />
+            </AppSidebar>
 
-            <ForgetOrganization />
+            <div className="flex-1 h-[calc(100svh-57px)] overflow-y-auto">
+              <SidebarInset>
+                <div className="hidden md:flex items-center p-4">
+                  <SidebarTrigger />
+                </div>
 
-            {children}
-          </SidebarInset>
+                <ForgetOrganization />
+
+                {children}
+              </SidebarInset>
+            </div>
+          </div>
         </SidebarProvider>
       </ErrorBoundary>
     </HydrateClient>

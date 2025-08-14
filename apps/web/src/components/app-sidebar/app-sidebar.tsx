@@ -9,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
 } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
@@ -26,17 +27,21 @@ export function AppSidebar({
   return (
     <div className="![--sidebar-width:12rem]">
       <Sidebar variant="inset" {...props}>
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
-                <Link href={baseUrl} className="mr-4 flex items-center gap-2 lg:mr-6">
-                  <Logo />
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
+        <div className="block md:hidden">
+          <SidebarHeader>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton size="lg" className="h-10 py-1" asChild>
+                  <Link href={baseUrl} className="mr-4 flex items-center gap-2 lg:mr-6">
+                    <Logo />
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarHeader>
+          <SidebarSeparator className="mx-0" />
+        </div>
+        <div className="hidden md:block h-12" />
         <SidebarContent>
           {/* nav main */}
           {children}

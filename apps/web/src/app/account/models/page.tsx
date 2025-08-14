@@ -11,7 +11,9 @@ export default function Page() {
 
   return (
     <HydrateClient>
-      <Models />
+      <div className="container max-w-7xl mx-auto px-4 sm:px-6 space-y-8">
+        <Models />
+      </div>
     </HydrateClient>
   )
 }

@@ -22,7 +22,6 @@ export default async function OrganizationLayout({
 
   const { organizations } = await fetch(trpc.organization.list.queryOptions())
 
-  console.log('organizations', organizations.map(w => w.id), organizationId)
   const organization = organizations.find((w) => w.id === organizationId)
   if (!organization) {
     await createCaller(createContext).organization.setActive({
@@ -52,6 +51,8 @@ export default async function OrganizationLayout({
       redirect(`/workspace/${stripIdPrefix(lastWorkspace)}/apps`)
     }
   }
+
+  prefetch(trpc.user.session.queryOptions())
 
   return (
     <>

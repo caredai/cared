@@ -1,6 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { MenuIcon } from 'lucide-react'
+
+import { Button } from '@cared/ui/components/button'
+import { useSidebar } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
 import { OrganizationAndAccountSwitcher } from './organization-switcher'
@@ -8,11 +12,13 @@ import { TopBarActions } from './top-bar-actions'
 import { WorkspaceSwitcher } from './workspace-switcher'
 
 export function AppTopBar() {
+  const { toggleSidebar } = useSidebar()
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="mx-auto w-full h-14 px-4 flex">
         <div className="flex items-center gap-4">
-          <Link href="/">
+          <Link href="/" className="hidden md:inline">
             <Logo />
           </Link>
 
@@ -26,6 +32,15 @@ export function AppTopBar() {
         {/* Right side actions */}
         <div className="ml-auto flex items-center gap-2">
           <TopBarActions />
+
+          <Button
+            className="h-8 w-8 flex-inline md:hidden"
+            variant="outline"
+            size="icon"
+            onClick={toggleSidebar}
+          >
+            <MenuIcon />
+          </Button>
         </div>
       </div>
     </header>

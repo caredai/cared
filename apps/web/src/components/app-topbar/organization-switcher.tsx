@@ -88,7 +88,7 @@ export function OrganizationAndAccountSwitcherInner({
         ) : (
           <>
             <Boxes className="size-4 text-muted-foreground" />
-            <span className="truncate max-w-30">{activeOrganization.name}</span>
+            <span className="truncate max-w-20">{activeOrganization.name}</span>
           </>
         )}
       </Button>

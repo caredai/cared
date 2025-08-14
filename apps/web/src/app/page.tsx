@@ -7,7 +7,9 @@ import { createContext } from '@/trpc/server'
 import Landing from './landing/page'
 
 export default async function Page() {
-  const session = await createCaller(createContext).user.session()
+  const session = await createCaller(createContext).user.session({
+    auth: false,
+  })
   const userId = session?.user.id
 
   if (userId) {
