@@ -57,8 +57,21 @@ const options = {
     additionalFields: {
       geolocation: {
         type: 'string',
+        required: false,
+        returned: true,
+      },
+      activeOrganizationId: {
+        type: 'string',
+        required: false,
+        returned: true,
+      },
+      activeTeamId: {
+        type: 'string',
+        required: false,
+        returned: true,
       },
     },
+    storeSessionInDatabase: false,
   },
   socialProviders: {
     google: {
@@ -261,6 +274,7 @@ const options = {
         '/sign-in/social',
         '/sign-out',
         '/update-user',
+        '/get-session',
         '/revoke-session',
         '/revoke-sessions',
         '/revoke-other-sessions',

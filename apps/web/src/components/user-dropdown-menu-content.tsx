@@ -1,6 +1,6 @@
 'use client'
 
-import type { User } from '@/hooks/use-user'
+import type { User } from '@/hooks/use-session'
 import Link from 'next/link'
 import {
   CircleDollarSignIcon,

@@ -3,10 +3,10 @@ import { usePrivy, useSubscribeToJwtAuthWithFlag } from '@privy-io/react-auth'
 
 import { authClient } from '@cared/auth/client'
 
-import { useUserPublic } from '@/hooks/use-user'
+import { useSessionPublic } from '@/hooks/use-session'
 
 export function usePrivyJwtAuth() {
-  const { user } = useUserPublic()
+  const { user } = useSessionPublic()
   const isAuthenticated = !!user
 
   const { ready, authenticated } = usePrivy()

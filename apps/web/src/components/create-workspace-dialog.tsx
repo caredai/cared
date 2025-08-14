@@ -40,10 +40,7 @@ export function CreateWorkspaceDialog({
   onSuccess,
 }: {
   organizationId: string
-  menu?: (props: {
-    organizationId: string
-    trigger: (props: { children: ReactNode }) => ReactNode
-  }) => ReactNode
+  menu?: (props: { trigger: (props: { children: ReactNode }) => ReactNode }) => ReactNode
   trigger?: ReactNode
   onSuccess?: () => void
 }) {
@@ -108,10 +105,7 @@ export function CreateWorkspaceDialog({
       }}
     >
       {Menu && (
-        <Menu
-          organizationId={organizationId}
-          trigger={({ children }) => <DialogTrigger asChild>{children}</DialogTrigger>}
-        />
+        <Menu trigger={({ children }) => <DialogTrigger asChild>{children}</DialogTrigger>} />
       )}
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">

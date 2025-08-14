@@ -1,5 +1,5 @@
 import type { Organization } from '@/hooks/use-organization'
 
-export function General({ organization }: { organization: Organization }) {
+export function Members({ organization }: { organization: Organization }) {
   return <></>
 }

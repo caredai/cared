@@ -5,11 +5,11 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
+import { AppTopBar } from '@/components/app-topbar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { ForgetOrganization } from '@/components/remember-organization'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AccountNavMain } from './nav-main'
-import { AppTopBar } from '@/components/app-topbar'
 
 export default async function Layout({
   children,
@@ -21,33 +21,33 @@ export default async function Layout({
     redirect('/auth/sign-in')
   }
 
-  prefetch(trpc.user.session.queryOptions())
   prefetch(trpc.user.accounts.queryOptions())
   prefetch(trpc.credits.getCredits.queryOptions())
   prefetch(trpc.organization.list.queryOptions())
   prefetch(trpc.workspace.list.queryOptions())
 
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <HydrateClient>
+    <HydrateClient>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
         <AppTopBar />
-      </HydrateClient>
-      <SidebarProvider>
-        <AppSidebar baseUrl="/">
-          <AccountNavMain />
-        </AppSidebar>
+        <SidebarProvider>
+          <AppSidebar baseUrl="/">
+            <AccountNavMain />
+          </AppSidebar>
 
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-            </div>
-          </header>
+          <SidebarInset>
+            <header className="flex h-16 shrink-0 items-center gap-2">
+              <div className="flex items-center gap-2 px-4">
+                <SidebarTrigger className="-ml-1" />
+              </div>
+            </header>
 
-          <ForgetOrganization />
-          <HydrateClient>{children}</HydrateClient>
-        </SidebarInset>
-      </SidebarProvider>
-    </ErrorBoundary>
+            <ForgetOrganization />
+
+            {children}
+          </SidebarInset>
+        </SidebarProvider>
+      </ErrorBoundary>
+    </HydrateClient>
   )
 }

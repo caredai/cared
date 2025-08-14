@@ -3,13 +3,13 @@ import { useLogout } from '@privy-io/react-auth'
 
 import { authClient } from '@cared/auth/client'
 
-import { useUserPublic } from '@/hooks/use-user'
+import { useSessionPublic } from '@/hooks/use-session'
 import { useLastWorkspace } from '@/hooks/use-workspace'
 
 export function useSignOut() {
   const router = useRouter()
 
-  const { refetchUser } = useUserPublic()
+  const { refetchSession } = useSessionPublic()
   const { logout } = useLogout()
 
   const [, setLastWorkspace] = useLastWorkspace()
@@ -23,7 +23,7 @@ export function useSignOut() {
       },
     })
 
-    void refetchUser()
+    void refetchSession()
 
     try {
       await logout()

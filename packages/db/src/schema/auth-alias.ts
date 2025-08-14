@@ -33,6 +33,7 @@ export {
   teamMember,
   twoFactor,
   user,
+  session,
   verification,
 } from './auth'
 

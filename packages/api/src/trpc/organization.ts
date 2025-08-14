@@ -104,12 +104,15 @@ export const organizationRouter = {
       }),
     )
     .mutation(async ({ input }) => {
+      // NOTE: The method `auth.api.setActiveOrganization()` will set the session cookie.
+      // However, since trpc cannot return headers here, the client must call `authClient.getSession()`
+      // again with the parameter `{ disableCookieCache: true }` to refresh the session cookie.
       const org = await auth.api.setActiveOrganization({
         body: {
           organizationId: input.organizationId,
         },
       })
-      if (!org) {
+      if (!org && input.organizationId) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: 'Failed to set active organization',

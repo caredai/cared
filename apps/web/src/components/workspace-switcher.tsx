@@ -17,24 +17,23 @@ import { useIsMobile } from '@cared/ui/hooks/use-mobile'
 import { cn } from '@cared/ui/lib/utils'
 
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
-import { useReplaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
+import { useActive } from '@/hooks/use-active'
+import { useReplaceRouteWithWorkspaceId, useWorkspaces } from '@/hooks/use-workspace'
 
 export function WorkspaceSwitcherInner({
-  organizationId,
   trigger,
 }: {
-  organizationId: string
   trigger?: (props: { children: ReactNode }) => ReactNode
 }) {
   const router = useRouter()
 
-  const workspaces = useWorkspaces(organizationId)
-  const workspace = useWorkspace()
+  const { activeWorkspace } = useActive()
+  const workspaces = useWorkspaces(activeWorkspace?.organizationId)
   const replaceRouteWithWorkspaceId = useReplaceRouteWithWorkspaceId()
 
   const isMobile = useIsMobile()
 
-  if (!workspace) {
+  if (!activeWorkspace) {
     router.replace('/')
     return null
   }
@@ -55,7 +54,7 @@ export function WorkspaceSwitcherInner({
       <DropdownMenuTrigger asChild>
         <SidebarMenuButton>
           <Blocks />
-          <span className="truncate">{workspace.name}</span>
+          <span className="truncate">{activeWorkspace.name}</span>
           <ChevronsUpDown className="ml-auto" />
         </SidebarMenuButton>
       </DropdownMenuTrigger>
@@ -71,15 +70,15 @@ export function WorkspaceSwitcherInner({
           return (
             <DropdownMenuItem
               key={space.id}
-              disabled={space.id === workspace.id}
+              disabled={space.id === activeWorkspace.id}
               onClick={() => router.push(route)}
-              className={cn('gap-2 p-2', space.id !== workspace.id && 'cursor-pointer')}
+              className={cn('gap-2 p-2', space.id !== activeWorkspace.id && 'cursor-pointer')}
             >
               <div className="flex size-6 items-center justify-center rounded-sm border">
                 <Blocks />
               </div>
               <span className="truncate">{space.name}</span>
-              {space.id === workspace.id && (
+              {space.id === activeWorkspace.id && (
                 <div className="ml-2 flex items-center">
                   <div className="size-2 rounded-full bg-primary" aria-hidden="true" />
                 </div>

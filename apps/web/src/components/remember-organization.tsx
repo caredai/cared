@@ -5,13 +5,13 @@ import { useEffect } from 'react'
 import { useSetLastOrganization } from '@/hooks/use-organization'
 
 export function RememberOrganization({ id }: { id?: string }) {
-  const setLastOrganization = useSetLastOrganization()
+  const { setLastOrganization, disabledSetLastOrganization } = useSetLastOrganization()
 
   useEffect(() => {
-    const remember = () => void setLastOrganization(id)
+    const remember = () => !disabledSetLastOrganization && void setLastOrganization(id)
     window.addEventListener('beforeunload', remember)
     return () => window.removeEventListener('beforeunload', remember)
-  }, [id, setLastOrganization])
+  }, [id, setLastOrganization, disabledSetLastOrganization])
 
   return <></>
 }

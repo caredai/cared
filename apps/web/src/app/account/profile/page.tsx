@@ -28,11 +28,11 @@ import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
 
 import { CircleSpinner } from '@/components/spinner'
-import { useAccounts, useUser } from '@/hooks/use-user'
+import { useAccounts, useSession } from '@/hooks/use-session'
 import { allowedProviders, getAccountInfo } from '@/lib/auth-providers'
 
 export default function Page() {
-  const { user, refetchUser } = useUser()
+  const { user, refetchSession } = useSession()
   const { accounts, refetchAccounts } = useAccounts()
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -53,7 +53,7 @@ export default function Page() {
       await authClient.updateUser({
         name: nameValue.trim(),
       })
-      await refetchUser()
+      await refetchSession()
       setIsEditingName(false)
       toast.success('Profile updated successfully')
     } catch (error) {
@@ -73,7 +73,7 @@ export default function Page() {
       // Since updateUserProfileImage may not exist, disable this functionality for now
       // await authClient.updateUserProfileImage(user.id, { file })
       toast.info('Profile image upload coming soon')
-      await refetchUser()
+      await refetchSession()
     } catch (error) {
       console.error('Failed to update profile image:', error)
       toast.error('Failed to upload profile image')

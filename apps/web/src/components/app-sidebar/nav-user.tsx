@@ -6,11 +6,11 @@ import { DropdownMenu, DropdownMenuTrigger } from '@cared/ui/components/dropdown
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@cared/ui/components/sidebar'
 
 import { UserDropdownMenuContent } from '@/components/user-dropdown-menu-content'
-import { useUser } from '@/hooks/use-user'
+import { useSession } from '@/hooks/use-session'
 import { UserInfo } from '../user-info'
 
 export function NavUser() {
-  const { user } = useUser()
+  const { user } = useSession()
 
   return (
     <SidebarMenu>

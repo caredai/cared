@@ -16,20 +16,30 @@ import { useIsMobile } from '@cared/ui/hooks/use-mobile'
 import { cn } from '@cared/ui/lib/utils'
 
 import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
-import { useReplaceRouteWithWorkspaceId, useWorkspace, useWorkspaces } from '@/hooks/use-workspace'
+import { useActive } from '@/hooks/use-active'
+import {
+  useLastWorkspace,
+  useReplaceRouteWithWorkspaceId,
+  useWorkspaces,
+} from '@/hooks/use-workspace'
 
-export function WorkspaceSwitcher({ organizationId }: { organizationId: string }) {
+export function WorkspaceSwitcher() {
   const router = useRouter()
 
-  const workspaces = useWorkspaces(organizationId)
-  const workspace = useWorkspace()
+  const { activeWorkspace } = useActive()
+  const workspaces = useWorkspaces(activeWorkspace?.organizationId)
+  const [, setLastWorkspace] = useLastWorkspace()
   const replaceRouteWithWorkspaceId = useReplaceRouteWithWorkspaceId()
 
   const isMobile = useIsMobile()
 
   const handleWorkspaceSelect = (workspaceId: string) => {
-    const route = replaceRouteWithWorkspaceId(workspaceId)
-    router.push(route)
+    setLastWorkspace(workspaceId)
+    router.push(replaceRouteWithWorkspaceId(workspaceId))
+  }
+
+  if (!activeWorkspace) {
+    return null
   }
 
   const addWorkspaceMenuItem = (
@@ -41,20 +51,15 @@ export function WorkspaceSwitcher({ organizationId }: { organizationId: string }
     </DropdownMenuItem>
   )
 
-  if (!workspace) {
-    router.replace('/')
-    return null
-  }
-
   return (
     <CreateWorkspaceDialog
-      organizationId={workspace.organizationId}
+      organizationId={activeWorkspace.organizationId}
       menu={({ trigger }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 gap-2 px-2 text-sm font-normal">
               <Blocks className="size-4" />
-              <span className="truncate max-w-[120px]">{workspace.name}</span>
+              <span className="truncate max-w-[120px]">{activeWorkspace.name}</span>
               <ChevronsUpDown className="size-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -70,15 +75,15 @@ export function WorkspaceSwitcher({ organizationId }: { organizationId: string }
             {workspaces.map((space) => (
               <DropdownMenuItem
                 key={space.id}
-                disabled={space.id === workspace.id}
+                disabled={space.id === activeWorkspace.id}
                 onClick={() => handleWorkspaceSelect(space.id)}
-                className={cn('gap-2 p-2', space.id !== workspace.id && 'cursor-pointer')}
+                className={cn('gap-2 p-2', space.id !== activeWorkspace.id && 'cursor-pointer')}
               >
                 <div className="flex size-6 items-center justify-center rounded-sm border">
                   <Blocks className="size-4" />
                 </div>
                 <span className="truncate">{space.name}</span>
-                {space.id === workspace.id && (
+                {space.id === activeWorkspace.id && (
                   <div className="ml-2 flex items-center">
                     <div className="size-2 rounded-full bg-primary" aria-hidden="true" />
                   </div>

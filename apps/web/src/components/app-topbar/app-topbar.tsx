@@ -3,14 +3,11 @@
 import Link from 'next/link'
 
 import { Logo } from '@/components/logo'
-import { useWorkspace } from '@/hooks/use-workspace'
 import { OrganizationAndAccountSwitcher } from './organization-switcher'
 import { TopBarActions } from './top-bar-actions'
 import { WorkspaceSwitcher } from './workspace-switcher'
 
 export function AppTopBar() {
-  const workspace = useWorkspace()
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto w-full h-14 px-4 flex">
@@ -23,7 +20,7 @@ export function AppTopBar() {
           <OrganizationAndAccountSwitcher />
 
           {/* Workspace Switcher - only show in workspace context */}
-          {workspace && <WorkspaceSwitcher organizationId={workspace.organizationId} />}
+          <WorkspaceSwitcher />
         </div>
 
         {/* Right side actions */}

@@ -5,7 +5,7 @@ import { SettingsIcon, UsersIcon } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
 
-import { useWorkspace } from '@/hooks/use-workspace'
+import { useActiveWorkspace } from '@/hooks/use-active'
 import { General } from './_settings/general'
 import { Members } from './_settings/members'
 
@@ -14,12 +14,14 @@ import { Members } from './_settings/members'
  */
 export function Settings({ kind }: { kind: string }) {
   const router = useRouter()
-  const workspace = useWorkspace()
+  const { activeWorkspace } = useActiveWorkspace()
 
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight truncate">{workspace.name} Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight truncate">
+          {activeWorkspace.name} Settings
+        </h1>
         <p className="text-muted-foreground mt-2">
           Manage your workspace settings and team members
         </p>
@@ -44,11 +46,11 @@ export function Settings({ kind }: { kind: string }) {
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
-          <General workspace={workspace} />
+          <General workspace={activeWorkspace} />
         </TabsContent>
 
         <TabsContent value="members" className="space-y-4">
-          <Members workspace={workspace} />
+          <Members workspace={activeWorkspace} />
         </TabsContent>
       </Tabs>
     </div>

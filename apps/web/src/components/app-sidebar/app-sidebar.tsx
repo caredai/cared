@@ -12,7 +12,6 @@ import {
 } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
-import { HydrateClient } from '@/trpc/server'
 import { NavSecondary } from './nav-secondary'
 import { NavUser } from './nav-user'
 
@@ -46,10 +45,8 @@ export function AppSidebar({
           <NavSecondary className="mt-auto" />
         </SidebarContent>
         <SidebarFooter>
-          <HydrateClient>
-            {/* nav user */}
-            <NavUser />
-          </HydrateClient>
+          {/* nav user */}
+          <NavUser />
         </SidebarFooter>
       </Sidebar>
     </div>

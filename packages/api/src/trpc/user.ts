@@ -31,12 +31,16 @@ export const userRouter = {
       },
     })
     .input(
-      z.object({
-        authenticated: z.boolean().optional(),
-      }).optional(),
+      z
+        .object({
+          auth: z.boolean(),
+        })
+        .default({
+          auth: true,
+        }),
     )
     .query(async ({ ctx, input }) => {
-      if (input?.authenticated) {
+      if (input.auth) {
         const auth = ctx.auth.auth
         if (!(auth?.type === 'user' || auth?.type === 'appUser')) {
           throw new TRPCError({ code: 'UNAUTHORIZED' })
@@ -46,26 +50,6 @@ export const userRouter = {
       return await auth.api.getSession({
         headers: await headers(),
       })
-    }),
-
-  me: userOrAppUserProtectedProcedure
-    .meta({
-      openapi: {
-        method: 'GET',
-        path: '/v1/me',
-        protect: true,
-        tags: ['me'],
-        summary: 'Get current user information',
-      },
-    })
-    .query(async () => {
-      const { user } = (await auth.api.getSession({
-        headers: await headers(),
-      }))!
-
-      return {
-        user,
-      }
     }),
 
   accounts: userProtectedProcedure

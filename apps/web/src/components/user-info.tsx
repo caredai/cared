@@ -1,6 +1,6 @@
 'use client'
 
-import type { User } from '@/hooks/use-user'
+import type { User } from '@/hooks/use-session'
 import { UserIcon } from 'lucide-react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '@cared/ui/components/avatar'

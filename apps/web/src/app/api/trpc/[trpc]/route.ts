@@ -48,6 +48,7 @@ const handler = async (req: NextRequest) => {
   })
 
   setCorsHeaders(response)
+
   return response
 }
 

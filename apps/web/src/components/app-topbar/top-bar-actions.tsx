@@ -1,7 +1,5 @@
 'use client'
 
-import { ChevronsUpDown } from 'lucide-react'
-
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,11 +7,11 @@ import {
 import { Button } from '@cared/ui/components/button'
 
 import { UserDropdownMenuContent } from '@/components/user-dropdown-menu-content'
-import { useUser } from '@/hooks/use-user'
+import { useSession } from '@/hooks/use-session'
 import { UserInfo } from '@/components/user-info'
 
 export function TopBarActions() {
-  const { user } = useUser()
+  const { user } = useSession()
 
   return (
     <DropdownMenu>

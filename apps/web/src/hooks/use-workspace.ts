@@ -1,27 +1,11 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import Cookies from 'js-cookie'
 
 import { lastWorkspaceCookieName } from '@/lib/cookie'
-import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
+import { stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
-
-export function useWorkspaceId() {
-  const pathname = usePathname()
-  const matched = /\/workspace\/([^/]+)/.exec(pathname)
-  return matched?.length && matched[1] ? addIdPrefix(matched[1], 'workspace') : ''
-}
-
-export function useWorkspace() {
-  const id = useWorkspaceId()
-
-  const workspaces = useAllWorkspaces()
-
-  const workspace = useMemo(() => workspaces.find((w) => w.id === id), [workspaces, id])
-
-  return workspace
-}
 
 export function useLastWorkspace() {
   const lastWorkspace = Cookies.get(lastWorkspaceCookieName)
@@ -49,26 +33,17 @@ export function useAllWorkspaces() {
     data: { workspaces },
   } = useSuspenseQuery(trpc.workspace.list.queryOptions())
 
-  const [workspace, setWorkspace] = useLastWorkspace()
-  useEffect(() => {
-    if (!workspace) {
-      // Set last workspace if it's not already set
-      setWorkspace(workspaces.at(0)?.id)
-    } else if (!workspaces.some((w) => w.id === workspace)) {
-      // If the last workspace is not in the list of workspaces, reset it
-      setWorkspace(workspaces.at(0)?.id)
-    }
-  }, [workspaces, workspace, setWorkspace])
-
   return workspaces
 }
 
-export function useWorkspaces(organizationId: string) {
+export function useWorkspaces(organizationId?: string) {
   const allWorkspaces = useAllWorkspaces()
-  return useMemo(
-    () => allWorkspaces.filter((w) => w.organizationId === organizationId),
-    [allWorkspaces],
-  )
+  return useMemo(() => {
+    if (!organizationId) {
+      return []
+    }
+    return allWorkspaces.filter((w) => w.organizationId === organizationId)
+  }, [allWorkspaces, organizationId])
 }
 
 export function replaceRouteWithWorkspaceId(route: string, id: string) {

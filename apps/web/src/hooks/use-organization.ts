@@ -1,28 +1,12 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
 
-import { authClient } from '@cared/auth/client'
-
-import { useSession } from '@/hooks/use-user'
-import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
+import { useSession, useSessionPublic } from '@/hooks/use-session'
+import { stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 
-export function useOrganizationId() {
-  const pathname = usePathname()
-  const matched = /\/org\/([^/]+)/.exec(pathname)
-  return matched?.length && matched[1] ? addIdPrefix(matched[1], 'org') : ''
-}
-
-export function useOrganization() {
-  const id = useOrganizationId()
-
-  const organizations = useOrganizations()
-
-  return organizations.find((org) => org.id === id)
-}
-
-export type Organization = ReturnType<typeof useOrganization>
+export type Organization = ReturnType<typeof useOrganizations>[number]
 
 export function useLastOrganization() {
   const { session } = useSession()
@@ -30,11 +14,33 @@ export function useLastOrganization() {
 }
 
 export function useSetLastOrganization() {
-  return useCallback(async (id?: string) => {
-    await authClient.organization.setActive({
+  const { session, refetchSession } = useSessionPublic()
+
+  const trpc = useTRPC()
+
+  const setActiveMutation = useMutation(trpc.organization.setActive.mutationOptions())
+
+  const [disabledSetLastOrganization, setDisabledSetLastOrganization] = useState(false)
+
+  const setLastOrganization = useCallback(async (id?: string, disable?: boolean) => {
+    if (id === (session?.activeOrganizationId ?? undefined)) {
+      return
+    }
+    console.log('set active organization', id)
+    await setActiveMutation.mutateAsync({
       organizationId: id ?? null,
     })
+    if (disable) {
+      setDisabledSetLastOrganization(true)
+    }
+    await refetchSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  return {
+    setLastOrganization,
+    disabledSetLastOrganization,
+  }
 }
 
 export function useOrganizations() {
@@ -43,18 +49,6 @@ export function useOrganizations() {
   const {
     data: { organizations },
   } = useSuspenseQuery(trpc.organization.list.queryOptions())
-
-  const lastOrganization = useLastOrganization()
-  const setLastOrganization = useSetLastOrganization()
-
-  useEffect(() => {
-    if (
-      (!lastOrganization && organizations.length) || // set last organization if it is not set
-      (lastOrganization && !organizations.some((org) => org.id === lastOrganization)) // or if the last organization is not in the list
-    ) {
-      void setLastOrganization(organizations.at(0)?.id)
-    }
-  }, [organizations, lastOrganization, setLastOrganization])
 
   return organizations
 }

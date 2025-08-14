@@ -5,11 +5,11 @@ import { HelioCheckout } from '@heliofi/checkout-react'
 import { useTheme } from 'next-themes'
 
 import { env } from '@/env'
-import { useUser } from '@/hooks/use-user'
+import { useSession } from '@/hooks/use-session'
 
 export function HelioCheckoutForm({ credits }: { credits: number }) {
   const { resolvedTheme } = useTheme()
-  const { user } = useUser()
+  const { user } = useSession()
 
   return (
     <RemoveCssWrapper>

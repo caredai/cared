@@ -5,18 +5,20 @@ import { SettingsIcon, UsersIcon } from 'lucide-react'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
 
-import { useOrganization } from '@/hooks/use-organization'
+import { useActiveOrganization } from '@/hooks/use-active'
 import { General } from './_settings/general'
 import { Members } from './_settings/members'
 
 export function Settings({ kind }: { kind: string }) {
   const router = useRouter()
-  const organization = useOrganization()
+  const { activeOrganization } = useActiveOrganization()
 
   return (
     <div className="container mx-auto py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight truncate">{organization.name} Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight truncate">
+          {activeOrganization.name} Settings
+        </h1>
         <p className="text-muted-foreground mt-2">Manage your organization settings and members</p>
       </div>
 
@@ -39,11 +41,11 @@ export function Settings({ kind }: { kind: string }) {
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
-          <General organization={organization} />
+          <General organization={activeOrganization} />
         </TabsContent>
 
         <TabsContent value="members" className="space-y-4">
-          <Members organization={organization} />
+          <Members organization={activeOrganization} />
         </TabsContent>
       </Tabs>
     </div>
