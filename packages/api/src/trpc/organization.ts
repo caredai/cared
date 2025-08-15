@@ -221,7 +221,7 @@ export const organizationRouter = {
     .input(
       z.object({
         organizationId: z.string().min(1),
-        email: z.string().email(),
+        email: z.email(),
         teamId: z.string().min(1).optional(),
         resend: z.boolean().optional(),
       }),
@@ -408,7 +408,14 @@ export const organizationRouter = {
         teamId: z.string().min(1).optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.auth.isAdmin) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only organization admins can add members',
+        })
+      }
+
       const member = await auth.api.addMember({
         body: {
           organizationId: input.organizationId,
@@ -470,7 +477,7 @@ export const organizationRouter = {
       z.object({
         organizationId: z.string().min(1),
         memberId: z.string().min(1),
-        role: z.enum(['owner', 'admin', 'member']),
+        role: z.enum(['admin', 'member']),
       }),
     )
     .mutation(async ({ input }) => {

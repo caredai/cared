@@ -30,6 +30,7 @@
     "@better-auth/utils": "^0.2.6",
     "@cared/db": "workspace:*",
     "@cared/kv": "workspace:*",
+    "@cared/log": "workspace:*",
     "@cared/shared": "workspace:*",
     "better-auth": "1.3.6",
     "better-auth-harmony": "^1.2.5",

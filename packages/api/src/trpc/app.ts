@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
 import type { AppMetadata } from '@cared/db/schema'
+import { orgRoles } from '@cared/auth'
 import { and, asc, count, desc, eq, gt, inArray, lt, sql } from '@cared/db'
 import {
   Agent,
@@ -18,6 +19,7 @@ import {
   DRAFT_VERSION,
   Tag,
   UpdateAppSchema,
+  Workspace,
 } from '@cared/db/schema'
 import log from '@cared/log'
 import { defaultModels } from '@cared/providers'
@@ -63,7 +65,7 @@ export async function getApps(
   ctx: BaseContext,
   baseQuery: {
     where?: SQL<unknown>
-    limit: number
+    limit?: number
     after?: string
     before?: string
     order?: 'desc' | 'asc'
@@ -85,14 +87,14 @@ export async function getApps(
 
   const query = conditions.length > 0 ? and(...conditions) : undefined
 
-  // Get paginated apps with appropriate ordering
+  // Get apps with appropriate ordering
   const apps = await ctx.db.query.App.findMany({
     where: query,
     orderBy: (baseQuery.order ?? 'desc') === 'desc' ? desc(App.id) : asc(App.id),
-    limit: baseQuery.limit + 1, // Get one extra to determine hasMore
+    limit: baseQuery.limit ? baseQuery.limit + 1 : undefined, // Get one extra to determine hasMore when limit is specified
   })
 
-  const hasMore = apps.length > baseQuery.limit
+  const hasMore = !!baseQuery.limit && apps.length > baseQuery.limit
   if (hasMore) {
     apps.pop() // Remove the extra item
   }
@@ -224,47 +226,71 @@ export async function getAppVersion(
 
 export const appRouter = {
   /**
-   * List all apps in a workspace.
-   * Only accessible by workspace members.
-   * @param input - Object containing workspaceId and pagination parameters
+   * List all apps in a workspace or organization.
+   * Only accessible by workspace members or organization members.
+   * @param input - Object containing either workspaceId or organizationId (but not both) and ordering preference
    * @returns List of apps with their categories and tags
-   * @throws {TRPCError} If workspace access verification fails
+   * @throws {TRPCError} If workspace/organization access verification fails
    */
   list: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/apps' } })
     .input(
-      z.object({
-        workspaceId: z.string().min(32),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
-        order: z.enum(['desc', 'asc']).default('desc'),
-      }),
+      z
+        .object({
+          organizationId: z.string().min(32).optional(),
+          workspaceId: z.string().min(32).optional(),
+          order: z.enum(['desc', 'asc']).default('desc'),
+        })
+        .refine(
+          (data) => {
+            const hasOrganizationId = !!data.organizationId
+            const hasWorkspaceId = !!data.workspaceId
+            return (hasOrganizationId && !hasWorkspaceId) || (!hasOrganizationId && hasWorkspaceId)
+          },
+          {
+            message: "Either 'organizationId' or 'workspaceId' must be provided, but not both",
+            path: ['organizationId', 'workspaceId'],
+          },
+        ),
     )
     .query(async ({ ctx, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
+      let scope
+      let whereCondition
+
+      if (input.workspaceId) {
+        scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
+        whereCondition = eq(App.workspaceId, input.workspaceId)
+      } else if (input.organizationId) {
+        scope = OrganizationScope.fromOrganization(ctx, input.organizationId)
+        // When organizationId is provided, we need to find apps in workspaces belonging to that organization
+        whereCondition = inArray(
+          App.workspaceId,
+          ctx.db
+            .select({ id: Workspace.id })
+            .from(Workspace)
+            .where(eq(Workspace.organizationId, input.organizationId)),
+        )
+      } else {
+        // This should never happen due to refine validation, but TypeScript requires it
+        throw new Error('Either workspaceId or organizationId must be provided')
+      }
+
       await scope.checkPermissions()
 
       const result = await getApps(ctx, {
-        where: eq(App.workspaceId, input.workspaceId),
-        after: input.after,
-        before: input.before,
-        limit: input.limit,
+        where: whereCondition,
         order: input.order,
       })
 
       return {
         apps: result.apps,
-        hasMore: result.hasMore,
-        first: result.first,
-        last: result.last,
       }
     }),
 
   /**
    * List all apps in a specific category within a workspace.
    * Only accessible by workspace members.
-   * @param input - Object containing workspaceId, categoryId and pagination parameters
+   * @param input - Object containing workspaceId, categoryId and ordering preference
    * @returns List of apps in the category
    * @throws {TRPCError} If workspace access verification fails
    */
@@ -274,9 +300,6 @@ export const appRouter = {
       z.object({
         workspaceId: z.string().min(32),
         categoryId: z.string(),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
         order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
@@ -289,24 +312,18 @@ export const appRouter = {
           eq(App.workspaceId, input.workspaceId),
           eq(AppsToCategories.categoryId, input.categoryId),
         ),
-        after: input.after,
-        before: input.before,
-        limit: input.limit,
         order: input.order,
       })
 
       return {
         apps: result.apps,
-        hasMore: result.hasMore,
-        first: result.first,
-        last: result.last,
       }
     }),
 
   /**
    * List all apps with any of the specified tags in a workspace.
    * Only accessible by workspace members.
-   * @param input - Object containing workspaceId, tags array and pagination parameters
+   * @param input - Object containing workspaceId, tags array and ordering preference
    * @returns List of apps with matching tags
    * @throws {TRPCError} If workspace access verification fails
    */
@@ -316,9 +333,6 @@ export const appRouter = {
       z.object({
         workspaceId: z.string().min(32),
         tags: z.array(z.string()).min(1).max(20),
-        after: z.string().optional(),
-        before: z.string().optional(),
-        limit: z.number().min(1).max(100).default(50),
         order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
@@ -328,17 +342,11 @@ export const appRouter = {
 
       const result = await getApps(ctx, {
         where: and(eq(App.workspaceId, input.workspaceId), inArray(AppsToTags.tag, input.tags)),
-        after: input.after,
-        before: input.before,
-        limit: input.limit,
         order: input.order,
       })
 
       return {
         apps: result.apps,
-        hasMore: result.hasMore,
-        first: result.first,
-        last: result.last,
       }
     }),
 

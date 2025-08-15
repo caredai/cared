@@ -52,12 +52,44 @@ function useOrganization(pathname: string, id?: string) {
   }, [organizations, pathname, id])
 }
 
+export function useActiveOrganizationId() {
+  const pathname = usePathname()
+  return useMemo(
+    () => ({
+      activeOrganizationId: getOrganizationId(pathname),
+      activeOrganizationIdNoPrefix: getOrganizationIdNoPrefix(pathname),
+    }),
+    [pathname],
+  )
+}
+
+export function useActiveWorkspaceId() {
+  const pathname = usePathname()
+  return useMemo(
+    () => ({
+      activeWorkspaceId: getWorkspaceId(pathname),
+      activeWorkspaceIdNoPrefix: getWorkspaceIdNoPrefix(pathname),
+    }),
+    [pathname],
+  )
+}
+
 function getOrganizationId(pathname: string) {
+  const idNoPrefix = getOrganizationIdNoPrefix(pathname)
+  return idNoPrefix ? addIdPrefix(idNoPrefix, 'org') : ''
+}
+
+function getOrganizationIdNoPrefix(pathname: string) {
   const matched = /\/org\/([^/]+)/.exec(pathname)
-  return matched?.length && matched[1] ? addIdPrefix(matched[1], 'org') : ''
+  return matched?.length && matched[1] ? matched[1] : ''
 }
 
 function getWorkspaceId(pathname: string) {
+  const idNoPrefix = getWorkspaceIdNoPrefix(pathname)
+  return idNoPrefix ? addIdPrefix(idNoPrefix, 'workspace') : ''
+}
+
+function getWorkspaceIdNoPrefix(pathname: string) {
   const matched = /\/workspace\/([^/]+)/.exec(pathname)
-  return matched?.length && matched[1] ? addIdPrefix(matched[1], 'workspace') : ''
+  return matched?.length && matched[1] ? matched[1] : ''
 }

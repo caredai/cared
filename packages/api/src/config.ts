@@ -1,9 +1,19 @@
+import { maxMembers, maxOrganizations } from '@cared/auth'
+
 export const cfg = {
   /**
    * User-level resource limitations
    * Defines the maximum resources allocated to each user
    */
   perUser: {
+    /**
+     * Maximum number of organizations a user can create
+     */
+    maxOrganizations,
+    /**
+     * Maximum number of organizations a user can create or join
+     */
+    maxMemberships: 10,
     /**
      * Provider-level resource limitations
      * Defines the maximum resources allocated to each provider
@@ -13,13 +23,17 @@ export const cfg = {
        * Maximum number of API keys that can be created for a provider
        */
       maxApiKeys: 10,
-    }
+    },
   },
   /**
    * Organization-level resource limitations
    * Defines the maximum resources allocated to each organization
    */
   perOrganization: {
+    /**
+     * Maximum number of members in an organization
+     */
+    maxMembers,
     /**
      * Maximum number of workspaces an organization can create or join
      */
@@ -33,7 +47,7 @@ export const cfg = {
        * Maximum number of API keys that can be created for a provider
        */
       maxApiKeys: 10,
-    }
+    },
   },
 
   /**

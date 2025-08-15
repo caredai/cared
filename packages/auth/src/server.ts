@@ -26,12 +26,16 @@ import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Account, User } from '@cared/db/schema'
 import { getKV } from '@cared/kv'
+import log from '@cared/log'
 import { generateId } from '@cared/shared'
 
 import { getBaseUrl } from './client'
 import { env } from './env'
 import { orgAc, orgRoles } from './permissions'
 import { customPlugin } from './plugin'
+
+export const maxOrganizations = 2
+export const maxMembers = 100
 
 const kv = getKV('auth', 'upstash')
 
@@ -72,6 +76,9 @@ const options = {
       },
     },
     storeSessionInDatabase: false,
+  },
+  emailAndPassword: {
+    enabled: true,
   },
   socialProviders: {
     google: {
@@ -185,8 +192,8 @@ const options = {
     organization({
       ac: orgAc,
       roles: orgRoles,
-      organizationLimit: 2,
-      membershipLimit: 100,
+      organizationLimit: maxOrganizations,
+      membershipLimit: maxMembers,
       teams: {
         enabled: true,
         defaultTeam: {
@@ -198,6 +205,10 @@ const options = {
       },
       invitationLimit: 100,
       cancelPendingInvitationsOnReInvite: true,
+      requireEmailVerificationOnInvitation: true,
+      async sendInvitationEmail(data) {
+        const inviteLink = `${getBaseUrl()}/org/accept-invitation/${data.id}`
+      },
       organizationDeletion: {
         disabled: true, // TODO
       },
@@ -345,6 +356,34 @@ const options = {
         }
       }
     }),
+  },
+  logger: {
+    level: 'info',
+    log: (level, message, ...args) => {
+      let levelLog
+      switch (level) {
+        case 'info':
+          // eslint-disable-next-line @typescript-eslint/unbound-method
+          levelLog = log.info
+          break
+        case 'warn':
+          // eslint-disable-next-line @typescript-eslint/unbound-method
+          levelLog = log.warn
+          break
+        case 'debug':
+          // eslint-disable-next-line @typescript-eslint/unbound-method
+          levelLog = log.debug
+          break
+        default:
+          // eslint-disable-next-line @typescript-eslint/unbound-method
+          levelLog = log.error
+          break
+      }
+      levelLog({
+        message,
+        args,
+      })
+    },
   },
   telemetry: { enabled: false },
 } satisfies BetterAuthOptions

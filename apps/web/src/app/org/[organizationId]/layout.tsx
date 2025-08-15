@@ -1,13 +1,20 @@
 import type { ReactNode } from 'react'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { ErrorBoundary } from 'react-error-boundary'
 
 import { createCaller } from '@cared/api'
+import { SidebarInset, SidebarProvider } from '@cared/ui/components/sidebar'
 
+import { OrganizationNavMain } from '@/app/org/[organizationId]/nav-main'
+import { AppSidebar } from '@/components/app-sidebar'
 import { AppTopBar } from '@/components/app-topbar'
+import { ErrorFallback } from '@/components/error-fallback'
 import { RememberOrganization } from '@/components/remember-organization'
+import { Section } from '@/components/section'
+import { getActiveOrganizationId } from '@/lib/active'
 import { lastWorkspaceCookieName } from '@/lib/cookie'
-import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
+import { stripIdPrefix } from '@/lib/utils'
 import { createContext, fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 export default async function OrganizationLayout({
@@ -17,12 +24,12 @@ export default async function OrganizationLayout({
   children: ReactNode
   params: Promise<{ organizationId: string }>
 }>) {
-  const { organizationId: orgIdNoPrefix } = await params
-  const organizationId = addIdPrefix(orgIdNoPrefix, 'org')
+  const { activeOrganizationId, activeOrganizationIdNoPrefix } =
+    await getActiveOrganizationId(params)
 
   const { organizations } = await fetch(trpc.organization.list.queryOptions())
 
-  const organization = organizations.find((w) => w.id === organizationId)
+  const organization = organizations.find((w) => w.id === activeOrganizationId)
   if (!organization) {
     await createCaller(createContext).organization.setActive({
       organizationId: null,
@@ -40,7 +47,7 @@ export default async function OrganizationLayout({
     prefetch(trpc.workspace.list.queryOptions())
   } else {
     const { workspaces: allWorkspaces } = await fetch(trpc.workspace.list.queryOptions())
-    const workspaces = allWorkspaces.filter((w) => w.organizationId === organizationId)
+    const workspaces = allWorkspaces.filter((w) => w.organizationId === activeOrganizationId)
 
     let lastWorkspace = (await cookies()).get(lastWorkspaceCookieName)?.value
     if (!lastWorkspace || !workspaces.some((w) => w.id === lastWorkspace)) {
@@ -55,13 +62,26 @@ export default async function OrganizationLayout({
   prefetch(trpc.user.session.queryOptions())
 
   return (
-    <>
-      <RememberOrganization id={organizationId} />
-      {/* TopBar for organization switching */}
-      <HydrateClient>
-        <AppTopBar />
-      </HydrateClient>
-      {children}
-    </>
+    <HydrateClient>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <SidebarProvider className="flex flex-col">
+          <AppTopBar />
+
+          <div className="flex flex-1">
+            <AppSidebar baseUrl={`/org/${activeOrganizationIdNoPrefix}/credits`}>
+              <OrganizationNavMain baseUrl={`/org/${activeOrganizationIdNoPrefix}`} />
+            </AppSidebar>
+
+            <div className="flex-1 flex flex-col h-[calc(100svh-57px)] overflow-y-auto">
+              <SidebarInset>
+                <Section>{children}</Section>
+
+                <RememberOrganization id={activeOrganizationId} />
+              </SidebarInset>
+            </div>
+          </div>
+        </SidebarProvider>
+      </ErrorBoundary>
+    </HydrateClient>
   )
 }

@@ -98,7 +98,7 @@ export class OrganizationScope {
     return new OrganizationScope(organizationId)
   }
 
-  async checkPermissions(permissions: OrganizationStatementsSubset = {}) {
+  async checkPermissions(permissions: OrganizationStatementsSubset = { pseudo: [] }) {
     const { success } = await auth.api.hasPermission({
       headers: await headers(),
       body: {
@@ -107,6 +107,10 @@ export class OrganizationScope {
       },
     })
     if (!success) {
+      // console.error('OrganizationScope.checkPermissions failed', {
+      //   organizationId: this.organizationId,
+      //   permissions,
+      // })
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have permission to perform this action',

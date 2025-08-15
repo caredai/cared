@@ -14,6 +14,7 @@ export type StatementsSubset<TStatements extends Statements> = {
 export type OrganizationStatementsSubset = StatementsSubset<typeof statements>
 
 const statements = {
+  pseudo: [],
   ...defaultStatements,
   providerKey: ['create', 'update', 'delete'],
   workspace: ['create', 'update', 'transfer', 'delete'],
@@ -24,6 +25,7 @@ const statements = {
 export const orgAc = createAccessControl(statements)
 
 const ownerAc = orgAc.newRole({
+  pseudo: [],
   ...defaultOwnerAc.statements,
   providerKey: ['create', 'update', 'delete'],
   workspace: ['create', 'update', 'transfer', 'delete'],
@@ -32,6 +34,7 @@ const ownerAc = orgAc.newRole({
 })
 
 const adminAc = orgAc.newRole({
+  pseudo: [],
   ...defaultAdminAc.statements,
   providerKey: ['create', 'update', 'delete'],
   workspace: ['create', 'update', 'delete'],
@@ -40,6 +43,7 @@ const adminAc = orgAc.newRole({
 })
 
 const memberAc = orgAc.newRole({
+  pseudo: [],
   ...defaultMemberAc.statements,
   workspace: [],
   app: [],

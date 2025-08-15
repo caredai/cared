@@ -140,6 +140,7 @@ export const protectedProcedure = t.procedure.use(timingMiddleware).use(({ ctx, 
 export type UserContext = BaseContext & {
   auth: {
     userId: string
+    isAdmin?: boolean
     useApiKey: boolean
   }
 }
@@ -153,6 +154,7 @@ export const userProtectedProcedure = t.procedure.use(timingMiddleware).use(({ c
     ctx: {
       auth: {
         userId: auth.userId,
+        isAdmin: auth.isAdmin,
         useApiKey: auth.type === 'apiKey',
       },
     },

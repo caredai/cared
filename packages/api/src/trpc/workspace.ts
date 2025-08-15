@@ -105,7 +105,7 @@ export const workspaceRouter = {
       const userWorkspacesCount = await ctx.db
         .select({ count: count() })
         .from(Workspace)
-        .where(eq(Workspace, scope.organizationId))
+        .where(eq(Workspace.organizationId, scope.organizationId))
         .then((r) => r[0]!.count)
 
       if (userWorkspacesCount >= cfg.perOrganization.maxWorkspaces) {
