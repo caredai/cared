@@ -4,8 +4,8 @@
   "version": "0.1.6",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./server": "./src/server.ts",
+    ".": "./src/index.tsx",
+    "./server": "./src/server.tsx",
     "./client": "./src/client.ts"
   },
   "license": "MIT",
@@ -29,6 +29,7 @@
   "dependencies": {
     "@better-auth/utils": "^0.2.6",
     "@cared/db": "workspace:*",
+    "@cared/email": "workspace:*",
     "@cared/kv": "workspace:*",
     "@cared/log": "workspace:*",
     "@cared/shared": "workspace:*",

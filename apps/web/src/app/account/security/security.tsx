@@ -28,11 +28,15 @@ import {
   TooltipTrigger,
 } from '@cared/ui/components/tooltip'
 
+import { useAccounts } from '@/hooks/use-session'
 import { useTRPC } from '@/trpc/client'
+import { ChangePasswordDialog } from './change-password-dialog'
 
 export function Security() {
   const trpc = useTRPC()
+  const { accounts } = useAccounts()
   const [isRevoking, setIsRevoking] = useState(false)
+  const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)
 
   const { data: currentSession } = useSuspenseQuery({
     ...trpc.user.session.queryOptions(),
@@ -43,6 +47,9 @@ export function Security() {
   } = useSuspenseQuery({
     ...trpc.user.sessions.queryOptions(),
   })
+
+  // Check if user has a credential account (email/password authentication)
+  const hasCredentialAccount = accounts.some((account) => account.providerId === 'credential')
 
   const sessions = sessionsData
     .map((s) => {
@@ -57,8 +64,7 @@ export function Security() {
 
   // Function to set password
   const handleSetPassword = () => {
-    // Implementation would connect to authClient
-    console.log('Set password clicked')
+    setShowChangePasswordDialog(true)
   }
 
   // Function to add passkey
@@ -131,27 +137,15 @@ export function Security() {
           <div className="flex items-center justify-between py-2">
             <div>
               <h3 className="font-medium">Password</h3>
-              <p className="text-sm text-gray-500">Last changed 30 days ago</p>
+              {!hasCredentialAccount && <p className="text-sm text-gray-500">No password set</p>}
             </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2"
-                      onClick={handleSetPassword}
-                      disabled
-                    >
-                      Change password
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Coming soon</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              onClick={handleSetPassword}
+            >
+              {hasCredentialAccount ? 'Change password' : 'Set password'}
+            </Button>
           </div>
 
           {/* Passkeys Section */}
@@ -332,6 +326,12 @@ export function Security() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={showChangePasswordDialog}
+        onOpenChange={setShowChangePasswordDialog}
+      />
     </div>
   )
 }

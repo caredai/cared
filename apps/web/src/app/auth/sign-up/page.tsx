@@ -19,5 +19,5 @@ export default async function Page({
     redirect(redirectToUrl)
   }
 
-  return <SignInUp mode="sign-in" />
+  return <SignInUp mode="sign-up" />
 }

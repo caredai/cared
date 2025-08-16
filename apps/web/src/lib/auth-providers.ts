@@ -7,9 +7,9 @@ import type {
 import { socialProviders } from '@daveyplate/better-auth-ui'
 
 import type { Account } from '@cared/db/schema'
-import { allowedProviders as _allowedProviders } from '@cared/auth/client'
+import { allowedSocialProviders as _allowedSocialProviders } from '@cared/auth/client'
 
-export const allowedProviders = _allowedProviders
+export const allowedProviders = _allowedSocialProviders
   .map((provider) => socialProviders.find((p) => p.provider === provider)!)
   .map((provider) => {
     if (provider.name === 'X') {
@@ -21,14 +21,14 @@ export const allowedProviders = _allowedProviders
     return provider
   })
 
-export type Provider = (typeof socialProviders)[number]['provider']
+export type SocialProvider = (typeof socialProviders)[number]['provider']
 
 export function getAccountInfo(account: Account): { displayUsername?: string } {
   if (!account.profile) {
     return {}
   }
   const profile = JSON.parse(account.profile)
-  switch (account.providerId as Provider) {
+  switch (account.providerId as SocialProvider) {
     case 'google':
       return {
         displayUsername: (profile as GoogleProfile).email,

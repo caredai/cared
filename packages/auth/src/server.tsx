@@ -25,6 +25,10 @@ import { sha256 } from 'viem'
 import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Account, User } from '@cared/db/schema'
+import { emails, getEmailAddresses } from '@cared/email'
+import InvitationEmail from '@cared/email/emails/invitation-email'
+import ResetPasswordEmail from '@cared/email/emails/reset-password-email'
+import VerificationEmail from '@cared/email/emails/verification-email'
 import { getKV } from '@cared/kv'
 import log from '@cared/log'
 import { generateId } from '@cared/shared'
@@ -79,6 +83,39 @@ const options = {
   },
   emailAndPassword: {
     enabled: true,
+    requireEmailVerification: true,
+    sendResetPassword: async ({ user, url }) => {
+      const addresses = getEmailAddresses({
+        from: 'hello',
+        replyTo: 'support',
+      })
+      await emails.send({
+        ...addresses,
+        to: user.email,
+        subject: '[Cared] Reset your password',
+        react: <ResetPasswordEmail link={url} user={user.name} supportEmail={addresses.support} />,
+      })
+    },
+    resetPasswordTokenExpiresIn: 3600, // 1 hour
+    revokeSessionsOnPasswordReset: true,
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      const addresses = getEmailAddresses({
+        from: 'hello',
+        replyTo: 'support',
+      })
+      await emails.send({
+        ...addresses,
+        to: user.email,
+        subject: '[Cared] Verify your email address',
+        react: <VerificationEmail link={url} user={user.name} supportEmail={addresses.support} />,
+      })
+    },
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 3600, // 1 hour
   },
   socialProviders: {
     google: {
@@ -203,11 +240,27 @@ const options = {
         maximumMembersPerTeam: undefined,
         allowRemovingAllTeams: true,
       },
+      invitationExpiresIn: 3600 * 24, // 24 hours
       invitationLimit: 100,
       cancelPendingInvitationsOnReInvite: true,
       requireEmailVerificationOnInvitation: true,
       async sendInvitationEmail(data) {
         const inviteLink = `${getBaseUrl()}/org/accept-invitation/${data.id}`
+        await emails.send({
+          ...getEmailAddresses({
+            from: 'hello',
+            replyTo: 'support',
+          }),
+          to: data.email,
+          subject: `[Cared] Join organization '${data.organization.name}'`,
+          react: (
+            <InvitationEmail
+              link={inviteLink}
+              inviter={data.inviter.user.name}
+              organizationName={data.organization.name}
+            />
+          ),
+        })
       },
       organizationDeletion: {
         disabled: true, // TODO
@@ -282,6 +335,8 @@ const options = {
       }
 
       const allowedPaths = [
+        '/sign-up/email',
+        '/sign-in/email',
         '/sign-in/social',
         '/sign-out',
         '/update-user',
@@ -291,6 +346,14 @@ const options = {
         '/revoke-other-sessions',
         '/link-social',
         '/unlink-account',
+        '/send-verification-email',
+        '/verify-email',
+        '/request-password-reset',
+        '/reset-password',
+        '/change-password',
+        '/organization/get-invitation',
+        '/organization/accept-invitation',
+        '/organization/reject-invitation',
         '/error', // TODO
         '/jwks',
         '/token',
@@ -305,7 +368,11 @@ const options = {
             ]
           : []),
       ]
-      if (!allowedPaths.includes(ctx.path) && !ctx.path.startsWith('/callback')) {
+      if (
+        !allowedPaths.includes(ctx.path) &&
+        !ctx.path.startsWith('/callback') &&
+        !ctx.path.startsWith('/reset-password') // reset-password callback
+      ) {
         throw new APIError('NOT_FOUND')
       }
     }),

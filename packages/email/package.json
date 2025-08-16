@@ -1,16 +1,17 @@
 {
-  "name": "@cared/crypto",
+  "name": "@cared/email",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./emails/*": "./emails/*.tsx"
   },
   "license": "MIT",
   "scripts": {
     "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc",
+    "dev": "email dev --port 3010",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
@@ -19,23 +20,18 @@
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
     "@cared/tsconfig": "workspace:*",
+    "@react-email/preview-server": "^4.2.8",
+    "@types/react": "catalog:react19",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"
   },
   "prettier": "@cared/prettier-config",
   "dependencies": {
-    "@heliofi/checkout-react": "^3.1.0",
-    "@heliofi/sdk": "^2.2.5",
-    "@hpke/core": "^1.7.2",
-    "@phala/dstack-sdk": "^0.1.11",
-    "@privy-io/react-auth": "^2.21.3",
-    "@privy-io/server-auth": "^1.31.1",
-    "@solana/spl-token": "^0.4.13",
-    "@solana/web3.js": "^1.98.4",
-    "alchemy-sdk": "^3.6.2",
-    "blo": "^2.0.0",
-    "viem": "^2.33.2",
-    "wagmi": "^2.16.1"
+    "@react-email/components": "^0.5.0",
+    "react": "catalog:react19",
+    "react-dom": "catalog:react19",
+    "react-email": "^4.2.8",
+    "resend": "^6.0.1"
   }
 }

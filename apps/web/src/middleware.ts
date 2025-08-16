@@ -11,7 +11,7 @@ export default function middleware(request: NextRequest) {
     pathname === '/api/trpc/user.session' ||
     (pathname.startsWith('/auth') && !pathname.startsWith('/auth/settings'))
   ) {
-    return NextResponse.next() // Skip the middleware for the get-session endpoint
+    return NextResponse.next()
   }
 
   const sessionCookie = getSessionCookie(request, {

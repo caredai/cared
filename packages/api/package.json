@@ -24,6 +24,7 @@
   "dependencies": {
     "@cared/auth": "workspace:*",
     "@cared/db": "workspace:*",
+    "@cared/email": "workspace:*",
     "@cared/etl": "workspace:*",
     "@cared/log": "workspace:*",
     "@cared/providers": "workspace:*",

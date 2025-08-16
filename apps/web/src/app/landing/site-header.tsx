@@ -1,9 +1,7 @@
-'use client'
-
 // import { CommandMenu } from '@/components/command-menu'
+import { TopRightNav } from '@/components/top-right-nav'
 import { MainNav } from './main-nav'
 import { MobileNav } from './mobile-nav'
-import { TopRightNav } from '@/components/top-right-nav'
 
 export function SiteHeader() {
   return (

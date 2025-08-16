@@ -52,6 +52,7 @@ function InnerProviders({ children }: { children: ReactNode }) {
           'safe',
           'backpack',
         ],
+        showWalletLoginFirst: true,
       },
       loginMethods: ['wallet'], // NOTE: just a placeholder to avoid the "You must enable at least one login method" error
       walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,

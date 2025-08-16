@@ -1,6 +1,6 @@
 'use client'
 
-import type { Provider } from '@/lib/auth-providers'
+import type { SocialProvider } from '@/lib/auth-providers'
 import { useRef, useState } from 'react'
 import * as React from 'react'
 import { LucideCheck, LucidePencil, LucidePlus, LucideX } from 'lucide-react'
@@ -108,7 +108,7 @@ export function Profile() {
   /**
    * Handle connecting a new social account
    */
-  const handleConnectAccount = async (provider: Provider) => {
+  const handleConnectAccount = async (provider: SocialProvider) => {
     try {
       setIsConnecting(provider)
       // Use the provider to connect a new account
@@ -250,39 +250,43 @@ export function Profile() {
         <CardContent className="space-y-6">
           {/* Connected accounts list */}
           <div className="space-y-3">
-            {accounts.length > 0 ? (
-              accounts.map((account) => {
-                const { icon: Icon, name } = allowedProviders.find(
-                  (provider) => provider.provider === account.providerId,
-                )!
-                const displayUsername = getAccountInfo(account).displayUsername
+            {accounts.filter((a) => a.providerId !== 'credential').length > 0 ? (
+              accounts
+                .filter((a) => a.providerId !== 'credential')
+                .map((account) => {
+                  const { icon: Icon, name } = allowedProviders.find(
+                    (provider) => provider.provider === account.providerId,
+                  )!
+                  const displayUsername = getAccountInfo(account).displayUsername
 
-                return (
-                  <div
-                    key={account.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3 truncate">
-                      <div className="w-5 h-5 flex items-center justify-center">
-                        <Icon variant="color" />
-                      </div>
-                      <span className="font-normal">{name}</span>
-                      {displayUsername && (
-                        <span className="text-sm font-mono truncate">{displayUsername}</span>
-                      )}
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={isDisconnecting === account.accountId || accounts.length <= 1}
-                      onClick={() => handleDisconnectAccount(account.accountId, account.providerId)}
+                  return (
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
                     >
-                      {isDisconnecting === account.id && <CircleSpinner className="h-4 w-4" />}
-                      Disconnect
-                    </Button>
-                  </div>
-                )
-              })
+                      <div className="flex items-center space-x-3 truncate">
+                        <div className="w-5 h-5 flex items-center justify-center">
+                          <Icon variant="color" />
+                        </div>
+                        <span className="font-normal">{name}</span>
+                        {displayUsername && (
+                          <span className="text-sm font-mono truncate">{displayUsername}</span>
+                        )}
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={isDisconnecting === account.accountId || accounts.length <= 1}
+                        onClick={() =>
+                          handleDisconnectAccount(account.accountId, account.providerId)
+                        }
+                      >
+                        {isDisconnecting === account.id && <CircleSpinner className="h-4 w-4" />}
+                        Disconnect
+                      </Button>
+                    </div>
+                  )
+                })
             ) : (
               <p className="text-gray-500 text-center py-3">No connected accounts</p>
             )}

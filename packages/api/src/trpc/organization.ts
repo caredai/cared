@@ -3,9 +3,8 @@ import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 import type { OrganizationRole } from '@cared/auth'
-import type { Invitation } from '@cared/db/schema'
 import { auth, headers } from '@cared/auth'
-import { Member, Organization } from '@cared/db/schema'
+import { Invitation, Member, Organization, User } from '@cared/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
 
@@ -318,12 +317,30 @@ export const organizationRouter = {
       },
     })
     .input(z.object({ invitationId: z.string().min(1) }))
-    .query(async ({ input }) => {
+    .query(async ({ input, ctx }) => {
       const invitation = await auth.api.getInvitation({
         headers: await headers(),
         query: { id: input.invitationId },
       })
-      return { invitation: formatInvitation(invitation) }
+      const inviter = await ctx.db.query.User.findFirst({
+        where: eq(User.email, invitation.inviterEmail),
+      })
+      if (!inviter) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Inviter not found',
+        })
+      }
+      return {
+        invitation: {
+          ...formatInvitation(invitation),
+          inviterName: inviter.name,
+        } as ReturnType<typeof formatInvitation> & {
+          organizationName: string
+          inviterEmail: string
+          inviterName: string
+        },
+      }
     }),
 
   listInvitations: userProtectedProcedure

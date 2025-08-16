@@ -52,6 +52,7 @@ import {
 
 import { SearchInput } from '@/components/search-input'
 import { SectionTitle } from '@/components/section'
+import { CircleSpinner } from '@/components/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { useActiveOrganizationId } from '@/hooks/use-active'
 import {
@@ -93,6 +94,12 @@ export function Members() {
   } | null>(null)
   const [newRole, setNewRole] = useState<'admin' | 'member'>('member')
 
+  // Loading states for async operations
+  const [isInviting, setIsInviting] = useState(false)
+  const [isRemovingMember, setIsRemovingMember] = useState(false)
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false)
+  const [cancelingInvitationId, setCancelingInvitationId] = useState<string | null>(null)
+
   // Check if current user is owner or admin
   const currentUserMember = members.find((member) => member.user.id === user.id)
   const canManageMembers =
@@ -101,6 +108,7 @@ export function Members() {
   // Handle create invitation
   const handleCreateInvitation = async () => {
     if (inviteEmail) {
+      setIsInviting(true)
       try {
         await createInvitation(activeOrganizationId, inviteEmail)
         setIsInviteDialogOpen(false)
@@ -109,6 +117,8 @@ export function Members() {
       } catch (error) {
         console.error('Failed to send invitation:', error)
         toast.error('Failed to send invitation')
+      } finally {
+        setIsInviting(false)
       }
     }
   }
@@ -116,6 +126,7 @@ export function Members() {
   // Handle remove member
   const handleRemoveMember = async () => {
     if (memberToDelete) {
+      setIsRemovingMember(true)
       try {
         await removeMember(activeOrganizationId, memberToDelete)
         setMemberToDelete(null)
@@ -123,6 +134,8 @@ export function Members() {
       } catch (error) {
         console.error('Failed to remove member:', error)
         toast.error('Failed to remove member')
+      } finally {
+        setIsRemovingMember(false)
       }
     }
   }
@@ -130,6 +143,7 @@ export function Members() {
   // Handle update member role
   const handleUpdateMemberRole = async () => {
     if (memberToUpdateRole) {
+      setIsUpdatingRole(true)
       try {
         await updateMemberRole(activeOrganizationId, memberToUpdateRole.id, newRole)
         setMemberToUpdateRole(null)
@@ -138,18 +152,23 @@ export function Members() {
       } catch (error) {
         console.error('Failed to update member role:', error)
         toast.error('Failed to update member role')
+      } finally {
+        setIsUpdatingRole(false)
       }
     }
   }
 
   // Handle cancel invitation
   const handleCancelInvitation = async (invitationId: string) => {
+    setCancelingInvitationId(invitationId)
     try {
       await cancelInvitation(activeOrganizationId, invitationId)
       toast.success('Invitation canceled successfully')
     } catch (error) {
       console.error('Failed to cancel invitation:', error)
       toast.error('Failed to cancel invitation')
+    } finally {
+      setCancelingInvitationId(null)
     }
   }
 
@@ -196,13 +215,13 @@ export function Members() {
           placeholder="Search members..."
           value={searchQuery}
           onChange={setSearchQuery}
-          className="max-w-sm"
+          className="flex-1 max-w-3xs"
         />
 
         <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
           <DialogTrigger asChild>
             <Button disabled={!canManageMembers}>
-              <Mail className="h-4 w-4 mr-2" />
+              <Mail />
               Invite Member
             </Button>
           </DialogTrigger>
@@ -211,22 +230,24 @@ export function Members() {
               <DialogTitle>Invite Organization Member</DialogTitle>
               <DialogDescription>Send an invitation to join your organization.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <Input
-                placeholder="Email address"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-              <div className="text-sm text-muted-foreground">
-                Invitations will be sent with Member role
-              </div>
-            </div>
+            <Input
+              placeholder="Email address"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+            />
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleCreateInvitation} disabled={!inviteEmail}>
-                Send Invitation
+              <Button onClick={handleCreateInvitation} disabled={!inviteEmail || isInviting}>
+                {isInviting ? (
+                  <>
+                    <CircleSpinner />
+                    Sending...
+                  </>
+                ) : (
+                  'Send Invitation'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -394,8 +415,9 @@ export function Members() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleCancelInvitation(invitation.id)}
+                            disabled={cancelingInvitationId === invitation.id}
                           >
-                            <X className="h-4 w-4" />
+                            {cancelingInvitationId === invitation.id ? <CircleSpinner /> : <X />}
                           </Button>
                         )}
                       </TableCell>
@@ -428,8 +450,16 @@ export function Members() {
             <AlertDialogAction
               onClick={handleRemoveMember}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isRemovingMember}
             >
-              Remove
+              {isRemovingMember ? (
+                <>
+                  <CircleSpinner />
+                  Removing...
+                </>
+              ) : (
+                'Remove'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -471,8 +501,15 @@ export function Members() {
             >
               Cancel
             </Button>
-            <Button onClick={handleUpdateMemberRole} disabled={!newRole}>
-              Update Role
+            <Button onClick={handleUpdateMemberRole} disabled={isUpdatingRole}>
+              {isUpdatingRole ? (
+                <>
+                  <CircleSpinner />
+                  Updating...
+                </>
+              ) : (
+                'Update Role'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
