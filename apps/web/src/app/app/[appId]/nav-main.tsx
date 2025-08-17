@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { FerrisWheel, Settings2, WandSparkles } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
@@ -22,6 +23,10 @@ const items = [
   },
 ]
 
-export function AppNavMain({ baseUrl }: { baseUrl: string }) {
-  return <NavMain items={items} baseUrl={baseUrl} />
+export function AppNavMain({ baseUrl, children }: { baseUrl: string; children?: ReactNode }) {
+  return (
+    <NavMain items={items} baseUrl={baseUrl}>
+      {children}
+    </NavMain>
+  )
 }

@@ -1,16 +1,14 @@
 import { getActiveOrganizationId } from '@/lib/active'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
-import { Members } from './members'
+import { Settings } from './settings'
 
 export default function Page({ params }: { params: Promise<{ organizationId: string }> }) {
-  return <HydrateMembers kind="members" params={params} />
+  return <HydrateSettings params={params} />
 }
 
-export async function HydrateMembers({
-  kind,
+export async function HydrateSettings({
   params,
 }: {
-  kind: 'members' | 'invitations'
   params: Promise<{ organizationId: string }>
 }) {
   const { activeOrganizationId } = await getActiveOrganizationId(params)
@@ -20,15 +18,10 @@ export async function HydrateMembers({
       organizationId: activeOrganizationId,
     }),
   )
-  prefetch(
-    trpc.organization.listInvitations.queryOptions({
-      organizationId: activeOrganizationId,
-    }),
-  )
 
   return (
     <HydrateClient>
-      <Members kind={kind} />
+      <Settings />
     </HydrateClient>
   )
 }

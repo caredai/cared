@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { useParams, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { BotIcon, FilterIcon, SearchIcon, TagIcon, XIcon } from 'lucide-react'
+import { BotIcon, FilterIcon, PlusIcon, SearchIcon, TagIcon, XIcon } from 'lucide-react'
 
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
@@ -29,6 +29,7 @@ import {
 import { Separator } from '@cared/ui/components/separator'
 
 import { RemoteImage } from '@/components/image'
+import { useApps } from '@/hooks/use-app'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 import defaultLogo from '@/public/images/agent.png'
 import { useTRPC } from '@/trpc/client'
@@ -45,23 +46,15 @@ export function Apps() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>(ALL_CATEGORIES)
 
-  // Get workspace apps list
-  const { data } = useSuspenseQuery(
-    trpc.app.list.queryOptions({
-      workspaceId,
-      limit: 100,
-    }),
-  )
+  const apps = useApps({
+    workspaceId,
+  })
 
   // Get all categories
-  const { data: categoriesData } = useSuspenseQuery(
-    trpc.app.listCategories.queryOptions({
-      limit: 100,
-    }),
-  )
+  const { data: categoriesData } = useSuspenseQuery(trpc.app.listCategories.queryOptions())
 
   // Search and filter functionality
-  const filteredApps = data.apps.filter((appData) => {
+  const filteredApps = apps.filter((appData) => {
     const matchesSearch =
       searchTerm === '' ||
       appData.app.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -82,7 +75,15 @@ export function Apps() {
           <h1 className="text-3xl font-bold tracking-tight truncate">Apps</h1>
           <p className="text-muted-foreground mt-2">Manage and deploy your AI agent applications</p>
         </div>
-        <CreateAppDialog workspaceId={workspaceId} />
+        <CreateAppDialog
+          workspaceId={workspaceId}
+          trigger={
+            <Button>
+              <PlusIcon />
+              New App
+            </Button>
+          }
+        />
       </div>
 
       {/* Search and filter section */}
@@ -131,13 +132,21 @@ export function Apps() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center p-8 text-center">
             <BotIcon className="h-12 w-12 text-muted-foreground mb-4" />
-            {data.apps.length === 0 ? (
+            {apps.length === 0 ? (
               <>
                 <h3 className="text-lg font-medium">No Apps</h3>
                 <p className="text-sm text-muted-foreground mt-2 mb-6">
                   You haven't created any apps yet. Click the button below to get started.
                 </p>
-                <CreateAppDialog workspaceId={workspaceId} />
+                <CreateAppDialog
+                  workspaceId={workspaceId}
+                  trigger={
+                    <Button>
+                      <PlusIcon />
+                      New App
+                    </Button>
+                  }
+                />
               </>
             ) : (
               <>

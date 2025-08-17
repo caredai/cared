@@ -32,6 +32,7 @@ import { Separator } from '@cared/ui/components/separator'
 
 import { CircleSpinner } from '@/components/spinner'
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/password-strength-indicator'
+import { useAuthRedirect } from '@/lib/auth-utils'
 
 // Reset password form schema with password strength validation
 const resetPasswordSchema = z
@@ -66,6 +67,7 @@ export function ResetPassword() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { createAuthUrl } = useAuthRedirect()
 
   const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
@@ -137,7 +139,7 @@ export function ResetPassword() {
               <Button
                 variant="outline"
                 className="w-full h-12 rounded-2xl transition-all duration-300"
-                onClick={() => router.push('/auth/forget-password')}
+                onClick={() => router.push('/auth/forgot-password')}
               >
                 Request New Reset
               </Button>
@@ -282,7 +284,7 @@ export function ResetPassword() {
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 Remember your password?{' '}
-                <Link href="/auth/sign-in" className="text-primary hover:underline font-medium">
+                <Link href={createAuthUrl('/auth/sign-in')} className="text-primary hover:underline font-medium">
                   Sign in
                 </Link>
               </p>

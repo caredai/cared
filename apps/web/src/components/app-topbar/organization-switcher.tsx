@@ -87,15 +87,17 @@ export function OrganizationAndAccountSwitcherInner({
           </>
         ) : (
           <>
-            <Boxes className="size-4 text-muted-foreground" />
-            <span className="truncate max-w-20">{activeOrganization.name}</span>
+            <Boxes className="text-muted-foreground/70" />
+            <span className={cn('truncate max-w-20 md:inline', activeWorkspace && 'hidden')}>
+              {activeOrganization.name}
+            </span>
           </>
         )}
       </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 px-2 has-[>svg]:px-2 text-sm font-medium">
+          <Button variant="ghost" className="h-8 px-1.5 has-[>svg]:px-1.5 text-sm font-medium">
             <ChevronsUpDown className="size-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -119,7 +121,7 @@ export function OrganizationAndAccountSwitcherInner({
               )}
             >
               <div className="flex size-6 items-center justify-center rounded-sm border">
-                <Boxes className="size-4 text-muted-foreground" />
+                <Boxes className="size-4 text-muted-foreground/70" />
               </div>
               <span className={cn('flex-1 truncate')}>{org.name}</span>
               {org.id === activeOrganization?.id && (

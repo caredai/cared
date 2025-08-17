@@ -1,10 +1,9 @@
 'use client'
 
-import type { Workspace } from '@/hooks/use-workspace'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Trash2, UserPlus } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -58,39 +57,58 @@ import {
 } from '@cared/ui/components/select'
 
 import { CircleSpinner } from '@/components/spinner'
+import { useActive } from '@/hooks/use-active'
+import { useMembers } from '@/hooks/use-members'
+import { useSession } from '@/hooks/use-session'
 import { useTRPC } from '@/trpc/client'
 
 /**
  * General settings component for workspace
  * Allows updating workspace name, transferring ownership, and deleting workspace
  */
-export function General({ workspace }: { workspace: Workspace }) {
+export function Settings() {
   const router = useRouter()
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
+  const { activeWorkspace, activeOrganization } = useActive()
+  const { user } = useSession()
+
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState<string>('')
-  const isOwner = workspace.role === 'owner'
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>('')
+
+  // Get organization members to check current user's role
+  const members = useMembers(activeOrganization?.id ?? '')
+  const currentUserMember = members.find((member) => member.userId === user.id)
+  const isOwner = currentUserMember?.role === 'owner'
 
   // Form for updating workspace name
   const form = useForm({
     resolver: zodResolver(updateWorkspaceSchema.omit({ id: true })),
     defaultValues: {
-      name: workspace.name,
+      name: activeWorkspace?.name ?? '',
     },
   })
+
+  // Update form values when activeWorkspace changes
+  useEffect(() => {
+    if (activeWorkspace?.name) {
+      form.reset({ name: activeWorkspace.name })
+    }
+  }, [activeWorkspace?.name, form])
 
   // Update workspace mutation
   const updateWorkspaceMutation = useMutation(
     trpc.workspace.update.mutationOptions({
       onSuccess: (data) => {
         form.reset({ name: data.workspace.name })
-        void queryClient.invalidateQueries(trpc.workspace.get.queryOptions({ id: workspace.id }))
+        void queryClient.invalidateQueries(
+          trpc.workspace.get.queryOptions({ id: activeWorkspace?.id ?? '' }),
+        )
         toast.success('Workspace name updated successfully')
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
         console.error('Failed to update workspace:', error)
         toast.error('Failed to update workspace name')
       },
@@ -105,7 +123,7 @@ export function General({ workspace }: { workspace: Workspace }) {
         toast.success('Workspace deleted successfully')
         router.push('/')
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
         setIsDeleteDialogOpen(false)
         console.error('Failed to delete workspace:', error)
         toast.error('Failed to delete workspace')
@@ -113,31 +131,30 @@ export function General({ workspace }: { workspace: Workspace }) {
     }),
   )
 
-  // Fetch workspace members
-  const { data: membersData } = useQuery({
-    ...trpc.workspace.listMembers.queryOptions({
-      workspaceId: workspace.id,
-    }),
-    enabled: isOwner && isTransferDialogOpen,
-  })
-
   // Transfer ownership mutation
   const transferOwnershipMutation = useMutation(
-    trpc.workspace.transferOwner.mutationOptions({
+    trpc.workspace.transferOwnership.mutationOptions({
       onSuccess: () => {
         setIsTransferDialogOpen(false)
-        setSelectedUserId('')
+        setSelectedOrganizationId('')
         toast.success('Workspace ownership transferred successfully')
 
-        // Refresh workspace data to update role
-        void queryClient.invalidateQueries(trpc.workspace.get.queryOptions({ id: workspace.id }))
+        // Refresh workspace data
+        void queryClient.invalidateQueries(
+          trpc.workspace.get.queryOptions({ id: activeWorkspace?.id ?? '' }),
+        )
       },
-      onError: (error) => {
+      onError: (error: unknown) => {
         console.error('Failed to transfer ownership:', error)
         toast.error('Failed to transfer workspace ownership')
       },
     }),
   )
+
+  // Early return if no active workspace
+  if (!activeWorkspace) {
+    return null
+  }
 
   return (
     <div className="space-y-6">
@@ -154,7 +171,7 @@ export function General({ workspace }: { workspace: Workspace }) {
             <form
               onSubmit={form.handleSubmit((data) => {
                 return updateWorkspaceMutation.mutateAsync({
-                  id: workspace.id,
+                  id: activeWorkspace.id,
                   name: data.name.trim(),
                 })
               })}
@@ -185,7 +202,7 @@ export function General({ workspace }: { workspace: Workspace }) {
                 disabled={
                   !isOwner ||
                   form.formState.isSubmitting ||
-                  form.watch('name').trim() === workspace.name
+                  form.watch('name').trim() === activeWorkspace.name
                 }
               >
                 {form.formState.isSubmitting ? (
@@ -212,13 +229,12 @@ export function General({ workspace }: { workspace: Workspace }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">Transfer Ownership</CardTitle>
           <CardDescription>
-            Transfer ownership of this workspace to another member. You will become a regular
-            member.
+            Transfer ownership of this workspace to another organization. This action cannot be undone.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Select a member to transfer ownership to. This action cannot be undone.
+            Select an organization to transfer ownership to. This action cannot be undone.
           </p>
           <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
             <DialogTrigger asChild>
@@ -231,27 +247,23 @@ export function General({ workspace }: { workspace: Workspace }) {
               <DialogHeader>
                 <DialogTitle>Transfer Workspace Ownership</DialogTitle>
                 <DialogDescription>
-                  Select a member to transfer ownership to. This action cannot be undone. You will
-                  become a regular member of the workspace.
+                  Select an organization to transfer ownership to. This action cannot be undone.
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4">
                 <Select
-                  value={selectedUserId}
-                  onValueChange={setSelectedUserId}
+                  value={selectedOrganizationId}
+                  onValueChange={setSelectedOrganizationId}
                   disabled={transferOwnershipMutation.isPending}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a member" />
+                    <SelectValue placeholder="Select an organization" />
                   </SelectTrigger>
                   <SelectContent>
-                    {membersData?.members
-                      .filter((member) => member.user.id !== workspace.id)
-                      .map((member) => (
-                        <SelectItem key={member.user.id} value={member.user.id}>
-                          {member.user.name} ({member.user.email})
-                        </SelectItem>
-                      ))}
+                    {/* Note: This would need to be populated with available organizations */}
+                    <SelectItem value="org_example" disabled>
+                      No other organizations available
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -265,14 +277,14 @@ export function General({ workspace }: { workspace: Workspace }) {
                 </Button>
                 <Button
                   onClick={() => {
-                    if (selectedUserId) {
+                    if (selectedOrganizationId) {
                       return transferOwnershipMutation.mutateAsync({
-                        workspaceId: workspace.id,
-                        userId: selectedUserId,
+                        workspaceId: activeWorkspace.id,
+                        organizationId: selectedOrganizationId,
                       })
                     }
                   }}
-                  disabled={!selectedUserId || transferOwnershipMutation.isPending}
+                  disabled={!selectedOrganizationId || transferOwnershipMutation.isPending}
                 >
                   {transferOwnershipMutation.isPending ? (
                     <>
@@ -328,7 +340,7 @@ export function General({ workspace }: { workspace: Workspace }) {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This action cannot be undone. This will permanently delete the workspace "
-                    {workspace.name}" and all associated data.
+                    {activeWorkspace.name}" and all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -338,7 +350,7 @@ export function General({ workspace }: { workspace: Workspace }) {
                   <AlertDialogAction
                     onClick={(e) => {
                       e.preventDefault()
-                      return deleteWorkspaceMutation.mutateAsync({ id: workspace.id })
+                      return deleteWorkspaceMutation.mutateAsync({ id: activeWorkspace.id })
                     }}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >

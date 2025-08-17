@@ -3,8 +3,9 @@ import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 import type { OrganizationRole } from '@cared/auth'
+import type { Invitation } from '@cared/db/schema'
 import { auth, headers } from '@cared/auth'
-import { Invitation, Member, Organization, User } from '@cared/db/schema'
+import { Member, Organization, User } from '@cared/db/schema'
 
 import { userProtectedProcedure } from '../trpc'
 
@@ -502,6 +503,56 @@ export const organizationRouter = {
         body: { organizationId: input.organizationId, memberId: input.memberId, role: input.role },
       })
       return { member }
+    }),
+
+  transferOwnership: userProtectedProcedure
+    .meta({
+      openapi: {
+        method: 'POST',
+        path: '/v1/organizations/{organizationId}/transfer-ownership',
+        protect: true,
+        tags: ['organization'],
+      },
+    })
+    .input(
+      z.object({
+        organizationId: z.string().min(1),
+        memberId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const previousOwnerMember = await ctx.db.query.Member.findFirst({
+        where: eq(Member.userId, ctx.auth.userId),
+      })
+      if (!previousOwnerMember) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You must be a member of the organization to transfer ownership',
+        })
+      }
+
+      // First, update the target member's role to owner
+      const newOwner = await auth.api.updateMemberRole({
+        body: {
+          organizationId: input.organizationId,
+          memberId: input.memberId,
+          role: 'owner',
+        },
+      })
+
+      // Then, update the current user's role to member
+      const previousOwner = await auth.api.updateMemberRole({
+        body: {
+          organizationId: input.organizationId,
+          memberId: previousOwnerMember.id,
+          role: 'member',
+        },
+      })
+
+      return {
+        newOwner,
+        previousOwner,
+      }
     }),
 
   leaveOrganization: userProtectedProcedure

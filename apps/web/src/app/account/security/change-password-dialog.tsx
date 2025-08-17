@@ -92,7 +92,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
    */
   const handleRedirectToForgotPassword = () => {
     onOpenChange(false)
-    router.push('/auth/forget-password')
+    router.push('/auth/forgot-password')
   }
 
   /**
@@ -152,7 +152,7 @@ export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialo
           <Alert>
             <LucideAlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Since you don't have a password set, you'll need to use the forgot password flow to set your first password. 
+              Since you don't have a password set, you'll need to use the forgot password flow to set your first password.
               This ensures your email is verified and your account is properly linked.
             </AlertDescription>
           </Alert>

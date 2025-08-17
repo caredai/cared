@@ -1,12 +1,17 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { SignInUp } from '@/components/sign-in-up'
-import { fetch, trpc } from '@/trpc/server'
+import { fetch, HydrateClient, trpc } from '@/trpc/server'
+
+export const metadata: Metadata = {
+  title: 'Sign in | Cared',
+}
 
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | undefined }>
+  searchParams: Promise<Record<string, string | undefined>>
 }) {
   const redirectToUrl = (await searchParams).redirectTo ?? '/'
 
@@ -19,5 +24,9 @@ export default async function Page({
     redirect(redirectToUrl)
   }
 
-  return <SignInUp mode="sign-in" />
+  return (
+    <HydrateClient>
+      <SignInUp mode="sign-in" />
+    </HydrateClient>
+  )
 }

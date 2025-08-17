@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
 
+import { useAllApps } from '@/hooks/use-app'
 import { useOrganizations } from '@/hooks/use-organization'
 import { useAllWorkspaces } from '@/hooks/use-workspace'
 import { addIdPrefix } from '@/lib/utils'
@@ -8,36 +9,30 @@ import { addIdPrefix } from '@/lib/utils'
 export function useActive() {
   const pathname = usePathname()
 
-  const activeWorkspace = useWorkspace(pathname)
-  const activeOrganization = useOrganization(pathname, activeWorkspace?.id)
+  const activeApp = useApp(pathname)
+  const activeWorkspace = useWorkspace(pathname, activeApp?.app.workspaceId)
+  const activeOrganization = useOrganization(pathname, activeWorkspace?.organizationId)
 
   return {
     activeOrganization,
     activeWorkspace,
+    activeApp,
   }
 }
 
 export function useActiveOrganization() {
-  const { activeOrganization } = useActive()
-  return {
-    activeOrganization: activeOrganization!,
-  }
+  const pathname = usePathname()
+  return useOrganization(pathname)
 }
 
 export function useActiveWorkspace() {
-  const { activeWorkspace } = useActive()
-  return {
-    activeWorkspace: activeWorkspace!,
-  }
+  const pathname = usePathname()
+  return useWorkspace(pathname)
 }
 
-function useWorkspace(pathname: string) {
-  const workspaces = useAllWorkspaces()
-
-  return useMemo(() => {
-    const id = getWorkspaceId(pathname)
-    return workspaces.find((w) => w.id === id)
-  }, [workspaces, pathname])
+export function useActiveApp() {
+  const pathname = usePathname()
+  return useApp(pathname)
 }
 
 function useOrganization(pathname: string, id?: string) {
@@ -50,6 +45,30 @@ function useOrganization(pathname: string, id?: string) {
     }
     return organizations.find((org) => org.id === orgId)
   }, [organizations, pathname, id])
+}
+
+function useWorkspace(pathname: string, id?: string) {
+  const workspaces = useAllWorkspaces()
+
+  return useMemo(() => {
+    const workspaceId = id ?? getWorkspaceId(pathname)
+    if (!workspaceId) {
+      return
+    }
+    return workspaces.find((w) => w.id === workspaceId)
+  }, [workspaces, pathname, id])
+}
+
+function useApp(pathname: string, id?: string) {
+  const apps = useAllApps()
+
+  return useMemo(() => {
+    const appId = id ?? getAppId(pathname)
+    if (!appId) {
+      return
+    }
+    return apps.find((a) => a.app.id === appId)
+  }, [apps, pathname, id])
 }
 
 export function useActiveOrganizationId() {
@@ -74,6 +93,17 @@ export function useActiveWorkspaceId() {
   )
 }
 
+export function useActiveAppId() {
+  const pathname = usePathname()
+  return useMemo(
+    () => ({
+      activeAppId: getAppId(pathname),
+      activeAppIdNoPrefix: getAppIdNoPrefix(pathname),
+    }),
+    [pathname],
+  )
+}
+
 function getOrganizationId(pathname: string) {
   const idNoPrefix = getOrganizationIdNoPrefix(pathname)
   return idNoPrefix ? addIdPrefix(idNoPrefix, 'org') : ''
@@ -91,5 +121,15 @@ function getWorkspaceId(pathname: string) {
 
 function getWorkspaceIdNoPrefix(pathname: string) {
   const matched = /\/workspace\/([^/]+)/.exec(pathname)
+  return matched?.length && matched[1] ? matched[1] : ''
+}
+
+function getAppId(pathname: string) {
+  const idNoPrefix = getAppIdNoPrefix(pathname)
+  return idNoPrefix ? addIdPrefix(idNoPrefix, 'app') : ''
+}
+
+function getAppIdNoPrefix(pathname: string) {
+  const matched = /\/app\/([^/]+)/.exec(pathname)
   return matched?.length && matched[1] ? matched[1] : ''
 }

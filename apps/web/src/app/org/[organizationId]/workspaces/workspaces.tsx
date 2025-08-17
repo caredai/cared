@@ -11,12 +11,13 @@ import { SectionTitle } from '@/components/section'
 import { useActiveOrganizationId } from '@/hooks/use-active'
 import { useApps } from '@/hooks/use-app'
 import { useWorkspaces } from '@/hooks/use-workspace'
+import { stripIdPrefix } from '@/lib/utils'
 
 export function Workspaces() {
   const { activeOrganizationId } = useActiveOrganizationId()
   const router = useRouter()
   const workspaces = useWorkspaces(activeOrganizationId)
-  const { apps } = useApps({
+  const apps = useApps({
     organizationId: activeOrganizationId,
   })
 
@@ -26,7 +27,7 @@ export function Workspaces() {
   }
 
   const handleWorkspaceClick = (workspaceId: string) => {
-    router.push(`/workspace/${workspaceId}/apps`)
+    router.push(`/workspace/${stripIdPrefix(workspaceId)}/apps`)
   }
 
   return (

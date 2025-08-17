@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
-import { SignInUp } from '@/components/sign-in-up'
+import { ForgotPassword } from '@/components/forgot-password'
 import { fetch, HydrateClient, trpc } from '@/trpc/server'
 
 export const metadata: Metadata = {
-  title: 'Sign up | Cared',
+  title: 'Forgot password | Cared',
 }
 
 export default async function Page({
@@ -23,9 +23,10 @@ export default async function Page({
   if (session) {
     redirect(redirectToUrl)
   }
+
   return (
     <HydrateClient>
-      <SignInUp mode="sign-up" />
+      <ForgotPassword />
     </HydrateClient>
   )
 }

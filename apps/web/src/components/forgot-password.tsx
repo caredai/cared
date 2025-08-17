@@ -31,6 +31,7 @@ import { Separator } from '@cared/ui/components/separator'
 
 import { EmailVerificationPrompt } from '@/components/email-verification-prompt'
 import { CircleSpinner } from '@/components/spinner'
+import { useAuthRedirect } from '@/lib/auth-utils'
 
 // Forgot password form schema
 const forgotPasswordSchema = z.object({
@@ -46,6 +47,7 @@ export function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const { createAuthUrl } = useAuthRedirect()
 
   const form = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -124,7 +126,7 @@ export function ForgotPassword() {
       <div className="w-full max-w-sm">
         <Card className="border-1 shadow-lg rounded-3xl gap-2">
           <CardHeader className="space-y-2 text-center pb-6">
-            <CardTitle className="text-2xl">🔑 Forgot Password</CardTitle>
+            <CardTitle className="text-2xl">🔑 Forgot password</CardTitle>
             <CardDescription className="text-lg">
               Enter your email to reset your password
             </CardDescription>
@@ -175,7 +177,10 @@ export function ForgotPassword() {
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 Remember your password?{' '}
-                <Link href="/auth/sign-in" className="text-primary hover:underline font-medium">
+                <Link
+                  href={createAuthUrl('/auth/sign-in')}
+                  className="text-primary hover:underline font-medium"
+                >
                   Sign in
                 </Link>
               </p>

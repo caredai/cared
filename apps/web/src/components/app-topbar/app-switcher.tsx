@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Box, ChevronsUpDown, Plus } from 'lucide-react'
+import { Bot, ChevronsUpDown, Plus } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
 import {
@@ -15,61 +15,60 @@ import {
 import { useIsMobile } from '@cared/ui/hooks/use-mobile'
 import { cn } from '@cared/ui/lib/utils'
 
-import { CreateWorkspaceDialog } from '@/components/create-workspace-dialog'
+// Import CreateAppDialog from the workspace apps directory
+import { CreateAppDialog } from '@/app/workspace/[workspaceId]/apps/create-app-dialog'
 import { useActive } from '@/hooks/use-active'
-import {
-  useLastWorkspace,
-  useReplaceRouteWithWorkspaceId,
-  useWorkspaces,
-} from '@/hooks/use-workspace'
+import { useApps, useReplaceRouteWithAppId } from '@/hooks/use-app'
 import { stripIdPrefix } from '@/lib/utils'
 
-export function WorkspaceSwitcher() {
+export function AppSwitcher() {
   const router = useRouter()
 
-  const { activeWorkspace, activeApp } = useActive()
-  const workspaces = useWorkspaces(activeWorkspace?.organizationId)
-  const [, setLastWorkspace] = useLastWorkspace()
-  const replaceRouteWithWorkspaceId = useReplaceRouteWithWorkspaceId()
+  const { activeApp, activeWorkspace } = useActive()
+  const apps = useApps({ workspaceId: activeWorkspace?.id })
+  const replaceRouteWithAppId = useReplaceRouteWithAppId()
 
   const isMobile = useIsMobile()
 
-  const handleWorkspaceSelect = (workspaceId: string) => {
-    setLastWorkspace(workspaceId)
-    router.push(replaceRouteWithWorkspaceId(workspaceId))
-  }
-
-  if (!activeWorkspace) {
+  // Only show app switcher when in app context
+  if (!activeApp) {
     return null
   }
 
-  const addWorkspaceMenuItem = (
+  const handleAppSelect = (appId: string) => {
+    router.push(replaceRouteWithAppId(appId))
+  }
+
+  const addAppMenuItem = (
     <DropdownMenuItem className="gap-2 p-2 cursor-pointer">
       <div className="flex size-6 items-center justify-center rounded-md border bg-background">
         <Plus className="size-4" />
       </div>
-      <div className="font-medium text-muted-foreground">Create workspace</div>
+      <div className="font-medium text-muted-foreground">Create app</div>
     </DropdownMenuItem>
   )
 
   return (
-    <CreateWorkspaceDialog
-      organizationId={activeWorkspace.organizationId}
+    <CreateAppDialog
+      workspaceId={activeWorkspace.id}
       menu={({ trigger }) => (
         <div className="flex items-center">
-          {/* Title button - displays current workspace name */}
+          {/* Title button - displays current app name if available, otherwise shows "Apps" */}
           <Button
             variant="ghost"
             className="h-8 gap-2 px-1 has-[>svg]:px-1 text-sm font-medium hover:bg-inherit hover:text-inherit"
             onClick={() => {
-              // Navigate to workspace page or stay in current workspace
-              router.push(`/workspace/${stripIdPrefix(activeWorkspace.id)}`)
+              if (activeApp) {
+                // Navigate to current app page
+                router.push(`/app/${stripIdPrefix(activeApp.app.id)}`)
+              } else {
+                // Navigate to apps list page
+                router.push(`/workspace/${stripIdPrefix(activeWorkspace.id)}/apps`)
+              }
             }}
           >
-            <Box className="text-muted-foreground/70" />
-            <span className={cn('truncate max-w-20 md:inline', activeApp && 'hidden')}>
-              {activeWorkspace.name}
-            </span>
+            <Bot className="text-muted-foreground/70" />
+            <span className="truncate max-w-20">{activeApp ? activeApp.app.name : 'Apps'}</span>
           </Button>
 
           {/* Dropdown menu button - only shows chevron icon */}
@@ -85,24 +84,22 @@ export function WorkspaceSwitcher() {
               side={isMobile ? 'bottom' : 'right'}
               sideOffset={4}
             >
-              <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Workspaces
-              </DropdownMenuLabel>
-              {workspaces.map((space) => (
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Apps</DropdownMenuLabel>
+              {apps.map((appData) => (
                 <DropdownMenuItem
-                  key={space.id}
-                  disabled={space.id === activeWorkspace.id}
-                  onClick={() => handleWorkspaceSelect(space.id)}
+                  key={appData.app.id}
+                  disabled={activeApp && appData.app.id === activeApp.app.id}
+                  onClick={() => handleAppSelect(appData.app.id)}
                   className={cn(
                     'max-w-56 gap-2 p-2',
-                    space.id !== activeWorkspace.id && 'cursor-pointer',
+                    (!activeApp || appData.app.id !== activeApp.app.id) && 'cursor-pointer',
                   )}
                 >
                   <div className="flex size-6 items-center justify-center rounded-sm border">
-                    <Box className="size-4 text-muted-foreground/70" />
+                    <Bot className="size-4 text-muted-foreground/70" />
                   </div>
-                  <span className={cn('flex-1 truncate')}>{space.name}</span>
-                  {space.id === activeWorkspace.id && (
+                  <span className={cn('flex-1 truncate')}>{appData.app.name}</span>
+                  {activeApp && appData.app.id === activeApp.app.id && (
                     <div className="ml-2 flex items-center">
                       <div className="size-2 rounded-full bg-primary" aria-hidden="true" />
                     </div>
@@ -110,7 +107,7 @@ export function WorkspaceSwitcher() {
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              {trigger({ children: addWorkspaceMenuItem })}
+              {trigger({ children: addAppMenuItem })}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

@@ -47,9 +47,15 @@ export const userRouter = {
         }
       }
 
-      return await auth.api.getSession({
+      const session = await auth.api.getSession({
         headers: await headers(),
       })
+
+      if (input.auth && !session) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' })
+      }
+
+      return session
     }),
 
   accounts: userProtectedProcedure

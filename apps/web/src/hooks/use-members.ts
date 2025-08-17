@@ -4,7 +4,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-q
 import { useTRPC } from '@/trpc/client'
 
 // Query hooks
-export function useMembers(organizationId: string) {
+export function useMembers(organizationId = '') {
   const trpc = useTRPC()
 
   const {

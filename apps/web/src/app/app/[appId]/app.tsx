@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import type { App as AppType } from '@cared/db/schema'
 
+import { SectionTitle } from '@/components/section'
 import { UploadLogo } from '@/components/upload-logo'
 import defaultLogo from '@/public/images/agent.png'
 import { useTRPC } from '@/trpc/client'
@@ -61,16 +62,20 @@ function UpdateAppLogo({ app }: { app: AppType }) {
   )
 
   return (
-    <div className="container mx-auto px-4 sm:px-0">
-      <UploadLogo
-        location={{
-          type: 'app',
-          appId: app.id,
-        }}
-        logoUrl={app.metadata.imageUrl}
-        onLogoUrlChange={onLogoUrlChange}
-        defaultLogo={defaultLogo}
-      />
-    </div>
+    <>
+      <SectionTitle title="Design" />
+
+      <div className="container mx-auto px-4 sm:px-0">
+        <UploadLogo
+          location={{
+            type: 'app',
+            appId: app.id,
+          }}
+          logoUrl={app.metadata.imageUrl}
+          onLogoUrlChange={onLogoUrlChange}
+          defaultLogo={defaultLogo}
+        />
+      </div>
+    </>
   )
 }

@@ -12,7 +12,7 @@ export default async function Page({
 
   return (
     <HydrateClient>
-      <Settings kind={kind} />
+      <Settings />
     </HydrateClient>
   )
 }

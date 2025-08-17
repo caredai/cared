@@ -1,10 +1,11 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { BotIcon, PlusIcon } from 'lucide-react'
+import { BotIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
@@ -54,11 +55,17 @@ const createAppSchema = z.object({
 
 type CreateAppFormValues = z.infer<typeof createAppSchema>
 
-interface CreateAppDialogProps {
+export function CreateAppDialog({
+  workspaceId,
+  menu,
+  trigger,
+  onSuccess,
+}: {
   workspaceId: string
-}
-
-export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
+  menu?: (props: { trigger: (props: { children: ReactNode }) => ReactNode }) => ReactNode
+  trigger?: ReactNode
+  onSuccess?: () => void
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const trpc = useTRPC()
@@ -155,14 +162,14 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
       onSuccess: (data) => {
         toast.success(`App "${data.app.name}" created successfully`)
         setOpen(false)
-        void queryClient.invalidateQueries(
-          trpc.app.list.queryOptions({
-            workspaceId,
-            limit: 100,
-          }),
-        )
-        // Navigate to the new app page
-        router.push(`/app/${stripIdPrefix(data.app.id)}`)
+        void queryClient.invalidateQueries(trpc.app.list.queryOptions())
+
+        // Call onSuccess callback if provided, otherwise navigate to the new app page
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push(`/app/${stripIdPrefix(data.app.id)}`)
+        }
       },
       onError: (error) => {
         console.error('Failed to create app:', error)
@@ -212,14 +219,14 @@ export function CreateAppDialog({ workspaceId }: CreateAppDialogProps) {
     })
   }
 
+  const Menu = menu
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusIcon className="h-4 w-4" />
-          New App
-        </Button>
-      </DialogTrigger>
+      {Menu && (
+        <Menu trigger={({ children }) => <DialogTrigger asChild>{children}</DialogTrigger>} />
+      )}
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Create New App</DialogTitle>

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useMemo, useState } from 'react'
 import { Crown, Mail, MoreHorizontal, Shield, User, X } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -69,7 +70,9 @@ import { useSession } from '@/hooks/use-session'
  * Members component for organization
  * Allows managing organization members (remove, update roles) and invitations
  */
-export function Members() {
+export function Members({ kind }: { kind: 'members' | 'invitations' }) {
+  const router = useRouter()
+
   const { user } = useSession()
 
   const { activeOrganizationId } = useActiveOrganizationId()
@@ -81,6 +84,11 @@ export function Members() {
   const updateMemberRole = useUpdateMemberRole()
   const createInvitation = useCreateInvitation()
   const cancelInvitation = useCancelInvitation()
+
+  const pendingInvitations = useMemo(
+    () => invitations.filter((inv) => inv.status === 'pending'),
+    [invitations],
+  )
 
   const [searchQuery, setSearchQuery] = useState('')
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
@@ -255,7 +263,16 @@ export function Members() {
       </div>
 
       {/* Tabs for members and invitations */}
-      <Tabs defaultValue="members" className="w-full">
+      <Tabs
+        value={kind}
+        onValueChange={(value) => {
+          if (value === 'members') {
+            router.push('../members')
+          } else {
+            router.push('./members/invitations')
+          }
+        }}
+        defaultValue="members" className="w-full">
         <div className="flex items-center justify-between pb-3">
           <TabsList>
             <TabsTrigger value="members">Members</TabsTrigger>
@@ -380,14 +397,14 @@ export function Members() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invitations.length === 0 ? (
+                {pendingInvitations.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-4">
                       No pending invitations found.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  invitations.map((invitation) => (
+                  pendingInvitations.map((invitation) => (
                     <TableRow key={invitation.id}>
                       <TableCell>{invitation.email}</TableCell>
                       <TableCell>

@@ -60,6 +60,7 @@ export default async function OrganizationLayout({
   }
 
   prefetch(trpc.user.session.queryOptions())
+  prefetch(trpc.app.list.queryOptions())
 
   return (
     <HydrateClient>

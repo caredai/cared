@@ -4,8 +4,9 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
+import { AppTopBar } from '@/components/app-topbar'
 import { ErrorFallback } from '@/components/error-fallback'
-import { WorkspaceEnterButton } from '@/components/workspace-enter-button'
+import { Section } from '@/components/section'
 import { addIdPrefix } from '@/lib/utils'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AppNavMain } from './nav-main'
@@ -23,6 +24,9 @@ export default async function Layout({
   const appId = addIdPrefix(appIdNoPrefix, 'app')
 
   prefetch(trpc.user.session.queryOptions())
+  prefetch(trpc.organization.list.queryOptions())
+  prefetch(trpc.workspace.list.queryOptions())
+  prefetch(trpc.app.list.queryOptions())
 
   const { app } = await fetch(
     trpc.app.byId.queryOptions({
@@ -31,26 +35,24 @@ export default async function Layout({
   )
 
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <SidebarProvider defaultOpen={false}>
-        <AppSidebar collapsible="icon" baseUrl="/">
-          <AppNavMain baseUrl={`/app/${appIdNoPrefix}`}>
-            <HydrateClient>
-              <WorkspaceEnterButton workspaceId={app.workspaceId} />
-            </HydrateClient>
-          </AppNavMain>
-        </AppSidebar>
+    <HydrateClient>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <SidebarProvider defaultOpen={false} className="flex flex-col">
+          <AppTopBar />
 
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
+          <div className="flex flex-1">
+            <AppSidebar collapsible="icon" baseUrl="/">
+              <AppNavMain baseUrl={`/app/${appIdNoPrefix}`} />
+            </AppSidebar>
+
+            <div className="flex-1 flex flex-col h-[calc(100svh-57px)] overflow-y-auto">
+              <SidebarInset>
+                <Section>{children}</Section>
+              </SidebarInset>
             </div>
-          </header>
-
-          <HydrateClient>{children}</HydrateClient>
-        </SidebarInset>
-      </SidebarProvider>
-    </ErrorBoundary>
+          </div>
+        </SidebarProvider>
+      </ErrorBoundary>
+    </HydrateClient>
   )
 }

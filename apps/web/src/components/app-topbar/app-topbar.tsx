@@ -7,6 +7,7 @@ import { Button } from '@cared/ui/components/button'
 import { useSidebar } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
+import { AppSwitcher } from './app-switcher'
 import { OrganizationAndAccountSwitcher } from './organization-switcher'
 import { TopBarActions } from './top-bar-actions'
 import { WorkspaceSwitcher } from './workspace-switcher'
@@ -17,7 +18,7 @@ export function AppTopBar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="mx-auto w-full h-14 px-4 flex">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 md:gap-4">
           <Link href="/" className="hidden md:inline">
             <Logo />
           </Link>
@@ -27,6 +28,9 @@ export function AppTopBar() {
 
           {/* Workspace Switcher - only show in workspace context */}
           <WorkspaceSwitcher />
+
+          {/* App Switcher - only show in workspace context */}
+          <AppSwitcher />
         </div>
 
         {/* Right side actions */}

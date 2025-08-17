@@ -33,7 +33,7 @@ const items = [
   },
   {
     title: 'Settings',
-    url: '/settings/general',
+    url: '/settings',
     icon: Settings2,
   },
 ]

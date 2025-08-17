@@ -1,7 +1,20 @@
-import { useMemo } from 'react'
-import { skipToken, useSuspenseQuery } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
+import { usePathname } from 'next/navigation'
+import { useSuspenseQuery } from '@tanstack/react-query'
 
+import { useWorkspaces } from '@/hooks/use-workspace'
+import { stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
+
+export function useAllApps() {
+  const trpc = useTRPC()
+
+  const {
+    data: { apps },
+  } = useSuspenseQuery(trpc.app.list.queryOptions())
+
+  return apps
+}
 
 export function useApps({
   organizationId,
@@ -10,24 +23,19 @@ export function useApps({
   organizationId?: string
   workspaceId?: string
 }) {
-  const trpc = useTRPC()
+  const apps = useAllApps()
+  const workspacesByOrg = useWorkspaces(organizationId)
 
-  const {
-    data: { apps },
-  } = useSuspenseQuery(
-    trpc.app.list.queryOptions(
-      organizationId || workspaceId
-        ? {
-            organizationId,
-            workspaceId,
-          }
-        : skipToken,
-    ),
-  )
-
-  return {
-    apps,
-  }
+  return useMemo(() => {
+    if (organizationId) {
+      const workspaces = new Set(workspacesByOrg.map((w) => w.id))
+      return apps.filter((app) => workspaces.has(app.app.workspaceId))
+    } else if (workspaceId) {
+      return apps.filter((app) => app.app.workspaceId === workspaceId)
+    } else {
+      return []
+    }
+  }, [organizationId, workspaceId, apps, workspacesByOrg])
 }
 
 export function useAppsByCategories({
@@ -37,27 +45,25 @@ export function useAppsByCategories({
   workspaceId: string
   categories: Set<string>
 }) {
-  const { apps } = useApps({ workspaceId })
+  const apps = useApps({ workspaceId })
 
-  const appsByCategories = useMemo(
+  return useMemo(
     () => apps.filter((app) => app.categories.some((c) => categories.has(c.id))),
     [apps, categories],
   )
-
-  return {
-    appsByCategories,
-  }
 }
 
 export function useAppsByTags({ workspaceId, tags }: { workspaceId: string; tags: Set<string> }) {
-  const { apps } = useApps({ workspaceId })
+  const apps = useApps({ workspaceId })
 
-  const appsByTags = useMemo(
-    () => apps.filter((app) => app.tags.some((t) => tags.has(t))),
-    [apps, tags],
-  )
+  return useMemo(() => apps.filter((app) => app.tags.some((t) => tags.has(t))), [apps, tags])
+}
 
-  return {
-    appsByTags,
-  }
+export function replaceRouteWithAppId(route: string, id: string) {
+  return route.replace(/^\/app\/[^/]+/, `/app/${stripIdPrefix(id)}`)
+}
+
+export function useReplaceRouteWithAppId() {
+  const pathname = usePathname()
+  return useCallback((id: string) => replaceRouteWithAppId(pathname, id), [pathname])
 }

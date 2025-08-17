@@ -40,6 +40,7 @@ import { CircleSpinner } from '@/components/spinner'
 import { useSessionPublic } from '@/hooks/use-session'
 import { allowedProviders } from '@/lib/auth-providers'
 import { BETTER_AUTH_ERROR_MESSAGES } from '@/lib/error'
+import { useAuthRedirect } from '@/lib/auth-utils'
 
 // Sign-up form schema with password strength validation
 const signUpSchema = z.object({
@@ -82,9 +83,7 @@ export function SignInUp({ mode }: SignInUpProps) {
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
 
   const { user } = useSessionPublic()
-
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  const getRedirectTo = new URLSearchParams(globalThis.location?.search).get('redirectTo') ?? '/'
+  const { redirectTo, createAuthUrl } = useAuthRedirect()
 
   // Initialize form based on mode
   const signUpForm = useForm<SignUpFormData>({
@@ -107,7 +106,7 @@ export function SignInUp({ mode }: SignInUpProps) {
   const form = mode === 'sign-up' ? signUpForm : signInForm
 
   if (user) {
-    window.location.href = getRedirectTo
+    window.location.href = redirectTo
   }
 
   /**
@@ -120,7 +119,7 @@ export function SignInUp({ mode }: SignInUpProps) {
     setIsLoading(provider)
     const { error } = await authClient.signIn.social({
       provider,
-      callbackURL: getRedirectTo,
+      callbackURL: redirectTo,
     })
     if (error) {
       toast.error(error.message ?? error.statusText)
@@ -140,7 +139,7 @@ export function SignInUp({ mode }: SignInUpProps) {
         name: generateFromEmail(data.email, { stripLeadingDigits: true }),
         email: data.email,
         password: data.password,
-        callbackURL: getRedirectTo,
+        callbackURL: redirectTo,
       })
       setIsLoading(undefined)
       if (error) {
@@ -148,7 +147,7 @@ export function SignInUp({ mode }: SignInUpProps) {
         if (error.message?.includes(BETTER_AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS)) {
           toast.error('User already exists. Please sign in instead.')
           // Switch to sign-in mode by redirecting
-          window.location.href = '/auth/sign-in'
+          window.location.href = createAuthUrl('/auth/sign-in')
         } else {
           toast.error(error.message ?? error.statusText)
         }
@@ -161,7 +160,7 @@ export function SignInUp({ mode }: SignInUpProps) {
         email: data.email,
         password: data.password,
         rememberMe: true,
-        callbackURL: getRedirectTo,
+        callbackURL: redirectTo,
       })
       setIsLoading(undefined)
       if (error) {
@@ -183,7 +182,7 @@ export function SignInUp({ mode }: SignInUpProps) {
     try {
       const { error } = await authClient.sendVerificationEmail({
         email: unverifiedEmail,
-        callbackURL: getRedirectTo,
+        callbackURL: redirectTo,
       })
 
       if (error) {
@@ -200,10 +199,10 @@ export function SignInUp({ mode }: SignInUpProps) {
   }
 
   const isSignUp = mode === 'sign-up'
-  const title = isSignUp ? '🎉 Sign up to Cared' : '🎉 Sign in to Cared'
+  const title = isSignUp ? '🎉 Create your account' : '🎉 Sign in to Cared'
   const description = isSignUp
-    ? 'Get started with your account today'
-    : 'Welcome back! Please sign in to continue'
+    ? 'Welcome! Please fill in the details to get started.'
+    : 'Welcome! Please sign in to continue.'
   const submitButtonText = isSignUp ? 'Create Account' : 'Sign in with Email'
   const loadingText = isSignUp ? 'Creating account...' : 'Signing in...'
 
@@ -299,7 +298,7 @@ export function SignInUp({ mode }: SignInUpProps) {
                         {!isSignUp && (
                           <div className="text-right">
                             <Link
-                              href="/auth/forget-password"
+                              href={createAuthUrl('/auth/forgot-password')}
                               className="text-sm text-primary hover:underline"
                             >
                               Forgot password?
@@ -349,7 +348,7 @@ export function SignInUp({ mode }: SignInUpProps) {
               <p className="text-sm text-muted-foreground">
                 {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
                 <Link
-                  href={isSignUp ? '/auth/sign-in' : '/auth/sign-up'}
+                  href={isSignUp ? createAuthUrl('/auth/sign-in') : createAuthUrl('/auth/sign-up')}
                   className="text-primary hover:underline font-medium"
                 >
                   {isSignUp ? 'Sign in' : 'Sign up'}

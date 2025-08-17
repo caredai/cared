@@ -55,6 +55,7 @@ export function useSession() {
   const refetchSession = useRefetchSession()
 
   const { data } = useSuspenseQuery(trpc.user.session.queryOptions())
+  // Since this query throws an error when the return value is null, using non-null assertion is safe here
   return {
     session: data!.session,
     user: data!.user,

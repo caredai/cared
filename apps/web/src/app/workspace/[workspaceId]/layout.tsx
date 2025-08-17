@@ -2,15 +2,16 @@ import type { ReactNode } from 'react'
 import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/components/sidebar'
+import { SidebarInset, SidebarProvider } from '@cared/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
+import { AppTopBar } from '@/components/app-topbar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { RememberWorkspace } from '@/components/remember-workspace'
-import { WorkspaceSwitcher } from '@/components/workspace-switcher'
+import { Section } from '@/components/section'
 import { addIdPrefix } from '@/lib/utils'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
-import { WorkspaceMenuBreadcrumb, WorkspaceNavMain } from './nav-main'
+import { WorkspaceNavMain } from './nav-main'
 
 export default async function WorkspaceLayout({
   children,
@@ -23,7 +24,7 @@ export default async function WorkspaceLayout({
   const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
 
   prefetch(trpc.user.session.queryOptions())
-  prefetch(trpc.user.accounts.queryOptions())
+
   const { workspaces } = await fetch(trpc.workspace.list.queryOptions())
 
   const workspace = workspaces.find((w) => w.id === workspaceId)
@@ -32,32 +33,32 @@ export default async function WorkspaceLayout({
     return null
   }
 
-  const organizationId = workspace.organizationId
+  prefetch(trpc.organization.list.queryOptions())
+  prefetch(trpc.app.list.queryOptions())
 
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback}>
-      {/*<Suspense fallback={<Loading />}>*/}
-      <SidebarProvider>
-        <AppSidebar baseUrl={`/workspace/${workspaceIdNoPrefix}/apps`}>
-          <WorkspaceNavMain baseUrl={`/workspace/${workspaceIdNoPrefix}`}>
-            <HydrateClient>
-              <WorkspaceSwitcher organizationId={organizationId} />
-            </HydrateClient>
-          </WorkspaceNavMain>
-        </AppSidebar>
+    <HydrateClient>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        {/*<Suspense fallback={<Loading />}>*/}
+        <SidebarProvider className="flex flex-col">
+          <AppTopBar />
 
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <WorkspaceMenuBreadcrumb baseUrl={`/workspace/${workspaceIdNoPrefix}`} />
+          <div className="flex flex-1">
+            <AppSidebar baseUrl={`/workspace/${workspaceIdNoPrefix}/apps`}>
+              <WorkspaceNavMain baseUrl={`/workspace/${workspaceIdNoPrefix}`} />
+            </AppSidebar>
+
+            <div className="flex-1 flex flex-col h-[calc(100svh-57px)] overflow-y-auto">
+              <SidebarInset>
+                <Section>{children}</Section>
+
+                <RememberWorkspace id={workspaceId} />
+              </SidebarInset>
             </div>
-          </header>
-          <RememberWorkspace id={workspaceId} />
-          {children}
-        </SidebarInset>
-      </SidebarProvider>
-      {/*</Suspense>*/}
-    </ErrorBoundary>
+          </div>
+        </SidebarProvider>
+        {/*</Suspense>*/}
+      </ErrorBoundary>
+    </HydrateClient>
   )
 }

@@ -4,7 +4,6 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
 import type { AppMetadata } from '@cared/db/schema'
-import { orgRoles } from '@cared/auth'
 import { and, asc, count, desc, eq, gt, inArray, lt, sql } from '@cared/db'
 import {
   Agent,
@@ -17,6 +16,7 @@ import {
   CreateAgentVersionSchema,
   CreateAppSchema,
   DRAFT_VERSION,
+  Member,
   Tag,
   UpdateAppSchema,
   Workspace,
@@ -112,6 +112,15 @@ export async function getApps(
   const first = apps[0]?.id
   const last = apps[apps.length - 1]?.id
 
+  return {
+    apps: await getAppsCategoriesAndTags(ctx, apps),
+    hasMore,
+    first,
+    last,
+  }
+}
+
+async function getAppsCategoriesAndTags(ctx: BaseContext, apps: App[]) {
   // Get categories for each app
   const categories = await ctx.db
     .select({
@@ -169,12 +178,7 @@ export async function getApps(
     appsMap.get(appId)?.tags.push(tag.name)
   })
 
-  return {
-    apps: Array.from(appsMap.values()),
-    hasMore,
-    first,
-    last,
-  }
+  return Array.from(appsMap.values())
 }
 
 /**
@@ -241,49 +245,69 @@ export const appRouter = {
           workspaceId: z.string().min(32).optional(),
           order: z.enum(['desc', 'asc']).default('desc'),
         })
-        .refine(
-          (data) => {
-            const hasOrganizationId = !!data.organizationId
-            const hasWorkspaceId = !!data.workspaceId
-            return (hasOrganizationId && !hasWorkspaceId) || (!hasOrganizationId && hasWorkspaceId)
-          },
-          {
-            message: "Either 'organizationId' or 'workspaceId' must be provided, but not both",
-            path: ['organizationId', 'workspaceId'],
-          },
-        ),
+        .refine((data) => !(data.organizationId && data.workspaceId), {
+          message: "Cannot provide both 'organizationId' and 'workspaceId' at the same time",
+          path: ['organizationId', 'workspaceId'],
+        })
+        .default({
+          order: 'desc',
+        }),
     )
     .query(async ({ ctx, input }) => {
-      let scope
-      let whereCondition
-
+      let appsWithCategoriesAndTags: Awaited<ReturnType<typeof getAppsCategoriesAndTags>>
       if (input.workspaceId) {
-        scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
-        whereCondition = eq(App.workspaceId, input.workspaceId)
+        const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
+        await scope.checkPermissions()
+
+        const { apps } = await getApps(ctx, {
+          where: eq(App.workspaceId, input.workspaceId),
+          order: input.order,
+        })
+        appsWithCategoriesAndTags = apps
       } else if (input.organizationId) {
-        scope = OrganizationScope.fromOrganization(ctx, input.organizationId)
+        const scope = OrganizationScope.fromOrganization(ctx, input.organizationId)
+        await scope.checkPermissions()
+
         // When organizationId is provided, we need to find apps in workspaces belonging to that organization
-        whereCondition = inArray(
-          App.workspaceId,
-          ctx.db
-            .select({ id: Workspace.id })
-            .from(Workspace)
-            .where(eq(Workspace.organizationId, input.organizationId)),
+        const apps = await ctx.db
+          .select({
+            app: App,
+          })
+          .from(App)
+          .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
+          .where(eq(Workspace.organizationId, input.organizationId))
+          .orderBy(input.order === 'desc' ? desc(App.id) : asc(App.id))
+
+        appsWithCategoriesAndTags = await getAppsCategoriesAndTags(
+          ctx,
+          apps.map(({ app }) => app),
         )
       } else {
-        // This should never happen due to refine validation, but TypeScript requires it
-        throw new Error('Either workspaceId or organizationId must be provided')
+        const auth = ctx.auth.auth
+        if (auth?.type !== 'user') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+          })
+        }
+
+        const apps = await ctx.db
+          .select({
+            app: App,
+          })
+          .from(App)
+          .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
+          .innerJoin(Member, eq(Member.organizationId, Workspace.organizationId))
+          .where(eq(Member.userId, auth.userId))
+          .orderBy(input.order === 'desc' ? desc(App.id) : asc(App.id))
+
+        appsWithCategoriesAndTags = await getAppsCategoriesAndTags(
+          ctx,
+          apps.map(({ app }) => app),
+        )
       }
 
-      await scope.checkPermissions()
-
-      const result = await getApps(ctx, {
-        where: whereCondition,
-        order: input.order,
-      })
-
       return {
-        apps: result.apps,
+        apps: appsWithCategoriesAndTags,
       }
     }),
 
