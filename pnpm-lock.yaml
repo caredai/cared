@@ -215,6 +215,9 @@ importers:
       unique-username-generator:
         specifier: ^1.5.1
         version: 1.5.1
+      virtua:
+        specifier: ^0.40.3
+        version: 0.40.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       zod:
         specifier: 3.25.51
         version: 3.25.51

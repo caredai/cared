@@ -15,7 +15,9 @@ class WorkflowClient extends Client {
   }
 }
 
-export const client = new WorkflowClient({})
+export function getWorkflowClient() {
+  return new WorkflowClient({})
+}
 
 let tasksApiRoutePath: string | undefined
 

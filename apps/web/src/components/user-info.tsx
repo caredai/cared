@@ -17,7 +17,7 @@ export function UserInfo({
   return (
     <>
       <Avatar className="h-8 w-8 rounded-lg">
-        <AvatarImage src={user.image} alt={user.name} />
+        <AvatarImage src={user.image ?? undefined} alt={user.name} />
         <AvatarFallback>
           <UserIcon className="size-4" />
         </AvatarFallback>

@@ -219,45 +219,56 @@ export interface ProviderSettings {
 
 export type ProviderKey = z.infer<typeof providerKeySchema>
 
+export const googleServiceAccountSchema = z.object({
+  project_id: z.string(),
+  client_email: z.string(),
+  private_key: z.string(),
+  private_key_id: z.string(),
+})
+
 export const providerKeySchema = z
   .object({
-    apiKey: z.string(), // encrypted in db
-    baseUrl: z.string().optional(),
+    baseUrl: z.url().optional(),
   })
   .and(
     z.discriminatedUnion('providerId', [
       z.object({
         providerId: providerIdSchema.exclude(['azure', 'bedrock', 'vertex', 'replicate']),
+        apiKey: z.string().min(1), // encrypted in db
       }),
 
       z.object({
         providerId: z.literal('azure'),
-        baseUrl: z.string(),
-        apiVersion: z.string().optional(),
+        apiKey: z.string().min(1), // encrypted in db
+        baseUrl: z.url(),
+        apiVersion: z.string().min(1).optional(),
       }),
 
       z.object({
         providerId: z.literal('bedrock'),
-        apiKey: z.never(),
-        region: z.string(),
-        accessKeyId: z.string(), // encrypted in db
-        secretAccessKey: z.string(), // encrypted in db
+        region: z.string().min(1),
+        accessKeyId: z.string().min(1), // encrypted in db
+        secretAccessKey: z.string().min(1), // encrypted in db
       }),
 
       z.object({
         providerId: z.literal('vertex'),
-        apiKey: z.never(),
-        project: z.string().optional(),
-        location: z.string().optional(),
-        clientEmail: z.string(), // encrypted in db
-        privateKey: z.string(), // encrypted in db
-        privateKeyId: z.string().optional(), // encrypted in db
+        location: z.string().min(1).optional(),
+        serviceAccountJson: z.string().refine(
+          (json) => {
+            const serviceAccount = JSON.parse(json)
+            const result = googleServiceAccountSchema.safeParse(serviceAccount)
+            return result.success
+          },
+          {
+            message: 'Invalid service account JSON format',
+          },
+        ), // encrypted in db
       }),
 
       z.object({
         providerId: z.literal('replicate'),
-        apiKey: z.never(),
-        apiToken: z.string(), // encrypted in db
+        apiToken: z.string().min(1), // encrypted in db
       }),
     ]),
   )

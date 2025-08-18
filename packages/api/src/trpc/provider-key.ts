@@ -3,87 +3,16 @@ import { z } from 'zod/v4'
 
 import type { OrganizationStatementsSubset } from '@cared/auth'
 import type { SQL } from '@cared/db'
-import type { ProviderKey as ProviderKeyContent } from '@cared/providers'
-import { and, eq } from '@cared/db'
+import { and, desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ProviderKey } from '@cared/db/schema'
 import { providerIdSchema, providerKeySchema } from '@cared/providers'
-import { decrypt as decrypt_, encrypt as encrypt_ } from '@cared/shared'
 
 import type { UserOrAppUserContext } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { env } from '../env'
 import { userOrAppUserProtectedProcedure } from '../trpc'
-
-async function encrypt(key: string) {
-  return await encrypt_(env.ENCRYPTION_KEY, key)
-}
-
-async function decrypt(encryptedKey: string) {
-  return await decrypt_(env.ENCRYPTION_KEY, encryptedKey)
-}
-
-async function decryptToStart(encryptedKey: string) {
-  return (await decrypt(encryptedKey)).slice(0, 4)
-}
-
-async function encryptProviderKey(key: ProviderKeyContent): Promise<ProviderKeyContent> {
-  const k = { ...key }
-
-  switch (k.providerId) {
-    case 'azure':
-      k.apiKey = await encrypt(k.apiKey)
-      break
-    case 'bedrock':
-      k.accessKeyId = await encrypt(k.accessKeyId)
-      k.secretAccessKey = await encrypt(k.secretAccessKey)
-      break
-    case 'vertex':
-      k.clientEmail = await encrypt(k.clientEmail)
-      k.privateKey = await encrypt(k.privateKey)
-      if (k.privateKeyId) {
-        k.privateKeyId = await encrypt(k.privateKeyId)
-      }
-      break
-    case 'replicate':
-      k.apiToken = await encrypt(k.apiToken)
-      break
-    default:
-      k.apiKey = await encrypt(k.apiKey)
-      break
-  }
-
-  return k
-}
-
-async function decryptProviderKey(key: ProviderKeyContent): Promise<ProviderKeyContent> {
-  const k = { ...key }
-
-  switch (k.providerId) {
-    case 'azure':
-      k.apiKey = await decryptToStart(k.apiKey)
-      break
-    case 'bedrock':
-      k.accessKeyId = await decryptToStart(k.accessKeyId)
-      k.secretAccessKey = await decryptToStart(k.secretAccessKey)
-      break
-    case 'vertex':
-      k.clientEmail = await decryptToStart(k.clientEmail)
-      k.privateKey = await decryptToStart(k.privateKey)
-      if (k.privateKeyId) {
-        k.privateKeyId = await decryptToStart(k.privateKeyId)
-      }
-      break
-    case 'replicate':
-      k.apiToken = await decryptToStart(k.apiToken)
-      break
-    default:
-      k.apiKey = await decryptToStart(k.apiKey)
-      break
-  }
-
-  return k
-}
+import { decryptProviderKey, encryptProviderKey } from '../types'
 
 export const providerKeyRouter = {
   // List provider keys with optional filtering by user or organization
@@ -99,11 +28,13 @@ export const providerKeyRouter = {
       },
     })
     .input(
-      z.object({
-        isSystem: z.boolean().optional(),
-        organizationId: z.string().optional(),
-        providerId: providerIdSchema.optional(),
-      }),
+      z
+        .object({
+          isSystem: z.boolean().optional(),
+          organizationId: z.string().optional(),
+          providerId: providerIdSchema.optional(),
+        })
+        .default({}),
     )
     .query(async ({ input, ctx }) => {
       const { isSystem, organizationId, providerId } = input
@@ -134,6 +65,7 @@ export const providerKeyRouter = {
 
       const keys = await db.query.ProviderKey.findMany({
         where: and(...conditions),
+        orderBy: desc(ProviderKey.id),
       })
 
       // Decrypt sensitive fields
@@ -144,7 +76,9 @@ export const providerKeyRouter = {
         })),
       )
 
-      return decryptedKeys
+      return {
+        providerKeys: decryptedKeys,
+      }
     }),
 
   // Create a new provider key
@@ -163,13 +97,12 @@ export const providerKeyRouter = {
       z.object({
         isSystem: z.boolean().optional(),
         organizationId: z.string().optional(),
-        providerId: providerIdSchema,
         key: providerKeySchema, // Use the imported schema instead of manual validation
         disabled: z.boolean().default(false),
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      const { isSystem, organizationId, providerId, key, disabled } = input
+      const { isSystem, organizationId, key, disabled } = input
 
       if (
         !(await checkPermissions(
@@ -197,7 +130,7 @@ export const providerKeyRouter = {
           isSystem,
           userId: !isSystem && !organizationId ? ctx.auth.userId : undefined,
           organizationId: !isSystem ? organizationId : undefined,
-          providerId,
+          providerId: key.providerId,
           key: encryptedKey,
           disabled,
         })
@@ -215,7 +148,9 @@ export const providerKeyRouter = {
         key: await decryptProviderKey(newKey.key),
       }
 
-      return decryptedKey
+      return {
+        providerKey: decryptedKey,
+      }
     }),
 
   // Update an existing provider key
@@ -293,7 +228,9 @@ export const providerKeyRouter = {
         key: await decryptProviderKey(updatedKey.key),
       }
 
-      return decryptedKey
+      return {
+        providerKey: decryptedKey,
+      }
     }),
 
   // Delete a provider key
@@ -346,6 +283,16 @@ export const providerKeyRouter = {
 
       // Delete the provider key
       await db.delete(ProviderKey).where(eq(ProviderKey.id, id))
+
+      // Decrypt the key for response
+      const decryptedKey = {
+        ...existingKey,
+        key: await decryptProviderKey(existingKey.key),
+      }
+
+      return {
+        providerKey: decryptedKey,
+      }
     }),
 }
 

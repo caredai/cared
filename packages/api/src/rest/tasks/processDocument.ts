@@ -13,7 +13,7 @@ import { embedMany } from '@cared/providers/embed'
 import { getModel } from '@cared/providers/providers'
 import { QdrantVector } from '@cared/vdb'
 
-import { client } from './client'
+import { getWorkflowClient } from './client'
 
 // Maximum length for a text segment (32K)
 const MAX_SEGMENT_LENGTH = 32768
@@ -262,7 +262,7 @@ export async function trigger(document: Document) {
     return
   }
 
-  const { workflowRunId } = await client.trigger({
+  const { workflowRunId } = await getWorkflowClient().trigger({
     url: name,
     body: document.id,
   })

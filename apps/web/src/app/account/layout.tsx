@@ -23,6 +23,7 @@ export default async function Layout({
 
   prefetch(trpc.organization.list.queryOptions())
   prefetch(trpc.workspace.list.queryOptions())
+  prefetch(trpc.app.list.queryOptions())
 
   return (
     <HydrateClient>

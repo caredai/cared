@@ -3,9 +3,10 @@
 import { useCallback, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useSuspenseQuery } from '@tanstack/react-query'
-import { CheckIcon, ChevronDown, ChevronUp, CopyIcon, Server } from 'lucide-react'
+import { CheckIcon, ChevronDown, ChevronUp, CopyIcon, Server, Settings } from 'lucide-react'
 import { useCopyToClipboard } from 'react-use'
 
+import type { ProviderId } from '@cared/providers'
 import { splitModelFullId } from '@cared/providers'
 import { Button } from '@cared/ui/components/button'
 import {
@@ -22,6 +23,7 @@ import {
 } from '@cared/ui/components/collapsible'
 
 import { useTRPC } from '@/trpc/client'
+import { ProviderKeysSheet } from './provider-keys-sheet'
 
 // Model type definition
 type ModelType = 'language' | 'textEmbedding' | 'image'
@@ -46,12 +48,28 @@ export function Models() {
   // Track expanded state for each provider
   const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({})
 
+  // Track provider keys sheet state
+  const [providerKeysSheetOpen, setProviderKeysSheetOpen] = useState(false)
+  const [selectedProviderId, setSelectedProviderId] = useState<ProviderId>()
+
   // Toggle provider expanded state
   const toggleProvider = (providerId: string) => {
     setExpandedProviders((prev) => ({
       ...prev,
       [providerId]: !prev[providerId],
     }))
+  }
+
+  // Handle opening provider keys sheet
+  const handleOpenProviderKeys = (providerId: ProviderId) => {
+    setSelectedProviderId(providerId)
+    setProviderKeysSheetOpen(true)
+  }
+
+  // Handle closing provider keys sheet
+  const handleCloseProviderKeys = () => {
+    setProviderKeysSheetOpen(false)
+    setSelectedProviderId(undefined)
   }
 
   // Get models of a specific type for a provider
@@ -78,7 +96,18 @@ export function Models() {
             open={expandedProviders[provider.id]}
             onOpenChange={() => toggleProvider(provider.id)}
           >
-            <Card>
+            <Card className="relative">
+              {/* Settings button positioned at top-right */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 h-8 w-8"
+                onClick={() => handleOpenProviderKeys(provider.id)}
+                title="Manage Provider Keys"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+
               <CardHeader>
                 <CardTitle className="flex items-center gap-4">
                   <div className="relative h-10 w-10 overflow-hidden rounded-sm flex items-center">
@@ -180,6 +209,16 @@ export function Models() {
           </Card>
         )}
       </div>
+
+      <ProviderKeysSheet
+        provider={
+          selectedProviderId
+            ? providersData.providers.find((p) => p.id === selectedProviderId)
+            : undefined
+        }
+        open={providerKeysSheetOpen}
+        onOpenChange={handleCloseProviderKeys}
+      />
     </div>
   )
 }
