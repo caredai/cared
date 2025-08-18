@@ -25,7 +25,7 @@ export interface UploadLogoProps {
   /**
    * Upload location
    */
-  location: s3Upload.StorageLocation
+  location: s3Upload.S3LocationRequest
   /**
    * Current logo URL
    */

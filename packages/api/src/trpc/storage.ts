@@ -22,8 +22,8 @@ import { zfd } from 'zod-form-data'
 import { log } from '@cared/log'
 
 import type { AppContext, BaseContext } from '../trpc'
+import { s3Client } from '../client/s3'
 import { env } from '../env'
-import { getClient } from '../rest/s3-upload/client'
 import { appProtectedProcedure } from '../trpc'
 
 function getKeyPrefixByApp(ctx: AppContext) {
@@ -149,8 +149,6 @@ export const storageRouter = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const s3 = getClient()
-
       const command = new ListObjectsV2Command({
         Bucket: env.S3_BUCKET,
         Prefix: getKeyByApp(ctx, input?.prefix),
@@ -159,7 +157,7 @@ export const storageRouter = {
         MaxKeys: input?.limit,
         StartAfter: input?.startAfter,
       })
-      const response = await s3.send(command)
+      const response = await s3Client.send(command)
       return {
         truncated: response.IsTruncated ?? false,
         cursor: response.NextContinuationToken,
@@ -191,15 +189,13 @@ export const storageRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const s3 = getClient()
-
       try {
         const command = new HeadObjectCommand({
           Bucket: env.S3_BUCKET,
           Key: getKeyByApp(ctx, input.key),
           ...getQueryHeaders(ctx),
         })
-        const response = await s3.send(command)
+        const response = await s3Client.send(command)
 
         setResponseHeaders(ctx, response)
 
@@ -236,14 +232,13 @@ export const storageRouter = {
       }),
     )
     .query(async function* ({ ctx, input }) {
-      const s3 = getClient()
       const command = new GetObjectCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
         ...getQueryHeaders(ctx),
       })
 
-      const response = await s3.send(command)
+      const response = await s3Client.send(command)
 
       setResponseHeaders(ctx, response)
 
@@ -278,13 +273,12 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
       const command = new GetObjectCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
         ...getQueryHeaders(ctx),
       })
-      const url = await getSignedUrl(s3, command, { expiresIn: input.expiresIn })
+      const url = await getSignedUrl(s3Client, command, { expiresIn: input.expiresIn })
       return { url }
     }),
 
@@ -299,15 +293,13 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
-
       const command = new PutObjectCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
         Body: input.file,
         ...getMutateHeaders(ctx),
       })
-      const response = await s3.send(command)
+      const response = await s3Client.send(command)
       return {
         size: response.Size!,
         etag: response.ETag!,
@@ -330,13 +322,12 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
       const command = new PutObjectCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
         ...getMutateHeaders(ctx),
       })
-      const url = await getSignedUrl(s3, command, { expiresIn: input.expiresIn })
+      const url = await getSignedUrl(s3Client, command, { expiresIn: input.expiresIn })
       return { url }
     }),
 
@@ -353,7 +344,6 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
       const prefix = getKeyPrefixByApp(ctx)
       const keysToDelete = (Array.isArray(input.keys) ? input.keys : [input.keys]).map((key) =>
         getKeyWithPrefix(prefix, key),
@@ -364,7 +354,7 @@ export const storageRouter = {
           Bucket: env.S3_BUCKET,
           Key: keysToDelete[0],
         })
-        await s3.send(command)
+        await s3Client.send(command)
         return { deleted: 1 }
       } else {
         const command = new DeleteObjectsCommand({
@@ -374,7 +364,7 @@ export const storageRouter = {
             Quiet: false, // Set to false to get feedback on successful deletions
           },
         })
-        const response = await s3.send(command)
+        const response = await s3Client.send(command)
         // Handle potential errors during bulk delete
         if (response.Errors?.length) {
           log.error('Bulk delete failed for some objects', response.Errors)
@@ -411,8 +401,6 @@ export const storageRouter = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const s3 = getClient()
-
       const command = new ListMultipartUploadsCommand({
         Bucket: env.S3_BUCKET,
         Prefix: getKeyByApp(ctx, input?.prefix),
@@ -421,7 +409,7 @@ export const storageRouter = {
         KeyMarker: input?.keyMarker,
         UploadIdMarker: input?.uploadIdMarker,
       })
-      const response = await s3.send(command)
+      const response = await s3Client.send(command)
 
       return {
         prefix: response.Prefix,
@@ -455,14 +443,12 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
-
       const command = new CreateMultipartUploadCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
         ...getMutateHeaders(ctx),
       })
-      const response = await s3.send(command)
+      const response = await s3Client.send(command)
       if (!response.Key || !response.UploadId) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
@@ -489,7 +475,6 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
       const command = new UploadPartCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
@@ -497,7 +482,7 @@ export const storageRouter = {
         PartNumber: input.partNumber,
         Body: input.file,
       })
-      const response = await s3.send(command)
+      const response = await s3Client.send(command)
       return {
         etag: response.ETag!,
         checksums: {
@@ -520,14 +505,13 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
       const command = new UploadPartCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
         UploadId: input.uploadId,
         PartNumber: input.partNumber,
       })
-      const url = await getSignedUrl(s3, command, { expiresIn: input.expiresIn })
+      const url = await getSignedUrl(s3Client, command, { expiresIn: input.expiresIn })
       return { url }
     }),
 
@@ -551,8 +535,6 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
-
       const command = new CompleteMultipartUploadCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key),
@@ -561,7 +543,7 @@ export const storageRouter = {
           Parts: input.parts,
         },
       })
-      const response = await s3.send(command)
+      const response = await s3Client.send(command)
       return {
         key: response.Key!,
         etag: response.ETag!,
@@ -583,13 +565,11 @@ export const storageRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const s3 = getClient()
-
       const command = new AbortMultipartUploadCommand({
         Bucket: env.S3_BUCKET,
         Key: getKeyByApp(ctx, input.key), // Key needs prefix
         UploadId: input.uploadId,
       })
-      await s3.send(command)
+      await s3Client.send(command)
     }),
 }

@@ -4,10 +4,11 @@ import mime from 'mime'
 import { sanitizeKey } from 'next-s3-upload'
 import { POST as APIRoute } from 'next-s3-upload/route'
 import { v7 as uuid } from 'uuid'
+import { z } from 'zod/v4'
 
 import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
-import { App, Chat, Dataset } from '@cared/db/schema'
+import { App, Chat, Dataset, Workspace } from '@cared/db/schema'
 
 import { authenticate, OrganizationScope } from '../../auth'
 import { env } from '../../env'
@@ -30,7 +31,11 @@ const allowedExtensions = [
   'txt',
 ]
 
-export type StorageLocation =
+export type S3LocationRequest = { mimeType?: string } & ( // {workspaceId}/{uuid}/{filename}
+  | {
+      type: 'workspace'
+      workspaceId: string
+    }
   // {workspaceId}/{datasetId}/{uuid}/{filename}
   | {
       type: 'dataset'
@@ -50,6 +55,37 @@ export type StorageLocation =
   | {
       type: 'temp'
     }
+)
+
+export const s3LocationRequestSchema = z
+  .object({
+    mimeType: z.string().optional(),
+  })
+  .and(
+    z.discriminatedUnion('type', [
+      z.object({
+        type: z.literal('workspace'),
+        workspaceId: z.string(),
+      }),
+      z.object({
+        type: z.literal('dataset'),
+        datasetId: z.string(),
+      }),
+      z.object({
+        type: z.literal('app'),
+        appId: z.string(),
+      }),
+      z.object({
+        type: z.literal('chat'),
+        chatId: z.string(),
+      }),
+      z.object({
+        type: z.literal('temp'),
+      }),
+    ]),
+  )
+
+const _: z.infer<typeof s3LocationRequestSchema> = {} as S3LocationRequest
 
 const _APIRoute = APIRoute.configure({
   accessKeyId: env.S3_ACCESS_KEY_ID,
@@ -64,11 +100,10 @@ const _APIRoute = APIRoute.configure({
     }
 
     const params = new URL(req.url).searchParams
-    const mimeType = params.get('mimeType')
-    params.delete('mimeType')
-    const location = Object.fromEntries(params.entries()) as StorageLocation
-    console.debug('location', location, 'mimeType', mimeType)
+    const location = s3LocationRequestSchema.parse(Object.fromEntries(params.entries()))
+    console.debug('S3 location request:', location)
 
+    const mimeType = location.mimeType
     const fileType = mimeType ? mime.getExtension(mimeType) : filename.split('.').pop()
     if (!fileType || !allowedExtensions.includes(fileType)) {
       throw new TRPCError({
@@ -83,7 +118,26 @@ const _APIRoute = APIRoute.configure({
     switch (location.type) {
       case 'temp':
         // Temporary file storage path
-        return `temp/${name}`
+        return `temp/${name}` // TODO: permission check
+
+      case 'workspace': {
+        const workspace = await db.query.Workspace.findFirst({
+          where: eq(Workspace.id, location.workspaceId),
+        })
+        if (!workspace) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Workspace not found',
+          })
+        }
+
+        const scope = await OrganizationScope.fromWorkspace({ auth, db }, workspace.id)
+        await scope.checkPermissions({
+          workspace: ['update'],
+        })
+
+        return `${workspace.id}/${name}`
+      }
 
       case 'dataset': {
         // Retrieve dataset to get workspaceId
@@ -119,7 +173,7 @@ const _APIRoute = APIRoute.configure({
 
         const scope = await OrganizationScope.fromApp({ auth, db }, app)
         await scope.checkPermissions({
-          dataset: ['update'],
+          app: ['update'],
         })
 
         return `${app.workspaceId}/${location.appId}/${name}`
@@ -148,10 +202,11 @@ const _APIRoute = APIRoute.configure({
           })
         }
 
-        const scope = await OrganizationScope.fromApp({ auth, db }, app)
-        await scope.checkPermissions({
-          dataset: ['update'],
-        })
+        if (!auth.isUser()) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+          })
+        }
 
         return `${app.workspaceId}/${chat.appId}/${location.chatId}/${name}`
       }
@@ -169,7 +224,14 @@ export const POST = async (request: NextRequest): Promise<Response> => {
   return await _APIRoute(request)
 }
 
-export type ParsedStorageLocation =
+export type ParsedS3Url = {
+  uuid: string
+  filename: string
+} & ( // {workspaceId}/{uuid}/{filename}
+  | {
+      type: 'workspace'
+      workspaceId: string
+    }
   // {workspaceId}/{datasetId}/{uuid}/{filename}
   | {
       type: 'dataset'
@@ -193,6 +255,7 @@ export type ParsedStorageLocation =
   | {
       type: 'temp'
     }
+)
 
 /**
  * Parse S3 URL to extract StorageLocation, UUID and filename
@@ -200,15 +263,9 @@ export type ParsedStorageLocation =
  * @param url The S3 URL to parse
  * @returns An object containing parsed storage location, UUID and filename
  */
-export function parseS3Url(url: string):
-  | {
-      location: ParsedStorageLocation
-      uuid: string
-      filename: string
-    }
-  | undefined {
+export function parseS3Url(url: string): ParsedS3Url | false | undefined {
   if (!env.NEXT_PUBLIC_IMAGE_URL || !url.startsWith(env.NEXT_PUBLIC_IMAGE_URL)) {
-    return
+    return undefined
   }
 
   // Extract path from URL
@@ -220,18 +277,18 @@ export function parseS3Url(url: string):
   const filename = pathParts.pop()
   const uuid = pathParts.pop()
   if (!filename || !uuid) {
-    return
+    return false
   }
 
   const firstId = pathParts[0]
   if (!firstId) {
-    return
+    return false
   }
 
   // Check for temp storage
   if (firstId === 'temp') {
     return {
-      location: { type: 'temp' },
+      type: 'temp',
       uuid,
       filename,
     }
@@ -240,22 +297,25 @@ export function parseS3Url(url: string):
   // Check for workspace
   const workspaceId = firstId
   if (!workspaceId.startsWith('workspace_')) {
-    return
+    return false
   }
 
   const secondId = pathParts[1]
   if (!secondId) {
-    return
+    return {
+      type: 'workspace',
+      workspaceId,
+      uuid,
+      filename,
+    }
   }
 
   // Check for dataset
   if (secondId.startsWith('dataset_')) {
     return {
-      location: {
-        type: 'dataset',
-        workspaceId,
-        datasetId: secondId,
-      },
+      type: 'dataset',
+      workspaceId,
+      datasetId: secondId,
       uuid,
       filename,
     }
@@ -263,7 +323,7 @@ export function parseS3Url(url: string):
 
   // Check for app
   if (!secondId.startsWith('app_')) {
-    return
+    return false
   }
 
   const appId = secondId
@@ -272,11 +332,9 @@ export function parseS3Url(url: string):
 
   if (!chatId) {
     return {
-      location: {
-        type: 'app',
-        workspaceId,
-        appId,
-      },
+      type: 'app',
+      workspaceId,
+      appId,
       uuid,
       filename,
     }
@@ -284,16 +342,14 @@ export function parseS3Url(url: string):
 
   // Check for chat
   if (!chatId.startsWith('chat_')) {
-    return
+    return false
   }
 
   return {
-    location: {
-      type: 'chat',
-      workspaceId,
-      appId,
-      chatId,
-    },
+    type: 'chat',
+    workspaceId,
+    appId,
+    chatId,
     uuid,
     filename,
   }

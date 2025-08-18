@@ -25,8 +25,8 @@ import { mergeWithoutUndefined } from '@cared/shared'
 
 import type { Context } from '../trpc'
 import { OrganizationScope } from '../auth'
+import { s3Client } from '../client/s3'
 import { env } from '../env'
-import { getClient } from '../rest/s3-upload/client'
 import { taskTrigger } from '../rest/tasks'
 import { protectedProcedure } from '../trpc'
 
@@ -68,20 +68,20 @@ export const datasetRouter = {
         summary: 'List all datasets in a workspace',
       },
     })
-            .input(
-          z
-            .object({
-              workspaceId: z.string().min(32),
-              after: z.string().optional(),
-              before: z.string().optional(),
-              limit: z.number().min(1).max(100).default(50),
-              order: z.enum(['desc', 'asc']).default('desc'),
-            })
-            .refine(
-              ({ after, before }) => !(after && before),
-              'Cannot use both after and before cursors',
-            ),
-        )
+    .input(
+      z
+        .object({
+          workspaceId: z.string().min(32),
+          after: z.string().optional(),
+          before: z.string().optional(),
+          limit: z.number().min(1).max(100).default(50),
+          order: z.enum(['desc', 'asc']).default('desc'),
+        })
+        .refine(
+          ({ after, before }) => !(after && before),
+          'Cannot use both after and before cursors',
+        ),
+    )
     .query(async ({ ctx, input }) => {
       const scope = await OrganizationScope.fromWorkspace(ctx, input.workspaceId)
       await scope.checkPermissions()
@@ -301,7 +301,6 @@ export const datasetRouter = {
         })
       if (s3ObjectsToDelete.length > 0) {
         try {
-          const s3Client = getClient()
           await s3Client.send(
             new DeleteObjectsCommand({
               Bucket: env.S3_BUCKET,
@@ -344,7 +343,6 @@ export const datasetRouter = {
       // If document has S3 URL, get file size and update dataset metadata
       let fileSize: number | undefined
       if (input.metadata?.url?.startsWith(env.S3_ENDPOINT)) {
-        const s3Client = getClient()
         const url = new URL(input.metadata.url)
         const key = url.pathname.slice(1) // Remove leading slash
 
@@ -492,7 +490,6 @@ export const datasetRouter = {
       // If document has S3 URL, get file size and subtract from dataset metadata
       let fileSize: number | undefined
       if (document.metadata.url?.startsWith(env.S3_ENDPOINT)) {
-        const s3Client = getClient()
         const url = new URL(document.metadata.url)
         const key = url.pathname.slice(1) // Remove leading slash
 
@@ -545,7 +542,6 @@ export const datasetRouter = {
       // Delete S3 file if exists
       if (document.metadata.url?.startsWith(env.S3_ENDPOINT)) {
         try {
-          const s3Client = getClient()
           const url = new URL(document.metadata.url)
           const key = url.pathname.slice(1) // Remove leading slash
 

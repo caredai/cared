@@ -37,13 +37,13 @@ export class Auth {
     return !!this.auth
   }
 
-  userId(): string | undefined {
+  isUser(): boolean {
     const auth = this.auth
-    return auth?.type === 'user' ||
+    return (
+      auth?.type === 'user' ||
       auth?.type === 'appUser' ||
       (auth?.type === 'apiKey' && auth.scope === 'user')
-      ? auth.userId
-      : undefined
+    )
   }
 
   isAdmin(): boolean {

@@ -23,6 +23,7 @@ import {
   useWorkspaces,
 } from '@/hooks/use-workspace'
 import { stripIdPrefix } from '@/lib/utils'
+import Link from 'next/link'
 
 export function WorkspaceSwitcher() {
   const router = useRouter()
@@ -61,15 +62,16 @@ export function WorkspaceSwitcher() {
           <Button
             variant="ghost"
             className="h-8 gap-2 px-1 has-[>svg]:px-1 text-sm font-medium hover:bg-inherit hover:text-inherit"
-            onClick={() => {
-              // Navigate to workspace page or stay in current workspace
-              router.push(`/workspace/${stripIdPrefix(activeWorkspace.id)}`)
-            }}
+            asChild
           >
-            <Box className="text-muted-foreground/70" />
-            <span className={cn('truncate max-w-20 md:inline', activeApp && 'hidden')}>
-              {activeWorkspace.name}
-            </span>
+            <Link
+              href={`/workspace/${stripIdPrefix(activeWorkspace.id)}`}
+            >
+              <Box className="text-muted-foreground/70" />
+              <span className={cn('truncate max-w-20 md:inline', activeApp && 'hidden')}>
+                {activeWorkspace.name}
+              </span>
+            </Link>
           </Button>
 
           {/* Dropdown menu button - only shows chevron icon */}

@@ -168,7 +168,7 @@ export function Apps() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {filteredApps.map((appData) => (
             <Card
               key={appData.app.id}
@@ -195,9 +195,11 @@ export function Apps() {
                     </div>
                   </div>
                 </div>
-                <CardDescription className="line-clamp-2">
-                  {appData.app.metadata.description || 'No description'}
-                </CardDescription>
+                {appData.app.metadata.description && (
+                  <CardDescription className="line-clamp-2">
+                    {appData.app.metadata.description}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="pb-3">
                 <div className="flex items-center text-xs text-muted-foreground">
@@ -207,7 +209,7 @@ export function Apps() {
                   </span>
                 </div>
                 <div className="flex items-center text-xs text-muted-foreground mt-1">
-                  <span className="font-medium mr-2">Language Model:</span>
+                  <span className="font-medium mr-2">Text:</span>
                   <span className="truncate">{appData.app.metadata.languageModel}</span>
                 </div>
               </CardContent>

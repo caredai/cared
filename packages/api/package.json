@@ -38,6 +38,7 @@
     "@upstash/workflow": "^0.2.7",
     "mime": "^4.0.6",
     "next-s3-upload": "^0.3.4",
+    "sanitize-filename": "^1.6.3",
     "stripe": "^18.3.0",
     "superjson": "2.2.2",
     "trpc-to-openapi": "^2.1.4",

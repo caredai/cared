@@ -26,6 +26,7 @@ import {
 } from '@/hooks/use-organization'
 import { useSession } from '@/hooks/use-session'
 import { stripIdPrefix } from '@/lib/utils'
+import Link from 'next/link'
 
 export function OrganizationAndAccountSwitcherInner({
   trigger,
@@ -72,27 +73,25 @@ export function OrganizationAndAccountSwitcherInner({
       <Button
         variant="ghost"
         className="h-8 gap-2 px-1 has-[>svg]:px-1 text-sm font-medium hover:bg-inherit hover:text-inherit"
-        onClick={() => {
-          if (activeOrganization) {
-            router.push(`/org/${stripIdPrefix(activeOrganization.id)}`)
-          } else {
-            router.push(`/account/credits`)
-          }
-        }}
+        asChild
       >
-        {!activeOrganization ? (
-          <>
-            <UserIcon className="size-4 text-muted-foreground" />
-            Account
-          </>
-        ) : (
-          <>
-            <Boxes className="text-muted-foreground/70" />
-            <span className={cn('truncate max-w-20 md:inline', activeWorkspace && 'hidden')}>
-              {activeOrganization.name}
-            </span>
-          </>
-        )}
+        <Link
+          href={activeOrganization ? `/org/${stripIdPrefix(activeOrganization.id)}` : `/account/credits`}
+        >
+          {!activeOrganization ? (
+            <>
+              <UserIcon className="size-4 text-muted-foreground" />
+              Account
+            </>
+          ) : (
+            <>
+              <Boxes className="text-muted-foreground/70" />
+              <span className={cn('truncate max-w-20 md:inline', activeWorkspace && 'hidden')}>
+                {activeOrganization.name}
+              </span>
+            </>
+          )}
+        </Link>
       </Button>
 
       <DropdownMenu>

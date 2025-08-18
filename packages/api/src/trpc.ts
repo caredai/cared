@@ -243,16 +243,17 @@ export type AdminContext = BaseContext & {
 }
 
 export const adminProcedure = t.procedure.use(timingMiddleware).use(({ ctx, next }) => {
-  if (!ctx.auth.isAuthenticated()) {
+  const auth = ctx.auth.auth
+  if (!(auth?.type === 'user' || (auth?.type === 'apiKey' && auth.scope === 'user'))) {
     throw new trpc.TRPCError({ code: 'UNAUTHORIZED' })
   }
-  if (!ctx.auth.isAdmin()) {
+  if (!auth.isAdmin) {
     throw new trpc.TRPCError({ code: 'FORBIDDEN' })
   }
   return next({
     ctx: {
       auth: {
-        userId: ctx.auth.userId()!,
+        userId: auth.userId,
       },
     },
   })

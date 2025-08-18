@@ -3,15 +3,12 @@ import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 
+import { s3Client } from '../src/client/s3'
 import { env } from '../src/env'
-import { getClient } from '../src/rest/s3-upload/client'
 
 // @ts-ignore
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-
-// Get S3 client instance
-const s3 = getClient()
 
 // Define the source directory path
 const TOKENIZERS_DIR = path.resolve(__dirname, '../../tokenizer/assets/tokenizers')
@@ -27,7 +24,7 @@ async function uploadFile(filePath: string, key: string) {
       ContentType: 'application/json', // Set the appropriate content type
     })
 
-    await s3.send(command)
+    await s3Client.send(command)
     console.log(`Successfully uploaded ${key}`)
   } catch (error) {
     console.error(`Error uploading ${key}:`, error)

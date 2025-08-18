@@ -27,11 +27,12 @@ import { mergeWithoutUndefined } from '@cared/shared'
 
 import type { BaseContext, Context } from '../trpc'
 import { OrganizationScope } from '../auth'
+import { s3Client } from '../client/s3'
 import { cfg } from '../config'
 import { env } from '../env'
-import { getClient } from '../rest/s3-upload/client'
 import { parseS3Url } from '../rest/s3-upload/route'
 import { protectedProcedure, publicProcedure } from '../trpc'
+import { deleteImages } from './utils'
 
 /**
  * Get an app by ID.
@@ -499,31 +500,35 @@ export const appRouter = {
       // Validate imageUrl if provided
       if (input.metadata.imageUrl) {
         const parsedUrl = parseS3Url(input.metadata.imageUrl)
-        if (!parsedUrl) {
+        if (parsedUrl === false) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'Invalid S3 image URL format',
           })
-        }
+        } else if (parsedUrl) {
+          if (parsedUrl.type !== 'workspace' || parsedUrl.workspaceId !== input.workspaceId) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+            })
+          }
+          // Check if file exists in S3 storage
+          try {
+            const url = new URL(input.metadata.imageUrl)
+            const key = url.pathname.slice(1) // Remove leading slash
 
-        // Check if file exists in S3 storage
-        try {
-          const s3Client = getClient()
-          const url = new URL(input.metadata.imageUrl)
-          const key = url.pathname.slice(1) // Remove leading slash
-
-          await s3Client.send(
-            new HeadObjectCommand({
-              Bucket: env.S3_BUCKET,
-              Key: key,
-            }),
-          )
-        } catch (error) {
-          log.error('Image file not found or cannot be accessed', error)
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Image file not found or cannot be accessed',
-          })
+            await s3Client.send(
+              new HeadObjectCommand({
+                Bucket: env.S3_BUCKET,
+                Key: key,
+              }),
+            )
+          } catch (error) {
+            log.error('Image file not found or cannot be accessed', error)
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Image file not found or cannot be accessed',
+            })
+          }
         }
       }
 
@@ -601,34 +606,48 @@ export const appRouter = {
       // Check if there's any published version
       const publishedVersion = await getAppVersion(ctx, id, 'latest').catch(() => undefined)
 
+      const imagesToDelete = []
+
       // Validate imageUrl if it was updated
       if (update.metadata?.imageUrl && update.metadata.imageUrl !== draft.metadata.imageUrl) {
+        if (draft.metadata.imageUrl) {
+          imagesToDelete.push(draft.metadata.imageUrl)
+        }
+
         const parsedUrl = parseS3Url(update.metadata.imageUrl)
-        if (!parsedUrl) {
+        if (parsedUrl === false) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'Invalid S3 image URL format',
           })
-        }
+        } else if (parsedUrl) {
+          if (
+            (parsedUrl.type !== 'workspace' || parsedUrl.workspaceId !== app.workspaceId) &&
+            (parsedUrl.type !== 'app' || parsedUrl.appId !== app.id)
+          ) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+            })
+          }
 
-        // Check if file exists in S3 storage
-        try {
-          const s3Client = getClient()
-          const url = new URL(update.metadata.imageUrl)
-          const key = url.pathname.slice(1) // Remove leading slash
+          // Check if file exists in S3 storage
+          try {
+            const url = new URL(update.metadata.imageUrl)
+            const key = url.pathname.slice(1) // Remove leading slash
 
-          await s3Client.send(
-            new HeadObjectCommand({
-              Bucket: env.S3_BUCKET,
-              Key: key,
-            }),
-          )
-        } catch (error) {
-          log.error('Image file not found or cannot be accessed', error)
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Image file not found or cannot be accessed',
-          })
+            await s3Client.send(
+              new HeadObjectCommand({
+                Bucket: env.S3_BUCKET,
+                Key: key,
+              }),
+            )
+          } catch (error) {
+            log.error('Image file not found or cannot be accessed', error)
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Image file not found or cannot be accessed',
+            })
+          }
         }
       }
 
@@ -638,7 +657,7 @@ export const appRouter = {
         metadata: mergeWithoutUndefined<AppMetadata>(draft.metadata, update.metadata),
       }
 
-      return ctx.db.transaction(async (tx) => {
+      const result = await ctx.db.transaction(async (tx) => {
         // Update draft version
         const [updatedDraft] = await tx
           .update(AppVersion)
@@ -656,6 +675,14 @@ export const appRouter = {
         // If no published version exists, update the app's main record as well
         let updatedApp = app
         if (!publishedVersion) {
+          if (
+            update.metadata?.imageUrl &&
+            app.metadata.imageUrl &&
+            update.metadata.imageUrl !== app.metadata.imageUrl
+          ) {
+            imagesToDelete.push(app.metadata.imageUrl)
+          }
+
           const [newApp] = await tx.update(App).set(updateValues).where(eq(App.id, id)).returning()
 
           if (!newApp) {
@@ -672,6 +699,10 @@ export const appRouter = {
           draft: updatedDraft,
         }
       })
+
+      await deleteImages(imagesToDelete)
+
+      return result
     }),
 
   /**
