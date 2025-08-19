@@ -7,17 +7,18 @@ import { Button } from '@cared/ui/components/button'
 
 import { shortenString } from '@/lib/utils'
 
-interface WalletAddressProps {
-  address: string
-  copyToClipboard: (value: string) => void
-}
-
 /**
  * WalletAddress component displays a wallet address with copy functionality
  * @param address - The wallet address to display
  * @param copyToClipboard - Function to copy the address to clipboard
  */
-export function WalletAddress({ address, copyToClipboard }: WalletAddressProps) {
+export function WalletAddress({
+  address,
+  copyToClipboard,
+}: {
+  address: string
+  copyToClipboard: (value: string) => void
+}) {
   const timeoutHandle = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [copied, setCopied] = useState(false)
 

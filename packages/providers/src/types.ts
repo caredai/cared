@@ -234,31 +234,35 @@ export const providerKeySchema = z
     z.discriminatedUnion('providerId', [
       z.object({
         providerId: providerIdSchema.exclude(['azure', 'bedrock', 'vertex', 'replicate']),
-        apiKey: z.string().min(1), // encrypted in db
+        apiKey: z.string().min(1, 'API key is required'), // encrypted in db
       }),
 
       z.object({
         providerId: z.literal('azure'),
-        apiKey: z.string().min(1), // encrypted in db
+        apiKey: z.string().min(1, 'API key is required'), // encrypted in db
         baseUrl: z.url(),
-        apiVersion: z.string().min(1).optional(),
+        apiVersion: z.string().min(1, 'API version is required').optional(),
       }),
 
       z.object({
         providerId: z.literal('bedrock'),
-        region: z.string().min(1),
-        accessKeyId: z.string().min(1), // encrypted in db
-        secretAccessKey: z.string().min(1), // encrypted in db
+        region: z.string().min(1, 'Region is required'),
+        accessKeyId: z.string().min(1, 'Access key ID is required'), // encrypted in db
+        secretAccessKey: z.string().min(1, 'Secret access key is required'), // encrypted in db
       }),
 
       z.object({
         providerId: z.literal('vertex'),
-        location: z.string().min(1).optional(),
-        serviceAccountJson: z.string().refine(
+        location: z.string().min(1, 'Location is required').optional(),
+        serviceAccountJson: z.string().min(1, 'Service account JSON is required').refine(
           (json) => {
-            const serviceAccount = JSON.parse(json)
-            const result = googleServiceAccountSchema.safeParse(serviceAccount)
-            return result.success
+            try {
+              const serviceAccount = JSON.parse(json.replace(/\s+/g, ''))
+              const result = googleServiceAccountSchema.safeParse(serviceAccount)
+              return result.success
+            } catch {
+              return false
+            }
           },
           {
             message: 'Invalid service account JSON format',
@@ -268,7 +272,7 @@ export const providerKeySchema = z
 
       z.object({
         providerId: z.literal('replicate'),
-        apiToken: z.string().min(1), // encrypted in db
+        apiToken: z.string().min(1, 'API token is required'), // encrypted in db
       }),
     ]),
   )

@@ -12,8 +12,8 @@ async function decrypt(encryptedKey: string) {
   return await decrypt_(env.ENCRYPTION_KEY, encryptedKey)
 }
 
-async function decryptToStart(encryptedKey: string) {
-  return (await decrypt(encryptedKey)).slice(0, 4)
+async function decryptToStart(encryptedKey: string, length = 6) {
+  return (await decrypt(encryptedKey)).slice(0, length)
 }
 
 export async function encryptProviderKey(key: ProviderKeyContent): Promise<ProviderKeyContent> {

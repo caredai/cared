@@ -8,7 +8,8 @@ import { useForm } from 'react-hook-form'
 import { Virtualizer } from 'virtua'
 import { z } from 'zod/v4'
 
-import { BaseProviderInfo, ProviderId, providerKeySchema } from '@cared/providers'
+import type { BaseProviderInfo, ProviderId } from '@cared/providers'
+import { providerKeySchema } from '@cared/providers'
 import { Avatar, AvatarFallback, AvatarImage } from '@cared/ui/components/avatar'
 import { Button } from '@cared/ui/components/button'
 import {
@@ -19,14 +20,22 @@ import {
   FormLabel,
   FormMessage,
 } from '@cared/ui/components/form'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@cared/ui/components/sheet'
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@cared/ui/components/sheet'
 import { Switch } from '@cared/ui/components/switch'
 
-import { OptionalInput, OptionalTextarea } from '@/components/input'
+import { OptionalInput } from '@/components/input'
+import { CircleSpinner } from '@/components/spinner'
 import {
   useCreateProviderKey,
   useDeleteProviderKey,
   useProviderKeysByProvider,
+  useToggleProviderKey,
   useUpdateProviderKey,
 } from '@/hooks/use-provider-key'
 
@@ -92,17 +101,18 @@ export function ProviderKeysSheet({
   const createProviderKey = useCreateProviderKey()
   const updateProviderKey = useUpdateProviderKey()
   const deleteProviderKey = useDeleteProviderKey()
+  const toggleProviderKey = useToggleProviderKey()
 
   // State for managing new items
   const [newKeys, setNewKeys] = useState<EditableProviderKey[]>([])
+  const [existingKeys, setExistingKeys] = useState<EditableProviderKey[]>([])
+  const [allKeys, setAllKeys] = useState<EditableProviderKey[]>([])
 
   useEffect(() => {
     setNewKeys([])
   }, [open])
 
-  const [allKeys, setAllKeys] = useState<EditableProviderKey[]>([])
-
-  // Transform provider keys to editable format and merge with temporary items
+  // Transform provider keys to editable format
   useEffect(() => {
     const existingKeys = providerKeys.map((key) => ({
       id: key.id,
@@ -116,8 +126,12 @@ export function ProviderKeysSheet({
       isNew: false,
     }))
 
+    setExistingKeys(existingKeys)
+  }, [providerKeys])
+
+  useEffect(() => {
     setAllKeys([...newKeys, ...existingKeys])
-  }, [providerKeys, newKeys])
+  }, [newKeys, existingKeys])
 
   // Handle adding new provider key
   const handleAddNew = useCallback(() => {
@@ -144,12 +158,18 @@ export function ProviderKeysSheet({
 
   // Handle editing existing provider key
   const handleEdit = useCallback((id: string) => {
-    setAllKeys((prev) => prev.map((key) => (key.id === id ? { ...key, isEditing: true } : key)))
+    setNewKeys((prev) => prev.map((key) => (key.id === id ? { ...key, isEditing: true } : key)))
+    setExistingKeys((prev) =>
+      prev.map((key) => (key.id === id ? { ...key, isEditing: true } : key)),
+    )
   }, [])
 
   // Handle canceling edits
   const handleCancel = useCallback((id: string) => {
-    setAllKeys((prev) => prev.map((key) => (key.id === id ? { ...key, isEditing: false } : key)))
+    setNewKeys((prev) => prev.map((key) => (key.id === id ? { ...key, isEditing: false } : key)))
+    setExistingKeys((prev) =>
+      prev.map((key) => (key.id === id ? { ...key, isEditing: false } : key)),
+    )
   }, [])
 
   // Handle saving changes
@@ -179,7 +199,7 @@ export function ProviderKeysSheet({
         })
 
         // Update local state
-        setAllKeys((prev) =>
+        setExistingKeys((prev) =>
           prev.map((key) => (key.id === id ? { ...key, isEditing: false } : key)),
         )
       }
@@ -200,9 +220,25 @@ export function ProviderKeysSheet({
       await deleteProviderKey(id)
 
       // Remove from local state
-      setAllKeys((prev) => prev.filter((key) => key.id !== id))
+      setExistingKeys((prev) => prev.filter((key) => key.id !== id))
     },
     [deleteProviderKey],
+  )
+
+  const handleToggle = useCallback(
+    async (id: string, disabled: boolean) => {
+      if (id.startsWith(TEMP_ID_PREFIX)) {
+        setNewKeys((prev) => prev.map((key) => (key.id === id ? { ...key, disabled } : key)))
+        return
+      }
+
+      setExistingKeys((prev) => prev.map((key) => (key.id === id ? { ...key, disabled } : key)))
+
+      await toggleProviderKey(id, disabled)
+
+      await refetchProviderKeys()
+    },
+    [toggleProviderKey, refetchProviderKeys],
   )
 
   return (
@@ -218,7 +254,10 @@ export function ProviderKeysSheet({
               <ServerIcon />
             </AvatarFallback>
           </Avatar>
-          <SheetTitle>{provider?.name}</SheetTitle>
+          <div>
+            <SheetTitle>{provider?.name}</SheetTitle>
+            <SheetDescription>Manage API Keys</SheetDescription>
+          </div>
         </SheetHeader>
 
         <div className="flex-1 flex flex-col gap-4 px-4 pb-4 overflow-y-auto [overflow-anchor:none]">
@@ -254,11 +293,13 @@ export function ProviderKeysSheet({
                 return (
                   <ProviderKeyItem
                     key={key.id}
+                    index={index - 1}
                     providerKey={key}
                     onEdit={() => handleEdit(key.id)}
                     onCancel={() => handleCancel(key.id)}
                     onSave={(formData) => handleSave(key.id, formData)}
                     onRemove={() => handleRemove(key.id)}
+                    onToggle={(disabled: boolean) => handleToggle(key.id, disabled)}
                   />
                 )
               }}
@@ -271,76 +312,192 @@ export function ProviderKeysSheet({
 }
 
 function ProviderKeyItem({
+  index,
   providerKey,
   onEdit,
   onCancel,
   onSave,
   onRemove,
+  onToggle,
 }: {
+  index: number
   providerKey: EditableProviderKey
   onEdit: () => void
   onCancel: () => void
-  onSave: (formData: ProviderKeyFormValues) => void
-  onRemove: () => void
+  onSave: (formData: ProviderKeyFormValues) => Promise<void>
+  onRemove: () => Promise<void>
+  onToggle: (disabled: boolean) => Promise<void>
 }) {
+  // Track loading states for specific actions separately
+  const [isSaving, setIsSaving] = useState(false)
+  const [isRemoving, setIsRemoving] = useState(false)
+
+  // Handle save with loading state
+  const handleSave = async (formData: ProviderKeyFormValues) => {
+    setIsSaving(true)
+    try {
+      await onSave(formData)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // Handle remove with loading state
+  const handleRemove = async () => {
+    setIsRemoving(true)
+    try {
+      await onRemove()
+    } finally {
+      setIsRemoving(false)
+    }
+  }
+
+  const handleToggle = async (disabled: boolean) => {
+    setIsSaving(true)
+    try {
+      await onToggle(disabled)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   if (providerKey.isEditing) {
     return (
       <ProviderKeyItemEdit
+        index={index}
         providerKey={providerKey}
+        isSaving={isSaving}
+        isRemoving={isRemoving}
         onCancel={onCancel}
-        onSave={onSave}
-        onRemove={onRemove}
+        onSave={handleSave}
+        onRemove={handleRemove}
       />
     )
   } else {
-    return <ProviderKeyItemView providerKey={providerKey} onEdit={onEdit} onRemove={onRemove} />
+    return (
+      <ProviderKeyItemView
+        index={index}
+        providerKey={providerKey}
+        isSaving={isSaving}
+        isRemoving={isRemoving}
+        onEdit={onEdit}
+        onRemove={handleRemove}
+        onToggle={handleToggle}
+      />
+    )
   }
 }
 
 function ProviderKeyItemView({
+  index,
   providerKey,
+  isSaving,
+  isRemoving,
   onEdit,
   onRemove,
+  onToggle,
 }: {
+  index: number
   providerKey: EditableProviderKey
+  isSaving: boolean
+  isRemoving: boolean
   onEdit: () => void
-  onRemove: () => void
+  onRemove: () => Promise<void>
+  onToggle: (disabled: boolean) => Promise<void>
 }) {
+  const isDisabled = isSaving || isRemoving
+
   return (
-    <div className="border rounded-lg p-4 my-4">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-medium">API Key</span>
-            {providerKey.disabled && (
-              <span className="text-xs bg-muted px-2 py-1 rounded">Disabled</span>
-            )}
-            {providerKey.isNew && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">New</span>
-            )}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {providerKey.key.apiKey && (
-              <div>API Key: {formatDecryptedKey(providerKey.key.apiKey)}</div>
-            )}
-            {providerKey.key.baseUrl && <div>Base URL: {providerKey.key.baseUrl}</div>}
-            {providerKey.key.apiVersion && <div>API Version: {providerKey.key.apiVersion}</div>}
-            {providerKey.key.region && <div>Region: {providerKey.key.region}</div>}
-            {providerKey.key.location && <div>Location: {providerKey.key.location}</div>}
-            {providerKey.key.serviceAccountJson && (
-              <div>Service Account JSON: {providerKey.key.serviceAccountJson}</div>
-            )}
-          </div>
+    <div className="border rounded-lg p-4 my-4 flex flex-col gap-2">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <span className="font-medium">Key #{index + 1}</span>
+          {providerKey.isNew && (
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">New</span>
+          )}
+          {providerKey.disabled && (
+            <span className="text-xs bg-muted px-2 py-1 rounded">Disabled</span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="size-6" onClick={onEdit}>
+          <Switch
+            checked={!providerKey.disabled}
+            onCheckedChange={(checked) => onToggle(!checked)}
+            disabled={isDisabled}
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-6"
+            onClick={onEdit}
+            disabled={isDisabled}
+          >
             <EditIcon className="size-3" />
           </Button>
-          <Button variant="outline" size="icon" className="size-6" onClick={onRemove}>
-            <Trash2Icon className="size-3" />
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-6"
+            onClick={onRemove}
+            disabled={isDisabled}
+          >
+            {isRemoving ? <CircleSpinner className="size-3" /> : <Trash2Icon className="size-3" />}
           </Button>
         </div>
+      </div>
+      <div className="text-sm text-muted-foreground">
+        {providerKey.key.apiKey && (
+          <div>
+            API Key: <span className="font-mono">{formatDecryptedKey(providerKey.key.apiKey)}</span>
+          </div>
+        )}
+        {providerKey.key.baseUrl && (
+          <div>
+            Base URL: <span className="font-mono">{providerKey.key.baseUrl}</span>
+          </div>
+        )}
+        {providerKey.key.apiVersion && (
+          <div>
+            API Version: <span className="font-mono">{providerKey.key.apiVersion}</span>
+          </div>
+        )}
+        {providerKey.key.region && (
+          <div>
+            Region: <span className="font-mono">{providerKey.key.region}</span>
+          </div>
+        )}
+        {providerKey.key.accessKeyId && (
+          <div>
+            Access Key ID:{' '}
+            <span className="font-mono">{formatDecryptedKey(providerKey.key.accessKeyId)}</span>
+          </div>
+        )}
+        {providerKey.key.secretAccessKey && (
+          <div>
+            Secrete Access Key:{' '}
+            <span className="font-mono">{formatDecryptedKey(providerKey.key.secretAccessKey)}</span>
+          </div>
+        )}
+        {providerKey.key.location && (
+          <div>
+            Location: <span className="font-mono">{providerKey.key.location}</span>
+          </div>
+        )}
+        {providerKey.key.serviceAccountJson && (
+          <div>
+            Service Account JSON:{' '}
+            <span className="font-mono">
+              {formatDecryptedKey(providerKey.key.serviceAccountJson)}
+            </span>
+          </div>
+        )}
+        {providerKey.key.apiToken && (
+          <div>
+            API Token:{' '}
+            <span className="font-mono">{formatDecryptedKey(providerKey.key.apiToken)}</span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -355,15 +512,21 @@ const emptyValuesForEncryptedFields = {
 }
 
 function ProviderKeyItemEdit({
+  index,
   providerKey,
+  isSaving,
+  isRemoving,
   onCancel,
   onSave,
   onRemove,
 }: {
+  index: number
   providerKey: EditableProviderKey
+  isSaving: boolean
+  isRemoving: boolean
   onCancel: () => void
-  onSave: (formData: ProviderKeyFormValues) => void
-  onRemove: () => void
+  onSave: (formData: ProviderKeyFormValues) => Promise<void>
+  onRemove: () => Promise<void>
 }) {
   const form = useForm<ProviderKeyFormValues>({
     resolver: zodResolver(providerKeyFormSchema),
@@ -380,11 +543,9 @@ function ProviderKeyItemEdit({
   })
 
   const handleSave = async () => {
-    const formData = form.getValues()
-    console.log('formData:', formData)
     if (await form.trigger()) {
       const formData = form.getValues()
-      onSave(formData)
+      await onSave(formData)
     }
   }
 
@@ -392,16 +553,29 @@ function ProviderKeyItemEdit({
     onCancel()
   }
 
+  // Disable form inputs only when saving or removing
+  const isFormDisabled = isSaving || isRemoving
+
   return (
     <div className="border rounded-lg p-4 my-4 bg-muted/50">
       <Form {...form}>
         <form className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium">{providerKey.isNew ? 'New API Key' : 'Edit API Key'}</h4>
+            <h4 className="font-medium">
+              {providerKey.isNew ? 'New Key' : 'Edit Key'} #{index + 1}
+            </h4>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" className="size-6" onClick={handleCancel}>
-                <XIcon className="size-3" />
-              </Button>
+              {!providerKey.isNew && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-6"
+                  onClick={handleCancel}
+                  disabled={isFormDisabled}
+                >
+                  <XIcon className="size-3" />
+                </Button>
+              )}
               <Button
                 size="icon"
                 className="size-6"
@@ -409,11 +583,22 @@ function ProviderKeyItemEdit({
                   e.preventDefault()
                   void handleSave()
                 }}
+                disabled={isFormDisabled}
               >
-                <CheckIcon className="size-3" />
+                {isSaving ? <CircleSpinner className="size-3" /> : <CheckIcon className="size-3" />}
               </Button>
-              <Button variant="outline" size="icon" className="size-6" onClick={onRemove}>
-                <Trash2Icon className="size-3" />
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-6"
+                onClick={onRemove}
+                disabled={isFormDisabled}
+              >
+                {isRemoving ? (
+                  <CircleSpinner className="size-3" />
+                ) : (
+                  <Trash2Icon className="size-3" />
+                )}
               </Button>
             </div>
           </div>
@@ -427,7 +612,12 @@ function ProviderKeyItemEdit({
                 <FormItem>
                   <FormLabel>API Key</FormLabel>
                   <FormControl>
-                    <OptionalInput type="password" placeholder="Enter API key" {...field} />
+                    <OptionalInput
+                      type="password"
+                      placeholder="Enter API key"
+                      {...field}
+                      disabled={isFormDisabled}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -443,7 +633,11 @@ function ProviderKeyItemEdit({
               <FormItem>
                 <FormLabel>Base URL {providerKey.providerId !== 'azure' && '(Optional)'}</FormLabel>
                 <FormControl>
-                  <OptionalInput placeholder="Enter base URL" {...field} />
+                  <OptionalInput
+                    placeholder="Enter base URL"
+                    {...field}
+                    disabled={isFormDisabled}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -459,7 +653,11 @@ function ProviderKeyItemEdit({
                 <FormItem>
                   <FormLabel>API Version (Optional)</FormLabel>
                   <FormControl>
-                    <OptionalInput placeholder="Enter API version" {...field} />
+                    <OptionalInput
+                      placeholder="Enter API version"
+                      {...field}
+                      disabled={isFormDisabled}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -477,7 +675,11 @@ function ProviderKeyItemEdit({
                   <FormItem>
                     <FormLabel>Region</FormLabel>
                     <FormControl>
-                      <OptionalInput placeholder="Enter region" {...field} />
+                      <OptionalInput
+                        placeholder="Enter region"
+                        {...field}
+                        disabled={isFormDisabled}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -490,7 +692,12 @@ function ProviderKeyItemEdit({
                   <FormItem>
                     <FormLabel>Access Key ID</FormLabel>
                     <FormControl>
-                      <OptionalInput placeholder="Enter access key ID" {...field} />
+                      <OptionalInput
+                        type="password"
+                        placeholder="Enter access key ID"
+                        {...field}
+                        disabled={isFormDisabled}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -507,6 +714,7 @@ function ProviderKeyItemEdit({
                         type="password"
                         placeholder="Enter secret access key"
                         {...field}
+                        disabled={isFormDisabled}
                       />
                     </FormControl>
                     <FormMessage />
@@ -526,7 +734,11 @@ function ProviderKeyItemEdit({
                   <FormItem>
                     <FormLabel>Location (Optional)</FormLabel>
                     <FormControl>
-                      <OptionalInput placeholder="Enter location" {...field} />
+                      <OptionalInput
+                        placeholder="us-central1"
+                        {...field}
+                        disabled={isFormDisabled}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -539,10 +751,11 @@ function ProviderKeyItemEdit({
                   <FormItem>
                     <FormLabel>Service Account JSON</FormLabel>
                     <FormControl>
-                      <OptionalTextarea
-                        placeholder="Enter service account JSON content"
-                        rows={3}
+                      <OptionalInput
+                        type="password"
+                        placeholder='{ "type": "...", "project_id": "...", "private_key_id": "...", "private_key": "...", "client_email": "..." }'
                         {...field}
+                        disabled={isFormDisabled}
                       />
                     </FormControl>
                     <FormMessage />
@@ -561,7 +774,12 @@ function ProviderKeyItemEdit({
                 <FormItem>
                   <FormLabel>API Token</FormLabel>
                   <FormControl>
-                    <OptionalInput type="password" placeholder="Enter API token" {...field} />
+                    <OptionalInput
+                      type="password"
+                      placeholder="Enter API token"
+                      {...field}
+                      disabled={isFormDisabled}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -575,10 +793,14 @@ function ProviderKeyItemEdit({
             name="disabled"
             render={({ field }) => (
               <FormItem className="flex items-center space-x-2">
+                <FormLabel>Enabled</FormLabel>
                 <FormControl>
-                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  <Switch
+                    checked={!field.value}
+                    onCheckedChange={(checked) => field.onChange(!checked)}
+                    disabled={isFormDisabled}
+                  />
                 </FormControl>
-                <FormLabel>Disabled</FormLabel>
               </FormItem>
             )}
           />
