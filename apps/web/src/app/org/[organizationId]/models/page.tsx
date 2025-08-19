@@ -1,4 +1,5 @@
 import { Models } from '@/components/models'
+import { addIdPrefix } from '@/lib/utils'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
 /**
@@ -6,7 +7,8 @@ import { HydrateClient, prefetch, trpc } from '@/trpc/server'
  * Renders the Models component with client-side hydration
  */
 export default async function Page({ params }: { params: Promise<{ organizationId: string }> }) {
-  const organizationId = (await params).organizationId
+  const { organizationId: orgIdNoPrefix } = await params
+  const organizationId = addIdPrefix(orgIdNoPrefix, 'org')
 
   prefetch(trpc.model.listProviders.queryOptions())
   prefetch(trpc.model.listModels.queryOptions())
@@ -18,7 +20,7 @@ export default async function Page({ params }: { params: Promise<{ organizationI
 
   return (
     <HydrateClient>
-      <Models />
+      <Models organizationId={organizationId} />
     </HydrateClient>
   )
 }

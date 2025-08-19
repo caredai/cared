@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { Bot, Brain, Database, Puzzle, Settings2, Wrench } from 'lucide-react'
+import { Bot, Database, Puzzle, Settings2, Wrench } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
@@ -21,11 +21,6 @@ const items = [
     title: 'Tools',
     url: '/tools',
     icon: Wrench,
-  },
-  {
-    title: 'Models',
-    url: '/models',
-    icon: Brain,
   },
   {
     title: 'Extensions',

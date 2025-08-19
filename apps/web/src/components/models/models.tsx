@@ -22,6 +22,7 @@ import {
   CollapsibleTrigger,
 } from '@cared/ui/components/collapsible'
 
+import { SectionTitle } from '@/components/section'
 import { useTRPC } from '@/trpc/client'
 import { ProviderKeysSheet } from './provider-keys-sheet'
 
@@ -35,7 +36,13 @@ const MODEL_TYPE_CONFIG: Record<ModelType, { title: string }> = {
   image: { title: 'Image Models' },
 }
 
-export function Models() {
+export function Models({
+  isSystem,
+  organizationId,
+}: {
+  isSystem?: boolean
+  organizationId?: string
+}) {
   const trpc = useTRPC()
   const [_, copyToClipboard] = useCopyToClipboard()
 
@@ -83,11 +90,8 @@ export function Models() {
   const allModelTypes: ModelType[] = ['language', 'textEmbedding', 'image']
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight truncate">Models</h1>
-        <p className="text-muted-foreground mt-2">View and manage available providers and models</p>
-      </div>
+    <>
+      <SectionTitle title="Models" description="View and manage available providers and models" />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {providersData.providers.map((provider) => (
@@ -211,6 +215,8 @@ export function Models() {
       </div>
 
       <ProviderKeysSheet
+        isSystem={isSystem}
+        organizationId={organizationId}
         provider={
           selectedProviderId
             ? providersData.providers.find((p) => p.id === selectedProviderId)
@@ -219,7 +225,7 @@ export function Models() {
         open={providerKeysSheetOpen}
         onOpenChange={handleCloseProviderKeys}
       />
-    </div>
+    </>
   )
 }
 

@@ -7,6 +7,7 @@ import type { UserContext } from '../trpc'
 import type { ApiKeyMetadata, ApiKeyScope } from '../types'
 import { OrganizationScope } from '../auth'
 import { userPlainProtectedProcedure } from '../trpc'
+import { cfg } from '../config'
 
 const metadataSchema = z.discriminatedUnion('scope', [
   z.object({
@@ -46,6 +47,24 @@ const optionalMetadataSchema = z
   ])
   .optional()
 
+function formatKey(key: {
+  id: string
+  name: string | null
+  metadata: Record<string, any> | null
+  start: string | null
+  createdAt: Date
+  updatedAt: Date
+}) {
+  return {
+    id: key.id,
+    name: key.name ?? '',
+    ...(key.metadata as ApiKeyMetadata),
+    start: key.start ?? '',
+    createdAt: key.createdAt,
+    updatedAt: key.updatedAt,
+  }
+}
+
 async function listApiKeys(input: z.infer<typeof optionalMetadataSchema>) {
   const allApiKeys = await auth.api.listApiKeys()
 
@@ -62,6 +81,8 @@ async function listApiKeys(input: z.infer<typeof optionalMetadataSchema>) {
           filteredKeys = filteredKeys.filter(
             (key) => key.metadata?.organizationId === input.organizationId,
           )
+        } else {
+          filteredKeys = []
         }
         break
       case 'workspace':
@@ -69,11 +90,15 @@ async function listApiKeys(input: z.infer<typeof optionalMetadataSchema>) {
           filteredKeys = filteredKeys.filter(
             (key) => key.metadata?.workspaceId === input.workspaceId,
           )
+        } else {
+          filteredKeys = []
         }
         break
       case 'app':
         if (input.appId) {
           filteredKeys = filteredKeys.filter((key) => key.metadata?.appId === input.appId)
+        } else {
+          filteredKeys = []
         }
         break
     }
@@ -150,13 +175,7 @@ export const apiKeyRouter = {
       const apiKeys = await listApiKeys(input)
 
       return {
-        keys: apiKeys.map((key) => ({
-          id: key.id,
-          ...(key.metadata as ApiKeyMetadata),
-          start: key.start,
-          createdAt: key.createdAt,
-          updatedAt: key.updatedAt,
-        })),
+        keys: apiKeys.map(formatKey),
       }
     }),
 
@@ -213,15 +232,8 @@ export const apiKeyRouter = {
         },
       })
 
-      const { id, start, metadata, createdAt, updatedAt } = apiKey
       return {
-        key: {
-          id,
-          start,
-          ...(metadata as ApiKeyMetadata),
-          createdAt,
-          updatedAt,
-        },
+        key: formatKey(apiKey),
       }
     }),
 
@@ -247,7 +259,7 @@ export const apiKeyRouter = {
     .input(
       z
         .object({
-          name: z.string().optional(),
+          name: z.string(),
         })
         .and(metadataSchema),
     )
@@ -257,32 +269,55 @@ export const apiKeyRouter = {
 
       const allApiKeys = await auth.api.listApiKeys()
 
-      // Check if API key already exists for workspace and app scopes (only one allowed)
-      if (input.scope === 'workspace' || input.scope === 'app') {
-        const existingKey = allApiKeys.find((key) => {
-          if (key.metadata?.scope !== input.scope) {
+      await checkCreationPermission(ctx, metadata)
+
+      // Check API key count limits based on scope
+      const existingKeys = allApiKeys.filter((key) => {
+        if (key.metadata?.scope !== metadata.scope) return false
+
+        switch (metadata.scope) {
+          case 'user':
+            return true // All user-scoped keys for the current user
+          case 'organization':
+            return key.metadata.organizationId === metadata.organizationId
+          case 'workspace':
+            return key.metadata.workspaceId === metadata.workspaceId
+          case 'app':
+            return key.metadata.appId === metadata.appId
+          default:
             return false
-          }
+        }
+      })
 
-          switch (input.scope) {
-            case 'workspace':
-              return key.metadata.workspaceId === input.workspaceId
-            case 'app':
-              return key.metadata.appId === input.appId
-            default:
-              return false
-          }
-        })
-
-        if (existingKey) {
+      // Get the maximum allowed API keys for the scope
+      let maxAllowed: number
+      switch (metadata.scope) {
+        case 'user':
+          maxAllowed = cfg.perUser.maxApiKeys
+          break
+        case 'organization':
+          maxAllowed = cfg.perOrganization.maxApiKeys
+          break
+        case 'workspace':
+          maxAllowed = cfg.perWorkspace.maxApiKeys
+          break
+        case 'app':
+          maxAllowed = cfg.perApp.maxApiKeys
+          break
+        default:
           throw new TRPCError({
             code: 'BAD_REQUEST',
-            message: `API key already exists for this ${input.scope}. Only one API key is allowed per ${input.scope}.`,
+            message: 'Invalid scope',
           })
-        }
       }
 
-      await checkCreationPermission(ctx, metadata)
+      // Check if the limit would be exceeded
+      if (existingKeys.length >= maxAllowed) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: `Maximum number of API keys (${maxAllowed}) for ${metadata.scope} scope has been reached`,
+        })
+      }
 
       const apiKey = await auth.api.createApiKey({
         body: {
@@ -292,15 +327,10 @@ export const apiKeyRouter = {
         },
       })
 
-      const { id, key, start, createdAt, updatedAt } = apiKey
       return {
         key: {
-          id,
-          ...metadata,
-          key,
-          start,
-          createdAt,
-          updatedAt,
+          ...formatKey(apiKey),
+          key: apiKey.key,
         },
       }
     }),
@@ -350,15 +380,10 @@ export const apiKeyRouter = {
         },
       })
 
-      const { id, key, start, metadata, createdAt, updatedAt } = apiKey
       return {
         key: {
-          id,
-          key,
-          start,
-          ...(metadata as ApiKeyMetadata),
-          createdAt,
-          updatedAt,
+          ...formatKey(apiKey),
+          key: apiKey.key,
         },
       }
     }),

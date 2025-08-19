@@ -1,6 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Box, ChevronsUpDown, Plus } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -23,22 +23,14 @@ import {
   useWorkspaces,
 } from '@/hooks/use-workspace'
 import { stripIdPrefix } from '@/lib/utils'
-import Link from 'next/link'
 
 export function WorkspaceSwitcher() {
-  const router = useRouter()
-
   const { activeWorkspace, activeApp } = useActive()
   const workspaces = useWorkspaces(activeWorkspace?.organizationId)
   const [, setLastWorkspace] = useLastWorkspace()
   const replaceRouteWithWorkspaceId = useReplaceRouteWithWorkspaceId()
 
   const isMobile = useIsMobile()
-
-  const handleWorkspaceSelect = (workspaceId: string) => {
-    setLastWorkspace(workspaceId)
-    router.push(replaceRouteWithWorkspaceId(workspaceId))
-  }
 
   if (!activeWorkspace) {
     return null
@@ -49,7 +41,7 @@ export function WorkspaceSwitcher() {
       <div className="flex size-6 items-center justify-center rounded-md border bg-background">
         <Plus className="size-4" />
       </div>
-      <div className="font-medium text-muted-foreground">Create workspace</div>
+      <div>Create workspace</div>
     </DropdownMenuItem>
   )
 
@@ -64,9 +56,7 @@ export function WorkspaceSwitcher() {
             className="h-8 gap-2 px-1 has-[>svg]:px-1 text-sm font-medium hover:bg-inherit hover:text-inherit"
             asChild
           >
-            <Link
-              href={`/workspace/${stripIdPrefix(activeWorkspace.id)}`}
-            >
+            <Link href={`/workspace/${stripIdPrefix(activeWorkspace.id)}`}>
               <Box className="text-muted-foreground/70" />
               <span className={cn('truncate max-w-20 md:inline', activeApp && 'hidden')}>
                 {activeWorkspace.name}
@@ -90,27 +80,33 @@ export function WorkspaceSwitcher() {
               <DropdownMenuLabel className="text-xs text-muted-foreground">
                 Workspaces
               </DropdownMenuLabel>
-              {workspaces.map((space) => (
-                <DropdownMenuItem
-                  key={space.id}
-                  disabled={space.id === activeWorkspace.id}
-                  onClick={() => handleWorkspaceSelect(space.id)}
-                  className={cn(
-                    'max-w-56 gap-2 p-2',
-                    space.id !== activeWorkspace.id && 'cursor-pointer',
-                  )}
-                >
-                  <div className="flex size-6 items-center justify-center rounded-sm border">
-                    <Box className="size-4 text-muted-foreground/70" />
-                  </div>
-                  <span className={cn('flex-1 truncate')}>{space.name}</span>
-                  {space.id === activeWorkspace.id && (
-                    <div className="ml-2 flex items-center">
-                      <div className="size-2 rounded-full bg-primary" aria-hidden="true" />
-                    </div>
-                  )}
-                </DropdownMenuItem>
-              ))}
+              {workspaces.map((space) => {
+                const isActive = space.id === activeWorkspace.id
+
+                return (
+                  <DropdownMenuItem
+                    key={space.id}
+                    className="max-w-56 gap-2 p-2 cursor-pointer"
+                    asChild
+                  >
+                    <Link
+                      href={replaceRouteWithWorkspaceId(space.id)}
+                      className="flex w-full items-center gap-2"
+                      onClick={() => setLastWorkspace(space.id)}
+                    >
+                      <div className="flex size-6 items-center justify-center rounded-sm border">
+                        <Box className="size-4 text-muted-foreground/70" />
+                      </div>
+                      <span className={cn('flex-1 truncate')}>{space.name}</span>
+                      {isActive && (
+                        <div className="ml-2 flex items-center">
+                          <div className="size-1.5 rounded-full bg-green-500" aria-hidden="true" />
+                        </div>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                )
+              })}
               <DropdownMenuSeparator />
               {trigger({ children: addWorkspaceMenuItem })}
             </DropdownMenuContent>

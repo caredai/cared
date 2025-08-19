@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Bot, ChevronsUpDown, Plus } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -16,15 +15,12 @@ import {
 import { useIsMobile } from '@cared/ui/hooks/use-mobile'
 import { cn } from '@cared/ui/lib/utils'
 
-// Import CreateAppDialog from the workspace apps directory
-import { CreateAppDialog } from '@/app/workspace/[workspaceId]/apps/create-app-dialog'
+import { CreateAppDialog } from '@/components/create-app-dialog'
 import { useActive } from '@/hooks/use-active'
 import { useApps, useReplaceRouteWithAppId } from '@/hooks/use-app'
 import { stripIdPrefix } from '@/lib/utils'
 
 export function AppSwitcher() {
-  const router = useRouter()
-
   const { activeApp, activeWorkspace } = useActive()
   const apps = useApps({ workspaceId: activeWorkspace?.id })
   const replaceRouteWithAppId = useReplaceRouteWithAppId()
@@ -36,16 +32,12 @@ export function AppSwitcher() {
     return null
   }
 
-  const handleAppSelect = (appId: string) => {
-    router.push(replaceRouteWithAppId(appId))
-  }
-
   const addAppMenuItem = (
     <DropdownMenuItem className="gap-2 p-2 cursor-pointer">
       <div className="flex size-6 items-center justify-center rounded-md border bg-background">
         <Plus className="size-4" />
       </div>
-      <div className="font-medium text-muted-foreground">Create app</div>
+      <div>Create app</div>
     </DropdownMenuItem>
   )
 
@@ -80,27 +72,31 @@ export function AppSwitcher() {
               sideOffset={4}
             >
               <DropdownMenuLabel className="text-xs text-muted-foreground">Apps</DropdownMenuLabel>
-              {apps.map((app) => (
-                <DropdownMenuItem
-                  key={app.app.id}
-                  disabled={app.app.id === activeApp.app.id}
-                  onClick={() => handleAppSelect(app.app.id)}
-                  className={cn(
-                    'max-w-56 gap-2 p-2',
-                    app.app.id !== activeApp.app.id && 'cursor-pointer',
-                  )}
-                >
-                  <div className="flex size-6 items-center justify-center rounded-sm border">
-                    <Bot className="size-4 text-muted-foreground/70" />
-                  </div>
-                  <span className={cn('flex-1 truncate')}>{app.app.name}</span>
-                  {app.app.id === activeApp.app.id && (
-                    <div className="ml-2 flex items-center">
-                      <div className="size-2 rounded-full bg-primary" aria-hidden="true" />
-                    </div>
-                  )}
-                </DropdownMenuItem>
-              ))}
+              {apps.map((app) => {
+                const isActive = app.app.id === activeApp.app.id
+                return (
+                  <DropdownMenuItem
+                    key={app.app.id}
+                    className="max-w-56 gap-2 p-2 cursor-pointer"
+                    asChild
+                  >
+                    <Link
+                      href={replaceRouteWithAppId(app.app.id)}
+                      className="flex w-full items-center gap-2"
+                    >
+                      <div className="flex size-6 items-center justify-center rounded-sm border">
+                        <Bot className="size-4 text-muted-foreground/70" />
+                      </div>
+                      <span className={cn('flex-1 truncate')}>{app.app.name}</span>
+                      {isActive && (
+                        <div className="ml-2 flex items-center">
+                          <div className="size-1.5 rounded-full bg-green-500" aria-hidden="true" />
+                        </div>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                )
+              })}
               <DropdownMenuSeparator />
               {trigger({ children: addAppMenuItem })}
             </DropdownMenuContent>

@@ -8,6 +8,7 @@ import { ErrorFallback } from '@/components/error-fallback'
 import { prefetchAndCheckSession } from '@/lib/session'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AdminMenuBreadcrumb, AdminNavMain } from './nav-main'
+import { Section } from '@/components/section'
 
 export default async function Layout({
   children,
@@ -24,7 +25,7 @@ export default async function Layout({
     <HydrateClient>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <SidebarProvider>
-          <AppSidebar baseUrl="/admin">
+          <AppSidebar baseUrl="/admin" alwaysShowLogo>
             <AdminNavMain />
           </AppSidebar>
 
@@ -35,7 +36,8 @@ export default async function Layout({
                 <AdminMenuBreadcrumb />
               </div>
             </header>
-            {children}
+
+            <Section>{children}</Section>
           </SidebarInset>
         </SidebarProvider>
       </ErrorBoundary>

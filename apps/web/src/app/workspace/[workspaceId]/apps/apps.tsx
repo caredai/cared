@@ -28,12 +28,12 @@ import {
 } from '@cared/ui/components/select'
 import { Separator } from '@cared/ui/components/separator'
 
+import { CreateAppDialog } from '@/components/create-app-dialog'
 import { RemoteImage } from '@/components/image'
 import { useApps } from '@/hooks/use-app'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 import defaultLogo from '@/public/images/agent.png'
 import { useTRPC } from '@/trpc/client'
-import { CreateAppDialog } from './create-app-dialog'
 
 // Constant for all categories filter value
 const ALL_CATEGORIES = 'all'

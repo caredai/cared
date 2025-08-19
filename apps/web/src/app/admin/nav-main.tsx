@@ -1,11 +1,16 @@
 'use client'
 
-import { Bot, DatabaseZap } from 'lucide-react'
+import { Bot, Brain, DatabaseZap } from 'lucide-react'
 
-import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
 import { NavMain } from '@/components/app-sidebar/nav-main'
+import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
 
 const items = [
+  {
+    title: 'Models',
+    url: '/models',
+    icon: Brain,
+  },
   {
     title: 'Apps',
     url: '/apps',

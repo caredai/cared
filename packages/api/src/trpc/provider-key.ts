@@ -307,7 +307,7 @@ async function checkPermissions(
     userId?: string | null
     organizationId?: string | null
   },
-  permissions: OrganizationStatementsSubset = {},
+  permissions?: OrganizationStatementsSubset,
 ) {
   if (isSystem) {
     if (!ctx.auth.isAdmin) {

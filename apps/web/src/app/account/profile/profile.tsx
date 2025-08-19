@@ -27,6 +27,7 @@ import {
 import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
 
+import { SectionTitle } from '@/components/section'
 import { CircleSpinner } from '@/components/spinner'
 import { useAccounts, useSession } from '@/hooks/use-session'
 import { allowedProviders, getAccountInfo } from '@/lib/auth-providers'
@@ -132,12 +133,11 @@ export function Profile() {
   const { success: hasEmail } = z.string().email().safeParse(user.email)
 
   return (
-    <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 space-y-8">
-      {/* Header section */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Profile Settings</h1>
-        <p className="text-gray-600">Manage your personal information and preferences</p>
-      </div>
+    <>
+      <SectionTitle
+        title="Profile Settings"
+        description="Manage your personal information and preferences"
+      />
 
       {/* Profile Information */}
       <Card>
@@ -330,6 +330,6 @@ export function Profile() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </>
   )
 }

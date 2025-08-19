@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from '@cared/ui/components/dropdown-menu'
 
+import { SectionTitle } from '@/components/section'
 import { CircleSpinner, Spinner } from '@/components/spinner'
 import { Tooltip } from '@/components/tooltip'
 import { WalletAddress } from '@/components/wallet-address'
@@ -184,12 +185,8 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 space-y-8">
-      {/* Header section */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Wallet Management</h1>
-        <p className="text-gray-600">Manage your embedded and external wallets</p>
-      </div>
+    <>
+      <SectionTitle title="Wallet" description="Manage your embedded and external wallets" />
 
       {/* Embedded Wallets Section */}
       <Card>
@@ -345,7 +342,7 @@ export default function WalletPage() {
         selectedWallet={selectedWallet}
         copyToClipboard={copyToClipboard}
       />
-    </div>
+    </>
   )
 }
 

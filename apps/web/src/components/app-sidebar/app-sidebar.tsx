@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from '@cared/ui/components/sidebar'
+import { cn } from '@cared/ui/lib/utils'
 
 import { Logo } from '@/components/logo'
 import { NavSecondary } from './nav-secondary'
@@ -18,16 +19,18 @@ import { NavUser } from './nav-user'
 
 export function AppSidebar({
   baseUrl,
+  alwaysShowLogo,
   children,
   ...props
 }: {
   baseUrl: string
+  alwaysShowLogo?: boolean
   children: ReactNode
 } & ComponentProps<typeof Sidebar>) {
   return (
     <div className="![--sidebar-width:12rem]">
       <Sidebar variant="inset" {...props}>
-        <div className="block md:hidden">
+        <div className={cn(!alwaysShowLogo && 'block md:hidden')}>
           <SidebarHeader>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -41,7 +44,7 @@ export function AppSidebar({
           </SidebarHeader>
           <SidebarSeparator className="mx-0" />
         </div>
-        <div className="hidden md:block h-12" />
+        {!alwaysShowLogo && <div className="hidden md:block h-12" />}
         <SidebarContent>
           {/* nav main */}
           {children}

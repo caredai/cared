@@ -16,7 +16,7 @@ export default function Page() {
 
   return (
     <HydrateClient>
-      <Models />
+      <Models isSystem />
     </HydrateClient>
   )
 }

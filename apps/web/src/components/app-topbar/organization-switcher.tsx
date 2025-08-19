@@ -1,7 +1,9 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Boxes, ChevronsUpDown, Plus, UserIcon } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -26,36 +28,21 @@ import {
 } from '@/hooks/use-organization'
 import { useSession } from '@/hooks/use-session'
 import { stripIdPrefix } from '@/lib/utils'
-import Link from 'next/link'
 
 export function OrganizationAndAccountSwitcherInner({
   trigger,
 }: {
   trigger?: (props: { children: ReactNode }) => ReactNode
 }) {
+  const router = useRouter()
+  const [isOpen, setIsOpen] = useState(false)
   const { user } = useSession()
   const organizations = useOrganizations()
   const { activeOrganization, activeWorkspace } = useActive()
   const { setLastOrganization } = useSetLastOrganization()
-  const router = useRouter()
   const replaceRouteWithOrganizationId = useReplaceRouteWithOrganizationId()
 
   const isMobile = useIsMobile()
-
-  const handleOrganizationSelect = async (organizationId: string) => {
-    await setLastOrganization(organizationId, true)
-    if (!activeOrganization || activeWorkspace) {
-      // If in account or workspace page, navigate to the organization page
-      router.push(`/org/${stripIdPrefix(organizationId)}`)
-    } else {
-      router.push(replaceRouteWithOrganizationId(organizationId))
-    }
-  }
-
-  const handleAccountSelect = async () => {
-    await setLastOrganization(undefined, true)
-    router.push('/account/credits')
-  }
 
   const addOrganizationMenuItem = (
     <DropdownMenuItem className="gap-2 p-2 cursor-pointer">
@@ -68,6 +55,20 @@ export function OrganizationAndAccountSwitcherInner({
 
   const Trigger = trigger
 
+  const handleOrganizationClick = async (e: React.MouseEvent, orgId: string, href: string) => {
+    e.preventDefault() // Prevent default navigation
+    setIsOpen(false) // Close the dropdown menu
+    await setLastOrganization(orgId, true)
+    router.push(href) // Use router.push for navigation
+  }
+
+  const handleAccountClick = async (e: React.MouseEvent) => {
+    e.preventDefault() // Prevent default navigation
+    setIsOpen(false) // Close the dropdown menu
+    await setLastOrganization(undefined, true)
+    router.push('/account/credits') // Use router.push for navigation
+  }
+
   return (
     <div className="flex items-center">
       <Button
@@ -76,7 +77,9 @@ export function OrganizationAndAccountSwitcherInner({
         asChild
       >
         <Link
-          href={activeOrganization ? `/org/${stripIdPrefix(activeOrganization.id)}` : `/account/credits`}
+          href={
+            activeOrganization ? `/org/${stripIdPrefix(activeOrganization.id)}` : `/account/credits`
+          }
         >
           {!activeOrganization ? (
             <>
@@ -94,7 +97,7 @@ export function OrganizationAndAccountSwitcherInner({
         </Link>
       </Button>
 
-      <DropdownMenu>
+      <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 px-1.5 has-[>svg]:px-1.5 text-sm font-medium">
             <ChevronsUpDown className="size-4" />
@@ -109,34 +112,46 @@ export function OrganizationAndAccountSwitcherInner({
           <DropdownMenuLabel className="text-xs text-muted-foreground">
             Organizations
           </DropdownMenuLabel>
-          {organizations.map((org) => (
-            <DropdownMenuItem
-              key={org.id}
-              disabled={org.id === activeOrganization?.id}
-              onClick={() => handleOrganizationSelect(org.id)}
-              className={cn(
-                'max-w-56 gap-2 p-2',
-                org.id !== activeOrganization?.id && 'cursor-pointer',
-              )}
-            >
-              <div className="flex size-6 items-center justify-center rounded-sm border">
-                <Boxes className="size-4 text-muted-foreground/70" />
-              </div>
-              <span className={cn('flex-1 truncate')}>{org.name}</span>
-              {org.id === activeOrganization?.id && (
-                <div className="ml-2 flex items-center">
-                  <div className="size-2 rounded-full bg-primary" aria-hidden="true" />
-                </div>
-              )}
-            </DropdownMenuItem>
-          ))}
+          {organizations.map((org) => {
+            const isActive = org.id === activeOrganization?.id
+            const href =
+              !activeOrganization || activeWorkspace
+                ? `/org/${stripIdPrefix(org.id)}`
+                : replaceRouteWithOrganizationId(org.id)
+
+            return (
+              <DropdownMenuItem key={org.id} className="max-w-56 gap-2 p-2 cursor-pointer" asChild>
+                <Link
+                  href={href}
+                  className="flex w-full items-center gap-2"
+                  onClick={(e) => handleOrganizationClick(e, org.id, href)}
+                >
+                  <div className="flex size-6 items-center justify-center rounded-sm border">
+                    <Boxes className="size-4 text-muted-foreground/70" />
+                  </div>
+                  <span className={cn('flex-1 truncate')}>{org.name}</span>
+                  {isActive && (
+                    <div className="ml-2 flex items-center">
+                      <div className="size-1.5 rounded-full bg-green-500" aria-hidden="true" />
+                    </div>
+                  )}
+                </Link>
+              </DropdownMenuItem>
+            )
+          })}
           <DropdownMenuSeparator />
           {Trigger ? <Trigger>{addOrganizationMenuItem}</Trigger> : addOrganizationMenuItem}
 
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-xs text-muted-foreground">Account</DropdownMenuLabel>
-          <DropdownMenuItem onClick={handleAccountSelect} className="gap-2 p-2 cursor-pointer">
-            <UserInfo user={user} />
+          <DropdownMenuItem className="gap-2 p-2 cursor-pointer" asChild>
+            <Link
+              href="/account/credits"
+              className="flex w-full items-center gap-2"
+              onClick={handleAccountClick}
+            >
+              <UserInfo user={user} />
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

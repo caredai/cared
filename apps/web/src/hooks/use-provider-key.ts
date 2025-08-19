@@ -6,11 +6,7 @@ import type { ProviderId, ProviderKey } from '@cared/providers'
 
 import { useTRPC } from '@/trpc/client'
 
-export function useProviderKeys(input?: {
-  isSystem?: boolean
-  organizationId?: string
-  providerId?: ProviderId
-}) {
+export function useProviderKeys(input?: { isSystem?: boolean; organizationId?: string }) {
   const trpc = useTRPC()
 
   const {
@@ -20,7 +16,6 @@ export function useProviderKeys(input?: {
     trpc.providerKey.list.queryOptions({
       isSystem: input?.isSystem,
       organizationId: input?.organizationId,
-      providerId: input?.providerId,
     }),
   )
 
@@ -42,8 +37,19 @@ export function useUserProviderKeys() {
   return useProviderKeys()
 }
 
-export function useProviderKeysByProvider(providerId?: string) {
-  const { providerKeys, refetchProviderKeys } = useProviderKeys()
+export function useProviderKeysByProvider({
+  isSystem,
+  organizationId,
+  providerId,
+}: {
+  isSystem?: boolean
+  organizationId?: string
+  providerId?: ProviderId
+}) {
+  const { providerKeys, refetchProviderKeys } = useProviderKeys({
+    isSystem,
+    organizationId,
+  })
 
   const filteredProviderKeys = useMemo(() => {
     if (!providerId) {

@@ -28,6 +28,7 @@ import {
   TooltipTrigger,
 } from '@cared/ui/components/tooltip'
 
+import { SectionTitle } from '@/components/section'
 import { useAccounts, useSession } from '@/hooks/use-session'
 import { useTRPC } from '@/trpc/client'
 import { ChangePasswordDialog } from './change-password-dialog'
@@ -114,12 +115,11 @@ export function Security() {
   }
 
   return (
-    <div className="container max-w-7xl mx-auto py-6 px-4 sm:px-6 space-y-6">
-      {/* Header section */}
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold mb-2">Security Settings</h1>
-        <p className="text-gray-600">Manage your account security and authentication methods</p>
-      </div>
+    <>
+      <SectionTitle
+        title="Security Settings"
+        description="Manage your account security and authentication methods"
+      />
 
       {/* Authentication Methods Card */}
       <Card>
@@ -330,6 +330,6 @@ export function Security() {
         open={showChangePasswordDialog}
         onOpenChange={setShowChangePasswordDialog}
       />
-    </div>
+    </>
   )
 }

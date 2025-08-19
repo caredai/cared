@@ -87,16 +87,24 @@ interface EditableProviderKey {
 }
 
 export function ProviderKeysSheet({
+  isSystem,
+  organizationId,
   provider,
   open,
   onOpenChange,
 }: {
+  isSystem?: boolean
+  organizationId?: string
   provider?: BaseProviderInfo
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const providerId = provider?.id
-  const { providerKeys, refetchProviderKeys } = useProviderKeysByProvider(providerId)
+  const { providerKeys, refetchProviderKeys } = useProviderKeysByProvider({
+    isSystem,
+    organizationId,
+    providerId,
+  })
   const vListRef = useRef<VirtualizerHandle>(null)
   const createProviderKey = useCreateProviderKey()
   const updateProviderKey = useUpdateProviderKey()

@@ -6,6 +6,8 @@ import { generateOpenApiDocument } from './openapi'
 import { appRouter } from './root'
 import { createCallerFactory, createTRPCContext } from './trpc'
 
+export * from './types'
+
 /**
  * Create a server-side caller for the tRPC API
  * @example

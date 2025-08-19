@@ -15,7 +15,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <NavTabs>
         <TabsList className="w-full max-w-md">
-          <TabsLinkTrigger href="./api-key">
+          <TabsLinkTrigger href="./api-keys">
             <KeyIcon className="h-4 w-4" />
             API key
           </TabsLinkTrigger>
@@ -25,7 +25,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </TabsLinkTrigger>
         </TabsList>
 
-        <TabsContent value="./api-key" className="space-y-4">
+        <TabsContent value="./api-keys" className="space-y-4">
           {children}
         </TabsContent>
         <TabsContent value="./oauth-application" className="space-y-4">

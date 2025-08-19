@@ -18,6 +18,7 @@ import {
 } from '@cared/ui/components/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
 
+import { SectionTitle } from '@/components/section'
 import { useCredits, useListCreditsOrders, useListCreditsSubscriptions } from '@/hooks/use-credits'
 import { RechargeDialog } from './recharge-dialog'
 
@@ -51,11 +52,8 @@ export function Credits() {
   }
 
   return (
-    <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 space-y-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Credits</h1>
-        <p className="text-gray-600">Manage your credits and billing</p>
-      </div>
+    <>
+      <SectionTitle title="Credits" description="Manage your credits and billing" />
 
       <Card>
         <CardHeader>
@@ -227,7 +225,7 @@ export function Credits() {
       </Tabs>
 
       <RechargeDialog open={isRechargeDialogOpen} onOpenChange={setIsRechargeDialogOpen} />
-    </div>
+    </>
   )
 }
 

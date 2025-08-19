@@ -8,6 +8,7 @@ import { Button } from '@cared/ui/components/button'
 import { Card, CardContent, CardDescription, CardTitle } from '@cared/ui/components/card'
 
 import { RemoteImage } from '@/components/image'
+import { SectionTitle } from '@/components/section'
 import { CircleSpinner } from '@/components/spinner'
 import defaultLogo from '@/public/images/agent.png'
 import { useTRPC } from '@/trpc/client'
@@ -29,11 +30,11 @@ export function Applications() {
   )
 
   return (
-    <div className="container max-w-7xl mx-auto py-8 px-4 sm:px-6 space-y-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Authorized Applications</h1>
-        <p className="text-muted-foreground mt-2">Manage your authorized OAuth applications</p>
-      </div>
+    <>
+      <SectionTitle
+        title="Authorized Applications"
+        description="Manage your authorized OAuth applications"
+      />
 
       <div className="space-y-4">
         {apps.apps.length === 0 ? (
@@ -82,6 +83,6 @@ export function Applications() {
           ))
         )}
       </div>
-    </div>
+    </>
   )
 }

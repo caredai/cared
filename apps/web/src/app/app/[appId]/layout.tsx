@@ -31,6 +31,8 @@ export default async function Layout({
   prefetch(trpc.organization.list.queryOptions())
   prefetch(trpc.workspace.list.queryOptions())
   prefetch(trpc.app.list.queryOptions())
+  prefetch(trpc.model.listProvidersModels.queryOptions())
+  prefetch(trpc.model.listDefaultModels.queryOptions())
 
   await fetch(
     trpc.app.byId.queryOptions({
