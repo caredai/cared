@@ -1,10 +1,13 @@
 import { createCaller } from '@cared/api'
 
-import { createContext, HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { prefetchAndCheckSession } from '@/lib/session'
+import { createContext, HydrateClient } from '@/trpc/server'
 import { Redirect } from './redirect'
 
 export default async function Page() {
-  prefetch(trpc.user.session.queryOptions())
+  if (!(await prefetchAndCheckSession())) {
+    return
+  }
 
   await createCaller(createContext).organization.setActive({
     organizationId: null,

@@ -22,7 +22,9 @@ export default async function Page({
   )
   if (session) {
     redirect(redirectToUrl)
+    return
   }
+
   return (
     <HydrateClient>
       <SignInUp mode="sign-up" />

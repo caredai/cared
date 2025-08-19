@@ -1,4 +1,11 @@
-import type { DefaultError, FetchQueryOptions, QueryKey } from '@tanstack/react-query'
+import type {
+  DefaultError,
+  FetchQueryOptions,
+  InferDataFromTag,
+  QueryKey,
+  SetDataOptions,
+  Updater,
+} from '@tanstack/react-query'
 import type { TRPCQueryOptions } from '@trpc/tanstack-react-query'
 import { cache } from 'react'
 import { headers } from 'next/headers'
@@ -56,4 +63,24 @@ export function fetch<
 ): Promise<TData> {
   const queryClient = getQueryClient()
   return queryClient.fetchQuery(queryOptions)
+}
+
+export function setData<
+  TQueryFnData = unknown,
+  TTaggedQueryKey extends QueryKey = QueryKey,
+  TInferredQueryFnData = InferDataFromTag<TQueryFnData, TTaggedQueryKey>,
+>(
+  queryKey: TTaggedQueryKey,
+  updater: Updater<
+    NoInfer<TInferredQueryFnData> | undefined,
+    NoInfer<TInferredQueryFnData> | undefined
+  >,
+  options?: SetDataOptions,
+): NoInfer<TInferredQueryFnData> | undefined {
+  const queryClient = getQueryClient()
+  return queryClient.setQueryData<TQueryFnData, TTaggedQueryKey, TInferredQueryFnData>(
+    queryKey,
+    updater,
+    options,
+  )
 }

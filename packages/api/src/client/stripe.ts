@@ -17,6 +17,7 @@ export function getStripe() {
     })
   }
   return new Stripe(env.STRIPE_SECRET_KEY, {
+    httpClient: Stripe.createFetchHttpClient(),
     maxNetworkRetries: 1,
     timeout: 15000,
     telemetry: false,

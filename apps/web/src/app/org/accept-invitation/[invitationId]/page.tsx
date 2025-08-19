@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 
-import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { prefetchAndCheckSession } from '@/lib/session'
+import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AcceptInvitation } from './accept-invitation'
 
 export default async function Page({ params }: { params: Promise<{ invitationId: string }> }) {
@@ -9,15 +10,15 @@ export default async function Page({ params }: { params: Promise<{ invitationId:
   // Redirect if no invitationId
   if (!invitationId) {
     redirect('/')
+    return
   }
 
-  const session = await fetch(
-    trpc.user.session.queryOptions({
-      auth: false,
-    }),
-  )
-  if (!session) {
-    redirect(`/auth/sign-in?redirectTo=/org/accept-invitation/${invitationId}`)
+  if (
+    !(await prefetchAndCheckSession(
+      `/auth/sign-in?redirectTo=/org/accept-invitation/${invitationId}`,
+    ))
+  ) {
+    return
   }
 
   prefetch(

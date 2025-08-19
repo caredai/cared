@@ -16,6 +16,7 @@ import { getActiveOrganizationId } from '@/lib/active'
 import { lastWorkspaceCookieName } from '@/lib/cookie'
 import { stripIdPrefix } from '@/lib/utils'
 import { createContext, fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { prefetchAndCheckSession } from '@/lib/session'
 
 export default async function OrganizationLayout({
   children,
@@ -26,6 +27,10 @@ export default async function OrganizationLayout({
 }>) {
   const { activeOrganizationId, activeOrganizationIdNoPrefix } =
     await getActiveOrganizationId(params)
+
+  if (!(await prefetchAndCheckSession())) {
+    return
+  }
 
   const { organizations } = await fetch(trpc.organization.list.queryOptions())
 
@@ -59,7 +64,6 @@ export default async function OrganizationLayout({
     }
   }
 
-  prefetch(trpc.user.session.queryOptions())
   prefetch(trpc.app.list.queryOptions())
 
   return (

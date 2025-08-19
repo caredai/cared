@@ -12,6 +12,7 @@ import { Section } from '@/components/section'
 import { addIdPrefix } from '@/lib/utils'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { WorkspaceNavMain } from './nav-main'
+import { prefetchAndCheckSession } from '@/lib/session'
 
 export default async function WorkspaceLayout({
   children,
@@ -23,7 +24,9 @@ export default async function WorkspaceLayout({
   const { workspaceId: workspaceIdNoPrefix } = await params
   const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
 
-  prefetch(trpc.user.session.queryOptions())
+  if (!(await prefetchAndCheckSession())) {
+    return
+  }
 
   const { workspaces } = await fetch(trpc.workspace.list.queryOptions())
 

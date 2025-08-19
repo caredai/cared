@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/components/sidebar'
+import { SidebarInset, SidebarProvider } from '@cared/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { AppTopBar } from '@/components/app-topbar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { Section } from '@/components/section'
+import { prefetchAndCheckSession } from '@/lib/session'
 import { addIdPrefix } from '@/lib/utils'
 import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AppNavMain } from './nav-main'
@@ -23,12 +24,15 @@ export default async function Layout({
   const { appId: appIdNoPrefix } = await params
   const appId = addIdPrefix(appIdNoPrefix, 'app')
 
-  prefetch(trpc.user.session.queryOptions())
+  if (!(await prefetchAndCheckSession())) {
+    return
+  }
+
   prefetch(trpc.organization.list.queryOptions())
   prefetch(trpc.workspace.list.queryOptions())
   prefetch(trpc.app.list.queryOptions())
 
-  const { app } = await fetch(
+  await fetch(
     trpc.app.byId.queryOptions({
       id: appId,
     }),

@@ -16,7 +16,7 @@ import {
   Workspace,
 } from '@cared/db/schema'
 
-import { publicProcedure, userOrAppUserProtectedProcedure, userProtectedProcedure } from '../trpc'
+import { publicProcedure, userProtectedProcedure } from '../trpc'
 import { formatOAuthApp } from './oauth-app'
 
 export const userRouter = {

@@ -28,7 +28,7 @@ import {
   TooltipTrigger,
 } from '@cared/ui/components/tooltip'
 
-import { useAccounts } from '@/hooks/use-session'
+import { useAccounts, useSession } from '@/hooks/use-session'
 import { useTRPC } from '@/trpc/client'
 import { ChangePasswordDialog } from './change-password-dialog'
 
@@ -38,9 +38,7 @@ export function Security() {
   const [isRevoking, setIsRevoking] = useState(false)
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)
 
-  const { data: currentSession } = useSuspenseQuery({
-    ...trpc.user.session.queryOptions(),
-  })
+  const { session } = useSession()
   const {
     data: { sessions: sessionsData },
     refetch: refetchSessions,
@@ -57,7 +55,7 @@ export function Security() {
         ...s,
         ua: s.userAgent ? UAParser(s.userAgent) : undefined,
 
-        isCurrent: s.token === currentSession?.session.token,
+        isCurrent: s.token === session.token,
       }
     })
     .reverse()
