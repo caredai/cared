@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { boolean, index, jsonb, pgTable, text, unique } from 'drizzle-orm/pg-core'
+import { boolean, index, jsonb, pgTable, text } from 'drizzle-orm/pg-core'
 
 import type {
   ModelInfos,
@@ -26,9 +26,9 @@ export const ProviderModels = pgTable(
     ...timestamps,
   },
   (table) => [
-    unique().on(table.isSystem, table.providerId),
-    unique().on(table.userId, table.providerId),
-    unique().on(table.organizationId, table.providerId),
+    index().on(table.isSystem, table.providerId),
+    index().on(table.userId, table.providerId),
+    index().on(table.organizationId, table.providerId),
   ],
 )
 

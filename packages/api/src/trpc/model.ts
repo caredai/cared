@@ -1,8 +1,9 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
+import type { SQL } from '@cared/db'
 import type { BaseModelInfo, BaseProviderInfo, ModelInfos, ModelType } from '@cared/providers'
-import { and, eq, or } from '@cared/db'
+import { and, eq, inArray, or, sql } from '@cared/db'
 import { ProviderModels } from '@cared/db/schema'
 import log from '@cared/log'
 import {
@@ -263,7 +264,7 @@ export const modelRouter = {
           model = userOrgModel
           break
         default:
-          model = userOrgModel ?? systemModel
+          model = systemModel ?? userOrgModel // if both exist, prefer system models
           break
       }
 
@@ -443,33 +444,43 @@ export const modelRouter = {
           z.discriminatedUnion('type', [
             z.object({
               type: z.literal('language'),
-              models: z.array(languageModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              })),
+              models: z.array(
+                languageModelInfoSchema.extend({
+                  id: modelFullIdSchema,
+                }),
+              ),
             }),
             z.object({
               type: z.literal('image'),
-              models: z.array(imageModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              })),
+              models: z.array(
+                imageModelInfoSchema.extend({
+                  id: modelFullIdSchema,
+                }),
+              ),
             }),
             z.object({
               type: z.literal('speech'),
-              models: z.array(speechModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              })),
+              models: z.array(
+                speechModelInfoSchema.extend({
+                  id: modelFullIdSchema,
+                }),
+              ),
             }),
             z.object({
               type: z.literal('transcription'),
-              models: z.array(transcriptionModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              })),
+              models: z.array(
+                transcriptionModelInfoSchema.extend({
+                  id: modelFullIdSchema,
+                }),
+              ),
             }),
             z.object({
               type: z.literal('textEmbedding'),
-              models: z.array(embeddingModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              })),
+              models: z.array(
+                embeddingModelInfoSchema.extend({
+                  id: modelFullIdSchema,
+                }),
+              ),
             }),
           ]),
         )
@@ -748,13 +759,14 @@ async function getProviderInfos(ctx: Context, source?: Source, organizationId?: 
     .select()
     .from(ProviderModels)
     .where(
-      source === 'system'
+      source === 'system' // only system models
         ? eq(ProviderModels.isSystem, true)
-        : source === 'custom'
+        : source === 'custom' // only user/organization customized models
           ? organizationId
             ? eq(ProviderModels.organizationId, organizationId)
             : eq(ProviderModels.userId, userId!)
           : or(
+              // both system models and user/organization customized models
               eq(ProviderModels.isSystem, true),
               organizationId
                 ? eq(ProviderModels.organizationId, organizationId)
@@ -776,37 +788,97 @@ async function getProviderInfos(ctx: Context, source?: Source, organizationId?: 
   }
 
   const providers: ReturnedProviderInfo[] = []
+
+  const deleteIds: string[] = []
+  const updateIds: string[] = []
+  const updateSqlChunks: SQL[] = []
+
+  updateSqlChunks.push(sql`(case`)
+
   for (const providerInfo of baseProviderInfos) {
-    const models = mergeModels(
-      systemProviderModels.get(providerInfo.id)?.models,
-      userOrgProviderModels.get(providerInfo.id)?.models,
+    const system = systemProviderModels.get(providerInfo.id)
+    const userOrg = userOrgProviderModels.get(providerInfo.id)
+    const { shouldUpdateUserOrg, ...models } = mergeModels(
+      system?.models,
+      userOrg?.models, // may be updated in place if deduplicated
     )
     providers.push({
       ...providerInfo,
       ...models,
     })
+
+    if (shouldUpdateUserOrg && userOrg) {
+      const models = userOrg.models
+      if (
+        models.languageModels?.length ||
+        models.imageModels?.length ||
+        models.speechModels?.length ||
+        models.transcriptionModels?.length ||
+        models.textEmbeddingModels?.length
+      ) {
+        updateIds.push(userOrg.id)
+        updateSqlChunks.push(sql`when ${ProviderModels.id} = ${userOrg.id} then ${userOrg.models}`)
+      } else {
+        // If all model arrays are empty, delete the record
+        deleteIds.push(userOrg.id)
+      }
+    }
+  }
+
+  updateSqlChunks.push(sql`end)`)
+
+  if (updateIds.length) {
+    const finalSql: SQL = sql.join(updateSqlChunks, sql.raw(' '))
+    await ctx.db
+      .update(ProviderModels)
+      .set({ models: finalSql })
+      .where(inArray(ProviderModels.id, updateIds))
+  }
+
+  if (deleteIds.length) {
+    await ctx.db.delete(ProviderModels).where(inArray(ProviderModels.id, deleteIds))
   }
 
   return providers
 }
 
-// Merge system and user/organization models, ensuring no duplicates and user models override system models
-function mergeModels(system?: ModelInfos, userOrg?: ModelInfos): ReturnedModelInfos {
+// Merge system and user/organization models, ensuring no duplicates and system models override user models
+function mergeModels(
+  system?: ModelInfos,
+  userOrg?: ModelInfos,
+): ReturnedModelInfos & {
+  shouldUpdateUserOrg: boolean
+} {
+  let shouldUpdateUserOrg = false
+
   function deduplicate<T extends { id: string; isSystem?: boolean }[]>(system?: T, userOrg?: T) {
+    const newUserOrg = [] as unknown as T
     const seen = new Set<string>()
-    const sep = userOrg?.length ?? 0
-    return [...(system ?? []), ...(userOrg ?? [])]
-      .reverse() // ensure user models override system models
+    const sep = system?.length ?? 0
+    const deduplicated = [...(system ?? []), ...(userOrg ?? [])]
+      // ensure system models override user models
       .filter((item, index) => {
-        if (seen.has(item.id)) return false
-        // Mark it as system if it's from system models
-        if (index >= sep) {
+        if (seen.has(item.id)) {
+          return false
+        }
+        if (index < sep) {
+          // Mark it as system if it's from system models
           item.isSystem = true
+        } else {
+          // None-duplicate userOrg models
+          newUserOrg.push(item)
         }
         seen.add(item.id)
         return true
       })
-      .reverse()
+
+    // Update userOrg in place if it has fewer models than before
+    if (newUserOrg.length < (userOrg?.length ?? 0)) {
+      shouldUpdateUserOrg = true
+      userOrg?.splice(0, userOrg.length, ...newUserOrg)
+    }
+
+    return deduplicated
   }
 
   return {
@@ -815,6 +887,7 @@ function mergeModels(system?: ModelInfos, userOrg?: ModelInfos): ReturnedModelIn
     speechModels: deduplicate(system?.speechModels, userOrg?.speechModels),
     transcriptionModels: deduplicate(system?.transcriptionModels, userOrg?.transcriptionModels),
     textEmbeddingModels: deduplicate(system?.textEmbeddingModels, userOrg?.textEmbeddingModels),
+    shouldUpdateUserOrg,
   }
 }
 

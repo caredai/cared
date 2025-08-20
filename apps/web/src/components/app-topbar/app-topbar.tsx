@@ -7,6 +7,7 @@ import { Button } from '@cared/ui/components/button'
 import { useSidebar } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
+import { AdminEnterButton } from './admin-enter-button'
 import { AppSwitcher } from './app-switcher'
 import { OrganizationAndAccountSwitcher } from './organization-switcher'
 import { TopBarActions } from './top-bar-actions'
@@ -31,6 +32,8 @@ export function AppTopBar() {
 
           {/* App Switcher - only show in workspace context */}
           <AppSwitcher />
+
+          <AdminEnterButton />
         </div>
 
         {/* Right side actions */}
