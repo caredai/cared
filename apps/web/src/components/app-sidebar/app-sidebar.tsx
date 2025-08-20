@@ -29,7 +29,7 @@ export function AppSidebar({
 } & ComponentProps<typeof Sidebar>) {
   return (
     <div className="![--sidebar-width:12rem]">
-      <Sidebar variant="inset" {...props}>
+      <Sidebar variant="inset" className="border-r" {...props}>
         <div className={cn(!alwaysShowLogo && 'block md:hidden')}>
           <SidebarHeader>
             <SidebarMenu>

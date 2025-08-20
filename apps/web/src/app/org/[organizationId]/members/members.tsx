@@ -1,7 +1,7 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Crown, Mail, MoreHorizontal, Shield, User, X } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -272,13 +272,13 @@ export function Members({ kind }: { kind: 'members' | 'invitations' }) {
             router.push('./members/invitations')
           }
         }}
-        defaultValue="members" className="w-full">
-        <div className="flex items-center justify-between pb-3">
-          <TabsList>
-            <TabsTrigger value="members">Members</TabsTrigger>
-            <TabsTrigger value="invitations">Pending Invitations</TabsTrigger>
-          </TabsList>
-        </div>
+        defaultValue="members"
+        className="space-y-4"
+      >
+        <TabsList>
+          <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="invitations">Pending Invitations</TabsTrigger>
+        </TabsList>
 
         {/* Members Tab */}
         <TabsContent value="members" className="space-y-4">

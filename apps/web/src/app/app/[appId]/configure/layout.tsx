@@ -1,20 +1,17 @@
 import Link from 'next/link'
 import { KeyIcon, UsersIcon } from 'lucide-react'
 
-import { TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
-
+import { TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import NavTabs from './nav-tabs'
+import { SectionTitle } from '@/components/section'
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="container mx-auto py-6 px-4">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight truncate">App Configuration</h1>
-        <p className="text-muted-foreground mt-2">Manage your app configuration</p>
-      </div>
+    <>
+      <SectionTitle title="App Configuration" />
 
       <NavTabs>
-        <TabsList className="w-full max-w-md">
+        <TabsList>
           <TabsLinkTrigger href="./api-keys">
             <KeyIcon className="h-4 w-4" />
             API key
@@ -32,7 +29,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {children}
         </TabsContent>
       </NavTabs>
-    </div>
+    </>
   )
 }
 

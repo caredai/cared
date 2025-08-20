@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { Bot, Database, Puzzle, Settings2, Wrench } from 'lucide-react'
+import { Bot, Database, Key, Puzzle, Settings2, Wrench } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
@@ -26,6 +26,11 @@ const items = [
     title: 'Extensions',
     url: '/extensions',
     icon: Puzzle,
+  },
+  {
+    title: 'API Keys',
+    url: '/api-keys',
+    icon: Key,
   },
   {
     title: 'Settings',

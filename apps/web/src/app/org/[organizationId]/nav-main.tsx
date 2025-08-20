@@ -4,6 +4,7 @@ import {
   Boxes,
   Brain,
   CircleDollarSign,
+  Key,
   Settings2,
   Users,
 } from 'lucide-react'
@@ -25,6 +26,11 @@ const items = [
     title: 'Models',
     url: '/models',
     icon: Brain,
+  },
+  {
+    title: 'API Keys',
+    url: '/api-keys',
+    icon: Key,
   },
   {
     title: 'Members',

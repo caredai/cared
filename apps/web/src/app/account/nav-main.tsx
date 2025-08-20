@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, Brain, CircleDollarSign, ShieldCheck, UserRound, Wallet } from 'lucide-react'
+import { Bot, Brain, CircleDollarSign, Key, ShieldCheck, UserRound, Wallet } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 
@@ -19,6 +19,11 @@ const items = [
     title: 'Models',
     url: '/models',
     icon: Brain,
+  },
+  {
+    title: 'API Keys',
+    url: '/api-keys',
+    icon: Key,
   },
   {
     title: 'Profile',

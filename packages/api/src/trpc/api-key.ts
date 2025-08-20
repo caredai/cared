@@ -175,7 +175,9 @@ export const apiKeyRouter = {
       const apiKeys = await listApiKeys(input)
 
       return {
-        keys: apiKeys.map(formatKey),
+        keys: apiKeys
+          .sort((a, b) => b.id.localeCompare(a.id))
+          .map(formatKey),
       }
     }),
 
@@ -259,7 +261,7 @@ export const apiKeyRouter = {
     .input(
       z
         .object({
-          name: z.string(),
+          name: z.string().min(1),
         })
         .and(metadataSchema),
     )

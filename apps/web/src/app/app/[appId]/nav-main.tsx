@@ -18,7 +18,7 @@ const items = [
   },
   {
     title: 'Configure',
-    url: '/configure/api-key',
+    url: '/configure/api-keys',
     icon: Settings2,
   },
 ]

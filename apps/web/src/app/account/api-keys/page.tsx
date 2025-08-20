@@ -1,20 +1,22 @@
 import { Suspense } from 'react'
 
 import { ApiKeys } from '@/components/api-keys'
+import { SectionTitle } from '@/components/section'
 import { SkeletonCard } from '@/components/skeleton'
-import { addIdPrefix } from '@/lib/utils'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 
-export default async function ApiKeyPage({ params }: { params: Promise<{ appId: string }> }) {
-  const { appId: appIdNoPrefix } = await params
-  const appId = addIdPrefix(appIdNoPrefix, 'app')
-
+export default function UserApiKeyPage() {
   prefetch(trpc.apiKey.list.queryOptions())
 
   return (
     <HydrateClient>
+      <SectionTitle
+        title="API Keys"
+        description="Configure API keys to securely control access to your account"
+      />
+
       <Suspense fallback={<SkeletonCard />}>
-        <ApiKeys scope="app" appId={appId} showTitle />
+        <ApiKeys scope="user" />
       </Suspense>
     </HydrateClient>
   )

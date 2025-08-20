@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 
-import { Tabs } from '@cared/ui/components/tabs'
+import { Tabs } from '@/components/tabs'
 
 export default function NavTabs({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

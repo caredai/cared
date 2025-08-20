@@ -36,7 +36,7 @@ export default async function Layout({
               <AccountNavMain />
             </AppSidebar>
 
-            <div className="flex-1 flex flex-col h-[calc(100svh-57px)] overflow-y-auto">
+            <div className="flex-1 flex flex-col h-[calc(100svh-57px)] overflow-y-auto overflow-x-hidden">
               <SidebarInset>
                 <Section>{children}</Section>
 

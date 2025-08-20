@@ -1,0 +1,409 @@
+'use client'
+
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
+  RowSelectionState,
+} from '@tanstack/react-table'
+import * as React from 'react'
+import {
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
+} from 'lucide-react'
+
+import { Button } from './button'
+import { Checkbox } from './checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from './dropdown-menu'
+import { Input } from './input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table'
+
+interface DataTableProps<TData, TValue> {
+  columns: ColumnDef<TData, TValue>[]
+  data: TData[]
+  searchKey?: string
+  searchPlaceholder?: string
+  pageSizeOptions?: number[]
+  defaultPageSize?: number
+  enableRowSelection?: boolean
+  onSelectionChange?: (selection: RowSelectionState) => void
+  bulkActions?: {
+    label: string
+    icon?: React.ComponentType<{ className?: string }>
+    action: (selectedRows: TData[]) => void
+    variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+  }[]
+}
+
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+  searchKey,
+  searchPlaceholder = 'Search...',
+  pageSizeOptions = [10, 20, 30, 40, 50],
+  defaultPageSize = 10,
+  enableRowSelection = false,
+  onSelectionChange,
+  bulkActions = [],
+}: DataTableProps<TData, TValue>) {
+  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: defaultPageSize,
+  })
+
+  // Handle row selection change
+  const handleRowSelectionChange = React.useCallback((updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
+    const newSelection = typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection) : updaterOrValue
+    setRowSelection(newSelection)
+    onSelectionChange?.(newSelection)
+  }, [rowSelection, onSelectionChange])
+
+  const table = useReactTable({
+    data,
+    columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: handleRowSelectionChange,
+    onPaginationChange: setPagination,
+    enableRowSelection: enableRowSelection,
+    state: {
+      sorting,
+      columnFilters,
+      columnVisibility,
+      rowSelection,
+      pagination,
+    },
+  })
+
+  // Calculate pagination info
+  const totalPages = table.getPageCount()
+  const currentPage = table.getState().pagination.pageIndex + 1
+  const pageSize = table.getState().pagination.pageSize
+
+  // Get selected rows data
+  const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original)
+  const isAllSelected = table.getIsAllPageRowsSelected()
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      table.toggleAllPageRowsSelected(false)
+    } else {
+      table.toggleAllPageRowsSelected(true)
+    }
+  }
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages = []
+    const maxVisiblePages = 5
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1)
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i)
+    }
+    return pages
+  }
+
+  // Handle go to page input
+  const [goToPage, setGoToPage] = React.useState('')
+  const [isEditingPage, setIsEditingPage] = React.useState(false)
+
+  const handleGoToPage = () => {
+    const pageIndex = parseInt(goToPage) - 1
+    if (pageIndex >= 0 && pageIndex < totalPages) {
+      table.setPageIndex(pageIndex)
+      setGoToPage((pageIndex + 1).toString())
+    } else {
+      setGoToPage(currentPage.toString())
+    }
+    setIsEditingPage(false)
+  }
+
+  const handleGoToPageKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleGoToPage()
+    }
+  }
+
+  const handleGoToPageBlur = () => {
+    handleGoToPage()
+  }
+
+  const handleGoToPageFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsEditingPage(true)
+    // Select all text when input is focused
+    setTimeout(() => {
+      e.target.select()
+    }, 0)
+  }
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center gap-4 py-4">
+        {searchKey && (
+          <Input
+            placeholder={searchPlaceholder}
+            value={(table.getColumn(searchKey)?.getFilterValue() as string | undefined) ?? ''}
+            onChange={(event) => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
+            className="max-w-sm"
+          />
+        )}
+        
+        {/* Bulk Actions */}
+        {enableRowSelection && selectedRows.length > 0 && bulkActions.length > 0 && (
+          <div className="flex items-center gap-2">
+            {bulkActions.map((action, index) => (
+              <Button
+                key={index}
+                variant={action.variant || 'outline'}
+                size="sm"
+                onClick={() => action.action(selectedRows)}
+                className="flex items-center gap-2"
+              >
+                {action.icon && <action.icon className="h-4 w-4" />}
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="ml-auto">
+              Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {table
+              .getAllColumns()
+              .filter((column) => column.getCanHide())
+              .map((column) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.id}
+                    className="capitalize"
+                    checked={column.getIsVisible()}
+                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  >
+                    {column.id}
+                  </DropdownMenuCheckboxItem>
+                )
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {/* Selection checkbox column */}
+                {enableRowSelection && (
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={isAllSelected}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all"
+                      className="translate-y-[2px]"
+                    />
+                  </TableHead>
+                )}
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow 
+                  key={row.id} 
+                  data-state={row.getIsSelected() && 'selected'}
+                  className={row.getIsSelected() ? 'bg-muted/50' : ''}
+                >
+                  {/* Selection checkbox cell */}
+                  {enableRowSelection && (
+                    <TableCell className="w-12">
+                      <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label={`Select row ${row.id}`}
+                        className="translate-y-[2px]"
+                      />
+                    </TableCell>
+                  )}
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell 
+                  colSpan={enableRowSelection ? columns.length + 1 : columns.length} 
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="max-w-full overflow-x-auto">
+        <div className="flex items-center justify-between space-x-4 py-4 min-w-0">
+          <div className="text-sm text-muted-foreground flex-shrink-0">
+            {enableRowSelection && (
+              <>
+                {table.getFilteredSelectedRowModel().rows.length} of{' '}
+                {table.getFilteredRowModel().rows.length} row(s) selected.
+              </>
+            )}
+          </div>
+
+          {/* Pagination info and controls */}
+          <div className="flex items-center space-x-8">
+            {/* Page size selector */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                Rows per page:
+              </span>
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value))
+                }}
+              >
+                <SelectTrigger className="h-8 w-18">
+                  <SelectValue placeholder={pageSize} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {pageSizeOptions.map((size) => (
+                    <SelectItem key={size} value={size.toString()}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center justify-center space-x-2">
+              <span className="text-sm text-muted-foreground">Page</span>
+              <Input
+                type="number"
+                min={1}
+                max={totalPages}
+                step={1}
+                value={isEditingPage ? goToPage : currentPage.toString()}
+                onChange={(e) => setGoToPage(e.target.value)}
+                onKeyDown={handleGoToPageKeyDown}
+                onBlur={handleGoToPageBlur}
+                onFocus={handleGoToPageFocus}
+                className="h-8 min-w-18"
+                placeholder="1"
+              />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">of {totalPages}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => table.setPageIndex(0)}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to first page</span>
+                <ChevronsLeftIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => table.previousPage()}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <span className="sr-only">Go to previous page</span>
+                <ChevronLeftIcon className="h-4 w-4" />
+              </Button>
+
+              {/* Page numbers */}
+              <div className="flex items-center space-x-1">
+                {getPageNumbers().map((page) => (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? 'default' : 'outline'}
+                    className="h-8 w-8 p-0 text-sm"
+                    onClick={() => table.setPageIndex(page - 1)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={() => table.nextPage()}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to next page</span>
+                <ChevronRightIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                className="hidden h-8 w-8 p-0 lg:flex"
+                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                disabled={!table.getCanNextPage()}
+              >
+                <span className="sr-only">Go to last page</span>
+                <ChevronsRightIcon className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
