@@ -32,10 +32,10 @@ export const Artifact = pgTable(
     version: integer().notNull(),
     userId: text()
       .notNull()
-      .references(() => User.id),
+      .references(() => User.id, { onDelete: 'cascade' }),
     chatId: text()
       .notNull()
-      .references(() => Chat.id),
+      .references(() => Chat.id, { onDelete: 'cascade' }),
     // Type of the artifact (e.g., 'image', 'text', 'code')
     kind: artifactKindEnum().notNull(),
     title: text('title').notNull(),
@@ -95,7 +95,7 @@ export const ArtifactSuggestion = pgTable(
       name: 'artifact_suggestion_artifact_id_version_fk',
       columns: [table.artifactId, table.artifactVersion],
       foreignColumns: [Artifact.id, Artifact.version],
-    }),
+    }).onDelete('cascade'),
     index().on(table.artifactId, table.artifactVersion),
     ...timestampsIndices(table),
   ],

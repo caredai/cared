@@ -65,10 +65,10 @@ export const Chat = pgTable(
     id: text().primaryKey().notNull().$defaultFn(generateChatId),
     appId: text()
       .notNull()
-      .references(() => App.id),
+      .references(() => App.id), // No action on delete
     userId: text()
       .notNull()
-      .references(() => User.id),
+      .references(() => User.id, { onDelete: 'cascade' }),
     // Whether the chat is in debug mode.
     // Only workspace owners and members (with RBAC) can create debug chats.
     // Only one debug chat is allowed per app per user.
@@ -116,13 +116,13 @@ export const Message = pgTable(
   {
     id: text().primaryKey().notNull().$defaultFn(generateMessageId),
     // Parent message id. Only empty for the root messages.
-    parentId: text().references((): AnyPgColumn => Message.id),
+    parentId: text().references((): AnyPgColumn => Message.id, { onDelete: 'cascade' }),
     chatId: text()
       .notNull()
       .references(() => Chat.id, { onDelete: 'cascade' }),
     role: messageRoleEnum().notNull(),
     // Agent id. Only set for assistant role messages.
-    agentId: text().references(() => Agent.id),
+    agentId: text().references(() => Agent.id, { onDelete: 'set null' }),
     content: jsonb().$type<MessageContent>().notNull(),
     ...timestamps,
   },
@@ -130,7 +130,7 @@ export const Message = pgTable(
     foreignKey({
       columns: [table.parentId],
       foreignColumns: [table.id],
-    }),
+    }).onDelete('cascade'),
     index().on(table.parentId),
     index().on(table.chatId, table.role),
     index().on(table.chatId, table.agentId),
@@ -175,7 +175,7 @@ export const MessageSummary = pgTable(
       .$defaultFn(() => generateId('msum')),
     chatId: text()
       .notNull()
-      .references(() => Chat.id),
+      .references(() => Chat.id, { onDelete: 'cascade' }),
     // Summary of message history up to the message (inclusive) which has this id.
     checkpoint: text().notNull(),
     content: text().notNull(),
@@ -212,10 +212,10 @@ export const MessageVote = pgTable(
   {
     chatId: text()
       .notNull()
-      .references(() => Chat.id),
+      .references(() => Chat.id, { onDelete: 'cascade' }),
     messageId: text()
       .notNull()
-      .references(() => Message.id),
+      .references(() => Message.id, { onDelete: 'cascade' }),
     isUpvoted: boolean().notNull(),
     ...timestamps,
   },

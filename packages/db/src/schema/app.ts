@@ -1,5 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import {
+  boolean,
+  timestamp,
   bigint,
   index,
   jsonb,
@@ -67,18 +69,30 @@ export const App = pgTable(
       .$defaultFn(() => generateId('app')),
     workspaceId: text()
       .notNull()
-      .references(() => Workspace.id),
+      .references(() => Workspace.id), // No action on delete
     // Column type, name, metadata are always the same as the latest published version in the app version table.
     // If no version is published, they are always the same as the draft version.
     type: appTypeEnum().notNull().default('single-agent'),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<AppMetadata>().notNull(),
+    archived: boolean(),
+    archivedAt: timestamp({
+      mode: 'date',
+      withTimezone: true,
+    }),
+    deleted: boolean(),
+    deletedAt: timestamp({
+      mode: 'date',
+      withTimezone: true,
+    }),
     ...timestamps,
   },
   (table) => [
-    index().on(table.workspaceId),
+    index().on(table.workspaceId, table.deleted),
     index().on(table.type),
     index().on(table.name),
+    index().on(table.archived, table.archivedAt),
+    index().on(table.deleted),
     ...timestampsIndices(table),
   ],
 )
@@ -114,7 +128,7 @@ export const AppVersion = pgTable(
   {
     appId: text()
       .notNull()
-      .references(() => App.id),
+      .references(() => App.id, { onDelete: 'cascade' }),
     // Must be Unix timestamp of the publishing time.
     // DRAFT_VERSION indicates an unpublished draft.
     version: bigint({ mode: 'number' }).notNull().default(DRAFT_VERSION),
@@ -193,10 +207,10 @@ export const AppsToCategories = pgTable(
   {
     appId: text()
       .notNull()
-      .references(() => App.id),
+      .references(() => App.id, { onDelete: 'cascade' }),
     categoryId: text()
       .notNull()
-      .references(() => Category.id),
+      .references(() => Category.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [
@@ -245,10 +259,10 @@ export const AppsToTags = pgTable(
   {
     appId: text()
       .notNull()
-      .references(() => App.id),
+      .references(() => App.id, { onDelete: 'cascade' }),
     tag: varchar({ length: 255 })
       .notNull()
-      .references(() => Tag.name),
+      .references(() => Tag.name, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [

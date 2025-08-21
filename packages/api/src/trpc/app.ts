@@ -33,6 +33,7 @@ import { env } from '../env'
 import { parseS3Url } from '../rest/s3-upload/route'
 import { protectedProcedure, publicProcedure } from '../trpc'
 import { deleteImages } from './utils'
+import { AppOperator } from '../operation'
 
 /**
  * Get an app by ID.
@@ -725,37 +726,20 @@ export const appRouter = {
       const scope = await OrganizationScope.fromApp(ctx, input.id)
       await scope.checkPermissions({ app: ['delete'] })
 
-      return await ctx.db.transaction(async (tx) => {
-        // Get all agent IDs for this app
-        const agents = await tx
-          .select({ id: Agent.id })
-          .from(Agent)
-          .where(eq(Agent.appId, input.id))
-
-        if (agents.length > 0) {
-          const agentIds = agents.map((agent) => agent.id)
-
-          // Delete all agent versions in one query
-          await tx.delete(AgentVersion).where(inArray(AgentVersion.agentId, agentIds))
-
-          // Delete all agents in one query
-          await tx.delete(Agent).where(inArray(Agent.id, agentIds))
-        }
-
-        // Delete all app versions
-        await tx.delete(AppVersion).where(eq(AppVersion.appId, input.id))
-
-        // Delete category associations
-        await tx.delete(AppsToCategories).where(eq(AppsToCategories.appId, input.id))
-
-        // Delete tag associations
-        await tx.delete(AppsToTags).where(eq(AppsToTags.appId, input.id))
-
-        // Delete the app itself
-        await tx.delete(App).where(eq(App.id, input.id))
-
-        return { success: true }
+      const app = await ctx.db.query.App.findFirst({
+        where: eq(App.id, input.id),
+        columns: { id: true },
       })
+      if (!app) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `App not found`,
+        })
+      }
+
+      const operator = new AppOperator(app.id)
+
+      await operator.delete()
     }),
 
   /**

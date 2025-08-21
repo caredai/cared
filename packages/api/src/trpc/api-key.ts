@@ -6,106 +6,14 @@ import { auth } from '@cared/auth'
 import type { UserContext } from '../trpc'
 import type { ApiKeyMetadata, ApiKeyScope } from '../types'
 import { OrganizationScope } from '../auth'
-import { userPlainProtectedProcedure } from '../trpc'
 import { cfg } from '../config'
-
-const metadataSchema = z.discriminatedUnion('scope', [
-  z.object({
-    scope: z.literal('user'),
-  }),
-  z.object({
-    scope: z.literal('organization'),
-    organizationId: z.string(),
-  }),
-  z.object({
-    scope: z.literal('workspace'),
-    workspaceId: z.string(),
-  }),
-  z.object({
-    scope: z.literal('app'),
-    appId: z.string(),
-  }),
-])
-
-const optionalMetadataSchema = z
-  .discriminatedUnion('scope', [
-    z.object({
-      scope: z.literal('user'),
-    }),
-    z.object({
-      scope: z.literal('organization'),
-      organizationId: z.string().optional(),
-    }),
-    z.object({
-      scope: z.literal('workspace'),
-      workspaceId: z.string().optional(),
-    }),
-    z.object({
-      scope: z.literal('app'),
-      appId: z.string().optional(),
-    }),
-  ])
-  .optional()
-
-function formatKey(key: {
-  id: string
-  name: string | null
-  metadata: Record<string, any> | null
-  start: string | null
-  createdAt: Date
-  updatedAt: Date
-}) {
-  return {
-    id: key.id,
-    name: key.name ?? '',
-    ...(key.metadata as ApiKeyMetadata),
-    start: key.start ?? '',
-    createdAt: key.createdAt,
-    updatedAt: key.updatedAt,
-  }
-}
-
-async function listApiKeys(input: z.infer<typeof optionalMetadataSchema>) {
-  const allApiKeys = await auth.api.listApiKeys()
-
-  let filteredKeys = allApiKeys
-
-  // Filter by scope if provided
-  if (input?.scope) {
-    filteredKeys = allApiKeys.filter((key) => key.metadata?.scope === input.scope)
-
-    // Additional filtering based on scope
-    switch (input.scope) {
-      case 'organization':
-        if (input.organizationId) {
-          filteredKeys = filteredKeys.filter(
-            (key) => key.metadata?.organizationId === input.organizationId,
-          )
-        } else {
-          filteredKeys = []
-        }
-        break
-      case 'workspace':
-        if (input.workspaceId) {
-          filteredKeys = filteredKeys.filter(
-            (key) => key.metadata?.workspaceId === input.workspaceId,
-          )
-        } else {
-          filteredKeys = []
-        }
-        break
-      case 'app':
-        if (input.appId) {
-          filteredKeys = filteredKeys.filter((key) => key.metadata?.appId === input.appId)
-        } else {
-          filteredKeys = []
-        }
-        break
-    }
-  }
-
-  return filteredKeys
-}
+import {
+  apiKeyMetadataSchema,
+  formatApiKey,
+  listApiKeys,
+  optionalApiKeyMetadataSchema,
+} from '../operation'
+import { userPlainProtectedProcedure } from '../trpc'
 
 async function checkCreationPermission(ctx: UserContext, metadata: ApiKeyMetadata) {
   // User scoped API keys always allow creation
@@ -170,14 +78,12 @@ export const apiKeyRouter = {
         summary: 'List all API keys for a scope',
       },
     })
-    .input(optionalMetadataSchema)
+    .input(optionalApiKeyMetadataSchema)
     .query(async ({ input }) => {
       const apiKeys = await listApiKeys(input)
 
       return {
-        keys: apiKeys
-          .sort((a, b) => b.id.localeCompare(a.id))
-          .map(formatKey),
+        keys: apiKeys,
       }
     }),
 
@@ -198,7 +104,7 @@ export const apiKeyRouter = {
         summary: 'Check if an entity has an API key',
       },
     })
-    .input(optionalMetadataSchema)
+    .input(optionalApiKeyMetadataSchema)
     .query(async ({ input }) => {
       const apiKeys = await listApiKeys(input)
 
@@ -235,7 +141,7 @@ export const apiKeyRouter = {
       })
 
       return {
-        key: formatKey(apiKey),
+        key: formatApiKey(apiKey),
       }
     }),
 
@@ -263,7 +169,7 @@ export const apiKeyRouter = {
         .object({
           name: z.string().min(1),
         })
-        .and(metadataSchema),
+        .and(apiKeyMetadataSchema),
     )
     .mutation(async ({ ctx, input }) => {
       const { name, ...others } = input
@@ -331,7 +237,7 @@ export const apiKeyRouter = {
 
       return {
         key: {
-          ...formatKey(apiKey),
+          ...formatApiKey(apiKey),
           key: apiKey.key,
         },
       }
@@ -384,7 +290,7 @@ export const apiKeyRouter = {
 
       return {
         key: {
-          ...formatKey(apiKey),
+          ...formatApiKey(apiKey),
           key: apiKey.key,
         },
       }

@@ -22,7 +22,7 @@ export const Memory = pgTable(
     // The user whom the memory belongs to.
     userId: text()
       .notNull()
-      .references(() => User.id),
+      .references(() => User.id, { onDelete: 'cascade' }),
     // The memory is always associated with an app.
     appId: text()
       .notNull()

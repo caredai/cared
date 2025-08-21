@@ -6,6 +6,7 @@ import { Member, Workspace } from '@cared/db/schema'
 
 import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
+import { WorkspaceOperator } from '../operation'
 import { protectedProcedure } from '../trpc'
 import { createWorkspaceSchema, updateWorkspaceSchema } from '../types'
 
@@ -19,9 +20,11 @@ export const workspaceRouter = {
   list: protectedProcedure
     .meta({ openapi: { method: 'GET', path: '/v1/workspaces' } })
     .input(
-      z.object({
-        organizationId: z.string().min(1).optional(),
-      }).optional(),
+      z
+        .object({
+          organizationId: z.string().min(1).optional(),
+        })
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
       let workspaces
@@ -168,8 +171,19 @@ export const workspaceRouter = {
       const scope = await OrganizationScope.fromWorkspace(ctx, input.id)
       await scope.checkPermissions({ workspace: ['delete'] })
 
-      // TODO: check other resources
-      await ctx.db.delete(Workspace).where(eq(Workspace.id, input.id))
+      const workspace = await ctx.db.query.Workspace.findFirst({
+        where: eq(Workspace.id, input.id),
+      })
+      if (!workspace) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Workspace not found',
+        })
+      }
+
+      const operator = new WorkspaceOperator(workspace.id)
+
+      await operator.delete()
     }),
 
   /**

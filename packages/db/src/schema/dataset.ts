@@ -51,7 +51,7 @@ export const Dataset = pgTable(
       .$defaultFn(() => generateId('dataset')),
     workspaceId: text()
       .notNull()
-      .references(() => Workspace.id),
+      .references(() => Workspace.id, { onDelete: 'cascade' }),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<DatasetMetadata>().notNull(),
     ...timestamps,
@@ -106,10 +106,10 @@ export const Document = pgTable(
       .$defaultFn(() => generateId('doc')),
     workspaceId: text()
       .notNull()
-      .references(() => Workspace.id),
+      .references(() => Workspace.id, { onDelete: 'cascade' }),
     datasetId: text()
       .notNull()
-      .references(() => Dataset.id),
+      .references(() => Dataset.id, { onDelete: 'cascade' }),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<DocumentMetadata>().notNull().default({}),
     ...timestamps,
@@ -152,13 +152,13 @@ export const DocumentSegment = pgTable(
       .$defaultFn(() => generateId('dseg')),
     workspaceId: text()
       .notNull()
-      .references(() => Workspace.id),
+      .references(() => Workspace.id, { onDelete: 'cascade' }),
     datasetId: text()
       .notNull()
-      .references(() => Dataset.id),
+      .references(() => Dataset.id, { onDelete: 'cascade' }),
     documentId: text()
       .notNull()
-      .references(() => Document.id),
+      .references(() => Document.id, { onDelete: 'cascade' }),
     index: integer().notNull(),
     content: text().notNull(),
     metadata: jsonb().notNull().default({}),
@@ -212,16 +212,16 @@ export const DocumentChunk = pgTable(
       .$defaultFn(() => generateId('dchunk')),
     workspaceId: text()
       .notNull()
-      .references(() => Workspace.id),
+      .references(() => Workspace.id, { onDelete: 'cascade' }),
     datasetId: text()
       .notNull()
-      .references(() => Dataset.id),
+      .references(() => Dataset.id, { onDelete: 'cascade' }),
     documentId: text()
       .notNull()
-      .references(() => Document.id),
+      .references(() => Document.id, { onDelete: 'cascade' }),
     segmentId: text()
       .notNull()
-      .references(() => DocumentSegment.id),
+      .references(() => DocumentSegment.id, { onDelete: 'cascade' }),
     index: integer().notNull(),
     content: text().notNull(),
     metadata: jsonb().notNull().default({}),

@@ -50,7 +50,7 @@ export const Agent = pgTable(
       .$defaultFn(() => generateId('agent')),
     appId: text()
       .notNull()
-      .references(() => App.id),
+      .references(() => App.id, { onDelete: 'cascade' }),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<AgentMetadata>().notNull().default({}),
     ...timestamps,
@@ -87,7 +87,7 @@ export const AgentVersion = pgTable(
   {
     agentId: text()
       .notNull()
-      .references(() => Agent.id),
+      .references(() => Agent.id, { onDelete: 'cascade' }),
     // Must be Unix timestamp of the publishing time.
     // DRAFT_VERSION indicates an unpublished draft.
     // The version always corresponds to an app version of the app that the agent belongs to.

@@ -605,7 +605,7 @@ function CreateApiKeyDialog({
                       Creating...
                     </>
                   ) : (
-                    'Create API Key'
+                    'Create'
                   )}
                 </Button>
               </DialogFooter>
