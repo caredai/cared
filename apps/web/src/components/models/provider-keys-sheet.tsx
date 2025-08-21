@@ -111,7 +111,6 @@ export function ProviderKeysSheet({
   const deleteProviderKey = useDeleteProviderKey()
   const toggleProviderKey = useToggleProviderKey()
 
-  // State for managing new items
   const [newKeys, setNewKeys] = useState<EditableProviderKey[]>([])
   const [existingKeys, setExistingKeys] = useState<EditableProviderKey[]>([])
   const [allKeys, setAllKeys] = useState<EditableProviderKey[]>([])

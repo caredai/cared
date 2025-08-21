@@ -7,19 +7,48 @@ import { Input as Input_ } from '@cared/ui/components/input'
 import { Textarea } from '@cared/ui/components/textarea'
 import { cn } from '@cared/ui/lib/utils'
 
-export function Input({ ...props }: ComponentPropsWithoutRef<typeof Input_>) {
+export function Input({
+  value,
+  onChange,
+  onBlur,
+  className,
+  ...props
+}: Omit<ComponentPropsWithoutRef<typeof Input_>, 'value' | 'onChange' | 'onBlur'> & {
+  value: string
+  onChange: (value: string) => void
+  onBlur: () => void
+}) {
+  const [inputValue, setInputValue] = useState(value)
+
+  useEffect(() => {
+    setInputValue(value)
+  }, [value])
+
+  const handleBlur = () => {
+    onChange(inputValue.trim())
+    setInputValue(inputValue.trim())
+    onBlur()
+  }
+
   const [showPassword, setPassword] = useState(false)
 
+  const inputNode = (
+    <Input_
+      {...props}
+      type={props.type !== 'password' || showPassword ? 'text' : 'password'}
+      value={inputValue}
+      onChange={(e) => setInputValue(e.target.value)}
+      onBlur={handleBlur}
+      className={cn(className, props.type === 'password' && 'pr-9')}
+    />
+  )
+
   if (props.type !== 'password') {
-    return <Input_ {...props}></Input_>
+    return inputNode
   } else {
     return (
       <div className="relative">
-        <Input_
-          {...props}
-          type={showPassword ? 'text' : 'password'}
-          className={cn(props.name, 'pr-9')}
-        ></Input_>
+        {inputNode}
 
         <Button
           type="button"
@@ -64,7 +93,7 @@ export function OptionalInput({
     <Input
       {...props}
       value={inputValue}
-      onChange={(e) => setInputValue(e.target.value)}
+      onChange={setInputValue}
       onBlur={handleBlur}
       className={className}
     />

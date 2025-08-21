@@ -11,7 +11,9 @@ export default async function Page({ params }: { params: Promise<{ organizationI
   const organizationId = addIdPrefix(orgIdNoPrefix, 'org')
 
   prefetch(trpc.model.listProviders.queryOptions())
-  prefetch(trpc.model.listModels.queryOptions())
+  prefetch(trpc.model.listModels.queryOptions({
+    organizationId
+  }))
   prefetch(
     trpc.providerKey.list.queryOptions({
       organizationId,

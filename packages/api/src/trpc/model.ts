@@ -8,22 +8,18 @@ import { ProviderModels } from '@cared/db/schema'
 import log from '@cared/log'
 import {
   defaultModels,
-  embeddingModelInfoSchema,
   getBaseProviderInfos,
-  imageModelInfoSchema,
-  languageModelInfoSchema,
   modelFullId,
   modelFullIdSchema,
   modelTypes,
   providerIdSchema,
-  speechModelInfoSchema,
   splitModelFullId,
-  transcriptionModelInfoSchema,
 } from '@cared/providers'
 
 import type { Context } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { protectedProcedure, publicProcedure } from '../trpc'
+import { updateModelArgsSchema, updateModelsArgsSchema } from '../types'
 
 type ReturnedProviderInfo = BaseProviderInfo & ReturnedModelInfos
 
@@ -306,40 +302,7 @@ export const modelRouter = {
           providerId: providerIdSchema,
           isSystem: z.boolean().optional(),
         })
-        .and(
-          z.discriminatedUnion('type', [
-            z.object({
-              type: z.literal('language'),
-              model: languageModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              }),
-            }),
-            z.object({
-              type: z.literal('image'),
-              model: imageModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              }),
-            }),
-            z.object({
-              type: z.literal('speech'),
-              model: speechModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              }),
-            }),
-            z.object({
-              type: z.literal('transcription'),
-              model: transcriptionModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              }),
-            }),
-            z.object({
-              type: z.literal('textEmbedding'),
-              model: embeddingModelInfoSchema.extend({
-                id: modelFullIdSchema,
-              }),
-            }),
-          ]),
-        )
+        .and(updateModelArgsSchema)
         .refine((data) => !(data.organizationId && data.isSystem), {
           message: 'organizationId and isSystem cannot both be present',
         }),
@@ -440,50 +403,7 @@ export const modelRouter = {
           providerId: providerIdSchema,
           isSystem: z.boolean().optional(),
         })
-        .and(
-          z.discriminatedUnion('type', [
-            z.object({
-              type: z.literal('language'),
-              models: z.array(
-                languageModelInfoSchema.extend({
-                  id: modelFullIdSchema,
-                }),
-              ),
-            }),
-            z.object({
-              type: z.literal('image'),
-              models: z.array(
-                imageModelInfoSchema.extend({
-                  id: modelFullIdSchema,
-                }),
-              ),
-            }),
-            z.object({
-              type: z.literal('speech'),
-              models: z.array(
-                speechModelInfoSchema.extend({
-                  id: modelFullIdSchema,
-                }),
-              ),
-            }),
-            z.object({
-              type: z.literal('transcription'),
-              models: z.array(
-                transcriptionModelInfoSchema.extend({
-                  id: modelFullIdSchema,
-                }),
-              ),
-            }),
-            z.object({
-              type: z.literal('textEmbedding'),
-              models: z.array(
-                embeddingModelInfoSchema.extend({
-                  id: modelFullIdSchema,
-                }),
-              ),
-            }),
-          ]),
-        )
+        .and(updateModelsArgsSchema)
         .refine((data) => !(data.organizationId && data.isSystem), {
           message: 'organizationId and isSystem cannot both be present',
         }),
@@ -817,7 +737,12 @@ async function getProviderInfos(ctx: Context, source?: Source, organizationId?: 
         models.textEmbeddingModels?.length
       ) {
         updateIds.push(userOrg.id)
-        updateSqlChunks.push(sql`when ${ProviderModels.id} = ${userOrg.id} then ${userOrg.models}`)
+        updateSqlChunks.push(sql`when
+        ${ProviderModels.id}
+        =
+        ${userOrg.id}
+        then
+        ${userOrg.models}`)
       } else {
         // If all model arrays are empty, delete the record
         deleteIds.push(userOrg.id)
@@ -825,7 +750,8 @@ async function getProviderInfos(ctx: Context, source?: Source, organizationId?: 
     }
   }
 
-  updateSqlChunks.push(sql`end)`)
+  updateSqlChunks.push(sql`end
+  )`)
 
   if (updateIds.length) {
     const finalSql: SQL = sql.join(updateSqlChunks, sql.raw(' '))

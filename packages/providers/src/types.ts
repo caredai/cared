@@ -5,6 +5,7 @@ import type {
   SpeechModelV2,
   TranscriptionModelV2,
 } from '@ai-sdk/provider'
+import { Decimal } from 'decimal.js'
 import { z } from 'zod/v4'
 
 export interface Provider {
@@ -81,7 +82,7 @@ export const modelFullIdSchema = z.templateLiteral([
   providerIdSchema,
   ':',
   z.string().min(1),
-])
+], 'Invalid model ID')
 
 export function modelFullId(providerId: ProviderId, modelId: string): ModelFullId {
   return `${providerId}:${modelId}`
@@ -158,50 +159,65 @@ export interface EmbeddingModelInfo extends BaseModelInfo {
 }
 
 export const baseModelInfoSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string(),
+  id: z.string().min(1, 'ID is required'),
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().min(1, 'Description is required'),
   deprecated: z.boolean().optional(),
   retired: z.boolean().optional(),
 })
 
+export function formatModelPrice(price: string) {
+  try {
+    const p = new Decimal(price)
+    if (p.isPositive()) {
+      return p.toString()
+    } else {
+      return '0.00'
+    }
+  } catch {
+    return
+  }
+}
+
+export const modelPriceSchema = z.string().refine((p) => !!formatModelPrice(p), {
+  message: 'Invalid price',
+})
+
 export const languageModelInfoSchema = baseModelInfoSchema.extend({
-  contextWindow: z.number().optional(),
-  maxOutputTokens: z.number().optional(),
-  inputTokenPrice: z.string().optional(),
-  cachedInputTokenPrice: z.string().optional(),
-  cacheInputTokenPrice: z.string().or(z.record(z.string(), z.string())).optional(),
-  outputTokenPrice: z.string().optional(),
+  contextWindow: z.int().min(0).optional(),
+  maxOutputTokens: z.int().min(0).optional(),
+  inputTokenPrice: modelPriceSchema.optional(),
+  cachedInputTokenPrice: modelPriceSchema.optional(),
+  cacheInputTokenPrice: modelPriceSchema.or(z.record(z.string(), modelPriceSchema)).optional(),
+  outputTokenPrice: modelPriceSchema.optional(),
 })
 
 export const imageModelInfoSchema = baseModelInfoSchema.extend({
-  imageInputTokenPrice: z.string().optional(),
-  imageCachedInputTokenPrice: z.string().optional(),
-  imageOutputTokenPrice: z.string().optional(),
-  textInputTokenPrice: z.string().optional(),
-  textCachedInputTokenPrice: z.string().optional(),
-  pricePerImage: z
-    .string()
-    .or(z.record(z.string(), z.string()))
-    .or(z.record(z.string(), z.record(z.string(), z.string())))
+  imageInputTokenPrice: modelPriceSchema.optional(),
+  imageCachedInputTokenPrice: modelPriceSchema.optional(),
+  imageOutputTokenPrice: modelPriceSchema.optional(),
+  textInputTokenPrice: modelPriceSchema.optional(),
+  textCachedInputTokenPrice: modelPriceSchema.optional(),
+  pricePerImage: modelPriceSchema.or(z.record(z.string(), modelPriceSchema))
+    .or(z.record(z.string(), z.record(z.string(), modelPriceSchema)))
     .optional(),
 })
 
 export const speechModelInfoSchema = baseModelInfoSchema.extend({
-  maxInputTokens: z.number().optional(),
-  textTokenPrice: z.string().optional(),
-  audioTokenPrice: z.string().optional(),
+  maxInputTokens: z.int().min(0).optional(),
+  textTokenPrice: modelPriceSchema.optional(),
+  audioTokenPrice: modelPriceSchema.optional(),
 })
 
 export const transcriptionModelInfoSchema = baseModelInfoSchema.extend({
-  audioTokenPrice: z.string().optional(),
-  textInputTokenPrice: z.string().optional(),
-  textOutputTokenPrice: z.string().optional(),
+  audioTokenPrice: modelPriceSchema.optional(),
+  textInputTokenPrice: modelPriceSchema.optional(),
+  textOutputTokenPrice: modelPriceSchema.optional(),
 })
 
 export const embeddingModelInfoSchema = baseModelInfoSchema.extend({
-  tokenPrice: z.string().optional(),
-  dimensions: z.number().optional(),
+  tokenPrice: modelPriceSchema.optional(),
+  dimensions: z.int().min(0).optional(),
 })
 
 export const modelInfosSchema = z.object({
@@ -254,20 +270,23 @@ export const providerKeySchema = z
       z.object({
         providerId: z.literal('vertex'),
         location: z.string().min(1, 'Location is required').optional(),
-        serviceAccountJson: z.string().min(1, 'Service account JSON is required').refine(
-          (json) => {
-            try {
-              const serviceAccount = JSON.parse(json.replace(/\s+/g, ''))
-              const result = googleServiceAccountSchema.safeParse(serviceAccount)
-              return result.success
-            } catch {
-              return false
-            }
-          },
-          {
-            message: 'Invalid service account JSON format',
-          },
-        ), // encrypted in db
+        serviceAccountJson: z
+          .string()
+          .min(1, 'Service account JSON is required')
+          .refine(
+            (json) => {
+              try {
+                const serviceAccount = JSON.parse(json.replace(/\s+/g, ''))
+                const result = googleServiceAccountSchema.safeParse(serviceAccount)
+                return result.success
+              } catch {
+                return false
+              }
+            },
+            {
+              message: 'Invalid service account JSON format',
+            },
+          ), // encrypted in db
       }),
 
       z.object({

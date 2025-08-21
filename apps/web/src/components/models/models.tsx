@@ -2,8 +2,15 @@
 
 import { useCallback, useRef, useState } from 'react'
 import Image from 'next/image'
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { CheckIcon, ChevronDown, ChevronUp, CopyIcon, Server, Settings } from 'lucide-react'
+import {
+  CheckIcon,
+  ChevronDown,
+  ChevronUp,
+  CloudCog,
+  CopyIcon,
+  KeyRound,
+  Server,
+} from 'lucide-react'
 import { useCopyToClipboard } from 'react-use'
 
 import type { ProviderId } from '@cared/providers'
@@ -23,17 +30,20 @@ import {
 } from '@cared/ui/components/collapsible'
 
 import { SectionTitle } from '@/components/section'
-import { useTRPC } from '@/trpc/client'
+import { useModels, useProviders } from '@/hooks/use-model'
+import { ModelSheet } from './model-sheet'
 import { ProviderKeysSheet } from './provider-keys-sheet'
 
 // Model type definition
-type ModelType = 'language' | 'textEmbedding' | 'image'
+type ModelType = 'language' | 'image' | 'speech' | 'transcription' | 'textEmbedding'
 
 // Model type display configuration
 const MODEL_TYPE_CONFIG: Record<ModelType, { title: string }> = {
   language: { title: 'Language Models' },
-  textEmbedding: { title: 'Text Embedding Models' },
   image: { title: 'Image Models' },
+  speech: { title: 'Speech Models' },
+  transcription: { title: 'Transcription Models' },
+  textEmbedding: { title: 'Text Embedding Models' },
 }
 
 export function Models({
@@ -43,20 +53,25 @@ export function Models({
   isSystem?: boolean
   organizationId?: string
 }) {
-  const trpc = useTRPC()
   const [_, copyToClipboard] = useCopyToClipboard()
 
   // Get all provider information
-  const { data: providersData } = useSuspenseQuery(trpc.model.listProviders.queryOptions())
+  const { providers } = useProviders()
 
   // Get all model information
-  const { data: modelsData } = useSuspenseQuery(trpc.model.listModels.queryOptions())
+  const { models } = useModels({
+    organizationId,
+    source: isSystem ? 'system' : undefined,
+  })
 
   // Track expanded state for each provider
   const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({})
 
   // Track provider keys sheet state
   const [providerKeysSheetOpen, setProviderKeysSheetOpen] = useState(false)
+  // Track model sheet state
+  const [modelSheetOpen, setModelSheetOpen] = useState(false)
+
   const [selectedProviderId, setSelectedProviderId] = useState<ProviderId>()
 
   // Toggle provider expanded state
@@ -79,22 +94,36 @@ export function Models({
     setSelectedProviderId(undefined)
   }
 
+  const handleOpenModelSheet = (providerId: ProviderId) => {
+    setSelectedProviderId(providerId)
+    setModelSheetOpen(true)
+  }
+
+  const handleCloseModelSheet = () => {
+    setModelSheetOpen(false)
+    setSelectedProviderId(undefined)
+  }
+
   // Get models of a specific type for a provider
   const getModelsForProvider = (providerId: string, modelType: ModelType) => {
-    return (
-      modelsData.models[modelType]?.filter((model) => model.id.startsWith(`${providerId}:`)) ?? []
-    )
+    return models[modelType]?.filter((model) => model.id.startsWith(`${providerId}:`)) ?? []
   }
 
   // All model types to display
-  const allModelTypes: ModelType[] = ['language', 'textEmbedding', 'image']
+  const allModelTypes: ModelType[] = [
+    'language',
+    'image',
+    'speech',
+    'transcription',
+    'textEmbedding',
+  ]
 
   return (
     <>
       <SectionTitle title="Models" description="View and manage available providers and models" />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {providersData.providers.map((provider) => (
+        {providers.map((provider) => (
           <Collapsible
             key={provider.id}
             open={expandedProviders[provider.id]}
@@ -102,15 +131,26 @@ export function Models({
           >
             <Card className="relative">
               {/* Settings button positioned at top-right */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-4 right-4 h-8 w-8"
-                onClick={() => handleOpenProviderKeys(provider.id)}
-                title="Manage Provider Keys"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
+              <div className="absolute top-4 right-4 flex">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleOpenProviderKeys(provider.id)}
+                  title="Manage Provider Keys"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleOpenModelSheet(provider.id)}
+                  title="Manage Models"
+                >
+                  <CloudCog className="h-4 w-4" />
+                </Button>
+              </div>
 
               <CardHeader>
                 <CardTitle className="flex items-center gap-4">
@@ -200,7 +240,7 @@ export function Models({
         ))}
 
         {/* No providers available */}
-        {!providersData.providers.length && (
+        {!providers.length && (
           <Card>
             <CardHeader>
               <CardTitle>No Model Providers Available</CardTitle>
@@ -218,12 +258,20 @@ export function Models({
         isSystem={isSystem}
         organizationId={organizationId}
         provider={
-          selectedProviderId
-            ? providersData.providers.find((p) => p.id === selectedProviderId)
-            : undefined
+          selectedProviderId ? providers.find((p) => p.id === selectedProviderId) : undefined
         }
         open={providerKeysSheetOpen}
         onOpenChange={handleCloseProviderKeys}
+      />
+
+      <ModelSheet
+        isSystem={isSystem}
+        organizationId={organizationId}
+        provider={
+          selectedProviderId ? providers.find((p) => p.id === selectedProviderId) : undefined
+        }
+        open={modelSheetOpen}
+        onOpenChange={handleCloseModelSheet}
       />
     </>
   )

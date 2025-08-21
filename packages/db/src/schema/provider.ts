@@ -17,7 +17,7 @@ export const ProviderModels = pgTable(
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('pak')),
+      .$defaultFn(() => generateId('pm')),
     isSystem: boolean().notNull(),
     userId: text().references(() => User.id, { onDelete: 'cascade' }),
     organizationId: text().references(() => Organization.id, { onDelete: 'cascade' }),
@@ -40,7 +40,7 @@ export const ProviderSettings = pgTable(
     id: text()
       .primaryKey()
       .notNull()
-      .$defaultFn(() => generateId('pak')),
+      .$defaultFn(() => generateId('ps')),
     userId: text().references(() => User.id, { onDelete: 'cascade' }),
     organizationId: text().references(() => Organization.id, { onDelete: 'cascade' }),
     settings: jsonb().$type<ProviderSettingsContent>().notNull(),

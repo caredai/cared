@@ -7,7 +7,7 @@ import { HydrateClient, prefetch, trpc } from '@/trpc/server'
  */
 export default function Page() {
   prefetch(trpc.model.listProviders.queryOptions())
-  prefetch(trpc.model.listModels.queryOptions())
+  prefetch(trpc.model.listModels.queryOptions({}))
   prefetch(trpc.providerKey.list.queryOptions({}))
 
   return (

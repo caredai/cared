@@ -11,8 +11,8 @@ import { providerIdSchema, providerKeySchema } from '@cared/providers'
 import type { UserOrAppUserContext } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { env } from '../env'
+import { decryptProviderKey, encryptProviderKey } from '../operation'
 import { userOrAppUserProtectedProcedure } from '../trpc'
-import { decryptProviderKey, encryptProviderKey } from '../types'
 
 export const providerKeyRouter = {
   // List provider keys with optional filtering by user or organization
