@@ -1,27 +1,31 @@
 'use client'
 
 import { EditIcon, Trash2Icon } from 'lucide-react'
+import { zuji } from 'zuji'
 
 import type {
   EmbeddingModelInfo,
   ImageModelInfo,
-  LanguageModelInfo, ProviderId,
+  LanguageModelInfo,
+  ProviderId,
   SpeechModelInfo,
-  TranscriptionModelInfo
+  TranscriptionModelInfo,
 } from '@cared/providers'
 import { Button } from '@cared/ui/components/button'
 
 import type { EditableModel } from './model-item-edit'
 import { CircleSpinner } from '@/components/spinner'
+import { CopyModelId } from './copy-model-id'
 
 export function ModelItemView({
   index,
-  providerId,
+  providerId: _,
   model,
   isSaving,
   isRemoving,
   onEdit,
   onRemove,
+  copyToClipboard,
 }: {
   index: number
   providerId: ProviderId
@@ -30,11 +34,12 @@ export function ModelItemView({
   isRemoving: boolean
   onEdit: () => void
   onRemove: () => Promise<void>
+  copyToClipboard: (value: string) => void
 }) {
   const isDisabled = isSaving || isRemoving
 
   return (
-    <div className="border rounded-lg p-4 my-4 flex flex-col gap-2">
+    <div className="border rounded-lg p-4 my-2 flex flex-col gap-2">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
           <span className="font-medium">{model.model.name || `Model #${index + 1}`}</span>
@@ -73,6 +78,8 @@ export function ModelItemView({
         </div>
       </div>
 
+      <CopyModelId modelId={model.model.id} copyToClipboard={copyToClipboard} />
+
       {model.model.description && (
         <div className="text-sm text-muted-foreground">{model.model.description}</div>
       )}
@@ -97,42 +104,70 @@ export function ModelItemView({
 function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      {model.contextWindow && (
-        <div>
-          Context Window: <span className="font-mono">{model.contextWindow.toLocaleString()}</span>
-        </div>
-      )}
-      {model.maxOutputTokens && (
-        <div>
-          Max Output Tokens:{' '}
-          <span className="font-mono">{model.maxOutputTokens.toLocaleString()}</span>
-        </div>
-      )}
-      {model.inputTokenPrice && (
-        <div>
-          Input Token Price: <span className="font-mono">{model.inputTokenPrice}</span>
-        </div>
-      )}
-      {model.cachedInputTokenPrice && (
-        <div>
-          Cached Input Token Price: <span className="font-mono">{model.cachedInputTokenPrice}</span>
-        </div>
-      )}
-      {model.cacheInputTokenPrice && (
-        <div>
-          Cache Input Token Price:{' '}
-          <span className="font-mono">
-            {typeof model.cacheInputTokenPrice === 'string'
-              ? model.cacheInputTokenPrice
-              : JSON.stringify(model.cacheInputTokenPrice)}
-          </span>
-        </div>
-      )}
-      {model.outputTokenPrice && (
-        <div>
-          Output Token Price: <span className="font-mono">{model.outputTokenPrice}</span>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-x-4">
+        {model.contextWindow && (
+          <div>
+            Context length:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.contextWindow, 'compact-decimal')}
+            </span>
+          </div>
+        )}
+        {model.maxOutputTokens && (
+          <div>
+            Max output length:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.maxOutputTokens, 'compact-decimal')}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-x-4">
+        {model.inputTokenPrice && (
+          <div>
+            Input:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.inputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+        {model.outputTokenPrice && (
+          <div>
+            Output:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.outputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-x-4">
+        {model.cachedInputTokenPrice && (
+          <div>
+            {model.cacheInputTokenPrice ? 'Cache read' : 'Cache'}:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.cachedInputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+        {model.cacheInputTokenPrice && (
+          <div>
+            Cache write:{' '}
+            {typeof model.cacheInputTokenPrice === 'string' ? (
+              <>
+                <span className="font-mono font-medium text-foreground">
+                  {zuji(model.cacheInputTokenPrice, 'standard-currency-usd')}/M
+                </span>{' '}
+                tokens
+              </>
+            ) : (
+              JSON.stringify(model.cacheInputTokenPrice)
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -141,40 +176,69 @@ function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
 function ImageModelItemView({ model }: { model: ImageModelInfo }) {
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      {model.imageInputTokenPrice && (
-        <div>
-          Image Input Token Price: <span className="font-mono">{model.imageInputTokenPrice}</span>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-x-4">
+        {model.imageInputTokenPrice && (
+          <div>
+            Image input:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.imageInputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+        {model.imageOutputTokenPrice && (
+          <div>
+            Image output:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.imageOutputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-x-4">
+        {model.textInputTokenPrice && (
+          <div>
+            Text input:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.textInputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+        {model.textCachedInputTokenPrice && (
+          <div>
+            Text cache:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.textCachedInputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+      </div>
       {model.imageCachedInputTokenPrice && (
         <div>
-          Image Cached Input Token Price:{' '}
-          <span className="font-mono">{model.imageCachedInputTokenPrice}</span>
-        </div>
-      )}
-      {model.imageOutputTokenPrice && (
-        <div>
-          Image Output Token Price: <span className="font-mono">{model.imageOutputTokenPrice}</span>
-        </div>
-      )}
-      {model.textInputTokenPrice && (
-        <div>
-          Text Input Token Price: <span className="font-mono">{model.textInputTokenPrice}</span>
-        </div>
-      )}
-      {model.textCachedInputTokenPrice && (
-        <div>
-          Text Cached Input Token Price:{' '}
-          <span className="font-mono">{model.textCachedInputTokenPrice}</span>
+          Image cache:{' '}
+          <span className="font-mono font-medium text-foreground">
+            {zuji(model.imageCachedInputTokenPrice, 'standard-currency-usd')}/M
+          </span>{' '}
+          tokens
         </div>
       )}
       {model.pricePerImage && (
         <div>
-          Price Per Image:{' '}
-          <span className="font-mono">
-            {typeof model.pricePerImage === 'string'
-              ? model.pricePerImage
-              : JSON.stringify(model.pricePerImage)}
+          Price per image:{' '}
+          <span>
+            {typeof model.pricePerImage === 'string' ? (
+              <>
+                <span className="font-mono font-medium text-foreground">
+                  {zuji(model.pricePerImage, 'standard-currency-usd')}/M
+                </span>{' '}
+                tokens
+              </>
+            ) : (
+              JSON.stringify(model.pricePerImage)
+            )}
           </span>
         </div>
       )}
@@ -186,22 +250,36 @@ function ImageModelItemView({ model }: { model: ImageModelInfo }) {
 function SpeechModelItemView({ model }: { model: SpeechModelInfo }) {
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      {model.maxInputTokens && (
-        <div>
-          Max Input Tokens:{' '}
-          <span className="font-mono">{model.maxInputTokens.toLocaleString()}</span>
-        </div>
-      )}
-      {model.textTokenPrice && (
-        <div>
-          Text Token Price: <span className="font-mono">{model.textTokenPrice}</span>
-        </div>
-      )}
-      {model.audioTokenPrice && (
-        <div>
-          Audio Token Price: <span className="font-mono">{model.audioTokenPrice}</span>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-x-4">
+        {model.maxInputTokens && (
+          <div>
+            Max input length:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.maxInputTokens, 'compact-decimal')}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-x-4">
+        {model.textTokenPrice && (
+          <div>
+            Text tokens:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.textTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+        {model.audioTokenPrice && (
+          <div>
+            Audio tokens:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.audioTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -210,21 +288,37 @@ function SpeechModelItemView({ model }: { model: SpeechModelInfo }) {
 function TranscriptionModelItemView({ model }: { model: TranscriptionModelInfo }) {
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      {model.audioTokenPrice && (
-        <div>
-          Audio Token Price: <span className="font-mono">{model.audioTokenPrice}</span>
-        </div>
-      )}
-      {model.textInputTokenPrice && (
-        <div>
-          Text Input Token Price: <span className="font-mono">{model.textInputTokenPrice}</span>
-        </div>
-      )}
-      {model.textOutputTokenPrice && (
-        <div>
-          Text Output Token Price: <span className="font-mono">{model.textOutputTokenPrice}</span>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-x-4">
+        {model.audioTokenPrice && (
+          <div>
+            Audio tokens:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.audioTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-x-4">
+        {model.textInputTokenPrice && (
+          <div>
+            Text input:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.textInputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+        {model.textOutputTokenPrice && (
+          <div>
+            Text output:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.textOutputTokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -233,16 +327,25 @@ function TranscriptionModelItemView({ model }: { model: TranscriptionModelInfo }
 function EmbeddingModelItemView({ model }: { model: EmbeddingModelInfo }) {
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      {model.dimensions && (
-        <div>
-          Dimensions: <span className="font-mono">{model.dimensions.toLocaleString()}</span>
-        </div>
-      )}
-      {model.tokenPrice && (
-        <div>
-          Token Price: <span className="font-mono">{model.tokenPrice}</span>
-        </div>
-      )}
+      <div className="flex flex-wrap gap-x-4">
+        {model.dimensions && (
+          <div>
+            Dimensions:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.dimensions, 'standard-integer')}
+            </span>
+          </div>
+        )}
+        {model.tokenPrice && (
+          <div>
+            Token price:{' '}
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.tokenPrice, 'standard-currency-usd')}/M
+            </span>{' '}
+            tokens
+          </div>
+        )}
+      </div>
     </div>
   )
 }

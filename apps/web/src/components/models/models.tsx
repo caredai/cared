@@ -1,16 +1,8 @@
 'use client'
 
-import { useCallback, useRef, useState } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
-import {
-  CheckIcon,
-  ChevronDown,
-  ChevronUp,
-  CloudCog,
-  CopyIcon,
-  KeyRound,
-  Server,
-} from 'lucide-react'
+import { ChevronDown, ChevronUp, CloudCog, KeyRound, Server } from 'lucide-react'
 import { useCopyToClipboard } from 'react-use'
 
 import type { ProviderId } from '@cared/providers'
@@ -31,6 +23,7 @@ import {
 
 import { SectionTitle } from '@/components/section'
 import { useModels, useProviders } from '@/hooks/use-model'
+import { CopyModelId } from './copy-model-id'
 import { ModelSheet } from './model-sheet'
 import { ProviderKeysSheet } from './provider-keys-sheet'
 
@@ -73,6 +66,9 @@ export function Models({
   const [modelSheetOpen, setModelSheetOpen] = useState(false)
 
   const [selectedProviderId, setSelectedProviderId] = useState<ProviderId>()
+  const selectedProvider = selectedProviderId
+    ? providers.find((p) => p.id === selectedProviderId)
+    : undefined
 
   // Toggle provider expanded state
   const toggleProvider = (providerId: string) => {
@@ -254,25 +250,25 @@ export function Models({
         )}
       </div>
 
-      <ProviderKeysSheet
-        isSystem={isSystem}
-        organizationId={organizationId}
-        provider={
-          selectedProviderId ? providers.find((p) => p.id === selectedProviderId) : undefined
-        }
-        open={providerKeysSheetOpen}
-        onOpenChange={handleCloseProviderKeys}
-      />
+      {selectedProvider && (
+        <>
+          <ProviderKeysSheet
+            isSystem={isSystem}
+            organizationId={organizationId}
+            provider={selectedProvider}
+            open={providerKeysSheetOpen}
+            onOpenChange={handleCloseProviderKeys}
+          />
 
-      <ModelSheet
-        isSystem={isSystem}
-        organizationId={organizationId}
-        provider={
-          selectedProviderId ? providers.find((p) => p.id === selectedProviderId) : undefined
-        }
-        open={modelSheetOpen}
-        onOpenChange={handleCloseModelSheet}
-      />
+          <ModelSheet
+            isSystem={isSystem}
+            organizationId={organizationId}
+            provider={selectedProvider}
+            open={modelSheetOpen}
+            onOpenChange={handleCloseModelSheet}
+          />
+        </>
+      )}
     </>
   )
 }
@@ -296,14 +292,10 @@ function ModelsByType({
       <h3 className="font-medium mb-2">{MODEL_TYPE_CONFIG[modelType].title}</h3>
       <ul className="space-y-2">
         {models.map((model) => {
-          const { modelId } = splitModelFullId(model.id)
           return (
             <li key={model.id} className="text-sm p-2 bg-muted rounded-md">
               <div className="font-medium">{model.name}</div>
-              <div className="flex items-center text-xs text-muted-foreground">
-                <span className="font-mono">{modelId}</span>
-                <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
-              </div>
+              <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
               {model.description && (
                 <div className="text-xs text-muted-foreground mt-1">{model.description}</div>
               )}
@@ -312,31 +304,5 @@ function ModelsByType({
         })}
       </ul>
     </div>
-  )
-}
-
-function CopyModelId({
-  modelId,
-  copyToClipboard,
-}: {
-  modelId: string
-  copyToClipboard: (value: string) => void
-}) {
-  const timeoutHandle = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const [copied, setCopied] = useState(false)
-  const copy = useCallback(() => {
-    copyToClipboard(modelId)
-    clearTimeout(timeoutHandle.current)
-    timeoutHandle.current = setTimeout(() => {
-      setCopied(false)
-    }, 1000)
-    setCopied(true)
-  }, [modelId, copyToClipboard, setCopied])
-
-  return (
-    <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={copy}>
-      {copied ? <CheckIcon /> : <CopyIcon />}
-      <span className="sr-only">Copy Model ID</span>
-    </Button>
   )
 }

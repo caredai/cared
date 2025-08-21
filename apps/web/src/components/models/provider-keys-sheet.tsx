@@ -95,11 +95,11 @@ export function ProviderKeysSheet({
 }: {
   isSystem?: boolean
   organizationId?: string
-  provider?: BaseProviderInfo
+  provider: BaseProviderInfo
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const providerId = provider?.id
+  const providerId = provider.id
   const { providerKeys, refetchProviderKeys } = useProviderKeysByProvider({
     isSystem,
     organizationId,
@@ -142,10 +142,6 @@ export function ProviderKeysSheet({
 
   // Handle adding new provider key
   const handleAddNew = useCallback(() => {
-    if (!providerId) {
-      return
-    }
-
     const newKey: EditableProviderKey = {
       id: `${TEMP_ID_PREFIX}${Date.now()}`,
       providerId,
@@ -182,10 +178,6 @@ export function ProviderKeysSheet({
   // Handle saving changes
   const handleSave = useCallback(
     async (id: string, formData: ProviderKeyFormValues) => {
-      if (!providerId) {
-        return
-      }
-
       if (id.startsWith(TEMP_ID_PREFIX)) {
         // This is a new key, create it via API
         await createProviderKey({
@@ -253,17 +245,14 @@ export function ProviderKeysSheet({
       <SheetContent className="w-full sm:max-w-[500px]">
         <SheetHeader className="flex flex-row items-center gap-4">
           <Avatar className="size-10 rounded-lg">
-            <AvatarImage
-              src={provider?.icon ? `/images/providers/${provider.icon}` : undefined}
-              alt={provider?.name}
-            />
+            <AvatarImage src={`/images/providers/${provider.icon}`} alt={provider.name} />
             <AvatarFallback>
               <ServerIcon />
             </AvatarFallback>
           </Avatar>
           <div>
-            <SheetTitle>{provider?.name}</SheetTitle>
-            <SheetDescription>Manage API Keys</SheetDescription>
+            <SheetTitle>{provider.name}</SheetTitle>
+            <SheetDescription>Use your own provider API keys</SheetDescription>
           </div>
         </SheetHeader>
 
@@ -272,7 +261,7 @@ export function ProviderKeysSheet({
             // Empty state with add button
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <div className="text-muted-foreground mb-4">
-                <p className="text-lg font-medium">No API keys found for {provider?.name}</p>
+                <p className="text-lg font-medium">No API keys found for {provider.name}</p>
                 <p className="text-sm">You can add an API key</p>
               </div>
               <Button onClick={handleAddNew} size="sm">

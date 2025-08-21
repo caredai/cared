@@ -145,7 +145,7 @@ export function ModelItemEdit({
   const isFormDisabled = isSaving || isRemoving
 
   return (
-    <div className="border rounded-lg p-4 my-4 bg-muted/50">
+    <div className="border rounded-lg p-4 my-2 bg-muted/50">
       <Form {...form}>
         <form className="space-y-4">
           <div className="flex items-center justify-between">
@@ -312,7 +312,7 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
         name="model.contextWindow"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Context Window (Optional)</FormLabel>
+            <FormLabel>Context Length (Optional)</FormLabel>
             <FormControl>
               <OptionalNumberInput
                 placeholder="Enter context window size"
@@ -333,7 +333,7 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
         name="model.maxOutputTokens"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Max Output Tokens (Optional)</FormLabel>
+            <FormLabel>Max Output Length (Optional)</FormLabel>
             <FormControl>
               <OptionalNumberInput
                 placeholder="Enter max output tokens"
@@ -354,10 +354,10 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
         name="model.inputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Input Token Price (Optional)</FormLabel>
+            <FormLabel>Input Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
-                placeholder="Enter input token price (e.g., 0.0015)"
+                placeholder="Enter input token price (e.g., 0.015)"
                 {...field}
                 disabled={isFormDisabled}
               />
@@ -372,7 +372,7 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
         name="model.cachedInputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Cached Input Token Price (Optional)</FormLabel>
+            <FormLabel>Cache Read Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter cached input token price (e.g., 0.0003)"
@@ -390,10 +390,10 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
         name="model.cacheInputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Cache Input Token Price (Optional)</FormLabel>
+            <FormLabel>Cache Write Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
-                placeholder="Enter cache input token price (e.g., 0.0003)"
+                placeholder="Enter cache input token price (e.g., 0.003)"
                 {...field}
                 disabled={isFormDisabled}
               />
@@ -408,10 +408,10 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
         name="model.outputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Output Token Price (Optional)</FormLabel>
+            <FormLabel>Output Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
-                placeholder="Enter output token price (e.g., 0.006)"
+                placeholder="Enter output token price (e.g., 0.06)"
                 {...field}
                 disabled={isFormDisabled}
               />
@@ -433,7 +433,7 @@ function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisable
         name="model.imageInputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Image Input Token Price (Optional)</FormLabel>
+            <FormLabel>Image Input Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter image input token price"
@@ -451,7 +451,7 @@ function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisable
         name="model.imageCachedInputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Image Cached Input Token Price (Optional)</FormLabel>
+            <FormLabel>Image Cache Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter image cached input token price"
@@ -469,7 +469,7 @@ function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisable
         name="model.imageOutputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Image Output Token Price (Optional)</FormLabel>
+            <FormLabel>Image Output Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter image output token price"
@@ -487,7 +487,7 @@ function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisable
         name="model.textInputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Text Input Token Price (Optional)</FormLabel>
+            <FormLabel>Text Input Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter text input token price"
@@ -505,7 +505,7 @@ function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisable
         name="model.textCachedInputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Text Cached Input Token Price (Optional)</FormLabel>
+            <FormLabel>Text Cache Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter text cached input token price"
@@ -523,10 +523,10 @@ function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisable
         name="model.pricePerImage"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Price Per Image (Optional)</FormLabel>
+            <FormLabel>Price $ Per Image (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
-                placeholder="Enter price per image (e.g., 0.040)"
+                placeholder="Enter price per image (e.g., 0.04)"
                 {...field}
                 disabled={isFormDisabled}
               />
@@ -569,7 +569,7 @@ function SpeechModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisabl
         name="model.textTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Text Token Price (Optional)</FormLabel>
+            <FormLabel>Text Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter text token price"
@@ -587,7 +587,7 @@ function SpeechModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisabl
         name="model.audioTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Audio Token Price (Optional)</FormLabel>
+            <FormLabel>Audio Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter audio token price"
@@ -618,7 +618,7 @@ function TranscriptionModelItemEdit({
         name="model.audioTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Audio Token Price (Optional)</FormLabel>
+            <FormLabel>Audio Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter audio token price"
@@ -636,7 +636,7 @@ function TranscriptionModelItemEdit({
         name="model.textInputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Text Input Token Price (Optional)</FormLabel>
+            <FormLabel>Text Input Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter text input token price"
@@ -654,7 +654,7 @@ function TranscriptionModelItemEdit({
         name="model.textOutputTokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Text Output Token Price (Optional)</FormLabel>
+            <FormLabel>Text Output Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
                 placeholder="Enter text output token price"
@@ -700,10 +700,10 @@ function EmbeddingModelItemEdit({ form, isFormDisabled }: { form: any; isFormDis
         name="model.tokenPrice"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Token Price (Optional)</FormLabel>
+            <FormLabel>Price $/M Tokens (Optional)</FormLabel>
             <FormControl>
               <OptionalPriceInput
-                placeholder="Enter token price (e.g., 0.0001)"
+                placeholder="Enter token price (e.g., 0.01)"
                 {...field}
                 disabled={isFormDisabled}
               />

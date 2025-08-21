@@ -3,6 +3,7 @@
 import type { VirtualizerHandle } from 'virtua'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { PlusIcon, ServerIcon } from 'lucide-react'
+import { useCopyToClipboard } from 'react-use'
 import { Virtualizer } from 'virtua'
 
 import type { UpdateModelArgs } from '@cared/api'
@@ -44,11 +45,11 @@ export function ModelSheet({
 }: {
   isSystem?: boolean
   organizationId?: string
-  provider?: BaseProviderInfo
+  provider: BaseProviderInfo
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const providerId = provider?.id
+  const providerId = provider.id
 
   const { models, refetchModels } = useModels({
     organizationId,
@@ -104,10 +105,6 @@ export function ModelSheet({
 
   // Handle adding new model
   const handleAddNew = useCallback(() => {
-    if (!providerId) {
-      return
-    }
-
     const id = `${TEMP_ID_PREFIX as ProviderId}:${Date.now()}` as const
 
     const newModel: EditableModel = {
@@ -149,10 +146,6 @@ export function ModelSheet({
   // Handle saving changes
   const handleSave = useCallback(
     async (id: string, args: UpdateModelArgs) => {
-      if (!providerId) {
-        return
-      }
-
       if (id.startsWith(TEMP_ID_PREFIX)) {
         // This is a new model, create it via API
         await updateModel({
@@ -209,22 +202,21 @@ export function ModelSheet({
     return allModels.filter((model) => model.type === activeTab)
   }, [allModels, activeTab])
 
+  const [_, copyToClipboard] = useCopyToClipboard()
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-[600px]">
         <SheetHeader className="flex flex-row items-center gap-4">
           <Avatar className="size-10 rounded-lg">
-            <AvatarImage
-              src={provider?.icon ? `/images/providers/${provider.icon}` : undefined}
-              alt={provider?.name}
-            />
+            <AvatarImage src={`/images/providers/${provider.icon}`} alt={provider.name} />
             <AvatarFallback>
               <ServerIcon />
             </AvatarFallback>
           </Avatar>
           <div>
-            <SheetTitle>{provider?.name}</SheetTitle>
-            <SheetDescription>Manage Models</SheetDescription>
+            <SheetTitle>{provider.name}</SheetTitle>
+            <SheetDescription>Access models from the provider</SheetDescription>
           </div>
         </SheetHeader>
 
@@ -303,6 +295,7 @@ export function ModelSheet({
                           onCancel={() => handleCancel(model.id)}
                           onSave={(formData) => handleSave(model.id, formData)}
                           onRemove={() => handleRemove(model.id)}
+                          copyToClipboard={copyToClipboard}
                         />
                       )
                     }}
@@ -325,6 +318,7 @@ function ModelItem({
   onCancel,
   onSave,
   onRemove,
+  copyToClipboard,
 }: {
   index: number
   providerId: ProviderId
@@ -333,6 +327,7 @@ function ModelItem({
   onCancel: () => void
   onSave: (formData: UpdateModelArgs) => Promise<void>
   onRemove: () => Promise<void>
+  copyToClipboard: (value: string) => void
 }) {
   // Track loading states for specific actions separately
   const [isSaving, setIsSaving] = useState(false)
@@ -381,6 +376,7 @@ function ModelItem({
         isRemoving={isRemoving}
         onEdit={onEdit}
         onRemove={handleRemove}
+        copyToClipboard={copyToClipboard}
       />
     )
   }

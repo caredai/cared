@@ -58,7 +58,8 @@
     "undici": "^7.5.0",
     "unique-username-generator": "^1.5.1",
     "virtua": "^0.40.3",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "zuji": "^1.0.8"
   },
   "devDependencies": {
     "@cared/eslint-config": "workspace:*",
