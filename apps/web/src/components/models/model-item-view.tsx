@@ -213,13 +213,11 @@ function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
           )}
           {model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice === 'string' && (
             <div>
-              Cache write:
-              <div className="text-sm">
-                <span className="font-mono font-medium text-foreground">
-                  {zuji(model.cacheInputTokenPrice, 'standard-currency-usd')}/M
-                </span>{' '}
-                tokens
-              </div>
+              Cache write:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.cacheInputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
             </div>
           )}
         </div>

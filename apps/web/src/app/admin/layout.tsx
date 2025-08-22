@@ -1,14 +1,14 @@
 import type { ReactNode } from 'react'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@cared/ui/components/sidebar'
+import { SidebarInset, SidebarProvider } from '@cared/ui/components/sidebar'
 
 import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
+import { Section } from '@/components/section'
 import { prefetchAndCheckSession } from '@/lib/session'
 import { HydrateClient, prefetch, trpc } from '@/trpc/server'
-import { AdminMenuBreadcrumb, AdminNavMain } from './nav-main'
-import { Section } from '@/components/section'
+import { AdminNavMain } from './nav-main'
 
 export default async function Layout({
   children,
@@ -29,16 +29,11 @@ export default async function Layout({
             <AdminNavMain />
           </AppSidebar>
 
-          <SidebarInset>
-            <header className="flex h-16 shrink-0 items-center gap-2">
-              <div className="flex items-center gap-2 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <AdminMenuBreadcrumb />
-              </div>
-            </header>
-
-            <Section>{children}</Section>
-          </SidebarInset>
+          <div className="flex-1 flex flex-col h-[calc(100svh-57px)] overflow-y-auto overflow-x-hidden">
+            <SidebarInset>
+              <Section>{children}</Section>
+            </SidebarInset>
+          </div>
         </SidebarProvider>
       </ErrorBoundary>
     </HydrateClient>

@@ -18,8 +18,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "extract-model-ids": "tsx ./scripts/extract-model-ids.ts",
-    "fetch-openrouter-models": "curl -L https://openrouter.ai/api/v1/models -o ./data/openrouter-models.json",
-    "fetch-litellm-models": "curl -L https://github.com/BerriAI/litellm/raw/refs/heads/main/model_prices_and_context_window.json -o ./data/model_prices_and_context_window.json"
+    "fetch-openrouter-models": "pnpm with-env tsx ./scripts/fetch-openrouter-models.ts",
+    "fetch-openrouter-models-json": "curl -L https://openrouter.ai/api/v1/models -o ./data/openrouter-models.json",
+    "fetch-litellm-models": "curl -L https://github.com/BerriAI/litellm/raw/refs/heads/main/model_prices_and_context_window.json -o ./data/model_prices_and_context_window.json",
+    "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "3.0.3",
