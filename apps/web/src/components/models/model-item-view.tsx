@@ -1,6 +1,6 @@
 'use client'
 
-import { EditIcon, Trash2Icon } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon, EditIcon, Trash2Icon } from 'lucide-react'
 import { zuji } from 'zuji'
 
 import type {
@@ -12,6 +12,15 @@ import type {
   TranscriptionModelInfo,
 } from '@cared/providers'
 import { Button } from '@cared/ui/components/button'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@cared/ui/components/table'
+import { cn } from '@cared/ui/lib/utils'
 
 import type { EditableModel } from './model-item-edit'
 import { CircleSpinner } from '@/components/spinner'
@@ -23,8 +32,14 @@ export function ModelItemView({
   model,
   isSaving,
   isRemoving,
+  isMovingUp,
+  isMovingDown,
   onEdit,
   onRemove,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp,
+  canMoveDown,
   copyToClipboard,
 }: {
   index: number
@@ -32,15 +47,22 @@ export function ModelItemView({
   model: EditableModel
   isSaving: boolean
   isRemoving: boolean
+  isMovingUp: boolean
+  isMovingDown: boolean
   onEdit: () => void
   onRemove: () => Promise<void>
+  onMoveUp: () => Promise<void>
+  onMoveDown: () => Promise<void>
+  canMoveUp: boolean
+  canMoveDown: boolean
   copyToClipboard: (value: string) => void
 }) {
-  const isDisabled = isSaving || isRemoving
+  // Disable all operations when any action is in progress
+  const isDisabled = isSaving || isRemoving || isMovingUp || isMovingDown
 
   return (
     <div className="border rounded-lg p-4 my-2 flex flex-col gap-2">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="font-medium">{model.model.name || `Model #${index + 1}`}</span>
           {model.isNew && (
@@ -57,6 +79,39 @@ export function ModelItemView({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Sort buttons - positioned at the leftmost side */}
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-6"
+              onClick={onMoveUp}
+              disabled={isDisabled || !canMoveUp}
+              title="Move up"
+            >
+              {isMovingUp ? (
+                <CircleSpinner className="size-3" />
+              ) : (
+                <ChevronUpIcon className="size-3" />
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="size-6"
+              onClick={onMoveDown}
+              disabled={isDisabled || !canMoveDown}
+              title="Move down"
+            >
+              {isMovingDown ? (
+                <CircleSpinner className="size-3" />
+              ) : (
+                <ChevronDownIcon className="size-3" />
+              )}
+            </Button>
+          </div>
+
+          {/* Edit and Remove buttons */}
           <Button
             variant="outline"
             size="icon"
@@ -142,32 +197,39 @@ function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
           </div>
         )}
       </div>
-      <div className="flex flex-wrap gap-x-4">
-        {model.cachedInputTokenPrice && (
-          <div>
-            {model.cacheInputTokenPrice ? 'Cache read' : 'Cache'}:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.cachedInputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-        {model.cacheInputTokenPrice && (
-          <div>
-            Cache write:{' '}
-            {typeof model.cacheInputTokenPrice === 'string' ? (
-              <>
+      {Boolean(
+        model.cachedInputTokenPrice ||
+          (model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice === 'string'),
+      ) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.cachedInputTokenPrice && (
+            <div>
+              {model.cacheInputTokenPrice ? 'Cache read' : 'Cache'}:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.cachedInputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+          {model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice === 'string' && (
+            <div>
+              Cache write:
+              <div className="text-sm">
                 <span className="font-mono font-medium text-foreground">
                   {zuji(model.cacheInputTokenPrice, 'standard-currency-usd')}/M
                 </span>{' '}
                 tokens
-              </>
-            ) : (
-              JSON.stringify(model.cacheInputTokenPrice)
-            )}
-          </div>
-        )}
-      </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice !== 'string' && (
+        <div>
+          Cache write:
+          <CacheInputTokenPriceTable cacheInputTokenPrice={model.cacheInputTokenPrice} />
+        </div>
+      )}
     </div>
   )
 }
@@ -176,70 +238,79 @@ function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
 function ImageModelItemView({ model }: { model: ImageModelInfo }) {
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      <div className="flex flex-wrap gap-x-4">
-        {model.imageInputTokenPrice && (
-          <div>
-            Image input:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.imageInputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-        {model.imageOutputTokenPrice && (
-          <div>
-            Image output:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.imageOutputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-x-4">
-        {model.textInputTokenPrice && (
-          <div>
-            Text input:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.textInputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-        {model.textCachedInputTokenPrice && (
-          <div>
-            Text cache:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.textCachedInputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-      </div>
-      {model.imageCachedInputTokenPrice && (
+      {Boolean(model.imageInputTokenPrice || model.imageOutputTokenPrice) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.imageInputTokenPrice && (
+            <div>
+              Image input:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.imageInputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+          {model.imageOutputTokenPrice && (
+            <div>
+              Image output:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.imageOutputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+        </div>
+      )}
+      {model.textInputTokenPrice && (
         <div>
-          Image cache:{' '}
+          Text input:{' '}
           <span className="font-mono font-medium text-foreground">
-            {zuji(model.imageCachedInputTokenPrice, 'standard-currency-usd')}/M
+            {zuji(model.textInputTokenPrice, 'standard-currency-usd')}/M
           </span>{' '}
           tokens
         </div>
       )}
+      {Boolean(model.textCachedInputTokenPrice || model.imageCachedInputTokenPrice) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.textCachedInputTokenPrice && (
+            <div>
+              Text cache:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.textCachedInputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+          {model.imageCachedInputTokenPrice && (
+            <div>
+              Image cache:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.imageCachedInputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+        </div>
+      )}
       {model.pricePerImage && (
-        <div>
+        <div
+          className={cn(
+            (model.imageInputTokenPrice ||
+              model.imageOutputTokenPrice ||
+              model.textInputTokenPrice ||
+              model.textCachedInputTokenPrice ||
+              model.imageCachedInputTokenPrice) &&
+              typeof model.pricePerImage !== 'string' &&
+              'mt-2',
+          )}
+        >
           Price per image:{' '}
-          <span>
-            {typeof model.pricePerImage === 'string' ? (
-              <>
-                <span className="font-mono font-medium text-foreground">
-                  {zuji(model.pricePerImage, 'standard-currency-usd')}/M
-                </span>{' '}
-                tokens
-              </>
-            ) : (
-              JSON.stringify(model.pricePerImage)
-            )}
-          </span>
+          {typeof model.pricePerImage === 'string' ? (
+            <span className="font-mono font-medium text-foreground">
+              {zuji(model.pricePerImage, 'standard-currency-usd')}
+            </span>
+          ) : (
+            <PricePerImageTable pricePerImage={model.pricePerImage} />
+          )}
         </div>
       )}
     </div>
@@ -347,5 +418,102 @@ function EmbeddingModelItemView({ model }: { model: EmbeddingModelInfo }) {
         )}
       </div>
     </div>
+  )
+}
+
+// Price per image table component that handles both data structures
+function PricePerImageTable({
+  pricePerImage,
+}: {
+  pricePerImage: [string, string][] | [string, [string, string][]][]
+}) {
+  // Check if it's a nested structure (quality -> size -> price)
+  const isNested = pricePerImage.some((item) => Array.isArray(item[1]))
+
+  if (isNested) {
+    // Handle nested structure: quality -> size -> price
+    const nestedPricePerImage = pricePerImage as [string, [string, string][]][]
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Quality</TableHead>
+            <TableHead>Size</TableHead>
+            <TableHead>Price</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {nestedPricePerImage.map(([quality, sizePriceArray]) =>
+            sizePriceArray.map(([size, price], index) => (
+              <TableRow key={`${quality}-${size}`}>
+                <TableCell className={index === 0 ? 'font-medium' : 'text-muted-foreground'}>
+                  {index === 0 ? quality : ''}
+                </TableCell>
+                <TableCell>{size}</TableCell>
+                <TableCell className="font-mono font-medium text-foreground">
+                  {zuji(price, 'standard-currency-usd')}
+                </TableCell>
+              </TableRow>
+            )),
+          )}
+        </TableBody>
+      </Table>
+    )
+  } else {
+    // Handle simple structure: quality -> price
+    const simplePricePerImage = pricePerImage as [string, string][]
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Quality</TableHead>
+            <TableHead>Price</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {simplePricePerImage.map(([quality, price]) => (
+            <TableRow key={quality}>
+              <TableCell>{quality}</TableCell>
+              <TableCell className="font-mono font-medium text-foreground">
+                {zuji(price, 'standard-currency-usd')}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    )
+  }
+}
+
+// Cache input token price table component for TTL to price mapping
+function CacheInputTokenPriceTable({
+  cacheInputTokenPrice,
+}: {
+  cacheInputTokenPrice: [string, string][]
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>TTL</TableHead>
+          <TableHead>Price</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {cacheInputTokenPrice.map(([ttl, price]) => (
+          <TableRow key={ttl}>
+            <TableCell>{ttl}</TableCell>
+            <TableCell>
+              <span className="font-mono font-medium text-foreground">
+                {zuji(price, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   )
 }

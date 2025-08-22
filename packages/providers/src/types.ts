@@ -78,11 +78,14 @@ const _: ProviderId = '' as z.infer<typeof providerIdSchema>
 const __: z.infer<typeof providerIdSchema> = '' as ProviderId
 
 export type ModelFullId = `${ProviderId}:${string}`
-export const modelFullIdSchema = z.templateLiteral([
-  providerIdSchema,
-  ':',
-  z.string().min(1),
-], 'Invalid model ID')
+export const modelFullIdSchema = z.templateLiteral(
+  [
+    providerIdSchema,
+    ':',
+    z.string().min(1),
+  ],
+  'Invalid model ID',
+)
 
 export function modelFullId(providerId: ProviderId, modelId: string): ModelFullId {
   return `${providerId}:${modelId}`
@@ -125,7 +128,7 @@ export interface LanguageModelInfo extends BaseModelInfo {
   maxOutputTokens?: number // max output tokens
   inputTokenPrice?: string // decimal string, in $USD/M input token
   cachedInputTokenPrice?: string // read; decimal string, in $USD/M cached input token
-  cacheInputTokenPrice?: string | Record<string, string> // write; ttl => price; decimal string, in $USD/M cached input token
+  cacheInputTokenPrice?: string | [string, string][] // write; ttl => price; decimal string, in $USD/M cached input token
   outputTokenPrice?: string // decimal string, in $USD/M input token
 }
 
@@ -137,8 +140,8 @@ export interface ImageModelInfo extends BaseModelInfo {
   textCachedInputTokenPrice?: string
   pricePerImage?:
     | string
-    | Record<string, string> // quality => price
-    | Record<string, Record<string, string>> // quality => size (or aspect ratio) => price
+    | [string, string][] // quality => price
+    | [string, [string, string][]][] // quality => size (or aspect ratio) => price
 }
 
 export interface SpeechModelInfo extends BaseModelInfo {
@@ -188,7 +191,13 @@ export const languageModelInfoSchema = baseModelInfoSchema.extend({
   maxOutputTokens: z.int().min(0).optional(),
   inputTokenPrice: modelPriceSchema.optional(),
   cachedInputTokenPrice: modelPriceSchema.optional(),
-  cacheInputTokenPrice: modelPriceSchema.or(z.record(z.string(), modelPriceSchema)).optional(),
+  cacheInputTokenPrice: modelPriceSchema
+    .or(
+      z
+        .array(z.tuple([z.string().min(1, 'TTL is required'), modelPriceSchema]))
+        .min(1, 'At least one TTL is required'),
+    )
+    .optional(),
   outputTokenPrice: modelPriceSchema.optional(),
 })
 
@@ -198,8 +207,24 @@ export const imageModelInfoSchema = baseModelInfoSchema.extend({
   imageOutputTokenPrice: modelPriceSchema.optional(),
   textInputTokenPrice: modelPriceSchema.optional(),
   textCachedInputTokenPrice: modelPriceSchema.optional(),
-  pricePerImage: modelPriceSchema.or(z.record(z.string(), modelPriceSchema))
-    .or(z.record(z.string(), z.record(z.string(), modelPriceSchema)))
+  pricePerImage: modelPriceSchema
+    .or(
+      z
+        .array(z.tuple([z.string().min(1, 'Quality is required'), modelPriceSchema]))
+        .min(1, 'At least one quality is required'),
+    )
+    .or(
+      z
+        .array(
+          z.tuple([
+            z.string().min(1, 'Quality is required'),
+            z
+              .array(z.tuple([z.string().min(1, 'Size is required'), modelPriceSchema]))
+              .min(1, 'At least one size is required'),
+          ]),
+        )
+        .min(1),
+    )
     .optional(),
 })
 

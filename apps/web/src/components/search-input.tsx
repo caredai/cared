@@ -12,6 +12,7 @@ interface SearchInputProps {
   onChange: (value: string) => void
   className?: string
   inputClassName?: string
+  disabled?: boolean
 }
 
 /**
@@ -24,6 +25,7 @@ export function SearchInput({
   onChange,
   className,
   inputClassName,
+  disabled = false,
 }: SearchInputProps) {
   const handleClear = () => {
     onChange('')
@@ -42,6 +44,7 @@ export function SearchInput({
           'px-8', // Left padding for search icon, right padding for clear button
           inputClassName,
         )}
+        disabled={disabled}
       />
 
       {/* Clear button (X) on the right when there's text */}
@@ -51,6 +54,7 @@ export function SearchInput({
           size="sm"
           onClick={handleClear}
           className="absolute right-1 h-6 w-6 p-0 hover:bg-muted text-muted-foreground"
+          disabled={disabled}
         >
           <X className="h-4 w-4" />
         </Button>

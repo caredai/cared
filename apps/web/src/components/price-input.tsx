@@ -1,5 +1,7 @@
 import type { ComponentPropsWithoutRef } from 'react'
 
+import { formatModelPrice } from '@cared/providers'
+
 import { NumberInput, OptionalNumberInput } from './number-input'
 
 export function OptionalPriceInput({
@@ -20,11 +22,11 @@ export function OptionalPriceInput({
     <OptionalNumberInput
       value={value?.length ? parseFloat(value) : undefined}
       onChange={(value) => {
-        onChange(typeof value === 'number' ? value.toString() : undefined)
+        onChange(typeof value === 'number' ? formatModelPrice(value.toString()) : undefined)
       }}
       min={0}
       max={max}
-      step={0.01}
+      step={0.000001}
       className={className}
       {...props}
     />

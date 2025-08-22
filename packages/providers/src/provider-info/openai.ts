@@ -271,31 +271,40 @@ const openaiProvider: ProviderInfo = {
       name: 'DALL·E 3',
       description:
         'DALL·E is an AI system that creates realistic images and art from a natural language description. DALL·E 3 currently supports the ability, given a prompt, to create a new image with a specific size.',
-      pricePerImage: {
-        Standard: {
-          '1024x1024': '0.04',
-          '1024x1792': '0.08',
-          '1792x1024': '0.08',
-        },
-        HD: {
-          '1024x1024': '0.08',
-          '1024x1792': '0.12',
-          '1792x1024': '0.12',
-        },
-      },
+      pricePerImage: [
+        [
+          'Standard',
+          [
+            ['1024x1024', '0.04'],
+            ['1024x1792', '0.08'],
+            ['1792x1024', '0.08'],
+          ],
+        ],
+        [
+          'HD',
+          [
+            ['1024x1024', '0.08'],
+            ['1024x1792', '0.12'],
+            ['1792x1024', '0.12'],
+          ],
+        ],
+      ],
     },
     {
       id: 'dall-e-2',
       name: 'DALL·E 2',
       description:
         'DALL·E is an AI system that creates realistic images and art from a natural language description. Older than DALL·E 3, DALL·E 2 offers more control in prompting and more requests at once.',
-      pricePerImage: {
-        Standard: {
-          '256x256': '0.016',
-          '512x512': '0.018',
-          '1024x1024': '0.02',
-        },
-      },
+      pricePerImage: [
+        [
+          'Standard',
+          [
+            ['256x256', '0.016'],
+            ['512x512', '0.018'],
+            ['1024x1024', '0.02'],
+          ],
+        ],
+      ],
     },
     {
       id: 'gpt-image-1',
@@ -308,23 +317,32 @@ const openaiProvider: ProviderInfo = {
       textCachedInputTokenPrice: '1.25',
       // Computed costs based on image dimensions and quality
       // https://platform.openai.com/docs/guides/image-generation#cost-and-latency
-      pricePerImage: {
-        Low: {
-          '1024x1024': '0.011',
-          '1024x1536': '0.016',
-          '1536x1024': '0.016',
-        },
-        Medium: {
-          '1024x1024': '0.042',
-          '1024x1536': '0.063',
-          '1536x1024': '0.063',
-        },
-        High: {
-          '1024x1024': '0.167',
-          '1024x1536': '0.25',
-          '1536x1024': '0.25',
-        },
-      },
+      pricePerImage: [
+        [
+          'Low',
+          [
+            ['1024x1024', '0.011'],
+            ['1024x1536', '0.016'],
+            ['1536x1024', '0.016'],
+          ],
+        ],
+        [
+          'Medium',
+          [
+            ['1024x1024', '0.042'],
+            ['1024x1536', '0.063'],
+            ['1536x1024', '0.063'],
+          ],
+        ],
+        [
+          'High',
+          [
+            ['1024x1024', '0.167'],
+            ['1024x1536', '0.25'],
+            ['1536x1024', '0.25'],
+          ],
+        ],
+      ],
     },
   ],
   speechModels: [

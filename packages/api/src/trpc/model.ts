@@ -492,6 +492,129 @@ export const modelRouter = {
     }),
 
   /**
+   * Sort models for a specific provider and type.
+   * Accessible by authenticated users.
+   * @returns Success message with sorted models
+   */
+  sortModels: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'PATCH',
+        path: '/v1/models/sort',
+        tags: ['models'],
+        summary: 'Sort models for a specific provider and type',
+      },
+    })
+    .input(
+      z
+        .object({
+          organizationId: z.string().optional(),
+          providerId: providerIdSchema,
+          isSystem: z.boolean().optional(),
+          type: z.enum(modelTypes),
+          ids: z.array(modelFullIdSchema),
+        })
+        .refine((data) => !(data.organizationId && data.isSystem), {
+          message: 'organizationId and isSystem cannot both be present',
+        }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const userId = await checkPermissions(ctx, input.organizationId, input.isSystem)
+
+      const providerModels = await ctx.db.query.ProviderModels.findFirst({
+        where: and(
+          input.isSystem
+            ? eq(ProviderModels.isSystem, true)
+            : input.organizationId
+              ? eq(ProviderModels.organizationId, input.organizationId)
+              : eq(ProviderModels.userId, userId!),
+          eq(ProviderModels.providerId, input.providerId),
+        ),
+      })
+
+      if (!providerModels) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Provider models not found',
+        })
+      }
+
+      const type = input.type
+      const modelsKey = `${type}Models` as const
+      const existingModels = providerModels.models[modelsKey]
+
+      if (!existingModels?.length) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `No models found for type ${type}`,
+        })
+      }
+
+      // Validate that all model ids match the provider
+      const validatedModelIds = input.ids.map((id) => {
+        const { providerId, modelId } = splitModelFullId(id)
+        if (providerId !== input.providerId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Model id ${id} has providerId ${providerId}, but expected ${input.providerId}`,
+          })
+        }
+        return modelId
+      })
+
+      // Check if all existing models are included in the ids array
+      const existingModelIds = existingModels.map((model) => model.id)
+      const missingModels = existingModelIds.filter((id) => !validatedModelIds.includes(id))
+      if (missingModels.length > 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Missing models in ids array: ${missingModels.join(', ')}`,
+        })
+      }
+
+      // Check if all ids in the array exist in the existing models
+      const extraModels = validatedModelIds.filter((id) => !existingModelIds.includes(id))
+      if (extraModels.length > 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Extra models in ids array that do not exist: ${extraModels.join(', ')}`,
+        })
+      }
+
+      // Create a map for quick lookup of existing models
+      const modelMap = new Map(existingModels.map((model) => [model.id, model]))
+
+      // Reorder models according to the ids array
+      const sortedModels = validatedModelIds.map((modelId) => {
+        const model = modelMap.get(modelId)
+        if (!model) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: `Model ${modelId} not found in existing models`,
+          })
+        }
+        return model
+      })
+
+      // Update the models array with the new order
+      providerModels.models[modelsKey] = sortedModels
+
+      // Update the database record
+      await ctx.db
+        .update(ProviderModels)
+        .set({ models: providerModels.models })
+        .where(eq(ProviderModels.id, providerModels.id))
+
+      return {
+        models: sortedModels.map((model) => ({
+          ...model,
+          id: modelFullId(input.providerId, model.id),
+          isSystem: providerModels.isSystem,
+        })),
+      }
+    }),
+
+  /**
    * Delete a single model from a provider.
    * Accessible by authenticated users.
    * @returns Success message

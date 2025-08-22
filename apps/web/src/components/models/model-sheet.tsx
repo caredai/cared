@@ -19,8 +19,9 @@ import {
 } from '@cared/ui/components/sheet'
 
 import type { EditableModel } from './model-item-edit'
+import { SearchInput } from '@/components/search-input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
-import { useDeleteModel, useModels, useUpdateModel } from '@/hooks/use-model'
+import { useDeleteModel, useModels, useSortModels, useUpdateModel } from '@/hooks/use-model'
 import { getDefaultValuesForModelType, ModelItemEdit } from './model-item-edit'
 import { ModelItemView } from './model-item-view'
 
@@ -63,6 +64,10 @@ export function ModelSheet({
     isSystem,
     organizationId,
   })
+  const sortModels = useSortModels({
+    isSystem,
+    organizationId,
+  })
 
   const vListRef = useRef<VirtualizerHandle>(null)
 
@@ -70,10 +75,14 @@ export function ModelSheet({
   const [existingModels, setExistingModels] = useState<EditableModel[]>([])
   const [allModels, setAllModels] = useState<EditableModel[]>([])
   const [activeTab, setActiveTab] = useState<ModelType>('language')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [cache, setCache] = useState<Record<string, any>>({})
 
   useEffect(() => {
     setNewModels([])
     setActiveTab('language')
+    setSearchQuery('')
+    setCache({})
   }, [open])
 
   // Transform models to editable format
@@ -104,24 +113,26 @@ export function ModelSheet({
   }, [newModels, existingModels])
 
   // Handle adding new model
-  const handleAddNew = useCallback(() => {
-    const id = `${TEMP_ID_PREFIX as ProviderId}:${Date.now()}` as const
+  const handleAddNew = useCallback(
+    (scrollIndex: number) => {
+      const id = `${TEMP_ID_PREFIX as ProviderId}:${Date.now()}` as const
 
-    const newModel: EditableModel = {
-      id,
-      isEditing: true,
-      isNew: true,
-      ...getDefaultValuesForModelType(providerId, activeTab),
-    }
+      const newModel: EditableModel = {
+        id,
+        isEditing: true,
+        isNew: true,
+        ...getDefaultValuesForModelType(providerId, activeTab),
+      }
 
-    setNewModels((prev) => [...prev, newModel])
+      setNewModels((prev) => [...prev, newModel])
 
-    // Scroll to the last item (new item)
-    setTimeout(() => {
-      const lastIndex = allModels.length + 1
-      vListRef.current?.scrollToIndex(lastIndex, { align: 'end', smooth: true })
-    }, 100)
-  }, [providerId, activeTab, allModels.length])
+      // Scroll to the new item
+      setTimeout(() => {
+        vListRef.current?.scrollToIndex(scrollIndex, { align: 'start', smooth: true })
+      }, 100)
+    },
+    [providerId, activeTab],
+  )
 
   // Handle editing existing model
   const handleEdit = useCallback((id: string) => {
@@ -131,6 +142,11 @@ export function ModelSheet({
     setExistingModels((prev) =>
       prev.map((model) => (model.id === id ? { ...model, isEditing: true } : model)),
     )
+
+    setCache((cache) => ({
+      ...cache,
+      [id]: undefined,
+    }))
   }, [])
 
   // Handle canceling edits
@@ -141,6 +157,10 @@ export function ModelSheet({
     setExistingModels((prev) =>
       prev.map((model) => (model.id === id ? { ...model, isEditing: false } : model)),
     )
+    setCache((cache) => ({
+      ...cache,
+      [id]: undefined,
+    }))
   }, [])
 
   // Handle saving changes
@@ -169,6 +189,11 @@ export function ModelSheet({
           prev.map((model) => (model.id === id ? { ...model, isEditing: false } : model)),
         )
       }
+
+      setCache((cache) => ({
+        ...cache,
+        [id]: undefined,
+      }))
     },
     [updateModel, providerId, refetchModels],
   )
@@ -179,28 +204,74 @@ export function ModelSheet({
       if (id.startsWith(TEMP_ID_PREFIX)) {
         // This is a temporary item, just remove from local state
         setNewModels((prev) => prev.filter((model) => model.id !== id))
-        return
+      } else {
+        // This is an existing model, delete it via API
+        const model = allModels.find((m) => m.id === id)
+        if (model) {
+          await deleteModel({
+            id: model.id,
+            type: model.type,
+          })
+
+          // Remove from local state
+          setExistingModels((prev) => prev.filter((model) => model.id !== id))
+        }
       }
 
-      // This is an existing model, delete it via API
-      const model = allModels.find((m) => m.id === id)
-      if (model) {
-        await deleteModel({
-          id: model.id,
-          type: model.type,
-        })
-
-        // Remove from local state
-        setExistingModels((prev) => prev.filter((model) => model.id !== id))
-      }
+      setCache((cache) => ({
+        ...cache,
+        [id]: undefined,
+      }))
     },
     [deleteModel, allModels],
   )
 
-  // Get models for current tab
+  // Get models for current tab with search filtering
   const getModelsForCurrentTab = useCallback(() => {
-    return allModels.filter((model) => model.type === activeTab)
-  }, [allModels, activeTab])
+    const tabModels = allModels.filter((model) => model.type === activeTab)
+
+    if (!searchQuery.trim()) {
+      return tabModels
+    }
+
+    const query = searchQuery.toLowerCase()
+    return tabModels.filter((model) => {
+      const name = model.model.name.toLowerCase() || ''
+      const id = model.model.id.toLowerCase() || ''
+      const description = model.model.description.toLowerCase() || ''
+
+      return name.includes(query) || id.includes(query) || description.includes(query)
+    })
+  }, [allModels, activeTab, searchQuery])
+
+  // Handle moving model up or down
+  const handleMoveModel = useCallback(
+    async (modelId: string, direction: 'up' | 'down') => {
+      const currentModels = getModelsForCurrentTab()
+      const currentIndex = currentModels.findIndex((m) => m.id === modelId)
+
+      // Check if move is possible
+      if (direction === 'up' && currentIndex <= 0) return // Already at the top
+      if (direction === 'down' && currentIndex >= currentModels.length - 1) return // Already at the bottom
+
+      const newModels = [...currentModels]
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+
+      // Swap models
+      const temp = newModels[currentIndex]!
+      newModels[currentIndex] = newModels[targetIndex]!
+      newModels[targetIndex] = temp
+
+      await sortModels({
+        providerId,
+        type: currentModels[currentIndex]!.type,
+        ids: newModels.map((m) => m.id),
+      })
+
+      await refetchModels()
+    },
+    [getModelsForCurrentTab, sortModels, providerId, refetchModels],
+  )
 
   const [_, copyToClipboard] = useCopyToClipboard()
 
@@ -235,7 +306,7 @@ export function ModelSheet({
             >
               <TabsList className="w-auto">
                 {MODEL_TYPES.map(({ value, label }) => (
-                  <TabsTrigger key={value} value={value}>
+                  <TabsTrigger key={value} value={value} disabled={false}>
                     {label}
                   </TabsTrigger>
                 ))}
@@ -256,18 +327,45 @@ export function ModelSheet({
                 value={type}
                 className="flex-1 flex flex-col px-4 pb-4 overflow-y-auto [overflow-anchor:none]"
               >
+                <div className="my-4 flex justify-between items-center gap-2">
+                  {/* Search input */}
+                  <SearchInput
+                    placeholder="Search models by ID, name, or description..."
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    className="w-full"
+                    disabled={false}
+                  />
+                  <Button onClick={() => handleAddNew(models.length)} size="sm" disabled={false}>
+                    <PlusIcon />
+                    Add
+                  </Button>
+                </div>
+
                 {models.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="text-muted-foreground mb-4">
                       <p className="text-lg font-medium">
-                        No models found for {MODEL_TYPES.find((t) => t.value === type)?.label}
+                        {searchQuery.trim()
+                          ? 'No models found matching your search'
+                          : `No models found for ${MODEL_TYPES.find((t) => t.value === type)?.label}`}
                       </p>
-                      <p className="text-sm">You can add a new model</p>
+                      <p className="text-sm">
+                        {searchQuery.trim()
+                          ? 'Try adjusting your search terms'
+                          : 'You can add a new model'}
+                      </p>
                     </div>
-                    <Button onClick={handleAddNew} size="sm">
-                      <PlusIcon />
-                      Add Model
-                    </Button>
+                    {!searchQuery.trim() && (
+                      <Button
+                        onClick={() => handleAddNew(models.length)}
+                        size="sm"
+                        disabled={false}
+                      >
+                        <PlusIcon />
+                        Add Model
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <Virtualizer ref={vListRef} count={models.length + 1}>
@@ -275,7 +373,11 @@ export function ModelSheet({
                       if (index === models.length) {
                         return (
                           <div className="flex justify-end my-4">
-                            <Button onClick={handleAddNew} size="sm">
+                            <Button
+                              onClick={() => handleAddNew(models.length)}
+                              size="sm"
+                              disabled={false}
+                            >
                               <PlusIcon />
                               Add
                             </Button>
@@ -295,7 +397,21 @@ export function ModelSheet({
                           onCancel={() => handleCancel(model.id)}
                           onSave={(formData) => handleSave(model.id, formData)}
                           onRemove={() => handleRemove(model.id)}
+                          onMoveUp={() => handleMoveModel(model.id, 'up')}
+                          onMoveDown={() => handleMoveModel(model.id, 'down')}
                           copyToClipboard={copyToClipboard}
+                          canMoveUp={index > 0}
+                          canMoveDown={index < models.length - 1}
+                          cache={cache[model.id]}
+                          setCache={(cacheFn: (prevCache?: any) => any) =>
+                            setCache((cache) => {
+                              const prevCache = cache[model.id]
+                              const newCache = cacheFn(prevCache)
+                              return newCache !== prevCache
+                                ? { ...cache, [model.id]: newCache }
+                                : cache
+                            })
+                          }
                         />
                       )
                     }}
@@ -318,7 +434,13 @@ function ModelItem({
   onCancel,
   onSave,
   onRemove,
+  onMoveUp,
+  onMoveDown,
   copyToClipboard,
+  canMoveUp,
+  canMoveDown,
+  cache,
+  setCache,
 }: {
   index: number
   providerId: ProviderId
@@ -327,11 +449,19 @@ function ModelItem({
   onCancel: () => void
   onSave: (formData: UpdateModelArgs) => Promise<void>
   onRemove: () => Promise<void>
+  onMoveUp: () => Promise<void>
+  onMoveDown: () => Promise<void>
   copyToClipboard: (value: string) => void
+  canMoveUp: boolean
+  canMoveDown: boolean
+  cache?: any
+  setCache: (cacheFn: (prevCache?: any) => any) => void
 }) {
   // Track loading states for specific actions separately
   const [isSaving, setIsSaving] = useState(false)
   const [isRemoving, setIsRemoving] = useState(false)
+  const [isMovingUp, setIsMovingUp] = useState(false)
+  const [isMovingDown, setIsMovingDown] = useState(false)
 
   // Handle save with loading state
   const handleSave = async (formData: UpdateModelArgs) => {
@@ -353,6 +483,26 @@ function ModelItem({
     }
   }
 
+  // Handle move up with loading state
+  const handleMoveUp = async () => {
+    setIsMovingUp(true)
+    try {
+      await onMoveUp()
+    } finally {
+      setIsMovingUp(false)
+    }
+  }
+
+  // Handle move down with loading state
+  const handleMoveDown = async () => {
+    setIsMovingDown(true)
+    try {
+      await onMoveDown()
+    } finally {
+      setIsMovingDown(false)
+    }
+  }
+
   if (model.isEditing) {
     return (
       <ModelItemEdit
@@ -361,9 +511,12 @@ function ModelItem({
         model={model}
         isSaving={isSaving}
         isRemoving={isRemoving}
+        isSorting={isMovingUp || isMovingDown}
         onCancel={onCancel}
         onSave={handleSave}
         onRemove={handleRemove}
+        cache={cache}
+        setCache={setCache}
       />
     )
   } else {
@@ -374,8 +527,14 @@ function ModelItem({
         model={model}
         isSaving={isSaving}
         isRemoving={isRemoving}
+        isMovingUp={isMovingUp}
+        isMovingDown={isMovingDown}
         onEdit={onEdit}
         onRemove={handleRemove}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        canMoveUp={canMoveUp}
+        canMoveDown={canMoveDown}
         copyToClipboard={copyToClipboard}
       />
     )

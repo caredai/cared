@@ -16,10 +16,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '15.00',
-      cacheInputTokenPrice: {
-        '5m': '18.75',
-        '1h': '30.00',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '18.75'],
+        ['1h', '30.00'],
+      ],
       cachedInputTokenPrice: '1.50',
       outputTokenPrice: '75.00',
     },
@@ -30,10 +30,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '15.00',
-      cacheInputTokenPrice: {
-        '5m': '18.75',
-        '1h': '30.00',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '18.75'],
+        ['1h', '30.00'],
+      ],
       cachedInputTokenPrice: '1.50',
       outputTokenPrice: '75.00',
     },
@@ -44,10 +44,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '3.00',
-      cacheInputTokenPrice: {
-        '5m': '3.75',
-        '1h': '6.00',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '3.75'],
+        ['1h', '6.00'],
+      ],
       cachedInputTokenPrice: '0.30',
       outputTokenPrice: '15.00',
     },
@@ -58,10 +58,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '3.00',
-      cacheInputTokenPrice: {
-        '5m': '3.75',
-        '1h': '6.00',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '3.75'],
+        ['1h', '6.00'],
+      ],
       cachedInputTokenPrice: '0.30',
       outputTokenPrice: '15.00',
     },
@@ -72,10 +72,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '3.00',
-      cacheInputTokenPrice: {
-        '5m': '3.75',
-        '1h': '6.00',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '3.75'],
+        ['1h', '6.00'],
+      ],
       cachedInputTokenPrice: '0.30',
       outputTokenPrice: '15.00',
     },
@@ -86,10 +86,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '0.80',
-      cacheInputTokenPrice: {
-        '5m': '1.00',
-        '1h': '1.60',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '1.00'],
+        ['1h', '1.60'],
+      ],
       cachedInputTokenPrice: '0.08',
       outputTokenPrice: '4.00',
     },
@@ -100,10 +100,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '15.00',
-      cacheInputTokenPrice: {
-        '5m': '18.75',
-        '1h': '30.00',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '18.75'],
+        ['1h', '30.00'],
+      ],
       cachedInputTokenPrice: '1.50',
       outputTokenPrice: '75.00',
     },
@@ -114,10 +114,10 @@ const anthropicProvider: ProviderInfo = {
       contextWindow: 200000,
       maxOutputTokens: 4096,
       inputTokenPrice: '0.25',
-      cacheInputTokenPrice: {
-        '5m': '0.30',
-        '1h': '0.50',
-      },
+      cacheInputTokenPrice: [
+        ['5m', '0.30'],
+        ['1h', '0.50'],
+      ],
       cachedInputTokenPrice: '0.03',
       outputTokenPrice: '1.25',
     },

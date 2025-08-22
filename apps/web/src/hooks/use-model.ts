@@ -264,3 +264,50 @@ export function useDeleteModels({
     [],
   )
 }
+
+export function useSortModels({
+  isSystem,
+  organizationId,
+}: {
+  isSystem?: boolean
+  organizationId?: string
+}) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const sortMutation = useMutation(
+    trpc.model.sortModels.mutationOptions({
+      onSuccess: () => {
+        // Invalidate relevant queries
+        void queryClient.invalidateQueries({
+          queryKey: trpc.model.listModels.queryOptions({
+            organizationId,
+            source: isSystem ? 'system' : undefined,
+          }).queryKey,
+        })
+        void queryClient.invalidateQueries({
+          queryKey: trpc.model.listProvidersModels.queryOptions({
+            organizationId,
+            source: isSystem ? 'system' : undefined,
+          }).queryKey,
+        })
+      },
+      onError: (error) => {
+        console.error('Failed to sort models:', error)
+        toast.error(`Failed to sort models: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (input: { providerId: ProviderId; type: ModelType; ids: ModelFullId[] }) => {
+      return await sortMutation.mutateAsync({
+        isSystem,
+        organizationId,
+        ...input,
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  )
+}

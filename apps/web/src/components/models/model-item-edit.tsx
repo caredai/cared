@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import hash from 'stable-hash'
 
 import type { UpdateModelArgs } from '@cared/api'
 import type { ModelFullId, ModelType, ProviderId } from '@cared/providers'
@@ -18,6 +19,14 @@ import {
   FormLabel,
   FormMessage,
 } from '@cared/ui/components/form'
+import { Label } from '@cared/ui/components/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cared/ui/components/select'
 import { Switch } from '@cared/ui/components/switch'
 
 import { Input } from '@/components/input'
@@ -104,36 +113,57 @@ export function getDefaultValuesForModelType(
 }
 
 export function ModelItemEdit({
-  index,
+  index: _,
   providerId,
   model,
   isSaving,
   isRemoving,
+  isSorting,
   onCancel,
   onSave,
   onRemove,
+  cache,
+  setCache,
 }: {
   index: number
   providerId: ProviderId
   model: EditableModel
   isSaving: boolean
   isRemoving: boolean
+  isSorting: boolean
   onCancel: () => void
   onSave: (formData: UpdateModelArgs) => Promise<void>
   onRemove: () => Promise<void>
+  cache?: any
+  setCache: (cacheFn: (prevCache?: any) => any) => void
 }) {
-  const form = useForm<UpdateModelArgs>({
-    resolver: zodResolver(updateModelArgsSchema),
-    defaultValues: {
+  const modelCache = !cache
+    ? {
       type: model.type,
       model: model.model,
-    },
+    }
+    : cache
+
+  const form = useForm<UpdateModelArgs>({
+    resolver: zodResolver(updateModelArgsSchema),
+    defaultValues: modelCache,
   })
+
+  useEffect(() => {
+    const { unsubscribe } = form.watch((value) => {
+      value = structuredClone(value)
+      setCache((cache) => (hash(value) !== hash(cache) ? value : cache))
+    })
+    return () => unsubscribe()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form])
 
   const handleSave = async () => {
     if (await form.trigger()) {
       const formData = form.getValues()
       await onSave(formData)
+    } else {
+      console.error(form.formState.errors)
     }
   }
 
@@ -141,55 +171,14 @@ export function ModelItemEdit({
     onCancel()
   }
 
-  // Disable form inputs only when saving or removing
-  const isFormDisabled = isSaving || isRemoving
+  // Disable form inputs when saving, removing, or sorting
+  const isFormDisabled = isSaving || isRemoving || isSorting
 
   return (
     <div className="border rounded-lg p-4 my-2 bg-muted/50">
       <Form {...form}>
         <form className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium">
-              {model.isNew ? 'New Model' : 'Edit Model'} #{index + 1}
-            </h4>
-            <div className="flex items-center gap-2">
-              {!model.isNew && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="size-6"
-                  onClick={handleCancel}
-                  disabled={isFormDisabled}
-                >
-                  <XIcon className="size-3" />
-                </Button>
-              )}
-              <Button
-                size="icon"
-                className="size-6"
-                onClick={(e) => {
-                  e.preventDefault()
-                  void handleSave()
-                }}
-                disabled={isFormDisabled}
-              >
-                {isSaving ? <CircleSpinner className="size-3" /> : <CheckIcon className="size-3" />}
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="size-6"
-                onClick={onRemove}
-                disabled={isFormDisabled}
-              >
-                {isRemoving ? (
-                  <CircleSpinner className="size-3" />
-                ) : (
-                  <Trash2Icon className="size-3" />
-                )}
-              </Button>
-            </div>
-          </div>
+          <h4 className="font-medium">{modelCache.model.name || 'New Model'}</h4>
 
           {/* Common fields for all model types */}
 
@@ -283,10 +272,18 @@ export function ModelItemEdit({
 
           {/* Render model-specific edit form based on type */}
           {model.type === 'language' && (
-            <LanguageModelItemEdit form={form} isFormDisabled={isFormDisabled} />
+            <LanguageModelItemEdit
+              form={form}
+              isFormDisabled={isFormDisabled}
+              originalCacheInputTokenPrice={modelCache.model.cacheInputTokenPrice}
+            />
           )}
           {model.type === 'image' && (
-            <ImageModelItemEdit form={form} isFormDisabled={isFormDisabled} />
+            <ImageModelItemEdit
+              form={form}
+              isFormDisabled={isFormDisabled}
+              originalPricePerImage={modelCache.model.pricePerImage}
+            />
           )}
           {model.type === 'speech' && (
             <SpeechModelItemEdit form={form} isFormDisabled={isFormDisabled} />
@@ -297,6 +294,46 @@ export function ModelItemEdit({
           {model.type === 'textEmbedding' && (
             <EmbeddingModelItemEdit form={form} isFormDisabled={isFormDisabled} />
           )}
+
+          <div className="flex items-center justify-end pt-4">
+            <div className="flex items-center gap-2">
+              {!model.isNew && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-6"
+                  onClick={handleCancel}
+                  disabled={isFormDisabled}
+                >
+                  <XIcon className="size-3" />
+                </Button>
+              )}
+              <Button
+                size="icon"
+                className="size-6"
+                onClick={(e) => {
+                  e.preventDefault()
+                  void handleSave()
+                }}
+                disabled={isFormDisabled}
+              >
+                {isSaving ? <CircleSpinner className="size-3" /> : <CheckIcon className="size-3" />}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="size-6"
+                onClick={onRemove}
+                disabled={isFormDisabled}
+              >
+                {isRemoving ? (
+                  <CircleSpinner className="size-3" />
+                ) : (
+                  <Trash2Icon className="size-3" />
+                )}
+              </Button>
+            </div>
+          </div>
         </form>
       </Form>
     </div>
@@ -304,7 +341,59 @@ export function ModelItemEdit({
 }
 
 // Language Model Item Edit
-function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisabled: boolean }) {
+function LanguageModelItemEdit({
+  form,
+  isFormDisabled,
+  originalCacheInputTokenPrice,
+}: {
+  form: any
+  isFormDisabled: boolean
+  originalCacheInputTokenPrice?: string | [string, string][]
+}) {
+  const currentCacheInputTokenPrice = form.watch('model.cacheInputTokenPrice')
+
+  type CachePriceStructureType = 'simple' | 'ttl-price'
+
+  // Determine the current structure type
+  const getCachePriceStructureType = (
+    value?: string | [string, string][],
+  ): CachePriceStructureType => {
+    if (!value) return 'simple'
+    if (typeof value === 'string') return 'simple'
+    return 'ttl-price'
+  }
+
+  const [currentCacheStructureType, setCurrentCacheStructureType] = useState(
+    getCachePriceStructureType(originalCacheInputTokenPrice),
+  )
+  useEffect(() => {
+    setCurrentCacheStructureType(getCachePriceStructureType(originalCacheInputTokenPrice))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originalCacheInputTokenPrice])
+
+  // Handle structure type change
+  const handleCacheStructureTypeChange = (newType: CachePriceStructureType) => {
+    setCurrentCacheStructureType(newType)
+
+    const originalStructureType = getCachePriceStructureType(originalCacheInputTokenPrice)
+    switch (newType) {
+      case 'simple':
+        form.setValue(
+          'model.cacheInputTokenPrice',
+          originalStructureType === 'simple' ? originalCacheInputTokenPrice : undefined,
+        )
+        break
+      case 'ttl-price':
+        form.setValue(
+          'model.cacheInputTokenPrice',
+          originalStructureType === 'ttl-price' ? originalCacheInputTokenPrice : [],
+        )
+        break
+    }
+  }
+
+  const cacheInputTokenPriceError = form.formState.errors?.model?.cacheInputTokenPrice
+
   return (
     <>
       <FormField
@@ -369,6 +458,24 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
 
       <FormField
         control={form.control}
+        name="model.outputTokenPrice"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Output Price $/M Tokens (Optional)</FormLabel>
+            <FormControl>
+              <OptionalPriceInput
+                placeholder="Enter output token price (e.g., 0.06)"
+                {...field}
+                disabled={isFormDisabled}
+              />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
         name="model.cachedInputTokenPrice"
         render={({ field }) => (
           <FormItem>
@@ -385,47 +492,261 @@ function LanguageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisa
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="model.cacheInputTokenPrice"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Cache Write Price $/M Tokens (Optional)</FormLabel>
-            <FormControl>
-              <OptionalPriceInput
-                placeholder="Enter cache input token price (e.g., 0.003)"
-                {...field}
-                disabled={isFormDisabled}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* Cache Input Token Price Structure Selection */}
+      <div className="space-y-2">
+        <Label htmlFor="model.cacheInputTokenPrice">Cache Write Price $/M Tokens (Optional)</Label>
+        <Select value={currentCacheStructureType} onValueChange={handleCacheStructureTypeChange}>
+          <SelectTrigger disabled={isFormDisabled}>
+            <SelectValue placeholder="Select price structure type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="simple">Price</SelectItem>
+            <SelectItem value="ttl-price">TTL × Price</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-      <FormField
-        control={form.control}
-        name="model.outputTokenPrice"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Output Price $/M Tokens (Optional)</FormLabel>
-            <FormControl>
-              <OptionalPriceInput
-                placeholder="Enter output token price (e.g., 0.06)"
-                {...field}
-                disabled={isFormDisabled}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      {/* Dynamic Price Fields based on selected structure */}
+      {currentCacheStructureType === 'simple' ? (
+        <FormField
+          control={form.control}
+          name="model.cacheInputTokenPrice"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <OptionalPriceInput
+                  placeholder="Enter cache input token price (e.g., 0.003)"
+                  {...field}
+                  disabled={isFormDisabled}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ) : (
+        <div className="space-y-4">
+          {cacheInputTokenPriceError && (
+            <p className="text-[0.8rem] font-medium text-destructive">Invalid price</p>
+          )}
+
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const current = form.getValues('model.cacheInputTokenPrice') || []
+                const newValue = [...current, ['', '']]
+                form.setValue('model.cacheInputTokenPrice', newValue)
+              }}
+              disabled={isFormDisabled}
+            >
+              Add TTL
+            </Button>
+          </div>
+
+          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+          {((currentCacheInputTokenPrice as [string, string][]) || []).map(
+            ([ttl, price], index) => (
+              <div
+                key={`${ttl}-${index}`}
+                className="flex items-center gap-2 p-3 border rounded-lg"
+              >
+                <Input
+                  placeholder="TTL (e.g., 1h, 24h, 7d)"
+                  value={ttl}
+                  onChange={(value) => {
+                    const current = form.getValues('model.cacheInputTokenPrice') || []
+                    const newValue = [...current]
+                    newValue[index] = [value, price]
+                    form.setValue('model.cacheInputTokenPrice', newValue)
+                  }}
+                  onBlur={() => undefined}
+                  disabled={isFormDisabled}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="Price (e.g., 0.003)"
+                  value={price}
+                  onChange={(value) => {
+                    const current = form.getValues('model.cacheInputTokenPrice') || []
+                    const newValue = [...current]
+                    newValue[index] = [ttl, value]
+                    form.setValue('model.cacheInputTokenPrice', newValue)
+                  }}
+                  onBlur={() => undefined}
+                  disabled={isFormDisabled}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    const current = form.getValues('model.cacheInputTokenPrice') || []
+                    const newValue = current.filter((_: any, i: number) => i !== index)
+                    form.setValue('model.cacheInputTokenPrice', newValue)
+                  }}
+                  disabled={isFormDisabled}
+                  className="shrink-0"
+                >
+                  <Trash2Icon className="size-4" />
+                </Button>
+              </div>
+            ),
+          )}
+
+          {!currentCacheInputTokenPrice ||
+          (currentCacheInputTokenPrice as [string, string][]).length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center">
+              Click "Add TTL" to add items.
+            </div>
+          ) : null}
+        </div>
+      )}
     </>
   )
 }
 
 // Image Model Item Edit
-function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisabled: boolean }) {
+function ImageModelItemEdit({
+  form,
+  isFormDisabled,
+  originalPricePerImage,
+}: {
+  form: any
+  isFormDisabled: boolean
+  originalPricePerImage?: string | [string, string][] | [string, [string, string][]][]
+}) {
+  const currentPricePerImage = form.watch('model.pricePerImage')
+
+  type PriceStructureType = 'simple' | 'quality-price' | 'quality-size-price'
+
+  // Determine the current structure type
+  const getPriceStructureType = (
+    value?: string | [string, string][] | [string, [string, string][]][],
+  ): PriceStructureType => {
+    if (!value) return 'simple'
+    if (typeof value === 'string') return 'simple'
+    if (Array.isArray(value) && value.length > 0 && Array.isArray(value[0]?.[1])) {
+      return 'quality-size-price'
+    }
+    return 'quality-price'
+  }
+
+  const [currentPriceStructureType, setCurrentPriceStructureType] = useState(
+    getPriceStructureType(originalPricePerImage),
+  )
+  useEffect(() => {
+    setCurrentPriceStructureType(getPriceStructureType(originalPricePerImage))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originalPricePerImage])
+
+  // Handle structure type change
+  const handleStructureTypeChange = (newType: PriceStructureType) => {
+    setCurrentPriceStructureType(newType)
+
+    const originalStructureType = getPriceStructureType(originalPricePerImage)
+    switch (newType) {
+      case 'simple':
+        form.setValue(
+          'model.pricePerImage',
+          originalStructureType === 'simple' ? originalPricePerImage : undefined,
+        )
+        break
+      case 'quality-price':
+        form.setValue(
+          'model.pricePerImage',
+          originalStructureType === 'quality-price' ? originalPricePerImage : [],
+        )
+        break
+      case 'quality-size-price':
+        form.setValue(
+          'model.pricePerImage',
+          originalStructureType === 'quality-size-price' ? originalPricePerImage : [],
+        )
+        break
+    }
+  }
+
+  // Helper functions for managing dynamic fields
+  const addQualityPriceItem = () => {
+    const current = form.getValues('model.pricePerImage') || []
+    const newValue = [...current, ['', '']]
+    form.setValue('model.pricePerImage', newValue)
+  }
+
+  const removeQualityPriceItem = (index: number) => {
+    const current = form.getValues('model.pricePerImage') || []
+    const newValue = current.filter((_: any, i: number) => i !== index)
+    form.setValue('model.pricePerImage', newValue)
+  }
+
+  const updateQualityPriceItem = (index: number, newQuality: string, price: string) => {
+    const current = form.getValues('model.pricePerImage') || []
+    const newValue = [...current]
+    newValue[index] = [newQuality, price]
+    form.setValue('model.pricePerImage', newValue)
+  }
+
+  const addQualitySizePriceItem = () => {
+    const current = form.getValues('model.pricePerImage') || []
+    const newValue = [...current, ['', [['', '']]]]
+    form.setValue('model.pricePerImage', newValue)
+  }
+
+  const removeQualitySizePriceItem = (index: number) => {
+    const current = form.getValues('model.pricePerImage') || []
+    const newValue = current.filter((_: any, i: number) => i !== index)
+    form.setValue('model.pricePerImage', newValue)
+  }
+
+  const addSizeToQuality = (qualityIndex: number) => {
+    const current = form.getValues('model.pricePerImage') || []
+    const quality = current[qualityIndex]
+    if (quality && Array.isArray(quality[1])) {
+      const sizes = quality[1] as [string, string][]
+      const newSizes = [...sizes, ['', '']]
+      const newValue = [...current]
+      newValue[qualityIndex] = [quality[0], newSizes]
+      form.setValue('model.pricePerImage', newValue)
+    }
+  }
+
+  const removeSizeFromQuality = (qualityIndex: number, sizeIndex: number) => {
+    const current = form.getValues('model.pricePerImage') || []
+    const quality = current[qualityIndex]
+    if (quality && Array.isArray(quality[1])) {
+      const sizes = quality[1] as [string, string][]
+      const newSizes = sizes.filter((_: any, i: number) => i !== sizeIndex)
+      const newValue = [...current]
+      newValue[qualityIndex] = [quality[0], newSizes]
+      form.setValue('model.pricePerImage', newValue)
+    }
+  }
+
+  const updateQualitySizePriceItem = (
+    qualityIndex: number,
+    newQuality: string,
+    sizeIndex: number,
+    newSize: string,
+    price: string,
+  ) => {
+    const current = form.getValues('model.pricePerImage') || []
+    const quality = current[qualityIndex]
+    if (quality && Array.isArray(quality[1])) {
+      const sizes = quality[1] as [string, string][]
+      const newSizes = [...sizes]
+      newSizes[sizeIndex] = [newSize, price]
+      const newValue = [...current]
+      newValue[qualityIndex] = [newQuality, newSizes]
+      form.setValue('model.pricePerImage', newValue)
+    }
+  }
+
+  const pricePerImageError = form.formState.errors?.model?.pricePerImage
+
   return (
     <>
       <FormField
@@ -518,23 +839,204 @@ function ImageModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisable
         )}
       />
 
-      <FormField
-        control={form.control}
-        name="model.pricePerImage"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Price $ Per Image (Optional)</FormLabel>
-            <FormControl>
-              <OptionalPriceInput
-                placeholder="Enter price per image (e.g., 0.04)"
-                {...field}
+      {/* Price Per Image Structure Selection */}
+      <div className="space-y-2">
+        <Label htmlFor="model.pricePerImage">Price $ Per Image (Optional)</Label>
+        <Select value={currentPriceStructureType} onValueChange={handleStructureTypeChange}>
+          <SelectTrigger disabled={isFormDisabled}>
+            <SelectValue placeholder="Select price structure type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="simple">Price</SelectItem>
+            <SelectItem value="quality-price">Quality × Price</SelectItem>
+            <SelectItem value="quality-size-price">Quality × Size × Price</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Dynamic Price Fields based on selected structure */}
+      {currentPriceStructureType === 'simple' ? (
+        <FormField
+          control={form.control}
+          name="model.pricePerImage"
+          render={({ field: _field }) => (
+            <FormItem>
+              <FormControl>
+                <OptionalPriceInput
+                  placeholder="Enter price per image (e.g., 0.04)"
+                  {..._field}
+                  disabled={isFormDisabled}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ) : (
+        pricePerImageError && (
+          <p className="text-[0.8rem] font-medium text-destructive">Invalid price</p>
+        )
+      )}
+
+      {currentPriceStructureType === 'quality-price' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addQualityPriceItem}
+              disabled={isFormDisabled}
+            >
+              Add Quality
+            </Button>
+          </div>
+
+          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+          {((currentPricePerImage as [string, string][]) || []).map(([quality, price], index) => (
+            <div
+              key={`${quality}-${index}`}
+              className="flex items-center gap-2 p-3 border rounded-lg"
+            >
+              <Input
+                placeholder="Quality (e.g., Standard, HD)"
+                value={quality}
+                onChange={(value) => updateQualityPriceItem(index, value, price)}
+                onBlur={() => undefined}
                 disabled={isFormDisabled}
+                className="flex-1"
               />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+              <Input
+                placeholder="Price (e.g., 0.04)"
+                value={price}
+                onChange={(value) => updateQualityPriceItem(index, quality, value)}
+                onBlur={() => undefined}
+                disabled={isFormDisabled}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => removeQualityPriceItem(index)}
+                disabled={isFormDisabled}
+                className="shrink-0"
+              >
+                <Trash2Icon className="size-4" />
+              </Button>
+            </div>
+          ))}
+
+          {!currentPricePerImage || (currentPricePerImage as [string, string][]).length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center">
+              Click "Add Quality" to add items.
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {currentPriceStructureType === 'quality-size-price' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addQualitySizePriceItem}
+              disabled={isFormDisabled}
+            >
+              Add Quality
+            </Button>
+          </div>
+
+          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+          {((currentPricePerImage as [string, [string, string][]][]) || []).map(
+            ([quality, sizePriceArray], qualityIndex) => (
+              <div key={`${quality}-${qualityIndex}`} className="space-y-3 p-3 border rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Quality (e.g., Standard, HD)"
+                    value={quality}
+                    onChange={(newQuality) => {
+                      const current = form.getValues('model.pricePerImage') || []
+                      const newValue = [...current]
+                      newValue[qualityIndex] = [newQuality, sizePriceArray]
+                      form.setValue('model.pricePerImage', newValue)
+                    }}
+                    onBlur={() => undefined}
+                    disabled={isFormDisabled}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => addSizeToQuality(qualityIndex)}
+                    disabled={isFormDisabled}
+                  >
+                    Add Size
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => removeQualitySizePriceItem(qualityIndex)}
+                    disabled={isFormDisabled}
+                    className="shrink-0"
+                  >
+                    <Trash2Icon className="size-4" />
+                  </Button>
+                </div>
+
+                {sizePriceArray.map(([size, price], sizeIndex) => (
+                  <div
+                    key={`${quality}-${size}-${sizeIndex}`}
+                    className="flex items-center gap-2 ml-4"
+                  >
+                    <Input
+                      placeholder="Size (e.g., 1024x1024)"
+                      value={size}
+                      onChange={(newSize) =>
+                        updateQualitySizePriceItem(qualityIndex, quality, sizeIndex, newSize, price)
+                      }
+                      onBlur={() => undefined}
+                      disabled={isFormDisabled}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="Price (e.g., 0.04)"
+                      value={price}
+                      onChange={(newPrice) =>
+                        updateQualitySizePriceItem(qualityIndex, quality, sizeIndex, size, newPrice)
+                      }
+                      onBlur={() => undefined}
+                      disabled={isFormDisabled}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeSizeFromQuality(qualityIndex, sizeIndex)}
+                      disabled={isFormDisabled}
+                      className="shrink-0"
+                    >
+                      <Trash2Icon className="size-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ),
+          )}
+
+          {!currentPricePerImage ||
+          (currentPricePerImage as [string, [string, string][]][]).length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center">
+              Click "Add Quality" to add items.
+            </div>
+          ) : null}
+        </div>
+      )}
     </>
   )
 }
