@@ -20,11 +20,13 @@ import { NavUser } from './nav-user'
 export function AppSidebar({
   baseUrl,
   alwaysShowLogo,
+  showNavUser,
   children,
   ...props
 }: {
   baseUrl: string
   alwaysShowLogo?: boolean
+  showNavUser?: boolean
   children: ReactNode
 } & ComponentProps<typeof Sidebar>) {
   return (
@@ -54,7 +56,7 @@ export function AppSidebar({
         </SidebarContent>
         <SidebarFooter>
           {/* nav user */}
-          <NavUser />
+          {showNavUser && <NavUser />}
         </SidebarFooter>
       </Sidebar>
     </div>

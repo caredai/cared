@@ -25,7 +25,7 @@ export default async function Layout({
     <HydrateClient>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <SidebarProvider>
-          <AppSidebar baseUrl="/admin" alwaysShowLogo>
+          <AppSidebar baseUrl="/admin" alwaysShowLogo showNavUser>
             <AdminNavMain />
           </AppSidebar>
 

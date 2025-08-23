@@ -17,7 +17,7 @@ catalog:
   # Otherwise, you may get the following error:
   #   Type instantiation is excessively deep and possibly infinite
   zod: ^3.25.51
-  ai: ^5.0.8
+  ai: 5.0.22
 
 catalogs:
   react19:

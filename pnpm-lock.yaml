@@ -19,8 +19,8 @@ catalogs:
       specifier: ^11.1.0
       version: 11.1.1
     ai:
-      specifier: ^5.0.8
-      version: 5.0.8
+      specifier: 5.0.22
+      version: 5.0.22
     eslint:
       specifier: ^9.18.0
       version: 9.25.1
@@ -940,7 +940,7 @@ importers:
         version: 0.2.6(zod@3.25.51)
       '@openrouter/ai-sdk-provider':
         specifier: 1.1.0
-        version: 1.1.0(ai@5.0.8(zod@3.25.51))(zod@3.25.51)
+        version: 1.1.0(ai@5.0.22(zod@3.25.51))(zod@3.25.51)
       '@portkey-ai/vercel-provider':
         specifier: ^2.1.0
         version: 2.1.0(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10)(zod@3.25.51)
@@ -949,7 +949,7 @@ importers:
         version: 0.0.9(zod@3.25.51)
       ai:
         specifier: 'catalog:'
-        version: 5.0.8(zod@3.25.51)
+        version: 5.0.22(zod@3.25.51)
       ai-gateway-provider:
         specifier: ^0.0.11
         version: 0.0.11(react@19.1.0)(zod@3.25.51)
@@ -1003,8 +1003,8 @@ importers:
         specifier: 'catalog:'
         version: 11.1.1(@tanstack/react-query@5.74.4(react@19.1.0))(@trpc/client@11.1.1(@trpc/server@11.1.1(typescript@5.8.3))(typescript@5.8.3))(@trpc/server@11.1.1(typescript@5.8.3))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
       ai:
-        specifier: '>=5.0.8'
-        version: 5.0.8(zod@3.25.51)
+        specifier: '>=5.0.22'
+        version: 5.0.22(zod@3.25.51)
       react:
         specifier: '>=19.0.0'
         version: 19.1.0
@@ -1130,7 +1130,7 @@ importers:
         version: 0.0.18(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       ai:
         specifier: 'catalog:'
-        version: 5.0.8(zod@3.25.51)
+        version: 5.0.22(zod@3.25.51)
     devDependencies:
       '@cared/eslint-config':
         specifier: workspace:*
@@ -1540,6 +1540,12 @@ packages:
     peerDependencies:
       zod: 3.25.51
 
+  '@ai-sdk/gateway@1.0.11':
+    resolution: {integrity: sha512-ErwWS3sPOuWy42eE3AVxlKkTa1XjjKBEtNCOylVKMO5KNyz5qie8QVlLYbULOG56dtxX4zTKX3rQNJudplhcmQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: 3.25.51
+
   '@ai-sdk/gateway@1.0.4':
     resolution: {integrity: sha512-1roLdgMbFU3Nr4MC97/te7w6OqxsWBkDUkpbCcvxF3jz/ku91WVaJldn/PKU8feMKNyI5W9wnqhbjb1BqbExOQ==}
     engines: {node: '>=18'}
@@ -1662,6 +1668,12 @@ packages:
 
   '@ai-sdk/provider-utils@3.0.1':
     resolution: {integrity: sha512-/iP1sKc6UdJgGH98OCly7sWJKv+J9G47PnTjIj40IJMUQKwDrUMyf7zOOfRtPwSuNifYhSoJQ4s1WltI65gJ/g==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: 3.25.51
+
+  '@ai-sdk/provider-utils@3.0.5':
+    resolution: {integrity: sha512-HliwB/yzufw3iwczbFVE2Fiwf1XqROB/I6ng8EKUsPM5+2wnIa8f4VbljZcDx+grhFrPV+PnRZH7zBqi8WZM7Q==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: 3.25.51
@@ -7552,6 +7564,12 @@ packages:
       react:
         optional: true
 
+  ai@5.0.22:
+    resolution: {integrity: sha512-RZiYhj7Ux7hrLtXkHPcxzdiSZt4NOiC69O5AkNfMCsz3twwz/KRkl9ASptosoOsg833s5yRcTSdIu5z53Sl6Pw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: 3.25.51
+
   ai@5.0.8:
     resolution: {integrity: sha512-qbnhj046UvG30V1S5WhjBn+RBGEAmi8PSZWqMhRsE3EPxvO5BcePXTZFA23e9MYyWS9zr4Vm8Mv3wQXwLmtIBw==}
     engines: {node: '>=18'}
@@ -8298,8 +8316,8 @@ packages:
   core-js-pure@3.41.0:
     resolution: {integrity: sha512-71Gzp96T9YPk63aUvE5Q5qP+DryB4ZloUZPSOebGM88VNw8VNfvdA7z6kGA8iGOTEzAomsRidp4jXSmUIJsL+Q==}
 
-  core-js@3.45.0:
-    resolution: {integrity: sha512-c2KZL9lP4DjkN3hk/an4pWn5b5ZefhRJnAc42n6LJ19kSnbeRbdQZE5dSeE2LBol1OwJD3X1BQvFTAsa8ReeDA==}
+  core-js@3.45.1:
+    resolution: {integrity: sha512-L4NPsJlCfZsPeXukyzHFlg/i7IIVwHSItR0wg0FLNqYClJ4MQYTYLbC7EkjKYRLZF2iof2MUgN0EGy7MdQFChg==}
 
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
@@ -13471,8 +13489,8 @@ packages:
     resolution: {integrity: sha512-ZPtzy0hu4cZjv3z5NW9gfKnNLjoz4y6uv4HlelAjDK7sY/xOkKZv9xK/WQpcsBB3jEybChz9DPC2U/+cusjJVQ==}
     engines: {node: '>=18'}
 
-  uint8array-extras@1.4.1:
-    resolution: {integrity: sha512-+NWHrac9dvilNgme+gP4YrBSumsaMZP0fNBtXXFIf33RLLKEcBUKaQZ7ULUbS0sBfcjxIZ4V96OTRkCbM7hxpw==}
+  uint8array-extras@1.5.0:
+    resolution: {integrity: sha512-rvKSBiC5zqCCiDZ9kAOszZcDvdAHwwIKJG33Ykj43OKcWsnmcBRL09YTU4nOeHZ8Y2a7l1MgTd08SBe9A8Qj6A==}
     engines: {node: '>=18'}
 
   uint8arrays@3.1.0:
@@ -14295,6 +14313,12 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.1(zod@3.25.51)
       zod: 3.25.51
 
+  '@ai-sdk/gateway@1.0.11(zod@3.25.51)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.5(zod@3.25.51)
+      zod: 3.25.51
+
   '@ai-sdk/gateway@1.0.4(zod@3.25.51)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -14424,6 +14448,14 @@ snapshots:
       zod: 3.25.51
 
   '@ai-sdk/provider-utils@3.0.1(zod@3.25.51)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.3
+      zod: 3.25.51
+      zod-to-json-schema: 3.24.6(zod@3.25.51)
+
+  '@ai-sdk/provider-utils@3.0.5(zod@3.25.51)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
       '@standard-schema/spec': 1.0.0
@@ -18045,9 +18077,9 @@ snapshots:
       rimraf: 3.0.2
     optional: true
 
-  '@openrouter/ai-sdk-provider@1.1.0(ai@5.0.8(zod@3.25.51))(zod@3.25.51)':
+  '@openrouter/ai-sdk-provider@1.1.0(ai@5.0.22(zod@3.25.51))(zod@3.25.51)':
     dependencies:
-      ai: 5.0.8(zod@3.25.51)
+      ai: 5.0.22(zod@3.25.51)
       zod: 3.25.51
 
   '@opentelemetry/api@1.9.0': {}
@@ -21307,7 +21339,7 @@ snapshots:
   '@triplit/db@1.1.10(typescript@5.8.3)':
     dependencies:
       '@triplit/logger': 0.0.3(typescript@5.8.3)
-      core-js: 3.45.0
+      core-js: 3.45.1
       elen: 1.0.10
       nanoid: 5.1.5
       sorted-btree: 1.8.1
@@ -22806,6 +22838,14 @@ snapshots:
     optionalDependencies:
       react: 19.1.0
 
+  ai@5.0.22(zod@3.25.51):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.11(zod@3.25.51)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.5(zod@3.25.51)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.51
+
   ai@5.0.8(zod@3.25.51):
     dependencies:
       '@ai-sdk/gateway': 1.0.4(zod@3.25.51)
@@ -23674,7 +23714,7 @@ snapshots:
 
   core-js-pure@3.41.0: {}
 
-  core-js@3.45.0: {}
+  core-js@3.45.1: {}
 
   core-util-is@1.0.3: {}
 
@@ -24934,7 +24974,7 @@ snapshots:
       '@tokenizer/inflate': 0.2.7
       strtok3: 10.3.4
       token-types: 6.1.1
-      uint8array-extras: 1.4.1
+      uint8array-extras: 1.5.0
     transitivePeerDependencies:
       - supports-color
 
@@ -29661,7 +29701,7 @@ snapshots:
 
   uint8array-extras@1.4.0: {}
 
-  uint8array-extras@1.4.1: {}
+  uint8array-extras@1.5.0: {}
 
   uint8arrays@3.1.0:
     dependencies:

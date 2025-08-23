@@ -2,7 +2,7 @@
 
 import type { ComponentPropsWithoutRef } from 'react'
 import Link from 'next/link'
-import { SiDiscord, SiGithub, SiX } from '@icons-pack/react-simple-icons'
+import { SiDiscord, SiX } from '@icons-pack/react-simple-icons'
 import { GraduationCap } from 'lucide-react'
 
 import { SidebarGroup, SidebarGroupContent, useSidebar } from '@cared/ui/components/sidebar'
@@ -49,15 +49,15 @@ export function NavSecondary({
                 <SiDiscord size={20} />
                 <span className="sr-only">Discord</span>
               </Link>
-              <Link
-                href={siteConfig.links.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <SiGithub size={20} />
-                <span className="sr-only">GitHub</span>
-              </Link>
+              {/*<Link*/}
+              {/*  href={siteConfig.links.github}*/}
+              {/*  target="_blank"*/}
+              {/*  rel="noopener noreferrer"*/}
+              {/*  className="text-muted-foreground hover:text-foreground transition-colors"*/}
+              {/*>*/}
+              {/*  <SiGithub size={20} />*/}
+              {/*  <span className="sr-only">GitHub</span>*/}
+              {/*</Link>*/}
             </>
           )}
         </div>
