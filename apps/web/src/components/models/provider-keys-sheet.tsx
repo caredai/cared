@@ -31,6 +31,7 @@ import { Switch } from '@cared/ui/components/switch'
 
 import { OptionalInput } from '@/components/input'
 import { CircleSpinner } from '@/components/spinner'
+import { useProviders } from '@/hooks/use-model'
 import {
   useCreateProviderKey,
   useDeleteProviderKey,
@@ -100,13 +101,17 @@ export function ProviderKeysSheet({
   onOpenChange: (open: boolean) => void
 }) {
   const providerId = provider.id
+  const { refetchProviders } = useProviders()
   const { providerKeys, refetchProviderKeys } = useProviderKeysByProvider({
     isSystem,
     organizationId,
     providerId,
   })
   const vListRef = useRef<VirtualizerHandle>(null)
-  const createProviderKey = useCreateProviderKey()
+  const createProviderKey = useCreateProviderKey({
+    isSystem,
+    organizationId,
+  })
   const updateProviderKey = useUpdateProviderKey()
   const deleteProviderKey = useDeleteProviderKey()
   const toggleProviderKey = useToggleProviderKey()
@@ -186,6 +191,7 @@ export function ProviderKeysSheet({
         })
 
         await refetchProviderKeys()
+        await refetchProviders()
 
         // Remove the temporary item from local state
         setNewKeys((prev) => prev.filter((key) => key.id !== id))
@@ -197,13 +203,15 @@ export function ProviderKeysSheet({
           disabled: formData.disabled,
         })
 
+        await refetchProviders()
+
         // Update local state
         setExistingKeys((prev) =>
           prev.map((key) => (key.id === id ? { ...key, isEditing: false } : key)),
         )
       }
     },
-    [createProviderKey, updateProviderKey, providerId, refetchProviderKeys],
+    [createProviderKey, refetchProviderKeys, refetchProviders, updateProviderKey],
   )
 
   // Handle removing temporary items or deleting existing ones
@@ -218,10 +226,12 @@ export function ProviderKeysSheet({
       // This is an existing key, delete it via API
       await deleteProviderKey(id)
 
+      await refetchProviders()
+
       // Remove from local state
       setExistingKeys((prev) => prev.filter((key) => key.id !== id))
     },
-    [deleteProviderKey],
+    [deleteProviderKey, refetchProviders],
   )
 
   const handleToggle = useCallback(
@@ -236,8 +246,9 @@ export function ProviderKeysSheet({
       await toggleProviderKey(id, disabled)
 
       await refetchProviderKeys()
+      await refetchProviders()
     },
-    [toggleProviderKey, refetchProviderKeys],
+    [toggleProviderKey, refetchProviderKeys, refetchProviders],
   )
 
   return (
@@ -252,7 +263,7 @@ export function ProviderKeysSheet({
           </Avatar>
           <div>
             <SheetTitle>{provider.name}</SheetTitle>
-            <SheetDescription>Use your own provider API keys</SheetDescription>
+            <SheetDescription>Use your own provider API keys (BYOK)</SheetDescription>
           </div>
         </SheetHeader>
 
@@ -539,6 +550,7 @@ function ProviderKeyItemEdit({
   })
 
   const handleSave = async () => {
+    console.log(form.getValues())
     if (await form.trigger()) {
       const formData = form.getValues()
       await onSave(formData)

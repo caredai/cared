@@ -5,3 +5,11 @@
   - https://docs.anthropic.com/en/docs/about-claude/pricing
   - https://docs.anthropic.com/en/docs/about-claude/models/overview
   - https://docs.anthropic.com/en/docs/about-claude/model-deprecations#model-status
+- Google
+  - https://ai.google.dev/gemini-api/docs/pricing
+  - https://ai.google.dev/gemini-api/docs/models
+  - https://aistudio.google.com
+  - https://ai.google.dev/gemini-api/docs/imagen
+  - https://ai.google.dev/gemini-api/docs/embeddings
+- Vertex
+  - https://cloud.google.com/vertex-ai/generative-ai/pricing

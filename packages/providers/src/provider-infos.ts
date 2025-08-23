@@ -3,6 +3,12 @@ import type { BaseProviderInfo } from './types'
 export function getBaseProviderInfos(): BaseProviderInfo[] {
   return [
     {
+      id: 'openrouter',
+      name: 'OpenRouter',
+      icon: 'openrouter.svg',
+      description: 'OpenRouter API gateway providing access to various AI models',
+    },
+    {
       id: 'openai',
       name: 'OpenAI',
       icon: 'openai.svg',
@@ -112,12 +118,6 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       name: 'Luma AI',
       icon: 'luma.svg',
       description: 'Luma AI platform specializing in video generation and 3D content creation',
-    },
-    {
-      id: 'openrouter',
-      name: 'OpenRouter',
-      icon: 'openrouter.svg',
-      description: 'OpenRouter API gateway providing access to various AI models',
     },
   ]
 }

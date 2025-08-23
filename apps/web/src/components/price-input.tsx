@@ -51,11 +51,11 @@ export function PriceInput({
     <NumberInput
       value={parseFloat(value)}
       onChange={(value) => {
-        onChange(value.toString())
+        onChange(formatModelPrice(value.toString()) ?? '0.00')
       }}
       min={0}
       max={max}
-      step={0.01}
+      step={0.000001}
       className={className}
       {...props}
     />

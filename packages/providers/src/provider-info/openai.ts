@@ -267,6 +267,44 @@ const openaiProvider: ProviderInfo = {
   ],
   imageModels: [
     {
+      id: 'gpt-image-1',
+      name: 'GPT Image 1',
+      description: 'State-of-the-art image generation model.',
+      imageInputTokenPrice: '10.00',
+      imageCachedInputTokenPrice: '2.50',
+      imageOutputTokenPrice: '40.00',
+      textInputTokenPrice: '5.00',
+      textCachedInputTokenPrice: '1.25',
+      // Computed costs based on image dimensions and quality
+      // https://platform.openai.com/docs/guides/image-generation#cost-and-latency
+      pricePerImage: [
+        [
+          'Low',
+          [
+            ['1024x1024', '0.011'],
+            ['1024x1536', '0.016'],
+            ['1536x1024', '0.016'],
+          ],
+        ],
+        [
+          'Medium',
+          [
+            ['1024x1024', '0.042'],
+            ['1024x1536', '0.063'],
+            ['1536x1024', '0.063'],
+          ],
+        ],
+        [
+          'High',
+          [
+            ['1024x1024', '0.167'],
+            ['1024x1536', '0.25'],
+            ['1536x1024', '0.25'],
+          ],
+        ],
+      ],
+    },
+    {
       id: 'dall-e-3',
       name: 'DALL·E 3',
       description:
@@ -302,44 +340,6 @@ const openaiProvider: ProviderInfo = {
             ['256x256', '0.016'],
             ['512x512', '0.018'],
             ['1024x1024', '0.02'],
-          ],
-        ],
-      ],
-    },
-    {
-      id: 'gpt-image-1',
-      name: 'GPT Image 1',
-      description: 'State-of-the-art image generation model.',
-      imageInputTokenPrice: '10.00',
-      imageCachedInputTokenPrice: '2.50',
-      imageOutputTokenPrice: '40.00',
-      textInputTokenPrice: '5.00',
-      textCachedInputTokenPrice: '1.25',
-      // Computed costs based on image dimensions and quality
-      // https://platform.openai.com/docs/guides/image-generation#cost-and-latency
-      pricePerImage: [
-        [
-          'Low',
-          [
-            ['1024x1024', '0.011'],
-            ['1024x1536', '0.016'],
-            ['1536x1024', '0.016'],
-          ],
-        ],
-        [
-          'Medium',
-          [
-            ['1024x1024', '0.042'],
-            ['1024x1536', '0.063'],
-            ['1536x1024', '0.063'],
-          ],
-        ],
-        [
-          'High',
-          [
-            ['1024x1024', '0.167'],
-            ['1024x1536', '0.25'],
-            ['1536x1024', '0.25'],
           ],
         ],
       ],

@@ -40,7 +40,7 @@ import {
 
 import { SectionTitle } from '@/components/section'
 import { CircleSpinner, Spinner } from '@/components/spinner'
-import { Tooltip } from '@/components/tooltip'
+import { PopoverTooltip } from '@/components/tooltip'
 import { WalletAddress } from '@/components/wallet-address'
 import { useWallets, walletType } from '@/hooks/use-wallets'
 import { WalletQrDialog } from './wallet-qr-dialog'
@@ -195,7 +195,7 @@ export default function WalletPage() {
             <div>
               <CardTitle>
                 Embedded Wallets &nbsp;
-                <Tooltip
+                <PopoverTooltip
                   className="inline-block align-bottom"
                   content={
                     <>
@@ -281,7 +281,7 @@ export default function WalletPage() {
             <div>
               <CardTitle>
                 External Wallets &nbsp;
-                <Tooltip
+                <PopoverTooltip
                   className="inline-block align-bottom"
                   content={
                     <p>

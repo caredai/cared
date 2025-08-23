@@ -25,7 +25,10 @@ type Strategy = 'skip' | 'override' | 'replace'
  * @param newModels - Array of new models
  * @returns Object containing merged array and information about overridden models
  */
-function overrideExistingModels<T extends { id: string }>(existingModels?: T[], newModels?: T[]): {
+function overrideExistingModels<T extends { id: string }>(
+  existingModels?: T[],
+  newModels?: T[],
+): {
   mergedModels: T[]
   overriddenModels: T[]
 } {
@@ -88,14 +91,14 @@ function filterExistingModels<T extends { id: string }>(
  * @param providerId - The provider ID to read
  * @returns Provider info object
  */
-function readProviderInfo(providerId: ProviderId) {
+async function readProviderInfo(providerId: ProviderId) {
   try {
-    const providerFilePath = path.posix.relative(
-      process.cwd(),
-      path.posix.resolve(__dirname, `../../providers/src/provider-info/${providerId}`),
+    const providerFilePath = path.posix.resolve(
+      __dirname,
+      `../../providers/src/provider-info/${providerId}`,
     )
     log.info(`Reading provider info from: ${providerFilePath}`)
-    return import(providerFilePath)
+    return await import(providerFilePath)
   } catch (error) {
     throw new Error(`Failed to read provider info for ${providerId}: ${error}`)
   }
@@ -174,7 +177,7 @@ async function pushProviderModels(providerId: ProviderId, strategy: Strategy) {
       ]
 
       if (allSkippedModels.length > 0) {
-        const skippedModelIds = allSkippedModels.map(model => model.id).join(', ')
+        const skippedModelIds = allSkippedModels.map((model) => model.id).join(', ')
         log.info(`Skipped ${allSkippedModels.length} models (already exist): ${skippedModelIds}`)
       }
 
@@ -248,7 +251,7 @@ async function pushProviderModels(providerId: ProviderId, strategy: Strategy) {
       ]
 
       if (allOverriddenModels.length > 0) {
-        const overriddenModelIds = allOverriddenModels.map(model => model.id).join(', ')
+        const overriddenModelIds = allOverriddenModels.map((model) => model.id).join(', ')
         log.info(`Overridden ${allOverriddenModels.length} models: ${overriddenModelIds}`)
       }
 

@@ -30,12 +30,13 @@ import {
 import { Switch } from '@cared/ui/components/switch'
 
 import { Input } from '@/components/input'
-import { OptionalNumberInput } from '@/components/number-input'
+import { NumberInput, OptionalNumberInput } from '@/components/number-input'
 import { OptionalPriceInput } from '@/components/price-input'
 import { CircleSpinner } from '@/components/spinner'
 
 export type EditableModel = {
   id: ModelFullId
+  isSystem?: boolean
   isEditing: boolean
   isNew?: boolean
 } & UpdateModelArgs
@@ -51,6 +52,7 @@ export function getDefaultValuesForModelType(
     description: '',
     deprecated: false,
     retired: false,
+    chargeable: false,
   }
 
   switch (type) {
@@ -116,6 +118,7 @@ export function ModelItemEdit({
   index: _,
   providerId,
   model,
+  isSystem,
   isSaving,
   isRemoving,
   isSorting,
@@ -128,6 +131,7 @@ export function ModelItemEdit({
   index: number
   providerId: ProviderId
   model: EditableModel
+  isSystem?: boolean
   isSaving: boolean
   isRemoving: boolean
   isSorting: boolean
@@ -139,9 +143,9 @@ export function ModelItemEdit({
 }) {
   const modelCache = !cache
     ? {
-      type: model.type,
-      model: model.model,
-    }
+        type: model.type,
+        model: model.model,
+      }
     : cache
 
   const form = useForm<UpdateModelArgs>({
@@ -234,7 +238,7 @@ export function ModelItemEdit({
             )}
           />
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <FormField
               control={form.control}
               name="model.deprecated"
@@ -268,6 +272,25 @@ export function ModelItemEdit({
                 </FormItem>
               )}
             />
+
+            {isSystem && (
+              <FormField
+                control={form.control}
+                name="model.chargeable"
+                render={({ field }) => (
+                  <FormItem className="flex items-center space-x-2">
+                    <FormLabel>Chargeable</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isFormDisabled}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
 
           {/* Render model-specific edit form based on type */}
@@ -292,7 +315,11 @@ export function ModelItemEdit({
             <TranscriptionModelItemEdit form={form} isFormDisabled={isFormDisabled} />
           )}
           {model.type === 'textEmbedding' && (
-            <EmbeddingModelItemEdit form={form} isFormDisabled={isFormDisabled} />
+            <EmbeddingModelItemEdit
+              form={form}
+              isFormDisabled={isFormDisabled}
+              originalDimensions={modelCache.model.dimensions}
+            />
           )}
 
           <div className="flex items-center justify-end pt-4">
@@ -1173,30 +1200,60 @@ function TranscriptionModelItemEdit({
 }
 
 // Embedding Model Item Edit
-function EmbeddingModelItemEdit({ form, isFormDisabled }: { form: any; isFormDisabled: boolean }) {
+function EmbeddingModelItemEdit({
+  form,
+  isFormDisabled,
+  originalDimensions,
+}: {
+  form: any
+  isFormDisabled: boolean
+  originalDimensions?: number | number[]
+}) {
+  const currentDimensions = form.watch('model.dimensions')
+
+  type DimensionsStructureType = 'single' | 'multiple'
+
+  // Determine the current structure type
+  const getDimensionsStructureType = (value?: number | number[]): DimensionsStructureType => {
+    if (!value) return 'single'
+    if (Array.isArray(value)) return 'multiple'
+    return 'single'
+  }
+
+  const [currentDimensionsStructureType, setCurrentDimensionsStructureType] = useState(
+    getDimensionsStructureType(originalDimensions),
+  )
+
+  useEffect(() => {
+    setCurrentDimensionsStructureType(getDimensionsStructureType(originalDimensions))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originalDimensions])
+
+  // Handle structure type change
+  const handleDimensionsStructureTypeChange = (newType: DimensionsStructureType) => {
+    setCurrentDimensionsStructureType(newType)
+
+    const originalStructureType = getDimensionsStructureType(originalDimensions)
+    switch (newType) {
+      case 'single':
+        form.setValue(
+          'model.dimensions',
+          originalStructureType === 'single' ? originalDimensions : undefined,
+        )
+        break
+      case 'multiple':
+        form.setValue(
+          'model.dimensions',
+          originalStructureType === 'multiple' ? originalDimensions : [],
+        )
+        break
+    }
+  }
+
+  const dimensionsError = form.formState.errors?.model?.dimensions
+
   return (
     <>
-      <FormField
-        control={form.control}
-        name="model.dimensions"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Dimensions (Optional)</FormLabel>
-            <FormControl>
-              <OptionalNumberInput
-                placeholder="Enter dimensions (e.g., 1536)"
-                value={field.value}
-                onChange={field.onChange}
-                min={1}
-                step={1}
-                disabled={isFormDisabled}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
       <FormField
         control={form.control}
         name="model.tokenPrice"
@@ -1214,6 +1271,111 @@ function EmbeddingModelItemEdit({ form, isFormDisabled }: { form: any; isFormDis
           </FormItem>
         )}
       />
+
+      {/* Dimensions Structure Selection */}
+      <div className="space-y-2">
+        <Label htmlFor="model.dimensions">Dimensions (Optional)</Label>
+        <Select
+          value={currentDimensionsStructureType}
+          onValueChange={handleDimensionsStructureTypeChange}
+        >
+          <SelectTrigger disabled={isFormDisabled}>
+            <SelectValue placeholder="Select dimensions structure type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="single">Single Dimension</SelectItem>
+            <SelectItem value="multiple">Multiple Dimensions</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Dynamic Dimensions Fields based on selected structure */}
+      {currentDimensionsStructureType === 'single' ? (
+        <FormField
+          control={form.control}
+          name="model.dimensions"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <OptionalNumberInput
+                  placeholder="Enter dimensions (e.g., 1536)"
+                  value={field.value}
+                  onChange={field.onChange}
+                  min={1}
+                  step={1}
+                  disabled={isFormDisabled}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      ) : (
+        <div className="space-y-4">
+          {dimensionsError && (
+            <p className="text-[0.8rem] font-medium text-destructive">Invalid dimensions</p>
+          )}
+
+          <div className="flex items-center justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const current = form.getValues('model.dimensions') || []
+                const newValue = [...current, 0]
+                form.setValue('model.dimensions', newValue)
+              }}
+              disabled={isFormDisabled}
+            >
+              Add Dimension
+            </Button>
+          </div>
+
+          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+          {((currentDimensions as number[]) || []).map((dimension, index) => (
+            <div
+              key={`dimension-${index}`}
+              className="flex items-center gap-2 p-3 border rounded-lg"
+            >
+              <NumberInput
+                placeholder="Enter dimension (e.g., 1536)"
+                value={dimension}
+                onChange={(value) => {
+                  const current = form.getValues('model.dimensions') || []
+                  const newValue = [...current]
+                  newValue[index] = value
+                  form.setValue('model.dimensions', newValue)
+                }}
+                min={1}
+                step={1}
+                disabled={isFormDisabled}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  const current = form.getValues('model.dimensions') || []
+                  const newValue = current.filter((_: number | undefined, i: number) => i !== index)
+                  form.setValue('model.dimensions', newValue)
+                }}
+                disabled={isFormDisabled}
+                className="shrink-0"
+              >
+                <Trash2Icon className="size-4" />
+              </Button>
+            </div>
+          ))}
+
+          {!currentDimensions || (currentDimensions as (number | undefined)[]).length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center">
+              Click "Add Dimension" to add items.
+            </div>
+          ) : null}
+        </div>
+      )}
     </>
   )
 }

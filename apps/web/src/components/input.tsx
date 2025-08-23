@@ -30,7 +30,7 @@ export function Input({
     onBlur()
   }
 
-  const [showPassword, setPassword] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const inputNode = (
     <Input_
@@ -55,7 +55,7 @@ export function Input({
           variant="ghost"
           size="sm"
           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-          onClick={() => setPassword(!showPassword)}
+          onClick={() => setShowPassword(!showPassword)}
           disabled={props.disabled}
         >
           {showPassword ? <LucideEyeOff className="h-4 w-4" /> : <LucideEye className="h-4 w-4" />}
@@ -74,27 +74,11 @@ export function OptionalInput({
   value?: string
   onChange: (value?: string) => void
 }) {
-  const [inputValue, setInputValue] = useState(value?.toString() ?? '')
-
-  useEffect(() => {
-    setInputValue(value?.toString() ?? '')
-  }, [value])
-
-  const handleBlur = () => {
-    if (inputValue.trim() === '') {
-      onChange(undefined)
-    } else {
-      onChange(inputValue.trim())
-    }
-    setInputValue(inputValue.trim())
-  }
-
   return (
     <Input
       {...props}
-      value={inputValue}
-      onChange={setInputValue}
-      onBlur={handleBlur}
+      value={value?.toString() ?? ''}
+      onChange={(value) => onChange(value.trim() || undefined)}
       className={className}
     />
   )

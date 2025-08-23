@@ -24,12 +24,15 @@ import { cn } from '@cared/ui/lib/utils'
 
 import type { EditableModel } from './model-item-edit'
 import { CircleSpinner } from '@/components/spinner'
+import { TextTooltip } from '@/components/tooltip'
 import { CopyModelId } from './copy-model-id'
 
 export function ModelItemView({
   index,
   providerId: _,
   model,
+  isSystem,
+  isSearching,
   isSaving,
   isRemoving,
   isMovingUp,
@@ -45,6 +48,8 @@ export function ModelItemView({
   index: number
   providerId: ProviderId
   model: EditableModel
+  isSystem?: boolean
+  isSearching: boolean
   isSaving: boolean
   isRemoving: boolean
   isMovingUp: boolean
@@ -76,67 +81,92 @@ export function ModelItemView({
           {model.model.retired && (
             <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Retired</span>
           )}
+          {model.model.chargeable && (
+            <TextTooltip
+              content={
+                <div className="space-y-2">
+                  <p>
+                    Usage of this model will consume Cared credits when no API keys are configured
+                  </p>
+                </div>
+              }
+            >
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                Chargeable
+              </span>
+            </TextTooltip>
+          )}
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Sort buttons - positioned at the leftmost side */}
-          <div className="flex items-center gap-1">
+        {Boolean(model.isSystem) === Boolean(isSystem) && (
+          <div className="flex items-center gap-2">
+            {/* Sort buttons - positioned at the leftmost side */}
+            {!isSearching && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-6"
+                  onClick={onMoveUp}
+                  disabled={isDisabled || !canMoveUp}
+                  title="Move up"
+                >
+                  {isMovingUp ? (
+                    <CircleSpinner className="size-3" />
+                  ) : (
+                    <ChevronUpIcon className="size-3" />
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="size-6"
+                  onClick={onMoveDown}
+                  disabled={isDisabled || !canMoveDown}
+                  title="Move down"
+                >
+                  {isMovingDown ? (
+                    <CircleSpinner className="size-3" />
+                  ) : (
+                    <ChevronDownIcon className="size-3" />
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Edit and Remove buttons */}
             <Button
               variant="outline"
               size="icon"
               className="size-6"
-              onClick={onMoveUp}
-              disabled={isDisabled || !canMoveUp}
-              title="Move up"
+              onClick={onEdit}
+              disabled={isDisabled}
             >
-              {isMovingUp ? (
-                <CircleSpinner className="size-3" />
-              ) : (
-                <ChevronUpIcon className="size-3" />
-              )}
+              <EditIcon className="size-3" />
             </Button>
             <Button
               variant="outline"
               size="icon"
               className="size-6"
-              onClick={onMoveDown}
-              disabled={isDisabled || !canMoveDown}
-              title="Move down"
+              onClick={onRemove}
+              disabled={isDisabled}
             >
-              {isMovingDown ? (
+              {isRemoving ? (
                 <CircleSpinner className="size-3" />
               ) : (
-                <ChevronDownIcon className="size-3" />
+                <Trash2Icon className="size-3" />
               )}
             </Button>
           </div>
-
-          {/* Edit and Remove buttons */}
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-6"
-            onClick={onEdit}
-            disabled={isDisabled}
-          >
-            <EditIcon className="size-3" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-6"
-            onClick={onRemove}
-            disabled={isDisabled}
-          >
-            {isRemoving ? <CircleSpinner className="size-3" /> : <Trash2Icon className="size-3" />}
-          </Button>
-        </div>
+        )}
       </div>
 
       <CopyModelId modelId={model.model.id} copyToClipboard={copyToClipboard} />
 
       {model.model.description && (
-        <div className="text-sm text-muted-foreground">{model.model.description}</div>
+        <blockquote className="my-2 border-l-1 pl-4 text-sm text-muted-foreground">
+          {model.model.description}
+        </blockquote>
       )}
 
       {/* Render model-specific view based on type */}
@@ -396,25 +426,38 @@ function TranscriptionModelItemView({ model }: { model: TranscriptionModelInfo }
 function EmbeddingModelItemView({ model }: { model: EmbeddingModelInfo }) {
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      <div className="flex flex-wrap gap-x-4">
-        {model.dimensions && (
-          <div>
-            Dimensions:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.dimensions, 'standard-integer')}
-            </span>
-          </div>
-        )}
-        {model.tokenPrice && (
-          <div>
-            Token price:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.tokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-      </div>
+      {(model.tokenPrice || model.dimensions) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.tokenPrice && (
+            <div>
+              Token price:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.tokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+          {model.dimensions && (
+            <div>
+              Dimensions:{' '}
+              {typeof model.dimensions === 'number' ? (
+                <span className="font-mono font-medium text-foreground">
+                  {zuji(model.dimensions, 'standard-integer')}
+                </span>
+              ) : (
+                model.dimensions.map((dim, index) => (
+                  <span
+                    key={index}
+                    className="font-mono font-medium text-foreground mr-1 last:mr-0"
+                  >
+                    {zuji(dim, 'standard-integer')}{' '}
+                  </span>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

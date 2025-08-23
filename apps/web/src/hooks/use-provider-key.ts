@@ -25,18 +25,6 @@ export function useProviderKeys(input?: { isSystem?: boolean; organizationId?: s
   }
 }
 
-export function useSystemProviderKeys() {
-  return useProviderKeys({ isSystem: true })
-}
-
-export function useOrganizationProviderKeys(organizationId: string) {
-  return useProviderKeys({ organizationId })
-}
-
-export function useUserProviderKeys() {
-  return useProviderKeys()
-}
-
 export function useProviderKeysByProvider({
   isSystem,
   organizationId,
@@ -65,7 +53,13 @@ export function useProviderKeysByProvider({
   }
 }
 
-export function useCreateProviderKey() {
+export function useCreateProviderKey({
+  isSystem,
+  organizationId,
+}: {
+  isSystem?: boolean
+  organizationId?: string
+}) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -87,13 +81,12 @@ export function useCreateProviderKey() {
   )
 
   return useCallback(
-    async (input: {
-      isSystem?: boolean
-      organizationId?: string
-      key: ProviderKey
-      disabled?: boolean
-    }) => {
-      return await createMutation.mutateAsync(input)
+    async (input: { key: ProviderKey; disabled?: boolean }) => {
+      return await createMutation.mutateAsync({
+        isSystem,
+        organizationId,
+        ...input,
+      })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

@@ -121,7 +121,11 @@ export interface BaseModelInfo {
   description: string
   deprecated?: boolean
   retired?: boolean
+  chargeable?: boolean // whether usage is chargeable by Cared credits
 }
+
+export type Modality = 'text' | 'image' | 'audio' | 'video' | 'pdf'
+export const modalities = ['text', 'image', 'audio', 'video', 'pdf'] as const
 
 export interface LanguageModelInfo extends BaseModelInfo {
   contextWindow?: number // max tokens including input and output tokens
@@ -130,6 +134,11 @@ export interface LanguageModelInfo extends BaseModelInfo {
   cachedInputTokenPrice?: string // read; decimal string, in $USD/M cached input token
   cacheInputTokenPrice?: string | [string, string][] // write; ttl => price; decimal string, in $USD/M cached input token
   outputTokenPrice?: string // decimal string, in $USD/M input token
+
+  modality?: {
+    input?: Modality[] // 'text' if not specified
+    output?: Modality[] // 'text' if not specified
+  }
 }
 
 export interface ImageModelInfo extends BaseModelInfo {
@@ -158,15 +167,16 @@ export interface TranscriptionModelInfo extends BaseModelInfo {
 
 export interface EmbeddingModelInfo extends BaseModelInfo {
   tokenPrice?: string
-  dimensions?: number
+  dimensions?: number | number[]
 }
 
 export const baseModelInfoSchema = z.object({
   id: z.string().min(1, 'ID is required'),
   name: z.string().min(1, 'Name is required'),
-  description: z.string().min(1, 'Description is required'),
+  description: z.string(),
   deprecated: z.boolean().optional(),
   retired: z.boolean().optional(),
+  chargeable: z.boolean().optional(),
 })
 
 export function formatModelPrice(price: string) {
@@ -199,6 +209,12 @@ export const languageModelInfoSchema = baseModelInfoSchema.extend({
     )
     .optional(),
   outputTokenPrice: modelPriceSchema.optional(),
+  modality: z
+    .object({
+      input: z.array(z.enum(modalities)).optional(),
+      output: z.array(z.enum(modalities)).optional(),
+    })
+    .optional(),
 })
 
 export const imageModelInfoSchema = baseModelInfoSchema.extend({
@@ -242,7 +258,11 @@ export const transcriptionModelInfoSchema = baseModelInfoSchema.extend({
 
 export const embeddingModelInfoSchema = baseModelInfoSchema.extend({
   tokenPrice: modelPriceSchema.optional(),
-  dimensions: z.int().min(0).optional(),
+  dimensions: z
+    .int()
+    .min(0)
+    .or(z.array(z.int().min(0)))
+    .optional(),
 })
 
 export const modelInfosSchema = z.object({
@@ -254,8 +274,11 @@ export const modelInfosSchema = z.object({
 })
 
 export interface ProviderSettings {
-  // TODO
-  providers: Record<ProviderId, any>
+  enabled?: boolean
+}
+
+export interface ProvidersSettings {
+  providers: Partial<Record<ProviderId, ProviderSettings>>
 }
 
 export type ProviderKey = z.infer<typeof providerKeySchema>

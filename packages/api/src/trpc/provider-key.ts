@@ -3,12 +3,13 @@ import { z } from 'zod/v4'
 
 import type { OrganizationStatementsSubset } from '@cared/auth'
 import type { SQL } from '@cared/db'
+import type { ProviderId } from '@cared/providers'
 import { and, desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
-import { ProviderKey } from '@cared/db/schema'
+import { ProviderKey, ProviderSettings } from '@cared/db/schema'
 import { providerIdSchema, providerKeySchema } from '@cared/providers'
 
-import type { UserOrAppUserContext } from '../trpc'
+import type { BaseContext, UserOrAppUserContext } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { env } from '../env'
 import { decryptProviderKey, encryptProviderKey } from '../operation'
@@ -142,6 +143,10 @@ export const providerKeyRouter = {
         })
       }
 
+      if (isSystem) {
+        await enableProvider(ctx, newKey.providerId)
+      }
+
       // Decrypt the key for response
       const decryptedKey = {
         ...newKey,
@@ -222,6 +227,10 @@ export const providerKeyRouter = {
         })
       }
 
+      if (updatedKey.isSystem) {
+        await enableProvider(ctx, updatedKey.providerId)
+      }
+
       // Decrypt the key for response
       const decryptedKey = {
         ...updatedKey,
@@ -284,6 +293,10 @@ export const providerKeyRouter = {
       // Delete the provider key
       await db.delete(ProviderKey).where(eq(ProviderKey.id, id))
 
+      if (existingKey.isSystem) {
+        await enableProvider(ctx, existingKey.providerId)
+      }
+
       // Decrypt the key for response
       const decryptedKey = {
         ...existingKey,
@@ -333,4 +346,42 @@ async function checkPermissions(
   }
 
   return true
+}
+
+async function enableProvider(ctx: BaseContext, providerId: ProviderId) {
+  const enabled = Boolean(
+    await ctx.db.query.ProviderKey.findFirst({
+      where: and(
+        eq(ProviderKey.isSystem, true),
+        eq(ProviderKey.providerId, providerId),
+        eq(ProviderKey.disabled, false),
+      ),
+    }),
+  )
+
+  const providerSettings = await ctx.db.query.ProviderSettings.findFirst({
+    where: eq(ProviderSettings.isSystem, true),
+  })
+  if (providerSettings) {
+    const settings = providerSettings.settings
+    settings.providers[providerId] = {
+      enabled,
+    }
+
+    await ctx.db
+      .update(ProviderSettings)
+      .set({ settings })
+      .where(eq(ProviderSettings.id, providerSettings.id))
+  } else {
+    await ctx.db.insert(ProviderSettings).values({
+      isSystem: true,
+      settings: {
+        providers: {
+          [providerId]: {
+            enabled,
+          },
+        },
+      },
+    })
+  }
 }

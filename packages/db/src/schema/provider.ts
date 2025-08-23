@@ -5,7 +5,7 @@ import type {
   ModelInfos,
   ProviderId,
   ProviderKey as ProviderKeyContent,
-  ProviderSettings as ProviderSettingsContent,
+  ProvidersSettings as ProvidersSettingsContent,
 } from '@cared/providers'
 import { generateId, timestamps } from '@cared/shared'
 
@@ -41,12 +41,14 @@ export const ProviderSettings = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('ps')),
+    isSystem: boolean().notNull(),
     userId: text().references(() => User.id, { onDelete: 'cascade' }),
     organizationId: text().references(() => Organization.id, { onDelete: 'cascade' }),
-    settings: jsonb().$type<ProviderSettingsContent>().notNull(),
+    settings: jsonb().$type<ProvidersSettingsContent>().notNull(),
     ...timestamps,
   },
   (table) => [
+    index().on(table.isSystem),
     index().on(table.userId),
     index().on(table.organizationId),
   ],

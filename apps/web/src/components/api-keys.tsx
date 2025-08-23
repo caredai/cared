@@ -48,7 +48,7 @@ import {
 import { cn } from '@cared/ui/lib/utils'
 
 import { CircleSpinner } from '@/components/spinner'
-import { Tooltip } from '@/components/tooltip'
+import { PopoverTooltip } from '@/components/tooltip'
 import { useApiKeys, useCreateApiKey, useDeleteApiKey, useRotateApiKey } from '@/hooks/use-api-key'
 import { useApps } from '@/hooks/use-app'
 import { useWorkspaces } from '@/hooks/use-workspace'
@@ -149,7 +149,7 @@ export function ApiKeysWithSelector({
             <AppSelector value={selectedAppId} onValueChange={setSelectedAppId} apps={apps} />
           ) : null}
 
-          <Tooltip
+          <PopoverTooltip
             icon={CircleQuestionMarkIcon}
             className="inline-block align-bottom"
             side="right"

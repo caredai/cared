@@ -4,7 +4,7 @@ import { z } from 'zod/v4'
 import type { SQL } from '@cared/db'
 import type { BaseModelInfo, BaseProviderInfo, ModelInfos, ModelType } from '@cared/providers'
 import { and, eq, inArray, or, sql } from '@cared/db'
-import { ProviderModels } from '@cared/db/schema'
+import { ProviderModels, ProviderSettings } from '@cared/db/schema'
 import log from '@cared/log'
 import {
   defaultModels,
@@ -65,11 +65,20 @@ export const modelRouter = {
         summary: 'List all available model providers',
       },
     })
-    .query(() => {
+    .query(async ({ ctx }) => {
       const providers = getBaseProviderInfos()
 
+      const providerSettings = (
+        await ctx.db.query.ProviderSettings.findFirst({
+          where: eq(ProviderSettings.isSystem, true),
+        })
+      )?.settings
+
       return {
-        providers,
+        providers: providers.map((provider) => ({
+          ...provider,
+          enabled: Boolean(providerSettings?.providers[provider.id]?.enabled),
+        })),
       }
     }),
 

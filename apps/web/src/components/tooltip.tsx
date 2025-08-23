@@ -1,11 +1,13 @@
 import type { LucideIcon } from 'lucide-react'
 import * as React from 'react'
+import { ComponentProps } from 'react'
 import { InfoIcon } from 'lucide-react'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@cared/ui/components/tooltip'
 import { cn } from '@cared/ui/lib/utils'
 
-interface TooltipProps {
+interface PopoverTooltipProps {
   // Content to be displayed in the tooltip
   content: React.ReactNode
   // Optional Lucide icon component to use as trigger (defaults to InfoIcon)
@@ -20,14 +22,14 @@ interface TooltipProps {
   align?: 'start' | 'center' | 'end'
 }
 
-export function Tooltip({
+export function PopoverTooltip({
   content,
   icon: Icon = InfoIcon,
   className,
   contentClassName,
   side = 'top',
   align = 'center',
-}: TooltipProps) {
+}: PopoverTooltipProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -58,5 +60,19 @@ export function Tooltip({
         {content}
       </PopoverContent>
     </Popover>
+  )
+}
+
+export function TextTooltip({
+  content,
+  ...props
+}: Omit<ComponentProps<typeof TooltipTrigger>, 'content'> & {
+  content: React.ReactNode
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild {...props} />
+      <TooltipContent>{content}</TooltipContent>
+    </Tooltip>
   )
 }
