@@ -4,7 +4,7 @@ import { z } from 'zod/v4'
 import { and, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Agent, AgentVersion, App, AppVersion, Chat, DRAFT_VERSION, Memory } from '@cared/db/schema'
-import { getTextEmbeddingModelInfo } from '@cared/providers'
+import { getTextEmbeddingDimensions } from '@cared/providers'
 import { embed } from '@cared/providers/embed'
 import { CohereReranker } from '@cared/providers/rerank'
 import { QdrantVector } from '@cared/vdb'
@@ -72,8 +72,8 @@ function storeMemory(ctx: Context) {
         return
       }
 
-      const modelInfo = await getTextEmbeddingModelInfo(embeddingModel)
-      if (!modelInfo?.dimensions) {
+      const dimensions = await getTextEmbeddingDimensions(embeddingModel)
+      if (!dimensions) {
         return
       }
 
@@ -94,7 +94,7 @@ function storeMemory(ctx: Context) {
 
       const embedding = await embed(content, embeddingModel)
 
-      const vdb = new QdrantVector(modelInfo.dimensions)
+      const vdb = new QdrantVector(dimensions)
       await vdb.insertMemories({
         id,
         content,
@@ -128,14 +128,14 @@ function retrieveMemory(ctx: Context) {
         return []
       }
 
-      const modelInfo = await getTextEmbeddingModelInfo(embeddingModel)
-      if (!modelInfo?.dimensions) {
+      const dimensions = await getTextEmbeddingDimensions(embeddingModel)
+      if (!dimensions) {
         return []
       }
 
       const embedding = await embed(query, embeddingModel)
 
-      const vdb = new QdrantVector(modelInfo.dimensions)
+      const vdb = new QdrantVector(dimensions)
 
       const filter = {
         userId: ctx.userId,

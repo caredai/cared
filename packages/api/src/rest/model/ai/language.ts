@@ -5,9 +5,10 @@ import { NextResponse } from 'next/server'
 import Ajv from 'ajv'
 import { z } from 'zod/v4'
 
+import type { SuperJSONResult } from '@cared/shared'
 import log from '@cared/log'
 import { getModel } from '@cared/providers/providers'
-import { sharedV2ProviderOptionsSchema } from '@cared/shared'
+import { serializeError, sharedV2ProviderOptionsSchema, SuperJSON } from '@cared/shared'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -181,7 +182,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const searchParams = req.nextUrl.searchParams
   const modelId = searchParams.get('modelId')
   if (!modelId) {
-    return new Response('modelId is required', {
+    return new Response('`modelId` is required', {
       status: 400,
     })
   }
@@ -202,7 +203,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     ...modelConfig
   } = model
 
-  return NextResponse.json({
+  return makeResponseJson({
     ...modelConfig,
     supportedUrls: Object.entries(await supportedUrls).map(([mediaType, regexArray]) => [
       mediaType,
@@ -213,17 +214,14 @@ export async function GET(req: NextRequest): Promise<Response> {
 
 export async function POST(req: NextRequest): Promise<Response> {
   try {
-    const validatedArgs = requestArgsSchema.safeParse(await req.json())
+    const validatedArgs = requestArgsSchema.safeParse(await requestJson(req))
     if (!validatedArgs.success) {
-      return new Response(
-        JSON.stringify({
+      return makeResponseJson(
+        {
           errors: validatedArgs.error.flatten().fieldErrors,
-        }),
+        },
         {
           status: 400,
-          headers: {
-            'Content-Type': 'application/json',
-          },
         },
       )
     }
@@ -264,6 +262,11 @@ export async function POST(req: NextRequest): Promise<Response> {
         .pipeTo(
           new WritableStream({
             async write(part) {
+              if (part.type === 'error' && part.error instanceof Error) {
+                // Serialize error to ensure it can be properly transferred across the network
+                part.error = serializeError(part.error)
+                ;(part as any).errorSerialized = true
+              }
               await write(part)
             },
             async close() {
@@ -286,20 +289,45 @@ export async function POST(req: NextRequest): Promise<Response> {
         },
       })
     } else {
-      const result = await model.doGenerate({
-        ...languageModelV2CallOptions,
-        abortSignal: req.signal,
-      })
-      return NextResponse.json(result)
+      try {
+        const result = await model.doGenerate({
+          ...languageModelV2CallOptions,
+          abortSignal: req.signal,
+        })
+        return makeResponseJson(result)
+      } catch (error: any) {
+        if (error instanceof Error) {
+          return makeResponseJson(
+            {
+              // Serialize error to ensure it can be properly transferred across the network
+              error: serializeError(error),
+              errorSerialized: true,
+            },
+            { status: 500 },
+          )
+        } else {
+          throw error
+        }
+      }
     }
   } catch (error: any) {
     log.error('Call language model error', error)
-    return NextResponse.json(
+    return makeResponseJson(
       {
-        error: 'Internal Server Error',
-        details: error.message || 'An unknown error occurred',
+        error: error.message || 'An unknown error occurred',
       },
       { status: 500 },
     )
   }
+}
+
+export async function requestJson(request: NextRequest): Promise<object> {
+  return SuperJSON.deserialize((await request.json()) as SuperJSONResult)
+}
+
+export function makeResponseJson<JsonBody>(
+  body: JsonBody,
+  init?: ResponseInit,
+): NextResponse<SuperJSONResult> {
+  return NextResponse.json(SuperJSON.serialize(body), init)
 }

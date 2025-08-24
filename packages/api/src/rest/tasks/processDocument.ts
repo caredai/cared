@@ -8,7 +8,7 @@ import { db } from '@cared/db/client'
 import { Dataset, Document, DocumentChunk, DocumentSegment } from '@cared/db/schema'
 import { loadFile } from '@cared/etl'
 import { log } from '@cared/log'
-import { getTextEmbeddingModelInfo } from '@cared/providers'
+import { getTextEmbeddingDimensions } from '@cared/providers'
 import { embedMany } from '@cared/providers/embed'
 import { getModel } from '@cared/providers/providers'
 import { QdrantVector } from '@cared/vdb'
@@ -102,8 +102,8 @@ export const { POST } = serve<string>(
       throw new Error('Invalid language model configuration')
     }
 
-    const modelInfo = await getTextEmbeddingModelInfo(dataset.metadata.embeddingModel)
-    if (!modelInfo?.dimensions) {
+    const dimensions = await getTextEmbeddingDimensions(dataset.metadata.embeddingModel)
+    if (!dimensions) {
       throw new Error('Embedding model configuration lacks dimensions')
     }
 
@@ -179,7 +179,7 @@ Clean up the text by:
 
     await context.run('store-embeddings', async () => {
       await db.transaction(async (tx) => {
-        const vdb = new QdrantVector(modelInfo.dimensions)
+        const vdb = new QdrantVector(dimensions)
 
         // Prepare batch arrays for segments and chunks
         const segmentValues = parentsAndChildren.map((item, index) => ({

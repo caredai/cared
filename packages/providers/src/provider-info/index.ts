@@ -93,3 +93,12 @@ export async function getTextEmbeddingModelInfo(fullId: string) {
   const textEmbeddingModelInfos = await getTextEmbeddingModelInfos()
   return textEmbeddingModelInfos.find((model) => model.id === fullId)
 }
+
+export async function getTextEmbeddingDimensions(fullId: string) {
+  const modelInfo = await getTextEmbeddingModelInfo(fullId)
+  let dimensions = modelInfo?.dimensions
+  if (Array.isArray(dimensions)) {
+    dimensions = dimensions[0]
+  }
+  return dimensions
+}

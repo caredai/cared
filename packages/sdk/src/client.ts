@@ -1,5 +1,11 @@
 import { env } from './env'
-import { createLanguageModel } from './model'
+import {
+  createEmbeddingModel,
+  createImageModel,
+  createLanguageModel,
+  createSpeechModel,
+  createTranscriptionModel,
+} from './model'
 import { createCaredTrpcClient } from './trpc'
 
 export type CaredClientOptions = {
@@ -33,6 +39,22 @@ export class CaredClient {
 
   createLanguageModel(modelId: string) {
     return createLanguageModel(modelId, this.opts)
+  }
+
+  createImageModel(modelId: string) {
+    return createImageModel(modelId, this.opts)
+  }
+
+  createSpeechModel(modelId: string) {
+    return createSpeechModel(modelId, this.opts)
+  }
+
+  createTranscriptionModel(modelId: string) {
+    return createTranscriptionModel(modelId, this.opts)
+  }
+
+  createEmbeddingModel(modelId: string) {
+    return createEmbeddingModel(modelId, this.opts)
   }
 }
 

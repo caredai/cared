@@ -4,7 +4,7 @@ import type {
   LanguageModelV2StreamPart,
 } from '@ai-sdk/provider'
 
-import { regexFromString } from '@cared/shared'
+import { deserializeError, regexFromString, SuperJSON } from '@cared/shared'
 
 import type { CaredClientOptions } from '../client'
 import { makeHeaders } from '../client'
@@ -63,6 +63,10 @@ async function* processStream(
   }
 }
 
+export type NonMethodProperties<T> = {
+  [K in keyof T as T[K] extends (...args: any[]) => any ? never : K]: T[K]
+}
+
 export async function createLanguageModel(
   modelId: string,
   opts: CaredClientOptions,
@@ -71,15 +75,11 @@ export async function createLanguageModel(
 
   const getUrl = new URL(url)
   getUrl.searchParams.set('modelId', modelId)
-  const { supportedUrls, ...attributes } = await (
+  const { supportedUrls, ...attributes } = await responseJson(
     await fetch(getUrl, {
       headers: await makeHeaders(opts),
-    })
-  ).json()
-
-  type NonMethodProperties<T> = {
-    [K in keyof T as T[K] extends (...args: any[]) => any ? never : K]: T[K]
-  }
+    }),
+  )
 
   return {
     ...(attributes as NonMethodProperties<LanguageModelV2>),
@@ -91,38 +91,50 @@ export async function createLanguageModel(
       ]),
     ) as Record<string, RegExp[]>,
 
-    doGenerate: async (options: LanguageModelV2CallOptions) => {
+    doGenerate: async ({ abortSignal, ...options }: LanguageModelV2CallOptions) => {
       const headers = await makeHeaders(opts)
       headers.set('Content-Type', 'application/json')
 
       const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
+        body: SuperJSON.stringify({
           modelId,
           stream: false,
           ...options,
         }),
+        signal: abortSignal,
       })
       if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`doGenerate error (${response.status}): ${errorText}`)
+        if (response.headers.get('Content-Type')?.startsWith('application/json')) {
+          const errorJson = await responseJson(response)
+          if (errorJson.errorSerialized) {
+            throw deserializeError(errorJson.error)
+          } else if (typeof errorJson.error === 'string') {
+            throw new Error(errorJson.error)
+          }
+        } else {
+          const errorText = await response.text()
+          throw new Error(`doGenerate error (${response.status}): ${errorText}`)
+        }
       }
-      return await response.json()
+
+      return await responseJson(response)
     },
 
-    doStream: async (options: LanguageModelV2CallOptions) => {
+    doStream: async ({ abortSignal, ...options }: LanguageModelV2CallOptions) => {
       const headers = await makeHeaders(opts)
       headers.set('Content-Type', 'application/json')
 
       const response = await fetch(url, {
         method: 'POST',
         headers,
-        body: JSON.stringify({
+        body: SuperJSON.stringify({
           modelId,
           stream: true,
           ...options,
         }),
+        signal: abortSignal,
       })
 
       if (!response.ok) {
@@ -153,6 +165,18 @@ export async function createLanguageModel(
             contentStreamStarted = true
             // Ensure it matches LanguageModelV2StreamPart before yielding
             if ('type' in chunk) {
+              if (
+                chunk.type === 'error' &&
+                typeof chunk.error === 'string' &&
+                (chunk as any).errorSerialized
+              ) {
+                delete (chunk as any).errorSerialized
+                try {
+                  chunk.error = deserializeError(chunk.error)
+                } catch {
+                  console.warn('Received unexpected error chunk format in content stream:', chunk)
+                }
+              }
               yield chunk
             } else {
               console.warn('Received unexpected chunk format in content stream:', chunk)
@@ -178,4 +202,8 @@ export async function createLanguageModel(
       }
     },
   }
+}
+
+export async function responseJson(response: Response): Promise<any> {
+  return SuperJSON.deserialize(await response.json())
 }

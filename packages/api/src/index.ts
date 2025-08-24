@@ -35,3 +35,4 @@ type RouterOutputs = inferRouterOutputs<AppRouter>
 
 export { createTRPCContext, appRouter, createCaller, generateOpenApiDocument, authenticate }
 export type { AppRouter, RouterInputs, RouterOutputs }
+export * from './rest'

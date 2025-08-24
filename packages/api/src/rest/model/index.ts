@@ -1,1 +1,1 @@
-export * as language from './language/route'
+export * as ai from './ai'

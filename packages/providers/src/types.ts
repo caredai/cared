@@ -11,7 +11,7 @@ import { z } from 'zod/v4'
 export interface Provider {
   languageModel?(modelId: string): LanguageModelV2
 
-  image?(modelId: string): ImageModelV2
+  imageModel?(modelId: string): ImageModelV2
 
   speechModel?(modelId: string): SpeechModelV2
 

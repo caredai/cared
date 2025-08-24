@@ -1,1 +1,5 @@
 export * from './language'
+export * from './image'
+export * from './speech'
+export * from './transcription'
+export * from './embedding'

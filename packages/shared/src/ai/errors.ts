@@ -29,7 +29,8 @@ import {
   TypeValidationError,
   UnsupportedFunctionalityError,
 } from 'ai'
-import superjson from 'superjson'
+
+import { SuperJSON } from '../superjson'
 
 type ErrorJSON = {
   className: string
@@ -56,7 +57,8 @@ class ErrorSerializer extends SerializableError {
     if (cause && (AISDKError.isInstance(cause) || cause instanceof Error)) {
       const serializer = errorSerializerRegistry[cause.name]
       if (serializer) {
-        json.cause = new serializer(cause).toJSON()
+        // @ts-ignore
+        json.cause = new serializer().toJSON(cause)
       }
     }
     return json
@@ -333,7 +335,8 @@ class ToolCallRepairErrorSerializer extends AISDKErrorSerializer {
     const json = super.toJSON(error)
 
     const serializer = errorSerializerRegistry[error.originalError.name]
-    const originalError = new serializer(error.originalError).toJSON()
+    // @ts-ignore
+    const originalError = new serializer().toJSON(error.originalError)
 
     return {
       ...json,
@@ -342,18 +345,26 @@ class ToolCallRepairErrorSerializer extends AISDKErrorSerializer {
     }
   }
 
-  static fromJSON(json: ErrorJSON): ToolCallRepairError {
+  static fromJSON(json: ErrorJSON): ToolCallRepairError | AISDKError {
     const error = AISDKErrorSerializer.fromJSON(json)
 
     const originalError = errorSerializerRegistry[json.originalError.className]?.fromJSON(
       json.originalError,
     )
 
-    return new ToolCallRepairError({
-      cause: error.cause,
-      originalError: originalError,
-      message: error.message,
-    })
+    if (originalError) {
+      return new ToolCallRepairError({
+        cause: error.cause,
+        originalError: originalError as any,
+        message: error.message,
+      })
+    } else {
+      return new AISDKError({
+        name: 'AI_ToolCallRepairError',
+        message: error.message,
+        cause: error.cause,
+      })
+    }
   }
 }
 
@@ -613,7 +624,7 @@ class UnsupportedFunctionalityErrorSerializer extends AISDKErrorSerializer {
 }
 
 // Registry for all error serializers
-export const errorSerializerRegistry: { [key: string]: any } = {
+export const errorSerializerRegistry: { [key: string]: typeof SerializableError } = {
   Error: ErrorSerializer,
   AISDKError: AISDKErrorSerializer,
   InvalidDataContentError: InvalidDataContentErrorSerializer,
@@ -649,12 +660,13 @@ function trimNonAlphanumericASCII(str: string) {
 export function serializeError(error: Error): string {
   const serializer =
     errorSerializerRegistry[trimNonAlphanumericASCII(error.constructor.name)] || ErrorSerializer
-  const json = new serializer(error).toJSON(error)
-  return superjson.stringify(json)
+  // @ts-ignore
+  const json = new serializer().toJSON(error)
+  return SuperJSON.stringify(json)
 }
 
 export function deserializeError(string: string): Error {
-  const json = superjson.parse<ErrorJSON>(string)
+  const json = SuperJSON.parse<ErrorJSON>(string)
   const deserializer = errorSerializerRegistry[json.className] || ErrorSerializer
   return deserializer.fromJSON(json)
 }

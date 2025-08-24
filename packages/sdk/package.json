@@ -27,7 +27,6 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
-    "@ai-sdk/provider": "2.0.0",
     "@aws-sdk/client-s3": "^3.787.0",
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
@@ -50,6 +49,7 @@
     "superjson": "2.2.2"
   },
   "peerDependencies": {
+    "@ai-sdk/provider": ">=2.0.0",
     "ai": ">=5.0.22",
     "react": ">=19.0.0"
   }

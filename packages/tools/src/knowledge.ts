@@ -16,7 +16,7 @@ import {
   DocumentSegment,
   DRAFT_VERSION,
 } from '@cared/db/schema'
-import { getTextEmbeddingModelInfo } from '@cared/providers'
+import { getTextEmbeddingDimensions } from '@cared/providers'
 import { embed } from '@cared/providers/embed'
 import { CohereReranker } from '@cared/providers/rerank'
 import { QdrantVector } from '@cared/vdb'
@@ -213,11 +213,11 @@ function searchKnowledge(_ctx: Context) {
       const embedding = await embed(query, dataset.metadata.embeddingModel)
 
       // Initialize vector database with correct dimensions
-      const modelInfo = await getTextEmbeddingModelInfo(dataset.metadata.embeddingModel)
-      if (!modelInfo?.dimensions) {
+      const dimensions = await getTextEmbeddingDimensions(dataset.metadata.embeddingModel)
+      if (!dimensions) {
         return []
       }
-      const vdb = new QdrantVector(modelInfo.dimensions)
+      const vdb = new QdrantVector(dimensions)
 
       // Search for relevant documents
       const filter = {

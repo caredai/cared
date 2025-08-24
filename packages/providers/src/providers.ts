@@ -1,4 +1,10 @@
-import type { EmbeddingModelV2, ImageModelV2, LanguageModelV2 } from '@ai-sdk/provider'
+import type {
+  EmbeddingModelV2,
+  ImageModelV2,
+  LanguageModelV2,
+  SpeechModelV2,
+  TranscriptionModelV2,
+} from '@ai-sdk/provider'
 import { bedrock, createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
 import { azure, createAzure } from '@ai-sdk/azure'
@@ -100,11 +106,15 @@ export function getModel<T extends ModelType>(
   keys?: Record<string, string>,
 ): T extends 'language'
   ? LanguageModelV2 | undefined
-  : T extends 'textEmbedding'
-    ? EmbeddingModelV2<string> | undefined
-    : T extends 'image'
-      ? ImageModelV2 | undefined
-      : never {
+  : T extends 'image'
+    ? ImageModelV2 | undefined
+    : T extends 'speech'
+      ? SpeechModelV2 | undefined
+      : T extends 'transcription'
+        ? TranscriptionModelV2 | undefined
+        : T extends 'textEmbedding'
+          ? EmbeddingModelV2<string> | undefined
+          : never {
   const { providerId, modelId } = splitModelFullId(fullId)
   let provider = providers[providerId]
   const key = keys?.[providerId]
@@ -121,9 +131,13 @@ export function getModel<T extends ModelType>(
   }
   if (modelType === 'language') {
     return provider.languageModel?.(modelId) as any
-  } else if (modelType === 'textEmbedding') {
-    return provider.textEmbeddingModel?.(modelId) as any
+  } else if (modelType === 'image') {
+    return provider.imageModel?.(modelId) as any
+  } else if (modelType === 'speech') {
+    return provider.speechModel?.(modelId) as any
+  } else if (modelType === 'transcription') {
+    return provider.transcriptionModel?.(modelId) as any
   } else {
-    return provider.image?.(modelId) as any
+    return provider.textEmbeddingModel?.(modelId) as any
   }
 }
