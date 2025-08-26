@@ -12,8 +12,8 @@ import { serializeError, sharedV2ProviderOptionsSchema, SuperJSON } from '@cared
 
 const ajv = new Ajv({ allErrors: true })
 
-const jsonSchema7Schema = z
-  .object({})
+export const jsonSchema7Schema = z
+  .record(z.string(), z.any())
   .refine((schema) => ajv.validateSchema(schema), 'Invalid JSON Schema')
 
 const languageModelV2FunctionToolSchema = z.object({

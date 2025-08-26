@@ -2,9 +2,9 @@ import { index, timestamp } from 'drizzle-orm/pg-core'
 import { v7 } from 'uuid'
 import { z } from 'zod/v4'
 
-export function generateId(prefix: string) {
+export function generateId(prefix: string, sep = '_') {
   const uuid = v7() // time based, monotonically increasing order
-  return `${prefix}_${uuid.replaceAll('-', '')}`
+  return `${prefix}${sep}${uuid.replaceAll('-', '')}`
 }
 
 const idRe = /^[0-9a-f]{8}[0-9a-f]{4}7[0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}$/i
