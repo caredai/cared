@@ -27,6 +27,7 @@
     "@cared/db": "workspace:*",
     "@cared/email": "workspace:*",
     "@cared/etl": "workspace:*",
+    "@cared/kv": "workspace:*",
     "@cared/log": "workspace:*",
     "@cared/providers": "workspace:*",
     "@cared/shared": "workspace:*",

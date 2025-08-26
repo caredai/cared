@@ -2,7 +2,7 @@ import type { ProviderKey as ProviderKeyContent } from '@cared/providers'
 import { googleServiceAccountSchema } from '@cared/providers'
 import { decrypt as decrypt_, encrypt as encrypt_ } from '@cared/shared'
 
-import { env } from '../env'
+import { env } from '../../env'
 
 async function encrypt(key: string) {
   return await encrypt_(env.ENCRYPTION_KEY, key)

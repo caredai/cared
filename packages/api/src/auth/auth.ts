@@ -1,3 +1,4 @@
+import type { ApiKeyAuth, ApiKeyMetadata } from '../types'
 import { cache } from 'react'
 import { headers } from 'next/headers'
 import { base64Url } from '@better-auth/utils/base64'
@@ -8,26 +9,24 @@ import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@cared/db/schema'
 
-import type { ApiKeyAuth, ApiKeyMetadata } from '../types'
+export type AuthObject =
+  | {
+      type: 'user'
+      userId: string
+      isAdmin?: boolean
+    }
+  | {
+      type: 'appUser'
+      userId: string
+      appId: string
+    }
+  | ({
+      type: 'apiKey'
+      ownerId: string
+    } & ApiKeyAuth)
 
 export class Auth {
-  constructor(
-    public auth?:
-      | {
-          type: 'user'
-          userId: string
-          isAdmin?: boolean
-        }
-      | {
-          type: 'appUser'
-          userId: string
-          appId: string
-        }
-      | ({
-          type: 'apiKey'
-          ownerId: string
-        } & ApiKeyAuth),
-  ) {}
+  constructor(public auth?: AuthObject) {}
 
   type() {
     return this.auth?.type
@@ -151,7 +150,14 @@ export async function authenticate() {
 }
 
 export const authenticateWithHeaders = cache(async (headers: Headers): Promise<Auth> => {
-  const key = headers.get('X-API-KEY')
+  const authorization = headers.get('Authorization')
+  const token = authorization?.replace('Bearer ', '') ?? ''
+
+  let key = headers.get('X-API-KEY')
+  if (!key && token.startsWith('sk_')) {
+    key = token
+  }
+
   if (key) {
     // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
     const hash = await createHash('SHA-256').digest(new TextEncoder().encode(key))
@@ -165,7 +171,8 @@ export const authenticateWithHeaders = cache(async (headers: Headers): Promise<A
     })
 
     if (apiKey?.metadata) {
-      const metadata = JSON.parse(apiKey.metadata) as ApiKeyMetadata
+      // NOTE: metadata is stringified twice in better-auth
+      const metadata = JSON.parse(JSON.parse(apiKey.metadata)) as ApiKeyMetadata
 
       const auth = {
         ...metadata,
@@ -192,9 +199,7 @@ export const authenticateWithHeaders = cache(async (headers: Headers): Promise<A
     }
   }
 
-  const authorization = headers.get('Authorization')
-  if (authorization) {
-    const token = authorization.replace('Bearer ', '')
+  if (token) {
     // TODO: cache
     const accessToken = await db.query.OAuthAccessToken.findFirst({
       where: eq(OAuthAccessToken.accessToken, token),

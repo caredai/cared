@@ -4,7 +4,7 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import { auth } from '@cared/auth'
-import { and, desc, eq, gt, lt, sql, asc } from '@cared/db'
+import { and, asc, desc, eq, gt, lt, sql } from '@cared/db'
 import { user as User } from '@cared/db/schema/auth'
 
 import { adminProcedure } from '../../trpc'

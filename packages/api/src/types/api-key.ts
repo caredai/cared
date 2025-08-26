@@ -20,10 +20,13 @@ export type ApiKeyMetadata =
   | {
       scope: 'workspace'
       workspaceId: string
+      organizationId: string
     }
   | {
       scope: 'app'
       appId: string
+      workspaceId: string
+      organizationId: string
     }
 
 export type ApiKeyAuth =
@@ -39,8 +42,11 @@ export type ApiKeyAuth =
   | {
       scope: 'workspace'
       workspaceId: string
+      organizationId: string
     }
   | {
       scope: 'app'
       appId: string
+      workspaceId: string
+      organizationId: string
     }

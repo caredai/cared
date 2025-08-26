@@ -1,4 +1,3 @@
-import type { LanguageModelV2StreamPart } from '@ai-sdk/provider'
 import type { ToolCallPart, ToolResultPart } from 'ai'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
@@ -9,6 +8,8 @@ import type { SuperJSONResult } from '@cared/shared'
 import log from '@cared/log'
 import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema, SuperJSON } from '@cared/shared'
+
+import type { LanguageModelV2StreamPart } from '@ai-sdk/provider'
 
 const ajv = new Ajv({ allErrors: true })
 

@@ -18,7 +18,7 @@ import {
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import type { ApiKey, ApiKeyMetadata, ApiKeyScope } from '@cared/api'
+import type { ApiKey, ApiKeyMetadataInput, ApiKeyScope } from '@cared/api'
 import { Button } from '@cared/ui/components/button'
 import { DataTable } from '@cared/ui/components/data-table'
 import {
@@ -537,7 +537,7 @@ function CreateApiKeyDialog({
       setIsCreating(true)
 
       // Create the metadata object based on scope
-      let metadata: ApiKeyMetadata
+      let metadata: ApiKeyMetadataInput
       switch (scope) {
         case 'user':
           metadata = { scope: 'user' }

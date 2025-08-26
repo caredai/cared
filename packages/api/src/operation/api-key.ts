@@ -25,6 +25,8 @@ export const apiKeyMetadataSchema = z.discriminatedUnion('scope', [
   }),
 ])
 
+export type ApiKeyMetadataInput = z.infer<typeof apiKeyMetadataSchema>
+
 export const optionalApiKeyMetadataSchema = z
   .discriminatedUnion('scope', [
     z.object({
@@ -44,6 +46,8 @@ export const optionalApiKeyMetadataSchema = z
     }),
   ])
   .optional()
+
+export type OptionalApiKeyMetadataInput = z.infer<typeof optionalApiKeyMetadataSchema>
 
 export function formatApiKey(key: {
   id: string

@@ -1,10 +1,11 @@
+import mime from 'mime'
+import { z } from 'zod/v4'
+
 import type {
   LanguageModelV2Message,
   LanguageModelV2TextPart,
   LanguageModelV2ToolCallPart,
 } from '@ai-sdk/provider'
-import mime from 'mime'
-import { z } from 'zod/v4'
 
 export const ChatCompletionContentPartTextSchema = z.object({
   type: z.literal('text'),

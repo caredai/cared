@@ -10,11 +10,11 @@ export class UpstashKV extends KV {
   constructor(namespace: string) {
     super(namespace)
 
-    if (!UpstashKV.instance) {
-      UpstashKV.instance = Redis.fromEnv({
-        automaticDeserialization: false,
-      })
-    }
+    UpstashKV.instance ??= Redis.fromEnv({
+      automaticDeserialization: false,
+      enableAutoPipelining: true,
+      readYourWrites: true,
+    })
 
     this.client = UpstashKV.instance
   }

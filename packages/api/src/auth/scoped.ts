@@ -26,35 +26,10 @@ export class OrganizationScope {
     return new OrganizationScope(organizationId)
   }
 
-  static async fromWorkspace(ctx: Context, workspaceId: string) {
-    const workspace = await ctx.db.query.Workspace.findFirst({
-      where: eq(Workspace.id, workspaceId),
-    })
-    if (!workspace) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Workspace not found',
-      })
-    }
-
-    if (
-      ctx.auth &&
-      !ctx.auth.checkWorkspace({ workspaceId, organizationId: workspace.organizationId })
-    ) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'You do not have permission to access this workspace',
-      })
-    }
-
-    return new OrganizationScope(workspace.organizationId)
-  }
-
-  static async fromApp(ctx: Context, app: string | App) {
-    let appId, workspaceId, organizationId
-    if (typeof app !== 'string') {
+  static async fromWorkspace(ctx: Context, workspaceId: string, organizationId?: string) {
+    if (!organizationId) {
       const workspace = await ctx.db.query.Workspace.findFirst({
-        where: eq(Workspace.id, app.workspaceId),
+        where: eq(Workspace.id, workspaceId),
       })
       if (!workspace) {
         throw new TRPCError({
@@ -62,30 +37,66 @@ export class OrganizationScope {
           message: 'Workspace not found',
         })
       }
-
-      appId = app.id
-      workspaceId = app.workspaceId
       organizationId = workspace.organizationId
-    } else {
-      const [result] = await ctx.db
-        .select({
-          workspaceId: Workspace.id,
-          organizationId: Workspace.organizationId,
-        })
-        .from(App)
-        .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
-        .where(eq(App.id, app))
-        .limit(1)
-      if (!result) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'App not found',
-        })
-      }
+    }
 
+    if (ctx.auth && !ctx.auth.checkWorkspace({ workspaceId, organizationId })) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to access this workspace',
+      })
+    }
+
+    return new OrganizationScope(organizationId)
+  }
+
+  static async fromApp(
+    ctx: Context,
+    app: string | App,
+    workspaceId?: string,
+    organizationId?: string,
+  ) {
+    let appId
+    if (typeof app !== 'string') {
+      appId = app.id
+
+      workspaceId ??= app.workspaceId
+
+      if (!organizationId) {
+        const workspace = await ctx.db.query.Workspace.findFirst({
+          where: eq(Workspace.id, app.workspaceId),
+        })
+        if (!workspace) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Workspace not found',
+          })
+        }
+        organizationId = workspace.organizationId
+      }
+    } else {
       appId = app
-      workspaceId = result.workspaceId
-      organizationId = result.organizationId
+
+      if (!workspaceId || !organizationId) {
+        const [result] = await ctx.db
+          .select({
+            workspaceId: Workspace.id,
+            organizationId: Workspace.organizationId,
+          })
+          .from(App)
+          .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
+          .where(eq(App.id, app))
+          .limit(1)
+        if (!result) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'App not found',
+          })
+        }
+
+        workspaceId = result.workspaceId
+        organizationId = result.organizationId
+      }
     }
 
     if (ctx.auth && !ctx.auth.checkApp({ appId, workspaceId, organizationId })) {

@@ -8,9 +8,12 @@ import type { NextRequest } from 'next/server'
 import type { OpenAI } from 'openai'
 import { z } from 'zod/v4'
 
+import { splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { generateId } from '@cared/shared'
 
+import { authenticate } from '../../../auth'
+import { ProviderKeyManager } from '../../../operation'
 import { jsonSchema7Schema } from '../ai/language'
 import {
   ChatCompletionContentPartTextSchema,
@@ -22,12 +25,14 @@ const ChatCompletionRequestArgsSchema = z.object({
   messages: z.array(ChatCompletionMessageSchema),
   model: z.string(),
   frequency_penalty: z.number().min(-2).max(2).nullish(),
-  function_call: z.union([
-    z.enum(['none', 'auto']),
-    z.object({
-      name: z.string(),
-    }),
-  ]),
+  function_call: z
+    .union([
+      z.enum(['none', 'auto']),
+      z.object({
+        name: z.string(),
+      }),
+    ])
+    .optional(),
   functions: z
     .array(
       z.object({
@@ -54,23 +59,25 @@ const ChatCompletionRequestArgsSchema = z.object({
   presence_penalty: z.number().min(-2).max(2).nullish(),
   prompt_cache_key: z.string().optional(),
   reasoning_effort: z.enum(['low', 'medium', 'high']).nullish(),
-  response_format: z.discriminatedUnion('type', [
-    z.object({
-      type: z.literal('text'),
-    }),
-    z.object({
-      type: z.literal('json_schema'),
-      json_schema: z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        schema: jsonSchema7Schema,
-        strict: z.boolean().nullish(),
+  response_format: z
+    .discriminatedUnion('type', [
+      z.object({
+        type: z.literal('text'),
       }),
-    }),
-    z.object({
-      type: z.literal('json_object'),
-    }),
-  ]),
+      z.object({
+        type: z.literal('json_schema'),
+        json_schema: z.object({
+          name: z.string(),
+          description: z.string().optional(),
+          schema: jsonSchema7Schema,
+          strict: z.boolean().nullish(),
+        }),
+      }),
+      z.object({
+        type: z.literal('json_object'),
+      }),
+    ])
+    .optional(),
   safety_identifier: z.string().optional(),
   seed: z.int().optional(),
   service_tier: z.enum(['auto', 'default', 'flex', 'priority']).nullish(),
@@ -127,18 +134,20 @@ const ChatCompletionRequestArgsSchema = z.object({
   top_p: z.number().min(0).max(1).nullish(),
   user: z.string().optional(),
   verbosity: z.enum(['low', 'medium', 'high']).optional(),
-  web_search_options: z.object({
-    search_context_size: z.enum(['low', 'medium', 'high']).optional(),
-    user_location: z.object({
-      type: z.literal('approximate'),
-      approximate: z.object({
-        city: z.string().optional(),
-        country: z.string().optional(),
-        region: z.string().optional(),
-        timezone: z.string().optional(),
+  web_search_options: z
+    .object({
+      search_context_size: z.enum(['low', 'medium', 'high']).optional(),
+      user_location: z.object({
+        type: z.literal('approximate'),
+        approximate: z.object({
+          city: z.string().optional(),
+          country: z.string().optional(),
+          region: z.string().optional(),
+          timezone: z.string().optional(),
+        }),
       }),
-    }),
-  }),
+    })
+    .optional(),
 })
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -149,9 +158,19 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const { messages, model: modelId, stream: doStream, ...args } = validatedArgs.data
 
-  // TODO
-  const providerId = ''
-  const model = getModel(modelId, 'language')
+  const auth = await authenticate()
+  if (!auth.isAuthenticated()) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  const { providerId } = splitModelFullId(modelId)
+
+  const keyManager = await ProviderKeyManager.from({
+    auth: auth.auth!,
+    providerId,
+  })
+
+  const model = getModel(modelId, 'language', keyManager.selectKeys()[0]!.key)
   if (!model) {
     return new Response('Model not found', {
       status: 400,
@@ -167,7 +186,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     presencePenalty: args.presence_penalty ?? undefined,
     frequencyPenalty: args.frequency_penalty ?? undefined,
     responseFormat:
-      args.response_format.type === 'text'
+      !args.response_format || args.response_format.type === 'text'
         ? { type: 'text' }
         : {
             type: 'json',
@@ -198,18 +217,17 @@ export async function POST(req: NextRequest): Promise<Response> {
     abortSignal: req.signal,
     providerOptions: {
       [providerId]: {
-        logitBias: args.logit_bias ?? null,
-        logprobs:
-          typeof args.top_logprobs === 'number' ? args.top_logprobs : (args.logprobs ?? null),
-        user: args.user ?? null,
-        parallelToolCalls: args.parallel_tool_calls ?? null,
-        reasoningEffort: args.reasoning_effort ?? null,
-        structuredOutputs: args.response_format.type === 'json_schema' ? true : null,
-        serviceTier: args.service_tier ?? null,
-        strictJsonSchema:
-          (args.response_format.type === 'json_schema' &&
-            args.response_format.json_schema.strict) ??
-          null,
+        ...(args.logit_bias && { logitBias: args.logit_bias }),
+        ...((typeof args.top_logprobs === 'number' || args.logprobs) && {
+          logprobs: typeof args.top_logprobs === 'number' ? args.top_logprobs : true,
+        }),
+        ...(args.user && { user: args.user }),
+        ...(args.parallel_tool_calls && { parallelToolCalls: args.parallel_tool_calls }),
+        ...(args.reasoning_effort && { reasoningEffort: args.reasoning_effort }),
+        ...(args.response_format?.type === 'json_schema' && { structuredOutputs: true }),
+        ...(args.service_tier && { serviceTier: args.service_tier }),
+        ...(args.response_format?.type === 'json_schema' &&
+          args.response_format.json_schema.strict && { strictJsonSchema: true }),
       },
     },
   }
@@ -270,10 +288,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       warnings: gen.warnings,
     })
   } else {
-    const { stream } = await model.doStream({
-      ...callOptions,
-      includeRawChunks: true,
-    })
+    const { stream } = await model.doStream(callOptions)
 
     // Create a TransformStream to convert LanguageModelV2StreamPart to OpenAI streaming format
     const { readable, writable } = new TransformStream()
@@ -453,6 +468,7 @@ export async function POST(req: NextRequest): Promise<Response> {
                     index: 0,
                     delta: {},
                     finish_reason: chatCompletionsFinishReason(part.finishReason),
+                    logprobs: part.providerMetadata?.[providerId]?.logprobs as any,
                   },
                 ],
                 usage: chatCompletionsUsage(part.usage, providerId, part.providerMetadata),

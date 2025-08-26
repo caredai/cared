@@ -2,6 +2,8 @@ import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
 import { auth } from '@cared/auth'
+import { eq } from '@cared/db'
+import { App, Workspace } from '@cared/db/schema'
 
 import type { UserContext } from '../trpc'
 import type { ApiKeyMetadata, ApiKeyScope } from '../types'
@@ -35,11 +37,17 @@ async function checkCreationPermission(ctx: UserContext, metadata: ApiKeyMetadat
       organizationScope = await OrganizationScope.fromWorkspace(
         { db: ctx.db },
         metadata.workspaceId,
+        metadata.organizationId,
       )
       break
     }
     case 'app': {
-      organizationScope = await OrganizationScope.fromApp({ db: ctx.db }, metadata.appId)
+      organizationScope = await OrganizationScope.fromApp(
+        { db: ctx.db },
+        metadata.appId,
+        metadata.workspaceId,
+        metadata.organizationId,
+      )
       break
     }
   }
@@ -173,7 +181,42 @@ export const apiKeyRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const { name, ...others } = input
-      const metadata: ApiKeyMetadata = others
+      const metadata = others as ApiKeyMetadata
+
+      switch (metadata.scope) {
+        case 'workspace': {
+          const workspace = await ctx.db.query.Workspace.findFirst({
+            where: eq(Workspace.id, metadata.workspaceId),
+          })
+          if (!workspace) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: 'Workspace not found',
+            })
+          }
+          metadata.organizationId = workspace.organizationId
+          break
+        }
+        case 'app': {
+          const [result] = await ctx.db
+            .select({
+              workspaceId: Workspace.id,
+              organizationId: Workspace.organizationId,
+            })
+            .from(App)
+            .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
+            .where(eq(App.id, metadata.appId))
+            .limit(1)
+          if (!result) {
+            throw new TRPCError({
+              code: 'NOT_FOUND',
+              message: 'App not found',
+            })
+          }
+          metadata.workspaceId = result.workspaceId
+          metadata.organizationId = result.organizationId
+        }
+      }
 
       const allApiKeys = await auth.api.listApiKeys()
 

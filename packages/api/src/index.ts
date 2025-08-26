@@ -6,8 +6,6 @@ import { generateOpenApiDocument } from './openapi'
 import { appRouter } from './root'
 import { createCallerFactory, createTRPCContext } from './trpc'
 
-export * from './types'
-
 /**
  * Create a server-side caller for the tRPC API
  * @example
@@ -35,4 +33,7 @@ type RouterOutputs = inferRouterOutputs<AppRouter>
 
 export { createTRPCContext, appRouter, createCaller, generateOpenApiDocument, authenticate }
 export type { AppRouter, RouterInputs, RouterOutputs }
+
+export * from './types'
 export * from './rest'
+export type { ApiKeyMetadataInput, OptionalApiKeyMetadataInput } from './operation'

@@ -25,8 +25,8 @@ import { createTogetherAI, togetherai } from '@ai-sdk/togetherai'
 import { createXai, xai } from '@ai-sdk/xai'
 import { createOpenRouter, openrouter } from '@openrouter/ai-sdk-provider'
 
-import type { ModelType, Provider, ProviderId } from './types'
 import { splitModelFullId } from './index'
+import { googleServiceAccountSchema, ModelType, Provider, ProviderId, ProviderKey } from './types'
 
 export const providers: Record<ProviderId, Provider> = {
   openai: openai,
@@ -103,7 +103,7 @@ const creators = {
 export function getModel<T extends ModelType>(
   fullId: string,
   modelType: T,
-  keys?: Record<string, string>,
+  key?: ProviderKey,
 ): T extends 'language'
   ? LanguageModelV2 | undefined
   : T extends 'image'
@@ -117,12 +117,53 @@ export function getModel<T extends ModelType>(
           : never {
   const { providerId, modelId } = splitModelFullId(fullId)
   let provider = providers[providerId]
-  const key = keys?.[providerId]
   if (key) {
-    const creator = creators[providerId]
-    provider = creator({
-      apiKey: key,
-    })
+    switch (key.providerId) {
+      case 'azure':
+        provider = createAzure({
+          baseURL: key.baseUrl,
+          apiKey: key.apiKey,
+          apiVersion: key.apiVersion,
+        })
+        break
+      case 'bedrock':
+        provider = createAmazonBedrock({
+          baseURL: key.baseUrl,
+          region: key.region,
+          accessKeyId: key.accessKeyId,
+          secretAccessKey: key.secretAccessKey,
+        })
+        break
+      case 'vertex': {
+        const serviceAccount = JSON.parse(key.serviceAccountJson.replace(/\s+/g, ''))
+        const sa = googleServiceAccountSchema.parse(serviceAccount)
+        provider = createVertex({
+          baseURL: key.baseUrl,
+          location: key.location,
+          project: sa.project_id,
+          googleCredentials: {
+            clientEmail: sa.client_email,
+            privateKey: sa.private_key,
+            privateKeyId: sa.private_key_id,
+          },
+        })
+        break
+      }
+      case 'replicate':
+        provider = createReplicate({
+          baseURL: key.baseUrl,
+          apiToken: key.apiToken,
+        })
+        break
+      default: {
+        const creator = creators[key.providerId]
+        provider = creator({
+          apiKey: key.apiKey,
+          baseURL: key.baseUrl,
+        })
+        break
+      }
+    }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition

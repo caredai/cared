@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import type { ApiKeyMetadata } from '@cared/api'
+import type { ApiKeyMetadataInput } from '@cared/api'
 
 import { useTRPC } from '@/trpc/client'
 
@@ -106,7 +106,7 @@ export function useCreateApiKey() {
     async (
       input: {
         name: string
-      } & ApiKeyMetadata,
+      } & ApiKeyMetadataInput,
     ) => {
       return await createMutation.mutateAsync(input)
     },
