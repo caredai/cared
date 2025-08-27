@@ -20,12 +20,13 @@ export interface AppMetadata {
   [key: string]: unknown
 }
 
-export type OrganizationRole = 'owner' | 'admin' | 'member'
+export type Invitation = InferSelectModel<typeof Invitation>
 
 export type ProviderId =
   | 'openai'
   | 'anthropic'
   | 'google'
+  | 'openrouter'
   | 'vertex'
   | 'azure'
   | 'bedrock'
@@ -41,16 +42,12 @@ export type ProviderId =
   | 'replicate'
   | 'perplexity'
   | 'luma'
-  | 'openrouter'
+  | 'vercel'
+  | 'fal'
+  | 'elevenlabs'
+  | 'lmnt'
 
 export type ModelFullId = `${ProviderId}:${string}`
-
-export interface BaseProviderInfo {
-  id: ProviderId
-  name: string
-  icon: string
-  description: string
-}
 
 export interface BaseModelInfo {
   id: string
@@ -58,15 +55,23 @@ export interface BaseModelInfo {
   description: string
   deprecated?: boolean
   retired?: boolean
+  chargeable?: boolean // whether usage is chargeable by Cared credits
 }
+
+export type Modality = 'text' | 'image' | 'audio' | 'video' | 'pdf'
 
 export interface LanguageModelInfo extends BaseModelInfo {
   contextWindow?: number // max tokens including input and output tokens
   maxOutputTokens?: number // max output tokens
   inputTokenPrice?: string // decimal string, in $USD/M input token
   cachedInputTokenPrice?: string // read; decimal string, in $USD/M cached input token
-  cacheInputTokenPrice?: string | Record<string, string> // write; ttl => price; decimal string, in $USD/M cached input token
+  cacheInputTokenPrice?: string | [string, string][] // write; ttl => price; decimal string, in $USD/M cached input token
   outputTokenPrice?: string // decimal string, in $USD/M input token
+
+  modality?: {
+    input?: Modality[] // 'text' if not specified
+    output?: Modality[] // 'text' if not specified
+  }
 }
 
 export interface ImageModelInfo extends BaseModelInfo {
@@ -77,8 +82,8 @@ export interface ImageModelInfo extends BaseModelInfo {
   textCachedInputTokenPrice?: string
   pricePerImage?:
     | string
-    | Record<string, string> // quality => price
-    | Record<string, Record<string, string>> // quality => size (or aspect ratio) => price
+    | [string, string][] // quality => price
+    | [string, [string, string][]][] // quality => size (or aspect ratio) => price
 }
 
 export interface SpeechModelInfo extends BaseModelInfo {
@@ -95,7 +100,7 @@ export interface TranscriptionModelInfo extends BaseModelInfo {
 
 export interface EmbeddingModelInfo extends BaseModelInfo {
   tokenPrice?: string
-  dimensions?: number
+  dimensions?: number | number[]
 }
 
 export interface AgentMetadata {
@@ -189,11 +194,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           apps: {
             app: {
               id: string
-              type: 'single-agent' | 'multiple-agents'
               name: string
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
+              type: 'single-agent' | 'multiple-agents'
+              archived: boolean | null
+              archivedAt: Date | null
+              deleted: boolean | null
+              deletedAt: Date | null
               workspaceId: string
             }
             categories: {
@@ -219,11 +228,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           apps: {
             app: {
               id: string
-              type: 'single-agent' | 'multiple-agents'
               name: string
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
+              type: 'single-agent' | 'multiple-agents'
+              archived: boolean | null
+              archivedAt: Date | null
+              deleted: boolean | null
+              deletedAt: Date | null
               workspaceId: string
             }
             categories: {
@@ -249,11 +262,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           apps: {
             app: {
               id: string
-              type: 'single-agent' | 'multiple-agents'
               name: string
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
+              type: 'single-agent' | 'multiple-agents'
+              archived: boolean | null
+              archivedAt: Date | null
+              deleted: boolean | null
+              deletedAt: Date | null
               workspaceId: string
             }
             categories: {
@@ -277,13 +294,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           versions: {
-            version: number
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
             appId: string
+            version: number
           }[]
           hasMore: boolean
           first: number | undefined
@@ -297,11 +314,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           app: {
             id: string
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
             workspaceId: string
           }
         }
@@ -361,6 +382,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
           }[]
           hasMore: boolean
           first: string | undefined
@@ -376,6 +401,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
           }
         }
       }>
@@ -391,9 +420,9 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             id: string
             name: string
             createdAt: Date
+            metadata: string | null
             slug: string | null
             logo: string | null
-            metadata: string | null
           }[]
           hasMore: boolean
           first: string | undefined
@@ -407,9 +436,9 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             id: string
             name: string
             createdAt: Date
+            metadata: string | null
             slug: string | null
             logo: string | null
-            metadata: string | null
           }
         }
       }>
@@ -427,11 +456,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             role: string
             createdAt: Date
             user: {
-              image: string | null
               id: string
               name: string
               email: string
               emailVerified: boolean
+              image: string | null
               createdAt: Date
               updatedAt: Date
               twoFactorEnabled: boolean | null
@@ -457,11 +486,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           users: {
-            image: string | null
             id: string
             name: string
             email: string
             emailVerified: boolean
+            image: string | null
             createdAt: Date
             updatedAt: Date
             twoFactorEnabled: boolean | null
@@ -480,11 +509,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: string
         output: {
           user: {
-            image: string | null
             id: string
             name: string
             email: string
             emailVerified: boolean
+            image: string | null
             createdAt: Date
             updatedAt: Date
             twoFactorEnabled: boolean | null
@@ -505,12 +534,12 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
       create: import('@trpc/server').TRPCMutationProcedure<{
         input: {
           name: string
-          logo?: string | undefined
         }
         output: {
           organization: {
             id: string
             name: string
+            slug: string | null
             createdAt: Date
           }
         }
@@ -519,21 +548,23 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: void
         output: {
           organizations: {
+            role: OrganizationRole
             id: string
             name: string
+            slug: string | null
             createdAt: Date
           }[]
         }
       }>
       setActive: import('@trpc/server').TRPCMutationProcedure<{
         input: {
-          organizationId: string
+          organizationId: string | null
         }
         output: void
       }>
       get: import('@trpc/server').TRPCQueryProcedure<{
         input: {
-          organizationId: string
+          id: string
         }
         output: {
           organization: {
@@ -554,8 +585,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
               teamId: string | undefined
               id: string
               email: string
-              organizationId: string
               expiresAt: Date
+              organizationId: string
               inviterId: string
               status: 'pending' | 'canceled' | 'accepted' | 'rejected'
               role: OrganizationRole
@@ -569,26 +600,28 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             }[]
             id: string
             name: string
+            slug: string | null
             createdAt: Date
           }
         }
       }>
       update: import('@trpc/server').TRPCMutationProcedure<{
         input: {
-          organizationId: string
+          id: string
           name: string
         }
         output: {
           organization: {
             id: string
             name: string
+            slug: string | null
             createdAt: Date
           }
         }
       }>
       delete: import('@trpc/server').TRPCMutationProcedure<{
         input: {
-          organizationId: string
+          id: string
         }
         output: void
       }>
@@ -604,8 +637,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            organizationId: string
             expiresAt: Date
+            organizationId: string
             inviterId: string
             status: 'pending' | 'canceled' | 'accepted' | 'rejected'
             role: OrganizationRole
@@ -621,8 +654,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            organizationId: string
             expiresAt: Date
+            organizationId: string
             inviterId: string
             status: 'pending' | 'canceled' | 'accepted' | 'rejected'
             role: OrganizationRole
@@ -638,8 +671,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            organizationId: string
             expiresAt: Date
+            organizationId: string
             inviterId: string
             status: 'pending' | 'canceled' | 'accepted' | 'rejected'
             role: OrganizationRole
@@ -655,8 +688,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            organizationId: string
             expiresAt: Date
+            organizationId: string
             inviterId: string
             status: 'pending' | 'canceled' | 'accepted' | 'rejected'
             role: OrganizationRole
@@ -668,15 +701,27 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           invitationId: string
         }
         output: {
-          invitation: {
-            teamId: string | undefined
-            id: string
-            email: string
-            organizationId: string
-            expiresAt: Date
-            inviterId: string
-            status: 'pending' | 'canceled' | 'accepted' | 'rejected'
-            role: OrganizationRole
+          invitation: ReturnType<
+            (
+              invitation: Omit<Invitation, 'status' | 'role' | 'teamId'> & {
+                status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+                role: OrganizationRole
+                teamId?: string | null
+              },
+            ) => {
+              teamId: string | undefined
+              id: string
+              email: string
+              expiresAt: Date
+              organizationId: string
+              inviterId: string
+              status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+              role: OrganizationRole
+            }
+          > & {
+            organizationName: string
+            inviterEmail: string
+            inviterName: string
           }
         }
       }>
@@ -689,8 +734,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            organizationId: string
             expiresAt: Date
+            organizationId: string
             inviterId: string
             status: 'pending' | 'canceled' | 'accepted' | 'rejected'
             role: OrganizationRole
@@ -704,8 +749,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            organizationId: string
             expiresAt: Date
+            organizationId: string
             inviterId: string
             status: 'pending' | 'canceled' | 'accepted' | 'rejected'
             role: OrganizationRole
@@ -768,10 +813,42 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: {
           organizationId: string
           memberId: string
-          role: 'member' | 'owner' | 'admin'
+          role: 'member' | 'admin'
         }
         output: {
           member: {
+            id: string
+            organizationId: string
+            role: 'owner' | 'member' | 'admin'
+            createdAt: Date
+            userId: string
+            user: {
+              email: string
+              name: string
+              image?: string
+            }
+          }
+        }
+      }>
+      transferOwnership: import('@trpc/server').TRPCMutationProcedure<{
+        input: {
+          organizationId: string
+          memberId: string
+        }
+        output: {
+          newOwner: {
+            id: string
+            organizationId: string
+            role: 'owner' | 'member' | 'admin'
+            createdAt: Date
+            userId: string
+            user: {
+              email: string
+              name: string
+              image?: string
+            }
+          }
+          previousOwner: {
             id: string
             organizationId: string
             role: 'owner' | 'member' | 'admin'
@@ -808,9 +885,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
     }
     workspace: {
       list: import('@trpc/server').TRPCQueryProcedure<{
-        input: {
-          organizationId: string
-        }
+        input:
+          | {
+              organizationId?: string | undefined
+            }
+          | undefined
         output: {
           workspaces: {
             id: string
@@ -818,6 +897,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
           }[]
         }
       }>
@@ -832,6 +915,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
           }
         }
       }>
@@ -847,6 +934,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
           }
         }
       }>
@@ -862,6 +953,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             id: string
             name: string
             organizationId: string
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
           }
         }
       }>
@@ -883,13 +978,21 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             id: string
             name: string
             organizationId: string
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
           }
         }
       }>
     }
     user: {
       session: import('@trpc/server').TRPCQueryProcedure<{
-        input: void
+        input:
+          | {
+              auth: boolean
+            }
+          | undefined
         output: {
           user: {
             id: string
@@ -914,48 +1017,29 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             token: string
             ipAddress?: string | null | undefined
             userAgent?: string | null | undefined
-            geolocation: string
-            impersonatedBy?: string | null | undefined
-            activeTeamId?: string | null | undefined
             activeOrganizationId?: string | null | undefined
+            activeTeamId?: string | null | undefined
+            geolocation?: string | null | undefined
+            impersonatedBy?: string | null | undefined
           }
         } | null
-      }>
-      me: import('@trpc/server').TRPCQueryProcedure<{
-        input: void
-        output: {
-          user: {
-            id: string
-            email: string
-            emailVerified: boolean
-            name: string
-            createdAt: Date
-            updatedAt: Date
-            image?: string | null | undefined
-            twoFactorEnabled: boolean | null | undefined
-            banned: boolean | null | undefined
-            role?: string | null | undefined
-            banReason?: string | null | undefined
-            banExpires?: Date | null | undefined
-          }
-        }
       }>
       accounts: import('@trpc/server').TRPCQueryProcedure<{
         input: void
         output: {
           accounts: {
             id: string
+            accountId: string
             providerId: string
             createdAt: Date
             updatedAt: Date
             userId: string
-            scope: string | null
-            accountId: string
             accessToken: string | null
             refreshToken: string | null
             idToken: string | null
             accessTokenExpiresAt: Date | null
             refreshTokenExpiresAt: Date | null
+            scope: string | null
             password: string | null
             profile: string | null
           }[]
@@ -980,9 +1064,9 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             token: string
             ipAddress?: string | null | undefined
             userAgent?: string | null | undefined
-            impersonatedBy?: string | null | undefined
-            activeTeamId?: string | null | undefined
             activeOrganizationId?: string | null | undefined
+            activeTeamId?: string | null | undefined
+            impersonatedBy?: string | null | undefined
           }[]
         }
       }>
@@ -1022,115 +1106,101 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
     }
     providerKey: {
       list: import('@trpc/server').TRPCQueryProcedure<{
-        input: {
-          isSystem?: boolean | undefined
-          organizationId?: string | undefined
-          providerId?:
-            | 'openai'
-            | 'anthropic'
-            | 'google'
-            | 'vertex'
-            | 'azure'
-            | 'bedrock'
-            | 'deepseek'
-            | 'mistral'
-            | 'xai'
-            | 'togetherai'
-            | 'cohere'
-            | 'fireworks'
-            | 'deepinfra'
-            | 'cerebras'
-            | 'groq'
-            | 'replicate'
-            | 'perplexity'
-            | 'luma'
-            | 'openrouter'
-            | undefined
-        }
+        input:
+          | {
+              isSystem?: boolean | undefined
+              organizationId?: string | undefined
+              providerId?:
+                | 'openai'
+                | 'anthropic'
+                | 'google'
+                | 'openrouter'
+                | 'vertex'
+                | 'azure'
+                | 'bedrock'
+                | 'deepseek'
+                | 'mistral'
+                | 'xai'
+                | 'togetherai'
+                | 'cohere'
+                | 'fireworks'
+                | 'deepinfra'
+                | 'cerebras'
+                | 'groq'
+                | 'replicate'
+                | 'perplexity'
+                | 'luma'
+                | 'vercel'
+                | 'fal'
+                | 'elevenlabs'
+                | 'lmnt'
+                | undefined
+            }
+          | undefined
         output: {
-          key: {
-            apiKey: string
-            baseUrl?: string | undefined
-          } & (
-            | {
-                providerId:
-                  | 'openai'
-                  | 'anthropic'
-                  | 'google'
-                  | 'deepseek'
-                  | 'mistral'
-                  | 'xai'
-                  | 'togetherai'
-                  | 'cohere'
-                  | 'fireworks'
-                  | 'deepinfra'
-                  | 'cerebras'
-                  | 'groq'
-                  | 'perplexity'
-                  | 'luma'
-                  | 'openrouter'
-              }
-            | {
-                providerId: 'azure'
-                baseUrl: string
-                apiVersion?: string | undefined
-              }
-            | {
-                providerId: 'bedrock'
-                apiKey: never
-                region: string
-                accessKeyId: string
-                secretAccessKey: string
-              }
-            | {
-                providerId: 'vertex'
-                apiKey: never
-                clientEmail: string
-                privateKey: string
-                project?: string | undefined
-                location?: string | undefined
-                privateKeyId?: string | undefined
-              }
-            | {
-                providerId: 'replicate'
-                apiKey: never
-                apiToken: string
-              }
-          )
-          id: string
-          providerId: ProviderId
-          isSystem: boolean | null
-          createdAt: Date
-          updatedAt: Date
-          userId: string | null
-          organizationId: string | null
-          disabled: boolean
-        }[]
+          providerKeys: {
+            key: {
+              baseUrl?: string | undefined
+            } & (
+              | {
+                  providerId:
+                    | 'openai'
+                    | 'anthropic'
+                    | 'google'
+                    | 'openrouter'
+                    | 'deepseek'
+                    | 'mistral'
+                    | 'xai'
+                    | 'togetherai'
+                    | 'cohere'
+                    | 'fireworks'
+                    | 'deepinfra'
+                    | 'cerebras'
+                    | 'groq'
+                    | 'perplexity'
+                    | 'luma'
+                    | 'vercel'
+                    | 'fal'
+                    | 'elevenlabs'
+                    | 'lmnt'
+                  apiKey: string
+                }
+              | {
+                  providerId: 'azure'
+                  apiKey: string
+                  baseUrl: string
+                  apiVersion?: string | undefined
+                }
+              | {
+                  providerId: 'bedrock'
+                  region: string
+                  accessKeyId: string
+                  secretAccessKey: string
+                }
+              | {
+                  providerId: 'vertex'
+                  serviceAccountJson: string
+                  location?: string | undefined
+                }
+              | {
+                  providerId: 'replicate'
+                  apiToken: string
+                }
+            )
+            id: string
+            providerId: ProviderId
+            createdAt: Date
+            updatedAt: Date
+            userId: string | null
+            organizationId: string | null
+            disabled: boolean
+            isSystem: boolean | null
+          }[]
+        }
       }>
       create: import('@trpc/server').TRPCMutationProcedure<{
         input: {
-          providerId:
-            | 'openai'
-            | 'anthropic'
-            | 'google'
-            | 'vertex'
-            | 'azure'
-            | 'bedrock'
-            | 'deepseek'
-            | 'mistral'
-            | 'xai'
-            | 'togetherai'
-            | 'cohere'
-            | 'fireworks'
-            | 'deepinfra'
-            | 'cerebras'
-            | 'groq'
-            | 'replicate'
-            | 'perplexity'
-            | 'luma'
-            | 'openrouter'
           key: {
-            apiKey: string
             baseUrl?: string | undefined
           } & (
             | {
@@ -1138,6 +1208,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | 'openai'
                   | 'anthropic'
                   | 'google'
+                  | 'openrouter'
                   | 'deepseek'
                   | 'mistral'
                   | 'xai'
@@ -1149,32 +1220,31 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | 'groq'
                   | 'perplexity'
                   | 'luma'
-                  | 'openrouter'
+                  | 'vercel'
+                  | 'fal'
+                  | 'elevenlabs'
+                  | 'lmnt'
+                apiKey: string
               }
             | {
                 providerId: 'azure'
+                apiKey: string
                 baseUrl: string
                 apiVersion?: string | undefined
               }
             | {
                 providerId: 'bedrock'
-                apiKey: never
                 region: string
                 accessKeyId: string
                 secretAccessKey: string
               }
             | {
                 providerId: 'vertex'
-                apiKey: never
-                clientEmail: string
-                privateKey: string
-                project?: string | undefined
+                serviceAccountJson: string
                 location?: string | undefined
-                privateKeyId?: string | undefined
               }
             | {
                 providerId: 'replicate'
-                apiKey: never
                 apiToken: string
               }
           )
@@ -1183,63 +1253,64 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           disabled?: boolean | undefined
         }
         output: {
-          key: {
-            apiKey: string
-            baseUrl?: string | undefined
-          } & (
-            | {
-                providerId:
-                  | 'openai'
-                  | 'anthropic'
-                  | 'google'
-                  | 'deepseek'
-                  | 'mistral'
-                  | 'xai'
-                  | 'togetherai'
-                  | 'cohere'
-                  | 'fireworks'
-                  | 'deepinfra'
-                  | 'cerebras'
-                  | 'groq'
-                  | 'perplexity'
-                  | 'luma'
-                  | 'openrouter'
-              }
-            | {
-                providerId: 'azure'
-                baseUrl: string
-                apiVersion?: string | undefined
-              }
-            | {
-                providerId: 'bedrock'
-                apiKey: never
-                region: string
-                accessKeyId: string
-                secretAccessKey: string
-              }
-            | {
-                providerId: 'vertex'
-                apiKey: never
-                clientEmail: string
-                privateKey: string
-                project?: string | undefined
-                location?: string | undefined
-                privateKeyId?: string | undefined
-              }
-            | {
-                providerId: 'replicate'
-                apiKey: never
-                apiToken: string
-              }
-          )
-          id: string
-          providerId: ProviderId
-          isSystem: boolean | null
-          createdAt: Date
-          updatedAt: Date
-          userId: string | null
-          organizationId: string | null
-          disabled: boolean
+          providerKey: {
+            key: {
+              baseUrl?: string | undefined
+            } & (
+              | {
+                  providerId:
+                    | 'openai'
+                    | 'anthropic'
+                    | 'google'
+                    | 'openrouter'
+                    | 'deepseek'
+                    | 'mistral'
+                    | 'xai'
+                    | 'togetherai'
+                    | 'cohere'
+                    | 'fireworks'
+                    | 'deepinfra'
+                    | 'cerebras'
+                    | 'groq'
+                    | 'perplexity'
+                    | 'luma'
+                    | 'vercel'
+                    | 'fal'
+                    | 'elevenlabs'
+                    | 'lmnt'
+                  apiKey: string
+                }
+              | {
+                  providerId: 'azure'
+                  apiKey: string
+                  baseUrl: string
+                  apiVersion?: string | undefined
+                }
+              | {
+                  providerId: 'bedrock'
+                  region: string
+                  accessKeyId: string
+                  secretAccessKey: string
+                }
+              | {
+                  providerId: 'vertex'
+                  serviceAccountJson: string
+                  location?: string | undefined
+                }
+              | {
+                  providerId: 'replicate'
+                  apiToken: string
+                }
+            )
+            id: string
+            providerId: ProviderId
+            createdAt: Date
+            updatedAt: Date
+            userId: string | null
+            organizationId: string | null
+            disabled: boolean
+            isSystem: boolean | null
+          }
         }
       }>
       update: import('@trpc/server').TRPCMutationProcedure<{
@@ -1247,7 +1318,6 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           id: string
           key?:
             | ({
-                apiKey: string
                 baseUrl?: string | undefined
               } & (
                 | {
@@ -1255,6 +1325,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | 'openai'
                       | 'anthropic'
                       | 'google'
+                      | 'openrouter'
                       | 'deepseek'
                       | 'mistral'
                       | 'xai'
@@ -1266,32 +1337,31 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | 'groq'
                       | 'perplexity'
                       | 'luma'
-                      | 'openrouter'
+                      | 'vercel'
+                      | 'fal'
+                      | 'elevenlabs'
+                      | 'lmnt'
+                    apiKey: string
                   }
                 | {
                     providerId: 'azure'
+                    apiKey: string
                     baseUrl: string
                     apiVersion?: string | undefined
                   }
                 | {
                     providerId: 'bedrock'
-                    apiKey: never
                     region: string
                     accessKeyId: string
                     secretAccessKey: string
                   }
                 | {
                     providerId: 'vertex'
-                    apiKey: never
-                    clientEmail: string
-                    privateKey: string
-                    project?: string | undefined
+                    serviceAccountJson: string
                     location?: string | undefined
-                    privateKeyId?: string | undefined
                   }
                 | {
                     providerId: 'replicate'
-                    apiKey: never
                     apiToken: string
                   }
               ))
@@ -1299,90 +1369,154 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           disabled?: boolean | undefined
         }
         output: {
-          key: {
-            apiKey: string
-            baseUrl?: string | undefined
-          } & (
-            | {
-                providerId:
-                  | 'openai'
-                  | 'anthropic'
-                  | 'google'
-                  | 'deepseek'
-                  | 'mistral'
-                  | 'xai'
-                  | 'togetherai'
-                  | 'cohere'
-                  | 'fireworks'
-                  | 'deepinfra'
-                  | 'cerebras'
-                  | 'groq'
-                  | 'perplexity'
-                  | 'luma'
-                  | 'openrouter'
-              }
-            | {
-                providerId: 'azure'
-                baseUrl: string
-                apiVersion?: string | undefined
-              }
-            | {
-                providerId: 'bedrock'
-                apiKey: never
-                region: string
-                accessKeyId: string
-                secretAccessKey: string
-              }
-            | {
-                providerId: 'vertex'
-                apiKey: never
-                clientEmail: string
-                privateKey: string
-                project?: string | undefined
-                location?: string | undefined
-                privateKeyId?: string | undefined
-              }
-            | {
-                providerId: 'replicate'
-                apiKey: never
-                apiToken: string
-              }
-          )
-          createdAt: Date
-          updatedAt: Date
-          id: string
-          isSystem: boolean | null
-          userId: string | null
-          organizationId: string | null
-          providerId: ProviderId
-          disabled: boolean
+          providerKey: {
+            key: {
+              baseUrl?: string | undefined
+            } & (
+              | {
+                  providerId:
+                    | 'openai'
+                    | 'anthropic'
+                    | 'google'
+                    | 'openrouter'
+                    | 'deepseek'
+                    | 'mistral'
+                    | 'xai'
+                    | 'togetherai'
+                    | 'cohere'
+                    | 'fireworks'
+                    | 'deepinfra'
+                    | 'cerebras'
+                    | 'groq'
+                    | 'perplexity'
+                    | 'luma'
+                    | 'vercel'
+                    | 'fal'
+                    | 'elevenlabs'
+                    | 'lmnt'
+                  apiKey: string
+                }
+              | {
+                  providerId: 'azure'
+                  apiKey: string
+                  baseUrl: string
+                  apiVersion?: string | undefined
+                }
+              | {
+                  providerId: 'bedrock'
+                  region: string
+                  accessKeyId: string
+                  secretAccessKey: string
+                }
+              | {
+                  providerId: 'vertex'
+                  serviceAccountJson: string
+                  location?: string | undefined
+                }
+              | {
+                  providerId: 'replicate'
+                  apiToken: string
+                }
+            )
+            createdAt: Date
+            updatedAt: Date
+            id: string
+            isSystem: boolean | null
+            userId: string | null
+            organizationId: string | null
+            providerId: ProviderId
+            disabled: boolean
+          }
         }
       }>
       delete: import('@trpc/server').TRPCMutationProcedure<{
         input: {
           id: string
         }
-        output: void
+        output: {
+          providerKey: {
+            key: {
+              baseUrl?: string | undefined
+            } & (
+              | {
+                  providerId:
+                    | 'openai'
+                    | 'anthropic'
+                    | 'google'
+                    | 'openrouter'
+                    | 'deepseek'
+                    | 'mistral'
+                    | 'xai'
+                    | 'togetherai'
+                    | 'cohere'
+                    | 'fireworks'
+                    | 'deepinfra'
+                    | 'cerebras'
+                    | 'groq'
+                    | 'perplexity'
+                    | 'luma'
+                    | 'vercel'
+                    | 'fal'
+                    | 'elevenlabs'
+                    | 'lmnt'
+                  apiKey: string
+                }
+              | {
+                  providerId: 'azure'
+                  apiKey: string
+                  baseUrl: string
+                  apiVersion?: string | undefined
+                }
+              | {
+                  providerId: 'bedrock'
+                  region: string
+                  accessKeyId: string
+                  secretAccessKey: string
+                }
+              | {
+                  providerId: 'vertex'
+                  serviceAccountJson: string
+                  location?: string | undefined
+                }
+              | {
+                  providerId: 'replicate'
+                  apiToken: string
+                }
+            )
+            id: string
+            providerId: ProviderId
+            createdAt: Date
+            updatedAt: Date
+            userId: string | null
+            organizationId: string | null
+            disabled: boolean
+            isSystem: boolean | null
+          }
+        }
       }>
     }
     app: {
       list: import('@trpc/server').TRPCQueryProcedure<{
-        input: {
-          workspaceId: string
-          after?: string | undefined
-          before?: string | undefined
-          limit?: number | undefined
-          order?: 'asc' | 'desc' | undefined
-        }
+        input:
+          | {
+              organizationId?: string | undefined
+              workspaceId?: string | undefined
+              order?: 'asc' | 'desc' | undefined
+            }
+          | undefined
         output: {
           apps: {
             app: {
               id: string
-              type: 'single-agent' | 'multiple-agents'
               name: string
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
+              type: 'single-agent' | 'multiple-agents'
+              archived: boolean | null
+              archivedAt: Date | null
+              deleted: boolean | null
+              deletedAt: Date | null
               workspaceId: string
             }
             categories: {
@@ -1391,29 +1525,27 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             }[]
             tags: string[]
           }[]
-          hasMore: boolean
-          first: string | undefined
-          last: string | undefined
         }
       }>
       listByCategory: import('@trpc/server').TRPCQueryProcedure<{
         input: {
           workspaceId: string
           categoryId: string
-          after?: string | undefined
-          before?: string | undefined
-          limit?: number | undefined
           order?: 'asc' | 'desc' | undefined
         }
         output: {
           apps: {
             app: {
               id: string
-              type: 'single-agent' | 'multiple-agents'
               name: string
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
+              type: 'single-agent' | 'multiple-agents'
+              archived: boolean | null
+              archivedAt: Date | null
+              deleted: boolean | null
+              deletedAt: Date | null
               workspaceId: string
             }
             categories: {
@@ -1422,29 +1554,27 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             }[]
             tags: string[]
           }[]
-          hasMore: boolean
-          first: string | undefined
-          last: string | undefined
         }
       }>
       listByTags: import('@trpc/server').TRPCQueryProcedure<{
         input: {
           workspaceId: string
           tags: string[]
-          after?: string | undefined
-          before?: string | undefined
-          limit?: number | undefined
           order?: 'asc' | 'desc' | undefined
         }
         output: {
           apps: {
             app: {
               id: string
-              type: 'single-agent' | 'multiple-agents'
               name: string
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
+              type: 'single-agent' | 'multiple-agents'
+              archived: boolean | null
+              archivedAt: Date | null
+              deleted: boolean | null
+              deletedAt: Date | null
               workspaceId: string
             }
             categories: {
@@ -1453,9 +1583,6 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             }[]
             tags: string[]
           }[]
-          hasMore: boolean
-          first: string | undefined
-          last: string | undefined
         }
       }>
       listVersions: import('@trpc/server').TRPCQueryProcedure<{
@@ -1468,13 +1595,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           versions: {
-            version: number
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
             appId: string
+            version: number
           }[]
           hasMore: boolean
           first: number | undefined
@@ -1488,11 +1615,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           app: {
             id: string
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
             workspaceId: string
           }
         }
@@ -1504,13 +1635,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           version: {
-            version: number
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
             appId: string
+            version: number
           }
         }
       }>
@@ -1535,25 +1666,33 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           }
           workspaceId: string
           type?: 'single-agent' | 'multiple-agents' | undefined
+          archived?: boolean | null | undefined
+          archivedAt?: Date | null | undefined
+          deleted?: boolean | null | undefined
+          deletedAt?: Date | null | undefined
         }
         output: {
           app: {
             id: string
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
             workspaceId: string
           }
           draft: {
-            version: number
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
             appId: string
+            version: number
           }
         }
       }>
@@ -1579,15 +1718,23 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 datasetBindings?: string[] | undefined
               }
             | undefined
+          archived?: boolean | null | undefined
+          archivedAt?: Date | null | undefined
+          deleted?: boolean | null | undefined
+          deletedAt?: Date | null | undefined
         }
         output: {
           app: {
             id: string
-            type: 'single-agent' | 'multiple-agents'
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
+            type: 'single-agent' | 'multiple-agents'
+            archived: boolean | null
+            archivedAt: Date | null
+            deleted: boolean | null
+            deletedAt: Date | null
             workspaceId: string
           }
           draft: {
@@ -1605,9 +1752,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: {
           id: string
         }
-        output: {
-          success: boolean
-        }
+        output: void
       }>
       publish: import('@trpc/server').TRPCMutationProcedure<{
         input: {
@@ -1623,6 +1768,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 type: 'single-agent' | 'multiple-agents'
                 name: string
                 metadata: AppMetadata
+                archived: boolean | null
+                archivedAt: Date | null
+                deleted: boolean | null
+                deletedAt: Date | null
               }
             | undefined
           version: number
@@ -1718,35 +1867,42 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           keys: (
             | {
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'user'
                 id: string
+                name: string
               }
             | {
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'organization'
                 organizationId: string
                 id: string
+                name: string
               }
             | {
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'workspace'
                 workspaceId: string
+                organizationId: string
                 id: string
+                name: string
               }
             | {
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'app'
                 appId: string
+                workspaceId: string
+                organizationId: string
                 id: string
+                name: string
               }
           )[]
         }
@@ -1780,41 +1936,48 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           key:
             | {
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'user'
                 id: string
-                start: string | null
+                name: string
               }
             | {
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'organization'
                 organizationId: string
                 id: string
-                start: string | null
+                name: string
               }
             | {
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'workspace'
                 workspaceId: string
+                organizationId: string
                 id: string
-                start: string | null
+                name: string
               }
             | {
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'app'
                 appId: string
+                workspaceId: string
+                organizationId: string
                 id: string
-                start: string | null
+                name: string
               }
         }
       }>
       create: import('@trpc/server').TRPCMutationProcedure<{
         input: {
-          name?: string | undefined
+          name: string
         } & (
           | {
               scope: 'user'
@@ -1836,38 +1999,45 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           key:
             | {
                 key: string
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'user'
                 id: string
+                name: string
               }
             | {
                 key: string
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'organization'
                 organizationId: string
                 id: string
+                name: string
               }
             | {
                 key: string
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'workspace'
                 workspaceId: string
+                organizationId: string
                 id: string
+                name: string
               }
             | {
                 key: string
-                start: string | null
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'app'
                 appId: string
+                workspaceId: string
+                organizationId: string
                 id: string
+                name: string
               }
         }
       }>
@@ -1878,39 +2048,46 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           key:
             | {
+                key: string
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'user'
                 id: string
-                key: string
-                start: string | null
+                name: string
               }
             | {
+                key: string
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'organization'
                 organizationId: string
                 id: string
-                key: string
-                start: string | null
+                name: string
               }
             | {
+                key: string
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'workspace'
                 workspaceId: string
+                organizationId: string
                 id: string
-                key: string
-                start: string | null
+                name: string
               }
             | {
+                key: string
+                start: string
                 createdAt: Date
                 updatedAt: Date
                 scope: 'app'
                 appId: string
+                workspaceId: string
+                organizationId: string
                 id: string
-                key: string
-                start: string | null
+                name: string
               }
         }
       }>
@@ -2079,11 +2256,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           versions: {
-            version: number
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AgentMetadata
+            version: number
             agentId: string
           }[]
         }
@@ -2098,11 +2275,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           versions: {
-            version: number
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AgentMetadata
+            version: number
             agentId: string
           }[]
           hasMore: boolean
@@ -2157,11 +2334,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             appId: string
           }
           draft: {
-            version: number
             name: string
             createdAt: Date
             updatedAt: Date
             metadata: AgentMetadata
+            version: number
             agentId: string
           }
         }
@@ -2557,8 +2734,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           | {
               prefix?: string | undefined
               limit?: number | undefined
-              cursor?: string | undefined
               delimiter?: string | undefined
+              cursor?: string | undefined
               startAfter?: string | undefined
             }
           | undefined
@@ -2618,8 +2795,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
               [Symbol.iterator](): IterableIterator<[string, FormDataEntryValue]>
             }
           | {
-              file: File
               key: string
+              file: File
             }
         output: {
           size: number
@@ -2694,8 +2871,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
               [Symbol.iterator](): IterableIterator<[string, FormDataEntryValue]>
             }
           | {
-              file: File
               key: string
+              file: File
               uploadId: string
               partNumber: number
               expiresIn?: number | undefined
@@ -2755,6 +2932,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `openai:${string}`
                 | `anthropic:${string}`
                 | `google:${string}`
+                | `openrouter:${string}`
                 | `vertex:${string}`
                 | `azure:${string}`
                 | `bedrock:${string}`
@@ -2770,11 +2948,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `replicate:${string}`
                 | `perplexity:${string}`
                 | `luma:${string}`
-                | `openrouter:${string}`
+                | `vercel:${string}`
+                | `fal:${string}`
+                | `elevenlabs:${string}`
+                | `lmnt:${string}`
               embeddingModel:
                 | `openai:${string}`
                 | `anthropic:${string}`
                 | `google:${string}`
+                | `openrouter:${string}`
                 | `vertex:${string}`
                 | `azure:${string}`
                 | `bedrock:${string}`
@@ -2790,11 +2972,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `replicate:${string}`
                 | `perplexity:${string}`
                 | `luma:${string}`
-                | `openrouter:${string}`
+                | `vercel:${string}`
+                | `fal:${string}`
+                | `elevenlabs:${string}`
+                | `lmnt:${string}`
               rerankModel:
                 | `openai:${string}`
                 | `anthropic:${string}`
                 | `google:${string}`
+                | `openrouter:${string}`
                 | `vertex:${string}`
                 | `azure:${string}`
                 | `bedrock:${string}`
@@ -2810,11 +2996,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `replicate:${string}`
                 | `perplexity:${string}`
                 | `luma:${string}`
-                | `openrouter:${string}`
+                | `vercel:${string}`
+                | `fal:${string}`
+                | `elevenlabs:${string}`
+                | `lmnt:${string}`
               imageModel:
                 | `openai:${string}`
                 | `anthropic:${string}`
                 | `google:${string}`
+                | `openrouter:${string}`
                 | `vertex:${string}`
                 | `azure:${string}`
                 | `bedrock:${string}`
@@ -2830,13 +3020,17 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `replicate:${string}`
                 | `perplexity:${string}`
                 | `luma:${string}`
-                | `openrouter:${string}`
+                | `vercel:${string}`
+                | `fal:${string}`
+                | `elevenlabs:${string}`
+                | `lmnt:${string}`
             }
             dataset: {
               languageModel:
                 | `openai:${string}`
                 | `anthropic:${string}`
                 | `google:${string}`
+                | `openrouter:${string}`
                 | `vertex:${string}`
                 | `azure:${string}`
                 | `bedrock:${string}`
@@ -2852,11 +3046,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `replicate:${string}`
                 | `perplexity:${string}`
                 | `luma:${string}`
-                | `openrouter:${string}`
+                | `vercel:${string}`
+                | `fal:${string}`
+                | `elevenlabs:${string}`
+                | `lmnt:${string}`
               embeddingModel:
                 | `openai:${string}`
                 | `anthropic:${string}`
                 | `google:${string}`
+                | `openrouter:${string}`
                 | `vertex:${string}`
                 | `azure:${string}`
                 | `bedrock:${string}`
@@ -2872,11 +3070,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `replicate:${string}`
                 | `perplexity:${string}`
                 | `luma:${string}`
-                | `openrouter:${string}`
+                | `vercel:${string}`
+                | `fal:${string}`
+                | `elevenlabs:${string}`
+                | `lmnt:${string}`
               rerankModel:
                 | `openai:${string}`
                 | `anthropic:${string}`
                 | `google:${string}`
+                | `openrouter:${string}`
                 | `vertex:${string}`
                 | `azure:${string}`
                 | `bedrock:${string}`
@@ -2892,7 +3094,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 | `replicate:${string}`
                 | `perplexity:${string}`
                 | `luma:${string}`
-                | `openrouter:${string}`
+                | `vercel:${string}`
+                | `fal:${string}`
+                | `elevenlabs:${string}`
+                | `lmnt:${string}`
             }
           }
         }
@@ -2900,14 +3105,21 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
       listProviders: import('@trpc/server').TRPCQueryProcedure<{
         input: void
         output: {
-          providers: BaseProviderInfo[]
+          providers: {
+            enabled: boolean
+            id: ProviderId
+            name: string
+            icon: string
+            description: string
+            isGateway?: boolean
+          }[]
         }
       }>
       listProvidersModels: import('@trpc/server').TRPCQueryProcedure<{
         input:
           | {
               organizationId?: string | undefined
-              type?: 'language' | 'image' | 'speech' | 'transcription' | 'textEmbedding' | undefined
+              type?: 'image' | 'language' | 'speech' | 'transcription' | 'textEmbedding' | undefined
               source?: 'custom' | 'system' | undefined
             }
           | undefined
@@ -2919,6 +3131,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   name: string
                   description: string
                   icon: string
+                  isGateway: boolean | undefined
                   models: (LanguageModelInfo & {
                     isSystem?: boolean
                   } & {
@@ -2926,6 +3139,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `openai:${string}`
                       | `anthropic:${string}`
                       | `google:${string}`
+                      | `openrouter:${string}`
                       | `vertex:${string}`
                       | `azure:${string}`
                       | `bedrock:${string}`
@@ -2941,7 +3155,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `replicate:${string}`
                       | `perplexity:${string}`
                       | `luma:${string}`
-                      | `openrouter:${string}`
+                      | `vercel:${string}`
+                      | `fal:${string}`
+                      | `elevenlabs:${string}`
+                      | `lmnt:${string}`
                   })[]
                 }[]
               | undefined
@@ -2951,6 +3168,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   name: string
                   description: string
                   icon: string
+                  isGateway: boolean | undefined
                   models: (ImageModelInfo & {
                     isSystem?: boolean
                   } & {
@@ -2958,6 +3176,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `openai:${string}`
                       | `anthropic:${string}`
                       | `google:${string}`
+                      | `openrouter:${string}`
                       | `vertex:${string}`
                       | `azure:${string}`
                       | `bedrock:${string}`
@@ -2973,7 +3192,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `replicate:${string}`
                       | `perplexity:${string}`
                       | `luma:${string}`
-                      | `openrouter:${string}`
+                      | `vercel:${string}`
+                      | `fal:${string}`
+                      | `elevenlabs:${string}`
+                      | `lmnt:${string}`
                   })[]
                 }[]
               | undefined
@@ -2983,6 +3205,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   name: string
                   description: string
                   icon: string
+                  isGateway: boolean | undefined
                   models: (SpeechModelInfo & {
                     isSystem?: boolean
                   } & {
@@ -2990,6 +3213,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `openai:${string}`
                       | `anthropic:${string}`
                       | `google:${string}`
+                      | `openrouter:${string}`
                       | `vertex:${string}`
                       | `azure:${string}`
                       | `bedrock:${string}`
@@ -3005,7 +3229,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `replicate:${string}`
                       | `perplexity:${string}`
                       | `luma:${string}`
-                      | `openrouter:${string}`
+                      | `vercel:${string}`
+                      | `fal:${string}`
+                      | `elevenlabs:${string}`
+                      | `lmnt:${string}`
                   })[]
                 }[]
               | undefined
@@ -3015,6 +3242,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   name: string
                   description: string
                   icon: string
+                  isGateway: boolean | undefined
                   models: (TranscriptionModelInfo & {
                     isSystem?: boolean
                   } & {
@@ -3022,6 +3250,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `openai:${string}`
                       | `anthropic:${string}`
                       | `google:${string}`
+                      | `openrouter:${string}`
                       | `vertex:${string}`
                       | `azure:${string}`
                       | `bedrock:${string}`
@@ -3037,7 +3266,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `replicate:${string}`
                       | `perplexity:${string}`
                       | `luma:${string}`
-                      | `openrouter:${string}`
+                      | `vercel:${string}`
+                      | `fal:${string}`
+                      | `elevenlabs:${string}`
+                      | `lmnt:${string}`
                   })[]
                 }[]
               | undefined
@@ -3047,6 +3279,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   name: string
                   description: string
                   icon: string
+                  isGateway: boolean | undefined
                   models: (EmbeddingModelInfo & {
                     isSystem?: boolean
                   } & {
@@ -3054,6 +3287,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `openai:${string}`
                       | `anthropic:${string}`
                       | `google:${string}`
+                      | `openrouter:${string}`
                       | `vertex:${string}`
                       | `azure:${string}`
                       | `bedrock:${string}`
@@ -3069,7 +3303,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                       | `replicate:${string}`
                       | `perplexity:${string}`
                       | `luma:${string}`
-                      | `openrouter:${string}`
+                      | `vercel:${string}`
+                      | `fal:${string}`
+                      | `elevenlabs:${string}`
+                      | `lmnt:${string}`
                   })[]
                 }[]
               | undefined
@@ -3080,7 +3317,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input:
           | {
               organizationId?: string | undefined
-              type?: 'language' | 'image' | 'speech' | 'transcription' | 'textEmbedding' | undefined
+              type?: 'image' | 'language' | 'speech' | 'transcription' | 'textEmbedding' | undefined
               source?: 'custom' | 'system' | undefined
             }
           | undefined
@@ -3094,6 +3331,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `openai:${string}`
                     | `anthropic:${string}`
                     | `google:${string}`
+                    | `openrouter:${string}`
                     | `vertex:${string}`
                     | `azure:${string}`
                     | `bedrock:${string}`
@@ -3109,7 +3347,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `replicate:${string}`
                     | `perplexity:${string}`
                     | `luma:${string}`
-                    | `openrouter:${string}`
+                    | `vercel:${string}`
+                    | `fal:${string}`
+                    | `elevenlabs:${string}`
+                    | `lmnt:${string}`
                 })[]
               | undefined
             image:
@@ -3120,6 +3361,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `openai:${string}`
                     | `anthropic:${string}`
                     | `google:${string}`
+                    | `openrouter:${string}`
                     | `vertex:${string}`
                     | `azure:${string}`
                     | `bedrock:${string}`
@@ -3135,7 +3377,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `replicate:${string}`
                     | `perplexity:${string}`
                     | `luma:${string}`
-                    | `openrouter:${string}`
+                    | `vercel:${string}`
+                    | `fal:${string}`
+                    | `elevenlabs:${string}`
+                    | `lmnt:${string}`
                 })[]
               | undefined
             speech:
@@ -3146,6 +3391,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `openai:${string}`
                     | `anthropic:${string}`
                     | `google:${string}`
+                    | `openrouter:${string}`
                     | `vertex:${string}`
                     | `azure:${string}`
                     | `bedrock:${string}`
@@ -3161,7 +3407,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `replicate:${string}`
                     | `perplexity:${string}`
                     | `luma:${string}`
-                    | `openrouter:${string}`
+                    | `vercel:${string}`
+                    | `fal:${string}`
+                    | `elevenlabs:${string}`
+                    | `lmnt:${string}`
                 })[]
               | undefined
             transcription:
@@ -3172,6 +3421,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `openai:${string}`
                     | `anthropic:${string}`
                     | `google:${string}`
+                    | `openrouter:${string}`
                     | `vertex:${string}`
                     | `azure:${string}`
                     | `bedrock:${string}`
@@ -3187,7 +3437,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `replicate:${string}`
                     | `perplexity:${string}`
                     | `luma:${string}`
-                    | `openrouter:${string}`
+                    | `vercel:${string}`
+                    | `fal:${string}`
+                    | `elevenlabs:${string}`
+                    | `lmnt:${string}`
                 })[]
               | undefined
             textEmbedding:
@@ -3198,6 +3451,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `openai:${string}`
                     | `anthropic:${string}`
                     | `google:${string}`
+                    | `openrouter:${string}`
                     | `vertex:${string}`
                     | `azure:${string}`
                     | `bedrock:${string}`
@@ -3213,7 +3467,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                     | `replicate:${string}`
                     | `perplexity:${string}`
                     | `luma:${string}`
-                    | `openrouter:${string}`
+                    | `vercel:${string}`
+                    | `fal:${string}`
+                    | `elevenlabs:${string}`
+                    | `lmnt:${string}`
                 })[]
               | undefined
           }
@@ -3225,6 +3482,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | `openai:${string}`
             | `anthropic:${string}`
             | `google:${string}`
+            | `openrouter:${string}`
             | `vertex:${string}`
             | `azure:${string}`
             | `bedrock:${string}`
@@ -3240,8 +3498,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | `replicate:${string}`
             | `perplexity:${string}`
             | `luma:${string}`
-            | `openrouter:${string}`
-          type: 'language' | 'image' | 'speech' | 'transcription' | 'textEmbedding'
+            | `vercel:${string}`
+            | `fal:${string}`
+            | `elevenlabs:${string}`
+            | `lmnt:${string}`
+          type: 'image' | 'language' | 'speech' | 'transcription' | 'textEmbedding'
           organizationId?: string | undefined
           source?: 'custom' | 'system' | undefined
         }
@@ -3252,6 +3513,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3267,24 +3529,33 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 contextWindow?: number
                 maxOutputTokens?: number
                 inputTokenPrice?: string
                 cachedInputTokenPrice?: string
-                cacheInputTokenPrice?: string | Record<string, string>
+                cacheInputTokenPrice?: string | [string, string][]
                 outputTokenPrice?: string
+                modality?: {
+                  input?: Modality[]
+                  output?: Modality[]
+                }
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3300,27 +3571,29 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 imageInputTokenPrice?: string
                 imageCachedInputTokenPrice?: string
                 imageOutputTokenPrice?: string
                 textInputTokenPrice?: string
                 textCachedInputTokenPrice?: string
-                pricePerImage?:
-                  | string
-                  | Record<string, string>
-                  | Record<string, Record<string, string>>
+                pricePerImage?: string | [string, string][] | [string, [string, string][]][]
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3336,7 +3609,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 maxInputTokens?: number
                 textTokenPrice?: string
@@ -3345,12 +3621,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3366,7 +3644,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 audioTokenPrice?: string
                 textInputTokenPrice?: string
@@ -3375,12 +3656,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3396,14 +3679,18 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 tokenPrice?: string
-                dimensions?: number
+                dimensions?: number | number[]
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
         }
       }>
@@ -3413,6 +3700,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | 'openai'
             | 'anthropic'
             | 'google'
+            | 'openrouter'
             | 'vertex'
             | 'azure'
             | 'bedrock'
@@ -3428,7 +3716,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | 'replicate'
             | 'perplexity'
             | 'luma'
-            | 'openrouter'
+            | 'vercel'
+            | 'fal'
+            | 'elevenlabs'
+            | 'lmnt'
           organizationId?: string | undefined
           isSystem?: boolean | undefined
         } & (
@@ -3441,6 +3732,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3456,15 +3748,25 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 contextWindow?: number | undefined
                 maxOutputTokens?: number | undefined
                 inputTokenPrice?: string | undefined
                 cachedInputTokenPrice?: string | undefined
-                cacheInputTokenPrice?: string | Record<string, string> | undefined
+                cacheInputTokenPrice?: string | [string, string][] | undefined
                 outputTokenPrice?: string | undefined
+                modality?:
+                  | {
+                      input?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                      output?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                    }
+                  | undefined
               }
             }
           | {
@@ -3476,6 +3778,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3491,9 +3794,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 imageInputTokenPrice?: string | undefined
                 imageCachedInputTokenPrice?: string | undefined
                 imageOutputTokenPrice?: string | undefined
@@ -3501,8 +3808,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 textCachedInputTokenPrice?: string | undefined
                 pricePerImage?:
                   | string
-                  | Record<string, string>
-                  | Record<string, Record<string, string>>
+                  | [string, string][]
+                  | [string, [string, string][]][]
                   | undefined
               }
             }
@@ -3515,6 +3822,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3530,9 +3838,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 maxInputTokens?: number | undefined
                 textTokenPrice?: string | undefined
                 audioTokenPrice?: string | undefined
@@ -3547,6 +3859,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3562,9 +3875,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 audioTokenPrice?: string | undefined
                 textInputTokenPrice?: string | undefined
                 textOutputTokenPrice?: string | undefined
@@ -3579,6 +3896,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3594,11 +3912,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 tokenPrice?: string | undefined
-                dimensions?: number | undefined
+                dimensions?: number | number[] | undefined
               }
             }
         )
@@ -3612,6 +3934,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3627,51 +3950,24 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 contextWindow?: number | undefined
                 maxOutputTokens?: number | undefined
                 inputTokenPrice?: string | undefined
                 cachedInputTokenPrice?: string | undefined
-                cacheInputTokenPrice?: string | Record<string, string> | undefined
+                cacheInputTokenPrice?: string | [string, string][] | undefined
                 outputTokenPrice?: string | undefined
-              }
-            | {
-                isSystem: boolean
-                name: string
-                description: string
-                id:
-                  | `openai:${string}`
-                  | `anthropic:${string}`
-                  | `google:${string}`
-                  | `vertex:${string}`
-                  | `azure:${string}`
-                  | `bedrock:${string}`
-                  | `deepseek:${string}`
-                  | `mistral:${string}`
-                  | `xai:${string}`
-                  | `togetherai:${string}`
-                  | `cohere:${string}`
-                  | `fireworks:${string}`
-                  | `deepinfra:${string}`
-                  | `cerebras:${string}`
-                  | `groq:${string}`
-                  | `replicate:${string}`
-                  | `perplexity:${string}`
-                  | `luma:${string}`
-                  | `openrouter:${string}`
-                deprecated?: boolean | undefined
-                retired?: boolean | undefined
-                imageInputTokenPrice?: string | undefined
-                imageCachedInputTokenPrice?: string | undefined
-                imageOutputTokenPrice?: string | undefined
-                textInputTokenPrice?: string | undefined
-                textCachedInputTokenPrice?: string | undefined
-                pricePerImage?:
-                  | string
-                  | Record<string, string>
-                  | Record<string, Record<string, string>>
+                modality?:
+                  | {
+                      input?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                      output?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                    }
                   | undefined
               }
             | {
@@ -3682,6 +3978,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3697,9 +3994,55 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
+                imageInputTokenPrice?: string | undefined
+                imageCachedInputTokenPrice?: string | undefined
+                imageOutputTokenPrice?: string | undefined
+                textInputTokenPrice?: string | undefined
+                textCachedInputTokenPrice?: string | undefined
+                pricePerImage?:
+                  | string
+                  | [string, string][]
+                  | [string, [string, string][]][]
+                  | undefined
+              }
+            | {
+                isSystem: boolean
+                name: string
+                description: string
+                id:
+                  | `openai:${string}`
+                  | `anthropic:${string}`
+                  | `google:${string}`
+                  | `openrouter:${string}`
+                  | `vertex:${string}`
+                  | `azure:${string}`
+                  | `bedrock:${string}`
+                  | `deepseek:${string}`
+                  | `mistral:${string}`
+                  | `xai:${string}`
+                  | `togetherai:${string}`
+                  | `cohere:${string}`
+                  | `fireworks:${string}`
+                  | `deepinfra:${string}`
+                  | `cerebras:${string}`
+                  | `groq:${string}`
+                  | `replicate:${string}`
+                  | `perplexity:${string}`
+                  | `luma:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
+                deprecated?: boolean | undefined
+                retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 maxInputTokens?: number | undefined
                 textTokenPrice?: string | undefined
                 audioTokenPrice?: string | undefined
@@ -3712,6 +4055,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3727,9 +4071,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 audioTokenPrice?: string | undefined
                 textInputTokenPrice?: string | undefined
                 textOutputTokenPrice?: string | undefined
@@ -3742,6 +4090,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3757,11 +4106,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 tokenPrice?: string | undefined
-                dimensions?: number | undefined
+                dimensions?: number | number[] | undefined
               }
         }
       }>
@@ -3771,6 +4124,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | 'openai'
             | 'anthropic'
             | 'google'
+            | 'openrouter'
             | 'vertex'
             | 'azure'
             | 'bedrock'
@@ -3786,7 +4140,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | 'replicate'
             | 'perplexity'
             | 'luma'
-            | 'openrouter'
+            | 'vercel'
+            | 'fal'
+            | 'elevenlabs'
+            | 'lmnt'
           organizationId?: string | undefined
           isSystem?: boolean | undefined
         } & (
@@ -3799,6 +4156,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3814,15 +4172,25 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 contextWindow?: number | undefined
                 maxOutputTokens?: number | undefined
                 inputTokenPrice?: string | undefined
                 cachedInputTokenPrice?: string | undefined
-                cacheInputTokenPrice?: string | Record<string, string> | undefined
+                cacheInputTokenPrice?: string | [string, string][] | undefined
                 outputTokenPrice?: string | undefined
+                modality?:
+                  | {
+                      input?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                      output?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                    }
+                  | undefined
               }[]
             }
           | {
@@ -3834,6 +4202,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3849,9 +4218,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 imageInputTokenPrice?: string | undefined
                 imageCachedInputTokenPrice?: string | undefined
                 imageOutputTokenPrice?: string | undefined
@@ -3859,8 +4232,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 textCachedInputTokenPrice?: string | undefined
                 pricePerImage?:
                   | string
-                  | Record<string, string>
-                  | Record<string, Record<string, string>>
+                  | [string, string][]
+                  | [string, [string, string][]][]
                   | undefined
               }[]
             }
@@ -3873,6 +4246,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3888,9 +4262,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 maxInputTokens?: number | undefined
                 textTokenPrice?: string | undefined
                 audioTokenPrice?: string | undefined
@@ -3905,6 +4283,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3920,9 +4299,13 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 audioTokenPrice?: string | undefined
                 textInputTokenPrice?: string | undefined
                 textOutputTokenPrice?: string | undefined
@@ -3937,6 +4320,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3952,11 +4336,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 tokenPrice?: string | undefined
-                dimensions?: number | undefined
+                dimensions?: number | number[] | undefined
               }[]
             }
         )
@@ -3967,6 +4355,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -3982,54 +4371,27 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 name: string
                 description: string
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 contextWindow?: number | undefined
                 maxOutputTokens?: number | undefined
                 inputTokenPrice?: string | undefined
                 cachedInputTokenPrice?: string | undefined
-                cacheInputTokenPrice?: string | Record<string, string> | undefined
+                cacheInputTokenPrice?: string | [string, string][] | undefined
                 outputTokenPrice?: string | undefined
-              }
-            | {
-                id:
-                  | `openai:${string}`
-                  | `anthropic:${string}`
-                  | `google:${string}`
-                  | `vertex:${string}`
-                  | `azure:${string}`
-                  | `bedrock:${string}`
-                  | `deepseek:${string}`
-                  | `mistral:${string}`
-                  | `xai:${string}`
-                  | `togetherai:${string}`
-                  | `cohere:${string}`
-                  | `fireworks:${string}`
-                  | `deepinfra:${string}`
-                  | `cerebras:${string}`
-                  | `groq:${string}`
-                  | `replicate:${string}`
-                  | `perplexity:${string}`
-                  | `luma:${string}`
-                  | `openrouter:${string}`
-                isSystem: boolean
-                name: string
-                description: string
-                deprecated?: boolean | undefined
-                retired?: boolean | undefined
-                imageInputTokenPrice?: string | undefined
-                imageCachedInputTokenPrice?: string | undefined
-                imageOutputTokenPrice?: string | undefined
-                textInputTokenPrice?: string | undefined
-                textCachedInputTokenPrice?: string | undefined
-                pricePerImage?:
-                  | string
-                  | Record<string, string>
-                  | Record<string, Record<string, string>>
+                modality?:
+                  | {
+                      input?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                      output?: ('image' | 'text' | 'audio' | 'video' | 'pdf')[] | undefined
+                    }
                   | undefined
               }
             | {
@@ -4037,6 +4399,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4052,12 +4415,58 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 name: string
                 description: string
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
+                imageInputTokenPrice?: string | undefined
+                imageCachedInputTokenPrice?: string | undefined
+                imageOutputTokenPrice?: string | undefined
+                textInputTokenPrice?: string | undefined
+                textCachedInputTokenPrice?: string | undefined
+                pricePerImage?:
+                  | string
+                  | [string, string][]
+                  | [string, [string, string][]][]
+                  | undefined
+              }
+            | {
+                id:
+                  | `openai:${string}`
+                  | `anthropic:${string}`
+                  | `google:${string}`
+                  | `openrouter:${string}`
+                  | `vertex:${string}`
+                  | `azure:${string}`
+                  | `bedrock:${string}`
+                  | `deepseek:${string}`
+                  | `mistral:${string}`
+                  | `xai:${string}`
+                  | `togetherai:${string}`
+                  | `cohere:${string}`
+                  | `fireworks:${string}`
+                  | `deepinfra:${string}`
+                  | `cerebras:${string}`
+                  | `groq:${string}`
+                  | `replicate:${string}`
+                  | `perplexity:${string}`
+                  | `luma:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
+                isSystem: boolean
+                name: string
+                description: string
+                deprecated?: boolean | undefined
+                retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 maxInputTokens?: number | undefined
                 textTokenPrice?: string | undefined
                 audioTokenPrice?: string | undefined
@@ -4067,6 +4476,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4082,12 +4492,16 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 name: string
                 description: string
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 audioTokenPrice?: string | undefined
                 textInputTokenPrice?: string | undefined
                 textOutputTokenPrice?: string | undefined
@@ -4097,6 +4511,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4112,14 +4527,262 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 name: string
                 description: string
                 deprecated?: boolean | undefined
                 retired?: boolean | undefined
+                chargeable?: boolean | undefined
                 tokenPrice?: string | undefined
-                dimensions?: number | undefined
+                dimensions?: number | number[] | undefined
+              }
+          )[]
+        }
+      }>
+      sortModels: import('@trpc/server').TRPCMutationProcedure<{
+        input: {
+          providerId:
+            | 'openai'
+            | 'anthropic'
+            | 'google'
+            | 'openrouter'
+            | 'vertex'
+            | 'azure'
+            | 'bedrock'
+            | 'deepseek'
+            | 'mistral'
+            | 'xai'
+            | 'togetherai'
+            | 'cohere'
+            | 'fireworks'
+            | 'deepinfra'
+            | 'cerebras'
+            | 'groq'
+            | 'replicate'
+            | 'perplexity'
+            | 'luma'
+            | 'vercel'
+            | 'fal'
+            | 'elevenlabs'
+            | 'lmnt'
+          type: 'image' | 'language' | 'speech' | 'transcription' | 'textEmbedding'
+          ids: (
+            | `openai:${string}`
+            | `anthropic:${string}`
+            | `google:${string}`
+            | `openrouter:${string}`
+            | `vertex:${string}`
+            | `azure:${string}`
+            | `bedrock:${string}`
+            | `deepseek:${string}`
+            | `mistral:${string}`
+            | `xai:${string}`
+            | `togetherai:${string}`
+            | `cohere:${string}`
+            | `fireworks:${string}`
+            | `deepinfra:${string}`
+            | `cerebras:${string}`
+            | `groq:${string}`
+            | `replicate:${string}`
+            | `perplexity:${string}`
+            | `luma:${string}`
+            | `vercel:${string}`
+            | `fal:${string}`
+            | `elevenlabs:${string}`
+            | `lmnt:${string}`
+          )[]
+          organizationId?: string | undefined
+          isSystem?: boolean | undefined
+        }
+        output: {
+          models: (
+            | {
+                id:
+                  | `openai:${string}`
+                  | `anthropic:${string}`
+                  | `google:${string}`
+                  | `openrouter:${string}`
+                  | `vertex:${string}`
+                  | `azure:${string}`
+                  | `bedrock:${string}`
+                  | `deepseek:${string}`
+                  | `mistral:${string}`
+                  | `xai:${string}`
+                  | `togetherai:${string}`
+                  | `cohere:${string}`
+                  | `fireworks:${string}`
+                  | `deepinfra:${string}`
+                  | `cerebras:${string}`
+                  | `groq:${string}`
+                  | `replicate:${string}`
+                  | `perplexity:${string}`
+                  | `luma:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
+                isSystem: boolean
+                contextWindow?: number
+                maxOutputTokens?: number
+                inputTokenPrice?: string
+                cachedInputTokenPrice?: string
+                cacheInputTokenPrice?: string | [string, string][]
+                outputTokenPrice?: string
+                modality?: {
+                  input?: Modality[]
+                  output?: Modality[]
+                }
+                name: string
+                description: string
+                deprecated?: boolean
+                retired?: boolean
+                chargeable?: boolean
+              }
+            | {
+                id:
+                  | `openai:${string}`
+                  | `anthropic:${string}`
+                  | `google:${string}`
+                  | `openrouter:${string}`
+                  | `vertex:${string}`
+                  | `azure:${string}`
+                  | `bedrock:${string}`
+                  | `deepseek:${string}`
+                  | `mistral:${string}`
+                  | `xai:${string}`
+                  | `togetherai:${string}`
+                  | `cohere:${string}`
+                  | `fireworks:${string}`
+                  | `deepinfra:${string}`
+                  | `cerebras:${string}`
+                  | `groq:${string}`
+                  | `replicate:${string}`
+                  | `perplexity:${string}`
+                  | `luma:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
+                isSystem: boolean
+                imageInputTokenPrice?: string
+                imageCachedInputTokenPrice?: string
+                imageOutputTokenPrice?: string
+                textInputTokenPrice?: string
+                textCachedInputTokenPrice?: string
+                pricePerImage?: string | [string, string][] | [string, [string, string][]][]
+                name: string
+                description: string
+                deprecated?: boolean
+                retired?: boolean
+                chargeable?: boolean
+              }
+            | {
+                id:
+                  | `openai:${string}`
+                  | `anthropic:${string}`
+                  | `google:${string}`
+                  | `openrouter:${string}`
+                  | `vertex:${string}`
+                  | `azure:${string}`
+                  | `bedrock:${string}`
+                  | `deepseek:${string}`
+                  | `mistral:${string}`
+                  | `xai:${string}`
+                  | `togetherai:${string}`
+                  | `cohere:${string}`
+                  | `fireworks:${string}`
+                  | `deepinfra:${string}`
+                  | `cerebras:${string}`
+                  | `groq:${string}`
+                  | `replicate:${string}`
+                  | `perplexity:${string}`
+                  | `luma:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
+                isSystem: boolean
+                maxInputTokens?: number
+                textTokenPrice?: string
+                audioTokenPrice?: string
+                name: string
+                description: string
+                deprecated?: boolean
+                retired?: boolean
+                chargeable?: boolean
+              }
+            | {
+                id:
+                  | `openai:${string}`
+                  | `anthropic:${string}`
+                  | `google:${string}`
+                  | `openrouter:${string}`
+                  | `vertex:${string}`
+                  | `azure:${string}`
+                  | `bedrock:${string}`
+                  | `deepseek:${string}`
+                  | `mistral:${string}`
+                  | `xai:${string}`
+                  | `togetherai:${string}`
+                  | `cohere:${string}`
+                  | `fireworks:${string}`
+                  | `deepinfra:${string}`
+                  | `cerebras:${string}`
+                  | `groq:${string}`
+                  | `replicate:${string}`
+                  | `perplexity:${string}`
+                  | `luma:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
+                isSystem: boolean
+                audioTokenPrice?: string
+                textInputTokenPrice?: string
+                textOutputTokenPrice?: string
+                name: string
+                description: string
+                deprecated?: boolean
+                retired?: boolean
+                chargeable?: boolean
+              }
+            | {
+                id:
+                  | `openai:${string}`
+                  | `anthropic:${string}`
+                  | `google:${string}`
+                  | `openrouter:${string}`
+                  | `vertex:${string}`
+                  | `azure:${string}`
+                  | `bedrock:${string}`
+                  | `deepseek:${string}`
+                  | `mistral:${string}`
+                  | `xai:${string}`
+                  | `togetherai:${string}`
+                  | `cohere:${string}`
+                  | `fireworks:${string}`
+                  | `deepinfra:${string}`
+                  | `cerebras:${string}`
+                  | `groq:${string}`
+                  | `replicate:${string}`
+                  | `perplexity:${string}`
+                  | `luma:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
+                isSystem: boolean
+                tokenPrice?: string
+                dimensions?: number | number[]
+                name: string
+                description: string
+                deprecated?: boolean
+                retired?: boolean
+                chargeable?: boolean
               }
           )[]
         }
@@ -4130,6 +4793,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | `openai:${string}`
             | `anthropic:${string}`
             | `google:${string}`
+            | `openrouter:${string}`
             | `vertex:${string}`
             | `azure:${string}`
             | `bedrock:${string}`
@@ -4145,8 +4809,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | `replicate:${string}`
             | `perplexity:${string}`
             | `luma:${string}`
-            | `openrouter:${string}`
-          type: 'language' | 'image' | 'speech' | 'transcription' | 'textEmbedding'
+            | `vercel:${string}`
+            | `fal:${string}`
+            | `elevenlabs:${string}`
+            | `lmnt:${string}`
+          type: 'image' | 'language' | 'speech' | 'transcription' | 'textEmbedding'
           organizationId?: string | undefined
           isSystem?: boolean | undefined
         }
@@ -4157,6 +4824,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4172,24 +4840,33 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 contextWindow?: number
                 maxOutputTokens?: number
                 inputTokenPrice?: string
                 cachedInputTokenPrice?: string
-                cacheInputTokenPrice?: string | Record<string, string>
+                cacheInputTokenPrice?: string | [string, string][]
                 outputTokenPrice?: string
+                modality?: {
+                  input?: Modality[]
+                  output?: Modality[]
+                }
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4205,27 +4882,29 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 imageInputTokenPrice?: string
                 imageCachedInputTokenPrice?: string
                 imageOutputTokenPrice?: string
                 textInputTokenPrice?: string
                 textCachedInputTokenPrice?: string
-                pricePerImage?:
-                  | string
-                  | Record<string, string>
-                  | Record<string, Record<string, string>>
+                pricePerImage?: string | [string, string][] | [string, [string, string][]][]
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4241,7 +4920,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 maxInputTokens?: number
                 textTokenPrice?: string
@@ -4250,12 +4932,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4271,7 +4955,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 audioTokenPrice?: string
                 textInputTokenPrice?: string
@@ -4280,12 +4967,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4301,14 +4990,18 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 tokenPrice?: string
-                dimensions?: number
+                dimensions?: number | number[]
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
         }
       }>
@@ -4318,6 +5011,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | 'openai'
             | 'anthropic'
             | 'google'
+            | 'openrouter'
             | 'vertex'
             | 'azure'
             | 'bedrock'
@@ -4333,11 +5027,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | 'replicate'
             | 'perplexity'
             | 'luma'
-            | 'openrouter'
+            | 'vercel'
+            | 'fal'
+            | 'elevenlabs'
+            | 'lmnt'
           ids: (
             | `openai:${string}`
             | `anthropic:${string}`
             | `google:${string}`
+            | `openrouter:${string}`
             | `vertex:${string}`
             | `azure:${string}`
             | `bedrock:${string}`
@@ -4353,9 +5051,12 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             | `replicate:${string}`
             | `perplexity:${string}`
             | `luma:${string}`
-            | `openrouter:${string}`
+            | `vercel:${string}`
+            | `fal:${string}`
+            | `elevenlabs:${string}`
+            | `lmnt:${string}`
           )[]
-          type: 'language' | 'image' | 'speech' | 'transcription' | 'textEmbedding'
+          type: 'image' | 'language' | 'speech' | 'transcription' | 'textEmbedding'
           organizationId?: string | undefined
           isSystem?: boolean | undefined
         }
@@ -4366,6 +5067,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4381,24 +5083,33 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 contextWindow?: number
                 maxOutputTokens?: number
                 inputTokenPrice?: string
                 cachedInputTokenPrice?: string
-                cacheInputTokenPrice?: string | Record<string, string>
+                cacheInputTokenPrice?: string | [string, string][]
                 outputTokenPrice?: string
+                modality?: {
+                  input?: Modality[]
+                  output?: Modality[]
+                }
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4414,27 +5125,29 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 imageInputTokenPrice?: string
                 imageCachedInputTokenPrice?: string
                 imageOutputTokenPrice?: string
                 textInputTokenPrice?: string
                 textCachedInputTokenPrice?: string
-                pricePerImage?:
-                  | string
-                  | Record<string, string>
-                  | Record<string, Record<string, string>>
+                pricePerImage?: string | [string, string][] | [string, [string, string][]][]
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4450,7 +5163,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 maxInputTokens?: number
                 textTokenPrice?: string
@@ -4459,12 +5175,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4480,7 +5198,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 audioTokenPrice?: string
                 textInputTokenPrice?: string
@@ -4489,12 +5210,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
             | {
                 id:
                   | `openai:${string}`
                   | `anthropic:${string}`
                   | `google:${string}`
+                  | `openrouter:${string}`
                   | `vertex:${string}`
                   | `azure:${string}`
                   | `bedrock:${string}`
@@ -4510,14 +5233,18 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                   | `replicate:${string}`
                   | `perplexity:${string}`
                   | `luma:${string}`
-                  | `openrouter:${string}`
+                  | `vercel:${string}`
+                  | `fal:${string}`
+                  | `elevenlabs:${string}`
+                  | `lmnt:${string}`
                 isSystem: boolean
                 tokenPrice?: string
-                dimensions?: number
+                dimensions?: number | number[]
                 name: string
                 description: string
                 deprecated?: boolean
                 retired?: boolean
+                chargeable?: boolean
               }
           )[]
         }
@@ -5255,11 +5982,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           artifacts: {
-            version: number
             id: string
             createdAt: Date
             updatedAt: Date
             userId: string
+            version: number
             title: string
             chatId: string
             content: unknown
@@ -5280,11 +6007,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           versions: {
-            version: number
             id: string
             createdAt: Date
             updatedAt: Date
             userId: string
+            version: number
             title: string
             chatId: string
             content: unknown
@@ -5313,8 +6040,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           suggestions: {
-            id: string
             description: string | null
+            id: string
             createdAt: Date
             updatedAt: Date
             artifactId: string

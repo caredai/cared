@@ -1,4 +1,6 @@
+import assert from 'assert'
 import type {
+  LanguageModelV2,
   LanguageModelV2CallOptions,
   LanguageModelV2FinishReason,
   LanguageModelV2Usage,
@@ -6,14 +8,17 @@ import type {
 } from '@ai-sdk/provider'
 import type { NextRequest } from 'next/server'
 import type { OpenAI } from 'openai'
+import { APICallError } from '@ai-sdk/provider'
 import { z } from 'zod/v4'
 
+import type { ModelFullId } from '@cared/providers'
+import log from '@cared/log'
 import { splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { generateId } from '@cared/shared'
 
 import { authenticate } from '../../../auth'
-import { ProviderKeyManager } from '../../../operation'
+import { findProvidersByModel, ProviderKeyManager } from '../../../operation'
 import { jsonSchema7Schema } from '../ai/language'
 import {
   ChatCompletionContentPartTextSchema,
@@ -156,29 +161,172 @@ export async function POST(req: NextRequest): Promise<Response> {
     return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
   }
 
-  const { messages, model: modelId, stream: doStream, ...args } = validatedArgs.data
+  const { model: modelId, stream: isStream, ...args } = validatedArgs.data
 
   const auth = await authenticate()
   if (!auth.isAuthenticated()) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const { providerId } = splitModelFullId(modelId)
-
-  const keyManager = await ProviderKeyManager.from({
-    auth: auth.auth!,
-    providerId,
-  })
-
-  const model = getModel(modelId, 'language', keyManager.selectKeys()[0]!.key)
-  if (!model) {
+  let modelIds: ModelFullId[] = [modelId as ModelFullId]
+  // Allow modelId without provider prefix
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!splitModelFullId(modelId).providerId) {
+    modelIds = (await findProvidersByModel(auth.auth!, modelId, 'language')).map((m) => m.id)
+  }
+  log.info(`Input model id: ${modelId}, resolved model ids: ${modelIds.join(', ')}`)
+  if (!modelIds.length) {
     return new Response('Model not found', {
       status: 400,
     })
   }
 
+  let responseStream,
+    closeStream: (() => Promise<void>) | undefined,
+    writeChunk: ((data: any, notJson?: boolean) => Promise<void>) | undefined
+
+  if (isStream) {
+    // Create a TransformStream to convert LanguageModelV2StreamPart to OpenAI streaming format
+    const { readable, writable } = new TransformStream()
+    const writer = writable.getWriter()
+
+    responseStream = readable
+    closeStream = () => writer.close()
+
+    // Helper function to write data to the stream
+    writeChunk = async (data: any, notJson?: boolean) => {
+      // SSE format
+      await writer.write(`data: ${!notJson ? JSON.stringify(data) : data}\n\n`)
+    }
+  }
+
+  async function process() {
+    for (const modelId of modelIds) {
+      const keyManager = await ProviderKeyManager.from({
+        auth: auth.auth!,
+        modelId,
+      })
+
+      const keys = keyManager.selectKeys()
+
+      for (const key of keys) {
+        log.info(`Using provider key ${key.id} for model ${modelId}`)
+
+        // TODO
+        function handleError(error: any) {
+          if (error instanceof APICallError) {
+            const statusCode = error.statusCode
+            if (statusCode === 408) {
+              // request timeout
+              return true
+            } else if (statusCode === 429) {
+              // too many requests
+              return true
+            } else if (statusCode && statusCode >= 500) {
+              // server error
+              return true
+            }
+          }
+          return false
+        }
+
+        const model = getModel(modelId, 'language', key.key)
+        if (!model) {
+          return new Response('Model not found', {
+            status: 400,
+          })
+        }
+        const providerId = model.provider
+
+        const callOptions = buildCallOptions({
+          args,
+          providerId,
+          signal: req.signal,
+        })
+
+        if (!isStream) {
+          try {
+            return await doGenerate({
+              model,
+              callOptions,
+              providerId,
+              modelId,
+            })
+          } catch (error) {
+            if (handleError(error)) {
+              continue
+            } else {
+              throw error
+            }
+          }
+        }
+
+        assert(writeChunk)
+        assert(closeStream)
+
+        try {
+          await doStream({
+            model,
+            callOptions,
+            providerId,
+            modelId,
+            writeChunk,
+          })
+        } catch (error) {
+          if (handleError(error)) {
+            continue
+          } else {
+            const errorChunk = {
+              error: {
+                message: error instanceof Error ? error.message : JSON.stringify(error),
+              },
+            }
+            await writeChunk(errorChunk)
+          }
+        }
+
+        await closeStream()
+        return
+      }
+    }
+
+    assert(writeChunk)
+    assert(closeStream)
+    await writeChunk({
+      error: {
+        message: 'Model not found',
+      },
+    })
+    await closeStream()
+  }
+
+  if (!isStream) {
+    return (await process())!
+  } else {
+    void process()
+
+    // Return the streaming response
+    return new Response(responseStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    })
+  }
+}
+
+function buildCallOptions({
+  args,
+  providerId,
+  signal,
+}: {
+  args: Omit<z.infer<typeof ChatCompletionRequestArgsSchema>, 'model' | 'stream'>
+  providerId: string
+  signal: AbortSignal
+}) {
   const callOptions: LanguageModelV2CallOptions = {
-    prompt: convertToLanguageModelV2Messages(messages),
+    prompt: convertToLanguageModelV2Messages(args.messages),
     maxOutputTokens: args.max_completion_tokens ?? args.max_tokens ?? undefined,
     temperature: args.temperature ?? undefined,
     stopSequences: args.stop ? (Array.isArray(args.stop) ? args.stop : [args.stop]) : undefined,
@@ -214,7 +362,7 @@ export async function POST(req: NextRequest): Promise<Response> {
               type: args.tool_choice.allowed_tools.mode,
             }
       : undefined,
-    abortSignal: req.signal,
+    abortSignal: signal,
     providerOptions: {
       [providerId]: {
         ...(args.logit_bias && { logitBias: args.logit_bias }),
@@ -231,276 +379,286 @@ export async function POST(req: NextRequest): Promise<Response> {
       },
     },
   }
+  return callOptions
+}
 
-  if (!doStream) {
-    const gen = await model.doGenerate(callOptions)
+async function doGenerate({
+  model,
+  callOptions,
+  providerId,
+  modelId,
+}: {
+  model: LanguageModelV2
+  callOptions: LanguageModelV2CallOptions
+  providerId: string
+  modelId: string
+}): Promise<Response> {
+  const gen = await model.doGenerate(callOptions)
 
-    const content = gen.content.find((part) => part.type === 'text')?.text ?? null
-    const toolCalls = gen.content
-      .filter((part) => part.type === 'tool-call')
-      .map((part) => ({
-        type: 'function' as const,
-        id: part.toolCallId,
-        function: {
-          name: part.toolName,
-          arguments: part.input,
+  const content = gen.content.find((part) => part.type === 'text')?.text ?? null
+  const toolCalls = gen.content
+    .filter((part) => part.type === 'tool-call')
+    .map((part) => ({
+      type: 'function' as const,
+      id: part.toolCallId,
+      function: {
+        name: part.toolName,
+        arguments: part.input,
+      },
+    }))
+
+  const rawResponse: any = gen.response?.body
+  const logprobs =
+    gen.providerMetadata?.[providerId]?.logprobs ?? rawResponse?.choices?.at(0)?.logprobs?.content
+
+  const finishReason = chatCompletionsFinishReason(gen.finishReason)
+
+  const response: OpenAI.ChatCompletion = {
+    id: gen.response?.id ?? generateId('chatcmpl', '-'),
+    created: Math.floor(+(gen.response?.timestamp ?? new Date()) / 1000),
+    model: modelId,
+    object: 'chat.completion',
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: 'assistant',
+          content,
+          tool_calls: toolCalls,
+          refusal: null,
+          annotations: [],
+          audio: null,
         },
-      }))
+        logprobs: logprobs
+          ? {
+              content: logprobs,
+              refusal: null,
+            }
+          : null,
+        finish_reason: finishReason,
+      },
+    ],
+    usage: chatCompletionsUsage(gen.usage, providerId, gen.providerMetadata, rawResponse?.usage),
+    service_tier: rawResponse?.service_tier,
+    system_fingerprint: rawResponse?.system_fingerprint,
+  }
 
-    const rawResponse: any = gen.response?.body
-    const logprobs =
-      gen.providerMetadata?.[providerId]?.logprobs ?? rawResponse?.choices?.at(0)?.logprobs?.content
+  return Response.json({
+    ...response,
+    warnings: gen.warnings,
+  })
+}
 
-    const finishReason = chatCompletionsFinishReason(gen.finishReason)
+async function doStream({
+  model,
+  callOptions,
+  providerId,
+  modelId,
+  writeChunk: writeChunk_,
+}: {
+  model: LanguageModelV2
+  callOptions: LanguageModelV2CallOptions
+  providerId: string
+  modelId: string
+  writeChunk: (data: any, notJson?: boolean) => Promise<void>
+}) {
+  const { stream } = await model.doStream(callOptions)
 
-    const response: OpenAI.ChatCompletion = {
-      id: gen.response?.id ?? generateId('chatcmpl', '-'),
-      created: Math.floor(+(gen.response?.timestamp ?? new Date()) / 1000),
-      model: modelId,
-      object: 'chat.completion',
-      choices: [
-        {
-          index: 0,
-          message: {
-            role: 'assistant',
-            content,
-            tool_calls: toolCalls,
-            refusal: null,
-            annotations: [],
-            audio: null,
-          },
-          logprobs: logprobs
-            ? {
-                content: logprobs,
-                refusal: null,
-              }
-            : null,
-          finish_reason: finishReason,
-        },
-      ],
-      usage: chatCompletionsUsage(gen.usage, providerId, gen.providerMetadata, rawResponse?.usage),
-      service_tier: rawResponse?.service_tier,
-      system_fingerprint: rawResponse?.system_fingerprint,
+  // Process the stream and convert to OpenAI format
+  const reader = stream.getReader()
+
+  // Track state for building the response
+  let responseMeta: Pick<OpenAI.ChatCompletionChunk, 'id' | 'model' | 'created' | 'object'> =
+    {} as any
+  const toolCallIndices = new Map<string, number>()
+
+  let hasWritten = false
+  const writeChunk = async (data: any, notJson = false) => {
+    hasWritten = true
+    await writeChunk_(data, notJson)
+  }
+
+  while (true) {
+    const { value: part, done } = await reader.read()
+
+    if (done) {
+      await writeChunk('[DONE]', true)
+      break
     }
 
-    return Response.json({
-      ...response,
-      warnings: gen.warnings,
-    })
-  } else {
-    const { stream } = await model.doStream(callOptions)
+    // Process different types of stream parts
+    switch (part.type) {
+      case 'stream-start': {
+        const chunk = {
+          ...responseMeta,
+          choices: [],
+          warnings: part.warnings,
+        }
+        await writeChunk(chunk)
+        break
+      }
 
-    // Create a TransformStream to convert LanguageModelV2StreamPart to OpenAI streaming format
-    const { readable, writable } = new TransformStream()
-    const writer = writable.getWriter()
+      case 'response-metadata':
+        responseMeta = {
+          id: part.id ?? generateId('chatcmpl', '-'),
+          created: Math.floor(+(part.timestamp ?? new Date()) / 1000),
+          model: modelId,
+          object: 'chat.completion.chunk',
+        }
+        break
 
-    // Helper function to write data to the stream
-    async function write(data: any) {
-      // SSE format
-      await writer.write(`data: ${JSON.stringify(data)}\n\n`)
-    }
+      case 'text-start': {
+        // Nothing
+        break
+      }
 
-    // Process the stream and convert to OpenAI format
-    const reader = stream.getReader()
-
-    // Track state for building the response
-    let responseMeta: Pick<OpenAI.ChatCompletionChunk, 'id' | 'model' | 'created' | 'object'>
-    const toolCallIndices = new Map<string, number>()
-
-    // Process the stream
-    async function processStream() {
-      try {
-        while (true) {
-          const { value: part, done } = await reader.read()
-
-          if (done) {
-            await write('[DONE]')
-            break
+      case 'text-delta':
+        if (part.delta) {
+          const chunk: OpenAI.ChatCompletionChunk = {
+            ...responseMeta,
+            choices: [
+              {
+                index: 0,
+                delta: { content: part.delta, role: 'assistant' },
+                finish_reason: null,
+              },
+            ],
           }
+          await writeChunk(chunk)
+        }
+        break
 
-          // Process different types of stream parts
-          switch (part.type) {
-            case 'stream-start': {
-              const chunk = {
-                ...responseMeta,
-                choices: [],
-                warnings: part.warnings,
-              }
-              await write(chunk)
-              break
-            }
+      case 'text-end':
+        break
 
-            case 'response-metadata':
-              responseMeta = {
-                id: part.id ?? generateId('chatcmpl', '-'),
-                created: Math.floor(+(part.timestamp ?? new Date()) / 1000),
-                model: modelId,
-                object: 'chat.completion.chunk',
-              }
-              break
+      case 'reasoning-start':
+        break
 
-            case 'text-start': {
-              // Nothing
-              break
-            }
+      case 'reasoning-delta':
+        break
 
-            case 'text-delta':
-              if (part.delta) {
-                const chunk: OpenAI.ChatCompletionChunk = {
-                  ...responseMeta,
-                  choices: [
-                    {
-                      index: 0,
-                      delta: { content: part.delta, role: 'assistant' },
-                      finish_reason: null,
-                    },
-                  ],
-                }
-                await write(chunk)
-              }
-              break
+      case 'reasoning-end':
+        break
 
-            case 'text-end':
-              break
+      case 'tool-input-start': {
+        if (toolCallIndices.has(part.id)) {
+          continue
+        }
+        const index = toolCallIndices.size
+        toolCallIndices.set(part.id, index)
 
-            case 'reasoning-start':
-              break
-
-            case 'reasoning-delta':
-              break
-
-            case 'reasoning-end':
-              break
-
-            case 'tool-input-start': {
-              if (toolCallIndices.has(part.id)) {
-                continue
-              }
-              const index = toolCallIndices.size
-              toolCallIndices.set(part.id, index)
-
-              const chunk: OpenAI.ChatCompletionChunk = {
-                ...responseMeta,
-                choices: [
+        const chunk: OpenAI.ChatCompletionChunk = {
+          ...responseMeta,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                tool_calls: [
                   {
-                    index: 0,
-                    delta: {
-                      tool_calls: [
-                        {
-                          index,
-                          id: part.id,
-                          type: 'function',
-                          function: {
-                            name: part.toolName,
-                          },
-                        },
-                      ],
+                    index,
+                    id: part.id,
+                    type: 'function',
+                    function: {
+                      name: part.toolName,
                     },
-                    finish_reason: null,
                   },
                 ],
-              }
-              await write(chunk)
-              break
-            }
+              },
+              finish_reason: null,
+            },
+          ],
+        }
+        await writeChunk(chunk)
+        break
+      }
 
-            case 'tool-input-delta': {
-              const index = toolCallIndices.get(part.id)
-              if (index === undefined) {
-                continue
-              }
+      case 'tool-input-delta': {
+        const index = toolCallIndices.get(part.id)
+        if (index === undefined) {
+          continue
+        }
 
-              const chunk: OpenAI.ChatCompletionChunk = {
-                ...responseMeta,
-                choices: [
+        const chunk: OpenAI.ChatCompletionChunk = {
+          ...responseMeta,
+          choices: [
+            {
+              index: 0,
+              delta: {
+                // Many of these fields are only set for the first delta of each tool call,
+                // like id, function.name, and type.
+                tool_calls: [
                   {
-                    index: 0,
-                    delta: {
-                      // Many of these fields are only set for the first delta of each tool call,
-                      // like id, function.name, and type.
-                      tool_calls: [
-                        {
-                          index,
-                          id: undefined,
-                          type: undefined,
-                          function: {
-                            name: undefined,
-                            arguments: part.delta,
-                          },
-                        },
-                      ],
+                    index,
+                    id: undefined,
+                    type: undefined,
+                    function: {
+                      name: undefined,
+                      arguments: part.delta,
                     },
-                    finish_reason: null,
                   },
                 ],
-              }
-              await write(chunk)
-              break
-            }
+              },
+              finish_reason: null,
+            },
+          ],
+        }
+        await writeChunk(chunk)
+        break
+      }
 
-            case 'tool-input-end':
-              break
+      case 'tool-input-end':
+        break
 
-            case 'tool-call':
-              break
+      case 'tool-call':
+        break
 
-            case 'tool-result':
-              break
+      case 'tool-result':
+        break
 
-            case 'file':
-              break
+      case 'file':
+        break
 
-            case 'source':
-              break
+      case 'source':
+        break
 
-            case 'raw':
-              break
+      case 'raw':
+        break
 
-            case 'error': {
-              break
-            }
-
-            case 'finish': {
-              const chunk: OpenAI.ChatCompletionChunk = {
-                ...responseMeta,
-                choices: [
-                  {
-                    index: 0,
-                    delta: {},
-                    finish_reason: chatCompletionsFinishReason(part.finishReason),
-                    logprobs: part.providerMetadata?.[providerId]?.logprobs as any,
-                  },
-                ],
-                usage: chatCompletionsUsage(part.usage, providerId, part.providerMetadata),
-              }
-              await write(chunk)
-              break
-            }
+      case 'error': {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!hasWritten && part.error instanceof APICallError) {
+          const statusCode = part.error.statusCode
+          if (statusCode === 408) {
+            // request timeout
+            throw part.error
+          } else if (statusCode === 429) {
+            // too many requests
+            throw part.error
+          } else if (statusCode && statusCode >= 500) {
+            // server error
+            throw part.error
           }
         }
-      } catch (error) {
-        const errorChunk = {
-          error: {
-            message: error instanceof Error ? error.message : JSON.stringify(error),
-          },
+        break
+      }
+
+      case 'finish': {
+        const chunk: OpenAI.ChatCompletionChunk = {
+          ...responseMeta,
+          choices: [
+            {
+              index: 0,
+              delta: {},
+              finish_reason: chatCompletionsFinishReason(part.finishReason),
+              logprobs: part.providerMetadata?.[providerId]?.logprobs as any,
+            },
+          ],
+          usage: chatCompletionsUsage(part.usage, providerId, part.providerMetadata),
         }
-        await write(errorChunk)
-      } finally {
-        await writer.close()
+        await writeChunk(chunk)
+        break
       }
     }
-
-    // Start processing the stream
-    void processStream()
-
-    // Return the streaming response
-    return new Response(readable, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    })
   }
 }
 

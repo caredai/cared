@@ -1,8 +1,9 @@
-import type { ProviderId, ProviderKey as ProviderKeyContent } from '@cared/providers'
+import type { ModelFullId, ProviderId, ProviderKey as ProviderKeyContent } from '@cared/providers'
 import { and, desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ProviderKey } from '@cared/db/schema'
 import { getKV } from '@cared/kv'
+import { splitModelFullId } from '@cared/providers'
 
 import type { AuthObject } from '../../auth'
 import { decryptProviderKey } from './encryption'
@@ -15,7 +16,17 @@ export class ProviderKeyManager {
     private userOrOrgKeys: ProviderKeyStatus[],
   ) {}
 
-  static async from({ auth, providerId }: { auth: AuthObject; providerId: ProviderId }) {
+  static async from({
+    auth,
+    providerId,
+    modelId,
+  }: {
+    auth: AuthObject
+    providerId?: ProviderId
+    modelId?: ModelFullId
+  }) {
+    providerId ??= splitModelFullId(modelId!).providerId
+
     const [systemKeysStatusStr, userOrOrgKeysStatusStr] = await Promise.all([
       kv.get(providerKeyStatusKey({ isSystem: true })),
       kv.get(

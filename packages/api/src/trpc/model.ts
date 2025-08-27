@@ -1,11 +1,9 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
-import type { SQL } from '@cared/db'
-import type { BaseModelInfo, BaseProviderInfo, ModelInfos, ModelType } from '@cared/providers'
-import { and, eq, inArray, or, sql } from '@cared/db'
+import type { BaseModelInfo, ModelInfos, ModelType } from '@cared/providers'
+import { and, eq, or } from '@cared/db'
 import { ProviderModels, ProviderSettings } from '@cared/db/schema'
-import log from '@cared/log'
 import {
   defaultModels,
   getBaseProviderInfos,
@@ -16,21 +14,12 @@ import {
   splitModelFullId,
 } from '@cared/providers'
 
+import type { ReturnedProviderInfo } from '../operation'
 import type { Context } from '../trpc'
 import { OrganizationScope } from '../auth'
+import { getProviderModelInfos, sourceSchema } from '../operation'
 import { protectedProcedure, publicProcedure } from '../trpc'
 import { updateModelArgsSchema, updateModelsArgsSchema } from '../types'
-
-type ReturnedProviderInfo = BaseProviderInfo & ReturnedModelInfos
-
-type ReturnedModelInfos = {
-  [K in keyof ModelInfos]: ModelInfos[K] extends (infer T)[] | undefined
-    ? (T & { isSystem?: boolean })[] | undefined
-    : never
-}
-
-const sourceSchema = z.enum(['system', 'custom'])
-type Source = z.infer<typeof sourceSchema>
 
 export const modelRouter = {
   /**
@@ -107,7 +96,8 @@ export const modelRouter = {
         .default({}),
     )
     .query(async ({ input, ctx }) => {
-      const providerInfos = await getProviderInfos(ctx, input.source, input.organizationId)
+      const userId = await checkPermissions(ctx, input.organizationId)
+      const providerInfos = await getProviderModelInfos(input.source, input.organizationId, userId)
 
       function format<M extends BaseModelInfo>(provider: ReturnedProviderInfo, models?: M[]) {
         return {
@@ -115,6 +105,7 @@ export const modelRouter = {
           name: provider.name,
           description: provider.description,
           icon: provider.icon,
+          isGateway: provider.isGateway,
           models:
             models?.map((model) => ({
               ...model,
@@ -173,7 +164,8 @@ export const modelRouter = {
         .default({}),
     )
     .query(async ({ input, ctx }) => {
-      const providerInfos = await getProviderInfos(ctx, input.source, input.organizationId)
+      const userId = await checkPermissions(ctx, input.organizationId)
+      const providerInfos = await getProviderModelInfos(input.source, input.organizationId, userId)
 
       function format<M extends { id: string }>(provider: ReturnedProviderInfo, models?: M[]) {
         return (
@@ -799,154 +791,6 @@ export const modelRouter = {
         })),
       }
     }),
-}
-
-async function getProviderInfos(ctx: Context, source?: Source, organizationId?: string) {
-  const userId = await checkPermissions(ctx, organizationId)
-
-  const baseProviderInfos = getBaseProviderInfos()
-
-  // Get provider models from database (system + user/organization)
-  const providerModelsList = await ctx.db
-    .select()
-    .from(ProviderModels)
-    .where(
-      source === 'system' // only system models
-        ? eq(ProviderModels.isSystem, true)
-        : source === 'custom' // only user/organization customized models
-          ? organizationId
-            ? eq(ProviderModels.organizationId, organizationId)
-            : eq(ProviderModels.userId, userId!)
-          : or(
-              // both system models and user/organization customized models
-              eq(ProviderModels.isSystem, true),
-              organizationId
-                ? eq(ProviderModels.organizationId, organizationId)
-                : eq(ProviderModels.userId, userId!),
-            ),
-    )
-
-  // Separate system and user/organization models
-  const systemProviderModels = new Map<string, ProviderModels>()
-  const userOrgProviderModels = new Map<string, ProviderModels>()
-  for (const providerModels of providerModelsList) {
-    const map = providerModels.isSystem ? systemProviderModels : userOrgProviderModels
-    if (map.has(providerModels.providerId)) {
-      log.error('Duplicate provider models found', {
-        providerModels,
-      })
-    }
-    map.set(providerModels.providerId, providerModels)
-  }
-
-  const providers: ReturnedProviderInfo[] = []
-
-  const deleteIds: string[] = []
-  const updateIds: string[] = []
-  const updateSqlChunks: SQL[] = []
-
-  updateSqlChunks.push(sql`(case`)
-
-  for (const providerInfo of baseProviderInfos) {
-    const system = systemProviderModels.get(providerInfo.id)
-    const userOrg = userOrgProviderModels.get(providerInfo.id)
-    const { shouldUpdateUserOrg, ...models } = mergeModels(
-      system?.models,
-      userOrg?.models, // may be updated in place if deduplicated
-    )
-    providers.push({
-      ...providerInfo,
-      ...models,
-    })
-
-    if (shouldUpdateUserOrg && userOrg) {
-      const models = userOrg.models
-      if (
-        models.languageModels?.length ||
-        models.imageModels?.length ||
-        models.speechModels?.length ||
-        models.transcriptionModels?.length ||
-        models.textEmbeddingModels?.length
-      ) {
-        updateIds.push(userOrg.id)
-        updateSqlChunks.push(sql`when
-        ${ProviderModels.id}
-        =
-        ${userOrg.id}
-        then
-        ${userOrg.models}`)
-      } else {
-        // If all model arrays are empty, delete the record
-        deleteIds.push(userOrg.id)
-      }
-    }
-  }
-
-  updateSqlChunks.push(sql`end
-  )`)
-
-  if (updateIds.length) {
-    const finalSql: SQL = sql.join(updateSqlChunks, sql.raw(' '))
-    await ctx.db
-      .update(ProviderModels)
-      .set({ models: finalSql })
-      .where(inArray(ProviderModels.id, updateIds))
-  }
-
-  if (deleteIds.length) {
-    await ctx.db.delete(ProviderModels).where(inArray(ProviderModels.id, deleteIds))
-  }
-
-  return providers
-}
-
-// Merge system and user/organization models, ensuring no duplicates and system models override user models
-function mergeModels(
-  system?: ModelInfos,
-  userOrg?: ModelInfos,
-): ReturnedModelInfos & {
-  shouldUpdateUserOrg: boolean
-} {
-  let shouldUpdateUserOrg = false
-
-  function deduplicate<T extends { id: string; isSystem?: boolean }[]>(system?: T, userOrg?: T) {
-    const newUserOrg = [] as unknown as T
-    const seen = new Set<string>()
-    const sep = system?.length ?? 0
-    const deduplicated = [...(system ?? []), ...(userOrg ?? [])]
-      // ensure system models override user models
-      .filter((item, index) => {
-        if (seen.has(item.id)) {
-          return false
-        }
-        if (index < sep) {
-          // Mark it as system if it's from system models
-          item.isSystem = true
-        } else {
-          // None-duplicate userOrg models
-          newUserOrg.push(item)
-        }
-        seen.add(item.id)
-        return true
-      })
-
-    // Update userOrg in place if it has fewer models than before
-    if (newUserOrg.length < (userOrg?.length ?? 0)) {
-      shouldUpdateUserOrg = true
-      userOrg?.splice(0, userOrg.length, ...newUserOrg)
-    }
-
-    return deduplicated
-  }
-
-  return {
-    languageModels: deduplicate(system?.languageModels, userOrg?.languageModels),
-    imageModels: deduplicate(system?.imageModels, userOrg?.imageModels),
-    speechModels: deduplicate(system?.speechModels, userOrg?.speechModels),
-    transcriptionModels: deduplicate(system?.transcriptionModels, userOrg?.transcriptionModels),
-    textEmbeddingModels: deduplicate(system?.textEmbeddingModels, userOrg?.textEmbeddingModels),
-    shouldUpdateUserOrg,
-  }
 }
 
 async function checkPermissions(ctx: Context, organizationId?: string, isSystem?: boolean) {

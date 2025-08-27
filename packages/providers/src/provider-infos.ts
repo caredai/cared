@@ -1,12 +1,14 @@
-import type { BaseProviderInfo } from './types'
+import type { BaseProviderInfo, ExtendedBaseProviderInfo } from './types'
 
-export function getBaseProviderInfos(): BaseProviderInfo[] {
+export function getExtendedBaseProviderInfos(): ExtendedBaseProviderInfo[] {
   return [
     {
       id: 'openrouter',
       name: 'OpenRouter',
       icon: 'openrouter.svg',
       description: 'OpenRouter API gateway providing access to various AI models',
+      isGateway: true,
+      modelSeparator: splitModelIdByFirstSeparator,
     },
     {
       id: 'openai',
@@ -31,6 +33,7 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       name: 'Google Cloud Vertex AI',
       icon: 'vertex_ai.svg',
       description: 'Google Cloud Vertex AI platform for enterprise ML and AI services',
+      isGateway: true,
     },
     {
       id: 'azure',
@@ -43,6 +46,9 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       name: 'Amazon Bedrock',
       icon: 'bedrock.svg',
       description: 'Amazon Bedrock AI service offering a variety of foundation models',
+      isGateway: true,
+      modelSeparator: (modelPrefixedId: string) =>
+        splitModelIdByFirstSeparator(modelPrefixedId, '.'),
     },
     {
       id: 'deepseek',
@@ -68,6 +74,8 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       name: 'Together AI',
       icon: 'togetherai.svg',
       description: 'Together AI platform offering a variety of open source and proprietary models',
+      isGateway: true,
+      modelSeparator: splitModelIdByFirstSeparator,
     },
     {
       id: 'cohere',
@@ -80,6 +88,8 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       name: 'Fireworks AI',
       icon: 'fireworks.svg',
       description: 'Fireworks AI platform offering optimized open source models',
+      isGateway: true,
+      modelSeparator: splitModelIdByLastSeparator,
     },
     {
       id: 'deepinfra',
@@ -87,6 +97,8 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       icon: 'deepinfra.png',
       description:
         'DeepInfra platform offering a variety of open source models with optimized inference',
+      isGateway: true,
+      modelSeparator: splitModelIdByFirstSeparator,
     },
     {
       id: 'cerebras',
@@ -99,12 +111,16 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       name: 'Groq',
       icon: 'groq.svg',
       description: 'Groq platform offering ultra-fast inference for language models',
+      isGateway: true,
+      modelSeparator: splitModelIdByFirstSeparator,
     },
     {
       id: 'replicate',
       name: 'Replicate',
       icon: 'replicate.svg',
       description: 'Replicate platform offering a wide variety of open source models',
+      isGateway: true,
+      modelSeparator: splitModelIdByFirstSeparator,
     },
     {
       id: 'perplexity',
@@ -119,5 +135,51 @@ export function getBaseProviderInfos(): BaseProviderInfo[] {
       icon: 'luma.svg',
       description: 'Luma AI platform specializing in video generation and 3D content creation',
     },
+    {
+      id: 'vercel',
+      name: 'Vercel v0',
+      icon: 'v0.svg',
+      description:
+        'The v0 Model API is designed for building modern web applications. It supports text and image inputs, provides fast streaming responses, and is compatible with the OpenAI Chat Completions API format.',
+    },
+    {
+      id: 'fal',
+      name: 'Fal',
+      icon: 'fal.svg',
+      description:
+        'Fal AI provides a generative media platform for developers with lightning-fast inference capabilities. Their platform offers optimized performance for running diffusion models, with speeds up to 4x faster than alternatives.',
+    },
+    {
+      id: 'elevenlabs',
+      name: 'ElevenLabs',
+      icon: 'elevenlabs.svg',
+      description:
+        'The ElevenLabs provider contains language model support for the ElevenLabs transcription and speech generation APIs.',
+    },
+    {
+      id: 'lmnt',
+      name: 'LMNT',
+      icon: 'lmnt.svg',
+      description:
+        "LMNT's text-to-speech and voice cloning API gives you the tools to build lifelike AI experiences",
+    },
   ]
+}
+
+export function getBaseProviderInfos(): BaseProviderInfo[] {
+  return getExtendedBaseProviderInfos().map(({ modelSeparator: _, ...baseInfo }) => baseInfo)
+}
+
+export function splitModelIdByFirstSeparator(modelPrefixedId: string, sep = '/') {
+  const index = modelPrefixedId.indexOf(sep)
+  const prefix = index >= 0 ? modelPrefixedId.slice(0, index) : ''
+  const modelId = index >= 0 ? modelPrefixedId.slice(index + 1) : modelPrefixedId
+  return { prefix, modelId }
+}
+
+export function splitModelIdByLastSeparator(modelPrefixedId: string, sep = '/') {
+  const index = modelPrefixedId.lastIndexOf(sep)
+  const prefix = index >= 0 ? modelPrefixedId.slice(0, index) : ''
+  const modelId = index >= 0 ? modelPrefixedId.slice(index + 1) : modelPrefixedId
+  return { prefix, modelId }
 }

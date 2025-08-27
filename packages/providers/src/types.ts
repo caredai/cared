@@ -33,6 +33,7 @@ export type ProviderId =
   | 'openai'
   | 'anthropic'
   | 'google'
+  | 'openrouter'
   | 'vertex'
   | 'azure'
   | 'bedrock'
@@ -48,12 +49,16 @@ export type ProviderId =
   | 'replicate'
   | 'perplexity'
   | 'luma'
-  | 'openrouter'
+  | 'vercel'
+  | 'fal'
+  | 'elevenlabs'
+  | 'lmnt'
 
 export const providerIds = [
   'openai',
   'anthropic',
   'google',
+  'openrouter',
   'vertex',
   'azure',
   'bedrock',
@@ -69,7 +74,10 @@ export const providerIds = [
   'replicate',
   'perplexity',
   'luma',
-  'openrouter',
+  'vercel',
+  'fal',
+  'elevenlabs',
+  'lmnt',
 ] as const
 
 export const providerIdSchema = z.enum(providerIds)
@@ -93,8 +101,8 @@ export function modelFullId(providerId: ProviderId, modelId: string): ModelFullI
 
 export function splitModelFullId(fullId: ModelFullId | string) {
   const index = fullId.indexOf(':')
-  const providerId = fullId.slice(0, index)
-  const modelId = fullId.slice(index + 1)
+  const providerId = index >= 0 ? fullId.slice(0, index) : ''
+  const modelId = index >= 0 ? fullId.slice(index + 1) : fullId
   return { providerId, modelId } as { providerId: ProviderId; modelId: string }
 }
 
@@ -105,6 +113,11 @@ export interface BaseProviderInfo {
   name: string
   icon: string
   description: string
+  isGateway?: boolean // whether it is a gateway provider like OpenRouter
+}
+
+export type ExtendedBaseProviderInfo = BaseProviderInfo & {
+  modelSeparator?: (modelPrefixedId: string) => { prefix: string; modelId: string } // for gateway providers, how to split model ID by prefix
 }
 
 export interface ModelInfos {
