@@ -1,13 +1,23 @@
-import type { AuthObject } from '@/auth'
 import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
-import type { BaseProviderInfo, ModelFullId, ModelInfos, ModelType } from '@cared/providers'
 import { eq, inArray, or, sql } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ProviderModels } from '@cared/db/schema'
 import log from '@cared/log'
-import { getBaseProviderInfos, getExtendedBaseProviderInfos, modelFullId } from '@cared/providers'
+import type {
+  BaseProviderInfo,
+  ModelFullId,
+  ModelInfos,
+  ModelType} from '@cared/providers';
+import {
+  getBaseProviderInfos,
+  getExtendedBaseProviderInfos,
+  modelFullId,
+  splitModelFullId,
+} from '@cared/providers'
+
+import type { AuthObject } from '@/auth'
 
 export type ReturnedProviderInfo = BaseProviderInfo & ReturnedModelInfos
 
@@ -91,12 +101,7 @@ export async function getProviderModelInfos(
         models.textEmbeddingModels?.length
       ) {
         updateIds.push(userOrg.id)
-        updateSqlChunks.push(sql`when
-        ${ProviderModels.id}
-        =
-        ${userOrg.id}
-        then
-        ${userOrg.models}`)
+        updateSqlChunks.push(sql`when ${ProviderModels.id} = ${userOrg.id} then ${userOrg.models}`)
       } else {
         // If all model arrays are empty, delete the record
         deleteIds.push(userOrg.id)
@@ -104,8 +109,7 @@ export async function getProviderModelInfos(
     }
   }
 
-  updateSqlChunks.push(sql`end
-  )`)
+  updateSqlChunks.push(sql`end)`)
 
   if (updateIds.length) {
     const finalSql: SQL = sql.join(updateSqlChunks, sql.raw(' '))
@@ -184,7 +188,12 @@ export async function findProvidersByModel<T extends ModelType>(
   }
 
   const providers = new Map(getExtendedBaseProviderInfos().map((info) => [info.id, info]))
+
   const providerModelsArray = await getProviderModelInfos(undefined, organizationId, userId)
+
+  const ids = splitModelFullId(queryModelId)
+  const queryProviderId = ids.providerId
+  queryModelId = ids.modelId
 
   // provide id => model
   const foundModels = new Map<
@@ -194,32 +203,48 @@ export async function findProvidersByModel<T extends ModelType>(
     }
   >()
 
-  providerModelsArray.forEach((providerModels) => {
-    const providerId = providerModels.id
-    const modelsByType = providerModels[`${modelType}Models`]
-
-    return modelsByType?.forEach((model) => {
-      if (model.id === queryModelId) {
-        foundModels.set(providerId, {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (queryProviderId) {
+    // TODO: optimize
+    const providerModels = providerModelsArray.find((p) => p.id === queryProviderId)
+    if (providerModels) {
+      const modelsByType = providerModels[`${modelType}Models`]
+      const model = modelsByType?.find((model) => model.id === queryModelId)
+      if (model) {
+        foundModels.set(queryProviderId, {
           ...model,
-          id: modelFullId(providerId, model.id),
+          id: modelFullId(queryProviderId, model.id),
         })
-      } else {
-        const provider = providers.get(providerId)
-        if (provider?.isGateway && provider.modelSeparator) {
-          const { modelId: modelIdNoPrefix } = provider.modelSeparator(model.id)
-          if (modelIdNoPrefix === queryModelId) {
-            if (!foundModels.has(providerId)) {
-              foundModels.set(providerId, {
-                ...model,
-                id: modelFullId(providerId, model.id),
-              })
+      }
+    }
+  } else {
+    providerModelsArray.forEach((providerModels) => {
+      const providerId = providerModels.id
+      const modelsByType = providerModels[`${modelType}Models`]
+
+      return modelsByType?.forEach((model) => {
+        if (model.id === queryModelId) {
+          foundModels.set(providerId, {
+            ...model,
+            id: modelFullId(providerId, model.id),
+          })
+        } else {
+          const provider = providers.get(providerId)
+          if (provider?.isGateway && provider.modelSeparator) {
+            const { modelId: modelIdNoPrefix } = provider.modelSeparator(model.id)
+            if (modelIdNoPrefix === queryModelId) {
+              if (!foundModels.has(providerId)) {
+                foundModels.set(providerId, {
+                  ...model,
+                  id: modelFullId(providerId, model.id),
+                })
+              }
             }
           }
         }
-      }
+      })
     })
-  })
+  }
 
   return Array.from(foundModels.values())
 }

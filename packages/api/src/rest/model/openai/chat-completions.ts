@@ -1,24 +1,25 @@
 import assert from 'assert'
-import type {
-  LanguageModelV2,
-  LanguageModelV2CallOptions,
-  LanguageModelV2FinishReason,
-  LanguageModelV2Usage,
-  SharedV2ProviderMetadata,
-} from '@ai-sdk/provider'
 import type { NextRequest } from 'next/server'
 import type { OpenAI } from 'openai'
 import { APICallError } from '@ai-sdk/provider'
 import { z } from 'zod/v4'
 
-import type { ModelFullId } from '@cared/providers'
+import type { LanguageGenerationDetails } from '@cared/providers'
 import log from '@cared/log'
-import { splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { generateId } from '@cared/shared'
 
+import type {
+  LanguageModelV2,
+  LanguageModelV2CallOptions,
+  LanguageModelV2CallWarning,
+  LanguageModelV2FinishReason,
+  LanguageModelV2ResponseMetadata,
+  LanguageModelV2Usage,
+  SharedV2ProviderMetadata,
+} from '@ai-sdk/provider'
 import { authenticate } from '../../../auth'
-import { findProvidersByModel, ProviderKeyManager } from '../../../operation'
+import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
 import { jsonSchema7Schema } from '../ai/language'
 import {
   ChatCompletionContentPartTextSchema,
@@ -153,6 +154,8 @@ const ChatCompletionRequestArgsSchema = z.object({
       }),
     })
     .optional(),
+
+  payerOrganizationId: z.string().optional(),
 })
 
 export async function POST(req: NextRequest): Promise<Response> {
@@ -161,21 +164,22 @@ export async function POST(req: NextRequest): Promise<Response> {
     return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
   }
 
-  const { model: modelId, stream: isStream, ...args } = validatedArgs.data
+  const { model: modelId, stream: isStream, payerOrganizationId, ...args } = validatedArgs.data
 
   const auth = await authenticate()
   if (!auth.isAuthenticated()) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  let modelIds: ModelFullId[] = [modelId as ModelFullId]
+  const expenseManager = ExpenseManager.from({
+    auth: auth.auth!,
+    payerOrganizationId,
+  })
+
   // Allow modelId without provider prefix
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!splitModelFullId(modelId).providerId) {
-    modelIds = (await findProvidersByModel(auth.auth!, modelId, 'language')).map((m) => m.id)
-  }
-  log.info(`Input model id: ${modelId}, resolved model ids: ${modelIds.join(', ')}`)
-  if (!modelIds.length) {
+  const models = await findProvidersByModel(auth.auth!, modelId, 'language')
+  log.info(`Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`)
+  if (!models.length) {
     return new Response('Model not found', {
       status: 400,
     })
@@ -201,7 +205,9 @@ export async function POST(req: NextRequest): Promise<Response> {
   }
 
   async function process() {
-    for (const modelId of modelIds) {
+    for (const modelInfo of models) {
+      const modelId = modelInfo.id
+
       const keyManager = await ProviderKeyManager.from({
         auth: auth.auth!,
         modelId,
@@ -244,49 +250,82 @@ export async function POST(req: NextRequest): Promise<Response> {
           signal: req.signal,
         })
 
-        if (!isStream) {
-          try {
-            return await doGenerate({
-              model,
-              callOptions,
-              providerId,
-              modelId,
-            })
-          } catch (error) {
-            if (handleError(error)) {
-              continue
-            } else {
-              throw error
+        await expenseManager.canAfford(
+          'language',
+          modelInfo,
+          {
+            modelType: 'language',
+            ...callOptions,
+          },
+          key.byok,
+        )
+
+        const details = {
+          modelType: 'language',
+          callOptions,
+          stream: !!isStream,
+        } as unknown as LanguageGenerationDetails
+
+        const execute = async () => {
+          if (!isStream) {
+            try {
+              return await doGenerate({
+                model,
+                callOptions,
+                providerId,
+                modelId,
+                details,
+              })
+            } catch (error) {
+              if (handleError(error)) {
+                return false
+              } else {
+                throw error
+              }
             }
-          }
-        }
-
-        assert(writeChunk)
-        assert(closeStream)
-
-        try {
-          await doStream({
-            model,
-            callOptions,
-            providerId,
-            modelId,
-            writeChunk,
-          })
-        } catch (error) {
-          if (handleError(error)) {
-            continue
           } else {
-            const errorChunk = {
-              error: {
-                message: error instanceof Error ? error.message : JSON.stringify(error),
-              },
+            assert(writeChunk)
+            assert(closeStream)
+
+            try {
+              await doStream({
+                model,
+                callOptions,
+                providerId,
+                modelId,
+                writeChunk,
+                details,
+              })
+            } catch (error) {
+              if (handleError(error)) {
+                return false
+              } else {
+                const errorChunk = {
+                  error: {
+                    message: error instanceof Error ? error.message : JSON.stringify(error),
+                  },
+                }
+                await writeChunk(errorChunk)
+              }
             }
-            await writeChunk(errorChunk)
+
+            await closeStream()
           }
         }
 
-        await closeStream()
-        return
+        const result = await execute()
+        if (result === false) {
+          // Try the next model/key if available
+          continue
+        }
+
+        await expenseManager.billGeneration('language', modelInfo, {
+          modelId,
+          byok: key.byok,
+          ...details,
+        })
+
+        return result
       }
     }
 
@@ -388,13 +427,28 @@ async function doGenerate({
   callOptions,
   providerId,
   modelId,
+  details,
 }: {
   model: LanguageModelV2
   callOptions: LanguageModelV2CallOptions
   providerId: string
   modelId: string
+  details: {
+    finishReason: LanguageModelV2FinishReason
+    usage: LanguageModelV2Usage
+    providerMetadata?: SharedV2ProviderMetadata
+    responseMetadata?: LanguageModelV2ResponseMetadata
+    warnings: LanguageModelV2CallWarning[]
+  }
 }): Promise<Response> {
   const gen = await model.doGenerate(callOptions)
+
+  details.finishReason = gen.finishReason
+  details.usage = gen.usage
+  details.providerMetadata = gen.providerMetadata
+  const { headers: _, body: __, ...responseMetadata } = gen.response ?? {}
+  details.responseMetadata = gen.response ? responseMetadata : undefined
+  details.warnings = gen.warnings
 
   const content = gen.content.find((part) => part.type === 'text')?.text ?? null
   const toolCalls = gen.content
@@ -456,12 +510,20 @@ async function doStream({
   providerId,
   modelId,
   writeChunk: writeChunk_,
+  details,
 }: {
   model: LanguageModelV2
   callOptions: LanguageModelV2CallOptions
   providerId: string
   modelId: string
   writeChunk: (data: any, notJson?: boolean) => Promise<void>
+  details: {
+    finishReason: LanguageModelV2FinishReason
+    usage: LanguageModelV2Usage
+    providerMetadata?: SharedV2ProviderMetadata
+    responseMetadata?: LanguageModelV2ResponseMetadata
+    warnings: LanguageModelV2CallWarning[]
+  }
 }) {
   const { stream } = await model.doStream(callOptions)
 
@@ -496,17 +558,24 @@ async function doStream({
           warnings: part.warnings,
         }
         await writeChunk(chunk)
+
+        details.warnings = part.warnings
+
         break
       }
 
-      case 'response-metadata':
+      case 'response-metadata': {
         responseMeta = {
           id: part.id ?? generateId('chatcmpl', '-'),
           created: Math.floor(+(part.timestamp ?? new Date()) / 1000),
           model: modelId,
           object: 'chat.completion.chunk',
         }
+
+        const { type: _, ...responseMetadata } = part
+        details.responseMetadata = responseMetadata
         break
+      }
 
       case 'text-start': {
         // Nothing
@@ -657,6 +726,11 @@ async function doStream({
           usage: chatCompletionsUsage(part.usage, providerId, part.providerMetadata),
         }
         await writeChunk(chunk)
+
+        details.finishReason = part.finishReason
+        details.usage = part.usage
+        details.providerMetadata = part.providerMetadata
+
         break
       }
     }

@@ -1,9 +1,13 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import type { Stripe } from 'stripe'
-import { index, integer, jsonb, pgEnum, pgTable, text } from 'drizzle-orm/pg-core'
+import { index, numeric, jsonb, pgEnum, pgTable, text } from 'drizzle-orm/pg-core'
 
-import { timestampsIndices, User } from '.'
+import { timestampsIndices, User, Organization } from '.'
 import { generateId, timestamps } from './utils'
+
+export const ownerTypes = ['user', 'organization'] as const
+export type OwnerType = (typeof ownerTypes)[number]
+export const ownerTypeEnum = pgEnum('ownerType', ownerTypes)
 
 export interface CreditsMetadata {
   customerId?: string
@@ -20,15 +24,19 @@ export const Credits = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('cdb')),
+    type: ownerTypeEnum().notNull(),
     userId: text()
-      .notNull()
       .references(() => User.id),
-    credits: integer().notNull(),
+    organizationId: text()
+      .references(() => Organization.id),
+    credits: numeric({ precision: 18, scale: 10 }).notNull(),
     metadata: jsonb().$type<CreditsMetadata>().notNull(),
     ...timestamps,
   },
   (table) => [
+    index().on(table.type),
     index().on(table.userId),
+    index().on(table.organizationId),
     ...timestampsIndices(table),
   ],
 )
@@ -37,7 +45,7 @@ export type Credits = InferSelectModel<typeof Credits>
 
 export const orderKinds = ['stripe-payment', 'stripe-subscription', 'stripe-invoice'] as const
 export type OrderKind = (typeof orderKinds)[number]
-export const orderKindEnum = pgEnum('order_kind', orderKinds)
+export const orderKindEnum = pgEnum('orderKind', orderKinds)
 
 export type OrderStatus = Stripe.Checkout.Session.Status | Stripe.Invoice.Status
 
@@ -48,9 +56,11 @@ export const CreditsOrder = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('cdo')),
+    type: ownerTypeEnum().notNull(),
     userId: text()
-      .notNull()
       .references(() => User.id),
+    organizationId: text()
+      .references(() => Organization.id),
     kind: orderKindEnum().notNull(),
     status: text().$type<OrderStatus>().notNull(),
     objectId: text().unique().notNull(),
@@ -68,7 +78,7 @@ export type CreditsOrder = InferSelectModel<typeof CreditsOrder>
 
 export const subscriptionKinds = ['stripe-subscription'] as const
 export type SubscriptionKind = (typeof subscriptionKinds)[number]
-export const subscriptionKindEnum = pgEnum('subscription_kind', subscriptionKinds)
+export const subscriptionKindEnum = pgEnum('subscriptionKind', subscriptionKinds)
 
 export type SubscriptionStatus = Stripe.Subscription.Status
 
@@ -79,9 +89,11 @@ export const CreditsSubscription = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('cds')),
+    type: ownerTypeEnum().notNull(),
     userId: text()
-      .notNull()
       .references(() => User.id),
+    organizationId: text()
+      .references(() => Organization.id),
     kind: subscriptionKindEnum().notNull(),
     status: text().$type<SubscriptionStatus>().notNull(),
     objectId: text().unique().notNull(),

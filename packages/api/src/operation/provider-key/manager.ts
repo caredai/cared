@@ -60,6 +60,7 @@ export class ProviderKeyManager {
 
       systemKeysStatus = keys.map((k) => ({
         id: k.id,
+        byok: !!k.isSystem,
         key: k.key,
         disabled: k.disabled,
       }))
@@ -81,6 +82,7 @@ export class ProviderKeyManager {
 
       userOrOrgKeysStatus = keys.map((k) => ({
         id: k.id,
+        byok: !!k.isSystem,
         key: k.key,
         disabled: k.disabled,
       }))
@@ -104,6 +106,7 @@ export class ProviderKeyManager {
 
   selectKeys(): {
     id: string
+    byok: boolean
     key: ProviderKeyContent
   }[] {
     return [...this.systemKeys, ...this.userOrOrgKeys].filter((k) => !k.disabled)
@@ -149,6 +152,11 @@ export interface ProviderKeyStatus {
    * Unique identifier for the Key.
    */
   id: string
+
+  /**
+   * Whether the Key is a byok Key.
+   */
+  byok: boolean
 
   /**
    * Encrypted or decrypted Key value.

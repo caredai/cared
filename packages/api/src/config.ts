@@ -2,6 +2,16 @@ import { maxMembers, maxOrganizations } from '@cared/auth'
 
 export const cfg = {
   /**
+   * Platform-level configurations
+   * Defines global settings for the platform
+   */
+  platform: {
+    /**
+     * Fee rate applied to credits purchased by users
+     */
+    creditsFeeRate: 0.05,
+  },
+  /**
    * User-level resource limitations
    * Defines the maximum resources allocated to each user
    */

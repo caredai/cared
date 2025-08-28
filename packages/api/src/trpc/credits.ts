@@ -7,19 +7,20 @@ import type { SQL } from '@cared/db'
 import type { OrderStatus } from '@cared/db/schema'
 import { getBaseUrl } from '@cared/auth/client'
 import { and, desc, eq, inArray, lt } from '@cared/db'
-import { Credits, CreditsOrder, orderKinds, User } from '@cared/db/schema'
+import { Credits, CreditsOrder, orderKinds, Organization, User } from '@cared/db/schema'
 import log from '@cared/log'
 
 import type { UserContext } from '../trpc'
 import { getStripe } from '../client/stripe'
+import { cfg } from '../config'
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
 
-export const creditsFeeRate = 0.05
-
-async function ensureCustomer(ctx: UserContext, stripe: Stripe) {
+async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizationId?: string) {
   let credits = await ctx.db.query.Credits.findFirst({
-    where: eq(Credits.userId, ctx.auth.userId),
+    where: organizationId
+      ? eq(Credits.organizationId, organizationId)
+      : eq(Credits.userId, ctx.auth.userId),
   })
   if (credits?.metadata.customerId) {
     return {
@@ -28,36 +29,74 @@ async function ensureCustomer(ctx: UserContext, stripe: Stripe) {
     }
   }
 
-  const user = await ctx.db.query.User.findFirst({
-    where: eq(User.id, ctx.auth.userId),
-  })
-  if (!user) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: `User with id ${ctx.auth.userId} not found`,
+  let customer
+
+  if (!organizationId) {
+    const user = await ctx.db.query.User.findFirst({
+      where: eq(User.id, ctx.auth.userId),
+    })
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `User with id ${ctx.auth.userId} not found`,
+      })
+    }
+
+    customer = await stripe.customers.create({
+      name: user.name,
+      email: user.email,
+      metadata: {
+        userId: user.id,
+      },
+    })
+  } else {
+    const organization = await ctx.db.query.Organization.findFirst({
+      where: eq(Organization.id, organizationId),
+    })
+    if (!organization) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `Organization with id ${organizationId} not found`,
+      })
+    }
+
+    customer = await stripe.customers.create({
+      name: organization.name,
+      metadata: {
+        organizationId: organization.id,
+      },
     })
   }
 
-  const customer = await stripe.customers.create({
-    name: user.name,
-    email: user.email,
-    metadata: {
-      userId: user.id,
-    },
-  })
-
-  credits = (
-    await ctx.db
-      .insert(Credits)
-      .values({
-        userId: ctx.auth.userId,
-        credits: 0,
-        metadata: {
-          customerId: customer.id,
-        },
-      })
-      .returning()
-  )[0]!
+  if (!credits) {
+    credits = (
+      await ctx.db
+        .insert(Credits)
+        .values({
+          type: organizationId ? 'organization' : 'user',
+          userId: organizationId ? undefined : ctx.auth.userId,
+          organizationId: organizationId,
+          credits: '0',
+          metadata: {
+            customerId: customer.id,
+          },
+        })
+        .returning()
+    ).at(0)!
+  } else {
+    credits = (
+      await ctx.db
+        .update(Credits)
+        .set({
+          metadata: {
+            ...credits.metadata,
+            customerId: customer.id,
+          },
+        })
+        .where(eq(Credits.id, credits.id))
+        .returning()
+    ).at(0)!
+  }
 
   return {
     customerId: customer.id,
@@ -125,18 +164,27 @@ async function getAutoRechargePrice(stripe: Stripe) {
 }
 
 export const creditsRouter = {
-  getCredits: userProtectedProcedure.query(async ({ ctx }) => {
-    const stripe = getStripe()
-    const { credits } = await ensureCustomer(ctx, stripe)
+  getCredits: userProtectedProcedure
+    .input(
+      z
+        .object({
+          organizationId: z.string().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const stripe = getStripe()
+      const { credits } = await ensureCustomer(ctx, stripe, input?.organizationId)
 
-    return {
-      credits,
-    }
-  }),
+      return {
+        credits,
+      }
+    }),
 
   listOrders: userProtectedProcedure
     .input(
       z.object({
+        organizationId: z.string().optional(),
         orderKinds: z.array(z.enum(orderKinds)).optional(),
         statuses: z.array(z.string()).optional(),
         limit: z.number().min(1).max(100).default(50),
@@ -144,7 +192,11 @@ export const creditsRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const conditions: SQL<unknown>[] = [eq(CreditsOrder.userId, ctx.auth.userId)]
+      const conditions: SQL<unknown>[] = [
+        input.organizationId
+          ? eq(CreditsOrder.organizationId, input.organizationId)
+          : eq(CreditsOrder.userId, ctx.auth.userId),
+      ]
       if (input.orderKinds) {
         conditions.push(inArray(CreditsOrder.kind, input.orderKinds))
       }
@@ -182,13 +234,14 @@ export const creditsRouter = {
   createOnetimeCheckout: userProtectedProcedure
     .input(
       z.object({
+        organizationId: z.string().optional(),
         credits: z.int().min(5).max(2500),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const stripe = getStripe()
 
-      const { customerId, credits } = await ensureCustomer(ctx, stripe)
+      const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
 
       if (credits.metadata.isRechargeInProgress) {
         throw new TRPCError({
@@ -207,7 +260,7 @@ export const creditsRouter = {
         line_items: [
           {
             price: price.id,
-            quantity: Math.ceil(input.credits * 100 * (1 + creditsFeeRate)),
+            quantity: Math.ceil(input.credits * 100 * (1 + cfg.platform.creditsFeeRate)),
           },
         ],
         mode: 'payment',
@@ -228,7 +281,9 @@ export const creditsRouter = {
       try {
         await ctx.db.transaction(async (tx) => {
           await tx.insert(CreditsOrder).values({
-            userId: ctx.auth.userId,
+            type: input.organizationId ? 'organization' : 'user',
+            userId: input.organizationId ? undefined : ctx.auth.userId,
+            organizationId: input.organizationId,
             kind: 'stripe-payment',
             status: session.status!,
             objectId: session.id,
@@ -257,26 +312,35 @@ export const creditsRouter = {
       }
     }),
 
-  listSubscriptions: userProtectedProcedure.query(async ({ ctx }) => {
-    const stripe = getStripe()
+  listSubscriptions: userProtectedProcedure
+    .input(
+      z
+        .object({
+          organizationId: z.string().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const stripe = getStripe()
 
-    const { customerId } = await ensureCustomer(ctx, stripe)
+      const { customerId } = await ensureCustomer(ctx, stripe, input?.organizationId)
 
-    const result = await stripe.subscriptions.list({
-      customer: customerId,
-      // NOTE: There should not be many non-canceled subscriptions, so we can safely use a high limit and avoid pagination.
-      limit: 100,
-    })
+      const result = await stripe.subscriptions.list({
+        customer: customerId,
+        // NOTE: There should not be many non-canceled subscriptions, so we can safely use a high limit and avoid pagination.
+        limit: 100,
+      })
 
-    return {
-      subscriptions: result.data,
-    }
-  }),
+      return {
+        subscriptions: result.data,
+      }
+    }),
 
   createAutoRechargeSubscriptionCheckout: userProtectedProcedure
     .input(
       z
         .object({
+          organizationId: z.string().optional(),
           autoRechargeThreshold: z.int().min(5),
           autoRechargeAmount: z.int().min(5),
         })
@@ -292,7 +356,7 @@ export const creditsRouter = {
     .mutation(async ({ ctx, input }) => {
       const stripe = getStripe()
 
-      const { customerId, credits } = await ensureCustomer(ctx, stripe)
+      const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
 
       if (credits.metadata.autoRechargeSubscriptionId) {
         throw new TRPCError({
@@ -338,7 +402,9 @@ export const creditsRouter = {
 
         await ctx.db.transaction(async (tx) => {
           await tx.insert(CreditsOrder).values({
-            userId: ctx.auth.userId,
+            type: input.organizationId ? 'organization' : 'user',
+            userId: input.organizationId ? undefined : ctx.auth.userId,
+            organizationId: input.organizationId || undefined,
             kind: 'stripe-subscription',
             status: session.status!,
             objectId: session.id,
@@ -369,109 +435,127 @@ export const creditsRouter = {
       }
     }),
 
-  cancelAutoRechargeSubscription: userProtectedProcedure.mutation(async ({ ctx }) => {
-    const stripe = getStripe()
+  cancelAutoRechargeSubscription: userProtectedProcedure
+    .input(
+      z
+        .object({
+          organizationId: z.string().optional(),
+        })
+        .optional(),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const stripe = getStripe()
 
-    const { credits } = await ensureCustomer(ctx, stripe)
-    if (!credits.metadata.autoRechargeSubscriptionId) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Auto-recharge subscription does not exist',
+      const { credits } = await ensureCustomer(ctx, stripe, input?.organizationId)
+      if (!credits.metadata.autoRechargeSubscriptionId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Auto-recharge subscription does not exist',
+        })
+      }
+
+      const subscription = await stripe.subscriptions.retrieve(
+        credits.metadata.autoRechargeSubscriptionId,
+      )
+      console.log(
+        `Canceling auto-recharge subscription ${credits.metadata.autoRechargeSubscriptionId} with status ${subscription.status}`,
+      )
+
+      if (subscription.status !== 'canceled') {
+        await stripe.subscriptions.cancel(credits.metadata.autoRechargeSubscriptionId)
+      }
+
+      await ctx.db
+        .update(Credits)
+        .set({
+          metadata: {
+            ...credits.metadata,
+            autoRechargeSubscriptionId: undefined,
+          },
+        })
+        .where(eq(Credits.id, credits.id))
+    }),
+
+  createAutoRechargeInvoice: userProtectedProcedure
+    .input(
+      z
+        .object({
+          organizationId: z.string().optional(),
+        })
+        .optional(),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const stripe = getStripe()
+
+      const { customerId, credits } = await ensureCustomer(ctx, stripe, input?.organizationId)
+
+      const metadata = credits.metadata
+      if (metadata.isRechargeInProgress) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Recharge is already in progress',
+        })
+      }
+      if (!metadata.autoRechargeSubscriptionId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Auto-recharge subscription does not exist',
+        })
+      }
+      if (Number(credits.credits) > metadata.autoRechargeThreshold!) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `You have enough credits (${credits.credits}), no need to recharge`,
+        })
+      }
+
+      const price = await getRechargePrice(stripe)
+
+      await stripe.invoiceItems.create({
+        customer: customerId,
+        pricing: {
+          price: price.id,
+        },
+        quantity: Math.ceil(metadata.autoRechargeAmount! * 100 * (1 + cfg.platform.creditsFeeRate)),
+        subscription: credits.metadata.autoRechargeSubscriptionId,
       })
-    }
 
-    const subscription = await stripe.subscriptions.retrieve(
-      credits.metadata.autoRechargeSubscriptionId,
-    )
-    console.log(
-      `Canceling auto-recharge subscription ${credits.metadata.autoRechargeSubscriptionId} with status ${subscription.status}`,
-    )
-
-    if (subscription.status !== 'canceled') {
-      await stripe.subscriptions.cancel(credits.metadata.autoRechargeSubscriptionId)
-    }
-
-    await ctx.db
-      .update(Credits)
-      .set({
+      const { lastResponse: _, ...invoice } = await stripe.invoices.create({
+        customer: customerId,
+        collection_method: 'send_invoice',
+        auto_advance: true,
         metadata: {
-          ...credits.metadata,
-          autoRechargeSubscriptionId: undefined,
+          credits: metadata.autoRechargeAmount!.toString(),
         },
       })
-      .where(eq(Credits.id, credits.id))
-  }),
 
-  createAutoRechargeInvoice: userProtectedProcedure.mutation(async ({ ctx }) => {
-    const stripe = getStripe()
-
-    const { customerId, credits } = await ensureCustomer(ctx, stripe)
-
-    const metadata = credits.metadata
-    if (metadata.isRechargeInProgress) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Recharge is already in progress',
-      })
-    }
-    if (!metadata.autoRechargeSubscriptionId) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Auto-recharge subscription does not exist',
-      })
-    }
-    if (credits.credits > metadata.autoRechargeThreshold!) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: `You have enough credits (${credits.credits}), no need to recharge`,
-      })
-    }
-
-    const price = await getRechargePrice(stripe)
-
-    await stripe.invoiceItems.create({
-      customer: customerId,
-      pricing: {
-        price: price.id,
-      },
-      quantity: Math.ceil(metadata.autoRechargeAmount! * 100 * (1 + creditsFeeRate)),
-      subscription: credits.metadata.autoRechargeSubscriptionId,
-    })
-
-    const { lastResponse: _, ...invoice } = await stripe.invoices.create({
-      customer: customerId,
-      collection_method: 'send_invoice',
-      auto_advance: true,
-      metadata: {
-        credits: metadata.autoRechargeAmount!.toString(),
-      },
-    })
-
-    try {
-      await ctx.db.transaction(async (tx) => {
-        await tx.insert(CreditsOrder).values({
-          userId: ctx.auth.userId,
-          kind: 'stripe-invoice',
-          status: invoice.status!,
-          objectId: invoice.id!,
-          object: invoice,
-        })
-
-        await tx
-          .update(Credits)
-          .set({
-            metadata: {
-              ...credits.metadata,
-              isRechargeInProgress: true,
-            },
+      try {
+        await ctx.db.transaction(async (tx) => {
+          await tx.insert(CreditsOrder).values({
+            type: input?.organizationId ? 'organization' : 'user',
+            userId: input?.organizationId ? undefined : ctx.auth.userId,
+            organizationId: input?.organizationId,
+            kind: 'stripe-invoice',
+            status: invoice.status!,
+            objectId: invoice.id!,
+            object: invoice,
           })
-          .where(eq(Credits.id, credits.id))
-      })
-    } catch (err) {
-      // If the order creation fails, we need to void the invoice.
-      await stripe.invoices.voidInvoice(invoice.id!)
 
-      throw err
-    }
-  }),
+          await tx
+            .update(Credits)
+            .set({
+              metadata: {
+                ...credits.metadata,
+                isRechargeInProgress: true,
+              },
+            })
+            .where(eq(Credits.id, credits.id))
+        })
+      } catch (err) {
+        // If the order creation fails, we need to void the invoice.
+        await stripe.invoices.voidInvoice(invoice.id!)
+
+        throw err
+      }
+    }),
 }

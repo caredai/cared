@@ -1,4 +1,7 @@
-import {
+import { Decimal } from 'decimal.js'
+import { z } from 'zod/v4'
+
+import type {
   EmbeddingModelV2,
   ImageModelV2,
   ImageModelV2CallOptions,
@@ -19,8 +22,6 @@ import {
   TranscriptionModelV2CallOptions,
   TranscriptionModelV2CallWarning,
 } from '@ai-sdk/provider'
-import { Decimal } from 'decimal.js'
-import { z } from 'zod/v4'
 
 export interface Provider {
   languageModel?(modelId: string): LanguageModelV2
@@ -372,64 +373,74 @@ export const providerKeySchema = z
   )
 
 export type GenerationDetails = {
-  modelType: ModelType
   modelId: ModelFullId
+  byok?: boolean
 } & (
-  | {
-      modelType: 'language'
-      callOptions: Omit<
-        LanguageModelV2CallOptions,
-        'prompt' | 'responseFormat' | 'tools' | 'abortSignal' | 'headers'
-      > & {
-        responseFormat?: 'text' | 'json'
-      }
-      stream: boolean
-      finishReason: LanguageModelV2FinishReason
-      usage: LanguageModelV2Usage
-      providerMetadata?: SharedV2ProviderMetadata
-      responseMetadata?: LanguageModelV2ResponseMetadata
-      warnings: LanguageModelV2CallWarning[]
-    }
-  | {
-      modelType: 'image'
-      callOptions: Omit<ImageModelV2CallOptions, 'abortSignal' | 'headers'>
-      warnings: ImageModelV2CallWarning[]
-      providerMetadata?: ImageModelV2ProviderMetadata
-      responseMetadata: Omit<Awaited<ReturnType<ImageModelV2['doGenerate']>>['response'], 'headers'>
-    }
-  | {
-      modelType: 'speech'
-      callOptions: Pick<
-        SpeechModelV2CallOptions,
-        'voice' | 'outputFormat' | 'speed' | 'language' | 'providerOptions'
-      >
-      warnings: SpeechModelV2CallWarning[]
-      providerMetadata?: SharedV2ProviderMetadata
-      responseMetadata: Omit<
-        Awaited<ReturnType<SpeechModelV2['doGenerate']>>['response'],
-        'headers' | 'body'
-      >
-    }
-  | {
-      modelType: 'transcription'
-      callOptions: Pick<TranscriptionModelV2CallOptions, 'mediaType' | 'providerOptions'>
-      language: string | undefined
-      durationInSeconds: number | undefined
-      warnings: TranscriptionModelV2CallWarning[]
-      providerMetadata?: SharedV2ProviderMetadata
-      responseMetadata: Omit<
-        Awaited<ReturnType<TranscriptionModelV2['doGenerate']>>['response'],
-        'headers' | 'body'
-      >
-    }
-  | {
-      modelType: 'textEmbedding'
-      callOptions: {
-        providerOptions?: SharedV2ProviderOptions
-      }
-      usage?: {
-        tokens: number
-      }
-      providerMetadata?: SharedV2ProviderMetadata
-    }
+  | LanguageGenerationDetails
+  | ImageGenerationDetails
+  | SpeechGenerationDetails
+  | TranscriptionGenerationDetails
+  | TextEmbeddingGenerationDetails
 )
+
+export interface LanguageGenerationDetails {
+  modelType: 'language'
+  callOptions: Omit<
+    LanguageModelV2CallOptions,
+    'prompt' | 'responseFormat' | 'tools' | 'abortSignal' | 'headers'
+  > & {
+    responseFormat?: 'text' | 'json'
+  }
+  stream: boolean
+  finishReason: LanguageModelV2FinishReason
+  usage: LanguageModelV2Usage
+  providerMetadata?: SharedV2ProviderMetadata
+  responseMetadata?: LanguageModelV2ResponseMetadata
+  warnings: LanguageModelV2CallWarning[]
+}
+
+export interface ImageGenerationDetails {
+  modelType: 'image'
+  callOptions: Omit<ImageModelV2CallOptions, 'abortSignal' | 'headers'>
+  warnings: ImageModelV2CallWarning[]
+  providerMetadata?: ImageModelV2ProviderMetadata
+  responseMetadata: Omit<Awaited<ReturnType<ImageModelV2['doGenerate']>>['response'], 'headers'>
+}
+
+export interface SpeechGenerationDetails {
+  modelType: 'speech'
+  callOptions: Pick<
+    SpeechModelV2CallOptions,
+    'voice' | 'outputFormat' | 'speed' | 'language' | 'providerOptions'
+  >
+  warnings: SpeechModelV2CallWarning[]
+  providerMetadata?: SharedV2ProviderMetadata
+  responseMetadata: Omit<
+    Awaited<ReturnType<SpeechModelV2['doGenerate']>>['response'],
+    'headers' | 'body'
+  >
+}
+
+export interface TranscriptionGenerationDetails {
+  modelType: 'transcription'
+  callOptions: Pick<TranscriptionModelV2CallOptions, 'mediaType' | 'providerOptions'>
+  language: string | undefined
+  durationInSeconds: number | undefined
+  warnings: TranscriptionModelV2CallWarning[]
+  providerMetadata?: SharedV2ProviderMetadata
+  responseMetadata: Omit<
+    Awaited<ReturnType<TranscriptionModelV2['doGenerate']>>['response'],
+    'headers' | 'body'
+  >
+}
+
+export interface TextEmbeddingGenerationDetails {
+  modelType: 'textEmbedding'
+  callOptions: {
+    providerOptions?: SharedV2ProviderOptions
+  }
+  usage?: {
+    tokens: number
+  }
+  providerMetadata?: SharedV2ProviderMetadata
+}

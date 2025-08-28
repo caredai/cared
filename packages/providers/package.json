@@ -54,6 +54,7 @@
     "@ai-sdk/togetherai": "^1.0.11",
     "@ai-sdk/vercel": "^1.0.11",
     "@ai-sdk/xai": "^2.0.11",
+    "@cared/shared": "workspace:*",
     "@friendliai/ai-provider": "^0.2.6",
     "@openrouter/ai-sdk-provider": "^1.1.2",
     "@portkey-ai/vercel-provider": "^2.1.0",

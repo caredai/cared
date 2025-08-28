@@ -1,6 +1,7 @@
 import type { Stripe } from 'stripe'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { Decimal } from 'decimal.js'
 import hash from 'stable-hash'
 
 import { eq } from '@cared/db'
@@ -94,7 +95,11 @@ export async function POST(req: Request) {
                     await tx
                       .select()
                       .from(Credits)
-                      .where(eq(Credits.userId, order.userId))
+                      .where(
+                        order.type === 'organization'
+                          ? eq(Credits.organizationId, order.organizationId!)
+                          : eq(Credits.userId, order.userId!),
+                      )
                       .for('update')
                   )[0]
 
@@ -102,15 +107,23 @@ export async function POST(req: Request) {
                     await tx
                       .update(Credits)
                       .set({
-                        credits: credits.credits + delta,
+                        credits: new Decimal(credits.credits)
+                          .add(delta)
+                          .toDecimalPlaces(10, Decimal.ROUND_CEIL)
+                          .toString(),
                         metadata: {
                           ...credits.metadata,
                           isRechargeInProgress: false,
                         },
                       })
-                      .where(eq(Credits.userId, order.userId))
+                      .where(eq(Credits.id, credits.id))
                   } else {
-                    log.error(`Credits not found for user with id ${order.userId}`)
+                    const entityType = order.type === 'organization' ? 'organization' : 'user'
+                    const entityId =
+                      order.type === 'organization' ? order.organizationId : order.userId
+                    log.error(
+                      `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                    )
                   }
                 } else {
                   if (!quantity) {
@@ -177,9 +190,9 @@ export async function POST(req: Request) {
                 order.status !== 'paid'
               ) {
                 /* const delta = invoice.lines.data.find(
-        (lineItem) =>
-          lineItem.pricing?.price_details?.price === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
-      )?.quantity */
+      (lineItem) =>
+        lineItem.pricing?.price_details?.price === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
+    )?.quantity */
                 const quantity = Math.floor(invoice.amount_paid) / 100
                 const delta = !isNaN(Number(invoice.metadata?.credits))
                   ? Number(invoice.metadata?.credits)
@@ -190,7 +203,11 @@ export async function POST(req: Request) {
                     await tx
                       .select()
                       .from(Credits)
-                      .where(eq(Credits.userId, order.userId))
+                      .where(
+                        order.type === 'organization'
+                          ? eq(Credits.organizationId, order.organizationId!)
+                          : eq(Credits.userId, order.userId!),
+                      )
                       .for('update')
                   )[0]
 
@@ -198,15 +215,23 @@ export async function POST(req: Request) {
                     await tx
                       .update(Credits)
                       .set({
-                        credits: credits.credits + delta,
+                        credits: new Decimal(credits.credits)
+                          .add(delta)
+                          .toDecimalPlaces(10, Decimal.ROUND_CEIL)
+                          .toString(),
                         metadata: {
                           ...credits.metadata,
                           isRechargeInProgress: false,
                         },
                       })
-                      .where(eq(Credits.userId, order.userId))
+                      .where(eq(Credits.id, credits.id))
                   } else {
-                    log.error(`Credits not found for user with id ${order.userId}`)
+                    const entityType = order.type === 'organization' ? 'organization' : 'user'
+                    const entityId =
+                      order.type === 'organization' ? order.organizationId : order.userId
+                    log.error(
+                      `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                    )
                   }
                 } else {
                   log.error(

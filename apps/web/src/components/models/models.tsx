@@ -162,7 +162,7 @@ export function Models({
                               Using your own keys allows you to manage rate limits and expenses
                               directly through your provider account.
                             </p>
-                            <p>Usage is billed at 8% of the upstream provider's cost.</p>
+                            <p>Usage is billed at 5% of the upstream provider's cost.</p>
                             <p>
                               Your keys are always prioritized, with optional fallback to Cared
                               credits for increased reliability.

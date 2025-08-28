@@ -1,4 +1,3 @@
-import type { ApiKeyAuth, ApiKeyMetadata } from '../types'
 import { cache } from 'react'
 import { headers } from 'next/headers'
 import { base64Url } from '@better-auth/utils/base64'
@@ -8,6 +7,8 @@ import { auth as authApi } from '@cared/auth'
 import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@cared/db/schema'
+
+import type { ApiKeyAuth, ApiKeyMetadata } from '../types'
 
 export type AuthObject =
   | {
@@ -151,38 +152,38 @@ export async function authenticate() {
 
 export const authenticateWithHeaders = cache(async (headers: Headers): Promise<Auth> => {
   const authorization = headers.get('Authorization')
-  const token = authorization?.replace('Bearer ', '') ?? ''
+  const bearerToken = authorization?.replace('Bearer ', '') ?? ''
 
-  let key = headers.get('X-API-KEY')
-  if (!key && token.startsWith('sk_')) {
-    key = token
+  let apiKey = headers.get('X-API-KEY')
+  if (!apiKey && bearerToken.startsWith('sk_')) {
+    apiKey = bearerToken
   }
 
-  if (key) {
+  if (apiKey) {
     // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
-    const hash = await createHash('SHA-256').digest(new TextEncoder().encode(key))
+    const hash = await createHash('SHA-256').digest(new TextEncoder().encode(apiKey))
     const hashed = base64Url.encode(new Uint8Array(hash), {
       padding: false,
     })
 
     // TODO: cache
-    const apiKey = await db.query.ApiKey.findFirst({
+    const key = await db.query.ApiKey.findFirst({
       where: eq(ApiKey.key, hashed),
     })
 
-    if (apiKey?.metadata) {
+    if (key?.metadata) {
       // NOTE: metadata is stringified twice in better-auth
-      const metadata = JSON.parse(JSON.parse(apiKey.metadata)) as ApiKeyMetadata
+      const metadata = JSON.parse(JSON.parse(key.metadata)) as ApiKeyMetadata
 
       const auth = {
         ...metadata,
       } as ApiKeyAuth
 
       if (auth.scope === 'user') {
-        auth.userId = apiKey.userId
+        auth.userId = key.userId
 
         const user = await db.query.User.findFirst({
-          where: eq(User.id, apiKey.userId),
+          where: eq(User.id, key.userId),
         })
         if (!user) {
           return new Auth()
@@ -193,16 +194,16 @@ export const authenticateWithHeaders = cache(async (headers: Headers): Promise<A
 
       return new Auth({
         type: 'apiKey',
-        ownerId: apiKey.userId,
+        ownerId: key.userId,
         ...auth,
       })
     }
   }
 
-  if (token) {
+  if (bearerToken) {
     // TODO: cache
     const accessToken = await db.query.OAuthAccessToken.findFirst({
-      where: eq(OAuthAccessToken.accessToken, token),
+      where: eq(OAuthAccessToken.accessToken, bearerToken),
     })
     if (accessToken) {
       // TODO: cache
