@@ -303,6 +303,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (!isStream) {
     return (await process())!
   } else {
+    // Processing the stream asynchronously
     void process()
 
     // Return the streaming response
