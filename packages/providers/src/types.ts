@@ -375,6 +375,8 @@ export const providerKeySchema = z
 export type GenerationDetails = {
   modelId: ModelFullId
   byok?: boolean
+  latency: number // first token latency, in ms
+  generationTime: number // generation time (not including latency), in ms
 } & (
   | LanguageGenerationDetails
   | ImageGenerationDetails
@@ -444,3 +446,12 @@ export interface TextEmbeddingGenerationDetails {
   }
   providerMetadata?: SharedV2ProviderMetadata
 }
+
+export type GenerationDetailsByType<
+  T extends { modelType: ModelType },
+  K extends T['modelType'],
+> = T extends {
+  modelType: K
+}
+  ? T
+  : never

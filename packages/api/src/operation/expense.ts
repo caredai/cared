@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Decimal } from 'decimal.js'
 
 import type {
-  ExtractGenerationDetailsByType,
+  GenerationDetailsByType,
   GenerationDetails,
   ModelCallOptions,
   ModelInfos,
@@ -12,8 +12,11 @@ import { and, desc, eq, sql } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Credits, Expense, Member, Organization } from '@cared/db/schema'
 import { computeGenerationCost, estimateGenerationCost } from '@cared/providers'
+import { getKV } from '@cared/kv'
 
 import type { AuthObject } from '@/auth'
+
+const kv = getKV('expense', 'upstash')
 
 export class ExpenseManager {
   static from({ auth, payerOrganizationId }: { auth: AuthObject; payerOrganizationId?: string }) {
@@ -109,7 +112,7 @@ export class ExpenseManager {
   async canAfford<T extends ModelType, K extends `${T}Models`>(
     type: T,
     model: NonNullable<ModelInfos[K]>[number],
-    callOptions: ExtractGenerationDetailsByType<ModelCallOptions, T>,
+    callOptions: GenerationDetailsByType<ModelCallOptions, T>,
     byok?: boolean,
   ) {
     const creditsCandidates = await this.prepare()
@@ -139,7 +142,7 @@ export class ExpenseManager {
   async billGeneration<T extends ModelType, K extends `${T}Models`>(
     type: T,
     model: NonNullable<ModelInfos[K]>[number],
-    details: ExtractGenerationDetailsByType<GenerationDetails, T>,
+    details: GenerationDetailsByType<GenerationDetails, T>,
   ) {
     await this.waitUntil(async () => {
       const creditsCandidates = await this.prepare()

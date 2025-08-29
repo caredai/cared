@@ -1,29 +1,25 @@
-import {
+import { Decimal } from 'decimal.js'
+
+import { SuperJSON } from '@cared/shared'
+
+import type {
+  GenerationDetailsByType,
+  GenerationDetails,
+  ModelInfos,
+  ModelType,
+} from './types'
+import type {
   EmbeddingModelV2,
   ImageModelV2CallOptions,
   LanguageModelV2CallOptions,
   SpeechModelV2CallOptions,
   TranscriptionModelV2CallOptions,
 } from '@ai-sdk/provider'
-import { Decimal } from 'decimal.js'
-
-import { SuperJSON } from '@cared/shared'
-
-import type { GenerationDetails, ModelInfos, ModelType } from './types'
-
-export type ExtractGenerationDetailsByType<
-  T extends { modelType: ModelType },
-  K extends T['modelType'],
-> = T extends {
-  modelType: K
-}
-  ? T
-  : never
 
 export function computeGenerationCost<T extends ModelType, K extends `${T}Models`>(
   type: T,
   model: NonNullable<ModelInfos[K]>[number],
-  details: ExtractGenerationDetailsByType<GenerationDetails, T>,
+  details: GenerationDetailsByType<GenerationDetails, T>,
 ): Decimal | undefined {
   const computeCost = () => {
     switch (type) {
@@ -69,7 +65,7 @@ export type ModelCallOptions =
 export function estimateGenerationCost<T extends ModelType, K extends `${T}Models`>(
   type: T,
   model: NonNullable<ModelInfos[K]>[number],
-  callOptions: ExtractGenerationDetailsByType<ModelCallOptions, T>,
+  callOptions: GenerationDetailsByType<ModelCallOptions, T>,
 ): Decimal | undefined {
   // TODO
   switch (type) {
@@ -101,7 +97,7 @@ function estimateLanguageCost(
 
 function computeLanguageCost(
   model: NonNullable<ModelInfos['languageModels']>[number],
-  details: ExtractGenerationDetailsByType<GenerationDetails, 'language'>,
+  details: GenerationDetailsByType<GenerationDetails, 'language'>,
 ): Decimal | undefined {
   if (!model.chargeable) {
     return
@@ -139,7 +135,7 @@ function computeLanguageCost(
 
 function computeImageCost(
   model: NonNullable<ModelInfos['imageModels']>[number],
-  _details: ExtractGenerationDetailsByType<GenerationDetails, 'image'>,
+  _details: GenerationDetailsByType<GenerationDetails, 'image'>,
 ): Decimal | undefined {
   if (!model.chargeable) {
     return
@@ -148,7 +144,7 @@ function computeImageCost(
 
 function computeSpeechCost(
   model: NonNullable<ModelInfos['speechModels']>[number],
-  _details: ExtractGenerationDetailsByType<GenerationDetails, 'speech'>,
+  _details: GenerationDetailsByType<GenerationDetails, 'speech'>,
 ): Decimal | undefined {
   if (!model.chargeable) {
     return
@@ -157,7 +153,7 @@ function computeSpeechCost(
 
 function computeTranscriptionCost(
   model: NonNullable<ModelInfos['transcriptionModels']>[number],
-  _details: ExtractGenerationDetailsByType<GenerationDetails, 'transcription'>,
+  _details: GenerationDetailsByType<GenerationDetails, 'transcription'>,
 ): Decimal | undefined {
   if (!model.chargeable) {
     return
@@ -167,7 +163,7 @@ function computeTranscriptionCost(
 
 function computeTextEmbeddingCost(
   model: NonNullable<ModelInfos['textEmbeddingModels']>[number],
-  _details: ExtractGenerationDetailsByType<GenerationDetails, 'textEmbedding'>,
+  _details: GenerationDetailsByType<GenerationDetails, 'textEmbedding'>,
 ): Decimal | undefined {
   if (!model.chargeable) {
     return

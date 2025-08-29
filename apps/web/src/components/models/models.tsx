@@ -159,13 +159,21 @@ export function Models({
                               with your own API keys (BYOK).
                             </p>
                             <p>
-                              Using your own keys allows you to manage rate limits and expenses
-                              directly through your provider account.
+                              Using your own keys allows you to manage rate limits
+                              <br />
+                              and expenses directly through your provider account.
                             </p>
-                            <p>Usage is billed at 5% of the upstream provider's cost.</p>
                             <p>
-                              Your keys are always prioritized, with optional fallback to Cared
-                              credits for increased reliability.
+                              The first 500 calls per day are{' '}
+                              <span className="text-green-600 font-medium">free</span>. After that,
+                              usage <br /> is billed at{' '}
+                              <span className="text-blue-600 font-medium">5%</span> of the upstream
+                              provider's cost.
+                            </p>
+                            <p>
+                              Your keys are always prioritized, with optional fallback
+                              <br />
+                              to Cared credits for increased reliability.
                             </p>
                           </>
                         ) : !isSystem && provider.enabled ? (
@@ -179,11 +187,14 @@ export function Models({
                               <span className="text-xs bg-green-100 text-green-800 px-1 rounded">
                                 Chargeable
                               </span>{' '}
-                              tag will be charged against your Cared credits.
+                              tag
+                              <br />
+                              will be charged against your Cared credits.
                             </p>
                             <p>
-                              However, you can add and enable your own API keys for this provider,
-                              to use those models with no{' '}
+                              However, you can add and enable your own API keys
+                              <br />
+                              for this provider, to use those models with no{' '}
                               <span className="text-xs bg-green-100 text-green-800 px-1 rounded">
                                 Chargeable
                               </span>{' '}
@@ -192,8 +203,9 @@ export function Models({
                           </>
                         ) : !isSystem ? (
                           <p>
-                            Provider <span className="text-red-500 font-medium">unavailable</span> -
-                            please add or enable your own API keys
+                            Provider <span className="text-red-500 font-medium">unavailable</span>.
+                            <br />
+                            Please add or enable your own API keys.
                           </p>
                         ) : (
                           !hasKey && (
@@ -258,7 +270,9 @@ export function Models({
                     <p>
                       Provider ID: <span className="font-mono">{provider.id}</span>
                     </p>
-                    <p className="mt-4 lg:min-h-16 xl:min-h-10 line-clamp-3">{provider.description}</p>
+                    <p className="mt-4 lg:min-h-16 xl:min-h-10 line-clamp-3">
+                      {provider.description}
+                    </p>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

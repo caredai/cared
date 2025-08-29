@@ -5,6 +5,7 @@ import type { Stripe } from 'stripe'
 import { useState } from 'react'
 import { format, formatDistance } from 'date-fns'
 import { CoinsIcon, CreditCardIcon, HistoryIcon, RepeatIcon } from 'lucide-react'
+import { Decimal } from 'decimal.js'
 
 import type { OrderStatus } from '@cared/db/schema'
 import { Badge } from '@cared/ui/components/badge'
@@ -31,10 +32,6 @@ export function Credits() {
   const autoRechargeThreshold = credits.metadata.autoRechargeThreshold
 
   const [isRechargeDialogOpen, setIsRechargeDialogOpen] = useState(false)
-
-  const formatCredits = (amount: number) => {
-    return amount.toFixed(2)
-  }
 
   const getOrderStatus = (status: OrderStatus) => {
     switch (status) {
@@ -66,7 +63,7 @@ export function Credits() {
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-2xl font-bold">$ {formatCredits(credits.credits)}</p>
+              <p className="text-2xl font-bold">$ {new Decimal(credits.credits).toFixed(2)}</p>
             </div>
             <Button onClick={() => setIsRechargeDialogOpen(true)}>
               <CreditCardIcon className="h-4 w-4 mr-2" />

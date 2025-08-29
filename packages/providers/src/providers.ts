@@ -1,10 +1,3 @@
-import type {
-  EmbeddingModelV2,
-  ImageModelV2,
-  LanguageModelV2,
-  SpeechModelV2,
-  TranscriptionModelV2,
-} from '@ai-sdk/provider'
 import { bedrock, createAmazonBedrock } from '@ai-sdk/amazon-bedrock'
 import { anthropic, createAnthropic } from '@ai-sdk/anthropic'
 import { azure, createAzure } from '@ai-sdk/azure'
@@ -29,6 +22,13 @@ import { createVercel, vercel } from '@ai-sdk/vercel'
 import { createXai, xai } from '@ai-sdk/xai'
 import { createOpenRouter, openrouter } from '@openrouter/ai-sdk-provider'
 
+import type {
+  EmbeddingModelV2,
+  ImageModelV2,
+  LanguageModelV2,
+  SpeechModelV2,
+  TranscriptionModelV2,
+} from '@ai-sdk/provider'
 import { splitModelFullId } from './index'
 import { googleServiceAccountSchema, ModelType, Provider, ProviderId, ProviderKey } from './types'
 
@@ -120,16 +120,17 @@ export function getModel<T extends ModelType>(
   fullId: string,
   modelType: T,
   key?: ProviderKey,
+  fetch?: typeof globalThis.fetch,
 ): T extends 'language'
-  ? LanguageModelV2 | undefined
+  ? LanguageModelV2
   : T extends 'image'
-    ? ImageModelV2 | undefined
+    ? ImageModelV2
     : T extends 'speech'
-      ? SpeechModelV2 | undefined
+      ? SpeechModelV2
       : T extends 'transcription'
-        ? TranscriptionModelV2 | undefined
+        ? TranscriptionModelV2
         : T extends 'textEmbedding'
-          ? EmbeddingModelV2<string> | undefined
+          ? EmbeddingModelV2<string>
           : never {
   const { providerId, modelId } = splitModelFullId(fullId)
   let provider = providers[providerId]
@@ -140,6 +141,7 @@ export function getModel<T extends ModelType>(
           baseURL: key.baseUrl,
           apiKey: key.apiKey,
           apiVersion: key.apiVersion,
+          fetch,
         })
         break
       case 'bedrock':
@@ -148,6 +150,7 @@ export function getModel<T extends ModelType>(
           region: key.region,
           accessKeyId: key.accessKeyId,
           secretAccessKey: key.secretAccessKey,
+          fetch,
         })
         break
       case 'vertex': {
@@ -162,6 +165,7 @@ export function getModel<T extends ModelType>(
             privateKey: sa.private_key,
             privateKeyId: sa.private_key_id,
           },
+          fetch,
         })
         break
       }
@@ -169,6 +173,7 @@ export function getModel<T extends ModelType>(
         provider = createReplicate({
           baseURL: key.baseUrl,
           apiToken: key.apiToken,
+          fetch,
         })
         break
       default: {
@@ -176,16 +181,13 @@ export function getModel<T extends ModelType>(
         provider = creator({
           apiKey: key.apiKey,
           baseURL: key.baseUrl,
+          fetch,
         })
         break
       }
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (!provider) {
-    return undefined as any
-  }
   if (modelType === 'language') {
     return provider.languageModel?.(modelId) as any
   } else if (modelType === 'image') {

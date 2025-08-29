@@ -4,17 +4,16 @@ import type { OpenAI } from 'openai'
 import { APICallError } from '@ai-sdk/provider'
 import { z } from 'zod/v4'
 
-import type { LanguageGenerationDetails } from '@cared/providers'
+import type { GenerationDetails, GenerationDetailsByType } from '@cared/providers'
 import log from '@cared/log'
+import { splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { generateId } from '@cared/shared'
 
 import type {
   LanguageModelV2,
   LanguageModelV2CallOptions,
-  LanguageModelV2CallWarning,
   LanguageModelV2FinishReason,
-  LanguageModelV2ResponseMetadata,
   LanguageModelV2Usage,
   SharedV2ProviderMetadata,
 } from '@ai-sdk/provider'
@@ -207,10 +206,12 @@ export async function POST(req: NextRequest): Promise<Response> {
   async function process() {
     for (const modelInfo of models) {
       const modelId = modelInfo.id
+      const providerId = splitModelFullId(modelId).providerId
 
       const keyManager = await ProviderKeyManager.from({
         auth: auth.auth!,
         modelId,
+        byok: !modelInfo.chargeable,
       })
 
       const keys = keyManager.selectKeys()
@@ -236,14 +237,6 @@ export async function POST(req: NextRequest): Promise<Response> {
           return false
         }
 
-        const model = getModel(modelId, 'language', key.key)
-        if (!model) {
-          return new Response('Model not found', {
-            status: 400,
-          })
-        }
-        const providerId = model.provider
-
         const callOptions = buildCallOptions({
           args,
           providerId,
@@ -260,11 +253,39 @@ export async function POST(req: NextRequest): Promise<Response> {
           key.byok,
         )
 
+        const {
+          prompt: _a,
+          responseFormat: _b,
+          tools: _c,
+          abortSignal: _d,
+          headers: _e,
+          responseFormat: _f,
+          ...callOptions_
+        } = callOptions
         const details = {
+          modelId,
+          byok: key.byok,
+
           modelType: 'language',
-          callOptions,
+          callOptions: {
+            ...callOptions_,
+            responseFormat: callOptions.responseFormat?.type,
+          },
           stream: !!isStream,
-        } as unknown as LanguageGenerationDetails
+        } as unknown as GenerationDetailsByType<GenerationDetails, 'language'>
+
+        async function customFetch(
+          input: string | URL | Request,
+          init?: RequestInit,
+        ): Promise<Response> {
+          const startTime = performance.now()
+          const response = await fetch(input, init)
+          const endTime = performance.now()
+          details.latency = Math.floor(endTime - startTime)
+          return response
+        }
+
+        const model = getModel(modelId, 'language', key.key, customFetch)
 
         const execute = async () => {
           if (!isStream) {
@@ -319,11 +340,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           continue
         }
 
-        await expenseManager.billGeneration('language', modelInfo, {
-          modelId,
-          byok: key.byok,
-          ...details,
-        })
+        await expenseManager.billGeneration('language', modelInfo, details)
 
         return result
       }
@@ -433,16 +450,12 @@ async function doGenerate({
   callOptions: LanguageModelV2CallOptions
   providerId: string
   modelId: string
-  details: {
-    finishReason: LanguageModelV2FinishReason
-    usage: LanguageModelV2Usage
-    providerMetadata?: SharedV2ProviderMetadata
-    responseMetadata?: LanguageModelV2ResponseMetadata
-    warnings: LanguageModelV2CallWarning[]
-  }
+  details: GenerationDetailsByType<GenerationDetails, 'language'>
 }): Promise<Response> {
+  const startTime = performance.now()
   const gen = await model.doGenerate(callOptions)
 
+  details.generationTime = Math.max(Math.floor(performance.now() - startTime - details.latency), 0)
   details.finishReason = gen.finishReason
   details.usage = gen.usage
   details.providerMetadata = gen.providerMetadata
@@ -517,14 +530,9 @@ async function doStream({
   providerId: string
   modelId: string
   writeChunk: (data: any, notJson?: boolean) => Promise<void>
-  details: {
-    finishReason: LanguageModelV2FinishReason
-    usage: LanguageModelV2Usage
-    providerMetadata?: SharedV2ProviderMetadata
-    responseMetadata?: LanguageModelV2ResponseMetadata
-    warnings: LanguageModelV2CallWarning[]
-  }
+  details: GenerationDetailsByType<GenerationDetails, 'language'>
 }) {
+  const startTime = performance.now()
   const { stream } = await model.doStream(callOptions)
 
   // Process the stream and convert to OpenAI format
@@ -545,6 +553,10 @@ async function doStream({
     const { value: part, done } = await reader.read()
 
     if (done) {
+      details.generationTime = Math.max(
+        Math.floor(performance.now() - startTime - details.latency),
+        0,
+      )
       await writeChunk('[DONE]', true)
       break
     }
@@ -573,6 +585,7 @@ async function doStream({
         }
 
         const { type: _, ...responseMetadata } = part
+        details.latency = Math.floor(performance.now() - startTime)
         details.responseMetadata = responseMetadata
         break
       }

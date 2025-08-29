@@ -7,9 +7,36 @@ export const cfg = {
    */
   platform: {
     /**
+     * Maximum number of AI model calls a user can send per day
+     */
+    freeQuotaModelCallsPerDay: 500,
+    /**
      * Fee rate applied to credits purchased by users
      */
     creditsFeeRate: 0.05,
+
+    /**
+     * Circuit breaker settings for handling AI model call failures.
+     * Prevents overwhelming AI services by limiting requests after repeated failures.
+     */
+    modelCircuitBreaker: {
+      /**
+       * Number of failures before opening the circuit.
+       * If the number of failures exceeds this threshold within the window duration,
+       * the circuit will open and block further requests for the cooldown period.
+       */
+      failureThreshold: 5,
+
+      /**
+       * Time window (in milliseconds) to monitor failures
+       */
+      windowDuration: 10 * 60 * 1000, // 10 minutes
+
+      /**
+       * Time (in milliseconds) the circuit remains open
+       */
+      cooldownPeriod: 5 * 60 * 1000, // 5 minutes
+    }
   },
   /**
    * User-level resource limitations

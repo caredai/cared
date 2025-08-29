@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
+import type { ComponentProps } from 'react'
 import * as React from 'react'
-import { ComponentProps } from 'react'
 import { InfoIcon } from 'lucide-react'
 
 import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
@@ -72,7 +72,9 @@ export function TextTooltip({
   return (
     <Tooltip>
       <TooltipTrigger asChild {...props} />
-      <TooltipContent>{content}</TooltipContent>
+      <TooltipContent className="bg-popover text-popover-foreground border">
+        {content}
+      </TooltipContent>
     </Tooltip>
   )
 }

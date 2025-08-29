@@ -1,15 +1,11 @@
 import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
+import type { BaseProviderInfo, ModelFullId, ModelInfos, ModelType } from '@cared/providers'
 import { eq, inArray, or, sql } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ProviderModels } from '@cared/db/schema'
 import log from '@cared/log'
-import type {
-  BaseProviderInfo,
-  ModelFullId,
-  ModelInfos,
-  ModelType} from '@cared/providers';
 import {
   getBaseProviderInfos,
   getExtendedBaseProviderInfos,
@@ -101,7 +97,12 @@ export async function getProviderModelInfos(
         models.textEmbeddingModels?.length
       ) {
         updateIds.push(userOrg.id)
-        updateSqlChunks.push(sql`when ${ProviderModels.id} = ${userOrg.id} then ${userOrg.models}`)
+        updateSqlChunks.push(sql`when
+        ${ProviderModels.id}
+        =
+        ${userOrg.id}
+        then
+        ${userOrg.models}`)
       } else {
         // If all model arrays are empty, delete the record
         deleteIds.push(userOrg.id)
@@ -109,7 +110,8 @@ export async function getProviderModelInfos(
     }
   }
 
-  updateSqlChunks.push(sql`end)`)
+  updateSqlChunks.push(sql`end
+  )`)
 
   if (updateIds.length) {
     const finalSql: SQL = sql.join(updateSqlChunks, sql.raw(' '))
@@ -196,7 +198,7 @@ export async function findProvidersByModel<T extends ModelType>(
   queryModelId = ids.modelId
 
   // provide id => model
-  const foundModels = new Map<
+  const foundProviderModels = new Map<
     string,
     NonNullable<ReturnedModelInfos[`${typeof modelType}Models`]>[number] & {
       id: ModelFullId
@@ -211,20 +213,22 @@ export async function findProvidersByModel<T extends ModelType>(
       const modelsByType = providerModels[`${modelType}Models`]
       const model = modelsByType?.find((model) => model.id === queryModelId)
       if (model) {
-        foundModels.set(queryProviderId, {
+        foundProviderModels.set(queryProviderId, {
           ...model,
           id: modelFullId(queryProviderId, model.id),
         })
       }
     }
   } else {
+    // If no provider is specified, search all providers for those supporting this model
     providerModelsArray.forEach((providerModels) => {
       const providerId = providerModels.id
       const modelsByType = providerModels[`${modelType}Models`]
 
       return modelsByType?.forEach((model) => {
         if (model.id === queryModelId) {
-          foundModels.set(providerId, {
+          // If the model id matches exactly, always select it
+          foundProviderModels.set(providerId, {
             ...model,
             id: modelFullId(providerId, model.id),
           })
@@ -233,8 +237,8 @@ export async function findProvidersByModel<T extends ModelType>(
           if (provider?.isGateway && provider.modelSeparator) {
             const { modelId: modelIdNoPrefix } = provider.modelSeparator(model.id)
             if (modelIdNoPrefix === queryModelId) {
-              if (!foundModels.has(providerId)) {
-                foundModels.set(providerId, {
+              if (!foundProviderModels.has(providerId)) {
+                foundProviderModels.set(providerId, {
                   ...model,
                   id: modelFullId(providerId, model.id),
                 })
@@ -246,5 +250,18 @@ export async function findProvidersByModel<T extends ModelType>(
     })
   }
 
-  return Array.from(foundModels.values())
+  const result = Array.from(foundProviderModels.values())
+  if (result.length > 0) {
+    // Always move the provider with an exact match of the specified model id to the front.
+    // This ensures that the provider whose model id exactly matches queryModelId is prioritized.
+    const exactProviderIndex = result.findIndex(
+      (m) => splitModelFullId(m.id).modelId === queryModelId,
+    )
+    if (exactProviderIndex >= 0) {
+      // Move the exact match to the front
+      const [exact] = result.splice(exactProviderIndex, 1)
+      result.unshift(exact!)
+    }
+  }
+  return result
 }
