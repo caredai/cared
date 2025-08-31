@@ -1,9 +1,10 @@
 import assert from 'assert'
+import { Ratelimit } from '@upstash/ratelimit'
 import { Decimal } from 'decimal.js'
 
 import type {
-  GenerationDetailsByType,
   GenerationDetails,
+  GenerationDetailsByType,
   ModelCallOptions,
   ModelInfos,
   ModelType,
@@ -11,12 +12,22 @@ import type {
 import { and, desc, eq, sql } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Credits, Expense, Member, Organization } from '@cared/db/schema'
-import { computeGenerationCost, estimateGenerationCost } from '@cared/providers'
 import { getKV } from '@cared/kv'
+import { computeGenerationCost, estimateGenerationCost } from '@cared/providers'
 
-import type { AuthObject } from '@/auth'
+import type { AuthObject } from '../auth'
+import { cfg } from '../config'
 
 const kv = getKV('expense', 'upstash')
+const cache = new Map()
+const freeQuotaRateLimit = new Ratelimit({
+  redis: kv.redis,
+  limiter: Ratelimit.fixedWindow(cfg.perUser.perDay.freeQuotaModelCalls, '1 d'),
+  prefix: 'freeQuota',
+  ephemeralCache: cache,
+  timeout: 2000, // 2s
+  analytics: false,
+})
 
 export class ExpenseManager {
   static from({ auth, payerOrganizationId }: { auth: AuthObject; payerOrganizationId?: string }) {
@@ -109,6 +120,17 @@ export class ExpenseManager {
     return this.creditsCandidates
   }
 
+  private hasFreeQuota_: boolean | undefined
+
+  async hasFreeQuota() {
+    // Check only once per request
+    if (this.hasFreeQuota_ === undefined) {
+      const { success } = await freeQuotaRateLimit.limit(this.userId)
+      this.hasFreeQuota_ = success
+    }
+    return this.hasFreeQuota_
+  }
+
   async canAfford<T extends ModelType, K extends `${T}Models`>(
     type: T,
     model: NonNullable<ModelInfos[K]>[number],
@@ -121,7 +143,15 @@ export class ExpenseManager {
     }
 
     const cost = estimateGenerationCost(type, model, callOptions)
-    if (byok || !cost?.isPositive()) {
+    // If no cost
+    if (!cost?.isPositive()) {
+      if (!(await this.hasFreeQuota())) {
+        throw new Error('Free quota exceeded')
+      }
+      return
+    }
+
+    if (byok && (await this.hasFreeQuota())) {
       return
     }
 
@@ -151,8 +181,8 @@ export class ExpenseManager {
         throw new Error('Negative credits')
       }
 
-      const cost = computeGenerationCost(type, model, details)
-      if (details.byok || !cost?.isPositive()) {
+      let cost = computeGenerationCost(type, model, details)
+      if (((await this.hasFreeQuota()) && details.byok) || !cost?.isPositive()) {
         await db.insert(Expense).values({
           type: 'user',
           userId: this.userId,
@@ -162,6 +192,10 @@ export class ExpenseManager {
         })
 
         return
+      }
+
+      if (details.byok) {
+        cost = cost.times(cfg.platform.creditsFeeRate).div(1 + cfg.platform.creditsFeeRate)
       }
 
       if (!creditsCandidates.length) {

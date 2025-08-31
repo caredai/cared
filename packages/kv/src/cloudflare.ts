@@ -93,4 +93,12 @@ export class CloudflareKV extends KV {
 
     return await response.json()
   }
+
+  eval<TArgs extends unknown[], TData = unknown>(
+    _script: { script: string; hash: string },
+    _keys: string[],
+    _args: TArgs,
+  ): Promise<TData> {
+    throw new Error('Eval is not supported in Cloudflare Workers KV')
+  }
 }

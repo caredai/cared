@@ -7,35 +7,33 @@ export const cfg = {
    */
   platform: {
     /**
-     * Maximum number of AI model calls a user can send per day
-     */
-    freeQuotaModelCallsPerDay: 500,
-    /**
      * Fee rate applied to credits purchased by users
      */
     creditsFeeRate: 0.05,
 
-    /**
-     * Circuit breaker settings for handling AI model call failures.
-     * Prevents overwhelming AI services by limiting requests after repeated failures.
-     */
-    modelCircuitBreaker: {
+    model: {
       /**
-       * Number of failures before opening the circuit.
-       * If the number of failures exceeds this threshold within the window duration,
-       * the circuit will open and block further requests for the cooldown period.
+       * Circuit breaker settings for handling AI model call failures.
+       * Prevents overwhelming AI services by limiting requests after repeated failures.
        */
-      failureThreshold: 5,
+      circuitBreaker: {
+        /**
+         * Number of failures before opening the circuit.
+         * If the number of failures exceeds this threshold within the window duration,
+         * the circuit will open and block further requests for the cooldown period.
+         */
+        failureThreshold: 5,
 
-      /**
-       * Time window (in milliseconds) to monitor failures
-       */
-      windowDuration: 10 * 60 * 1000, // 10 minutes
+        /**
+         * Time window (in milliseconds) to monitor failures
+         */
+        windowDuration: 10 * 60 * 1000, // 10 minutes
 
-      /**
-       * Time (in milliseconds) the circuit remains open
-       */
-      cooldownPeriod: 5 * 60 * 1000, // 5 minutes
+        /**
+         * Time (in milliseconds) the circuit remains open
+         */
+        cooldownPeriod: 5 * 60 * 1000, // 5 minutes
+      },
     }
   },
   /**
@@ -64,6 +62,12 @@ export const cfg = {
        * Maximum number of API keys that can be created for a provider
        */
       maxApiKeys: 10,
+    },
+    perDay: {
+      /**
+       * Maximum number of AI model calls a user can send per day
+       */
+      freeQuotaModelCalls: 500,
     },
   },
   /**

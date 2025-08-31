@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "generate-api-types": "tsx ./scripts/generate-api-types.ts && pnpm prettier --check --write ../sdk/src/api.d.ts",
     "push-provider-models": "pnpm with-env tsx ./scripts/push-provider-models.ts",
+    "load-redis-script": "pnpm with-env tsx ./scripts/load-redis-script.ts",
     "upload-tokenizer-assets": "pnpm with-env tsx ./scripts/upload-tokenizer-assets.ts",
     "with-env": "dotenv -e ../../.env --"
   },

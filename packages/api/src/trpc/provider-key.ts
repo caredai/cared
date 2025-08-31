@@ -12,7 +12,7 @@ import { providerIdSchema, providerKeySchema } from '@cared/providers'
 import type { BaseContext, UserOrAppUserContext } from '../trpc'
 import { OrganizationScope } from '../auth'
 import { env } from '../env'
-import { decryptProviderKey, encryptProviderKey } from '../operation'
+import { decryptProviderKey, deleteProviderKeysStateCache, encryptProviderKey } from '../operation'
 import { userOrAppUserProtectedProcedure } from '../trpc'
 
 export const providerKeyRouter = {
@@ -147,6 +147,14 @@ export const providerKeyRouter = {
         await enableProvider(ctx, newKey.providerId)
       }
 
+      // Clear provider key state cache after creating new key
+      await deleteProviderKeysStateCache({
+        providerId: newKey.providerId,
+        isSystem: newKey.isSystem,
+        userId: newKey.userId,
+        organizationId: newKey.organizationId,
+      })
+
       // Decrypt the key for response
       const decryptedKey = {
         ...newKey,
@@ -231,6 +239,14 @@ export const providerKeyRouter = {
         await enableProvider(ctx, updatedKey.providerId)
       }
 
+      // Clear provider key state cache after updating key
+      await deleteProviderKeysStateCache({
+        providerId: updatedKey.providerId,
+        isSystem: updatedKey.isSystem,
+        userId: updatedKey.userId,
+        organizationId: updatedKey.organizationId,
+      })
+
       // Decrypt the key for response
       const decryptedKey = {
         ...updatedKey,
@@ -289,6 +305,14 @@ export const providerKeyRouter = {
           message: 'You do not have permission to delete this provider key',
         })
       }
+
+      // Clear provider key state cache before deleting key
+      await deleteProviderKeysStateCache({
+        providerId: existingKey.providerId,
+        isSystem: existingKey.isSystem,
+        userId: existingKey.userId,
+        organizationId: existingKey.organizationId,
+      })
 
       // Delete the provider key
       await db.delete(ProviderKey).where(eq(ProviderKey.id, id))

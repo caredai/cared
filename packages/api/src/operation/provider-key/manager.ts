@@ -1,12 +1,33 @@
+import assert from 'assert'
+
 import type { ModelFullId, ProviderId, ProviderKey as ProviderKeyContent } from '@cared/providers'
 import { and, desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ProviderKey } from '@cared/db/schema'
-import { getKV } from '@cared/kv'
+import { getKV, sha1 } from '@cared/kv'
 import { splitModelFullId } from '@cared/providers'
 
 import type { AuthObject } from '../../auth'
+import type { DeleteKeysByPrefixResult } from './lua-script'
 import { decryptProviderKey } from './encryption'
+import { deleteKeysByPrefixScript, providerKeysStatesScript } from './lua-script'
+
+const scripts = {
+  providerKeysStates: {
+    script: providerKeysStatesScript,
+    hash: '3d405ebec9c73bfb4678fb148deb146de0103504',
+  },
+  deleteKeysByPrefix: {
+    script: deleteKeysByPrefixScript,
+    hash: '91589094b4bd7b3485d4d5f820ebb3c45b0c4af5',
+  },
+}
+
+void Object.entries(scripts).forEach(([name, script]) => {
+  void sha1(script.script).then((hash) => {
+    assert.equal(hash === script.hash, `${name} hash mismatch`)
+  })
+})
 
 const kv = getKV('providerKey', 'upstash')
 
@@ -14,10 +35,8 @@ export class ProviderKeyManager {
   constructor(
     private auth: AuthObject,
     private modelFullId: ModelFullId,
-    private providerId: ProviderId,
-    private modelId: string,
-    private systemKeys: ProviderKeyStatus[],
-    private userOrOrgKeys: ProviderKeyStatus[],
+    private systemKeys: ProviderKeyState[],
+    private userOrOrgKeys: ProviderKeyState[],
     private byok: boolean,
   ) {}
 
@@ -30,19 +49,23 @@ export class ProviderKeyManager {
     modelId: ModelFullId
     byok: boolean
   }) {
-    const { providerId, modelId } = splitModelFullId(modelFullId)
+    const { providerId } = splitModelFullId(modelFullId)
 
-    const [systemKeysStatusStr, userOrOrgKeysStatusStr] = await Promise.all([
-      !byok ? kv.get(systemKeysStatusKey(modelFullId)) : null,
-      kv.get(userOrOrgKeysStatusKey(auth, modelFullId)),
+    const [systemKeysStateStr, userOrOrgKeysStateStr] = await Promise.all([
+      !byok ? kv.redis.json.get(kv.key(systemKeysStateKey(modelFullId))) : null,
+      kv.redis.json.get(kv.key(userOrOrgKeysStateKey(auth, modelFullId))),
     ])
 
-    let systemKeysStatus: ProviderKeyStatus[] | null =
-      systemKeysStatusStr && JSON.parse(systemKeysStatusStr)
-    let userOrOrgKeysStatus: ProviderKeyStatus[] | null =
-      userOrOrgKeysStatusStr && JSON.parse(userOrOrgKeysStatusStr)
+    let systemKeysState: ProviderKeyState[] | null =
+      systemKeysStateStr && JSON.parse(systemKeysStateStr as any)
+    let userOrOrgKeysState: ProviderKeyState[] | null =
+      userOrOrgKeysStateStr && JSON.parse(userOrOrgKeysStateStr as any)
+    let shouldCacheSystemKeys = false
+    let shouldCacheUserOrOrgKeys = false
 
-    if (!systemKeysStatus) {
+    if (!systemKeysState) {
+      shouldCacheSystemKeys = true
+
       if (!byok) {
         const keys = await db
           .select()
@@ -50,18 +73,21 @@ export class ProviderKeyManager {
           .where(and(eq(ProviderKey.providerId, providerId), eq(ProviderKey.isSystem, true)))
           .orderBy(desc(ProviderKey.id))
 
-        systemKeysStatus = keys.map((k) => ({
+        systemKeysState = keys.map((k) => ({
+          ...defaultProviderKeyState(),
           id: k.id,
-          byok: !!k.isSystem,
+          byok: false,
           key: k.key,
           disabled: k.disabled,
         }))
       } else {
-        systemKeysStatus = []
+        systemKeysState = []
       }
     }
 
-    if (!userOrOrgKeysStatus) {
+    if (!userOrOrgKeysState) {
+      shouldCacheUserOrOrgKeys = true
+
       const keys = await db
         .select()
         .from(ProviderKey)
@@ -75,325 +101,424 @@ export class ProviderKeyManager {
         )
         .orderBy(desc(ProviderKey.id))
 
-      userOrOrgKeysStatus = keys.map((k) => ({
+      userOrOrgKeysState = keys.map((k) => ({
+        ...defaultProviderKeyState(),
         id: k.id,
-        byok: !!k.isSystem,
+        byok: true,
         key: k.key,
         disabled: k.disabled,
       }))
     }
 
-    return new ProviderKeyManager(
+    const manager = new ProviderKeyManager(
       auth,
       modelFullId,
-      providerId,
-      modelId,
       await Promise.all(
-        systemKeysStatus.map(async (k) => ({
+        systemKeysState.map(async (k) => ({
           ...k,
           key: await decryptProviderKey(k.key, true),
         })),
       ),
       await Promise.all(
-        userOrOrgKeysStatus.map(async (k) => ({
+        userOrOrgKeysState.map(async (k) => ({
           ...k,
           key: await decryptProviderKey(k.key, true),
         })),
       ),
       byok,
     )
+
+    if (shouldCacheSystemKeys) {
+      systemKeysState.forEach((key) => {
+        manager.systemKeysChanges.push({
+          type: ProviderKeyChangeType.Add,
+          ...key,
+        })
+      })
+    }
+    if (shouldCacheUserOrOrgKeys) {
+      userOrOrgKeysState.forEach((key) => {
+        manager.userOrOrgKeysChanges.push({
+          type: ProviderKeyChangeType.Add,
+          ...key,
+        })
+      })
+    }
+    void manager.saveState() // TODO: waitUntil
+
+    return manager
   }
 
-  /**
-   * Select available keys based on their current status and health.
-   * Implements intelligent key selection considering:
-   * - Key availability (not disabled)
-   * - Failure count and health status
-   * - Rate limit status
-   * - Last usage time for load balancing
-   * - Priority (system keys first, then user/org keys)
-   */
-  selectKeys(strategy: ProviderKeyStrategy = 'hybrid'): ProviderKeyStatus[] {
-    const availableSystemKeys = this.systemKeys.filter((k) => !k.disabled)
-    const availableUserOrOrgKeys = this.userOrOrgKeys.filter((k) => !k.disabled)
+  selectKeys() {
+    const availableSystemKeys = this.systemKeys.filter((k) => !k.disabled && !k.rateLimited)
+    const availableUserOrOrgKeys = this.userOrOrgKeys.filter((k) => !k.disabled && !k.rateLimited)
 
     if (!this.byok) {
       // Combine system and user/org keys, prioritizing user/org keys
       return [
-        ...this.selectKeys_(strategy, availableUserOrOrgKeys),
-        ...this.selectKeys_(strategy, availableSystemKeys),
+        ...this.selectKeys_(availableUserOrOrgKeys),
+        ...this.selectKeys_(availableSystemKeys),
       ]
     } else {
-      return this.selectKeys_(strategy, availableUserOrOrgKeys)
+      return this.selectKeys_(availableUserOrOrgKeys)
     }
   }
 
-  private selectKeys_(strategy: ProviderKeyStrategy, availableKeys: ProviderKeyStatus[]) {
-    switch (strategy) {
-      case 'random':
-        return this.selectRandomKeys(availableKeys)
-      case 'round-robin':
-        return this.selectRoundRobinKeys(availableKeys)
-      case 'weighted-round-robin':
-        return this.selectWeightedRoundRobinKeys(availableKeys)
-      case 'failover':
-        return this.selectFailoverKeys(availableKeys)
-      case 'rate-limit':
-        return this.selectRateLimitKeys(availableKeys)
-      case 'hybrid':
-      default:
-        return this.selectHybridKeys(availableKeys)
+  private selectKeys_(availableKeys: ProviderKeyState[]) {
+    const closedKeys = availableKeys.filter((k) => k.circuitBreaker === CircuitBreakerState.Closed)
+    // If there are circuit-breaker closed keys, prefer them
+    if (closedKeys.length > 0) {
+      return this.sortKeys(closedKeys)
     }
+    // Otherwise return all keys, ignoring circuit breaker
+    return this.sortKeys(availableKeys)
   }
 
-  /**
-   * Select keys randomly from available pool
-   */
-  private selectRandomKeys(availableKeys: ProviderKeyStatus[]): ProviderKeyStatus[] {
-    return availableKeys.sort(() => Math.random() - 0.5)
+  private sortKeys(keys: ProviderKeyState[]) {
+    return keys
+      .map((key) => ({
+        key,
+        score: this.calculateKeyScore(key),
+      }))
+      .sort((a, b) => {
+        // Higher score first
+        if (a.score !== b.score) {
+          return b.score - a.score
+        }
+        // When scores are equal, prioritize keys that haven't been used recently
+        return a.key.lastUsedAt - b.key.lastUsedAt
+      })
+      .map(({ key }) => key)
   }
 
-  /**
-   * Select keys in round-robin fashion based on last usage time
-   */
-  private selectRoundRobinKeys(availableKeys: ProviderKeyStatus[]): ProviderKeyStatus[] {
-    return availableKeys.sort((a, b) => {
-      const aTime = a.lastUsedAt ?? 0
-      const bTime = b.lastUsedAt ?? 0
-      return aTime - bTime
-    })
-  }
+  private calculateKeyScore(key: ProviderKeyState) {
+    const stats = this.keyStats(key)
 
-  /**
-   * Select keys using weighted round-robin based on health and rate limit status
-   */
-  private selectWeightedRoundRobinKeys(availableKeys: ProviderKeyStatus[]): ProviderKeyStatus[] {
-    return availableKeys.sort((a, b) => {
-      // Calculate health score (lower is better)
-      const aHealthScore = this.calculateHealthScore(a)
-      const bHealthScore = this.calculateHealthScore(b)
-
-      // Calculate rate limit score (higher remaining quota is better)
-      const aRateScore = this.calculateRateLimitScore(a)
-      const bRateScore = this.calculateRateLimitScore(b)
-
-      // Combine scores (health is more important than rate limit)
-      const aTotalScore = aHealthScore * 0.7 + aRateScore * 0.3
-      const bTotalScore = bHealthScore * 0.7 + bRateScore * 0.3
-
-      return aTotalScore - bTotalScore
-    })
-  }
-
-  /**
-   * Select keys using failover strategy (healthiest keys first)
-   */
-  private selectFailoverKeys(availableKeys: ProviderKeyStatus[]): ProviderKeyStatus[] {
-    return availableKeys.sort((a, b) => {
-      const aHealthScore = this.calculateHealthScore(a)
-      const bHealthScore = this.calculateHealthScore(b)
-      return aHealthScore - bHealthScore
-    })
-  }
-
-  /**
-   * Select keys prioritizing those with available rate limits
-   */
-  private selectRateLimitKeys(availableKeys: ProviderKeyStatus[]): ProviderKeyStatus[] {
-    return availableKeys.sort((a, b) => {
-      const aRateScore = this.calculateRateLimitScore(a)
-      const bRateScore = this.calculateRateLimitScore(b)
-      return bRateScore - aRateScore // Higher score first
-    })
-  }
-
-  /**
-   * Hybrid strategy combining multiple factors for optimal key selection
-   */
-  private selectHybridKeys(availableKeys: ProviderKeyStatus[]): ProviderKeyStatus[] {
-    return availableKeys.sort((a, b) => {
-      // Calculate comprehensive score
-      const aScore = this.calculateComprehensiveScore(a)
-      const bScore = this.calculateComprehensiveScore(b)
-      return bScore - aScore // Higher score first
-    })
-  }
-
-  /**
-   * Calculate health score based on failure count and last failure time
-   * Lower score means healthier key
-   */
-  private calculateHealthScore(key: ProviderKeyStatus): number {
-    let score = 0
-
-    // Failure count penalty (exponential)
-    if (key.failureCount && key.failureCount > 0) {
-      score += Math.pow(2, key.failureCount - 1) * 10
+    let score = 1
+    const requests = stats.failures + stats.successes
+    if (requests < minimumRequestsToEvaluate) {
+      return score
     }
 
-    // Recent failure penalty (decays over time)
-    if (key.lastFailureAt) {
-      const timeSinceFailure = now() - key.lastFailureAt
-      const hoursSinceFailure = timeSinceFailure / 3600
-      if (hoursSinceFailure < 24) {
-        score += (24 - hoursSinceFailure) * 2 // Recent failures get higher penalty
-      }
+    const failureRate = stats.failures / Math.max(1, stats.failures + stats.successes)
+    if (failureRate >= failureThreshold) {
+      // Apply penalty based on how much failure rate exceeds threshold
+      // Higher failure rates get progressively worse penalties
+      const failurePenalty = Math.min(1, failureRate / failureThresholdToCircuitBreaker) // Cap at 100% penalty
+      score *= 1 - failurePenalty
     }
 
-    return score
+    if (stats.latencyAverage >= latencyThreshold) {
+      // Apply penalty based on how much average latency exceeds threshold
+      // Higher latencies get progressively worse penalties
+      const latencyRatio = Math.min(stats.latencyAverage / latencyThreshold, 3) // Cap at 3x threshold
+      const latencyPenalty = Math.min(0.2, (latencyRatio - 1) * 0.3) // Cap at 20% penalty
+      score *= 1 - latencyPenalty
+    }
+
+    if (stats.latencySpike >= latencySpikeThreshold) {
+      // Apply penalty based on how much spike latency exceeds threshold
+      // Higher spikes get progressively worse penalties
+      const spikeRatio = Math.min(stats.latencySpike / latencySpikeThreshold, 4) // Cap at 4x threshold
+      const spikePenalty = Math.min(0.1, (spikeRatio - 1) * 0.15) // Cap at 10% penalty
+      score *= 1 - spikePenalty
+    }
+
+    // Ensure score doesn't go below 0.1 to maintain some diversity
+    return Number(Math.max(0.1, score).toFixed(4))
   }
 
-  /**
-   * Calculate rate limit score based on remaining quotas
-   * Higher score means more available capacity
-   */
-  private calculateRateLimitScore(key: ProviderKeyStatus): number {
-    let score = 0
-
-    // Request quota score
-    if (key.rateLimitRemainingRequests !== undefined) {
-      score += key.rateLimitRemainingRequests * 0.1
-    }
-
-    // Token quota score
-    if (key.rateLimitRemainingTokens !== undefined) {
-      score += key.rateLimitRemainingTokens * 0.001 // Tokens are typically much larger numbers
-    }
-
-    // Reset time bonus (closer to reset means more capacity soon)
-    if (key.rateLimitResetRequestsAt) {
-      const timeToReset = key.rateLimitResetRequestsAt - now()
-      if (timeToReset > 0 && timeToReset < 3600) {
-        // Within next hour
-        score += (3600 - timeToReset) * 0.01
-      }
-    }
-
-    return score
-  }
-
-  /**
-   * Calculate comprehensive score combining all factors
-   * Higher score means better key choice
-   */
-  private calculateComprehensiveScore(key: ProviderKeyStatus): number {
-    const healthScore = this.calculateHealthScore(key)
-    const rateScore = this.calculateRateLimitScore(key)
-    const timeScore = this.calculateTimeScore(key)
-    const priorityScore = this.calculatePriorityScore(key)
-
-    // Normalize and combine scores
-    const normalizedHealthScore = Math.max(0, 100 - healthScore) // Convert to 0-100 scale
-    const normalizedRateScore = Math.min(100, rateScore) // Cap at 100
-    const normalizedTimeScore = timeScore
-    const normalizedPriorityScore = priorityScore
-
-    // Weighted combination
-    return (
-      normalizedHealthScore * 0.4 + // Health is most important
-      normalizedRateScore * 0.3 + // Rate limit capacity
-      normalizedTimeScore * 0.2 + // Load balancing
-      normalizedPriorityScore * 0.1 // System vs user priority
+  private keyStats(key: ProviderKeyState) {
+    // Sliding window calculation
+    const percentageInPrevious = 1 - (Date.now() % window) / window
+    const failuresInPreviousWindow = Math.floor(percentageInPrevious * key.previousWindow.failures)
+    const failures = failuresInPreviousWindow + key.currentWindow.failures
+    const successesInPreviousWindow = Math.floor(
+      percentageInPrevious * key.previousWindow.successes,
     )
-  }
-
-  /**
-   * Calculate time-based score for load balancing
-   * Higher score for keys that haven't been used recently
-   */
-  private calculateTimeScore(key: ProviderKeyStatus): number {
-    if (!key.lastUsedAt) {
-      return 100 // Never used keys get highest score
-    }
-
-    const timeSinceLastUse = now() - key.lastUsedAt
-    const hoursSinceLastUse = timeSinceLastUse / 3600
-
-    // Score decreases over time, but not too aggressively
-    return Math.max(0, 100 - hoursSinceLastUse * 2)
-  }
-
-  /**
-   * Calculate priority score (system keys get slight priority)
-   */
-  private calculatePriorityScore(key: ProviderKeyStatus): number {
-    return key.byok ? 10 : 0 // System keys get slight bonus
-  }
-
-  private findKey(id: string) {
-    return [...this.systemKeys, ...this.userOrOrgKeys].find((k) => k.id === id)
-  }
-
-  recordSuccess(keyId: string) {
-    const key = this.findKey(keyId)
-    if (key) {
-      key.lastUsedAt = now()
+    const successes = successesInPreviousWindow + key.currentWindow.successes
+    const latencyAverageInPreviousWindow = Math.floor(
+      percentageInPrevious * key.previousWindow.latencyAverage,
+    )
+    const latencyAverage = latencyAverageInPreviousWindow + key.currentWindow.latencyAverage
+    const latencySpike = Math.max(key.previousWindow.latencySpike, key.currentWindow.latencySpike)
+    const expiredAt = key.currentWindow.expiredAt
+    return {
+      expiredAt,
+      failures,
+      successes,
+      latencyAverage,
+      latencySpike,
     }
   }
 
-  recordFailure(keyId: string) {
-    const key = this.findKey(keyId)
-    if (key) {
-      key.failureCount = (key.failureCount ?? 0) + 1
-      key.lastFailureAt = now()
-      key.lastUsedAt = now()
-    }
-  }
+  private systemKeysChanges: ProviderKeyChange[] = []
+  private userOrOrgKeysChanges: ProviderKeyChange[] = []
 
-  recordRateLimit(
-    keyId: string,
-    rateLimit: {
-      remainingRequests?: number
-      resetRequestsAt?: number
-      remainingTokens?: number
-      resetTokensAt?: number
+  updateState(
+    key: ProviderKeyState,
+    {
+      key: newKey,
+      disabled,
+      success,
+      latency,
+      retryAfter,
+    }: {
+      key?: ProviderKeyContent
+      disabled?: boolean
+      success: boolean
+      latency: number
+      retryAfter?: string | number // seconds
     },
   ) {
-    const key = this.findKey(keyId)
-    if (key) {
-      if (rateLimit.remainingRequests !== undefined) {
-        key.rateLimitRemainingRequests = rateLimit.remainingRequests
+    const rateLimitedUntil = parseRetryAfterToTimestamp(retryAfter)
+    const rateLimited = rateLimitedUntil ? true : undefined
+
+    // Compute circuit breaker state
+    const oldStats = key.currentWindow
+    const failures = oldStats.failures + Number(!success)
+    const successes = oldStats.successes + Number(success)
+    const failureRate = failures / Math.max(1, failures + successes)
+    const circuitBreaker = failureRate >= failureThresholdToCircuitBreaker
+
+    const update: ProviderKeyUpdate = {
+      type: ProviderKeyChangeType.Update,
+      id: key.id,
+      key: newKey,
+      disabled,
+      rateLimited,
+      rateLimitedUntil,
+      circuitBreaker: circuitBreaker ? CircuitBreakerState.Open : undefined,
+      cooldownUntil: circuitBreaker ? Date.now() + cooldownPeriod : undefined,
+    }
+    const updateStats: ProviderKeyStatsUpdate = {
+      type: ProviderKeyChangeType.UpdateStats,
+      id: key.id,
+      success,
+      latency,
+    }
+
+    const changes = !key.byok ? this.systemKeysChanges : this.userOrOrgKeysChanges
+
+    if (
+      update.key ||
+      update.disabled !== undefined ||
+      update.rateLimited !== undefined ||
+      update.circuitBreaker !== undefined
+    ) {
+      changes.push(update)
+    }
+    changes.push(updateStats)
+  }
+
+  private savingPromise: Promise<any> | undefined = undefined
+
+  async saveState() {
+    // Clear changes after saving
+    const systemKeysChanges = this.systemKeysChanges
+    const userOrOrgKeysChanges = this.userOrOrgKeysChanges
+    this.systemKeysChanges = []
+    this.userOrOrgKeysChanges = []
+
+    if (this.savingPromise) {
+      try {
+        await this.savingPromise
+      } catch {
+        // ignore
       }
-      if (rateLimit.resetRequestsAt !== undefined) {
-        key.rateLimitResetRequestsAt = rateLimit.resetRequestsAt
-      }
-      if (rateLimit.remainingTokens !== undefined) {
-        key.rateLimitRemainingTokens = rateLimit.remainingTokens
-      }
-      if (rateLimit.resetTokensAt !== undefined) {
-        key.rateLimitResetTokensAt = rateLimit.resetTokensAt
-      }
-      key.lastUsedAt = now()
+    }
+
+    const request = {
+      keyTtl,
+      now: Date.now(),
+      window,
+    } as ProviderKeyChangeRequest
+
+    try {
+      this.savingPromise = Promise.all([
+        systemKeysChanges.length > 0 &&
+          kv.eval(
+            scripts.providerKeysStates,
+            [kv.key(systemKeysStateKey(this.modelFullId))],
+            [
+              JSON.stringify({
+                ...request,
+                changes: systemKeysChanges,
+              }),
+            ],
+          ),
+        userOrOrgKeysChanges.length > 0 &&
+          kv.eval(
+            scripts.providerKeysStates,
+            [kv.key(userOrOrgKeysStateKey(this.auth, this.modelFullId))],
+            [
+              JSON.stringify({
+                ...request,
+                changes: userOrOrgKeysChanges,
+              }),
+            ],
+          ),
+      ])
+
+      await this.savingPromise
+    } finally {
+      this.savingPromise = undefined
     }
   }
+}
 
-  async save() {
-    await Promise.all([
-      !this.byok
-        ? kv.set(systemKeysStatusKey(this.modelFullId), JSON.stringify(this.systemKeys))
-        : undefined,
-      kv.set(
-        userOrOrgKeysStatusKey(this.auth, this.modelFullId),
-        JSON.stringify(this.userOrOrgKeys),
-      ),
-    ])
+export async function deleteProviderKeysStateCache({
+  providerId,
+  isSystem,
+  userId,
+  organizationId,
+}: {
+  providerId: ProviderId
+  isSystem?: boolean | null
+  userId?: string | null
+  organizationId?: string | null
+}) {
+  return JSON.parse(
+    await kv.eval(
+      scripts.deleteKeysByPrefix,
+      [],
+      [
+        kv.key(
+          providerKeyStateKeyPattern({
+            isSystem,
+            userId,
+            organizationId,
+            providerId,
+          }),
+        ),
+      ],
+    ),
+  ) as DeleteKeysByPrefixResult
+}
+
+const keyTtl = 24 * 60 * 60 * 1000 // 24h
+const window = 60 * 1000 // 1m
+const cooldownPeriod = 60 * 1000 // 1m
+const minimumRequestsToEvaluate = 10
+const failureThresholdToCircuitBreaker = 0.2 // 20% failures
+const failureThreshold = 0.025 // 2.5% failures
+const latencyThreshold = 2000 // 2s
+const latencySpikeThreshold = 5000 // 5s
+
+function defaultProviderKeyState() {
+  return {
+    lastUsedAt: 0,
+    rateLimited: false,
+    rateLimitedUntil: 0,
+    circuitBreaker: 0 as const,
+    cooldownUntil: 0,
+    previousWindow: {
+      expiredAt: 0,
+      failures: 0,
+      successes: 0,
+      latencyAverage: 0,
+      latencySpike: 0,
+    },
+    currentWindow: {
+      expiredAt: 0,
+      failures: 0,
+      successes: 0,
+      latencyAverage: 0,
+      latencySpike: 0,
+    },
   }
 }
 
-export type ProviderKeyStrategy =
-  | 'random'
-  | 'round-robin'
-  | 'weighted-round-robin'
-  | 'failover'
-  | 'rate-limit'
-  | 'hybrid'
-
-function systemKeysStatusKey(modelId: ModelFullId) {
-  return providerKeyStatusKey({ isSystem: true, modelId })
+enum CircuitBreakerState {
+  Closed = 0,
+  Open = 1,
 }
 
-function userOrOrgKeysStatusKey(auth: AuthObject, modelId: ModelFullId) {
-  return providerKeyStatusKey({
+export interface ProviderKeyState {
+  id: string
+  byok: boolean
+  key: ProviderKeyContent
+  disabled: boolean
+
+  lastUsedAt: number
+
+  rateLimited: boolean
+  rateLimitedUntil: number // Unix Epoch timestamp in ms
+  circuitBreaker: CircuitBreakerState
+  cooldownUntil: number // Unix Epoch timestamp in ms
+
+  previousWindow: ProviderKeyStats
+  currentWindow: ProviderKeyStats
+}
+
+export interface ProviderKeyStats {
+  expiredAt: number // Unix Epoch timestamp in ms
+
+  failures: number
+  successes: number
+  latencyAverage: number // average latency in ms
+  latencySpike: number // max latency in ms
+}
+
+export interface ProviderKeyChangeRequest {
+  keyTtl: number
+  now: number
+  window: number
+
+  changes: ProviderKeyChange[]
+}
+
+export type ProviderKeyChange =
+  | ProviderKeyAdd
+  | ProviderKeyUpdate
+  | ProviderKeyStatsUpdate
+  | ProviderKeyRemove
+
+enum ProviderKeyChangeType {
+  Add,
+  Update,
+  UpdateStats,
+  Remove,
+}
+
+export type ProviderKeyAdd = {
+  type: ProviderKeyChangeType.Add
+} & ProviderKeyState
+
+export interface ProviderKeyUpdate {
+  type: ProviderKeyChangeType.Update
+
+  id: string
+
+  key?: ProviderKeyContent
+  disabled?: boolean
+
+  rateLimited?: boolean
+  rateLimitedUntil?: number
+  circuitBreaker?: CircuitBreakerState
+  cooldownUntil?: number
+}
+
+export interface ProviderKeyStatsUpdate {
+  type: ProviderKeyChangeType.UpdateStats
+
+  id: string
+  success: boolean
+  latency: number
+}
+
+export interface ProviderKeyRemove {
+  type: ProviderKeyChangeType.Remove
+
+  id: string
+}
+
+function systemKeysStateKey(modelId: ModelFullId) {
+  return providerKeyStateKey({ isSystem: true, modelId })
+}
+
+function userOrOrgKeysStateKey(auth: AuthObject, modelId: ModelFullId) {
+  return providerKeyStateKey({
     userId:
       auth.type === 'user' || auth.type === 'appUser' || auth.scope === 'user'
         ? auth.userId
@@ -405,7 +530,7 @@ function userOrOrgKeysStatusKey(auth: AuthObject, modelId: ModelFullId) {
   })
 }
 
-function providerKeyStatusKey({
+function providerKeyStateKey({
   isSystem,
   userId,
   organizationId,
@@ -417,72 +542,42 @@ function providerKeyStatusKey({
   modelId: ModelFullId
 }) {
   if (isSystem) {
-    return `system:${modelId}:status`
+    return `system:${modelId}:state`
   } else if (userId) {
-    return `${userId}:${modelId}:status`
+    return `${userId}:${modelId}:state`
   } else {
-    return `${organizationId!}:${modelId}:status`
+    return `${organizationId!}:${modelId}:state`
   }
 }
 
-export interface ProviderKeyStatus {
-  /**
-   * Unique identifier for the Key.
-   */
-  id: string
-
-  /**
-   * Whether the Key is a byok Key.
-   */
-  byok: boolean
-
-  /**
-   * Encrypted or decrypted Key value.
-   */
-  key: ProviderKeyContent
-
-  /**
-   * Whether the Key is disabled.
-   */
-  disabled: boolean
-
-  /**
-   * Consecutive failure count. The Key may be marked unhealthy if this exceeds a threshold.
-   */
-  failureCount?: number
-
-  /**
-   * Unix Epoch timestamp of the last failure occurrence.
-   */
-  lastFailureAt?: number
-
-  /**
-   * Remaining requests quota (parsed from API response headers).
-   */
-  rateLimitRemainingRequests?: number
-
-  /**
-   * Unix Epoch timestamp when the request quota will reset.
-   */
-  rateLimitResetRequestsAt?: number
-
-  /**
-   * Remaining token quota (parsed from API response headers).
-   */
-  rateLimitRemainingTokens?: number
-
-  /**
-   * Unix Epoch timestamp when the token quota will reset.
-   */
-  rateLimitResetTokensAt?: number
-
-  /**
-   * Unix Epoch timestamp of the last time this Key was used.
-   * Can be used for LRU (Least Recently Used) or other time-based strategies.
-   */
-  lastUsedAt?: number
+function providerKeyStateKeyPattern({
+  isSystem,
+  userId,
+  organizationId,
+  providerId,
+}: {
+  isSystem?: boolean | null
+  userId?: string | null
+  organizationId?: string | null
+  providerId: ProviderId
+}) {
+  if (isSystem) {
+    return `system:${providerId}*`
+  } else if (userId) {
+    return `${userId}:${providerId}*`
+  } else {
+    return `${organizationId!}:${providerId}*`
+  }
 }
 
-function now() {
-  return Math.floor(Date.now() / 1000)
+function parseRetryAfterToTimestamp(retryAfter?: string | number): number | undefined {
+  if (!retryAfter) return undefined
+  if (typeof retryAfter === 'number') return retryAfter * 1000 + Date.now()
+  const parsed = parseInt(retryAfter, 10)
+  if (!isNaN(parsed)) return parsed * 1000 + Date.now()
+  const timestamp = new Date(retryAfter).getTime()
+  if (!isNaN(timestamp) && timestamp > Date.now()) {
+    return timestamp
+  }
+  return undefined
 }

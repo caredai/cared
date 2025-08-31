@@ -219,24 +219,6 @@ export async function POST(req: NextRequest): Promise<Response> {
       for (const key of keys) {
         log.info(`Using provider key ${key.id} for model ${modelId}`)
 
-        // TODO
-        function handleError(error: any) {
-          if (error instanceof APICallError) {
-            const statusCode = error.statusCode
-            if (statusCode === 408) {
-              // request timeout
-              return true
-            } else if (statusCode === 429) {
-              // too many requests
-              return true
-            } else if (statusCode && statusCode >= 500) {
-              // server error
-              return true
-            }
-          }
-          return false
-        }
-
         const callOptions = buildCallOptions({
           args,
           providerId,
@@ -285,6 +267,38 @@ export async function POST(req: NextRequest): Promise<Response> {
           return response
         }
 
+        function handleError(error: any) {
+          if (error instanceof APICallError) {
+            const statusCode = error.statusCode
+            keyManager.updateState(key, {
+              success: false,
+              latency: details.latency,
+              retryAfter:
+                statusCode === 429
+                  ? error.responseHeaders?.['Retry-After'] ||
+                    error.responseHeaders?.['X-Retry-After']
+                  : undefined,
+            })
+            if (statusCode === 401) {
+              // unauthorized
+              return true
+            } else if (statusCode === 403) {
+              // forbidden
+              return true
+            } else if (statusCode === 408) {
+              // request timeout
+              return true
+            } else if (statusCode === 429) {
+              // too many requests
+              return true
+            } else if (statusCode && statusCode >= 500) {
+              // server error
+              return true
+            }
+          }
+          return false
+        }
+
         const model = getModel(modelId, 'language', key.key, customFetch)
 
         const execute = async () => {
@@ -301,6 +315,7 @@ export async function POST(req: NextRequest): Promise<Response> {
               if (handleError(error)) {
                 return false
               } else {
+                await keyManager.saveState() // TODO: waitUntil
                 throw error
               }
             }
@@ -341,6 +356,13 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
 
         await expenseManager.billGeneration('language', modelInfo, details)
+
+        keyManager.updateState(key, {
+          success: true,
+          latency: details.latency,
+        })
+
+        await keyManager.saveState() // TODO: waitUntil
 
         return result
       }

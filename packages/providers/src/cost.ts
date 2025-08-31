@@ -67,6 +67,10 @@ export function estimateGenerationCost<T extends ModelType, K extends `${T}Model
   model: NonNullable<ModelInfos[K]>[number],
   callOptions: GenerationDetailsByType<ModelCallOptions, T>,
 ): Decimal | undefined {
+  if (!model.chargeable) {
+    return
+  }
+
   // TODO
   switch (type) {
     case 'language':
@@ -86,12 +90,8 @@ function estimateLanguageCost(
   model: NonNullable<ModelInfos['languageModels']>[number],
   callOptions: LanguageModelV2CallOptions,
 ) {
-  if (!model.chargeable) {
-    return
-  }
-
   // TODO: count tokens properly
-  const inputTokens = SuperJSON.stringify(callOptions.prompt).length * 2
+  const inputTokens = SuperJSON.stringify(callOptions.prompt).length * 2 + 100
   return new Decimal(model.inputTokenPrice ?? 0).times(inputTokens)
 }
 
