@@ -198,6 +198,15 @@ export interface EmbeddingModelInfo extends BaseModelInfo {
   dimensions?: number | number[]
 }
 
+export type TypedModelInfo =
+  | ({ type: 'language' } & LanguageModelInfo)
+  | ({ type: 'image' } & ImageModelInfo)
+  | ({
+      type: 'speech'
+    } & SpeechModelInfo)
+  | ({ type: 'transcription' } & TranscriptionModelInfo)
+  | ({ type: 'textEmbedding' } & EmbeddingModelInfo)
+
 export const baseModelInfoSchema = z.object({
   id: z.string().min(1, 'ID is required'),
   name: z.string().min(1, 'Name is required'),
@@ -372,21 +381,22 @@ export const providerKeySchema = z
     ]),
   )
 
-export type GenerationDetails = {
-  modelId: ModelFullId
-  byok?: boolean
-  latency: number // first token latency, in ms
-  generationTime: number // generation time (not including latency), in ms
-} & (
+export type GenerationDetails =
   | LanguageGenerationDetails
   | ImageGenerationDetails
   | SpeechGenerationDetails
   | TranscriptionGenerationDetails
   | TextEmbeddingGenerationDetails
-)
 
-export interface LanguageGenerationDetails {
-  modelType: 'language'
+export interface BaseGenerationDetails {
+  modelId: ModelFullId
+  byok?: boolean
+  latency: number // first token latency, in ms
+  generationTime: number // generation time (not including latency), in ms
+}
+
+export interface LanguageGenerationDetails extends BaseGenerationDetails {
+  type: 'language'
   callOptions: Omit<
     LanguageModelV2CallOptions,
     'prompt' | 'responseFormat' | 'tools' | 'abortSignal' | 'headers'
@@ -401,16 +411,16 @@ export interface LanguageGenerationDetails {
   warnings: LanguageModelV2CallWarning[]
 }
 
-export interface ImageGenerationDetails {
-  modelType: 'image'
+export interface ImageGenerationDetails extends BaseGenerationDetails {
+  type: 'image'
   callOptions: Omit<ImageModelV2CallOptions, 'abortSignal' | 'headers'>
   warnings: ImageModelV2CallWarning[]
   providerMetadata?: ImageModelV2ProviderMetadata
   responseMetadata: Omit<Awaited<ReturnType<ImageModelV2['doGenerate']>>['response'], 'headers'>
 }
 
-export interface SpeechGenerationDetails {
-  modelType: 'speech'
+export interface SpeechGenerationDetails extends BaseGenerationDetails {
+  type: 'speech'
   callOptions: Pick<
     SpeechModelV2CallOptions,
     'voice' | 'outputFormat' | 'speed' | 'language' | 'providerOptions'
@@ -423,8 +433,8 @@ export interface SpeechGenerationDetails {
   >
 }
 
-export interface TranscriptionGenerationDetails {
-  modelType: 'transcription'
+export interface TranscriptionGenerationDetails extends BaseGenerationDetails {
+  type: 'transcription'
   callOptions: Pick<TranscriptionModelV2CallOptions, 'mediaType' | 'providerOptions'>
   language: string | undefined
   durationInSeconds: number | undefined
@@ -436,8 +446,8 @@ export interface TranscriptionGenerationDetails {
   >
 }
 
-export interface TextEmbeddingGenerationDetails {
-  modelType: 'textEmbedding'
+export interface TextEmbeddingGenerationDetails extends BaseGenerationDetails {
+  type: 'textEmbedding'
   callOptions: {
     providerOptions?: SharedV2ProviderOptions
   }
@@ -446,12 +456,3 @@ export interface TextEmbeddingGenerationDetails {
   }
   providerMetadata?: SharedV2ProviderMetadata
 }
-
-export type GenerationDetailsByType<
-  T extends { modelType: ModelType },
-  K extends T['modelType'],
-> = T extends {
-  modelType: K
-}
-  ? T
-  : never

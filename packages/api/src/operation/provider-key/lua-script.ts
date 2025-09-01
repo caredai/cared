@@ -146,7 +146,7 @@ for _, change in ipairs(changes) do
         byok = change.byok,
         key = change.key,
         disabled = change.disabled or false,
-        lastUsedAt: change.lastUsedAt or 0,
+        lastUsedAt = change.lastUsedAt or 0,
         rateLimited = change.rateLimited or false,
         rateLimitedUntil = change.rateLimitedUntil or 0,
         circuitBreaker = change.circuitBreaker or 0,

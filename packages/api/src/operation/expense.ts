@@ -3,11 +3,9 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Decimal } from 'decimal.js'
 
 import type {
-  GenerationDetails,
-  GenerationDetailsByType,
   ModelCallOptions,
-  ModelInfos,
-  ModelType,
+  GenerationDetails,
+  TypedModelInfo,
 } from '@cared/providers'
 import { and, desc, eq, sql } from '@cared/db'
 import { db } from '@cared/db/client'
@@ -131,27 +129,23 @@ export class ExpenseManager {
     return this.hasFreeQuota_
   }
 
-  async canAfford<T extends ModelType, K extends `${T}Models`>(
-    type: T,
-    model: NonNullable<ModelInfos[K]>[number],
-    callOptions: GenerationDetailsByType<ModelCallOptions, T>,
-    byok?: boolean,
-  ) {
+  async canAfford(model: TypedModelInfo, callOptions: ModelCallOptions, byok?: boolean) {
+    if (!model.chargeable && !byok) {
+      throw new Error('Model is not chargeable')
+    }
+
     const creditsCandidates = await this.prepare()
     if (creditsCandidates.some((credits) => new Decimal(credits.credits).isNegative())) {
       throw new Error('Negative credits')
     }
 
-    const cost = estimateGenerationCost(type, model, callOptions)
+    const cost = estimateGenerationCost(model, callOptions)
+
     // If no cost
     if (!cost?.isPositive()) {
       if (!(await this.hasFreeQuota())) {
         throw new Error('Free quota exceeded')
       }
-      return
-    }
-
-    if (byok && (await this.hasFreeQuota())) {
       return
     }
 
@@ -169,11 +163,14 @@ export class ExpenseManager {
     await cb()
   }
 
-  async billGeneration<T extends ModelType, K extends `${T}Models`>(
-    type: T,
-    model: NonNullable<ModelInfos[K]>[number],
-    details: GenerationDetailsByType<GenerationDetails, T>,
+  async billGeneration(
+    model: TypedModelInfo,
+    details: GenerationDetails,
   ) {
+    if (!model.chargeable && !details.byok) {
+      throw new Error('Model is not chargeable')
+    }
+
     await this.waitUntil(async () => {
       const creditsCandidates = await this.prepare()
 
@@ -181,8 +178,10 @@ export class ExpenseManager {
         throw new Error('Negative credits')
       }
 
-      let cost = computeGenerationCost(type, model, details)
-      if (((await this.hasFreeQuota()) && details.byok) || !cost?.isPositive()) {
+      let cost = computeGenerationCost(model, details)
+
+      if (!cost?.isPositive()) {
+        assert(this.hasFreeQuota())
         await db.insert(Expense).values({
           type: 'user',
           userId: this.userId,
@@ -194,6 +193,7 @@ export class ExpenseManager {
         return
       }
 
+      // If byok, apply credits fee rate
       if (details.byok) {
         cost = cost.times(cfg.platform.creditsFeeRate).div(1 + cfg.platform.creditsFeeRate)
       }
@@ -201,6 +201,8 @@ export class ExpenseManager {
       if (!creditsCandidates.length) {
         throw new Error('No credits available')
       }
+
+      // Find credits with sufficient balance to fully cover the cost
 
       let maxCredits: Credits | undefined
       for (const credits of creditsCandidates) {
@@ -236,6 +238,10 @@ export class ExpenseManager {
 
         return
       }
+
+      // All available credits have insufficient balance to fully cover the cost.
+      // Use the credits with maximum balance to pay as much as possible.
+      // Note that this will result in negative balance for this credits.
 
       assert(maxCredits, 'maxCredits should be defined if creditsCandidates is not empty')
 

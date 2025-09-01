@@ -4,7 +4,7 @@ import type { OpenAI } from 'openai'
 import { APICallError } from '@ai-sdk/provider'
 import { z } from 'zod/v4'
 
-import type { GenerationDetails, GenerationDetailsByType } from '@cared/providers'
+import type { LanguageGenerationDetails } from '@cared/providers'
 import log from '@cared/log'
 import { splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
@@ -211,7 +211,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       const keyManager = await ProviderKeyManager.from({
         auth: auth.auth!,
         modelId,
-        byok: !modelInfo.chargeable,
+        onlyByok: !modelInfo.chargeable,
       })
 
       const keys = keyManager.selectKeys()
@@ -226,10 +226,12 @@ export async function POST(req: NextRequest): Promise<Response> {
         })
 
         await expenseManager.canAfford(
-          'language',
-          modelInfo,
           {
-            modelType: 'language',
+            type: 'language',
+            ...modelInfo,
+          },
+          {
+            type: 'language',
             ...callOptions,
           },
           key.byok,
@@ -248,13 +250,13 @@ export async function POST(req: NextRequest): Promise<Response> {
           modelId,
           byok: key.byok,
 
-          modelType: 'language',
+          type: 'language',
           callOptions: {
             ...callOptions_,
             responseFormat: callOptions.responseFormat?.type,
           },
           stream: !!isStream,
-        } as unknown as GenerationDetailsByType<GenerationDetails, 'language'>
+        } as LanguageGenerationDetails
 
         async function customFetch(
           input: string | URL | Request,
@@ -270,6 +272,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         function handleError(error: any) {
           if (error instanceof APICallError) {
             const statusCode = error.statusCode
+
             keyManager.updateState(key, {
               success: false,
               latency: details.latency,
@@ -279,20 +282,19 @@ export async function POST(req: NextRequest): Promise<Response> {
                     error.responseHeaders?.['X-Retry-After']
                   : undefined,
             })
-            if (statusCode === 401) {
+
+            if (
               // unauthorized
-              return true
-            } else if (statusCode === 403) {
+              statusCode === 401 ||
               // forbidden
-              return true
-            } else if (statusCode === 408) {
+              statusCode === 403 ||
               // request timeout
-              return true
-            } else if (statusCode === 429) {
+              statusCode === 408 ||
               // too many requests
-              return true
-            } else if (statusCode && statusCode >= 500) {
+              statusCode === 429 ||
               // server error
+              (statusCode && statusCode >= 500)
+            ) {
               return true
             }
           }
@@ -346,6 +348,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             }
 
             await closeStream()
+            return true
           }
         }
 
@@ -355,7 +358,13 @@ export async function POST(req: NextRequest): Promise<Response> {
           continue
         }
 
-        await expenseManager.billGeneration('language', modelInfo, details)
+        await expenseManager.billGeneration(
+          {
+            type: 'language',
+            ...modelInfo,
+          },
+          details,
+        )
 
         keyManager.updateState(key, {
           success: true,
@@ -367,22 +376,34 @@ export async function POST(req: NextRequest): Promise<Response> {
         return result
       }
     }
-
-    assert(writeChunk)
-    assert(closeStream)
-    await writeChunk({
-      error: {
-        message: 'Model not found',
-      },
-    })
-    await closeStream()
   }
 
   if (!isStream) {
-    return (await process())!
+    return (await process()) as Response
   } else {
     // Processing the stream asynchronously
+    assert(writeChunk)
+    assert(closeStream)
     void process()
+      .then(async (success) => {
+        if (!success) {
+          await writeChunk({
+            error: {
+              message: 'Model not found',
+            },
+          })
+          await closeStream()
+        }
+      })
+      .catch(async (error) => {
+        const errorChunk = {
+          error: {
+            message: error instanceof Error ? error.message : JSON.stringify(error),
+          },
+        }
+        await writeChunk(errorChunk)
+        await closeStream()
+      })
 
     // Return the streaming response
     return new Response(responseStream, {
@@ -472,7 +493,7 @@ async function doGenerate({
   callOptions: LanguageModelV2CallOptions
   providerId: string
   modelId: string
-  details: GenerationDetailsByType<GenerationDetails, 'language'>
+  details: LanguageGenerationDetails
 }): Promise<Response> {
   const startTime = performance.now()
   const gen = await model.doGenerate(callOptions)
@@ -552,7 +573,7 @@ async function doStream({
   providerId: string
   modelId: string
   writeChunk: (data: any, notJson?: boolean) => Promise<void>
-  details: GenerationDetailsByType<GenerationDetails, 'language'>
+  details: LanguageGenerationDetails
 }) {
   const startTime = performance.now()
   const { stream } = await model.doStream(callOptions)
@@ -733,14 +754,18 @@ async function doStream({
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!hasWritten && part.error instanceof APICallError) {
           const statusCode = part.error.statusCode
-          if (statusCode === 408) {
+          if (
+            // unauthorized
+            statusCode === 401 ||
+            // forbidden
+            statusCode === 403 ||
             // request timeout
-            throw part.error
-          } else if (statusCode === 429) {
+            statusCode === 408 ||
             // too many requests
-            throw part.error
-          } else if (statusCode && statusCode >= 500) {
+            statusCode === 429 ||
             // server error
+            (statusCode && statusCode >= 500)
+          ) {
             throw part.error
           }
         }

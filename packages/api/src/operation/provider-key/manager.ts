@@ -15,17 +15,17 @@ import { deleteKeysByPrefixScript, providerKeysStatesScript } from './lua-script
 const scripts = {
   providerKeysStates: {
     script: providerKeysStatesScript,
-    hash: '3d405ebec9c73bfb4678fb148deb146de0103504',
+    hash: 'cdb9cca42dc2700b14d40c6484e6d7f20127c27c',
   },
   deleteKeysByPrefix: {
     script: deleteKeysByPrefixScript,
-    hash: '91589094b4bd7b3485d4d5f820ebb3c45b0c4af5',
+    hash: '3e068d0ff69f0cab4b49cfabb519062e32a0a381',
   },
 }
 
 void Object.entries(scripts).forEach(([name, script]) => {
   void sha1(script.script).then((hash) => {
-    assert.equal(hash === script.hash, `${name} hash mismatch`)
+    assert.equal(hash, script.hash, `${name} hash mismatch`)
   })
 })
 
@@ -37,22 +37,22 @@ export class ProviderKeyManager {
     private modelFullId: ModelFullId,
     private systemKeys: ProviderKeyState[],
     private userOrOrgKeys: ProviderKeyState[],
-    private byok: boolean,
+    private onlyByok: boolean,
   ) {}
 
   static async from({
     auth,
     modelId: modelFullId,
-    byok,
+    onlyByok,
   }: {
     auth: AuthObject
     modelId: ModelFullId
-    byok: boolean
+    onlyByok: boolean
   }) {
     const { providerId } = splitModelFullId(modelFullId)
 
     const [systemKeysStateStr, userOrOrgKeysStateStr] = await Promise.all([
-      !byok ? kv.redis.json.get(kv.key(systemKeysStateKey(modelFullId))) : null,
+      !onlyByok ? kv.redis.json.get(kv.key(systemKeysStateKey(modelFullId))) : null,
       kv.redis.json.get(kv.key(userOrOrgKeysStateKey(auth, modelFullId))),
     ])
 
@@ -66,7 +66,7 @@ export class ProviderKeyManager {
     if (!systemKeysState) {
       shouldCacheSystemKeys = true
 
-      if (!byok) {
+      if (!onlyByok) {
         const keys = await db
           .select()
           .from(ProviderKey)
@@ -125,7 +125,7 @@ export class ProviderKeyManager {
           key: await decryptProviderKey(k.key, true),
         })),
       ),
-      byok,
+      onlyByok,
     )
 
     if (shouldCacheSystemKeys) {
@@ -153,7 +153,7 @@ export class ProviderKeyManager {
     const availableSystemKeys = this.systemKeys.filter((k) => !k.disabled && !k.rateLimited)
     const availableUserOrOrgKeys = this.userOrOrgKeys.filter((k) => !k.disabled && !k.rateLimited)
 
-    if (!this.byok) {
+    if (!this.onlyByok) {
       // Combine system and user/org keys, prioritizing user/org keys
       return [
         ...this.selectKeys_(availableUserOrOrgKeys),

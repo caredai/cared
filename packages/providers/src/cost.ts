@@ -1,12 +1,22 @@
+import assert from 'assert'
 import { Decimal } from 'decimal.js'
 
 import { SuperJSON } from '@cared/shared'
 
 import type {
-  GenerationDetailsByType,
+  BaseModelInfo,
+  EmbeddingModelInfo,
+  ImageGenerationDetails,
+  ImageModelInfo,
+  LanguageGenerationDetails,
+  LanguageModelInfo,
+  SpeechGenerationDetails,
+  SpeechModelInfo,
+  TextEmbeddingGenerationDetails,
+  TranscriptionGenerationDetails,
+  TranscriptionModelInfo,
   GenerationDetails,
-  ModelInfos,
-  ModelType,
+  TypedModelInfo,
 } from './types'
 import type {
   EmbeddingModelV2,
@@ -16,23 +26,79 @@ import type {
   TranscriptionModelV2CallOptions,
 } from '@ai-sdk/provider'
 
-export function computeGenerationCost<T extends ModelType, K extends `${T}Models`>(
-  type: T,
-  model: NonNullable<ModelInfos[K]>[number],
-  details: GenerationDetailsByType<GenerationDetails, T>,
+export function isChargeable(model: BaseModelInfo) {
+  return model.chargeable
+}
+
+export function isByokChargeable(model: TypedModelInfo) {
+  if (isChargeable(model)) {
+    return true
+  }
+  switch (model.type) {
+    case 'language':
+      return Boolean(model.inputTokenPrice || model.outputTokenPrice)
+    case 'image':
+      return Boolean(model.imageInputTokenPrice)
+    case 'speech':
+      return false
+    case 'transcription':
+      return false
+    case 'textEmbedding':
+      return false
+  }
+}
+
+export function estimateGenerationCost(
+  model: TypedModelInfo,
+  callOptions: ModelCallOptions,
+): Decimal | undefined {
+  // TODO
+  switch (model.type) {
+    case 'language':
+      assert(callOptions.type === 'language')
+      return estimateLanguageCost(model, callOptions)
+    case 'image':
+      assert(callOptions.type === 'image')
+      return undefined
+    case 'speech':
+      assert(callOptions.type === 'speech')
+      return undefined
+    case 'transcription':
+      assert(callOptions.type === 'transcription')
+      return undefined
+    case 'textEmbedding':
+      assert(callOptions.type === 'textEmbedding')
+      return undefined
+  }
+}
+
+function estimateLanguageCost(model: LanguageModelInfo, callOptions: LanguageModelV2CallOptions) {
+  // TODO: count tokens properly
+  const inputTokens = SuperJSON.stringify(callOptions.prompt).length * 2 + 100
+  return new Decimal(model.inputTokenPrice ?? 0).times(inputTokens)
+}
+
+export function computeGenerationCost(
+  model: TypedModelInfo,
+  details: GenerationDetails,
 ): Decimal | undefined {
   const computeCost = () => {
-    switch (type) {
+    switch (model.type) {
       case 'language':
-        return computeLanguageCost(model as any, details as any)
+        assert(details.type === 'language')
+        return computeLanguageCost(model, details)
       case 'image':
-        return computeImageCost(model as any, details as any)
+        assert(details.type === 'image')
+        return computeImageCost(model, details)
       case 'speech':
-        return computeSpeechCost(model as any, details as any)
+        assert(details.type === 'speech')
+        return computeSpeechCost(model, details)
       case 'transcription':
-        return computeTranscriptionCost(model as any, details as any)
+        assert(details.type === 'transcription')
+        return computeTranscriptionCost(model, details)
       case 'textEmbedding':
-        return computeTextEmbeddingCost(model as any, details as any)
+        assert(details.type === 'textEmbedding')
+        return computeTextEmbeddingCost(model, details)
     }
   }
 
@@ -47,62 +113,25 @@ export function computeGenerationCost<T extends ModelType, K extends `${T}Models
 
 export type ModelCallOptions =
   | ({
-      modelType: 'language'
+      type: 'language'
     } & LanguageModelV2CallOptions)
   | ({
-      modelType: 'image'
+      type: 'image'
     } & ImageModelV2CallOptions)
   | ({
-      modelType: 'speech'
+      type: 'speech'
     } & SpeechModelV2CallOptions)
   | ({
-      modelType: 'transcription'
+      type: 'transcription'
     } & TranscriptionModelV2CallOptions)
   | ({
-      modelType: 'textEmbedding'
+      type: 'textEmbedding'
     } & Parameters<EmbeddingModelV2<number>['doEmbed']>[0])
 
-export function estimateGenerationCost<T extends ModelType, K extends `${T}Models`>(
-  type: T,
-  model: NonNullable<ModelInfos[K]>[number],
-  callOptions: GenerationDetailsByType<ModelCallOptions, T>,
-): Decimal | undefined {
-  if (!model.chargeable) {
-    return
-  }
-
-  // TODO
-  switch (type) {
-    case 'language':
-      return estimateLanguageCost(model as any, callOptions as any)
-    case 'image':
-      return undefined
-    case 'speech':
-      return undefined
-    case 'transcription':
-      return undefined
-    case 'textEmbedding':
-      return undefined
-  }
-}
-
-function estimateLanguageCost(
-  model: NonNullable<ModelInfos['languageModels']>[number],
-  callOptions: LanguageModelV2CallOptions,
-) {
-  // TODO: count tokens properly
-  const inputTokens = SuperJSON.stringify(callOptions.prompt).length * 2 + 100
-  return new Decimal(model.inputTokenPrice ?? 0).times(inputTokens)
-}
-
 function computeLanguageCost(
-  model: NonNullable<ModelInfos['languageModels']>[number],
-  details: GenerationDetailsByType<GenerationDetails, 'language'>,
+  model: LanguageModelInfo,
+  details: LanguageGenerationDetails,
 ): Decimal | undefined {
-  if (!model.chargeable) {
-    return
-  }
-
   const usage = details.usage
 
   const inputCost = new Decimal(model.inputTokenPrice ?? 0)
@@ -134,38 +163,29 @@ function computeLanguageCost(
 }
 
 function computeImageCost(
-  model: NonNullable<ModelInfos['imageModels']>[number],
-  _details: GenerationDetailsByType<GenerationDetails, 'image'>,
+  _model: ImageModelInfo,
+  _details: ImageGenerationDetails,
 ): Decimal | undefined {
-  if (!model.chargeable) {
-    return
-  }
+  return
 }
 
 function computeSpeechCost(
-  model: NonNullable<ModelInfos['speechModels']>[number],
-  _details: GenerationDetailsByType<GenerationDetails, 'speech'>,
+  _model: SpeechModelInfo,
+  _details: SpeechGenerationDetails,
 ): Decimal | undefined {
-  if (!model.chargeable) {
-    return
-  }
+  return
 }
 
 function computeTranscriptionCost(
-  model: NonNullable<ModelInfos['transcriptionModels']>[number],
-  _details: GenerationDetailsByType<GenerationDetails, 'transcription'>,
+  _model: TranscriptionModelInfo,
+  _details: TranscriptionGenerationDetails,
 ): Decimal | undefined {
-  if (!model.chargeable) {
-    return
-  }
   return
 }
 
 function computeTextEmbeddingCost(
-  model: NonNullable<ModelInfos['textEmbeddingModels']>[number],
-  _details: GenerationDetailsByType<GenerationDetails, 'textEmbedding'>,
+  _model: EmbeddingModelInfo,
+  _details: TextEmbeddingGenerationDetails,
 ): Decimal | undefined {
-  if (!model.chargeable) {
-    return
-  }
+  return
 }
