@@ -1,9 +1,6 @@
 {
   "extends": "@cared/tsconfig/internal-package.json",
   "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
-    }
   },
   "include": ["*.ts", "src"],
   "exclude": ["node_modules"]

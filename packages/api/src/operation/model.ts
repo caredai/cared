@@ -13,7 +13,7 @@ import {
   splitModelFullId,
 } from '@cared/providers'
 
-import type { AuthObject } from '@/auth'
+import type { AuthObject } from '../auth'
 
 export type ReturnedProviderInfo = BaseProviderInfo & ReturnedModelInfos
 

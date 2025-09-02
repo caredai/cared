@@ -2,7 +2,7 @@ import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Credits } from '@cared/db/schema'
 
-import { authenticate } from '@/auth'
+import { authenticate } from '../../../auth'
 
 export async function GET(): Promise<Response> {
   const a = await authenticate()

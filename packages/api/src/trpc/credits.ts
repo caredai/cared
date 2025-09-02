@@ -120,7 +120,7 @@ async function getRechargePrice(stripe: Stripe) {
       price.active &&
       price.billing_scheme === 'per_unit' &&
       price.type === 'one_time' &&
-      !!price.unit_amount
+      !!price.unit_amount_decimal
     )
   ) {
     log.error(`Stripe top-up price is not configured correctly:`, price)
@@ -265,7 +265,8 @@ export const creditsRouter = {
         ],
         mode: 'payment',
         return_url: returnUrl.toString(),
-        automatic_tax: { enabled: true },
+        // TODO: You must have a valid origin address to enable automatic tax calculation
+        automatic_tax: { enabled: false },
         customer: customerId,
         payment_intent_data: {
           setup_future_usage: 'off_session',
@@ -393,7 +394,8 @@ export const creditsRouter = {
         saved_payment_method_options: {
           payment_method_save: 'enabled',
         },
-        automatic_tax: { enabled: true },
+        // TODO: You must have a valid origin address to enable automatic tax calculation
+        automatic_tax: { enabled: false },
         return_url: returnUrl.toString(),
       })
 
