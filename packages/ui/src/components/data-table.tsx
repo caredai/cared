@@ -22,6 +22,9 @@ import {
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
+  ArrowUpDownIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
 } from 'lucide-react'
 
 import { Button } from './button'
@@ -51,6 +54,7 @@ interface DataTableProps<TData, TValue> {
     action: (selectedRows: TData[]) => void
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
   }[]
+  defaultSorting?: SortingState
 }
 
 export function DataTable<TData, TValue>({
@@ -63,8 +67,9 @@ export function DataTable<TData, TValue>({
   enableRowSelection = false,
   onSelectionChange,
   bulkActions = [],
+  defaultSorting = [],
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>(defaultSorting)
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
@@ -245,9 +250,27 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.isPlaceholder ? null : (
+                        <div className="flex items-center">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          {header.column.getCanSort() && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-2 h-4 w-4 p-0"
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              {header.column.getIsSorted() === 'asc' ? (
+                                <ArrowUpIcon className="h-3 w-3" />
+                              ) : header.column.getIsSorted() === 'desc' ? (
+                                <ArrowDownIcon className="h-3 w-3" />
+                              ) : (
+                                <ArrowUpDownIcon className="h-3 w-3" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </TableHead>
                   )
                 })}

@@ -13,6 +13,7 @@ import { oauthAppRouter } from './trpc/oauth-app'
 import { organizationRouter } from './trpc/organization'
 import { providerKeyRouter } from './trpc/provider-key'
 import { storageRouter } from './trpc/storage'
+import { stripeRouter } from './trpc/stripe'
 import { tokenizerRouter } from './trpc/tokenizer'
 import { userRouter } from './trpc/user'
 import { workspaceRouter } from './trpc/workspace'
@@ -35,6 +36,7 @@ export const appRouter = createTRPCRouter({
   message: messageRouter,
   artifact: artifactRouter,
   credits: creditsRouter,
+  stripe: stripeRouter,
 })
 
 // export type definition of API

@@ -70,6 +70,7 @@ export async function POST(req: Request) {
                 await tx
                   .update(CreditsOrder)
                   .set({
+                    status: session.status!,
                     object: session,
                   })
                   .where(eq(CreditsOrder.id, order.id))
@@ -179,6 +180,7 @@ export async function POST(req: Request) {
                 await tx
                   .update(CreditsOrder)
                   .set({
+                    status: event.type === 'invoice.deleted' ? invoice.status! : 'deleted',
                     object: invoice,
                   })
                   .where(eq(CreditsOrder.id, order.id))
@@ -190,9 +192,9 @@ export async function POST(req: Request) {
                 order.status !== 'paid'
               ) {
                 /* const delta = invoice.lines.data.find(
-      (lineItem) =>
-        lineItem.pricing?.price_details?.price === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
-    )?.quantity */
+    (lineItem) =>
+      lineItem.pricing?.price_details?.price === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
+  )?.quantity */
                 const quantity = Math.floor(invoice.amount_paid) / 100
                 const delta = !isNaN(Number(invoice.metadata?.credits))
                   ? Number(invoice.metadata?.credits)

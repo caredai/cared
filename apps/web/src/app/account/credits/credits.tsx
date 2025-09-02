@@ -4,8 +4,8 @@ import assert from 'assert'
 import type { Stripe } from 'stripe'
 import { useState } from 'react'
 import { format, formatDistance } from 'date-fns'
-import { CoinsIcon, CreditCardIcon, HistoryIcon, RepeatIcon } from 'lucide-react'
 import { Decimal } from 'decimal.js'
+import { CoinsIcon, CreditCardIcon, HistoryIcon, RepeatIcon } from 'lucide-react'
 
 import type { OrderStatus } from '@cared/db/schema'
 import { Badge } from '@cared/ui/components/badge'
@@ -17,36 +17,106 @@ import {
   CardHeader,
   CardTitle,
 } from '@cared/ui/components/card'
+import { DataTable } from '@cared/ui/components/data-table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
 
+import type { ColumnDef } from '@tanstack/react-table'
 import { SectionTitle } from '@/components/section'
 import { useCredits, useListCreditsOrders, useListCreditsSubscriptions } from '@/hooks/use-credits'
 import { RechargeDialog } from './recharge-dialog'
+import { PaymentMethods } from './payment-methods'
+
+// Types for table data
+interface OrderTableData {
+  id: string
+  kind: string
+  status: OrderStatus
+  credits: number
+  paymentMethod: string
+  orderKind: string
+  updatedAt: Date
+  object: Stripe.Checkout.Session | Stripe.Invoice
+}
+
+interface SubscriptionTableData {
+  id: string
+  status: Stripe.Subscription.Status
+  createdAt: Date
+  object: Stripe.Subscription
+}
 
 export function Credits() {
   const { credits } = useCredits()
   const { creditsOrdersPages } = useListCreditsOrders()
   const { creditsSubscriptions } = useListCreditsSubscriptions()
 
-  const autoRechargeAmount = credits.metadata.autoRechargeAmount
-  const autoRechargeThreshold = credits.metadata.autoRechargeThreshold
+  const _autoRechargeAmount = credits.metadata.autoRechargeAmount
+  const _autoRechargeThreshold = credits.metadata.autoRechargeThreshold
 
   const [isRechargeDialogOpen, setIsRechargeDialogOpen] = useState(false)
 
-  const getOrderStatus = (status: OrderStatus) => {
-    switch (status) {
-      case 'draft':
-      case 'open':
-        return 'pending'
-      case 'complete':
-      case 'paid':
-        return 'paid'
-      case 'expired':
-        return 'expired'
-      default:
-        return 'failed'
-    }
-  }
+  // Transform orders data for table
+  const ordersData: OrderTableData[] = creditsOrdersPages
+    ? creditsOrdersPages
+        .flatMap((page) => page.orders)
+        .map((order) => {
+          let credits = 0
+          let paymentMethod = ''
+          let orderKind = ''
+          switch (order.kind) {
+            case 'stripe-payment':
+              {
+                assert(isCheckoutSession(order.object))
+                const session = order.object
+                credits = !isNaN(Number(session.metadata?.credits))
+                  ? Number(session.metadata?.credits)
+                  : 0
+                paymentMethod = 'Fiat'
+                orderKind = 'Onetime top-up'
+              }
+              break
+            case 'stripe-subscription':
+              {
+                assert(isCheckoutSession(order.object))
+                paymentMethod = 'Fiat'
+                orderKind = 'Subscription'
+              }
+              break
+            case 'stripe-invoice':
+              {
+                assert(!isCheckoutSession(order.object))
+                const invoice = order.object
+                credits = !isNaN(Number(invoice.metadata?.credits))
+                  ? Number(invoice.metadata?.credits)
+                  : 0
+                paymentMethod = 'Fiat'
+                orderKind = 'Auto top-up'
+              }
+              break
+          }
+
+          return {
+            id: order.id,
+            kind: order.kind,
+            status: order.status,
+            credits,
+            paymentMethod,
+            orderKind,
+            updatedAt: order.updatedAt,
+            object: order.object,
+          }
+        })
+    : []
+
+  // Transform subscriptions data for table
+  const subscriptionsData: SubscriptionTableData[] = creditsSubscriptions
+    ? creditsSubscriptions.map((subscription) => ({
+        id: subscription.id,
+        status: subscription.status,
+        createdAt: new Date(subscription.created),
+        object: subscription,
+      }))
+    : []
 
   return (
     <>
@@ -86,143 +156,187 @@ export function Credits() {
         </TabsList>
 
         <TabsContent value="orders" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Orders</CardTitle>
-              <CardDescription>Your recent credit purchase orders</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {creditsOrdersPages && creditsOrdersPages.length > 0 ? (
-                <div className="space-y-4">
-                  {creditsOrdersPages
-                    .flatMap((page) => page.orders)
-                    .map((order) => {
-                      let credits = 0
-                      let paymentMethod = ''
-                      let orderKind = ''
-                      switch (order.kind) {
-                        case 'stripe-payment':
-                          {
-                            assert(isCheckoutSession(order.object))
-                            const session = order.object
-                            credits = !isNaN(Number(session.metadata?.credits))
-                              ? Number(session.metadata?.credits)
-                              : 0
-                            paymentMethod = 'Fiat'
-                            orderKind = 'Onetime top-up'
-                          }
-                          break
-                        case 'stripe-subscription':
-                          {
-                            assert(isCheckoutSession(order.object))
-                            paymentMethod = 'Fiat'
-                            orderKind = 'Subscription'
-                          }
-                          break
-                        case 'stripe-invoice':
-                          {
-                            assert(!isCheckoutSession(order.object))
-                            const invoice = order.object
-                            credits = !isNaN(Number(invoice.metadata?.credits))
-                              ? Number(invoice.metadata?.credits)
-                              : 0
-                            paymentMethod = 'Fiat'
-                            orderKind = 'Auto top-up'
-                          }
-                          break
-                      }
-
-                      const status = getOrderStatus(order.status)
-                      const updatedAt = order.updatedAt
-
-                      return (
-                        <div
-                          key={order.id}
-                          className="flex items-center justify-between gap-2 p-2 border rounded-lg"
-                        >
-                          <span title={format(updatedAt, 'MMM dd, yyyy hh:mm a')}>
-                            {formatDistance(updatedAt, new Date(), {
-                              addSuffix: true,
-                            })}
-                          </span>
-                          <span>{orderKind}</span>
-                          <span>{order.kind !== 'stripe-subscription' ? `$${credits}` : ''}</span>
-                          {status === 'paid' ? (
-                            <Badge variant="default" className="bg-green-500">
-                              Completed
-                            </Badge>
-                          ) : status === 'pending' ? (
-                            <Badge variant="secondary">Pending</Badge>
-                          ) : status === 'expired' ? (
-                            <Badge variant="destructive">Expired</Badge>
-                          ) : (
-                            <Badge variant="destructive">Failed</Badge>
-                          )}
-                          <span>{paymentMethod}</span>
-                        </div>
-                      )
-                    })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <HistoryIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <span>No orders found</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <OrdersTable data={ordersData} />
         </TabsContent>
 
         <TabsContent value="subscriptions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Auto Top-up Subscriptions</CardTitle>
-              <CardDescription>Your recent credit auto top-up subscriptions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {creditsSubscriptions && creditsSubscriptions.length > 0 ? (
-                <div className="space-y-4">
-                  {creditsSubscriptions.map((subscription) => {
-                    const status = subscription.status
-                    const createdAt = new Date(subscription.created)
-
-                    return (
-                      <div
-                        key={subscription.id}
-                        className="flex items-center justify-between gap-2 p-2 border rounded-lg"
-                      >
-                        <span title={format(createdAt, 'MMM dd, yyyy hh:mm a')}>
-                          {formatDistance(createdAt, new Date(), {
-                            addSuffix: true,
-                          })}
-                        </span>
-
-                        {status === 'active' ? (
-                          <Badge variant="default" className="bg-green-500">
-                            Active
-                          </Badge>
-                        ) : status === 'canceled' ? (
-                          <Badge variant="destructive">Canceled</Badge>
-                        ) : (
-                          <Badge variant="outline">{capitalizeString(status)}</Badge>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <RepeatIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <span>No subscriptions found</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <SubscriptionsTable data={subscriptionsData} />
         </TabsContent>
       </Tabs>
 
+      <PaymentMethods />
+
       <RechargeDialog open={isRechargeDialogOpen} onOpenChange={setIsRechargeDialogOpen} />
     </>
+  )
+}
+
+// Orders Table Component
+function OrdersTable({ data }: { data: OrderTableData[] }) {
+  const columns: ColumnDef<OrderTableData>[] = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const id = row.getValue<string>('id')
+        return (
+          <span className="font-mono text-xs" title={id}>
+            {id.slice(0, 8)}...
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'updatedAt',
+      header: 'Date',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const updatedAt = row.getValue<Date>('updatedAt')
+        return (
+          <span title={format(updatedAt, 'MMM dd, yyyy hh:mm a')}>
+            {formatDistance(updatedAt, new Date(), { addSuffix: true })}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'orderKind',
+      header: 'Type',
+      enableSorting: true,
+      cell: ({ row }) => row.getValue<string>('orderKind'),
+    },
+    {
+      accessorKey: 'credits',
+      header: 'Amount',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const credits = row.getValue<number>('credits')
+        const kind = row.original.kind
+        return kind !== 'stripe-subscription' ? `$${credits}` : '-'
+      },
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const status = row.getValue<OrderStatus>('status')
+        const statusType = getOrderStatus(status)
+
+        switch (statusType) {
+          case 'paid':
+            return (
+              <Badge variant="default" className="bg-green-500">
+                Completed
+              </Badge>
+            )
+          case 'pending':
+            return <Badge variant="secondary">Pending</Badge>
+          case 'canceled':
+            return <Badge variant="destructive">Canceled</Badge>
+          default:
+            return <Badge variant="destructive">Failed</Badge>
+        }
+      },
+    },
+    {
+      accessorKey: 'paymentMethod',
+      header: 'Payment Method',
+      enableSorting: true,
+      cell: ({ row }) => row.getValue<string>('paymentMethod'),
+    },
+  ]
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Orders</CardTitle>
+        <CardDescription>Your recent credit purchase orders</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DataTable
+          columns={columns}
+          data={data}
+          searchKey="orderKind"
+          searchPlaceholder="Search orders..."
+          defaultPageSize={10}
+          defaultSorting={[{ id: 'updatedAt', desc: true }]}
+        />
+      </CardContent>
+    </Card>
+  )
+}
+
+// Subscriptions Table Component
+function SubscriptionsTable({ data }: { data: SubscriptionTableData[] }) {
+  const columns: ColumnDef<SubscriptionTableData>[] = [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const id = row.getValue<string>('id')
+        return (
+          <span className="font-mono text-xs" title={id}>
+            {id.slice(0, 8)}...
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'createdAt',
+      header: 'Created',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const createdAt = row.getValue<Date>('createdAt')
+        return (
+          <span title={format(createdAt, 'MMM dd, yyyy hh:mm a')}>
+            {formatDistance(createdAt, new Date(), { addSuffix: true })}
+          </span>
+        )
+      },
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const status = row.getValue<Stripe.Subscription.Status>('status')
+
+        switch (status) {
+          case 'active':
+            return (
+              <Badge variant="default" className="bg-green-500">
+                Active
+              </Badge>
+            )
+          case 'canceled':
+            return <Badge variant="destructive">Canceled</Badge>
+          default:
+            return <Badge variant="outline">{capitalizeString(status)}</Badge>
+        }
+      },
+    },
+  ]
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Auto Top-up Subscriptions</CardTitle>
+        <CardDescription>Your recent credit auto top-up subscriptions</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <DataTable
+          columns={columns}
+          data={data}
+          searchKey="status"
+          searchPlaceholder="Search subscriptions..."
+          defaultPageSize={10}
+          defaultSorting={[{ id: 'createdAt', desc: true }]}
+        />
+      </CardContent>
+    </Card>
   )
 }
 
@@ -238,4 +352,21 @@ function capitalizeString(str: string) {
   }
   str = str.replace('_', ' ')
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+}
+
+function getOrderStatus(status: OrderStatus) {
+  switch (status) {
+    case 'draft':
+    case 'open':
+      return 'pending'
+    case 'complete':
+    case 'paid':
+      return 'paid'
+    case 'expired':
+    case 'void':
+    case 'deleted':
+      return 'canceled'
+    default:
+      return 'failed'
+  }
 }

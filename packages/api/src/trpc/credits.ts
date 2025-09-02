@@ -16,7 +16,7 @@ import { cfg } from '../config'
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
 
-async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizationId?: string) {
+export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizationId?: string) {
   let credits = await ctx.db.query.Credits.findFirst({
     where: organizationId
       ? eq(Credits.organizationId, organizationId)
@@ -228,6 +228,91 @@ export const creditsRouter = {
         })),
         hasMore,
         cursor,
+      }
+    }),
+
+  cancelOrder: userProtectedProcedure
+    .input(
+      z.object({
+        orderId: z.string(),
+        organizationId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const stripe = getStripe()
+
+      // Find the order and verify ownership
+      const order = await ctx.db.query.CreditsOrder.findFirst({
+        where: and(
+          eq(CreditsOrder.id, input.orderId),
+          input.organizationId
+            ? eq(CreditsOrder.organizationId, input.organizationId)
+            : eq(CreditsOrder.userId, ctx.auth.userId),
+        ),
+      })
+      if (!order) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Order not found',
+        })
+      }
+
+      // Check if order can be canceled based on status
+      const cancelableStatuses = ['draft', 'open', 'uncollectible']
+      if (
+        !cancelableStatuses.includes(order.status) ||
+        (order.status === 'draft' && (order.object as Stripe.Invoice).billing_reason !== 'manual')
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Order cannot be canceled in current status: ${order.status}`,
+        })
+      }
+
+      let newStatus: OrderStatus
+      switch (order.kind) {
+        case 'stripe-payment':
+        case 'stripe-subscription': {
+          // Cancel checkout session
+          const session = order.object as Stripe.Checkout.Session
+          await stripe.checkout.sessions.expire(session.id)
+          newStatus = 'expired'
+          break
+        }
+        case 'stripe-invoice': {
+          const invoice = order.object as Stripe.Invoice
+          if (invoice.status === 'draft') {
+            await stripe.invoices.del(invoice.id!)
+            newStatus = 'deleted'
+          } else {
+            await stripe.invoices.voidInvoice(invoice.id!)
+            newStatus = 'void'
+          }
+          break
+        }
+      }
+
+      await ctx.db
+        .update(CreditsOrder)
+        .set({
+          status: newStatus,
+        })
+        .where(eq(CreditsOrder.id, order.id))
+
+      // If this was a recharge in progress, clear the flag
+      if (order.kind === 'stripe-payment' || order.kind === 'stripe-invoice') {
+        const { credits } = await ensureCustomer(ctx, stripe, input.organizationId)
+        if (credits.metadata.isRechargeInProgress) {
+          await ctx.db
+            .update(Credits)
+            .set({
+              metadata: {
+                ...credits.metadata,
+                isRechargeInProgress: false,
+              },
+            })
+            .where(eq(Credits.id, credits.id))
+        }
       }
     }),
 
