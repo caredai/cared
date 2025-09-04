@@ -191,10 +191,6 @@ export async function POST(req: Request) {
                 invoice.status === 'paid' &&
                 order.status !== 'paid'
               ) {
-                /* const delta = invoice.lines.data.find(
-    (lineItem) =>
-      lineItem.pricing?.price_details?.price === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
-  )?.quantity */
                 const quantity = Math.floor(invoice.amount_paid) / 100
                 const delta = !isNaN(Number(invoice.metadata?.credits))
                   ? Number(invoice.metadata?.credits)

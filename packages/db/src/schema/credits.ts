@@ -1,6 +1,6 @@
 import type { InferSelectModel } from 'drizzle-orm'
 import type { Stripe } from 'stripe'
-import { index, jsonb, numeric, pgEnum, pgTable, text } from 'drizzle-orm/pg-core'
+import { index, jsonb, numeric, pgEnum, pgTable, text, unique } from 'drizzle-orm/pg-core'
 
 import { Organization, timestampsIndices, User } from '.'
 import { generateId, timestamps } from './utils'
@@ -33,8 +33,8 @@ export const Credits = pgTable(
   },
   (table) => [
     index().on(table.type),
-    index().on(table.userId),
-    index().on(table.organizationId),
+    unique().on(table.userId),
+    unique().on(table.organizationId),
     ...timestampsIndices(table),
   ],
 )
@@ -68,8 +68,9 @@ export const CreditsOrder = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.userId, table.kind, table.status),
-    index().on(table.userId, table.status),
+    index().on(table.type),
+    index().on(table.userId, table.organizationId, table.kind, table.status),
+    index().on(table.userId, table.organizationId, table.status),
     ...timestampsIndices(table),
   ],
 )
@@ -99,8 +100,9 @@ export const CreditsSubscription = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.userId, table.kind, table.status),
-    index().on(table.userId, table.status),
+    index().on(table.type),
+    index().on(table.userId, table.organizationId, table.kind, table.status),
+    index().on(table.userId, table.organizationId, table.status),
     ...timestampsIndices(table),
   ],
 )

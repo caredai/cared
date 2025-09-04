@@ -5,7 +5,14 @@ import type { Stripe } from 'stripe'
 import { useState } from 'react'
 import { format, formatDistance } from 'date-fns'
 import { Decimal } from 'decimal.js'
-import { CoinsIcon, CreditCardIcon, HistoryIcon, RepeatIcon } from 'lucide-react'
+import {
+  CoinsIcon,
+  CreditCardIcon,
+  HistoryIcon,
+  MoreHorizontal,
+  RepeatIcon,
+  Trash2,
+} from 'lucide-react'
 
 import type { OrderStatus } from '@cared/db/schema'
 import { Badge } from '@cared/ui/components/badge'
@@ -18,13 +25,24 @@ import {
   CardTitle,
 } from '@cared/ui/components/card'
 import { DataTable } from '@cared/ui/components/data-table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@cared/ui/components/dropdown-menu'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
 
 import type { ColumnDef } from '@tanstack/react-table'
 import { SectionTitle } from '@/components/section'
-import { useCredits, useListCreditsOrders, useListCreditsSubscriptions } from '@/hooks/use-credits'
-import { RechargeDialog } from './recharge-dialog'
+import {
+  useCancelCreditsOrder,
+  useCredits,
+  useListCreditsOrders,
+  useListCreditsSubscriptions,
+} from '@/hooks/use-credits'
 import { PaymentMethods } from './payment-methods'
+import { RechargeDialog } from './recharge-dialog'
 
 // Types for table data
 interface OrderTableData {
@@ -45,10 +63,10 @@ interface SubscriptionTableData {
   object: Stripe.Subscription
 }
 
-export function Credits() {
-  const { credits } = useCredits()
-  const { creditsOrdersPages } = useListCreditsOrders()
-  const { creditsSubscriptions } = useListCreditsSubscriptions()
+export function Credits({ organizationId }: { organizationId?: string }) {
+  const { credits } = useCredits(organizationId)
+  const { creditsOrdersPages } = useListCreditsOrders(organizationId)
+  const { creditsSubscriptions } = useListCreditsSubscriptions(organizationId)
 
   const _autoRechargeAmount = credits.metadata.autoRechargeAmount
   const _autoRechargeThreshold = credits.metadata.autoRechargeThreshold
@@ -156,7 +174,7 @@ export function Credits() {
         </TabsList>
 
         <TabsContent value="orders" className="space-y-4">
-          <OrdersTable data={ordersData} />
+          <OrdersTable data={ordersData} organizationId={organizationId} />
         </TabsContent>
 
         <TabsContent value="subscriptions" className="space-y-4">
@@ -166,13 +184,25 @@ export function Credits() {
 
       <PaymentMethods />
 
-      <RechargeDialog open={isRechargeDialogOpen} onOpenChange={setIsRechargeDialogOpen} />
+      <RechargeDialog
+        organizationId={organizationId}
+        open={isRechargeDialogOpen}
+        onOpenChange={setIsRechargeDialogOpen}
+      />
     </>
   )
 }
 
 // Orders Table Component
-function OrdersTable({ data }: { data: OrderTableData[] }) {
+function OrdersTable({
+  data,
+  organizationId,
+}: {
+  data: OrderTableData[]
+  organizationId?: string
+}) {
+  const cancelOrder = useCancelCreditsOrder(organizationId)
+
   const columns: ColumnDef<OrderTableData>[] = [
     {
       accessorKey: 'id',
@@ -245,6 +275,41 @@ function OrdersTable({ data }: { data: OrderTableData[] }) {
       header: 'Payment Method',
       enableSorting: true,
       cell: ({ row }) => row.getValue<string>('paymentMethod'),
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => {
+        const order = row.original
+        const statusType = getOrderStatus(order.status)
+        const isPending = statusType === 'pending'
+
+        if (!isPending) {
+          return null
+        }
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive cursor-pointer"
+                onClick={async () => {
+                  await cancelOrder(order.id)
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Cancel Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
     },
   ]
 
@@ -358,6 +423,7 @@ function getOrderStatus(status: OrderStatus) {
   switch (status) {
     case 'draft':
     case 'open':
+    case 'uncollectible':
       return 'pending'
     case 'complete':
     case 'paid':

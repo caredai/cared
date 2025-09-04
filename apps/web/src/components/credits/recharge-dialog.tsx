@@ -22,9 +22,11 @@ import { StripeCheckoutForm } from './stripe-checkout-form'
 type PaymentMethod = 'fiat' | 'crypto'
 
 export function RechargeDialog({
+  organizationId,
   open,
   onOpenChange,
 }: {
+  organizationId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -129,7 +131,7 @@ export function RechargeDialog({
           <div className="space-y-4">
             <div className="isolate">
               {selectedPaymentMethod === 'fiat' ? (
-                <StripeCheckoutForm credits={rechargeAmount} />
+                <StripeCheckoutForm organizationId={organizationId} credits={rechargeAmount} />
               ) : (
                 <HelioCheckoutForm credits={rechargeAmount} />
               )}

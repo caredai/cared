@@ -7,101 +7,125 @@ import type { SQL } from '@cared/db'
 import type { OrderStatus } from '@cared/db/schema'
 import { getBaseUrl } from '@cared/auth/client'
 import { and, desc, eq, inArray, lt } from '@cared/db'
-import { Credits, CreditsOrder, orderKinds, Organization, User } from '@cared/db/schema'
+import { Credits, CreditsOrder, Member, orderKinds, Organization, User } from '@cared/db/schema'
 import log from '@cared/log'
 
 import type { UserContext } from '../trpc'
+import { OrganizationScope } from '../auth'
 import { getStripe } from '../client/stripe'
 import { cfg } from '../config'
 import { env } from '../env'
 import { userProtectedProcedure } from '../trpc'
 
 export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizationId?: string) {
-  let credits = await ctx.db.query.Credits.findFirst({
-    where: organizationId
-      ? eq(Credits.organizationId, organizationId)
-      : eq(Credits.userId, ctx.auth.userId),
-  })
-  if (credits?.metadata.customerId) {
+  return await ctx.db.transaction(async (tx) => {
+    let credits = (
+      await tx
+        .select()
+        .from(Credits)
+        .where(
+          organizationId
+            ? eq(Credits.organizationId, organizationId)
+            : eq(Credits.userId, ctx.auth.userId),
+        )
+        .for('update')
+    ) // lock
+      .at(0)
+    if (credits?.metadata.customerId) {
+      return {
+        customerId: credits.metadata.customerId,
+        credits,
+      }
+    }
+
+    let customer
+
+    if (!organizationId) {
+      const user = (await tx.select().from(User).where(eq(User.id, ctx.auth.userId)).for('update')) // lock
+        .at(0)
+      if (!user) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `User with id ${ctx.auth.userId} not found`,
+        })
+      }
+
+      customer = await stripe.customers.create({
+        name: user.name,
+        email: user.email,
+        metadata: {
+          userId: user.id,
+        },
+      })
+    } else {
+      const { organization, owner } =
+        (
+          await tx
+            .select({
+              organization: Organization,
+              owner: User,
+            })
+            .from(Organization)
+            .innerJoin(
+              Member,
+              and(eq(Member.organizationId, Organization.id), eq(Member.role, 'owner')),
+            )
+            .innerJoin(User, eq(User.id, Member.userId))
+            .where(eq(Organization.id, organizationId))
+            .for('update')
+        ) // lock
+          .at(0) ?? {}
+      if (!organization || !owner) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Organization with id ${organizationId} not found`,
+        })
+      }
+
+      customer = await stripe.customers.create({
+        name: organization.name,
+        email: owner.email,
+        metadata: {
+          organizationId: organization.id,
+        },
+      })
+    }
+
+    if (!credits) {
+      credits = (
+        await tx
+          .insert(Credits)
+          .values({
+            type: organizationId ? 'organization' : 'user',
+            userId: organizationId ? undefined : ctx.auth.userId,
+            organizationId: organizationId,
+            credits: '0',
+            metadata: {
+              customerId: customer.id,
+            },
+          })
+          .returning()
+      ).at(0)!
+    } else {
+      credits = (
+        await tx
+          .update(Credits)
+          .set({
+            metadata: {
+              ...credits.metadata,
+              customerId: customer.id,
+            },
+          })
+          .where(eq(Credits.id, credits.id))
+          .returning()
+      ).at(0)!
+    }
+
     return {
-      customerId: credits.metadata.customerId,
+      customerId: customer.id,
       credits,
     }
-  }
-
-  let customer
-
-  if (!organizationId) {
-    const user = await ctx.db.query.User.findFirst({
-      where: eq(User.id, ctx.auth.userId),
-    })
-    if (!user) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `User with id ${ctx.auth.userId} not found`,
-      })
-    }
-
-    customer = await stripe.customers.create({
-      name: user.name,
-      email: user.email,
-      metadata: {
-        userId: user.id,
-      },
-    })
-  } else {
-    const organization = await ctx.db.query.Organization.findFirst({
-      where: eq(Organization.id, organizationId),
-    })
-    if (!organization) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Organization with id ${organizationId} not found`,
-      })
-    }
-
-    customer = await stripe.customers.create({
-      name: organization.name,
-      metadata: {
-        organizationId: organization.id,
-      },
-    })
-  }
-
-  if (!credits) {
-    credits = (
-      await ctx.db
-        .insert(Credits)
-        .values({
-          type: organizationId ? 'organization' : 'user',
-          userId: organizationId ? undefined : ctx.auth.userId,
-          organizationId: organizationId,
-          credits: '0',
-          metadata: {
-            customerId: customer.id,
-          },
-        })
-        .returning()
-    ).at(0)!
-  } else {
-    credits = (
-      await ctx.db
-        .update(Credits)
-        .set({
-          metadata: {
-            ...credits.metadata,
-            customerId: customer.id,
-          },
-        })
-        .where(eq(Credits.id, credits.id))
-        .returning()
-    ).at(0)!
-  }
-
-  return {
-    customerId: customer.id,
-    credits,
-  }
+  })
 }
 
 async function getRechargePrice(stripe: Stripe) {
@@ -173,6 +197,11 @@ export const creditsRouter = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      if (input?.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions()
+      }
+
       const stripe = getStripe()
       const { credits } = await ensureCustomer(ctx, stripe, input?.organizationId)
 
@@ -192,6 +221,11 @@ export const creditsRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions()
+      }
+
       const conditions: SQL<unknown>[] = [
         input.organizationId
           ? eq(CreditsOrder.organizationId, input.organizationId)
@@ -239,6 +273,11 @@ export const creditsRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['delete'] })
+      }
+
       const stripe = getStripe()
 
       // Find the order and verify ownership
@@ -324,6 +363,11 @@ export const creditsRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['create'] })
+      }
+
       const stripe = getStripe()
 
       const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
@@ -407,6 +451,11 @@ export const creditsRouter = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      if (input?.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions()
+      }
+
       const stripe = getStripe()
 
       const { customerId } = await ensureCustomer(ctx, stripe, input?.organizationId)
@@ -440,6 +489,11 @@ export const creditsRouter = {
         ),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['create'] })
+      }
+
       const stripe = getStripe()
 
       const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
@@ -531,6 +585,11 @@ export const creditsRouter = {
         .optional(),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input?.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['delete'] })
+      }
+
       const stripe = getStripe()
 
       const { credits } = await ensureCustomer(ctx, stripe, input?.organizationId)
@@ -572,6 +631,11 @@ export const creditsRouter = {
         .optional(),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input?.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['create'] })
+      }
+
       const stripe = getStripe()
 
       const { customerId, credits } = await ensureCustomer(ctx, stripe, input?.organizationId)

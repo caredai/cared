@@ -9,8 +9,14 @@ import { useCreateCreditsOnetimeCheckout } from '@/hooks/use-credits'
 
 const stripePromise = loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
 
-export function StripeCheckoutForm({ credits }: { credits: number }) {
-  const createOnetimeCheckout = useCreateCreditsOnetimeCheckout()
+export function StripeCheckoutForm({
+  organizationId,
+  credits,
+}: {
+  organizationId?: string
+  credits: number
+}) {
+  const createOnetimeCheckout = useCreateCreditsOnetimeCheckout(organizationId)
 
   return (
     <EmbeddedCheckoutProvider

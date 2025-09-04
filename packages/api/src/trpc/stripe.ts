@@ -1,6 +1,7 @@
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
 
+import { OrganizationScope } from '../auth'
 import { getStripe } from '../client/stripe'
 import { userProtectedProcedure } from '../trpc'
 import { ensureCustomer } from './credits'
@@ -16,6 +17,11 @@ export const stripeRouter = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      if (input?.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions()
+      }
+
       const stripe = getStripe()
       const { customerId } = await ensureCustomer(ctx, stripe, input?.organizationId)
 
@@ -42,6 +48,11 @@ export const stripeRouter = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
+      if (input?.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions()
+      }
+
       const stripe = getStripe()
       const { customerId } = await ensureCustomer(ctx, stripe, input?.organizationId)
 
@@ -64,6 +75,11 @@ export const stripeRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['create'] })
+      }
+
       const stripe = getStripe()
       const { customerId } = await ensureCustomer(ctx, stripe, input.organizationId)
 
@@ -95,6 +111,11 @@ export const stripeRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['delete'] })
+      }
+
       const stripe = getStripe()
       const { customerId } = await ensureCustomer(ctx, stripe, input.organizationId)
 
