@@ -84,14 +84,11 @@ export async function POST(req: Request) {
                 session.payment_status === 'paid' &&
                 order.status !== 'complete'
               ) {
-                const quantity = session.line_items?.data.find(
-                  (lineItem) => lineItem.price?.id === env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
-                )?.quantity
                 const delta = !isNaN(Number(session.metadata?.credits))
                   ? Number(session.metadata?.credits)
                   : 0
 
-                if (quantity && delta && quantity >= delta * 100) {
+                if (delta) {
                   const credits = (
                     await tx
                       .select()
@@ -133,17 +130,10 @@ export async function POST(req: Request) {
                     }
                   }
                 } else {
-                  if (!quantity) {
-                    log.error(
-                      `Line item not found for checkout session with id ${session.id}`,
-                      session,
-                    )
-                  } else {
-                    log.error(
-                      `Invalid quantity for checkout session with id ${session.id}: quantity=${quantity}, credits=${delta}`,
-                      session,
-                    )
-                  }
+                  log.error(
+                    `Invalid quantity for checkout session with id ${session.id}: credits=${delta}`,
+                    session,
+                  )
                 }
               }
             } else {

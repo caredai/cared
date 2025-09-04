@@ -4,7 +4,6 @@ import {
   useInfiniteQuery,
   useMutation,
   useQuery,
-  useQueryClient,
   useSuspenseQuery,
 } from '@tanstack/react-query'
 import { atom, useAtom } from 'jotai'
@@ -40,7 +39,7 @@ export function useListCreditsOrders(organizationId?: string) {
     trpc.credits.listOrders.infiniteQueryOptions(
       {
         organizationId,
-        statuses: ['open', 'complete', 'draft', 'paid'],
+        // statuses: ['open', 'complete', 'draft', 'paid'],
         limit: PAGE_SIZE,
       },
       {
@@ -73,18 +72,15 @@ export function useListCreditsOrders(organizationId?: string) {
 
 export function useCreateCreditsOnetimeCheckout(organizationId?: string) {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
+
+  const { refetchCredits } = useCredits(organizationId)
+  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
 
   const createMutation = useMutation(
     trpc.credits.createOnetimeCheckout.mutationOptions({
       onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: trpc.credits.listOrders.queryKey({
-            organizationId,
-            statuses: ['open', 'complete', 'draft', 'paid'],
-            limit: PAGE_SIZE,
-          }),
-        })
+        void refetchCredits()
+        void refetchCreditsOrders()
       },
     }),
   )
@@ -120,21 +116,17 @@ export function useListCreditsSubscriptions(organizationId?: string) {
 
 export function useCreateAutoRechargeCreditsSubscriptionCheckout(organizationId?: string) {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
+
+  const { refetchCredits } = useCredits(organizationId)
+  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
+  const { refetchCreditsSubscriptions } = useListCreditsSubscriptions(organizationId)
 
   const createMutation = useMutation(
     trpc.credits.createAutoRechargeSubscriptionCheckout.mutationOptions({
       onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: trpc.credits.listOrders.queryKey({
-            organizationId,
-            statuses: ['open', 'complete', 'draft', 'paid'],
-            limit: PAGE_SIZE,
-          }),
-        })
-        void queryClient.invalidateQueries({
-          queryKey: trpc.credits.listSubscriptions.queryKey(),
-        })
+        void refetchCredits()
+        void refetchCreditsOrders()
+        void refetchCreditsSubscriptions()
       },
       onError: (error) => {
         toast.error(`Failed to create auto top-up subscription checkout: ${error.message}`)
@@ -157,14 +149,15 @@ export function useCreateAutoRechargeCreditsSubscriptionCheckout(organizationId?
 
 export function useCancelAutoRechargeCreditsSubscription(organizationId?: string) {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
+
+  const { refetchCredits } = useCredits(organizationId)
+  const { refetchCreditsSubscriptions } = useListCreditsSubscriptions(organizationId)
 
   const cancelMutation = useMutation(
     trpc.credits.cancelAutoRechargeSubscription.mutationOptions({
       onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: trpc.credits.listSubscriptions.queryKey(),
-        })
+        void refetchCredits()
+        void refetchCreditsSubscriptions()
       },
     }),
   )
@@ -179,18 +172,15 @@ export function useCancelAutoRechargeCreditsSubscription(organizationId?: string
 
 export function useCreateAutoRechargeCreditsInvoice(organizationId?: string) {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
+
+  const { refetchCredits } = useCredits(organizationId)
+  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
 
   const createMutation = useMutation(
     trpc.credits.createAutoRechargeInvoice.mutationOptions({
       onSuccess: () => {
-        void queryClient.invalidateQueries({
-          queryKey: trpc.credits.listOrders.queryKey({
-            organizationId,
-            statuses: ['open', 'complete', 'draft', 'paid'],
-            limit: PAGE_SIZE,
-          }),
-        })
+        void refetchCredits()
+        void refetchCreditsOrders()
       },
     }),
   )
@@ -208,24 +198,15 @@ export function useCreateAutoRechargeCreditsInvoice(organizationId?: string) {
  */
 export function useCancelCreditsOrder(organizationId?: string) {
   const trpc = useTRPC()
-  const queryClient = useQueryClient()
+
+  const { refetchCredits } = useCredits(organizationId)
+  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
 
   const cancelMutation = useMutation(
     trpc.credits.cancelOrder.mutationOptions({
       onSuccess: () => {
-        // Invalidate orders list to refresh the data
-        void queryClient.invalidateQueries({
-          queryKey: trpc.credits.listOrders.queryKey({
-            organizationId,
-            limit: PAGE_SIZE,
-          }),
-        })
-        // Also invalidate credits to refresh the current credits balance
-        void queryClient.invalidateQueries({
-          queryKey: trpc.credits.getCredits.queryKey({
-            organizationId,
-          }),
-        })
+        void refetchCredits()
+        void refetchCreditsOrders()
       },
       onError: (error) => {
         toast.error(`Failed to cancel order: ${error.message}`)

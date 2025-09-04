@@ -112,7 +112,7 @@ export function PaymentMethods() {
             <DialogTrigger asChild>
               <Button>
                 <PlusIcon className="h-4 w-4" />
-                Add Payment Method
+                Add
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md max-h-[95vh] px-0 flex flex-col">
@@ -283,8 +283,6 @@ function PaymentMethodsTable({
     <DataTable
       columns={columns}
       data={data}
-      searchKeys={["brand"]}
-      searchPlaceholder="Search payment methods..."
       defaultPageSize={10}
       defaultSorting={[{ id: 'created', desc: true }]}
     />

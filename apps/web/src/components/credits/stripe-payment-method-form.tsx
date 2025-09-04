@@ -84,7 +84,10 @@ function PaymentMethodForm({ onSuccess, onCancel }: StripePaymentMethodFormProps
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/account/credits/payment-methods`,
+          return_url: `${window.location.origin}/account/credits`,
+          payment_method_data: {
+            allow_redisplay: 'always'
+          }
         },
         redirect: 'if_required', // Only redirect for redirect-based payment methods
       })
@@ -92,7 +95,6 @@ function PaymentMethodForm({ onSuccess, onCancel }: StripePaymentMethodFormProps
       if (error) {
         toast.error(`Payment method setup failed: ${error.message ?? 'Unknown error'}`)
       } else if (setupIntent.status === 'succeeded') {
-        toast.success('Payment method added successfully!')
         onSuccess?.()
       }
     } catch (error) {

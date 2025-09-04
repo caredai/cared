@@ -6,7 +6,7 @@ import { z } from 'zod/v4'
 import type { SQL } from '@cared/db'
 import type { OrderStatus } from '@cared/db/schema'
 import { getBaseUrl } from '@cared/auth/client'
-import { and, desc, eq, inArray, lt } from '@cared/db'
+import { and, desc, eq, inArray, lt, lte } from '@cared/db'
 import { Credits, CreditsOrder, Member, orderKinds, Organization, User } from '@cared/db/schema'
 import log from '@cared/log'
 
@@ -247,26 +247,52 @@ export const creditsRouter = {
       }
       const query = and(...conditions)
 
-      const orders = await ctx.db
-        .select()
-        .from(CreditsOrder)
-        .where(query)
-        .orderBy(desc(CreditsOrder.id))
-        .limit(input.limit + 1)
+      while (true) {
+        const orders = await ctx.db
+          .select()
+          .from(CreditsOrder)
+          .where(query)
+          .orderBy(desc(CreditsOrder.id))
+          .limit(input.limit + 1)
 
-      const hasMore = orders.length > input.limit
-      if (hasMore) {
-        orders.pop()
-      }
-      const cursor = orders.at(-1)?.id
+        const hasMore = orders.length > input.limit
+        if (hasMore) {
+          orders.pop()
+        }
+        const cursor = orders.at(-1)?.id
 
-      return {
-        orders: orders.map((order) => ({
-          ...order,
-          status: order.status as Stripe.Checkout.Session.Status | Stripe.Invoice.Status,
-        })),
-        hasMore,
-        cursor,
+        const oneWeekAgo = new Date()
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+        if (
+          orders.find(
+            (order) =>
+              ['expired', 'void', 'deleted'].includes(order.status) &&
+              order.updatedAt <= oneWeekAgo,
+          )
+        ) {
+          await ctx.db
+            .delete(CreditsOrder)
+            .where(
+              and(
+                input.organizationId
+                  ? eq(CreditsOrder.organizationId, input.organizationId)
+                  : eq(CreditsOrder.userId, ctx.auth.userId),
+                inArray(CreditsOrder.status, ['expired', 'void', 'deleted']),
+                lte(CreditsOrder.updatedAt, oneWeekAgo),
+              ),
+            )
+
+          continue
+        }
+
+        return {
+          orders: orders.map((order) => ({
+            ...order,
+            status: order.status as Stripe.Checkout.Session.Status | Stripe.Invoice.Status,
+          })),
+          hasMore,
+          cursor,
+        }
       }
     }),
 
@@ -327,7 +353,9 @@ export const creditsRouter = {
         line_items: [
           {
             price: price.id,
-            quantity: Math.ceil(input.credits * 100 * (1 + cfg.platform.creditsFeeRate)),
+            quantity: Math.ceil(
+              input.credits * 100 + Math.max(input.credits * 100 * cfg.platform.creditsFeeRate, 80),
+            ),
           },
         ],
         mode: 'payment',
@@ -338,8 +366,11 @@ export const creditsRouter = {
         payment_intent_data: {
           setup_future_usage: 'off_session',
         },
+        payment_method_data: {
+          allow_redisplay: 'always',
+        },
         saved_payment_method_options: {
-          payment_method_save: 'enabled',
+          // payment_method_save: 'enabled',
         },
         metadata: {
           credits: input.credits.toString(),

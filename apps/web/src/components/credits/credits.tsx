@@ -5,14 +5,7 @@ import type { Stripe } from 'stripe'
 import { useState } from 'react'
 import { format, formatDistance } from 'date-fns'
 import { Decimal } from 'decimal.js'
-import {
-  CoinsIcon,
-  CreditCardIcon,
-  HistoryIcon,
-  MoreHorizontal,
-  RepeatIcon,
-  Trash2,
-} from 'lucide-react'
+import { CreditCardIcon, HistoryIcon, MoreHorizontal, RepeatIcon, Trash2Icon } from 'lucide-react'
 
 import type { OrderStatus } from '@cared/db/schema'
 import { Badge } from '@cared/ui/components/badge'
@@ -31,10 +24,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@cared/ui/components/dropdown-menu'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
 
 import type { ColumnDef } from '@tanstack/react-table'
 import { SectionTitle } from '@/components/section'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import {
   useCancelCreditsOrder,
   useCredits,
@@ -142,45 +135,52 @@ export function Credits({ organizationId }: { organizationId?: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CoinsIcon className="h-5 w-5" />
-            Current Balance
-          </CardTitle>
+          <CardTitle className="flex items-center gap-2">Balance</CardTitle>
           <CardDescription>Your available credits for using Cared services</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-2xl font-bold">$ {new Decimal(credits.credits).toFixed(2)}</p>
+              <p className="text-4xl font-bold">$ {new Decimal(credits.credits).toFixed(2)}</p>
             </div>
+            <div className="flex flex-col md:flex-row gap-2">
             <Button onClick={() => setIsRechargeDialogOpen(true)}>
-              <CreditCardIcon className="h-4 w-4 mr-2" />
-              Recharge Credits
+              <CreditCardIcon className="h-4 w-4" />
+              Buy Credits
             </Button>
+            <Button variant="outline" onClick={() => setIsRechargeDialogOpen(true)}>
+              <CreditCardIcon className="h-4 w-4" />
+              Auto Top-Up
+            </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="orders" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="orders" className="flex items-center gap-2">
-            <HistoryIcon className="h-4 w-4" />
-            Order History
-          </TabsTrigger>
-          <TabsTrigger value="subscriptions" className="flex items-center gap-2">
-            <RepeatIcon className="h-4 w-4" />
-            Subscriptions
-          </TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardContent>
+          <Tabs defaultValue="orders" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="orders" className="flex items-center gap-2">
+                <HistoryIcon className="h-4 w-4" />
+                Orders
+              </TabsTrigger>
+              <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+                <RepeatIcon className="h-4 w-4" />
+                Subscriptions
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="orders" className="space-y-4">
-          <OrdersTable data={ordersData} organizationId={organizationId} />
-        </TabsContent>
+            <TabsContent value="orders" className="space-y-4">
+              <OrdersTable data={ordersData} organizationId={organizationId} />
+            </TabsContent>
 
-        <TabsContent value="subscriptions" className="space-y-4">
-          <SubscriptionsTable data={subscriptionsData} />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="subscriptions" className="space-y-4">
+              <SubscriptionsTable data={subscriptionsData} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
 
       <PaymentMethods />
 
@@ -285,7 +285,7 @@ function OrdersTable({
                   await cancelOrder(order.id)
                 }}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2Icon className="h-4 w-4" />
                 Cancel Order
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -296,20 +296,12 @@ function OrdersTable({
   ]
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Orders</CardTitle>
-        <CardDescription>Your recent credit purchase orders</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTable
-          columns={columns}
-          data={data}
-          searchPlaceholder="Search orders..."
-          defaultPageSize={10}
-        />
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm text-muted-foreground">Your recent orders</p>
+      </div>
+      <DataTable columns={columns} data={data} defaultPageSize={10} />
+    </div>
   )
 }
 
@@ -351,21 +343,12 @@ function SubscriptionsTable({ data }: { data: SubscriptionTableData[] }) {
   ]
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Auto Top-up Subscriptions</CardTitle>
-        <CardDescription>Your recent credit auto top-up subscriptions</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <DataTable
-          columns={columns}
-          data={data}
-          searchKeys={["status"]}
-          searchPlaceholder="Search subscriptions..."
-          defaultPageSize={10}
-        />
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div>
+        <p className="text-sm text-muted-foreground">Your recent auto top-up subscriptions</p>
+      </div>
+      <DataTable columns={columns} data={data} defaultPageSize={10} />
+    </div>
   )
 }
 

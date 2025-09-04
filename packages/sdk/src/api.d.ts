@@ -163,10 +163,11 @@ export interface ChatMetadata {
 
 export interface CreditsMetadata {
   customerId?: string
-  isRechargeInProgress?: boolean
+  onetimeRechargeSessionId?: string
   autoRechargeSubscriptionId?: string
   autoRechargeThreshold?: number
   autoRechargeAmount?: number
+  autoRechargeInvoiceId?: string
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -193,15 +194,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           apps: {
             app: {
-              id: string
               name: string
+              id: string
+              type: 'single-agent' | 'multiple-agents'
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
-              type: 'single-agent' | 'multiple-agents'
+              deleted: boolean | null
               archived: boolean | null
               archivedAt: Date | null
-              deleted: boolean | null
               deletedAt: Date | null
               workspaceId: string
             }
@@ -227,15 +228,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           apps: {
             app: {
-              id: string
               name: string
+              id: string
+              type: 'single-agent' | 'multiple-agents'
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
-              type: 'single-agent' | 'multiple-agents'
+              deleted: boolean | null
               archived: boolean | null
               archivedAt: Date | null
-              deleted: boolean | null
               deletedAt: Date | null
               workspaceId: string
             }
@@ -261,15 +262,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           apps: {
             app: {
-              id: string
               name: string
+              id: string
+              type: 'single-agent' | 'multiple-agents'
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
-              type: 'single-agent' | 'multiple-agents'
+              deleted: boolean | null
               archived: boolean | null
               archivedAt: Date | null
-              deleted: boolean | null
               deletedAt: Date | null
               workspaceId: string
             }
@@ -295,12 +296,12 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           versions: {
             name: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
-            appId: string
             version: number
+            appId: string
           }[]
           hasMore: boolean
           first: number | undefined
@@ -313,15 +314,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           app: {
-            id: string
             name: string
+            id: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
             workspaceId: string
           }
@@ -333,8 +334,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           category: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
           }[]
@@ -342,8 +343,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
       }>
       updateCategory: import('@trpc/server').TRPCMutationProcedure<{
         input: {
-          id: string
           name: string
+          id: string
         }
         output: {
           category:
@@ -377,14 +378,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           workspaces: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
           }[]
           hasMore: boolean
@@ -396,14 +397,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: string
         output: {
           workspace: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
           }
         }
@@ -417,12 +418,12 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           organizations: {
-            id: string
             name: string
+            id: string
             createdAt: Date
-            metadata: string | null
             slug: string | null
             logo: string | null
+            metadata: string | null
           }[]
           hasMore: boolean
           first: string | undefined
@@ -433,12 +434,12 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: string
         output: {
           organization: {
-            id: string
             name: string
+            id: string
             createdAt: Date
-            metadata: string | null
             slug: string | null
             logo: string | null
+            metadata: string | null
           }
         }
       }>
@@ -456,8 +457,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             role: string
             createdAt: Date
             user: {
-              id: string
               name: string
+              id: string
               email: string
               emailVerified: boolean
               image: string | null
@@ -486,8 +487,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           users: {
-            id: string
             name: string
+            id: string
             email: string
             emailVerified: boolean
             image: string | null
@@ -509,8 +510,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: string
         output: {
           user: {
-            id: string
             name: string
+            id: string
             email: string
             emailVerified: boolean
             image: string | null
@@ -585,10 +586,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
               teamId: string | undefined
               id: string
               email: string
-              expiresAt: Date
               organizationId: string
+              expiresAt: Date
               inviterId: string
-              status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+              status: 'canceled' | 'pending' | 'accepted' | 'rejected'
               role: OrganizationRole
             }[]
             teams: {
@@ -637,10 +638,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            expiresAt: Date
             organizationId: string
+            expiresAt: Date
             inviterId: string
-            status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+            status: 'canceled' | 'pending' | 'accepted' | 'rejected'
             role: OrganizationRole
           }
         }
@@ -654,10 +655,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            expiresAt: Date
             organizationId: string
+            expiresAt: Date
             inviterId: string
-            status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+            status: 'canceled' | 'pending' | 'accepted' | 'rejected'
             role: OrganizationRole
           }
         }
@@ -671,10 +672,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            expiresAt: Date
             organizationId: string
+            expiresAt: Date
             inviterId: string
-            status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+            status: 'canceled' | 'pending' | 'accepted' | 'rejected'
             role: OrganizationRole
           }
         }
@@ -688,10 +689,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            expiresAt: Date
             organizationId: string
+            expiresAt: Date
             inviterId: string
-            status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+            status: 'canceled' | 'pending' | 'accepted' | 'rejected'
             role: OrganizationRole
           }
         }
@@ -704,7 +705,7 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           invitation: ReturnType<
             (
               invitation: Omit<Invitation, 'status' | 'role' | 'teamId'> & {
-                status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+                status: 'canceled' | 'pending' | 'accepted' | 'rejected'
                 role: OrganizationRole
                 teamId?: string | null
               },
@@ -712,10 +713,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
               teamId: string | undefined
               id: string
               email: string
-              expiresAt: Date
               organizationId: string
+              expiresAt: Date
               inviterId: string
-              status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+              status: 'canceled' | 'pending' | 'accepted' | 'rejected'
               role: OrganizationRole
             }
           > & {
@@ -734,10 +735,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            expiresAt: Date
             organizationId: string
+            expiresAt: Date
             inviterId: string
-            status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+            status: 'canceled' | 'pending' | 'accepted' | 'rejected'
             role: OrganizationRole
           }[]
         }
@@ -749,10 +750,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             teamId: string | undefined
             id: string
             email: string
-            expiresAt: Date
             organizationId: string
+            expiresAt: Date
             inviterId: string
-            status: 'pending' | 'canceled' | 'accepted' | 'rejected'
+            status: 'canceled' | 'pending' | 'accepted' | 'rejected'
             role: OrganizationRole
           }[]
         }
@@ -892,14 +893,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           | undefined
         output: {
           workspaces: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
           }[]
         }
@@ -910,14 +911,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           workspace: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
           }
         }
@@ -929,14 +930,14 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           workspace: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             organizationId: string
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
           }
         }
@@ -1029,11 +1030,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           accounts: {
             id: string
-            accountId: string
-            providerId: string
             createdAt: Date
             updatedAt: Date
             userId: string
+            accountId: string
+            providerId: string
             accessToken: string | null
             refreshToken: string | null
             idToken: string | null
@@ -1188,11 +1189,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 }
             )
             id: string
-            providerId: ProviderId
             createdAt: Date
             updatedAt: Date
             userId: string | null
             organizationId: string | null
+            providerId: ProviderId
             disabled: boolean
             isSystem: boolean | null
           }[]
@@ -1303,11 +1304,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 }
             )
             id: string
-            providerId: ProviderId
             createdAt: Date
             updatedAt: Date
             userId: string | null
             organizationId: string | null
+            providerId: ProviderId
             disabled: boolean
             isSystem: boolean | null
           }
@@ -1484,11 +1485,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 }
             )
             id: string
-            providerId: ProviderId
             createdAt: Date
             updatedAt: Date
             userId: string | null
             organizationId: string | null
+            providerId: ProviderId
             disabled: boolean
             isSystem: boolean | null
           }
@@ -1507,15 +1508,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           apps: {
             app: {
-              id: string
               name: string
+              id: string
+              type: 'single-agent' | 'multiple-agents'
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
-              type: 'single-agent' | 'multiple-agents'
+              deleted: boolean | null
               archived: boolean | null
               archivedAt: Date | null
-              deleted: boolean | null
               deletedAt: Date | null
               workspaceId: string
             }
@@ -1536,15 +1537,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           apps: {
             app: {
-              id: string
               name: string
+              id: string
+              type: 'single-agent' | 'multiple-agents'
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
-              type: 'single-agent' | 'multiple-agents'
+              deleted: boolean | null
               archived: boolean | null
               archivedAt: Date | null
-              deleted: boolean | null
               deletedAt: Date | null
               workspaceId: string
             }
@@ -1565,15 +1566,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           apps: {
             app: {
-              id: string
               name: string
+              id: string
+              type: 'single-agent' | 'multiple-agents'
               createdAt: Date
               updatedAt: Date
               metadata: AppMetadata
-              type: 'single-agent' | 'multiple-agents'
+              deleted: boolean | null
               archived: boolean | null
               archivedAt: Date | null
-              deleted: boolean | null
               deletedAt: Date | null
               workspaceId: string
             }
@@ -1596,12 +1597,12 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           versions: {
             name: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
-            appId: string
             version: number
+            appId: string
           }[]
           hasMore: boolean
           first: number | undefined
@@ -1614,15 +1615,15 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           app: {
-            id: string
             name: string
+            id: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
             workspaceId: string
           }
@@ -1636,12 +1637,12 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         output: {
           version: {
             name: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
-            appId: string
             version: number
+            appId: string
           }
         }
       }>
@@ -1666,33 +1667,33 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           }
           workspaceId: string
           type?: 'single-agent' | 'multiple-agents' | undefined
+          deleted?: boolean | null | undefined
           archived?: boolean | null | undefined
           archivedAt?: Date | null | undefined
-          deleted?: boolean | null | undefined
           deletedAt?: Date | null | undefined
         }
         output: {
           app: {
-            id: string
             name: string
+            id: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
             workspaceId: string
           }
           draft: {
             name: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
-            appId: string
             version: number
+            appId: string
           }
         }
       }>
@@ -1718,22 +1719,22 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
                 datasetBindings?: string[] | undefined
               }
             | undefined
+          deleted?: boolean | null | undefined
           archived?: boolean | null | undefined
           archivedAt?: Date | null | undefined
-          deleted?: boolean | null | undefined
           deletedAt?: Date | null | undefined
         }
         output: {
           app: {
-            id: string
             name: string
+            id: string
+            type: 'single-agent' | 'multiple-agents'
             createdAt: Date
             updatedAt: Date
             metadata: AppMetadata
-            type: 'single-agent' | 'multiple-agents'
+            deleted: boolean | null
             archived: boolean | null
             archivedAt: Date | null
-            deleted: boolean | null
             deletedAt: Date | null
             workspaceId: string
           }
@@ -1821,8 +1822,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           | undefined
         output: {
           categories: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
           }[]
@@ -1839,8 +1840,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           categories: {
-            id: string
             name: string
+            id: string
           }[]
         }
       }>
@@ -2237,8 +2238,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           agents: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: AgentMetadata
@@ -2293,8 +2294,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           agent: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: AgentMetadata
@@ -2326,8 +2327,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           agent: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: AgentMetadata
@@ -2367,8 +2368,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           agent: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: AgentMetadata
@@ -2396,8 +2397,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           datasets: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: DatasetMetadata
@@ -2412,8 +2413,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: string
         output: {
           dataset: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: DatasetMetadata
@@ -2441,8 +2442,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           dataset: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: DatasetMetadata
@@ -2500,8 +2501,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           document: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: DocumentMetadata
@@ -2548,8 +2549,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           documents: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: DocumentMetadata
@@ -2565,8 +2566,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: string
         output: {
           document: {
-            id: string
             name: string
+            id: string
             createdAt: Date
             updatedAt: Date
             metadata: DocumentMetadata
@@ -2732,10 +2733,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
       list: import('@trpc/server').TRPCQueryProcedure<{
         input:
           | {
-              prefix?: string | undefined
               limit?: number | undefined
-              delimiter?: string | undefined
+              prefix?: string | undefined
               cursor?: string | undefined
+              delimiter?: string | undefined
               startAfter?: string | undefined
             }
           | undefined
@@ -2827,8 +2828,8 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
       listMultipartUploads: import('@trpc/server').TRPCQueryProcedure<{
         input:
           | {
-              prefix?: string | undefined
               limit?: number | undefined
+              prefix?: string | undefined
               delimiter?: string | undefined
               keyMarker?: string | undefined
               uploadIdMarker?: string | undefined
@@ -5986,11 +5987,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             createdAt: Date
             updatedAt: Date
             userId: string
+            kind: 'image' | 'code' | 'text' | 'sheet'
             version: number
             title: string
             chatId: string
             content: unknown
-            kind: 'image' | 'code' | 'text' | 'sheet'
           }[]
           hasMore: boolean
           first: string | undefined
@@ -6011,11 +6012,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
             createdAt: Date
             updatedAt: Date
             userId: string
+            kind: 'image' | 'code' | 'text' | 'sheet'
             version: number
             title: string
             chatId: string
             content: unknown
-            kind: 'image' | 'code' | 'text' | 'sheet'
           }[]
           hasMore: boolean
           first: number | undefined
@@ -6040,10 +6041,10 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         }
         output: {
           suggestions: {
-            description: string | null
             id: string
             createdAt: Date
             updatedAt: Date
+            description: string | null
             artifactId: string
             artifactVersion: number
             originalText: string
@@ -6058,20 +6059,27 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
     }
     credits: {
       getCredits: import('@trpc/server').TRPCQueryProcedure<{
-        input: void
+        input:
+          | {
+              organizationId?: string | undefined
+            }
+          | undefined
         output: {
           credits: {
+            credits: string
             id: string
+            type: 'user' | 'organization'
             createdAt: Date
             updatedAt: Date
-            userId: string
+            userId: string | null
             metadata: CreditsMetadata
-            credits: number
+            organizationId: string | null
           }
         }
       }>
       listOrders: import('@trpc/server').TRPCQueryProcedure<{
         input: {
+          organizationId?: string | undefined
           orderKinds?: ('stripe-payment' | 'stripe-subscription' | 'stripe-invoice')[] | undefined
           statuses?: string[] | undefined
           limit?: number | undefined
@@ -6084,9 +6092,11 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
               | import('stripe').Stripe.Invoice.Status
             object: import('stripe').Stripe.Checkout.Session | import('stripe').Stripe.Invoice
             id: string
+            type: 'user' | 'organization'
             createdAt: Date
             updatedAt: Date
-            userId: string
+            userId: string | null
+            organizationId: string | null
             kind: 'stripe-payment' | 'stripe-subscription' | 'stripe-invoice'
             objectId: string
           }[]
@@ -6094,16 +6104,28 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
           cursor: string | undefined
         }
       }>
+      cancelOrder: import('@trpc/server').TRPCMutationProcedure<{
+        input: {
+          orderId: string
+          organizationId?: string | undefined
+        }
+        output: void
+      }>
       createOnetimeCheckout: import('@trpc/server').TRPCMutationProcedure<{
         input: {
           credits: number
+          organizationId?: string | undefined
         }
         output: {
           sessionClientSecret: string
         }
       }>
       listSubscriptions: import('@trpc/server').TRPCQueryProcedure<{
-        input: void
+        input:
+          | {
+              organizationId?: string | undefined
+            }
+          | undefined
         output: {
           subscriptions: import('stripe').Stripe.Subscription[]
         }
@@ -6112,17 +6134,75 @@ declare const appRouter: import('@trpc/server/unstable-core-do-not-import').Buil
         input: {
           autoRechargeThreshold: number
           autoRechargeAmount: number
+          organizationId?: string | undefined
         }
         output: {
           sessionClientSecret: string
         }
       }>
       cancelAutoRechargeSubscription: import('@trpc/server').TRPCMutationProcedure<{
-        input: void
+        input:
+          | {
+              organizationId?: string | undefined
+            }
+          | undefined
         output: void
       }>
       createAutoRechargeInvoice: import('@trpc/server').TRPCMutationProcedure<{
-        input: void
+        input:
+          | {
+              organizationId?: string | undefined
+            }
+          | undefined
+        output: void
+      }>
+    }
+    stripe: {
+      getCustomer: import('@trpc/server').TRPCQueryProcedure<{
+        input:
+          | {
+              organizationId?: string | undefined
+            }
+          | undefined
+        output: {
+          customer: import('stripe').Stripe.Customer & {
+            lastResponse: {
+              headers: {
+                [key: string]: string
+              }
+              requestId: string
+              statusCode: number
+              apiVersion?: string
+              idempotencyKey?: string
+              stripeAccount?: string
+            }
+          }
+        }
+      }>
+      listPaymentMethods: import('@trpc/server').TRPCQueryProcedure<{
+        input:
+          | {
+              organizationId?: string | undefined
+            }
+          | undefined
+        output: {
+          paymentMethods: import('stripe').Stripe.PaymentMethod[]
+        }
+      }>
+      addPaymentMethod: import('@trpc/server').TRPCMutationProcedure<{
+        input: {
+          organizationId?: string | undefined
+        }
+        output: {
+          clientSecret: string
+          setupIntentId: string
+        }
+      }>
+      removePaymentMethod: import('@trpc/server').TRPCMutationProcedure<{
+        input: {
+          paymentMethodId: string
+          organizationId?: string | undefined
+        }
         output: void
       }>
     }

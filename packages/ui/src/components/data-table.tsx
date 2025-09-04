@@ -42,7 +42,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  /** 
+  /**
    * Array of column keys to search across. The search will look for matches in any of these columns.
    * Only valid keys from the data object are allowed.
    * @example ['name', 'email'] - searches in both name and email columns
@@ -91,7 +91,7 @@ export function DataTable<TData, TValue>({
   const globalFilterFn = React.useCallback(
     (row: any, columnId: string, filterValue: string) => {
       if (!searchKeys || searchKeys.length === 0 || !filterValue) return true
-      
+
       const searchValue = filterValue.toLowerCase()
       return searchKeys.some(key => {
         const cellValue = row.getValue(key)
@@ -214,7 +214,7 @@ export function DataTable<TData, TValue>({
             className="max-w-sm"
           />
         )}
-        
+
         {/* Bulk Actions */}
         {enableRowSelection && selectedRows.length > 0 && bulkActions.length > 0 && (
           <div className="flex items-center gap-2">
@@ -308,8 +308,8 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow 
-                  key={row.id} 
+                <TableRow
+                  key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
                   className={row.getIsSelected() ? 'bg-muted/50' : ''}
                 >
@@ -333,11 +333,11 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell 
-                  colSpan={enableRowSelection ? columns.length + 1 : columns.length} 
-                  className="h-24 text-center"
+                <TableCell
+                  colSpan={enableRowSelection ? columns.length + 1 : columns.length}
+                  className="h-24 text-center text-muted-foreground"
                 >
-                  No results.
+                  No data
                 </TableCell>
               </TableRow>
             )}
