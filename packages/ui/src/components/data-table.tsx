@@ -42,11 +42,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  searchKey?: string
+  /** 
+   * Array of column keys to search across. The search will look for matches in any of these columns.
+   * Only valid keys from the data object are allowed.
+   * @example ['name', 'email'] - searches in both name and email columns
+   * @example ['title', 'description', 'category'] - searches across title, description, and category
+   */
+  searchKeys?: (keyof TData)[]
   searchPlaceholder?: string
   pageSizeOptions?: number[]
   defaultPageSize?: number
   enableRowSelection?: boolean
+  enableSorting?: boolean
   onSelectionChange?: (selection: RowSelectionState) => void
   bulkActions?: {
     label: string
@@ -60,11 +67,12 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  searchKey,
+  searchKeys,
   searchPlaceholder = 'Search...',
   pageSizeOptions = [10, 20, 30, 40, 50],
   defaultPageSize = 10,
   enableRowSelection = false,
+  enableSorting = false,
   onSelectionChange,
   bulkActions = [],
   defaultSorting = [],
@@ -77,6 +85,22 @@ export function DataTable<TData, TValue>({
     pageIndex: 0,
     pageSize: defaultPageSize,
   })
+  const [globalFilter, setGlobalFilter] = React.useState('')
+
+  // Custom global filter function for multiple search keys
+  const globalFilterFn = React.useCallback(
+    (row: any, columnId: string, filterValue: string) => {
+      if (!searchKeys || searchKeys.length === 0 || !filterValue) return true
+      
+      const searchValue = filterValue.toLowerCase()
+      return searchKeys.some(key => {
+        const cellValue = row.getValue(key)
+        if (cellValue == null) return false
+        return String(cellValue).toLowerCase().includes(searchValue)
+      })
+    },
+    [searchKeys]
+  )
 
   // Handle row selection change
   const handleRowSelectionChange = React.useCallback((updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
@@ -88,22 +112,26 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
+    onSortingChange: enableSorting ? setSorting : undefined,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: handleRowSelectionChange,
     onPaginationChange: setPagination,
     enableRowSelection: enableRowSelection,
+    enableSorting: enableSorting,
+    globalFilterFn: searchKeys && searchKeys.length > 0 ? globalFilterFn : undefined,
     state: {
-      sorting,
+      sorting: enableSorting ? sorting : [],
       columnFilters,
       columnVisibility,
       rowSelection,
       pagination,
+      globalFilter,
     },
   })
 
@@ -178,11 +206,11 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full">
       <div className="flex items-center gap-4 py-4">
-        {searchKey && (
+        {searchKeys && searchKeys.length > 0 && (
           <Input
             placeholder={searchPlaceholder}
-            value={(table.getColumn(searchKey)?.getFilterValue() as string | undefined) ?? ''}
-            onChange={(event) => table.getColumn(searchKey)?.setFilterValue(event.target.value)}
+            value={globalFilter}
+            onChange={(event) => setGlobalFilter(event.target.value)}
             className="max-w-sm"
           />
         )}
@@ -253,7 +281,7 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder ? null : (
                         <div className="flex items-center">
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getCanSort() && (
+                          {enableSorting && header.column.getCanSort() && (
                             <Button
                               variant="ghost"
                               size="sm"

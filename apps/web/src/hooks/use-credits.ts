@@ -40,6 +40,7 @@ export function useListCreditsOrders(organizationId?: string) {
     trpc.credits.listOrders.infiniteQueryOptions(
       {
         organizationId,
+        statuses: ['open', 'complete', 'draft', 'paid'],
         limit: PAGE_SIZE,
       },
       {
@@ -80,6 +81,7 @@ export function useCreateCreditsOnetimeCheckout(organizationId?: string) {
         void queryClient.invalidateQueries({
           queryKey: trpc.credits.listOrders.queryKey({
             organizationId,
+            statuses: ['open', 'complete', 'draft', 'paid'],
             limit: PAGE_SIZE,
           }),
         })
@@ -126,6 +128,7 @@ export function useCreateAutoRechargeCreditsSubscriptionCheckout(organizationId?
         void queryClient.invalidateQueries({
           queryKey: trpc.credits.listOrders.queryKey({
             organizationId,
+            statuses: ['open', 'complete', 'draft', 'paid'],
             limit: PAGE_SIZE,
           }),
         })
@@ -184,6 +187,7 @@ export function useCreateAutoRechargeCreditsInvoice(organizationId?: string) {
         void queryClient.invalidateQueries({
           queryKey: trpc.credits.listOrders.queryKey({
             organizationId,
+            statuses: ['open', 'complete', 'draft', 'paid'],
             limit: PAGE_SIZE,
           }),
         })

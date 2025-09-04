@@ -388,7 +388,7 @@ function ApiKeysInner({
         <DataTable
           columns={columns}
           data={apiKeys}
-          searchKey="name"
+          searchKeys={["name"]}
           searchPlaceholder="Search API keys..."
         />
       )}

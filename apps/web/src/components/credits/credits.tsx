@@ -50,7 +50,7 @@ interface OrderTableData {
   kind: string
   status: OrderStatus
   credits: number
-  paymentMethod: string
+  gateway: string
   orderKind: string
   updatedAt: Date
   object: Stripe.Checkout.Session | Stripe.Invoice
@@ -79,7 +79,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
         .flatMap((page) => page.orders)
         .map((order) => {
           let credits = 0
-          let paymentMethod = ''
+          let gateway = ''
           let orderKind = ''
           switch (order.kind) {
             case 'stripe-payment':
@@ -89,14 +89,14 @@ export function Credits({ organizationId }: { organizationId?: string }) {
                 credits = !isNaN(Number(session.metadata?.credits))
                   ? Number(session.metadata?.credits)
                   : 0
-                paymentMethod = 'Fiat'
+                gateway = 'Stripe'
                 orderKind = 'Onetime top-up'
               }
               break
             case 'stripe-subscription':
               {
                 assert(isCheckoutSession(order.object))
-                paymentMethod = 'Fiat'
+                gateway = 'Stripe'
                 orderKind = 'Subscription'
               }
               break
@@ -107,7 +107,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
                 credits = !isNaN(Number(invoice.metadata?.credits))
                   ? Number(invoice.metadata?.credits)
                   : 0
-                paymentMethod = 'Fiat'
+                gateway = 'Stripe'
                 orderKind = 'Auto top-up'
               }
               break
@@ -118,7 +118,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
             kind: order.kind,
             status: order.status,
             credits,
-            paymentMethod,
+            gateway,
             orderKind,
             updatedAt: order.updatedAt,
             object: order.object,
@@ -205,22 +205,8 @@ function OrdersTable({
 
   const columns: ColumnDef<OrderTableData>[] = [
     {
-      accessorKey: 'id',
-      header: 'ID',
-      enableSorting: true,
-      cell: ({ row }) => {
-        const id = row.getValue<string>('id')
-        return (
-          <span className="font-mono text-xs" title={id}>
-            {id.slice(0, 8)}...
-          </span>
-        )
-      },
-    },
-    {
       accessorKey: 'updatedAt',
       header: 'Date',
-      enableSorting: true,
       cell: ({ row }) => {
         const updatedAt = row.getValue<Date>('updatedAt')
         return (
@@ -233,13 +219,11 @@ function OrdersTable({
     {
       accessorKey: 'orderKind',
       header: 'Type',
-      enableSorting: true,
       cell: ({ row }) => row.getValue<string>('orderKind'),
     },
     {
       accessorKey: 'credits',
       header: 'Amount',
-      enableSorting: true,
       cell: ({ row }) => {
         const credits = row.getValue<number>('credits')
         const kind = row.original.kind
@@ -249,7 +233,6 @@ function OrdersTable({
     {
       accessorKey: 'status',
       header: 'Status',
-      enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue<OrderStatus>('status')
         const statusType = getOrderStatus(status)
@@ -271,10 +254,9 @@ function OrdersTable({
       },
     },
     {
-      accessorKey: 'paymentMethod',
-      header: 'Payment Method',
-      enableSorting: true,
-      cell: ({ row }) => row.getValue<string>('paymentMethod'),
+      accessorKey: 'gateway',
+      header: 'Gateway',
+      cell: ({ row }) => row.getValue<string>('gateway'),
     },
     {
       id: 'actions',
@@ -323,10 +305,8 @@ function OrdersTable({
         <DataTable
           columns={columns}
           data={data}
-          searchKey="orderKind"
           searchPlaceholder="Search orders..."
           defaultPageSize={10}
-          defaultSorting={[{ id: 'updatedAt', desc: true }]}
         />
       </CardContent>
     </Card>
@@ -337,22 +317,8 @@ function OrdersTable({
 function SubscriptionsTable({ data }: { data: SubscriptionTableData[] }) {
   const columns: ColumnDef<SubscriptionTableData>[] = [
     {
-      accessorKey: 'id',
-      header: 'ID',
-      enableSorting: true,
-      cell: ({ row }) => {
-        const id = row.getValue<string>('id')
-        return (
-          <span className="font-mono text-xs" title={id}>
-            {id.slice(0, 8)}...
-          </span>
-        )
-      },
-    },
-    {
       accessorKey: 'createdAt',
       header: 'Created',
-      enableSorting: true,
       cell: ({ row }) => {
         const createdAt = row.getValue<Date>('createdAt')
         return (
@@ -365,7 +331,6 @@ function SubscriptionsTable({ data }: { data: SubscriptionTableData[] }) {
     {
       accessorKey: 'status',
       header: 'Status',
-      enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue<Stripe.Subscription.Status>('status')
 
@@ -395,10 +360,9 @@ function SubscriptionsTable({ data }: { data: SubscriptionTableData[] }) {
         <DataTable
           columns={columns}
           data={data}
-          searchKey="status"
+          searchKeys={["status"]}
           searchPlaceholder="Search subscriptions..."
           defaultPageSize={10}
-          defaultSorting={[{ id: 'createdAt', desc: true }]}
         />
       </CardContent>
     </Card>

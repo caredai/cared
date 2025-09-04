@@ -104,7 +104,7 @@ export async function POST(req: Request) {
                       .for('update')
                   )[0]
 
-                  if (credits) {
+                  if (credits?.metadata.onetimeRechargeSessionId === session.id) {
                     await tx
                       .update(Credits)
                       .set({
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
                           .toString(),
                         metadata: {
                           ...credits.metadata,
-                          isRechargeInProgress: false,
+                          onetimeRechargeSessionId: undefined,
                         },
                       })
                       .where(eq(Credits.id, credits.id))
@@ -122,9 +122,15 @@ export async function POST(req: Request) {
                     const entityType = order.type === 'organization' ? 'organization' : 'user'
                     const entityId =
                       order.type === 'organization' ? order.organizationId : order.userId
-                    log.error(
-                      `${entityType} credits not found for ${entityType} with id ${entityId}`,
-                    )
+                    if (!credits) {
+                      log.error(
+                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                      )
+                    } else {
+                      log.error(
+                        `onetimeRechargeSessionId mismatched for ${entityType} with id ${entityId}`,
+                      )
+                    }
                   }
                 } else {
                   if (!quantity) {
@@ -209,7 +215,7 @@ export async function POST(req: Request) {
                       .for('update')
                   )[0]
 
-                  if (credits) {
+                  if (credits?.metadata.autoRechargeInvoiceId === invoice.id!) {
                     await tx
                       .update(Credits)
                       .set({
@@ -219,7 +225,7 @@ export async function POST(req: Request) {
                           .toString(),
                         metadata: {
                           ...credits.metadata,
-                          isRechargeInProgress: false,
+                          autoRechargeInvoiceId: undefined,
                         },
                       })
                       .where(eq(Credits.id, credits.id))
@@ -227,9 +233,15 @@ export async function POST(req: Request) {
                     const entityType = order.type === 'organization' ? 'organization' : 'user'
                     const entityId =
                       order.type === 'organization' ? order.organizationId : order.userId
-                    log.error(
-                      `${entityType} credits not found for ${entityType} with id ${entityId}`,
-                    )
+                    if (!credits) {
+                      log.error(
+                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                      )
+                    } else {
+                      log.error(
+                        `autoRechargeInvoiceId mismatched for ${entityType} with id ${entityId}`,
+                      )
+                    }
                   }
                 } else {
                   log.error(

@@ -283,7 +283,7 @@ function PaymentMethodsTable({
     <DataTable
       columns={columns}
       data={data}
-      searchKey="brand"
+      searchKeys={["brand"]}
       searchPlaceholder="Search payment methods..."
       defaultPageSize={10}
       defaultSorting={[{ id: 'created', desc: true }]}

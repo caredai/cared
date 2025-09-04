@@ -11,10 +11,11 @@ export const ownerTypeEnum = pgEnum('ownerType', ownerTypes)
 
 export interface CreditsMetadata {
   customerId?: string
-  isRechargeInProgress?: boolean
+  onetimeRechargeSessionId?: string
   autoRechargeSubscriptionId?: string
   autoRechargeThreshold?: number
   autoRechargeAmount?: number
+  autoRechargeInvoiceId?: string
 }
 
 export const Credits = pgTable(

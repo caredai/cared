@@ -56,91 +56,93 @@ export function RechargeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[95vh] px-0 flex flex-col">
+        <DialogHeader className="px-6">
           <DialogTitle>Recharge Credits</DialogTitle>
           <DialogDescription>
             Add credits to your account. Cared charges a 5% processing fee on all transactions.
           </DialogDescription>
         </DialogHeader>
 
-        {!showCheckout ? (
-          <>
+        <div className="flex-1 overflow-y-auto px-6">
+          {!showCheckout ? (
+            <>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount</Label>
+                  <NumberInput
+                    id="amount"
+                    value={rechargeAmount}
+                    onChange={setRechargeAmount}
+                    min={5}
+                    step={1}
+                    placeholder="Enter amount"
+                  />
+                </div>
+
+                <div className="space-y-2 p-3 bg-muted rounded-lg">
+                  <div className="flex justify-between text-sm">
+                    <span>Amount:</span>
+                    <span>${formatCredits(rechargeAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Processing Fee (5%):</span>
+                    <span>${formatCredits(fee)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-medium">
+                    <span>Total:</span>
+                    <span>${formatCredits(totalAmount)}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Payment Method</Label>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={selectedPaymentMethod === 'fiat' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedPaymentMethod('fiat')}
+                    >
+                      <CreditCardIcon className="h-4 w-4 mr-2" />
+                      Credit Card
+                    </Button>
+                    <Button
+                      variant={selectedPaymentMethod === 'crypto' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedPaymentMethod('crypto')}
+                    >
+                      <CoinsIcon className="h-4 w-4 mr-2" />
+                      Cryptocurrency
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={handleCloseRechargeDialog}>
+                  Cancel
+                </Button>
+                <Button onClick={handleRecharge} disabled={rechargeAmount <= 0}>
+                  Continue to Payment
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
-                <NumberInput
-                  id="amount"
-                  value={rechargeAmount}
-                  onChange={setRechargeAmount}
-                  min={5}
-                  step={1}
-                  placeholder="Enter amount"
-                />
+              <div className="isolate">
+                {selectedPaymentMethod === 'fiat' ? (
+                  <StripeCheckoutForm organizationId={organizationId} credits={rechargeAmount} />
+                ) : (
+                  <HelioCheckoutForm credits={rechargeAmount} />
+                )}
               </div>
-
-              <div className="space-y-2 p-3 bg-muted rounded-lg">
-                <div className="flex justify-between text-sm">
-                  <span>Amount:</span>
-                  <span>${formatCredits(rechargeAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Processing Fee (5%):</span>
-                  <span>${formatCredits(fee)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between font-medium">
-                  <span>Total:</span>
-                  <span>${formatCredits(totalAmount)}</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Payment Method</Label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={selectedPaymentMethod === 'fiat' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedPaymentMethod('fiat')}
-                  >
-                    <CreditCardIcon className="h-4 w-4 mr-2" />
-                    Credit Card
-                  </Button>
-                  <Button
-                    variant={selectedPaymentMethod === 'crypto' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedPaymentMethod('crypto')}
-                  >
-                    <CoinsIcon className="h-4 w-4 mr-2" />
-                    Cryptocurrency
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={handleCloseRechargeDialog}>
+              <Button variant="outline" onClick={handleCloseRechargeDialog} className="w-full">
                 Cancel
               </Button>
-              <Button onClick={handleRecharge} disabled={rechargeAmount <= 0}>
-                Continue to Payment
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          <div className="space-y-4">
-            <div className="isolate">
-              {selectedPaymentMethod === 'fiat' ? (
-                <StripeCheckoutForm organizationId={organizationId} credits={rechargeAmount} />
-              ) : (
-                <HelioCheckoutForm credits={rechargeAmount} />
-              )}
             </div>
-            <Button variant="outline" onClick={handleCloseRechargeDialog} className="w-full">
-              Cancel
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

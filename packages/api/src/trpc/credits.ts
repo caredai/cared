@@ -15,6 +15,11 @@ import { OrganizationScope } from '../auth'
 import { getStripe } from '../client/stripe'
 import { cfg } from '../config'
 import { env } from '../env'
+import {
+  cancelCreditsOrder,
+  cancelCreditsOrdersByKind,
+  createAutoRechargeInvoice,
+} from '../operation'
 import { userProtectedProcedure } from '../trpc'
 
 export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizationId?: string) {
@@ -278,81 +283,7 @@ export const creditsRouter = {
         await scope.checkPermissions({ credits: ['delete'] })
       }
 
-      const stripe = getStripe()
-
-      // Find the order and verify ownership
-      const order = await ctx.db.query.CreditsOrder.findFirst({
-        where: and(
-          eq(CreditsOrder.id, input.orderId),
-          input.organizationId
-            ? eq(CreditsOrder.organizationId, input.organizationId)
-            : eq(CreditsOrder.userId, ctx.auth.userId),
-        ),
-      })
-      if (!order) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Order not found',
-        })
-      }
-
-      // Check if order can be canceled based on status
-      const cancelableStatuses = ['draft', 'open', 'uncollectible']
-      if (
-        !cancelableStatuses.includes(order.status) ||
-        (order.status === 'draft' && (order.object as Stripe.Invoice).billing_reason !== 'manual')
-      ) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Order cannot be canceled in current status: ${order.status}`,
-        })
-      }
-
-      let newStatus: OrderStatus
-      switch (order.kind) {
-        case 'stripe-payment':
-        case 'stripe-subscription': {
-          // Cancel checkout session
-          const session = order.object as Stripe.Checkout.Session
-          await stripe.checkout.sessions.expire(session.id)
-          newStatus = 'expired'
-          break
-        }
-        case 'stripe-invoice': {
-          const invoice = order.object as Stripe.Invoice
-          if (invoice.status === 'draft') {
-            await stripe.invoices.del(invoice.id!)
-            newStatus = 'deleted'
-          } else {
-            await stripe.invoices.voidInvoice(invoice.id!)
-            newStatus = 'void'
-          }
-          break
-        }
-      }
-
-      await ctx.db
-        .update(CreditsOrder)
-        .set({
-          status: newStatus,
-        })
-        .where(eq(CreditsOrder.id, order.id))
-
-      // If this was a recharge in progress, clear the flag
-      if (order.kind === 'stripe-payment' || order.kind === 'stripe-invoice') {
-        const { credits } = await ensureCustomer(ctx, stripe, input.organizationId)
-        if (credits.metadata.isRechargeInProgress) {
-          await ctx.db
-            .update(Credits)
-            .set({
-              metadata: {
-                ...credits.metadata,
-                isRechargeInProgress: false,
-              },
-            })
-            .where(eq(Credits.id, credits.id))
-        }
-      }
+      await cancelCreditsOrder(ctx, input.orderId, input.organizationId, true)
     }),
 
   createOnetimeCheckout: userProtectedProcedure
@@ -370,14 +301,21 @@ export const creditsRouter = {
 
       const stripe = getStripe()
 
-      const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
-
-      if (credits.metadata.isRechargeInProgress) {
+      // Cancel any existing onetime recharge orders before creating a new one
+      const cancelled = await cancelCreditsOrdersByKind(
+        ctx,
+        'stripe-payment',
+        input.organizationId,
+        false,
+      )
+      if (cancelled === false) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Recharge is already in progress',
+          message: 'Cannot cancel existing onetime recharge order',
         })
       }
+
+      const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
 
       const returnUrl = new URL(`${getBaseUrl()}/account/credits`)
       returnUrl.searchParams.set('checkout_session_id', '{CHECKOUT_SESSION_ID}')
@@ -420,12 +358,23 @@ export const creditsRouter = {
             object: session,
           })
 
+          // Get credits with select for update to ensure proper locking
+          const lockedCredits = (
+            await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
+          ).at(0)!
+          if (lockedCredits.metadata.onetimeRechargeSessionId) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Onetime recharge session already exists',
+            })
+          }
+
           await tx
             .update(Credits)
             .set({
               metadata: {
                 ...credits.metadata,
-                isRechargeInProgress: true,
+                onetimeRechargeSessionId: session.id,
               },
             })
             .where(eq(Credits.id, credits.id))
@@ -496,14 +445,21 @@ export const creditsRouter = {
 
       const stripe = getStripe()
 
-      const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
-
-      if (credits.metadata.autoRechargeSubscriptionId) {
+      // Cancel any existing auto-recharge subscription orders before creating a new one
+      const cancelled = await cancelCreditsOrdersByKind(
+        ctx,
+        'stripe-subscription',
+        input.organizationId,
+        false,
+      )
+      if (cancelled === false) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Auto-recharge subscription already exists',
+          message: 'Cannot cancel existing auto-recharge subscription order in current status',
         })
       }
+
+      const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
 
       const price = await getAutoRechargePrice(stripe)
 
@@ -551,6 +507,17 @@ export const creditsRouter = {
             objectId: session.id,
             object: session,
           })
+
+          // Get credits with select for update to ensure proper locking
+          const lockedCredits = (
+            await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
+          ).at(0)!
+          if (lockedCredits.metadata.autoRechargeSubscriptionId) {
+            throw new TRPCError({
+              code: 'BAD_REQUEST',
+              message: 'Auto-recharge subscription already exists',
+            })
+          }
 
           await tx
             .update(Credits)
@@ -611,15 +578,31 @@ export const creditsRouter = {
         await stripe.subscriptions.cancel(credits.metadata.autoRechargeSubscriptionId)
       }
 
-      await ctx.db
-        .update(Credits)
-        .set({
-          metadata: {
-            ...credits.metadata,
-            autoRechargeSubscriptionId: undefined,
-          },
-        })
-        .where(eq(Credits.id, credits.id))
+      await ctx.db.transaction(async (tx) => {
+        // Get credits with select for update to ensure proper locking
+        const lockedCredits = (
+          await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
+        ).at(0)!
+        if (
+          lockedCredits.metadata.autoRechargeSubscriptionId !==
+          credits.metadata.autoRechargeSubscriptionId
+        ) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Auto-recharge subscription mismatched',
+          })
+        }
+
+        await tx
+          .update(Credits)
+          .set({
+            metadata: {
+              ...credits.metadata,
+              autoRechargeSubscriptionId: undefined,
+            },
+          })
+          .where(eq(Credits.id, credits.id))
+      })
     }),
 
   createAutoRechargeInvoice: userProtectedProcedure
@@ -636,77 +619,6 @@ export const creditsRouter = {
         await scope.checkPermissions({ credits: ['create'] })
       }
 
-      const stripe = getStripe()
-
-      const { customerId, credits } = await ensureCustomer(ctx, stripe, input?.organizationId)
-
-      const metadata = credits.metadata
-      if (metadata.isRechargeInProgress) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Recharge is already in progress',
-        })
-      }
-      if (!metadata.autoRechargeSubscriptionId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Auto-recharge subscription does not exist',
-        })
-      }
-      if (Number(credits.credits) > metadata.autoRechargeThreshold!) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `You have enough credits (${credits.credits}), no need to recharge`,
-        })
-      }
-
-      const price = await getRechargePrice(stripe)
-
-      await stripe.invoiceItems.create({
-        customer: customerId,
-        pricing: {
-          price: price.id,
-        },
-        quantity: Math.ceil(metadata.autoRechargeAmount! * 100 * (1 + cfg.platform.creditsFeeRate)),
-        subscription: credits.metadata.autoRechargeSubscriptionId,
-      })
-
-      const { lastResponse: _, ...invoice } = await stripe.invoices.create({
-        customer: customerId,
-        collection_method: 'send_invoice',
-        auto_advance: true,
-        metadata: {
-          credits: metadata.autoRechargeAmount!.toString(),
-        },
-      })
-
-      try {
-        await ctx.db.transaction(async (tx) => {
-          await tx.insert(CreditsOrder).values({
-            type: input?.organizationId ? 'organization' : 'user',
-            userId: input?.organizationId ? undefined : ctx.auth.userId,
-            organizationId: input?.organizationId,
-            kind: 'stripe-invoice',
-            status: invoice.status!,
-            objectId: invoice.id!,
-            object: invoice,
-          })
-
-          await tx
-            .update(Credits)
-            .set({
-              metadata: {
-                ...credits.metadata,
-                isRechargeInProgress: true,
-              },
-            })
-            .where(eq(Credits.id, credits.id))
-        })
-      } catch (err) {
-        // If the order creation fails, we need to void the invoice.
-        await stripe.invoices.voidInvoice(invoice.id!)
-
-        throw err
-      }
+      await createAutoRechargeInvoice(ctx, input?.organizationId, true)
     }),
 }
