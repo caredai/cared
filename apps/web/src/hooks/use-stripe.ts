@@ -61,8 +61,8 @@ export function useAddPaymentMethod() {
           queryKey: trpc.stripe.listPaymentMethods.queryKey(),
         })
       },
-      onError: (error) => {
-        toast.error(`Failed to setup payment method: ${error.message}`)
+      onError: (_error) => {
+        // toast.error(`Failed to setup payment method: ${error.message}`)
       },
     }),
   )

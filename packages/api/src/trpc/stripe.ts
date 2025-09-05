@@ -97,7 +97,7 @@ export const stripeRouter = {
       })
 
       return {
-        clientSecret: setupIntent.client_secret!,
+        setupIntentClientSecret: setupIntent.client_secret!,
         setupIntentId: setupIntent.id,
       }
     }),

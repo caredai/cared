@@ -7,7 +7,15 @@ import { useTheme } from 'next-themes'
 import { env } from '@/env'
 import { useSession } from '@/hooks/use-session'
 
-export function HelioCheckoutForm({ credits }: { credits: number }) {
+export function HelioCheckoutForm({
+  credits,
+  onSuccess,
+  onCancel,
+}: {
+  credits: number
+  onSuccess?: () => void
+  onCancel?: () => void
+}) {
   const { resolvedTheme } = useTheme()
   const { user } = useSession()
 
@@ -26,6 +34,9 @@ export function HelioCheckoutForm({ credits }: { credits: number }) {
           },
           display: 'inline',
           showPayWithCard: true,
+          onSuccess: () => onSuccess?.(),
+          onError: () => onCancel?.(),
+          onCancel: () => onCancel?.(),
           // debug: true,
         }}
       />

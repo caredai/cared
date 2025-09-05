@@ -48,8 +48,6 @@ export function useListCreditsOrders(organizationId?: string) {
           return lastPage.cursor
         },
         placeholderData: keepPreviousData,
-        staleTime: 300 * 1000,
-        gcTime: 3600 * 1000,
       },
     ),
   )

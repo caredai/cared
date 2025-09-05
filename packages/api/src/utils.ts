@@ -46,3 +46,7 @@ export function omitUserId<
   const { userId: _, ...rest } = obj
   return rest
 }
+
+export function stripIdPrefix(id: string) {
+  return id.split('_', 2)[1] ?? ''
+}

@@ -56,7 +56,7 @@ interface PaymentMethodTableData {
   displayInfo: PaymentMethodDisplayInfo
 }
 
-export function PaymentMethods() {
+export function PaymentMethods({ organizationId }: { organizationId?: string }) {
   const result = useListPaymentMethods()
   const paymentMethods = result.paymentMethods
   const isLoading = result.isLoading
@@ -123,6 +123,7 @@ export function PaymentMethods() {
                 </DialogDescription>
               </DialogHeader>
               <StripePaymentMethodForm
+                organizationId={organizationId}
                 onSuccess={handlePaymentMethodAdded}
                 onCancel={() => setIsAddDialogOpen(false)}
               />

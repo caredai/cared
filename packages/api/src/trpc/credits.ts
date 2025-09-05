@@ -1,4 +1,3 @@
-import assert from 'assert'
 import type Stripe from 'stripe'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod/v4'
@@ -21,6 +20,7 @@ import {
   createAutoRechargeInvoice,
 } from '../operation'
 import { userProtectedProcedure } from '../trpc'
+import { stripIdPrefix } from '../utils'
 
 export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizationId?: string) {
   return await ctx.db.transaction(async (tx) => {
@@ -343,8 +343,8 @@ export const creditsRouter = {
 
       const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
 
-      const returnUrl = new URL(`${getBaseUrl()}/account/credits`)
-      returnUrl.searchParams.set('checkout_session_id', '{CHECKOUT_SESSION_ID}')
+      const returnUrl =
+        getCreditsBaseUrl(input.organizationId) + `?onetimeCheckoutSessionId={CHECKOUT_SESSION_ID}`
 
       const price = await getRechargePrice(stripe)
 
@@ -359,7 +359,7 @@ export const creditsRouter = {
           },
         ],
         mode: 'payment',
-        return_url: returnUrl.toString(),
+        return_url: returnUrl,
         // TODO: You must have a valid origin address to enable automatic tax calculation
         automatic_tax: { enabled: false },
         customer: customerId,
@@ -456,8 +456,8 @@ export const creditsRouter = {
       z
         .object({
           organizationId: z.string().optional(),
-          autoRechargeThreshold: z.int().min(5),
-          autoRechargeAmount: z.int().min(5),
+          autoRechargeThreshold: z.int().min(5).max(2500),
+          autoRechargeAmount: z.int().min(5).max(2500),
         })
         .refine(
           (data) => {
@@ -494,8 +494,9 @@ export const creditsRouter = {
 
       const price = await getAutoRechargePrice(stripe)
 
-      const returnUrl = new URL(`${getBaseUrl()}/account/credits`)
-      returnUrl.searchParams.set('checkout_session_id', '{CHECKOUT_SESSION_ID}')
+      const returnUrl =
+        getCreditsBaseUrl(input.organizationId) +
+        `?autoRechargeSubscriptionCheckoutSessionId={CHECKOUT_SESSION_ID}`
 
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
@@ -503,7 +504,7 @@ export const creditsRouter = {
         line_items: [
           {
             price: price.id,
-            quantity: 1,
+            // quantity: 1,
           },
         ],
         customer: customerId,
@@ -514,20 +515,15 @@ export const creditsRouter = {
             type: 'flexible',
           },
         },
-        payment_intent_data: {
-          setup_future_usage: 'off_session',
-        },
         saved_payment_method_options: {
           payment_method_save: 'enabled',
         },
         // TODO: You must have a valid origin address to enable automatic tax calculation
         automatic_tax: { enabled: false },
-        return_url: returnUrl.toString(),
+        return_url: returnUrl,
       })
 
       try {
-        assert.equal(typeof session.subscription, 'string')
-
         await ctx.db.transaction(async (tx) => {
           await tx.insert(CreditsOrder).values({
             type: input.organizationId ? 'organization' : 'user',
@@ -543,7 +539,10 @@ export const creditsRouter = {
           const lockedCredits = (
             await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
           ).at(0)!
-          if (lockedCredits.metadata.autoRechargeSubscriptionId) {
+          if (
+            lockedCredits.metadata.autoRechargeSessionId ||
+            lockedCredits.metadata.autoRechargeSubscriptionId
+          ) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
               message: 'Auto-recharge subscription already exists',
@@ -555,7 +554,7 @@ export const creditsRouter = {
             .set({
               metadata: {
                 ...credits.metadata,
-                autoRechargeSubscriptionId: session.subscription as string,
+                autoRechargeSessionId: session.id,
                 autoRechargeThreshold: input.autoRechargeThreshold,
                 autoRechargeAmount: input.autoRechargeAmount,
               },
@@ -629,6 +628,7 @@ export const creditsRouter = {
           .set({
             metadata: {
               ...credits.metadata,
+              autoRechargeSessionId: undefined,
               autoRechargeSubscriptionId: undefined,
             },
           })
@@ -652,4 +652,9 @@ export const creditsRouter = {
 
       await createAutoRechargeInvoice(ctx, input?.organizationId, true)
     }),
+}
+
+export function getCreditsBaseUrl(organizationId?: string) {
+  const segment = organizationId ? `org/${stripIdPrefix(organizationId)}` : 'account'
+  return `${getBaseUrl()}/${segment}/credits`
 }

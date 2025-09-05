@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BitcoinIcon, CreditCardIcon } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -37,6 +37,12 @@ export function RechargeDialog({
   const fee = Math.max(rechargeAmount * 0.05, 0.8)
   const totalAmount = rechargeAmount + fee
 
+  useEffect(() => {
+    setRechargeAmount(10)
+    setSelectedPaymentMethod('stripe')
+    setShowCheckout(false)
+  }, [open])
+
   const handleRecharge = () => {
     if (rechargeAmount > 0) {
       setShowCheckout(true)
@@ -45,9 +51,6 @@ export function RechargeDialog({
 
   const handleCloseRechargeDialog = () => {
     onOpenChange(false)
-    setRechargeAmount(10)
-    setSelectedPaymentMethod('stripe')
-    setShowCheckout(false)
   }
 
   const formatCredits = (amount: number) => {
@@ -139,9 +142,18 @@ export function RechargeDialog({
             <div className="space-y-4">
               <div className="isolate">
                 {selectedPaymentMethod === 'stripe' ? (
-                  <StripeCheckoutForm organizationId={organizationId} credits={rechargeAmount} />
+                  <StripeCheckoutForm
+                    organizationId={organizationId}
+                    credits={rechargeAmount}
+                    onSuccess={handleCloseRechargeDialog}
+                    onCancel={handleCloseRechargeDialog}
+                  />
                 ) : (
-                  <HelioCheckoutForm credits={rechargeAmount} />
+                  <HelioCheckoutForm
+                    credits={rechargeAmount}
+                    onSuccess={handleCloseRechargeDialog}
+                    onCancel={handleCloseRechargeDialog}
+                  />
                 )}
               </div>
               <Button variant="outline" onClick={handleCloseRechargeDialog} className="w-full">

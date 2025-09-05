@@ -8,45 +8,54 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Spinner } from '@/components/spinner'
 import { env } from '@/env'
 import {
-  useCreateCreditsOnetimeCheckout,
+  useCreateAutoRechargeCreditsSubscriptionCheckout,
   useCredits,
   useListCreditsOrders,
+  useListCreditsSubscriptions,
 } from '@/hooks/use-credits'
 
 const stripePromise = loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
 
-export function StripeCheckoutForm({
+export function StripeAutoTopupForm({
   organizationId,
-  credits,
+  autoRechargeThreshold,
+  autoRechargeAmount,
   onSuccess,
   onCancel: _,
 }: {
   organizationId?: string
-  credits: number
+  autoRechargeThreshold: number
+  autoRechargeAmount: number
   onSuccess?: () => void
   onCancel?: () => void
 }) {
-  const createOnetimeCheckout = useCreateCreditsOnetimeCheckout(organizationId)
+  const createAutoRechargeSubscriptionCheckout =
+    useCreateAutoRechargeCreditsSubscriptionCheckout(organizationId)
   const { refetchCredits } = useCredits(organizationId)
   const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
+  const { refetchCreditsSubscriptions } = useListCreditsSubscriptions(organizationId)
 
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchClientSecret = useCallback(async () => {
     setIsLoading(true)
     try {
-      const { sessionClientSecret } = await createOnetimeCheckout(credits)
+      const { sessionClientSecret } = await createAutoRechargeSubscriptionCheckout(
+        autoRechargeThreshold,
+        autoRechargeAmount,
+      )
       return sessionClientSecret
     } finally {
       setIsLoading(false)
     }
-  }, [credits, createOnetimeCheckout])
+  }, [autoRechargeThreshold, autoRechargeAmount, createAutoRechargeSubscriptionCheckout])
 
   const onComplete = useCallback(() => {
     void refetchCredits()
     void refetchCreditsOrders()
+    void refetchCreditsSubscriptions()
     onSuccess?.()
-  }, [onSuccess, refetchCredits, refetchCreditsOrders])
+  }, [onSuccess, refetchCredits, refetchCreditsOrders, refetchCreditsSubscriptions])
 
   return (
     <div className="relative">
@@ -68,9 +77,10 @@ export function StripeCheckoutForm({
   )
 }
 
-export function useCheckStripeCheckoutSessionReturnUrl(organizationId?: string) {
+export function useCheckStripeAutoTopupCheckoutSessionReturnUrl(organizationId?: string) {
   const router = useRouter()
   const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
+  const { refetchCreditsSubscriptions } = useListCreditsSubscriptions(organizationId)
 
   useEffect(() => {
     void stripePromise.then((stripe) => {
@@ -78,15 +88,18 @@ export function useCheckStripeCheckoutSessionReturnUrl(organizationId?: string) 
         return
       }
 
-      const sessionId = new URLSearchParams(window.location.search).get('onetimeCheckoutSessionId')
+      const sessionId = new URLSearchParams(window.location.search).get(
+        'autoRechargeSubscriptionCheckoutSessionId',
+      )
 
       if (sessionId) {
         void refetchCreditsOrders()
+        void refetchCreditsSubscriptions()
 
         const url = new URL(window.location.toString())
         url.search = ''
         router.replace(url.toString())
       }
     })
-  }, [refetchCreditsOrders, router])
+  }, [refetchCreditsOrders, refetchCreditsSubscriptions, router])
 }

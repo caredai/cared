@@ -12,6 +12,7 @@ export const ownerTypeEnum = pgEnum('ownerType', ownerTypes)
 export interface CreditsMetadata {
   customerId?: string
   onetimeRechargeSessionId?: string
+  autoRechargeSessionId?: string
   autoRechargeSubscriptionId?: string
   autoRechargeThreshold?: number
   autoRechargeAmount?: number

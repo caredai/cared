@@ -1,3 +1,4 @@
+import assert from 'assert'
 import type Stripe from 'stripe'
 import { TRPCError } from '@trpc/server'
 
@@ -163,7 +164,7 @@ export async function cancelCreditsOrdersByKind(
       relevantId = credits.metadata.onetimeRechargeSessionId
       break
     case 'stripe-subscription':
-      relevantId = credits.metadata.autoRechargeSubscriptionId
+      relevantId = credits.metadata.autoRechargeSessionId
       break
     case 'stripe-invoice':
       relevantId = credits.metadata.autoRechargeInvoiceId
@@ -328,7 +329,176 @@ export async function createAutoRechargeInvoice(
     pricing: {
       price: price.id,
     },
-    quantity: Math.ceil(metadata.autoRechargeAmount! * 100 * (1 + cfg.platform.creditsFeeRate)),
+    quantity: Math.ceil(
+      metadata.autoRechargeAmount! * 100 +
+        Math.max(metadata.autoRechargeAmount! * 100 * cfg.platform.creditsFeeRate, 80),
+    ),
+    subscription: credits.metadata.autoRechargeSubscriptionId,
+  })
+
+  const { lastResponse: _, ...invoice } = await stripe.invoices.create({
+    customer: customerId,
+    collection_method: 'send_invoice',
+    auto_advance: true,
+    metadata: {
+      credits: metadata.autoRechargeAmount!.toString(),
+    },
+  })
+
+  try {
+    await ctx.db.transaction(async (tx) => {
+      await tx.insert(CreditsOrder).values({
+        type: organizationId ? 'organization' : 'user',
+        userId: organizationId ? undefined : ctx.auth.userId,
+        organizationId: organizationId,
+        kind: 'stripe-invoice',
+        status: invoice.status!,
+        objectId: invoice.id!,
+        object: invoice,
+      })
+
+      // Get credits with select for update
+      const lockedCredits = (
+        await tx
+          .select()
+          .from(Credits)
+          .where(
+            organizationId
+              ? eq(Credits.organizationId, organizationId)
+              : eq(Credits.userId, ctx.auth.userId),
+          )
+          .for('update')
+      )[0]!
+
+      if (lockedCredits.metadata.autoRechargeInvoiceId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Auto-recharge invoice already exists',
+        })
+      }
+
+      await tx
+        .update(Credits)
+        .set({
+          metadata: {
+            ...lockedCredits.metadata,
+            autoRechargeInvoiceId: invoice.id!,
+          },
+        })
+        .where(eq(Credits.id, lockedCredits.id))
+    })
+  } catch (err) {
+    // If the order creation fails, we need to void the invoice.
+    await stripe.invoices.voidInvoice(invoice.id!)
+
+    throw err
+  }
+}
+
+export async function createAutoRechargePayment(
+  ctx: UserContext,
+  organizationId?: string,
+  allowRecreate = false,
+): Promise<void> {
+  const stripe = getStripe()
+
+  const credits = await ctx.db.query.Credits.findFirst({
+    where: organizationId
+      ? eq(Credits.organizationId, organizationId)
+      : eq(Credits.userId, ctx.auth.userId),
+  })
+  if (!credits) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Credits record not found',
+    })
+  }
+
+  const metadata = credits.metadata
+  if (Number(credits.credits) > metadata.autoRechargeThreshold!) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `You have enough credits (${credits.credits}), no need to recharge`,
+    })
+  }
+
+  const customerId = metadata.customerId
+  if (!customerId) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Customer ID not found in credits metadata',
+    })
+  }
+
+  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stripe top-up price ID is not configured',
+    })
+  }
+
+  if (metadata.autoRechargeInvoiceId) {
+    if (allowRecreate) {
+      // Cancel any existing auto-recharge invoice orders before creating a new one
+      const cancelled = await cancelCreditsOrdersByKind(
+        ctx,
+        'stripe-invoice',
+        organizationId,
+        false,
+      )
+      if (cancelled === false) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot cancel existing auto-recharge invoice order',
+        })
+      }
+    } else {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Auto-recharge invoice already exists',
+      })
+    }
+  }
+
+  const price = await stripe.prices.retrieve(env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID, {
+    expand: ['product'],
+  })
+  if (
+    !(
+      price.active &&
+      price.billing_scheme === 'per_unit' &&
+      price.type === 'one_time' &&
+      !!price.unit_amount_decimal
+    )
+  ) {
+    log.error(`Stripe top-up price is not configured correctly:`, price)
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stripe top-up price is not configured correctly',
+    })
+  }
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: 1099,
+    currency: 'hkd',
+    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+    automatic_payment_methods: { enabled: true },
+    customer: '{{CUSTOMER_ID}}',
+    payment_method: '{{PAYMENT_METHOD_ID}}',
+    return_url: 'https://example.com/order/123/complete',
+    off_session: true,
+    confirm: true,
+  })
+
+  await stripe.invoiceItems.create({
+    customer: customerId,
+    pricing: {
+      price: price.id,
+    },
+    quantity: Math.ceil(
+      metadata.autoRechargeAmount! * 100 +
+        Math.max(metadata.autoRechargeAmount! * 100 * cfg.platform.creditsFeeRate, 80),
+    ),
     subscription: credits.metadata.autoRechargeSubscriptionId,
   })
 
@@ -404,8 +574,12 @@ function clearIdFromMetadataByKind(
       }
       break
     case 'stripe-subscription':
-      if (metadata?.autoRechargeSubscriptionId === id) {
-        metadata.autoRechargeSubscriptionId = undefined
+      if (metadata?.autoRechargeSessionId === id) {
+        assert(
+          !metadata.autoRechargeSubscriptionId,
+          'Auto-recharge subscription ID should not be set when auto-recharge session ID is set',
+        )
+        metadata.autoRechargeSessionId = undefined
         return true
       }
       break

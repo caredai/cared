@@ -5,7 +5,14 @@ import type { Stripe } from 'stripe'
 import { useState } from 'react'
 import { format, formatDistance } from 'date-fns'
 import { Decimal } from 'decimal.js'
-import { CreditCardIcon, HistoryIcon, MoreHorizontal, RepeatIcon, Trash2Icon } from 'lucide-react'
+import {
+  AlarmClockIcon,
+  HandCoinsIcon,
+  HistoryIcon,
+  MoreHorizontal,
+  RepeatIcon,
+  Trash2Icon,
+} from 'lucide-react'
 
 import type { OrderStatus } from '@cared/db/schema'
 import { Badge } from '@cared/ui/components/badge'
@@ -34,8 +41,12 @@ import {
   useListCreditsOrders,
   useListCreditsSubscriptions,
 } from '@/hooks/use-credits'
+import { AutoTopupDialog } from './auto-topup-dialog'
 import { PaymentMethods } from './payment-methods'
 import { RechargeDialog } from './recharge-dialog'
+import { useCheckStripeCheckoutSessionReturnUrl } from './stripe-checkout-form'
+import { useCheckPaymentMethodSetupReturnUrl } from './stripe-payment-method-form'
+import { useCheckStripeAutoTopupCheckoutSessionReturnUrl } from './stripe-auto-topup-form'
 
 // Types for table data
 interface OrderTableData {
@@ -57,6 +68,10 @@ interface SubscriptionTableData {
 }
 
 export function Credits({ organizationId }: { organizationId?: string }) {
+  useCheckStripeCheckoutSessionReturnUrl(organizationId)
+  useCheckStripeAutoTopupCheckoutSessionReturnUrl(organizationId)
+  useCheckPaymentMethodSetupReturnUrl()
+
   const { credits } = useCredits(organizationId)
   const { creditsOrdersPages } = useListCreditsOrders(organizationId)
   const { creditsSubscriptions } = useListCreditsSubscriptions(organizationId)
@@ -65,6 +80,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
   const _autoRechargeThreshold = credits.metadata.autoRechargeThreshold
 
   const [isRechargeDialogOpen, setIsRechargeDialogOpen] = useState(false)
+  const [isAutoTopupDialogOpen, setIsAutoTopupDialogOpen] = useState(false)
 
   // Transform orders data for table
   const ordersData: OrderTableData[] = creditsOrdersPages
@@ -144,14 +160,14 @@ export function Credits({ organizationId }: { organizationId?: string }) {
               <p className="text-4xl font-bold">$ {new Decimal(credits.credits).toFixed(2)}</p>
             </div>
             <div className="flex flex-col md:flex-row gap-2">
-            <Button onClick={() => setIsRechargeDialogOpen(true)}>
-              <CreditCardIcon className="h-4 w-4" />
-              Buy Credits
-            </Button>
-            <Button variant="outline" onClick={() => setIsRechargeDialogOpen(true)}>
-              <CreditCardIcon className="h-4 w-4" />
-              Auto Top-Up
-            </Button>
+              <Button onClick={() => setIsRechargeDialogOpen(true)}>
+                <HandCoinsIcon className="h-4 w-4" />
+                Buy Credits
+              </Button>
+              <Button variant="outline" onClick={() => setIsAutoTopupDialogOpen(true)}>
+                <AlarmClockIcon className="h-4 w-4" />
+                Auto Top-Up
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -188,6 +204,12 @@ export function Credits({ organizationId }: { organizationId?: string }) {
         organizationId={organizationId}
         open={isRechargeDialogOpen}
         onOpenChange={setIsRechargeDialogOpen}
+      />
+
+      <AutoTopupDialog
+        organizationId={organizationId}
+        open={isAutoTopupDialogOpen}
+        onOpenChange={setIsAutoTopupDialogOpen}
       />
     </>
   )

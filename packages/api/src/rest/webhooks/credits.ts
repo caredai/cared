@@ -136,6 +136,65 @@ export async function POST(req: Request) {
                   )
                 }
               }
+
+              if (
+                (event.type === 'checkout.session.completed' ||
+                  event.type === 'checkout.session.async_payment_succeeded') &&
+                session.mode === 'subscription' &&
+                session.status === 'complete' &&
+                (session.payment_status === 'paid' ||
+                  session.payment_status === 'no_payment_required') &&
+                order.status !== 'complete'
+              ) {
+                const subscriptionId =
+                  typeof session.subscription === 'string'
+                    ? session.subscription
+                    : session.subscription?.id
+
+                if (subscriptionId) {
+                  const credits = (
+                    await tx
+                      .select()
+                      .from(Credits)
+                      .where(
+                        order.type === 'organization'
+                          ? eq(Credits.organizationId, order.organizationId!)
+                          : eq(Credits.userId, order.userId!),
+                      )
+                      .for('update')
+                  )[0]
+
+                  if (credits?.metadata.autoRechargeSessionId === session.id) {
+                    await tx
+                      .update(Credits)
+                      .set({
+                        metadata: {
+                          ...credits.metadata,
+                          autoRechargeSubscriptionId: subscriptionId,
+                        },
+                      })
+                      .where(eq(Credits.id, credits.id))
+                  } else {
+                    const entityType = order.type === 'organization' ? 'organization' : 'user'
+                    const entityId =
+                      order.type === 'organization' ? order.organizationId : order.userId
+                    if (!credits) {
+                      log.error(
+                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                      )
+                    } else {
+                      log.error(
+                        `autoRechargeSessionId mismatched for ${entityType} with id ${entityId}`,
+                      )
+                    }
+                  }
+                } else {
+                  log.error(
+                    `Invalid subscription id for checkout session with id ${session.id}: subscriptionId=${subscriptionId}`,
+                    session,
+                  )
+                }
+              }
             } else {
               log.error(`Order not found for checkout session with id ${session.id}`)
             }
