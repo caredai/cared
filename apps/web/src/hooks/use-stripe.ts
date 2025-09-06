@@ -25,6 +25,12 @@ export function useCustomer(organizationId?: string) {
   }
 }
 
+export function useDefaultPaymentMethodId(organizationId?: string) {
+  const { customer } = useCustomer(organizationId)
+  const defaultPaymentMethod = customer?.invoice_settings.default_payment_method
+  return typeof defaultPaymentMethod === 'string' ? defaultPaymentMethod : defaultPaymentMethod?.id
+}
+
 /**
  * Hook to list payment methods for a customer
  */
@@ -49,7 +55,7 @@ export function useListPaymentMethods(organizationId?: string) {
 /**
  * Hook to add a new payment method using SetupIntent
  */
-export function useAddPaymentMethod() {
+export function useAddPaymentMethod(organizationId?: string) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -58,7 +64,9 @@ export function useAddPaymentMethod() {
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: trpc.stripe.listPaymentMethods.queryKey(),
+          queryKey: trpc.stripe.listPaymentMethods.queryKey({
+            organizationId,
+          }),
         })
       },
       onError: (_error) => {
@@ -68,19 +76,20 @@ export function useAddPaymentMethod() {
   )
 
   return useCallback(
-    async (organizationId?: string) => {
+    async () => {
       return await addMutation.mutateAsync({
         organizationId,
       })
     },
-    [addMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [organizationId],
   )
 }
 
 /**
  * Hook to remove a payment method
  */
-export function useRemovePaymentMethod() {
+export function useRemovePaymentMethod(organizationId?: string) {
   const trpc = useTRPC()
   const queryClient = useQueryClient()
 
@@ -89,7 +98,9 @@ export function useRemovePaymentMethod() {
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: trpc.stripe.listPaymentMethods.queryKey(),
+          queryKey: trpc.stripe.listPaymentMethods.queryKey({
+            organizationId,
+          }),
         })
       },
       onError: (error) => {
@@ -99,12 +110,48 @@ export function useRemovePaymentMethod() {
   )
 
   return useCallback(
-    async (paymentMethodId: string, organizationId?: string) => {
+    async (paymentMethodId: string) => {
       return await removeMutation.mutateAsync({
         paymentMethodId,
         organizationId,
       })
     },
-    [removeMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [organizationId],
+  )
+}
+
+/**
+ * Hook to update customer's default payment method
+ */
+export function useUpdateDefaultPaymentMethod(organizationId?: string) {
+  const trpc = useTRPC()
+  const queryClient = useQueryClient()
+
+  const updateMutation = useMutation(
+    trpc.stripe.updateDefaultPaymentMethod.mutationOptions({
+      onSuccess: () => {
+        // Invalidate customer data to refresh the default payment method
+        void queryClient.invalidateQueries({
+          queryKey: trpc.stripe.getCustomer.queryKey({
+            organizationId,
+          }),
+        })
+      },
+      onError: (error) => {
+        toast.error(`Failed to update default payment method: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (paymentMethodId: string) => {
+      return await updateMutation.mutateAsync({
+        organizationId,
+        paymentMethodId,
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [organizationId],
   )
 }

@@ -112,107 +112,29 @@ export function useListCreditsSubscriptions(organizationId?: string) {
   }
 }
 
-export function useCreateAutoRechargeCreditsSubscriptionCheckout(organizationId?: string) {
-  const trpc = useTRPC()
-
-  const { refetchCredits } = useCredits(organizationId)
-  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
-  const { refetchCreditsSubscriptions } = useListCreditsSubscriptions(organizationId)
-
-  const createMutation = useMutation(
-    trpc.credits.createAutoRechargeSubscriptionCheckout.mutationOptions({
-      onSuccess: () => {
-        void refetchCredits()
-        void refetchCreditsOrders()
-        void refetchCreditsSubscriptions()
-      },
-      onError: (error) => {
-        toast.error(`Failed to create auto top-up subscription checkout: ${error.message}`)
-      },
-    }),
-  )
-
-  return useCallback(
-    async (autoRechargeThreshold: number, autoRechargeAmount: number) => {
-      return await createMutation.mutateAsync({
-        organizationId,
-        autoRechargeThreshold,
-        autoRechargeAmount,
-      })
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [organizationId],
-  )
-}
-
-export function useCancelAutoRechargeCreditsSubscription(organizationId?: string) {
-  const trpc = useTRPC()
-
-  const { refetchCredits } = useCredits(organizationId)
-  const { refetchCreditsSubscriptions } = useListCreditsSubscriptions(organizationId)
-
-  const cancelMutation = useMutation(
-    trpc.credits.cancelAutoRechargeSubscription.mutationOptions({
-      onSuccess: () => {
-        void refetchCredits()
-        void refetchCreditsSubscriptions()
-      },
-    }),
-  )
-
-  return useCallback(async () => {
-    return await cancelMutation.mutateAsync({
-      organizationId,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organizationId])
-}
-
-export function useCreateAutoRechargeCreditsInvoice(organizationId?: string) {
-  const trpc = useTRPC()
-
-  const { refetchCredits } = useCredits(organizationId)
-  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
-
-  const createMutation = useMutation(
-    trpc.credits.createAutoRechargeInvoice.mutationOptions({
-      onSuccess: () => {
-        void refetchCredits()
-        void refetchCreditsOrders()
-      },
-    }),
-  )
-
-  return useCallback(async () => {
-    return await createMutation.mutateAsync({
-      organizationId,
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [organizationId])
-}
-
-export function useUpdateAutoRechargeCreditsSubscription(organizationId?: string) {
+export function useUpdateAutoRechargeCreditsSettings(organizationId?: string) {
   const trpc = useTRPC()
 
   const { refetchCredits } = useCredits(organizationId)
 
   const updateMutation = useMutation(
-    trpc.credits.updateAutoRechargeSubscription.mutationOptions({
+    trpc.credits.updateAutoRechargeSettings.mutationOptions({
       onSuccess: () => {
         void refetchCredits()
       },
       onError: (error) => {
-        toast.error(`Failed to update auto top-up subscription: ${error.message}`)
+        toast.error(`Failed to update auto top-up settings: ${error.message}`)
       },
     }),
   )
 
   return useCallback(
-    async (autoRechargeThreshold: number, autoRechargeAmount: number) => {
+    async (enabled: boolean, threshold?: number, amount?: number) => {
       return await updateMutation.mutateAsync({
         organizationId,
-        autoRechargeThreshold,
-        autoRechargeAmount,
+        enabled,
+        threshold,
+        amount,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

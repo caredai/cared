@@ -416,6 +416,11 @@ export async function triggerAutoRechargePaymentIntent(
   allowRecreate = false,
 ): Promise<void> {
   const metadata = credits.metadata
+
+  if (!metadata.autoRechargeEnabled) {
+    return
+  }
+
   if (Number(credits.credits) > metadata.autoRechargeThreshold!) {
     return
   }
@@ -450,10 +455,26 @@ export async function triggerAutoRechargePaymentIntent(
 
   const stripe = getStripe()
 
-  const paymentMethods = await stripe.paymentMethods.list({
-    customer: customerId,
-  })
-  const paymentMethodId = paymentMethods.data[0]?.id
+  // Get customer to check for default payment method
+  const customer = await stripe.customers.retrieve(customerId)
+  if (customer.deleted) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Customer not found',
+    })
+  }
+
+  // Use default payment method if available, otherwise use first available payment method
+  const defaultPaymentMethod = customer.invoice_settings.default_payment_method
+  let paymentMethodId =
+    typeof defaultPaymentMethod === 'string' ? defaultPaymentMethod : defaultPaymentMethod?.id
+  if (!paymentMethodId) {
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: customerId,
+    })
+    paymentMethodId = paymentMethods.data[0]?.id
+  }
+
   if (!paymentMethodId) {
     return
   }

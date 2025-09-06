@@ -20,6 +20,9 @@ export interface CreditsMetadata {
 
   autoRechargePaymentIntentId?: string
 
+  subscriptionSessionId?: string
+  subscriptionId?: string
+
   autoRechargeSessionId?: string
   autoRechargeSubscriptionId?: string
   autoRechargeInvoiceId?: string

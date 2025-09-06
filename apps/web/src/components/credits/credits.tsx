@@ -42,11 +42,10 @@ import {
   useListCreditsSubscriptions,
 } from '@/hooks/use-credits'
 import { AutoTopupDialog } from './auto-topup-dialog'
+import { useCheckPaymentMethodSetupReturnUrl } from './payment-method-dialog'
 import { PaymentMethods } from './payment-methods'
 import { RechargeDialog } from './recharge-dialog'
 import { useCheckStripeCheckoutSessionReturnUrl } from './stripe-checkout-form'
-import { useCheckPaymentMethodSetupReturnUrl } from './stripe-payment-method-form'
-import { useCheckStripeAutoTopupCheckoutSessionReturnUrl } from './stripe-auto-topup-form'
 
 // Types for table data
 interface OrderTableData {
@@ -69,15 +68,11 @@ interface SubscriptionTableData {
 
 export function Credits({ organizationId }: { organizationId?: string }) {
   useCheckStripeCheckoutSessionReturnUrl(organizationId)
-  useCheckStripeAutoTopupCheckoutSessionReturnUrl(organizationId)
   useCheckPaymentMethodSetupReturnUrl()
 
   const { credits } = useCredits(organizationId)
   const { creditsOrdersPages } = useListCreditsOrders(organizationId)
   const { creditsSubscriptions } = useListCreditsSubscriptions(organizationId)
-
-  const _autoRechargeAmount = credits.metadata.autoRechargeAmount
-  const _autoRechargeThreshold = credits.metadata.autoRechargeThreshold
 
   const [isRechargeDialogOpen, setIsRechargeDialogOpen] = useState(false)
   const [isAutoTopupDialogOpen, setIsAutoTopupDialogOpen] = useState(false)
@@ -102,6 +97,17 @@ export function Credits({ organizationId }: { organizationId?: string }) {
                 orderKind = 'Onetime top-up'
               }
               break
+            case 'stripe-payment-intent':
+              {
+                assert(isPaymentIntent(order.object))
+                const paymentIntent = order.object
+                credits = !isNaN(Number(paymentIntent.metadata?.credits))
+                  ? Number(paymentIntent.metadata?.credits)
+                  : 0
+                gateway = 'Stripe'
+                orderKind = 'Auto top-up'
+              }
+              break
             case 'stripe-subscription':
               {
                 assert(isCheckoutSession(order.object))
@@ -111,7 +117,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
               break
             case 'stripe-invoice':
               {
-                assert(!isCheckoutSession(order.object))
+                assert(isInvoice(order.object))
                 const invoice = order.object
                 credits = !isNaN(Number(invoice.metadata?.credits))
                   ? Number(invoice.metadata?.credits)
@@ -375,9 +381,21 @@ function SubscriptionsTable({ data }: { data: SubscriptionTableData[] }) {
 }
 
 function isCheckoutSession(
-  object: Stripe.Checkout.Session | Stripe.Invoice,
+  object: Stripe.Checkout.Session | Stripe.PaymentIntent | Stripe.Invoice,
 ): object is Stripe.Checkout.Session {
   return object.object === 'checkout.session'
+}
+
+function isPaymentIntent(
+  object: Stripe.Checkout.Session | Stripe.PaymentIntent | Stripe.Invoice,
+): object is Stripe.PaymentIntent {
+  return object.object === 'payment_intent'
+}
+
+function isInvoice(
+  object: Stripe.Checkout.Session | Stripe.PaymentIntent | Stripe.Invoice,
+): object is Stripe.Invoice {
+  return object.object === 'invoice'
 }
 
 function capitalizeString(str: string) {

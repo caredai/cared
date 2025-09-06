@@ -130,4 +130,38 @@ export const stripeRouter = {
 
       await stripe.paymentMethods.detach(input.paymentMethodId)
     }),
+
+  // Update customer's default payment method
+  updateDefaultPaymentMethod: userProtectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string().optional(),
+        paymentMethodId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['update'] })
+      }
+
+      const stripe = getStripe()
+      const { customerId } = await ensureCustomer(ctx, stripe, input.organizationId)
+
+      // Verify the payment method belongs to the customer
+      const paymentMethod = await stripe.paymentMethods.retrieve(input.paymentMethodId)
+      if (paymentMethod.customer !== customerId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Payment method not found',
+        })
+      }
+
+      // Update customer's default payment method
+      await stripe.customers.update(customerId, {
+        invoice_settings: {
+          default_payment_method: input.paymentMethodId,
+        },
+      })
+    }),
 }

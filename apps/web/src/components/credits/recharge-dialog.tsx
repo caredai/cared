@@ -59,7 +59,7 @@ export function RechargeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[95vh] px-0 flex flex-col">
+      <DialogContent className="max-w-md max-h-[95vh] px-0 flex flex-col">
         <DialogHeader className="px-6">
           <DialogTitle>Buy More Credits</DialogTitle>
           <DialogDescription>

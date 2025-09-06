@@ -163,36 +163,6 @@ async function getRechargePrice(stripe: Stripe) {
   return price
 }
 
-async function getAutoRechargePrice(stripe: Stripe) {
-  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Stripe auto top-up price ID is not configured',
-    })
-  }
-
-  const price = await stripe.prices.retrieve(env.NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID, {
-    expand: ['product'],
-  })
-  if (
-    !(
-      price.active &&
-      price.billing_scheme === 'per_unit' &&
-      price.recurring?.usage_type === 'metered' &&
-      price.type === 'recurring' &&
-      price.unit_amount === 0
-    )
-  ) {
-    log.error(`Stripe auto top-up price is not configured correctly:`, price)
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Stripe auto top-up price is not configured correctly',
-    })
-  }
-
-  return price
-}
-
 export const creditsRouter = {
   getCredits: userProtectedProcedure
     .input(
@@ -452,190 +422,6 @@ export const creditsRouter = {
       }
     }),
 
-  createAutoRechargeSubscriptionCheckout: userProtectedProcedure
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-          autoRechargeThreshold: z.int().min(5).max(2500),
-          autoRechargeAmount: z.int().min(5).max(2500),
-        })
-        .refine(
-          (data) => {
-            return data.autoRechargeAmount >= data.autoRechargeThreshold
-          },
-          {
-            message: 'Auto-recharge amount must be greater than or equal to the threshold',
-          },
-        ),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
-        await scope.checkPermissions({ credits: ['create'] })
-      }
-
-      const stripe = getStripe()
-
-      // Cancel any existing auto-recharge subscription orders before creating a new one
-      const cancelled = await cancelCreditsOrdersByKind(
-        'stripe-subscription',
-        ctx.auth.userId,
-        input.organizationId,
-        false,
-      )
-      if (cancelled === false) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Cannot cancel existing auto-recharge subscription order in current status',
-        })
-      }
-
-      const { customerId, credits } = await ensureCustomer(ctx, stripe, input.organizationId)
-
-      const price = await getAutoRechargePrice(stripe)
-
-      const returnUrl =
-        getCreditsBaseUrl(input.organizationId) +
-        `?autoRechargeSubscriptionCheckoutSessionId={CHECKOUT_SESSION_ID}`
-
-      const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        ui_mode: 'embedded',
-        line_items: [
-          {
-            price: price.id,
-          },
-        ],
-        customer: customerId,
-        subscription_data: {
-          // Suppress zero-amount line items when adding usage-based items.
-          // https://docs.stripe.com/billing/subscriptions/billing-mode#usage-based-pricing
-          billing_mode: {
-            type: 'flexible',
-          },
-        },
-        saved_payment_method_options: {
-          payment_method_save: 'enabled',
-        },
-        // TODO: You must have a valid origin address to enable automatic tax calculation
-        automatic_tax: { enabled: false },
-        return_url: returnUrl,
-      })
-
-      try {
-        await ctx.db.transaction(async (tx) => {
-          await tx.insert(CreditsOrder).values({
-            type: input.organizationId ? 'organization' : 'user',
-            userId: input.organizationId ? undefined : ctx.auth.userId,
-            organizationId: input.organizationId || undefined,
-            kind: 'stripe-subscription',
-            status: session.status!,
-            objectId: session.id,
-            object: session,
-          })
-
-          // Get credits with select for update to ensure proper locking
-          const lockedCredits = (
-            await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
-          ).at(0)!
-          if (
-            lockedCredits.metadata.autoRechargeSessionId ||
-            lockedCredits.metadata.autoRechargeSubscriptionId
-          ) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: 'Auto-recharge subscription already exists',
-            })
-          }
-
-          await tx
-            .update(Credits)
-            .set({
-              metadata: {
-                ...credits.metadata,
-                autoRechargeSessionId: session.id,
-                autoRechargeThreshold: input.autoRechargeThreshold,
-                autoRechargeAmount: input.autoRechargeAmount,
-              },
-            })
-            .where(eq(Credits.id, credits.id))
-        })
-      } catch (err) {
-        // If the order creation fails, we need to expire the checkout session.
-        await stripe.checkout.sessions.expire(session.id)
-
-        throw err
-      }
-
-      return {
-        sessionClientSecret: session.client_secret!,
-      }
-    }),
-
-  cancelAutoRechargeSubscription: userProtectedProcedure
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .mutation(async ({ ctx, input }) => {
-      if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
-        await scope.checkPermissions({ credits: ['delete'] })
-      }
-
-      const stripe = getStripe()
-
-      const { credits } = await ensureCustomer(ctx, stripe, input?.organizationId)
-      if (!credits.metadata.autoRechargeSubscriptionId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Auto-recharge subscription does not exist',
-        })
-      }
-
-      const subscription = await stripe.subscriptions.retrieve(
-        credits.metadata.autoRechargeSubscriptionId,
-      )
-      console.log(
-        `Canceling auto-recharge subscription ${credits.metadata.autoRechargeSubscriptionId} with status ${subscription.status}`,
-      )
-
-      if (subscription.status !== 'canceled') {
-        await stripe.subscriptions.cancel(credits.metadata.autoRechargeSubscriptionId)
-      }
-
-      await ctx.db.transaction(async (tx) => {
-        // Get credits with select for update to ensure proper locking
-        const lockedCredits = (
-          await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
-        ).at(0)!
-        if (
-          lockedCredits.metadata.autoRechargeSubscriptionId !==
-          credits.metadata.autoRechargeSubscriptionId
-        ) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Auto-recharge subscription mismatched',
-          })
-        }
-
-        await tx
-          .update(Credits)
-          .set({
-            metadata: {
-              ...credits.metadata,
-              autoRechargeSessionId: undefined,
-              autoRechargeSubscriptionId: undefined,
-            },
-          })
-          .where(eq(Credits.id, credits.id))
-      })
-    }),
-
   createAutoRechargeInvoice: userProtectedProcedure
     .input(
       z
@@ -682,65 +468,60 @@ export const creditsRouter = {
       await triggerAutoRechargePaymentIntent(credits, true)
     }),
 
-  updateAutoRechargeSubscription: userProtectedProcedure
+  updateAutoRechargeSettings: userProtectedProcedure
     .input(
       z
         .object({
           organizationId: z.string().optional(),
-          autoRechargeThreshold: z.int().min(5).max(2500),
-          autoRechargeAmount: z.int().min(5).max(2500),
+          enabled: z.boolean().optional(),
+          threshold: z.int().min(5).max(2500).optional(),
+          amount: z.int().min(5).max(2500).optional(),
         })
         .refine(
           (data) => {
-            return data.autoRechargeAmount >= data.autoRechargeThreshold
+            // If enabled, threshold and amount must be provided
+            if (data.enabled) {
+              return data.amount && data.threshold && data.amount >= data.threshold
+            }
+            return true
           },
           {
-            message: 'Auto-recharge amount must be greater than or equal to the threshold',
+            message:
+              'Auto-recharge amount must be greater than or equal to the threshold when enabled',
           },
         ),
     )
     .mutation(async ({ ctx, input }) => {
+      // Permission check: select permission based on operation type
       if (input.organizationId) {
         const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
         await scope.checkPermissions({ credits: ['update'] })
       }
 
-      const stripe = getStripe()
-      const { credits } = await ensureCustomer(ctx, stripe, input.organizationId)
-
-      if (!credits.metadata.autoRechargeSubscriptionId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Auto-recharge subscription does not exist',
-        })
-      }
+      const { credits } = await ensureCustomer(ctx, getStripe(), input.organizationId)
 
       await ctx.db.transaction(async (tx) => {
         // Get credits with select for update to ensure proper locking
-        const lockedCredits = (
+        const _lockedCredits = (
           await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
         ).at(0)!
 
-        if (
-          lockedCredits.metadata.autoRechargeSubscriptionId !==
-          credits.metadata.autoRechargeSubscriptionId
-        ) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Auto-recharge subscription mismatched',
-          })
+        // Build update data
+        const updateData = {
+          ...credits.metadata,
         }
 
-        await tx
-          .update(Credits)
-          .set({
-            metadata: {
-              ...credits.metadata,
-              autoRechargeThreshold: input.autoRechargeThreshold,
-              autoRechargeAmount: input.autoRechargeAmount,
-            },
-          })
-          .where(eq(Credits.id, credits.id))
+        if (!input.enabled) {
+          updateData.autoRechargeEnabled = false
+          updateData.autoRechargeThreshold = undefined
+          updateData.autoRechargeAmount = undefined
+        } else {
+          updateData.autoRechargeEnabled = true
+          updateData.autoRechargeThreshold = input.threshold
+          updateData.autoRechargeAmount = input.amount
+        }
+
+        await tx.update(Credits).set({ metadata: updateData }).where(eq(Credits.id, credits.id))
       })
     }),
 }

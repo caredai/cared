@@ -15,6 +15,13 @@ import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 
 import { Button } from '@cared/ui/components/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@cared/ui/components/dialog'
 
 import type { StripeElementsOptions } from '@stripe/stripe-js'
 import { SkeletonCard } from '@/components/skeleton'
@@ -24,15 +31,19 @@ import { stripIdPrefix } from '@/lib/utils'
 
 const stripePromise = loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
 
-export function StripePaymentMethodForm({
-  organizationId,
-  onSuccess,
-  onCancel,
-}: {
+interface PaymentMethodDialogProps {
   organizationId?: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onSuccess?: () => void
-  onCancel?: () => void
-}) {
+}
+
+export function PaymentMethodDialog({
+  organizationId,
+  open,
+  onOpenChange,
+  onSuccess,
+}: PaymentMethodDialogProps) {
   const { resolvedTheme } = useTheme()
 
   const options: StripeElementsOptions = {
@@ -44,17 +55,25 @@ export function StripePaymentMethodForm({
   }
 
   return (
-    <Elements stripe={stripePromise} options={options}>
-      <StripePaymentMethodFormInner
-        organizationId={organizationId}
-        onSuccess={onSuccess}
-        onCancel={onCancel}
-      />
-    </Elements>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[95vh] px-0 flex flex-col">
+        <DialogHeader className="px-6">
+          <DialogTitle>Add Payment Method</DialogTitle>
+          <DialogDescription>Securely add a new payment method to your account.</DialogDescription>
+        </DialogHeader>
+        <Elements stripe={stripePromise} options={options}>
+          <PaymentMethodForm
+            organizationId={organizationId}
+            onSuccess={onSuccess}
+            onCancel={() => onOpenChange(false)}
+          />
+        </Elements>
+      </DialogContent>
+    </Dialog>
   )
 }
 
-function StripePaymentMethodFormInner({
+function PaymentMethodForm({
   organizationId,
   onSuccess,
   onCancel,
@@ -66,8 +85,8 @@ function StripePaymentMethodFormInner({
   const stripe = useStripe()
   const elements = useElements()
 
-  const { customer } = useCustomer()
-  const addPaymentMethod = useAddPaymentMethod()
+  const { customer } = useCustomer(organizationId)
+  const addPaymentMethod = useAddPaymentMethod(organizationId)
 
   const [isLoading, setIsLoading] = useState(false)
   const [isPaymentElementReady, setIsPaymentElementReady] = useState(false)

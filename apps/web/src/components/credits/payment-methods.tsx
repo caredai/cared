@@ -27,20 +27,17 @@ import {
   CardTitle,
 } from '@cared/ui/components/card'
 import { DataTable } from '@cared/ui/components/data-table'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@cared/ui/components/dialog'
+import { Dialog, DialogTrigger } from '@cared/ui/components/dialog'
 
 import type { PaymentMethodDisplayInfo } from '@/lib/payment-method-utils'
 import type { ColumnDef } from '@tanstack/react-table'
-import { useListPaymentMethods, useRemovePaymentMethod } from '@/hooks/use-stripe'
+import {
+  useDefaultPaymentMethodId,
+  useListPaymentMethods,
+  useRemovePaymentMethod,
+} from '@/hooks/use-stripe'
 import { getPaymentMethodDisplayInfo } from '@/lib/payment-method-utils'
-import { StripePaymentMethodForm } from './stripe-payment-method-form'
+import { PaymentMethodDialog } from './payment-method-dialog'
 
 // Types for table data
 interface PaymentMethodTableData {
@@ -57,11 +54,12 @@ interface PaymentMethodTableData {
 }
 
 export function PaymentMethods({ organizationId }: { organizationId?: string }) {
-  const result = useListPaymentMethods()
+  const defaultPaymentMethodId = useDefaultPaymentMethodId(organizationId)
+  const result = useListPaymentMethods(organizationId)
   const paymentMethods = result.paymentMethods
   const isLoading = result.isLoading
   const refetchPaymentMethods = result.refetchPaymentMethods
-  const removePaymentMethod = useRemovePaymentMethod()
+  const removePaymentMethod = useRemovePaymentMethod(organizationId)
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
@@ -76,7 +74,7 @@ export function PaymentMethods({ organizationId }: { organizationId?: string }) 
           last4: displayInfo.last4,
           expMonth: displayInfo.expMonth,
           expYear: displayInfo.expYear,
-          isDefault: false, // Stripe doesn't have a default flag, we'll show all as non-default
+          isDefault: pm.id === defaultPaymentMethodId,
           created: pm.created,
           object: pm,
           displayInfo,
@@ -115,19 +113,6 @@ export function PaymentMethods({ organizationId }: { organizationId?: string }) 
                 Add
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md max-h-[95vh] px-0 flex flex-col">
-              <DialogHeader className="px-6">
-                <DialogTitle>Add Payment Method</DialogTitle>
-                <DialogDescription>
-                  Securely add a new payment method to your account.
-                </DialogDescription>
-              </DialogHeader>
-              <StripePaymentMethodForm
-                organizationId={organizationId}
-                onSuccess={handlePaymentMethodAdded}
-                onCancel={() => setIsAddDialogOpen(false)}
-              />
-            </DialogContent>
           </Dialog>
         </div>
       </CardHeader>
@@ -139,6 +124,13 @@ export function PaymentMethods({ organizationId }: { organizationId?: string }) 
           isLoading={isLoading}
         />
       </CardContent>
+
+      <PaymentMethodDialog
+        organizationId={organizationId}
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={handlePaymentMethodAdded}
+      />
     </Card>
   )
 }
