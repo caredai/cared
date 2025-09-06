@@ -107,7 +107,7 @@ export async function POST(req: Request) {
                       .set({
                         credits: new Decimal(credits.credits)
                           .add(delta)
-                          .toDecimalPlaces(10, Decimal.ROUND_CEIL)
+                          .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
                           .toString(),
                         metadata: {
                           ...credits.metadata,
@@ -201,6 +201,105 @@ export async function POST(req: Request) {
           })
         }
         break
+
+      case 'payment_intent.amount_capturable_updated':
+      case 'payment_intent.canceled':
+      case 'payment_intent.created':
+      case 'payment_intent.partially_funded':
+      case 'payment_intent.payment_failed':
+      case 'payment_intent.processing':
+      case 'payment_intent.requires_action':
+      case 'payment_intent.succeeded':
+        {
+          const paymentIntent = event.data.object
+          log.info(
+            `Received payment intent event: ${event.type} for payment intent with id ${paymentIntent.id}`,
+          )
+
+          await db.transaction(async (tx) => {
+            const order = (
+              await tx
+                .select()
+                .from(CreditsOrder)
+                .where(eq(CreditsOrder.objectId, paymentIntent.id))
+                .for('update')
+            )[0]
+
+            if (order) {
+              if (hash(order.object) !== hash(paymentIntent)) {
+                await tx
+                  .update(CreditsOrder)
+                  .set({
+                    status: paymentIntent.status,
+                    object: paymentIntent,
+                  })
+                  .where(eq(CreditsOrder.id, order.id))
+              }
+
+              if (
+                event.type === 'payment_intent.succeeded' &&
+                paymentIntent.status === 'succeeded' &&
+                order.status !== 'succeeded'
+              ) {
+                const quantity = Math.floor(paymentIntent.amount_received) / 100
+                const delta = !isNaN(Number(paymentIntent.metadata.credits))
+                  ? Number(paymentIntent.metadata.credits)
+                  : 0
+
+                if (quantity && delta && quantity >= delta * 100) {
+                  const credits = (
+                    await tx
+                      .select()
+                      .from(Credits)
+                      .where(
+                        order.type === 'organization'
+                          ? eq(Credits.organizationId, order.organizationId!)
+                          : eq(Credits.userId, order.userId!),
+                      )
+                      .for('update')
+                  )[0]
+
+                  if (credits?.metadata.autoRechargePaymentIntentId === paymentIntent.id) {
+                    await tx
+                      .update(Credits)
+                      .set({
+                        credits: new Decimal(credits.credits)
+                          .add(delta)
+                          .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
+                          .toString(),
+                        metadata: {
+                          ...credits.metadata,
+                          autoRechargePaymentIntentId: undefined,
+                        },
+                      })
+                      .where(eq(Credits.id, credits.id))
+                  } else {
+                    const entityType = order.type === 'organization' ? 'organization' : 'user'
+                    const entityId =
+                      order.type === 'organization' ? order.organizationId : order.userId
+                    if (!credits) {
+                      log.error(
+                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                      )
+                    } else {
+                      log.error(
+                        `autoRechargePaymentIntentId mismatched for ${entityType} with id ${entityId}`,
+                      )
+                    }
+                  }
+                } else {
+                  log.error(
+                    `Invalid quantity for payment intent with id ${paymentIntent.id}: quantity=${quantity}, credits=${delta}`,
+                    paymentIntent,
+                  )
+                }
+              }
+            } else {
+              log.error(`Order not found for payment intent with id ${paymentIntent.id}`)
+            }
+          })
+        }
+        break
       case 'invoice.created':
       case 'invoice.deleted':
       case 'invoice.finalization_failed':
@@ -270,7 +369,7 @@ export async function POST(req: Request) {
                       .set({
                         credits: new Decimal(credits.credits)
                           .add(delta)
-                          .toDecimalPlaces(10, Decimal.ROUND_CEIL)
+                          .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
                           .toString(),
                         metadata: {
                           ...credits.metadata,

@@ -14,8 +14,10 @@ import {
 } from '@cared/ui/components/dialog'
 import { Label } from '@cared/ui/components/label'
 import { Separator } from '@cared/ui/components/separator'
+import { Switch } from '@cared/ui/components/switch'
 
 import { NumberInput } from '@/components/number-input'
+import { useCredits, useUpdateAutoRechargeCreditsSubscription, useCancelAutoRechargeCreditsSubscription } from '@/hooks/use-credits'
 import { StripeAutoTopupForm } from './stripe-auto-topup-form'
 
 export function AutoTopupDialog({
@@ -27,22 +29,53 @@ export function AutoTopupDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { credits } = useCredits(organizationId)
+  const updateAutoRechargeSubscription = useUpdateAutoRechargeCreditsSubscription(organizationId)
+  const cancelAutoRechargeSubscription = useCancelAutoRechargeCreditsSubscription(organizationId)
+
   const [autoRechargeThreshold, setAutoRechargeThreshold] = useState(10)
   const [autoRechargeAmount, setAutoRechargeAmount] = useState(50)
   const [showCheckout, setShowCheckout] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isAutoTopupEnabled, setIsAutoTopupEnabled] = useState(true)
 
   const fee = Math.max(autoRechargeAmount * 0.05, 0.8)
   const totalAmount = autoRechargeAmount + fee
 
+  // Check if auto-recharge subscription already exists
+  const hasExistingSubscription = !!credits.metadata.autoRechargeSubscriptionId
+
   useEffect(() => {
-    setAutoRechargeThreshold(10)
-    setAutoRechargeAmount(50)
+    setAutoRechargeThreshold(credits.metadata.autoRechargeThreshold ?? 10)
+    setAutoRechargeAmount(credits.metadata.autoRechargeAmount ?? 50)
     setShowCheckout(false)
-  }, [open])
+    setIsUpdating(false)
+    setIsAutoTopupEnabled(!!credits.metadata.autoRechargeSubscriptionId)
+  }, [open, credits])
 
   const handleAutoTopup = () => {
     if (autoRechargeThreshold > 0 && autoRechargeAmount > 0) {
       setShowCheckout(true)
+    }
+  }
+
+  const handleUpdateSettings = async () => {
+    setIsUpdating(true)
+    try {
+      if (isAutoTopupEnabled) {
+        // Update existing subscription
+        if (autoRechargeThreshold > 0 && autoRechargeAmount > 0) {
+          await updateAutoRechargeSubscription(autoRechargeThreshold, autoRechargeAmount)
+        }
+      } else {
+        // Cancel subscription when disabled
+        await cancelAutoRechargeSubscription()
+      }
+      onOpenChange(false)
+    } catch {
+      // Error is handled by the hook
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -58,7 +91,7 @@ export function AutoTopupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[95vh] px-0 flex flex-col">
         <DialogHeader className="px-6">
-          <DialogTitle>Enable Auto Top-Up</DialogTitle>
+          <DialogTitle>Auto Top-Up</DialogTitle>
           <DialogDescription>
             Automatically top-up your credits when your balance falls below the threshold. Cared
             charges a 5% ($0.80 minimum) fee per recharge.
@@ -68,6 +101,21 @@ export function AutoTopupDialog({
         <div className="flex-1 overflow-y-auto px-6 space-y-6">
           {!showCheckout ? (
             <>
+              {hasExistingSubscription && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="auto-topup-enabled">Enable Auto Top-Up</Label>
+                    <Switch
+                      id="auto-topup-enabled"
+                      checked={isAutoTopupEnabled}
+                      onCheckedChange={setIsAutoTopupEnabled}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Toggle to enable or disable automatic credit top-up.
+                  </p>
+                </div>
+              )}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="threshold">
@@ -146,12 +194,24 @@ export function AutoTopupDialog({
                 <Button variant="outline" onClick={handleCloseAutoTopupDialog}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={handleAutoTopup}
-                  disabled={autoRechargeThreshold <= 0 || autoRechargeAmount <= 0}
-                >
-                  Setup Auto Top-Up
-                </Button>
+                {hasExistingSubscription ? (
+                  <Button
+                    onClick={handleUpdateSettings}
+                    disabled={
+                      (isAutoTopupEnabled && (autoRechargeThreshold <= 0 || autoRechargeAmount <= 0)) ||
+                      isUpdating
+                    }
+                  >
+                    {isUpdating ? 'Saving...' : 'Save'}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleAutoTopup}
+                    disabled={autoRechargeThreshold <= 0 || autoRechargeAmount <= 0}
+                  >
+                    Setup Auto Top-Up
+                  </Button>
+                )}
               </DialogFooter>
             </>
           ) : (

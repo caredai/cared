@@ -11,11 +11,17 @@ export const ownerTypeEnum = pgEnum('ownerType', ownerTypes)
 
 export interface CreditsMetadata {
   customerId?: string
+
   onetimeRechargeSessionId?: string
-  autoRechargeSessionId?: string
-  autoRechargeSubscriptionId?: string
+
+  autoRechargeEnabled?: boolean
   autoRechargeThreshold?: number
   autoRechargeAmount?: number
+
+  autoRechargePaymentIntentId?: string
+
+  autoRechargeSessionId?: string
+  autoRechargeSubscriptionId?: string
   autoRechargeInvoiceId?: string
 }
 
@@ -43,12 +49,18 @@ export const Credits = pgTable(
 
 export type Credits = InferSelectModel<typeof Credits>
 
-export const orderKinds = ['stripe-payment', 'stripe-subscription', 'stripe-invoice'] as const
+export const orderKinds = [
+  'stripe-payment',
+  'stripe-payment-intent',
+  'stripe-subscription',
+  'stripe-invoice',
+] as const
 export type OrderKind = (typeof orderKinds)[number]
 export const orderKindEnum = pgEnum('orderKind', orderKinds)
 
 export type OrderStatus =
   | Stripe.Checkout.Session.Status
+  | Stripe.PaymentIntent.Status
   | Stripe.Invoice.Status
   // for deleted invoice
   | 'deleted'
@@ -66,7 +78,9 @@ export const CreditsOrder = pgTable(
     kind: orderKindEnum().notNull(),
     status: text().$type<OrderStatus>().notNull(),
     objectId: text().unique().notNull(),
-    object: jsonb().$type<Stripe.Checkout.Session | Stripe.Invoice>().notNull(),
+    object: jsonb()
+      .$type<Stripe.Checkout.Session | Stripe.PaymentIntent | Stripe.Invoice>()
+      .notNull(),
     ...timestamps,
   },
   (table) => [

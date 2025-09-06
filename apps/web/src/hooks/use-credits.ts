@@ -191,6 +191,35 @@ export function useCreateAutoRechargeCreditsInvoice(organizationId?: string) {
   }, [organizationId])
 }
 
+export function useUpdateAutoRechargeCreditsSubscription(organizationId?: string) {
+  const trpc = useTRPC()
+
+  const { refetchCredits } = useCredits(organizationId)
+
+  const updateMutation = useMutation(
+    trpc.credits.updateAutoRechargeSubscription.mutationOptions({
+      onSuccess: () => {
+        void refetchCredits()
+      },
+      onError: (error) => {
+        toast.error(`Failed to update auto top-up subscription: ${error.message}`)
+      },
+    }),
+  )
+
+  return useCallback(
+    async (autoRechargeThreshold: number, autoRechargeAmount: number) => {
+      return await updateMutation.mutateAsync({
+        organizationId,
+        autoRechargeThreshold,
+        autoRechargeAmount,
+      })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [organizationId],
+  )
+}
+
 /**
  * Hook to cancel a credits order
  */

@@ -4,6 +4,7 @@ import { TRPCError } from '@trpc/server'
 
 import type { CreditsMetadata, OrderKind, OrderStatus } from '@cared/db/schema'
 import { and, eq } from '@cared/db'
+import { db } from '@cared/db/client'
 import { Credits, CreditsOrder } from '@cared/db/schema'
 import log from '@cared/log'
 
@@ -21,15 +22,15 @@ import { env } from '../env'
  * @returns Promise<boolean> - Returns true if canceled successfully, false if it cannot be canceled
  */
 export async function cancelCreditsOrder(
-  ctx: UserContext,
   orderId: string,
-  organizationId?: string,
+  userId?: string | null,
+  organizationId?: string | null,
   forceCancel = false,
 ): Promise<boolean> {
   const stripe = getStripe()
 
-  return await ctx.db.transaction(async (tx) => {
-    // Find the order and verify ownership with select for update
+  return await db.transaction(async (tx) => {
+    // Find the order with select for update
     const order = (
       await tx
         .select()
@@ -39,7 +40,7 @@ export async function cancelCreditsOrder(
             eq(CreditsOrder.id, orderId),
             organizationId
               ? eq(CreditsOrder.organizationId, organizationId)
-              : eq(CreditsOrder.userId, ctx.auth.userId),
+              : eq(CreditsOrder.userId, userId!),
           ),
         )
         .for('update')
@@ -53,7 +54,15 @@ export async function cancelCreditsOrder(
     }
 
     // Check if order can be canceled based on status
-    const cancelableStatuses = ['draft', 'open', 'uncollectible']
+    const cancelableStatuses = [
+      'draft',
+      'open',
+      'uncollectible',
+      'requires_action',
+      'requires_capture',
+      'requires_confirmation',
+      'requires_payment_method',
+    ]
     if (
       !cancelableStatuses.includes(order.status) ||
       (order.status === 'draft' && (order.object as Stripe.Invoice).billing_reason !== 'manual')
@@ -88,6 +97,12 @@ export async function cancelCreditsOrder(
         }
         break
       }
+      case 'stripe-payment-intent': {
+        const paymentIntent = order.object as Stripe.PaymentIntent
+        await stripe.paymentIntents.cancel(paymentIntent.id)
+        newStatus = 'canceled'
+        break
+      }
     }
 
     // Update the order status within the transaction
@@ -104,9 +119,7 @@ export async function cancelCreditsOrder(
         .select()
         .from(Credits)
         .where(
-          organizationId
-            ? eq(Credits.organizationId, organizationId)
-            : eq(Credits.userId, ctx.auth.userId),
+          organizationId ? eq(Credits.organizationId, organizationId) : eq(Credits.userId, userId!),
         )
         .for('update')
     )[0]
@@ -138,16 +151,16 @@ export async function cancelCreditsOrder(
  * @returns Promise<boolean | undefined> - Returns true if canceled successfully, false if cannot be canceled, undefined if no need to cancel
  */
 export async function cancelCreditsOrdersByKind(
-  ctx: UserContext,
   orderKind: OrderKind,
-  organizationId?: string,
+  userId?: string | null,
+  organizationId?: string | null,
   throwOnInconsistency = false,
 ): Promise<boolean | undefined> {
   // First, find the credits record
-  const credits = await ctx.db.query.Credits.findFirst({
+  const credits = await db.query.Credits.findFirst({
     where: organizationId
       ? eq(Credits.organizationId, organizationId)
-      : eq(Credits.userId, ctx.auth.userId),
+      : eq(Credits.userId, userId!),
   })
 
   if (!credits) {
@@ -163,6 +176,9 @@ export async function cancelCreditsOrdersByKind(
     case 'stripe-payment':
       relevantId = credits.metadata.onetimeRechargeSessionId
       break
+    case 'stripe-payment-intent':
+      relevantId = credits.metadata.autoRechargePaymentIntentId
+      break
     case 'stripe-subscription':
       relevantId = credits.metadata.autoRechargeSessionId
       break
@@ -176,13 +192,13 @@ export async function cancelCreditsOrdersByKind(
   }
 
   // Find the specific order using the objectId from metadata
-  const order = await ctx.db.query.CreditsOrder.findFirst({
+  const order = await db.query.CreditsOrder.findFirst({
     where: and(
       eq(CreditsOrder.objectId, relevantId),
       eq(CreditsOrder.kind, orderKind),
       organizationId
         ? eq(CreditsOrder.organizationId, organizationId)
-        : eq(CreditsOrder.userId, ctx.auth.userId),
+        : eq(CreditsOrder.userId, userId!),
     ),
   })
 
@@ -194,7 +210,7 @@ export async function cancelCreditsOrdersByKind(
       })
     }
 
-    await ctx.db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       // Get credits with select for update
       const lockedCredits = (
         await tx
@@ -203,7 +219,7 @@ export async function cancelCreditsOrdersByKind(
           .where(
             organizationId
               ? eq(Credits.organizationId, organizationId)
-              : eq(Credits.userId, ctx.auth.userId),
+              : eq(Credits.userId, userId!),
           )
           .for('update')
       )[0]!
@@ -223,7 +239,7 @@ export async function cancelCreditsOrdersByKind(
     return undefined
   }
 
-  return await cancelCreditsOrder(ctx, order.id, organizationId, false)
+  return await cancelCreditsOrder(order.id, userId, organizationId, false)
 }
 
 /**
@@ -287,8 +303,8 @@ export async function createAutoRechargeInvoice(
     if (allowRecreate) {
       // Cancel any existing auto-recharge invoice orders before creating a new one
       const cancelled = await cancelCreditsOrdersByKind(
-        ctx,
         'stripe-invoice',
+        ctx.auth.userId,
         organizationId,
         false,
       )
@@ -395,31 +411,13 @@ export async function createAutoRechargeInvoice(
   }
 }
 
-export async function createAutoRechargePayment(
-  ctx: UserContext,
-  organizationId?: string,
+export async function triggerAutoRechargePaymentIntent(
+  credits: Credits,
   allowRecreate = false,
 ): Promise<void> {
-  const stripe = getStripe()
-
-  const credits = await ctx.db.query.Credits.findFirst({
-    where: organizationId
-      ? eq(Credits.organizationId, organizationId)
-      : eq(Credits.userId, ctx.auth.userId),
-  })
-  if (!credits) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Credits record not found',
-    })
-  }
-
   const metadata = credits.metadata
   if (Number(credits.credits) > metadata.autoRechargeThreshold!) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: `You have enough credits (${credits.credits}), no need to recharge`,
-    })
+    return
   }
 
   const customerId = metadata.customerId
@@ -430,132 +428,94 @@ export async function createAutoRechargePayment(
     })
   }
 
-  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Stripe top-up price ID is not configured',
-    })
-  }
-
-  if (metadata.autoRechargeInvoiceId) {
+  if (metadata.autoRechargePaymentIntentId) {
     if (allowRecreate) {
-      // Cancel any existing auto-recharge invoice orders before creating a new one
+      // Cancel any existing auto-recharge payment intent orders before creating a new one
       const cancelled = await cancelCreditsOrdersByKind(
-        ctx,
-        'stripe-invoice',
-        organizationId,
+        'stripe-payment-intent',
+        credits.userId,
+        credits.organizationId,
         false,
       )
       if (cancelled === false) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Cannot cancel existing auto-recharge invoice order',
+          message: 'Cannot cancel existing auto-recharge payment intent order',
         })
       }
     } else {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
-        message: 'Auto-recharge invoice already exists',
-      })
+      return
     }
   }
 
-  const price = await stripe.prices.retrieve(env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID, {
-    expand: ['product'],
+  const stripe = getStripe()
+
+  const paymentMethods = await stripe.paymentMethods.list({
+    customer: customerId,
   })
-  if (
-    !(
-      price.active &&
-      price.billing_scheme === 'per_unit' &&
-      price.type === 'one_time' &&
-      !!price.unit_amount_decimal
-    )
-  ) {
-    log.error(`Stripe top-up price is not configured correctly:`, price)
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Stripe top-up price is not configured correctly',
-    })
+  const paymentMethodId = paymentMethods.data[0]?.id
+  if (!paymentMethodId) {
+    return
   }
 
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: 1099,
-    currency: 'hkd',
-    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-    automatic_payment_methods: { enabled: true },
-    customer: '{{CUSTOMER_ID}}',
-    payment_method: '{{PAYMENT_METHOD_ID}}',
-    return_url: 'https://example.com/order/123/complete',
-    off_session: true,
-    confirm: true,
-  })
+  const amount = Math.ceil(
+    metadata.autoRechargeAmount! * 100 +
+      Math.max(metadata.autoRechargeAmount! * 100 * cfg.platform.creditsFeeRate, 80),
+  )
 
-  await stripe.invoiceItems.create({
-    customer: customerId,
-    pricing: {
-      price: price.id,
-    },
-    quantity: Math.ceil(
-      metadata.autoRechargeAmount! * 100 +
-        Math.max(metadata.autoRechargeAmount! * 100 * cfg.platform.creditsFeeRate, 80),
-    ),
-    subscription: credits.metadata.autoRechargeSubscriptionId,
-  })
-
-  const { lastResponse: _, ...invoice } = await stripe.invoices.create({
-    customer: customerId,
-    collection_method: 'send_invoice',
-    auto_advance: true,
-    metadata: {
-      credits: metadata.autoRechargeAmount!.toString(),
-    },
-  })
+  let paymentIntent: Stripe.PaymentIntent | undefined
 
   try {
-    await ctx.db.transaction(async (tx) => {
-      await tx.insert(CreditsOrder).values({
-        type: organizationId ? 'organization' : 'user',
-        userId: organizationId ? undefined : ctx.auth.userId,
-        organizationId: organizationId,
-        kind: 'stripe-invoice',
-        status: invoice.status!,
-        objectId: invoice.id!,
-        object: invoice,
-      })
-
+    await db.transaction(async (tx) => {
       // Get credits with select for update
       const lockedCredits = (
-        await tx
-          .select()
-          .from(Credits)
-          .where(
-            organizationId
-              ? eq(Credits.organizationId, organizationId)
-              : eq(Credits.userId, ctx.auth.userId),
-          )
-          .for('update')
+        await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
       )[0]!
 
-      if (lockedCredits.metadata.autoRechargeInvoiceId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Auto-recharge invoice already exists',
-        })
+      if (lockedCredits.metadata.autoRechargePaymentIntentId) {
+        return
       }
+
+      const { lastResponse: _, ...pi } = await stripe.paymentIntents.create({
+        amount,
+        currency: 'usd',
+        automatic_payment_methods: { enabled: true },
+        customer: customerId,
+        payment_method: paymentMethodId,
+        // return_url: 'https://example.com/order/123/complete',
+        off_session: true,
+        confirm: true,
+        metadata: {
+          credits: metadata.autoRechargeAmount!.toString(),
+        },
+      })
+      paymentIntent = pi
 
       await tx
         .update(Credits)
         .set({
           metadata: {
             ...lockedCredits.metadata,
-            autoRechargeInvoiceId: invoice.id!,
+            autoRechargePaymentIntentId: paymentIntent.id,
           },
         })
         .where(eq(Credits.id, lockedCredits.id))
+
+      await tx.insert(CreditsOrder).values({
+        type: credits.organizationId ? 'organization' : 'user',
+        userId: credits.organizationId ? undefined : credits.userId,
+        organizationId: credits.organizationId,
+        kind: 'stripe-payment-intent',
+        status: paymentIntent.status,
+        objectId: paymentIntent.id,
+        object: paymentIntent,
+      })
     })
   } catch (err) {
-    // If the order creation fails, we need to void the invoice.
-    await stripe.invoices.voidInvoice(invoice.id!)
+    if (paymentIntent) {
+      // If error occurred, we need to cancel the payment intent.
+      await stripe.paymentIntents.cancel(paymentIntent.id)
+    }
 
     throw err
   }
@@ -570,6 +530,12 @@ function clearIdFromMetadataByKind(
     case 'stripe-payment':
       if (metadata?.onetimeRechargeSessionId === id) {
         metadata.onetimeRechargeSessionId = undefined
+        return true
+      }
+      break
+    case 'stripe-payment-intent':
+      if (metadata?.autoRechargePaymentIntentId === id) {
+        metadata.autoRechargePaymentIntentId = undefined
         return true
       }
       break

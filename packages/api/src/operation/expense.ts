@@ -2,11 +2,7 @@ import assert from 'assert'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Decimal } from 'decimal.js'
 
-import type {
-  ModelCallOptions,
-  GenerationDetails,
-  TypedModelInfo,
-} from '@cared/providers'
+import type { GenerationDetails, ModelCallOptions, TypedModelInfo } from '@cared/providers'
 import { and, desc, eq, sql } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Credits, Expense, Member, Organization } from '@cared/db/schema'
@@ -15,6 +11,7 @@ import { computeGenerationCost, estimateGenerationCost } from '@cared/providers'
 
 import type { AuthObject } from '../auth'
 import { cfg } from '../config'
+import { triggerAutoRechargePaymentIntent } from './credits'
 
 const kv = getKV('expense', 'upstash')
 const cache = new Map()
@@ -163,10 +160,7 @@ export class ExpenseManager {
     await cb()
   }
 
-  async billGeneration(
-    model: TypedModelInfo,
-    details: GenerationDetails,
-  ) {
+  async billGeneration(model: TypedModelInfo, details: GenerationDetails) {
     if (!model.chargeable && !details.byok) {
       throw new Error('Model is not chargeable')
     }
@@ -236,6 +230,8 @@ export class ExpenseManager {
 
         credits.credits = updatedCredits.credits
 
+        await triggerAutoRechargePaymentIntent(updatedCredits)
+
         return
       }
 
@@ -266,6 +262,8 @@ export class ExpenseManager {
       ).at(0)!
 
       maxCredits.credits = updatedCredits.credits
+
+      await triggerAutoRechargePaymentIntent(updatedCredits)
     })
   }
 }
