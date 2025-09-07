@@ -136,7 +136,6 @@ function computeLanguageCost(
 
   const inputCost = new Decimal(model.inputTokenPrice ?? 0)
     .times((usage.inputTokens ?? 0) - (usage.cachedInputTokens ?? 0))
-    .round()
     .clamp(0, Infinity)
   const outputCost = new Decimal(model.outputTokenPrice ?? 0).times(usage.outputTokens ?? 0)
   const cachedInputCost = new Decimal(model.cachedInputTokenPrice ?? 0).times(

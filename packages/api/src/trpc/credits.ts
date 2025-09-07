@@ -390,6 +390,7 @@ export const creditsRouter = {
 
       return {
         sessionClientSecret: session.client_secret!,
+        sessionId: session.id,
       }
     }),
 

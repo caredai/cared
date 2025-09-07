@@ -194,16 +194,29 @@ export async function POST(req: NextRequest): Promise<Response> {
     const writer = writable.getWriter()
 
     responseStream = readable
-    closeStream = () => writer.close()
+
+    let closed = false
+    closeStream = async () => {
+      if (closed) {
+        return
+      }
+      closed = true
+      await writer.close()
+    }
 
     // Helper function to write data to the stream
     writeChunk = async (data: any, notJson?: boolean) => {
+      if (closed) {
+        return
+      }
       // SSE format
       await writer.write(`data: ${!notJson ? JSON.stringify(data) : data}\n\n`)
     }
   }
 
   async function process() {
+    let lastError: Error | undefined
+
     for (const modelInfo of models) {
       const modelId = modelInfo.id
       const providerId = splitModelFullId(modelId).providerId
@@ -270,7 +283,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
 
         function handleError(error: any) {
-          if (error instanceof APICallError) {
+          if (APICallError.isInstance(error)) {
             const statusCode = error.statusCode
 
             keyManager.updateState(key, {
@@ -295,6 +308,7 @@ export async function POST(req: NextRequest): Promise<Response> {
               // server error
               (statusCode && statusCode >= 500)
             ) {
+              lastError = error
               return true
             }
           }
@@ -338,12 +352,8 @@ export async function POST(req: NextRequest): Promise<Response> {
               if (handleError(error)) {
                 return false
               } else {
-                const errorChunk = {
-                  error: {
-                    message: error instanceof Error ? error.message : JSON.stringify(error),
-                  },
-                }
-                await writeChunk(errorChunk)
+                await keyManager.saveState() // TODO: waitUntil
+                throw error
               }
             }
 
@@ -376,6 +386,12 @@ export async function POST(req: NextRequest): Promise<Response> {
         return result
       }
     }
+
+    if (lastError) {
+      throw lastError
+    }
+
+    return false
   }
 
   if (!isStream) {
@@ -396,9 +412,14 @@ export async function POST(req: NextRequest): Promise<Response> {
         }
       })
       .catch(async (error) => {
+        console.error(error)
         const errorChunk = {
           error: {
-            message: error instanceof Error ? error.message : JSON.stringify(error),
+            message: APICallError.isInstance(error)
+              ? error.message + '\n' + error.responseBody
+              : error instanceof Error
+                ? error.message
+                : JSON.stringify(error),
           },
         }
         await writeChunk(errorChunk)
@@ -752,7 +773,7 @@ async function doStream({
 
       case 'error': {
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!hasWritten && part.error instanceof APICallError) {
+        if (!hasWritten && APICallError.isInstance(part.error)) {
           const statusCode = part.error.statusCode
           if (
             // unauthorized

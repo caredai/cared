@@ -56,7 +56,7 @@ interface OrderTableData {
   gateway: string
   orderKind: string
   updatedAt: Date
-  object: Stripe.Checkout.Session | Stripe.Invoice
+  object: Stripe.Checkout.Session | Stripe.PaymentIntent | Stripe.Invoice
 }
 
 interface SubscriptionTableData {
@@ -101,8 +101,8 @@ export function Credits({ organizationId }: { organizationId?: string }) {
               {
                 assert(isPaymentIntent(order.object))
                 const paymentIntent = order.object
-                credits = !isNaN(Number(paymentIntent.metadata?.credits))
-                  ? Number(paymentIntent.metadata?.credits)
+                credits = !isNaN(Number(paymentIntent.metadata.credits))
+                  ? Number(paymentIntent.metadata.credits)
                   : 0
                 gateway = 'Stripe'
                 orderKind = 'Auto top-up'
@@ -410,12 +410,19 @@ function getOrderStatus(status: OrderStatus) {
   switch (status) {
     case 'draft':
     case 'open':
+    case 'processing':
+    case 'requires_action':
+    case 'requires_capture':
+    case 'requires_confirmation':
+    case 'requires_payment_method':
     case 'uncollectible':
       return 'pending'
     case 'complete':
     case 'paid':
+    case 'succeeded':
       return 'paid'
     case 'expired':
+    case 'canceled':
     case 'void':
     case 'deleted':
       return 'canceled'

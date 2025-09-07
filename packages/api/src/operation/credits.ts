@@ -1,6 +1,7 @@
 import assert from 'assert'
 import type Stripe from 'stripe'
 import { TRPCError } from '@trpc/server'
+import { Decimal } from 'decimal.js'
 
 import type { CreditsMetadata, OrderKind, OrderStatus } from '@cared/db/schema'
 import { and, eq } from '@cared/db'
@@ -515,10 +516,18 @@ export async function triggerAutoRechargePaymentIntent(
       await tx
         .update(Credits)
         .set({
-          metadata: {
-            ...lockedCredits.metadata,
-            autoRechargePaymentIntentId: paymentIntent.id,
-          },
+          ...(paymentIntent.status === 'succeeded' && {
+            credits: new Decimal(lockedCredits.credits)
+              .add(metadata.autoRechargeAmount!)
+              .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
+              .toString(),
+          }),
+          ...(paymentIntent.status !== 'succeeded' && {
+            metadata: {
+              ...lockedCredits.metadata,
+              autoRechargePaymentIntentId: paymentIntent.id,
+            },
+          }),
         })
         .where(eq(Credits.id, lockedCredits.id))
 
@@ -533,9 +542,13 @@ export async function triggerAutoRechargePaymentIntent(
       })
     })
   } catch (err) {
-    if (paymentIntent) {
+    if (paymentIntent && paymentIntent.status !== 'succeeded') {
       // If error occurred, we need to cancel the payment intent.
-      await stripe.paymentIntents.cancel(paymentIntent.id)
+      try {
+        await stripe.paymentIntents.cancel(paymentIntent.id)
+      } catch (err) {
+        log.error('Failed to cancel payment intent:', err)
+      }
     }
 
     throw err

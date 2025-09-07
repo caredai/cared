@@ -202,9 +202,10 @@ export async function POST(req: Request) {
         }
         break
 
+      case 'payment_intent.created':
+        break
       case 'payment_intent.amount_capturable_updated':
       case 'payment_intent.canceled':
-      case 'payment_intent.created':
       case 'payment_intent.partially_funded':
       case 'payment_intent.payment_failed':
       case 'payment_intent.processing':
@@ -246,52 +247,49 @@ export async function POST(req: Request) {
                   ? Number(paymentIntent.metadata.credits)
                   : 0
 
-                if (quantity && delta && quantity >= delta * 100) {
-                  const credits = (
-                    await tx
-                      .select()
-                      .from(Credits)
-                      .where(
-                        order.type === 'organization'
-                          ? eq(Credits.organizationId, order.organizationId!)
-                          : eq(Credits.userId, order.userId!),
-                      )
-                      .for('update')
-                  )[0]
+                const credits = (
+                  await tx
+                    .select()
+                    .from(Credits)
+                    .where(
+                      order.type === 'organization'
+                        ? eq(Credits.organizationId, order.organizationId!)
+                        : eq(Credits.userId, order.userId!),
+                    )
+                    .for('update')
+                )[0]
 
-                  if (credits?.metadata.autoRechargePaymentIntentId === paymentIntent.id) {
-                    await tx
-                      .update(Credits)
-                      .set({
-                        credits: new Decimal(credits.credits)
-                          .add(delta)
-                          .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
-                          .toString(),
-                        metadata: {
-                          ...credits.metadata,
-                          autoRechargePaymentIntentId: undefined,
-                        },
-                      })
-                      .where(eq(Credits.id, credits.id))
-                  } else {
-                    const entityType = order.type === 'organization' ? 'organization' : 'user'
-                    const entityId =
-                      order.type === 'organization' ? order.organizationId : order.userId
-                    if (!credits) {
-                      log.error(
-                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
-                      )
-                    } else {
-                      log.error(
-                        `autoRechargePaymentIntentId mismatched for ${entityType} with id ${entityId}`,
-                      )
-                    }
-                  }
+                if (credits?.metadata.autoRechargePaymentIntentId === paymentIntent.id) {
+                  await tx
+                    .update(Credits)
+                    .set({
+                      ...(quantity &&
+                        delta &&
+                        quantity >= delta && {
+                          credits: new Decimal(credits.credits)
+                            .add(delta)
+                            .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
+                            .toString(),
+                        }),
+                      metadata: {
+                        ...credits.metadata,
+                        autoRechargePaymentIntentId: undefined,
+                      },
+                    })
+                    .where(eq(Credits.id, credits.id))
                 } else {
-                  log.error(
-                    `Invalid quantity for payment intent with id ${paymentIntent.id}: quantity=${quantity}, credits=${delta}`,
-                    paymentIntent,
-                  )
+                  const entityType = order.type === 'organization' ? 'organization' : 'user'
+                  const entityId =
+                    order.type === 'organization' ? order.organizationId : order.userId
+                  if (!credits) {
+                    log.error(
+                      `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                    )
+                  } else {
+                    log.error(
+                      `autoRechargePaymentIntentId mismatched for ${entityType} with id ${entityId}`,
+                    )
+                  }
                 }
               }
             } else {
@@ -350,7 +348,7 @@ export async function POST(req: Request) {
                   ? Number(invoice.metadata?.credits)
                   : 0
 
-                if (quantity && delta && quantity >= delta * 100) {
+                if (quantity && delta && quantity >= delta) {
                   const credits = (
                     await tx
                       .select()

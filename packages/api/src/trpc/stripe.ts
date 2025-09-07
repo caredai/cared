@@ -164,4 +164,34 @@ export const stripeRouter = {
         },
       })
     }),
+
+  // Create customer session for pricing table
+  createCustomerSession: userProtectedProcedure
+    .input(
+      z.object({
+        organizationId: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (input.organizationId) {
+        const scope = OrganizationScope.fromOrganization({ db: ctx.db }, input.organizationId)
+        await scope.checkPermissions({ credits: ['create'] })
+      }
+
+      const stripe = getStripe()
+      const { customerId } = await ensureCustomer(ctx, stripe, input.organizationId)
+
+      const customerSession = await stripe.customerSessions.create({
+        customer: customerId,
+        components: {
+          pricing_table: {
+            enabled: true,
+          },
+        },
+      })
+
+      return {
+        customerSession,
+      }
+    }),
 }
