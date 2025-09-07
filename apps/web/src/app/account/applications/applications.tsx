@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardTitle } from '@cared/ui/compone
 
 import { RemoteImage } from '@/components/image'
 import { SectionTitle } from '@/components/section'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import defaultLogo from '@/public/images/agent.png'
 import { useTRPC } from '@/trpc/client'
 

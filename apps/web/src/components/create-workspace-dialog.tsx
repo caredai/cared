@@ -29,7 +29,7 @@ import {
 } from '@cared/ui/components/form'
 import { Input } from '@cared/ui/components/input'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useReplaceRouteWithWorkspaceId } from '@/hooks/use-workspace'
 import { useTRPC } from '@/trpc/client'
 

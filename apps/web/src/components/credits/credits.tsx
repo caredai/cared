@@ -161,7 +161,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
           <CardDescription>Your available credits for using Cared services</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between mt-8">
             <div>
               <p className="text-4xl font-bold">$ {new Decimal(credits.credits).toFixed(2)}</p>
             </div>
@@ -204,7 +204,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
         </CardContent>
       </Card>
 
-      <PaymentMethods />
+      <PaymentMethods organizationId={organizationId} />
 
       <RechargeDialog
         organizationId={organizationId}

@@ -30,7 +30,7 @@ import {
 import { Input } from '@cared/ui/components/input'
 import { Separator } from '@cared/ui/components/separator'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/password-strength-indicator'
 import { useAuthRedirect } from '@/lib/auth-utils'
 

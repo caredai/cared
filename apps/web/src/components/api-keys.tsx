@@ -47,7 +47,7 @@ import {
 } from '@cared/ui/components/select'
 import { cn } from '@cared/ui/lib/utils'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { PopoverTooltip } from '@/components/tooltip'
 import { useApiKeys, useCreateApiKey, useDeleteApiKey, useRotateApiKey } from '@/hooks/use-api-key'
 import { useApps } from '@/hooks/use-app'

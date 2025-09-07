@@ -49,7 +49,7 @@ export function NavMain({
 
   const isItemActive = (url: string) => {
     // If we have an activeUrl from click, use that
-    if (activeUrl === url) return true
+    if (activeUrl?.startsWith(url)) return true
 
     // Otherwise fall back to pathname matching
     const baseRouteKeys = baseUrl.split('/').filter(Boolean)
@@ -97,14 +97,20 @@ export function NavMain({
                       </SidebarMenuAction>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <SidebarMenuSub>
+                      <SidebarMenuSub className="mt-1">
                         {item.items.map((subItem) => {
                           const url = `${item.url}${subItem.url}`
-                          const subActive = pathname.endsWith(url)
-                          // TODO: setActiveUrl
+                          const subActive = activeUrl === url || pathname.endsWith(url)
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton asChild isActive={subActive}>
+                              <SidebarMenuSubButton
+                                asChild
+                                isActive={subActive}
+                                onClick={() => {
+                                  // Set active state immediately on click
+                                  setActiveUrl(url)
+                                }}
+                              >
                                 <Link href={`${baseUrl}${url}`}>
                                   <span>{subItem.title}</span>
                                 </Link>

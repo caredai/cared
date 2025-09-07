@@ -24,7 +24,7 @@ import {
   TableRow,
 } from '@cared/ui/components/table'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useTRPC } from '@/trpc/client'
 
 export function Tags() {

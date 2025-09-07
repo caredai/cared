@@ -30,7 +30,7 @@ import {
 import { Switch } from '@cared/ui/components/switch'
 
 import { OptionalInput } from '@/components/input'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useProviders } from '@/hooks/use-model'
 import {
   useCreateProviderKey,

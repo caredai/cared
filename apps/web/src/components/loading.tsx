@@ -1,4 +1,4 @@
-import { Spinner } from '@/components/spinner'
+import { Spinner } from '@cared/ui/components/spinner'
 
 export function Loading() {
   return (

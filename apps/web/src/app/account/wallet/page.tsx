@@ -39,7 +39,7 @@ import {
 } from '@cared/ui/components/dropdown-menu'
 
 import { SectionTitle } from '@/components/section'
-import { CircleSpinner, Spinner } from '@/components/spinner'
+import { CircleSpinner, Spinner } from '@cared/ui/components/spinner'
 import { PopoverTooltip } from '@/components/tooltip'
 import { WalletAddress } from '@/components/wallet-address'
 import { useWallets, walletType } from '@/hooks/use-wallets'

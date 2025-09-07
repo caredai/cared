@@ -32,7 +32,7 @@ import { Switch } from '@cared/ui/components/switch'
 import { Input } from '@/components/input'
 import { NumberInput, OptionalNumberInput } from '@/components/number-input'
 import { OptionalPriceInput } from '@/components/price-input'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 
 export type EditableModel = {
   id: ModelFullId

@@ -28,7 +28,7 @@ import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
 
 import { SectionTitle } from '@/components/section'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useAccounts, useSession } from '@/hooks/use-session'
 import { allowedProviders, getAccountInfo } from '@/lib/auth-providers'
 

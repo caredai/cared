@@ -1,12 +1,5 @@
 'use client'
 
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  RowSelectionState,
-} from '@tanstack/react-table'
 import * as React from 'react'
 import {
   flexRender,
@@ -17,16 +10,24 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import {
+  ArrowDownIcon,
+  ArrowUpDownIcon,
+  ArrowUpIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
-  ArrowUpDownIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
 } from 'lucide-react'
 
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  RowSelectionState,
+  SortingState,
+  VisibilityState,
+} from '@tanstack/react-table'
+import { cn } from '../lib/utils'
 import { Button } from './button'
 import { Checkbox } from './checkbox'
 import {
@@ -37,6 +38,7 @@ import {
 } from './dropdown-menu'
 import { Input } from './input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
+import { Spinner } from './spinner'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './table'
 
 interface DataTableProps<TData, TValue> {
@@ -52,6 +54,8 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string
   pageSizeOptions?: number[]
   defaultPageSize?: number
+  pageSize?: number
+  onPageSizeChange?: (pageSize: number) => void
   enableRowSelection?: boolean
   enableSorting?: boolean
   onSelectionChange?: (selection: RowSelectionState) => void
@@ -62,6 +66,12 @@ interface DataTableProps<TData, TValue> {
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
   }[]
   defaultSorting?: SortingState
+  // Infinite scroll pagination props
+  enableInfiniteScroll?: boolean
+  hasNextPage?: boolean
+  isFetchingNextPage?: boolean
+  onFetchNextPage?: () => Promise<unknown> | void
+  className?: string
 }
 
 export function DataTable<TData, TValue>({
@@ -71,11 +81,18 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = 'Search...',
   pageSizeOptions = [10, 20, 30, 40, 50],
   defaultPageSize = 10,
+  pageSize,
+  onPageSizeChange,
   enableRowSelection = false,
   enableSorting = false,
   onSelectionChange,
   bulkActions = [],
   defaultSorting = [],
+  enableInfiniteScroll = false,
+  hasNextPage = false,
+  isFetchingNextPage = false,
+  onFetchNextPage,
+  className,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting)
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -83,9 +100,16 @@ export function DataTable<TData, TValue>({
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
-    pageSize: defaultPageSize,
+    pageSize: pageSize ?? defaultPageSize,
   })
   const [globalFilter, setGlobalFilter] = React.useState('')
+
+  // Sync controlled pageSize with internal pagination state
+  React.useEffect(() => {
+    if (pageSize !== undefined && pageSize !== pagination.pageSize) {
+      setPagination((prev) => ({ ...prev, pageSize }))
+    }
+  }, [pageSize, pagination.pageSize])
 
   // Custom global filter function for multiple search keys
   const globalFilterFn = React.useCallback(
@@ -93,21 +117,25 @@ export function DataTable<TData, TValue>({
       if (!searchKeys || searchKeys.length === 0 || !filterValue) return true
 
       const searchValue = filterValue.toLowerCase()
-      return searchKeys.some(key => {
+      return searchKeys.some((key) => {
         const cellValue = row.getValue(key)
         if (cellValue == null) return false
         return String(cellValue).toLowerCase().includes(searchValue)
       })
     },
-    [searchKeys]
+    [searchKeys],
   )
 
   // Handle row selection change
-  const handleRowSelectionChange = React.useCallback((updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
-    const newSelection = typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection) : updaterOrValue
-    setRowSelection(newSelection)
-    onSelectionChange?.(newSelection)
-  }, [rowSelection, onSelectionChange])
+  const handleRowSelectionChange = React.useCallback(
+    (updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
+      const newSelection =
+        typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection) : updaterOrValue
+      setRowSelection(newSelection)
+      onSelectionChange?.(newSelection)
+    },
+    [rowSelection, onSelectionChange],
+  )
 
   const table = useReactTable({
     data,
@@ -136,12 +164,14 @@ export function DataTable<TData, TValue>({
   })
 
   // Calculate pagination info
-  const totalPages = table.getPageCount()
+  const totalPages = enableInfiniteScroll
+    ? Math.ceil(data.length / table.getState().pagination.pageSize)
+    : table.getPageCount()
   const currentPage = table.getState().pagination.pageIndex + 1
-  const pageSize = table.getState().pagination.pageSize
+  const currentPageSize = table.getState().pagination.pageSize
 
   // Get selected rows data
-  const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original)
+  const selectedRows = table.getFilteredSelectedRowModel().rows.map((row) => row.original)
   const isAllSelected = table.getIsAllPageRowsSelected()
 
   // Handle select all
@@ -259,7 +289,7 @@ export function DataTable<TData, TValue>({
         </DropdownMenu>
       </div>
 
-      <div className="rounded-md border">
+      <div className={cn('rounded-md border antialiased', className)}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -364,13 +394,15 @@ export function DataTable<TData, TValue>({
                 Rows per page:
               </span>
               <Select
-                value={pageSize.toString()}
+                value={currentPageSize.toString()}
                 onValueChange={(value) => {
-                  table.setPageSize(Number(value))
+                  const newPageSize = Number(value)
+                  table.setPageSize(newPageSize)
+                  onPageSizeChange?.(newPageSize)
                 }}
               >
                 <SelectTrigger className="h-8 w-18">
-                  <SelectValue placeholder={pageSize} />
+                  <SelectValue placeholder={currentPageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">
                   {pageSizeOptions.map((size) => (
@@ -397,7 +429,9 @@ export function DataTable<TData, TValue>({
                 className="h-8 min-w-18"
                 placeholder="1"
               />
-              <span className="text-sm text-muted-foreground whitespace-nowrap">of {totalPages}</span>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                of {totalPages}
+              </span>
             </div>
             <div className="flex items-center space-x-2">
               <Button
@@ -436,16 +470,42 @@ export function DataTable<TData, TValue>({
               <Button
                 variant="outline"
                 className="h-8 w-8 p-0"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
+                onClick={async () => {
+                  if (
+                    enableInfiniteScroll &&
+                    !table.getCanNextPage() &&
+                    hasNextPage &&
+                    onFetchNextPage
+                  ) {
+                    // Call onFetchNextPage when we're at the last page of current data AND there's more data available
+                    await onFetchNextPage()
+                    // After fetching next page, move to the next page in the table
+                    setTimeout(() => table.setPageIndex(table.getPageCount() - 1), 100)
+                  } else {
+                    // Use normal pagination for all other cases
+                    table.nextPage()
+                  }
+                }}
+                disabled={
+                  enableInfiniteScroll
+                    ? (!hasNextPage && !table.getCanNextPage()) || isFetchingNextPage
+                    : !table.getCanNextPage()
+                }
               >
                 <span className="sr-only">Go to next page</span>
-                <ChevronRightIcon className="h-4 w-4" />
+                {enableInfiniteScroll && !table.getCanNextPage() && isFetchingNextPage ? (
+                  <Spinner className="h-4 w-4" />
+                ) : (
+                  <ChevronRightIcon className="h-4 w-4" />
+                )}
               </Button>
               <Button
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
-                onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                onClick={() => {
+                  // Always go to the last page of current data, regardless of infinite scroll
+                  table.setPageIndex(table.getPageCount() - 1)
+                }}
                 disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">Go to last page</span>

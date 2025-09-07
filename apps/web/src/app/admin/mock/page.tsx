@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from '@cared/ui/components/card'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useTRPC } from '@/trpc/client'
 
 /**

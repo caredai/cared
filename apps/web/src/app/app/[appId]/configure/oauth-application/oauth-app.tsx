@@ -41,7 +41,7 @@ import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
 import { Switch } from '@cared/ui/components/switch'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useTRPC } from '@/trpc/client'
 
 export function OAuthApp({ appId }: { appId: string }) {

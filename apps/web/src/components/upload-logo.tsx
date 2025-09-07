@@ -18,7 +18,7 @@ import {
 import { cn } from '@cared/ui/lib/utils'
 
 import { RemoteImage } from '@/components/image'
-import { Spinner } from '@/components/spinner'
+import { Spinner } from '@cared/ui/components/spinner'
 import { env } from '@/env'
 
 export interface UploadLogoProps {

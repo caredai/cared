@@ -53,7 +53,7 @@ import {
 
 import { SearchInput } from '@/components/search-input'
 import { SectionTitle } from '@/components/section'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { useActiveOrganizationId } from '@/hooks/use-active'
 import {

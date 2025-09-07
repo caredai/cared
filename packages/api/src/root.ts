@@ -7,6 +7,7 @@ import { artifactRouter } from './trpc/artifact'
 import { chatRouter } from './trpc/chat'
 import { creditsRouter } from './trpc/credits'
 import { datasetRouter } from './trpc/dataset'
+import { expenseRouter } from './trpc/expense'
 import { messageRouter } from './trpc/message'
 import { modelRouter } from './trpc/model'
 import { oauthAppRouter } from './trpc/oauth-app'
@@ -36,6 +37,7 @@ export const appRouter = createTRPCRouter({
   message: messageRouter,
   artifact: artifactRouter,
   credits: creditsRouter,
+  expense: expenseRouter,
   stripe: stripeRouter,
 })
 

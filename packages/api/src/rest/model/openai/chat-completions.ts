@@ -597,6 +597,8 @@ async function doStream({
   details: LanguageGenerationDetails
 }) {
   const startTime = performance.now()
+  let latencyTime: number | undefined
+
   const { stream } = await model.doStream(callOptions)
 
   // Process the stream and convert to OpenAI format
@@ -618,7 +620,7 @@ async function doStream({
 
     if (done) {
       details.generationTime = Math.max(
-        Math.floor(performance.now() - startTime - details.latency),
+        Math.floor(performance.now() - startTime - (latencyTime ?? 0)),
         0,
       )
       await writeChunk('[DONE]', true)
@@ -649,7 +651,8 @@ async function doStream({
         }
 
         const { type: _, ...responseMetadata } = part
-        details.latency = Math.floor(performance.now() - startTime)
+        latencyTime = performance.now() - startTime
+        details.latency = Math.floor(latencyTime)
         details.responseMetadata = responseMetadata
         break
       }

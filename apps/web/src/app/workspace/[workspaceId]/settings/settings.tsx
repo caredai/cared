@@ -56,7 +56,7 @@ import {
   SelectValue,
 } from '@cared/ui/components/select'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useActive } from '@/hooks/use-active'
 import { useMembers } from '@/hooks/use-members'
 import { useSession } from '@/hooks/use-session'

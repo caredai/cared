@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 
-import { Spinner } from '@/components/spinner'
+import { Spinner } from '@cared/ui/components/spinner'
 import { env } from '@/env'
 import {
   useCreateCreditsOnetimeCheckout,

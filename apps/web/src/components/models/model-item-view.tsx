@@ -23,7 +23,7 @@ import {
 import { cn } from '@cared/ui/lib/utils'
 
 import type { EditableModel } from './model-item-edit'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { TextTooltip } from '@/components/tooltip'
 import { CopyModelId } from './copy-model-id'
 

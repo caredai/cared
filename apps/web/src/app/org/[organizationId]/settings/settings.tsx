@@ -43,7 +43,7 @@ import {
 } from '@cared/ui/components/select'
 
 import { SectionTitle } from '@/components/section'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useActiveOrganization } from '@/hooks/use-active'
 import { useMembers } from '@/hooks/use-members'
 import { useTransferOrganizationOwnership, useUpdateOrganization } from '@/hooks/use-organization'

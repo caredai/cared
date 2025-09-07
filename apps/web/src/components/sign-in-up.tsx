@@ -36,7 +36,7 @@ import {
   PasswordStrengthIndicator,
   validatePasswordStrength,
 } from '@/components/password-strength-indicator'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useSessionPublic } from '@/hooks/use-session'
 import { allowedProviders } from '@/lib/auth-providers'
 import { BETTER_AUTH_ERROR_MESSAGES } from '@/lib/error'

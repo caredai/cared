@@ -30,7 +30,7 @@ import { Input } from '@cared/ui/components/input'
 import { Separator } from '@cared/ui/components/separator'
 
 import { EmailVerificationPrompt } from '@/components/email-verification-prompt'
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useAuthRedirect } from '@/lib/auth-utils'
 
 // Forgot password form schema

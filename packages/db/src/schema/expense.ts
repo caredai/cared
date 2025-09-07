@@ -1,3 +1,4 @@
+import type { InferSelectModel } from 'drizzle-orm'
 import { index, jsonb, numeric, pgEnum, pgTable, text } from 'drizzle-orm/pg-core'
 
 import type { GenerationDetails } from '@cared/providers'
@@ -33,8 +34,11 @@ export const Expense = pgTable(
     createdAt,
   },
   (table) => [
-    index().on(table.userId, table.appId),
-    index().on(table.organizationId, table.userId, table.appId),
+    index().on(table.type, table.userId, table.appId),
+    index().on(table.type, table.organizationId, table.appId),
+    index().on(table.type, table.organizationId, table.userId, table.appId),
     index().on(table.createdAt),
   ],
 )
+
+export type Expense = InferSelectModel<typeof Expense>

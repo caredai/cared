@@ -19,7 +19,7 @@ import {
 import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
 
-import { CircleSpinner } from '@/components/spinner'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 import { stripIdPrefix } from '@/lib/utils'
 import { useTRPC } from '@/trpc/client'
 

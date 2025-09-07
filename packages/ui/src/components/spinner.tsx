@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 import { LoaderCircle, LoaderIcon, LoaderPinwheel } from 'lucide-react'
 
-import { cn } from '@cared/ui/lib/utils'
+import { cn } from '../lib/utils'
 
 export function Spinner({ className, ...props }: ComponentProps<typeof LoaderIcon>) {
   return <LoaderIcon className={cn('animate-spin', className)} {...props} />

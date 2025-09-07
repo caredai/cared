@@ -21,6 +21,12 @@ const items = [
     title: 'Credits',
     url: '/credits',
     icon: CircleDollarSign,
+    items: [
+      {
+        title: 'Usage',
+        url: '/usage',
+      },
+    ],
   },
   {
     title: 'Models',
