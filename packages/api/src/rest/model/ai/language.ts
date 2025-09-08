@@ -1,6 +1,7 @@
 import type { ToolCallPart, ToolResultPart } from 'ai'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
+import { APICallError } from '@ai-sdk/provider'
 import Ajv from 'ajv'
 import { z } from 'zod/v4'
 
@@ -10,6 +11,7 @@ import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema, SuperJSON } from '@cared/shared'
 
 import type { LanguageModelV2StreamPart } from '@ai-sdk/provider'
+import { ProviderKeyManager, ProviderKeyState } from '../../../operation'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -331,4 +333,48 @@ export function makeResponseJson<JsonBody>(
   init?: ResponseInit,
 ): NextResponse<SuperJSONResult> {
   return NextResponse.json(SuperJSON.serialize(body), init)
+}
+
+export function handleError(
+  keyManager: ProviderKeyManager,
+  key: ProviderKeyState,
+  error: any,
+  details: {
+    latency: number
+  },
+) {
+  if (APICallError.isInstance(error)) {
+    const statusCode = error.statusCode
+
+    keyManager.updateState(key, {
+      success: false,
+      latency: details.latency,
+      retryAfter:
+        statusCode === 429
+          ? error.responseHeaders?.['Retry-After'] || error.responseHeaders?.['X-Retry-After']
+          : undefined,
+    })
+
+    if (
+      // unauthorized
+      statusCode === 401 ||
+      // forbidden
+      statusCode === 403 ||
+      // request timeout
+      statusCode === 408 ||
+      // too many requests
+      statusCode === 429 ||
+      // server error
+      (statusCode && statusCode >= 500)
+    ) {
+      return true
+    }
+  } else {
+    keyManager.updateState(key, {
+      success: false,
+      latency: details.latency,
+    })
+  }
+
+  return false
 }

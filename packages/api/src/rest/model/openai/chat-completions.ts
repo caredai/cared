@@ -19,7 +19,7 @@ import type {
 } from '@ai-sdk/provider'
 import { authenticate } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
-import { jsonSchema7Schema } from '../ai/language'
+import { handleError, jsonSchema7Schema } from '../ai/language'
 import {
   ChatCompletionContentPartTextSchema,
   ChatCompletionMessageSchema,
@@ -282,39 +282,6 @@ export async function POST(req: NextRequest): Promise<Response> {
           return response
         }
 
-        function handleError(error: any) {
-          if (APICallError.isInstance(error)) {
-            const statusCode = error.statusCode
-
-            keyManager.updateState(key, {
-              success: false,
-              latency: details.latency,
-              retryAfter:
-                statusCode === 429
-                  ? error.responseHeaders?.['Retry-After'] ||
-                    error.responseHeaders?.['X-Retry-After']
-                  : undefined,
-            })
-
-            if (
-              // unauthorized
-              statusCode === 401 ||
-              // forbidden
-              statusCode === 403 ||
-              // request timeout
-              statusCode === 408 ||
-              // too many requests
-              statusCode === 429 ||
-              // server error
-              (statusCode && statusCode >= 500)
-            ) {
-              lastError = error
-              return true
-            }
-          }
-          return false
-        }
-
         const model = getModel(modelId, 'language', key.key, customFetch)
 
         const execute = async () => {
@@ -327,8 +294,9 @@ export async function POST(req: NextRequest): Promise<Response> {
                 modelId,
                 details,
               })
-            } catch (error) {
-              if (handleError(error)) {
+            } catch (error: any) {
+              lastError = error
+              if (handleError(keyManager, key, error, details)) {
                 return false
               } else {
                 await keyManager.saveState() // TODO: waitUntil
@@ -348,8 +316,9 @@ export async function POST(req: NextRequest): Promise<Response> {
                 writeChunk,
                 details,
               })
-            } catch (error) {
-              if (handleError(error)) {
+            } catch (error: any) {
+              lastError = error
+              if (handleError(keyManager, key, error, details)) {
                 return false
               } else {
                 await keyManager.saveState() // TODO: waitUntil
@@ -358,7 +327,6 @@ export async function POST(req: NextRequest): Promise<Response> {
             }
 
             await closeStream()
-            return true
           }
         }
 
@@ -385,46 +353,51 @@ export async function POST(req: NextRequest): Promise<Response> {
 
         return result
       }
+
+      await keyManager.saveState() // TODO: waitUntil
     }
 
     if (lastError) {
       throw lastError
     }
 
-    return false
+    if (!isStream) {
+      return new Response('Model not found', {
+        status: 400,
+      })
+    } else {
+      assert(writeChunk)
+      assert(closeStream)
+
+      await writeChunk({
+        error: {
+          message: 'Model not found',
+        },
+      })
+      await closeStream()
+    }
   }
 
   if (!isStream) {
-    return (await process()) as Response
+    return (await process())!
   } else {
     // Processing the stream asynchronously
     assert(writeChunk)
     assert(closeStream)
-    void process()
-      .then(async (success) => {
-        if (!success) {
-          await writeChunk({
-            error: {
-              message: 'Model not found',
-            },
-          })
-          await closeStream()
-        }
-      })
-      .catch(async (error) => {
-        console.error(error)
-        const errorChunk = {
-          error: {
-            message: APICallError.isInstance(error)
-              ? error.message + '\n' + error.responseBody
-              : error instanceof Error
-                ? error.message
-                : JSON.stringify(error),
-          },
-        }
-        await writeChunk(errorChunk)
-        await closeStream()
-      })
+    void process().catch(async (error) => {
+      console.error(error)
+      const errorChunk = {
+        error: {
+          message: APICallError.isInstance(error)
+            ? error.message + '\n' + error.responseBody
+            : error instanceof Error
+              ? error.message
+              : JSON.stringify(error),
+        },
+      }
+      await writeChunk(errorChunk)
+      await closeStream()
+    })
 
     // Return the streaming response
     return new Response(responseStream, {
@@ -615,8 +588,16 @@ async function doStream({
     await writeChunk_(data, notJson)
   }
 
+  let firstChunk = true
+
   while (true) {
     const { value: part, done } = await reader.read()
+
+    if (firstChunk) {
+      firstChunk = false
+      latencyTime = performance.now() - startTime
+      details.latency = Math.floor(latencyTime)
+    }
 
     if (done) {
       details.generationTime = Math.max(
@@ -651,8 +632,6 @@ async function doStream({
         }
 
         const { type: _, ...responseMetadata } = part
-        latencyTime = performance.now() - startTime
-        details.latency = Math.floor(latencyTime)
         details.responseMetadata = responseMetadata
         break
       }

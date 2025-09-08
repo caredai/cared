@@ -82,6 +82,20 @@ const googleProvider: ProviderInfo = {
       },
     },
     {
+      id: 'gemini-2.5-flash-image-preview',
+      name: 'Gemini 2.5 Flash Image Preview',
+      description:
+        'Latest, fastest, and most efficient natively multimodal model that lets you generate and edit images conversationally.',
+      contextWindow: 32768,
+      maxOutputTokens: 32768,
+      inputTokenPrice: '0.30',
+      outputTokenPrice: '30.00', // TODO: imageOutputTokenPrice
+      modality: {
+        input: ['text', 'image'],
+        output: ['text', 'image'],
+      },
+    },
+    {
       id: 'gemini-2.5-flash-preview-tts',
       name: 'Gemini 2.5 Flash Preview TTS',
       description:
@@ -244,15 +258,25 @@ const googleProvider: ProviderInfo = {
   ],
   imageModels: [
     {
-      id: 'imagen-4.0-generate-001',
-      name: 'Imagen 4',
+      id: 'imagen-4.0-ultra-generate-001',
+      name: 'Imagen 4 Ultra',
       description:
         'Latest image generation model, with significantly better text rendering and better overall image quality.',
-      pricePerImage: [
-        ['Fast', '0.02'],
-        ['Standard', '0.04'],
-        ['Ultra', '0.06'],
-      ],
+      pricePerImage: '0.06',
+    },
+    {
+      id: 'imagen-4.0-generate-001',
+      name: 'Imagen 4 Standard',
+      description:
+        'Latest image generation model, with significantly better text rendering and better overall image quality.',
+      pricePerImage: '0.04',
+    },
+    {
+      id: 'imagen-4.0-fast-generate-001',
+      name: 'Imagen 4 Fast',
+      description:
+        'Latest image generation model, with significantly better text rendering and better overall image quality.',
+      pricePerImage: '0.02',
     },
     {
       id: 'imagen-3.0-generate-002',

@@ -1,11 +1,16 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod/v4'
 
+import type { TranscriptionGenerationDetails } from '@cared/providers'
 import log from '@cared/log'
+import { createCustomJsonFetch, extractTranscriptionRawResponse, splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema } from '@cared/shared'
 
-import { makeResponseJson, requestJson } from './language'
+import type { TranscriptionModelV2CallOptions } from '@ai-sdk/provider'
+import { authenticate } from '../../../auth'
+import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
+import { handleError, makeResponseJson, requestJson } from './language'
 
 // Schema for TranscriptionModelV2 call options
 const transcriptionModelV2CallOptionsSchema = z.object({
@@ -15,13 +20,15 @@ const transcriptionModelV2CallOptionsSchema = z.object({
   ]),
   mediaType: z.string(),
   providerOptions: sharedV2ProviderOptionsSchema.optional(),
-  headers: z.record(z.string(), z.string().or(z.undefined())).optional(),
+  // headers: z.record(z.string(), z.string().or(z.undefined())).optional(),
 })
 
 // Request schema
 const requestArgsSchema = z.object({
   modelId: z.string(),
   ...transcriptionModelV2CallOptionsSchema.shape,
+
+  payerOrganizationId: z.string().optional(),
 })
 
 export function GET(req: NextRequest): Response {
@@ -34,11 +41,6 @@ export function GET(req: NextRequest): Response {
   }
 
   const model = getModel(modelId, 'transcription')
-  if (!model) {
-    return new Response('Model not found', {
-      status: 404,
-    })
-  }
 
   const {
     // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     if (!validatedArgs.success) {
       return makeResponseJson(
         {
-          errors: validatedArgs.error.flatten().fieldErrors,
+          error: z.prettifyError(validatedArgs.error),
         },
         {
           status: 400,
@@ -63,40 +65,130 @@ export async function POST(req: NextRequest): Promise<Response> {
       )
     }
 
-    const { modelId, ...transcriptionModelV2CallOptions } = validatedArgs.data
+    const { modelId, payerOrganizationId, ...transcriptionModelV2CallOptions } = validatedArgs.data
 
-    const model = getModel(modelId, 'transcription')
-    if (!model) {
-      return new Response('Model not found', {
-        status: 404,
-      })
+    const auth = await authenticate()
+    if (!auth.isAuthenticated()) {
+      return new Response('Unauthorized', { status: 401 })
     }
 
-    try {
-      const result = await model.doGenerate({
-        ...transcriptionModelV2CallOptions,
-        abortSignal: req.signal,
+    const expenseManager = ExpenseManager.from({
+      auth: auth.auth!,
+      payerOrganizationId,
+    })
+
+    // Allow modelId without provider prefix
+    const models = await findProvidersByModel(auth.auth!, modelId, 'transcription')
+    log.info(
+      `Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`,
+    )
+
+    let lastError: Error | undefined
+
+    for (const modelInfo of models) {
+      const modelId = modelInfo.id
+      const providerId = splitModelFullId(modelId).providerId
+
+      const keyManager = await ProviderKeyManager.from({
+        auth: auth.auth!,
+        modelId,
+        onlyByok: !modelInfo.chargeable,
       })
-      return makeResponseJson(result)
-    } catch (error: any) {
-      if (error instanceof Error) {
-        return makeResponseJson(
+
+      const keys = keyManager.selectKeys()
+
+      for (const key of keys) {
+        log.info(`Using provider key ${key.id} for model ${modelId}`)
+
+        await expenseManager.canAfford(
           {
-            // Serialize error to ensure it can be properly transferred across the network
-            error: serializeError(error),
-            errorSerialized: true,
+            type: 'transcription',
+            ...modelInfo,
           },
-          { status: 500 },
+          {
+            type: 'transcription',
+            ...(transcriptionModelV2CallOptions as TranscriptionModelV2CallOptions),
+          },
+          key.byok,
         )
-      } else {
-        throw error
+
+        const details = {
+          modelId,
+          byok: key.byok,
+
+          type: 'transcription',
+          callOptions: transcriptionModelV2CallOptions,
+        } as TranscriptionGenerationDetails
+
+        const customFetch = createCustomJsonFetch({
+          onResponse: (response) => {
+            details.rawResponse = extractTranscriptionRawResponse(providerId, response)
+          },
+          onLatency: (latency) => {
+            details.latency = latency
+          },
+        })
+
+        const model = getModel(modelId, 'transcription', key.key, customFetch)
+
+        try {
+          const result = await model.doGenerate({
+            ...transcriptionModelV2CallOptions,
+            abortSignal: req.signal,
+          })
+
+          details.warnings = result.warnings
+          details.providerMetadata = result.providerMetadata
+          details.responseMetadata = result.response
+
+          await expenseManager.billGeneration(
+            {
+              type: 'transcription',
+              ...modelInfo,
+            },
+            details,
+          )
+
+          keyManager.updateState(key, {
+            success: true,
+            latency: details.latency,
+          })
+
+          await keyManager.saveState() // TODO: waitUntil
+
+          return makeResponseJson(result)
+        } catch (error: any) {
+          lastError = error
+          if (handleError(keyManager, key, error, details)) {
+            // Try the next model/key if available
+            continue
+          } else {
+            await keyManager.saveState() // TODO: waitUntil
+            throw error
+          }
+        }
       }
+
+      await keyManager.saveState() // TODO: waitUntil
     }
+
+    if (lastError) {
+      throw lastError
+    }
+
+    return new Response('Model not found', {
+      status: 400,
+    })
   } catch (error: any) {
     log.error('Call transcription model error', error)
     return makeResponseJson(
       {
-        error: error.message || 'An unknown error occurred',
+        error:
+          error instanceof Error
+            ? // Serialize error to ensure it can be properly transferred across the network
+              serializeError(error)
+            : error.message || 'An unknown error occurred',
+        errorSerialized: error instanceof Error,
       },
       { status: 500 },
     )

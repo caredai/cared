@@ -4,27 +4,31 @@ import { Decimal } from 'decimal.js'
 import { SuperJSON } from '@cared/shared'
 
 import type {
-  BaseModelInfo,
-  EmbeddingModelInfo,
-  ImageGenerationDetails,
-  ImageModelInfo,
-  LanguageGenerationDetails,
-  LanguageModelInfo,
-  SpeechGenerationDetails,
-  SpeechModelInfo,
-  TextEmbeddingGenerationDetails,
-  TranscriptionGenerationDetails,
-  TranscriptionModelInfo,
-  GenerationDetails,
-  TypedModelInfo,
-} from './types'
-import type {
   EmbeddingModelV2,
   ImageModelV2CallOptions,
   LanguageModelV2CallOptions,
   SpeechModelV2CallOptions,
   TranscriptionModelV2CallOptions,
 } from '@ai-sdk/provider'
+import {
+  BaseModelInfo,
+  EmbeddingModelInfo,
+  GenerationDetails,
+  ImageGenerationDetails,
+  ImageModelInfo,
+  LanguageGenerationDetails,
+  LanguageModelInfo,
+  ModelFullId,
+  modelPriceSchema,
+  qualityPricePerImageSchema,
+  SpeechGenerationDetails,
+  SpeechModelInfo,
+  splitModelFullId,
+  TextEmbeddingGenerationDetails,
+  TranscriptionGenerationDetails,
+  TranscriptionModelInfo,
+  TypedModelInfo,
+} from './types'
 
 export function isChargeable(model: BaseModelInfo) {
   return model.chargeable
@@ -52,30 +56,34 @@ export function estimateGenerationCost(
   model: TypedModelInfo,
   callOptions: ModelCallOptions,
 ): Decimal | undefined {
-  // TODO
-  switch (model.type) {
-    case 'language':
-      assert(callOptions.type === 'language')
-      return estimateLanguageCost(model, callOptions)
-    case 'image':
-      assert(callOptions.type === 'image')
-      return undefined
-    case 'speech':
-      assert(callOptions.type === 'speech')
-      return undefined
-    case 'transcription':
-      assert(callOptions.type === 'transcription')
-      return undefined
-    case 'textEmbedding':
-      assert(callOptions.type === 'textEmbedding')
-      return undefined
+  const estimateCost = () => {
+    // TODO
+    switch (model.type) {
+      case 'language':
+        assert(callOptions.type === 'language')
+        return estimateLanguageCost(model, callOptions)
+      case 'image':
+        assert(callOptions.type === 'image')
+        return estimateImageCost(model, callOptions)
+      case 'speech':
+        assert(callOptions.type === 'speech')
+        return undefined
+      case 'transcription':
+        assert(callOptions.type === 'transcription')
+        return undefined
+      case 'textEmbedding':
+        assert(callOptions.type === 'textEmbedding')
+        return undefined
+    }
   }
-}
 
-function estimateLanguageCost(model: LanguageModelInfo, callOptions: LanguageModelV2CallOptions) {
-  // TODO: count tokens properly
-  const inputTokens = SuperJSON.stringify(callOptions.prompt).length * 2 + 100
-  return new Decimal(model.inputTokenPrice ?? 0).times(inputTokens)
+  return (
+    estimateCost()
+      // divided by M
+      ?.div(Decimal.pow(10, 6))
+      // rounded up to 10 decimal places
+      .toDecimalPlaces(10, Decimal.ROUND_CEIL)
+  )
 }
 
 export function computeGenerationCost(
@@ -111,6 +119,8 @@ export function computeGenerationCost(
   )
 }
 
+export type EmbeddingModelV2CallOptions = Parameters<EmbeddingModelV2<number>['doEmbed']>[0]
+
 export type ModelCallOptions =
   | ({
       type: 'language'
@@ -126,7 +136,13 @@ export type ModelCallOptions =
     } & TranscriptionModelV2CallOptions)
   | ({
       type: 'textEmbedding'
-    } & Parameters<EmbeddingModelV2<number>['doEmbed']>[0])
+    } & EmbeddingModelV2CallOptions)
+
+function estimateLanguageCost(model: LanguageModelInfo, callOptions: LanguageModelV2CallOptions) {
+  // TODO: count tokens properly
+  const inputTokens = SuperJSON.stringify(callOptions.prompt).length * 2 + 100
+  return new Decimal(model.inputTokenPrice ?? 0).times(inputTokens)
+}
 
 function computeLanguageCost(
   model: LanguageModelInfo,
@@ -161,10 +177,120 @@ function computeLanguageCost(
   return inputCost.plus(outputCost).plus(cachedInputCost).plus(cacheInputCost)
 }
 
+function estimateImageCost(
+  model: ImageModelInfo & {
+    id: ModelFullId
+  },
+  callOptions: ImageModelV2CallOptions,
+) {
+  const { providerId } = splitModelFullId(model.id)
+  switch (providerId) {
+    case 'openai':
+      if (model.pricePerImage) {
+        qualityPricePerImageSchema.parse(model.pricePerImage)
+      }
+      break
+    case 'google':
+    case 'vertex':
+      if (model.pricePerImage) {
+        modelPriceSchema.parse(model.pricePerImage)
+      }
+      break
+    case 'fal':
+      if (model.pricePerImage) {
+        modelPriceSchema.parse(model.pricePerImage)
+      }
+      break
+  }
+
+  return new Decimal(0.04).times(callOptions.n)
+}
+
 function computeImageCost(
-  _model: ImageModelInfo,
-  _details: ImageGenerationDetails,
+  model: ImageModelInfo,
+  details: ImageGenerationDetails,
 ): Decimal | undefined {
+  const rawResponse = details.rawResponse
+  switch (rawResponse?.providerId) {
+    case 'openai': {
+      const usage = rawResponse.usage
+      if (
+        usage &&
+        model.imageInputTokenPrice &&
+        model.textInputTokenPrice &&
+        model.imageOutputTokenPrice
+      ) {
+        const imageInputCost = new Decimal(model.imageInputTokenPrice).times(
+          usage.input_tokens_details.image_tokens,
+        )
+        const textInputCost = new Decimal(model.textInputTokenPrice).times(
+          usage.input_tokens_details.text_tokens,
+        )
+        const imageOutputCost = new Decimal(model.imageOutputTokenPrice).times(usage.output_tokens)
+        return imageInputCost.plus(textInputCost).plus(imageOutputCost)
+      }
+
+      if (model.pricePerImage) {
+        const pricePerImage = model.pricePerImage as [string, [string, string][]][]
+
+        const qualities = {
+          low: 'Low',
+          medium: 'Medium',
+          high: 'High',
+          standard: 'Standard',
+          hd: 'HD',
+        }
+        // @ts-ignore
+        const quality = qualities[rawResponse.quality]
+
+        const sizePrices = (pricePerImage.find(([q]) => q === quality) ?? pricePerImage.at(-1)!).at(
+          1,
+        )! as [string, string][]
+        const price = (sizePrices.find(([s]) => s === rawResponse.size) ?? sizePrices.at(-1)!).at(
+          1,
+        )!
+
+        return new Decimal(price).times(details.callOptions.n).times(Decimal.pow(10, 6))
+      }
+      break
+    }
+    case 'google':
+    case 'vertex': {
+      if (model.pricePerImage) {
+        return new Decimal(model.pricePerImage as string)
+          .times(rawResponse.predictions.length)
+          .times(Decimal.pow(10, 6))
+      }
+      break
+    }
+    case 'fal': {
+      const images = details.providerMetadata?.fal?.images as
+        | {
+            width?: number
+            height?: number
+          }[]
+        | undefined
+      if (images) {
+        if (model.imageOutputTokenPrice) {
+          let cost = new Decimal(0)
+          for (const image of images) {
+            if (image.width && image.height) {
+              cost = cost.plus(
+                new Decimal(image.width).times(image.height).times(model.imageOutputTokenPrice),
+              )
+            }
+          }
+          return cost
+        }
+
+        if (model.pricePerImage) {
+          return new Decimal(model.pricePerImage as string)
+            .times(images.length)
+            .times(Decimal.pow(10, 6))
+        }
+      }
+    }
+  }
   return
 }
 

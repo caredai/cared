@@ -22,6 +22,7 @@ import type {
   TranscriptionModelV2CallOptions,
   TranscriptionModelV2CallWarning,
 } from '@ai-sdk/provider'
+import { ImageRawResponse } from './image'
 
 export interface Provider {
   languageModel?(modelId: string): LanguageModelV2
@@ -198,7 +199,7 @@ export interface EmbeddingModelInfo extends BaseModelInfo {
   dimensions?: number | number[]
 }
 
-export type TypedModelInfo =
+export type TypedModelInfo = (
   | ({ type: 'language' } & LanguageModelInfo)
   | ({ type: 'image' } & ImageModelInfo)
   | ({
@@ -206,6 +207,9 @@ export type TypedModelInfo =
     } & SpeechModelInfo)
   | ({ type: 'transcription' } & TranscriptionModelInfo)
   | ({ type: 'textEmbedding' } & EmbeddingModelInfo)
+) & {
+  id: ModelFullId
+}
 
 export const baseModelInfoSchema = z.object({
   id: z.string().min(1, 'ID is required'),
@@ -232,6 +236,21 @@ export function formatModelPrice(price: string) {
 export const modelPriceSchema = z.string().refine((p) => !!formatModelPrice(p), {
   message: 'Invalid price',
 })
+
+export const qualityPricePerImageSchema = z
+  .array(z.tuple([z.string().min(1, 'Quality is required'), modelPriceSchema]))
+  .min(1, 'At least one quality is required')
+
+export const qualitySizePricePerImageSchema = z
+  .array(
+    z.tuple([
+      z.string().min(1, 'Quality is required'),
+      z
+        .array(z.tuple([z.string().min(1, 'Size is required'), modelPriceSchema]))
+        .min(1, 'At least one size is required'),
+    ]),
+  )
+  .min(1)
 
 export const languageModelInfoSchema = baseModelInfoSchema.extend({
   contextWindow: z.int().min(0).optional(),
@@ -261,23 +280,8 @@ export const imageModelInfoSchema = baseModelInfoSchema.extend({
   textInputTokenPrice: modelPriceSchema.optional(),
   textCachedInputTokenPrice: modelPriceSchema.optional(),
   pricePerImage: modelPriceSchema
-    .or(
-      z
-        .array(z.tuple([z.string().min(1, 'Quality is required'), modelPriceSchema]))
-        .min(1, 'At least one quality is required'),
-    )
-    .or(
-      z
-        .array(
-          z.tuple([
-            z.string().min(1, 'Quality is required'),
-            z
-              .array(z.tuple([z.string().min(1, 'Size is required'), modelPriceSchema]))
-              .min(1, 'At least one size is required'),
-          ]),
-        )
-        .min(1),
-    )
+    .or(qualityPricePerImageSchema)
+    .or(qualitySizePricePerImageSchema)
     .optional(),
 })
 
@@ -417,6 +421,7 @@ export interface ImageGenerationDetails extends BaseGenerationDetails {
   warnings: ImageModelV2CallWarning[]
   providerMetadata?: ImageModelV2ProviderMetadata
   responseMetadata: Omit<Awaited<ReturnType<ImageModelV2['doGenerate']>>['response'], 'headers'>
+  rawResponse?: ImageRawResponse
 }
 
 export interface SpeechGenerationDetails extends BaseGenerationDetails {
