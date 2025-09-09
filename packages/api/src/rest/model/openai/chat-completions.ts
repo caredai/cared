@@ -6,7 +6,7 @@ import { z } from 'zod/v4'
 
 import type { LanguageGenerationDetails } from '@cared/providers'
 import log from '@cared/log'
-import { splitModelFullId } from '@cared/providers'
+import { createCustomJsonFetch, splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { generateId } from '@cared/shared'
 
@@ -259,9 +259,11 @@ export async function POST(req: NextRequest): Promise<Response> {
           responseFormat: _f,
           ...callOptions_
         } = callOptions
-        const details = {
+        const details: LanguageGenerationDetails = {
           modelId,
           byok: key.byok,
+          latency: 0,
+          generationTime: 0,
 
           type: 'language',
           callOptions: {
@@ -269,18 +271,16 @@ export async function POST(req: NextRequest): Promise<Response> {
             responseFormat: callOptions.responseFormat?.type,
           },
           stream: !!isStream,
-        } as LanguageGenerationDetails
-
-        async function customFetch(
-          input: string | URL | Request,
-          init?: RequestInit,
-        ): Promise<Response> {
-          const startTime = performance.now()
-          const response = await fetch(input, init)
-          const endTime = performance.now()
-          details.latency = Math.floor(endTime - startTime)
-          return response
+          finishReason: 'stop',
+          usage: { inputTokens: undefined, outputTokens: undefined, totalTokens: undefined },
+          warnings: [],
         }
+
+        const customFetch = createCustomJsonFetch({
+          onLatency: (latency) => {
+            details.latency = latency
+          },
+        })
 
         const model = getModel(modelId, 'language', key.key, customFetch)
 
@@ -294,8 +294,8 @@ export async function POST(req: NextRequest): Promise<Response> {
                 modelId,
                 details,
               })
-            } catch (error: any) {
-              lastError = error
+            } catch (error: unknown) {
+              lastError = error instanceof Error ? error : new Error(String(error))
               if (handleError(keyManager, key, error, details)) {
                 return false
               } else {
@@ -316,8 +316,8 @@ export async function POST(req: NextRequest): Promise<Response> {
                 writeChunk,
                 details,
               })
-            } catch (error: any) {
-              lastError = error
+            } catch (error: unknown) {
+              lastError = error instanceof Error ? error : new Error(String(error))
               if (handleError(keyManager, key, error, details)) {
                 return false
               } else {

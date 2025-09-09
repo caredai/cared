@@ -119,16 +119,17 @@ export async function POST(req: NextRequest): Promise<Response> {
           key.byok,
         )
 
+        const { prompt: _, ...callOptions_ } = imageModelV2CallOptions
         const details = {
           modelId,
           byok: key.byok,
 
           type: 'image',
-          callOptions: imageModelV2CallOptions,
+          callOptions: callOptions_,
         } as ImageGenerationDetails
 
         const customFetch = createCustomJsonFetch({
-          onResponse: (response) => {
+          onSuccess: (response) => {
             details.rawResponse = extractImageRawResponse(providerId, response)
           },
           onLatency: (latency) => {
@@ -139,14 +140,21 @@ export async function POST(req: NextRequest): Promise<Response> {
         const model = getModel(modelId, 'image', key.key, customFetch)
 
         try {
+          const startTime = performance.now()
+
           const result = await model.doGenerate({
             ...imageModelV2CallOptions,
             abortSignal: req.signal,
           } as any)
 
+          details.generationTime = Math.max(
+            Math.floor(performance.now() - startTime - details.latency),
+            0,
+          )
           details.warnings = result.warnings
           details.providerMetadata = result.providerMetadata
-          details.responseMetadata = result.response
+          const { headers: _, ...responseMetadata } = result.response
+          details.responseMetadata = responseMetadata
 
           await expenseManager.billGeneration(
             {

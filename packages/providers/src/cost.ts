@@ -20,7 +20,7 @@ import {
   LanguageModelInfo,
   ModelFullId,
   modelPriceSchema,
-  qualityPricePerImageSchema,
+  qualitySizePricePerImageSchema,
   SpeechGenerationDetails,
   SpeechModelInfo,
   splitModelFullId,
@@ -119,7 +119,7 @@ export function computeGenerationCost(
   )
 }
 
-export type EmbeddingModelV2CallOptions = Parameters<EmbeddingModelV2<number>['doEmbed']>[0]
+export type EmbeddingModelV2CallOptions = Parameters<EmbeddingModelV2<string>['doEmbed']>[0]
 
 export type ModelCallOptions =
   | ({
@@ -187,7 +187,7 @@ function estimateImageCost(
   switch (providerId) {
     case 'openai':
       if (model.pricePerImage) {
-        qualityPricePerImageSchema.parse(model.pricePerImage)
+        qualitySizePricePerImageSchema.parse(model.pricePerImage)
       }
       break
     case 'google':

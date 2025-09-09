@@ -1,64 +1,31 @@
+import { parseJsonEventStream } from '@ai-sdk/provider-utils'
+import { z } from 'zod/v4'
+
+import { deserializeError, regexFromString, SuperJSON } from '@cared/shared'
+
+import type { CaredClientOptions } from '../client'
 import type {
   LanguageModelV2,
   LanguageModelV2CallOptions,
   LanguageModelV2StreamPart,
 } from '@ai-sdk/provider'
-
-import { deserializeError, regexFromString, SuperJSON } from '@cared/shared'
-
-import type { CaredClientOptions } from '../client'
+import type { ParseResult } from '@ai-sdk/provider-utils'
 import { makeHeaders } from '../client'
 
-const NEWLINE = '\n'.charCodeAt(0)
-
-function concatChunks(chunks: Uint8Array[], totalLength: number) {
-  const concatenatedChunks = new Uint8Array(totalLength)
-
-  let offset = 0
-  for (const chunk of chunks) {
-    concatenatedChunks.set(chunk, offset)
-    offset += chunk.length
-  }
-  chunks.length = 0
-
-  return concatenatedChunks
-}
-
-async function* processStream(
-  responseBody: ReadableStream<Uint8Array>,
+// Helper function to process SSE stream and separate metadata from content
+async function* processSSEStream(
+  stream: ReadableStream<Uint8Array>,
 ): AsyncGenerator<LanguageModelV2StreamPart | { type: 'metadata'; [key: string]: any }> {
-  const reader = responseBody.getReader()
-  const decoder = new TextDecoder()
-  const chunks: Uint8Array[] = []
-  let totalLength = 0
-
-  while (true) {
-    const { value } = await reader.read()
-
-    if (value) {
-      chunks.push(value)
-      totalLength += value.length
-      if (value[value.length - 1] !== NEWLINE) {
-        // if the last character is not a newline, we have not read the whole JSON value
-        continue
-      }
-    }
-
-    if (chunks.length === 0) {
-      break // we have reached the end of the stream
-    }
-
-    const concatenatedChunks = concatChunks(chunks, totalLength)
-    totalLength = 0
-
-    const streamParts = decoder
-      .decode(concatenatedChunks, { stream: true })
-      .split('\n')
-      .filter((line) => line !== '') // splitting leaves an empty string at the end
-      .map((line) => JSON.parse(line))
-
-    for (const part of streamParts) {
-      yield part
+  for await (const chunk of parseJsonEventStream({
+    stream: stream as any,
+    schema: z.any(),
+  }) as any as AsyncGenerator<
+    ParseResult<LanguageModelV2StreamPart | { type: 'metadata'; [key: string]: any }>
+  >) {
+    if (chunk.success) {
+      yield chunk.value
+    } else {
+      yield { type: 'error', error: chunk.error }
     }
   }
 }
@@ -142,14 +109,13 @@ export async function createLanguageModel(
         throw new Error(`doStream error (${response.status}): ${errorText}`)
       }
 
-      // Process the stream to extract metadata and forward content
+      // Process the SSE stream to extract metadata and forward content
       let metadata = {} as Omit<Awaited<ReturnType<LanguageModelV2['doStream']>>, 'stream'>
       let contentStreamStarted = false
 
       // Create an async generator that separates metadata and content
       const generator = async function* () {
-        for await (const chunk of processStream(response.body!)) {
-          // console.log('processStream chunk:', chunk)
+        for await (const chunk of processSSEStream(response.body as any)) {
           if (chunk.type === 'metadata') {
             if (contentStreamStarted) {
               // Metadata should only come at the beginning

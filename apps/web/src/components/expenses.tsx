@@ -57,7 +57,7 @@ function calculateSpeed(details: GenerationDetails): string {
   if (details.type === 'language' && 'usage' in details) {
     const usage = details.usage as { outputTokens?: number }
     const outputTokens = usage.outputTokens ?? 0
-    const generationTimeSeconds = details.generationTime / 1000
+    const generationTimeSeconds = (details.stream ? details.generationTime : details.latency) / 1000
     if (generationTimeSeconds > 0) {
       const tps = outputTokens / generationTimeSeconds
       return `${tps.toFixed(1)} tps`
@@ -173,7 +173,7 @@ function createColumns(
 
 export function Expenses({ organizationId }: { organizationId?: string }) {
   const [pageSize, setPageSize] = useState(20)
-  
+
   const {
     expensesPages,
     isLoadingExpenses,

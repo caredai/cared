@@ -3,7 +3,7 @@ import { z } from 'zod/v4'
 
 import type { SpeechGenerationDetails } from '@cared/providers'
 import log from '@cared/log'
-import { createCustomJsonFetch, extractSpeechRawResponse, splitModelFullId } from '@cared/providers'
+import { createCustomJsonFetch } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema } from '@cared/shared'
 
@@ -88,7 +88,6 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     for (const modelInfo of models) {
       const modelId = modelInfo.id
-      const providerId = splitModelFullId(modelId).providerId
 
       const keyManager = await ProviderKeyManager.from({
         auth: auth.auth!,
@@ -113,18 +112,17 @@ export async function POST(req: NextRequest): Promise<Response> {
           key.byok,
         )
 
+        const { text: _, instructions: __, ...callOptions_ } = speechModelV2CallOptions
+
         const details = {
           modelId,
           byok: key.byok,
 
           type: 'speech',
-          callOptions: speechModelV2CallOptions,
+          callOptions: callOptions_,
         } as SpeechGenerationDetails
 
         const customFetch = createCustomJsonFetch({
-          onResponse: (response) => {
-            details.rawResponse = extractSpeechRawResponse(providerId, response)
-          },
           onLatency: (latency) => {
             details.latency = latency
           },
@@ -133,14 +131,21 @@ export async function POST(req: NextRequest): Promise<Response> {
         const model = getModel(modelId, 'speech', key.key, customFetch)
 
         try {
+          const startTime = performance.now()
+
           const result = await model.doGenerate({
             ...speechModelV2CallOptions,
             abortSignal: req.signal,
           })
 
+          details.generationTime = Math.max(
+            Math.floor(performance.now() - startTime - details.latency),
+            0,
+          )
           details.warnings = result.warnings
           details.providerMetadata = result.providerMetadata
-          details.responseMetadata = result.response
+          const { headers: _, body: __, ...responseMetadata } = result.response
+          details.responseMetadata = responseMetadata
 
           await expenseManager.billGeneration(
             {

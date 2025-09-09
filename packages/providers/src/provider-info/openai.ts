@@ -33,6 +33,7 @@ const openaiProvider: ProviderInfo = {
       id: 'gpt-5-nano',
       name: 'GPT-5 nano',
       description: 'Fastest, most cost-efficient version of GPT-5.',
+      chargeable: true,
       contextWindow: 400000,
       maxOutputTokens: 128000,
       inputTokenPrice: '0.05',
@@ -63,6 +64,7 @@ const openaiProvider: ProviderInfo = {
       id: 'gpt-4.1-mini',
       name: 'GPT-4.1 mini',
       description: 'Balanced for intelligence, speed, and cost.',
+      chargeable: true,
       contextWindow: 1047576,
       maxOutputTokens: 32768,
       inputTokenPrice: '0.40',
@@ -270,6 +272,7 @@ const openaiProvider: ProviderInfo = {
       id: 'gpt-image-1',
       name: 'GPT Image 1',
       description: 'State-of-the-art image generation model.',
+      chargeable: true,
       imageInputTokenPrice: '10.00',
       imageCachedInputTokenPrice: '2.50',
       imageOutputTokenPrice: '40.00',
@@ -333,6 +336,7 @@ const openaiProvider: ProviderInfo = {
       name: 'DALL·E 2',
       description:
         'DALL·E is an AI system that creates realistic images and art from a natural language description. Older than DALL·E 3, DALL·E 2 offers more control in prompting and more requests at once.',
+      chargeable: true,
       pricePerImage: [
         [
           'Standard',

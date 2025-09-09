@@ -1,13 +1,9 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod/v4'
 
-import type { EmbeddingModelV2CallOptions, TextEmbeddingGenerationDetails } from '@cared/providers'
+import type { TextEmbeddingGenerationDetails } from '@cared/providers'
 import log from '@cared/log'
-import {
-  createCustomJsonFetch,
-  extractEmbeddingRawResponse,
-  splitModelFullId,
-} from '@cared/providers'
+import { createCustomJsonFetch } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema } from '@cared/shared'
 
@@ -92,7 +88,6 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     for (const modelInfo of models) {
       const modelId = modelInfo.id
-      const providerId = splitModelFullId(modelId).providerId
 
       const keyManager = await ProviderKeyManager.from({
         auth: auth.auth!,
@@ -112,23 +107,21 @@ export async function POST(req: NextRequest): Promise<Response> {
           },
           {
             type: 'textEmbedding',
-            ...(embeddingModelV2CallOptions as EmbeddingModelV2CallOptions),
+            ...embeddingModelV2CallOptions,
           },
           key.byok,
         )
 
+        const { values: _, ...callOptions_ } = embeddingModelV2CallOptions
         const details = {
           modelId,
           byok: key.byok,
 
           type: 'textEmbedding',
-          callOptions: embeddingModelV2CallOptions,
+          callOptions: callOptions_,
         } as TextEmbeddingGenerationDetails
 
         const customFetch = createCustomJsonFetch({
-          onResponse: (response) => {
-            details.rawResponse = extractEmbeddingRawResponse(providerId, response)
-          },
           onLatency: (latency) => {
             details.latency = latency
           },
@@ -137,14 +130,19 @@ export async function POST(req: NextRequest): Promise<Response> {
         const model = getModel(modelId, 'textEmbedding', key.key, customFetch)
 
         try {
+          const startTime = performance.now()
+
           const result = await model.doEmbed({
             ...embeddingModelV2CallOptions,
             abortSignal: req.signal,
           })
 
-          details.warnings = result.warnings
+          details.generationTime = Math.max(
+            Math.floor(performance.now() - startTime - details.latency),
+            0,
+          )
+          details.usage = result.usage
           details.providerMetadata = result.providerMetadata
-          details.responseMetadata = result.response
 
           await expenseManager.billGeneration(
             {

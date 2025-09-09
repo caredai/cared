@@ -1,6 +1,7 @@
 import { Decimal } from 'decimal.js'
 import { z } from 'zod/v4'
 
+import type { ImageRawResponse } from './image'
 import type {
   EmbeddingModelV2,
   ImageModelV2,
@@ -22,7 +23,6 @@ import type {
   TranscriptionModelV2CallOptions,
   TranscriptionModelV2CallWarning,
 } from '@ai-sdk/provider'
-import { ImageRawResponse } from './image'
 
 export interface Provider {
   languageModel?(modelId: string): LanguageModelV2
@@ -417,7 +417,7 @@ export interface LanguageGenerationDetails extends BaseGenerationDetails {
 
 export interface ImageGenerationDetails extends BaseGenerationDetails {
   type: 'image'
-  callOptions: Omit<ImageModelV2CallOptions, 'abortSignal' | 'headers'>
+  callOptions: Omit<ImageModelV2CallOptions, 'prompt' | 'abortSignal' | 'headers'>
   warnings: ImageModelV2CallWarning[]
   providerMetadata?: ImageModelV2ProviderMetadata
   responseMetadata: Omit<Awaited<ReturnType<ImageModelV2['doGenerate']>>['response'], 'headers'>

@@ -60,7 +60,7 @@
     "@openrouter/ai-sdk-provider": "^1.2.0",
     "@portkey-ai/vercel-provider": "^2.1.0",
     "@requesty/ai-sdk": "^0.0.9",
-    "ai": "catalog:",
+    "ai": "^5.0.38",
     "ai-gateway-provider": "^0.0.11",
     "ajv": "^8.17.1",
     "cohere-ai": "^7.18.1",

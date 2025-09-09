@@ -24,7 +24,8 @@
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "test-client": "env NODE_TLS_REJECT_UNAUTHORIZED=0 tsx ./scripts/test-client.ts"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.787.0",
@@ -37,6 +38,7 @@
     "stripe": "^18.3.0",
     "trpc-to-openapi": "^2.1.4",
     "tsup": "^8.3.6",
+    "tsx": "^4.19.3",
     "typescript": "catalog:"
   },
   "prettier": "@cared/prettier-config",
@@ -50,7 +52,7 @@
   },
   "peerDependencies": {
     "@ai-sdk/provider": ">=2.0.0",
-    "ai": ">=5.0.22",
+    "ai": ">=5.0.38",
     "react": ">=19.0.0"
   }
 }

@@ -68,6 +68,7 @@ export async function makeHeaders(opts: CaredClientOptions) {
   }
   if (apiKey) {
     headers.set('X-API-KEY', apiKey)
+    headers.set('Authorization', 'Bearer ' + apiKey)
     return headers
   }
 

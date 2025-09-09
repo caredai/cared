@@ -1,3 +1,4 @@
+import assert from 'assert'
 import type { ToolCallPart, ToolResultPart } from 'ai'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
@@ -5,13 +6,21 @@ import { APICallError } from '@ai-sdk/provider'
 import Ajv from 'ajv'
 import { z } from 'zod/v4'
 
+import type { LanguageGenerationDetails } from '@cared/providers'
 import type { SuperJSONResult } from '@cared/shared'
 import log from '@cared/log'
+import { createCustomFetch } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema, SuperJSON } from '@cared/shared'
 
-import type { LanguageModelV2StreamPart } from '@ai-sdk/provider'
-import { ProviderKeyManager, ProviderKeyState } from '../../../operation'
+import type { ProviderKeyState } from '../../../operation'
+import type {
+  LanguageModelV2,
+  LanguageModelV2CallOptions,
+  LanguageModelV2StreamPart,
+} from '@ai-sdk/provider'
+import { authenticate } from '../../../auth'
+import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -179,6 +188,8 @@ const requestArgsSchema = z.object({
   headers: z.record(z.string(), z.string().or(z.undefined())).optional(),
 
   providerOptions: sharedV2ProviderOptionsSchema.optional(),
+
+  payerOrganizationId: z.string().optional(),
 })
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -191,11 +202,6 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 
   const model = getModel(modelId, 'language')
-  if (!model) {
-    return new Response('Model not found', {
-      status: 404,
-    })
-  }
 
   const {
     // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
@@ -219,108 +225,418 @@ export async function POST(req: NextRequest): Promise<Response> {
   try {
     const validatedArgs = requestArgsSchema.safeParse(await requestJson(req))
     if (!validatedArgs.success) {
-      return makeResponseJson(
-        {
-          errors: validatedArgs.error.flatten().fieldErrors,
-        },
-        {
-          status: 400,
-        },
-      )
+      return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
     }
 
-    const { modelId, stream: doStream, ...languageModelV2CallOptions } = validatedArgs.data
+    const {
+      modelId,
+      stream: isStream,
+      payerOrganizationId,
+      ...languageModelV2CallOptions
+    } = validatedArgs.data
 
-    const model = getModel(modelId, 'language')
-    if (!model) {
+    const auth = await authenticate()
+    if (!auth.isAuthenticated()) {
+      return new Response('Unauthorized', { status: 401 })
+    }
+
+    const expenseManager = ExpenseManager.from({
+      auth: auth.auth!,
+      payerOrganizationId,
+    })
+
+    // Allow modelId without provider prefix
+    const models = await findProvidersByModel(auth.auth!, modelId, 'language')
+    log.info(
+      `Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`,
+    )
+    if (!models.length) {
       return new Response('Model not found', {
-        status: 404,
+        status: 400,
       })
     }
 
-    if (doStream) {
-      const { stream, ...metadata } = await model.doStream({
-        ...languageModelV2CallOptions,
-        abortSignal: req.signal,
-      })
-
-      // Use a TransformStream to prepend metadata
-      const { readable, writable } = new TransformStream()
-      const writer = writable.getWriter()
-
-      async function write(data: any) {
-        await writer.write(`${JSON.stringify(data)}\n`)
-      }
-
-      // @ts-expect-error: type 'metadata' must not be in LanguageModelV2StreamPart
-      const _: LanguageModelV2StreamPart['type'] = 'metadata'
-
-      void write({
-        type: 'metadata',
-        ...metadata,
-      })
-
-      // Pipe the original stream through the transformer
-      stream
-        .pipeTo(
-          new WritableStream({
-            async write(part) {
-              if (part.type === 'error' && part.error instanceof Error) {
-                // Serialize error to ensure it can be properly transferred across the network
-                part.error = serializeError(part.error)
-                ;(part as any).errorSerialized = true
-              }
-              await write(part)
-            },
-            async close() {
-              await writer.close()
-            },
-            async abort(reason) {
-              await writer.abort(reason)
-            },
-          }),
-        )
-        .catch(async (err) => {
-          log.error('Error piping original stream', err)
-          await writer.abort(err instanceof Error ? err.message : err?.toString()) // Abort the transformer if the source errors
-        })
-
-      // Return the transformed stream (metadata + original content)
-      return new Response(readable.pipeThrough(new TextEncoderStream()), {
-        headers: {
-          'Content-Type': 'text/plain; charset=utf-8', // Vercel AI SDK stream protocol type
-        },
-      })
-    } else {
-      try {
-        const result = await model.doGenerate({
-          ...languageModelV2CallOptions,
-          abortSignal: req.signal,
-        })
-        return makeResponseJson(result)
-      } catch (error: any) {
-        if (error instanceof Error) {
-          return makeResponseJson(
-            {
-              // Serialize error to ensure it can be properly transferred across the network
-              error: serializeError(error),
-              errorSerialized: true,
-            },
-            { status: 500 },
-          )
-        } else {
-          throw error
-        }
-      }
-    }
+    // Process with model and key polling
+    return await processWithPolling({
+      models,
+      languageModelV2CallOptions,
+      expenseManager,
+      auth: auth.auth!,
+      isStream,
+      req,
+    })
   } catch (error: any) {
     log.error('Call language model error', error)
     return makeResponseJson(
       {
-        error: error.message || 'An unknown error occurred',
+        error: error.message ?? 'An unknown error occurred',
       },
       { status: 500 },
     )
+  }
+}
+
+async function processWithPolling({
+  models,
+  languageModelV2CallOptions,
+  expenseManager,
+  auth,
+  isStream,
+  req,
+}: {
+  models: Awaited<ReturnType<typeof findProvidersByModel>>
+  languageModelV2CallOptions: Omit<
+    z.infer<typeof requestArgsSchema>,
+    'modelId' | 'stream' | 'payerOrganizationId'
+  >
+  expenseManager: ExpenseManager
+  auth: NonNullable<Awaited<ReturnType<typeof authenticate>>['auth']>
+  isStream: boolean
+  req: NextRequest
+}): Promise<Response> {
+  let responseStream: ReadableStream | undefined
+  let closeStream: (() => Promise<void>) | undefined
+  let writeChunk: ((data: any) => Promise<void>) | undefined
+
+  if (isStream) {
+    // Create a TransformStream to convert LanguageModelV2StreamPart to SSE format
+    const { readable, writable } = new TransformStream()
+    const writer = writable.getWriter()
+
+    responseStream = readable
+
+    let closed = false
+    closeStream = async () => {
+      if (closed) {
+        return
+      }
+      closed = true
+      await writer.close()
+    }
+
+    // Helper function to write data to the stream
+    writeChunk = async (data: any) => {
+      if (closed) {
+        return
+      }
+      // SSE format
+      await writer.write(`data: ${JSON.stringify(data)}\n\n`)
+    }
+  }
+
+  async function process() {
+    let lastError: Error | undefined
+
+    for (const modelInfo of models) {
+      const modelId = modelInfo.id
+
+      const keyManager = await ProviderKeyManager.from({
+        auth,
+        modelId,
+        onlyByok: !modelInfo.chargeable,
+      })
+
+      const keys = keyManager.selectKeys()
+
+      for (const key of keys) {
+        log.info(`Using provider key ${key.id} for model ${modelId}`)
+
+        const callOptions = {
+          ...languageModelV2CallOptions,
+          abortSignal: req.signal,
+        }
+
+        await expenseManager.canAfford(
+          {
+            type: 'language',
+            ...modelInfo,
+          },
+          {
+            type: 'language',
+            ...callOptions,
+          },
+          key.byok,
+        )
+
+        const {
+          prompt: _a,
+          responseFormat: _b,
+          tools: _c,
+          abortSignal: _d,
+          headers: _e,
+          responseFormat: _f,
+          ...callOptions_
+        } = callOptions
+        const details: LanguageGenerationDetails = {
+          modelId,
+          byok: key.byok,
+          latency: 0,
+          generationTime: 0,
+
+          type: 'language' as const,
+          callOptions: {
+            ...callOptions_,
+            responseFormat: callOptions.responseFormat?.type,
+          },
+          stream: !!isStream,
+          finishReason: 'stop',
+          usage: { inputTokens: undefined, outputTokens: undefined, totalTokens: undefined },
+          warnings: [],
+        }
+
+        const customFetch = createCustomFetch({
+          onLatency: (latency) => {
+            details.latency = latency
+          },
+        })
+
+        const model = getModel(modelId, 'language', key.key, customFetch)
+
+        const execute = async () => {
+          if (!isStream) {
+            try {
+              return await doGenerate({
+                model,
+                callOptions,
+                details,
+              })
+            } catch (error: unknown) {
+              lastError = error instanceof Error ? error : new Error(String(error))
+              if (handleError(keyManager, key, error, details)) {
+                return false
+              } else {
+                await keyManager.saveState() // TODO: waitUntil
+                throw error
+              }
+            }
+          } else {
+            assert(writeChunk)
+            assert(closeStream)
+
+            try {
+              await doStream({
+                model,
+                callOptions,
+                writeChunk,
+                details,
+              })
+            } catch (error: unknown) {
+              lastError = error instanceof Error ? error : new Error(String(error))
+              if (handleError(keyManager, key, error, details)) {
+                return false
+              } else {
+                await keyManager.saveState() // TODO: waitUntil
+                throw error
+              }
+            }
+
+            await closeStream()
+          }
+        }
+
+        const result = await execute()
+        if (result === false) {
+          // Try the next model/key if available
+          continue
+        }
+
+        await expenseManager.billGeneration(
+          {
+            type: 'language',
+            ...modelInfo,
+          },
+          details,
+        )
+
+        keyManager.updateState(key, {
+          success: true,
+          latency: details.latency,
+        })
+
+        await keyManager.saveState() // TODO: waitUntil
+
+        return result
+      }
+
+      await keyManager.saveState() // TODO: waitUntil
+    }
+
+    if (lastError) {
+      throw lastError
+    }
+
+    if (!isStream) {
+      return new Response('Model not found', {
+        status: 400,
+      })
+    } else {
+      assert(writeChunk)
+      assert(closeStream)
+
+      await writeChunk({
+        error: {
+          message: 'Model not found',
+        },
+      })
+      await closeStream()
+    }
+  }
+
+  if (!isStream) {
+    return (await process())!
+  } else {
+    // Processing the stream asynchronously
+    assert(writeChunk)
+    assert(closeStream)
+    void process().catch(async (error) => {
+      const errorChunk = {
+        type: 'error',
+        // Serialize error to ensure it can be properly transferred across the network
+        error: error instanceof Error ? serializeError(error) : JSON.stringify(error),
+        errorSerialized: error instanceof Error,
+      }
+      await writeChunk(errorChunk)
+      await closeStream()
+    })
+
+    // Return the streaming response
+    return new Response(responseStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    })
+  }
+}
+
+async function doGenerate({
+  model,
+  callOptions,
+  details,
+}: {
+  model: LanguageModelV2
+  callOptions: LanguageModelV2CallOptions
+  details: LanguageGenerationDetails
+}): Promise<Response> {
+  const startTime = performance.now()
+  const gen = await model.doGenerate(callOptions)
+
+  details.generationTime = Math.max(Math.floor(performance.now() - startTime - details.latency), 0)
+  details.finishReason = gen.finishReason
+  details.usage = gen.usage
+  details.providerMetadata = gen.providerMetadata
+  const { headers: _, body: __, ...responseMetadata } = gen.response ?? {}
+  details.responseMetadata = gen.response ? responseMetadata : undefined
+  details.warnings = gen.warnings
+
+  return makeResponseJson(gen)
+}
+
+async function doStream({
+  model,
+  callOptions,
+  writeChunk: writeChunk_,
+  details,
+}: {
+  model: LanguageModelV2
+  callOptions: LanguageModelV2CallOptions
+  writeChunk: (data: any) => Promise<void>
+  details: LanguageGenerationDetails
+}): Promise<void> {
+  const startTime = performance.now()
+  let latencyTime: number | undefined
+
+  const { stream, ...metadata } = await model.doStream(callOptions)
+
+  const reader = stream.getReader()
+
+  let hasWritten = false
+  const writeChunk = async (data: any) => {
+    hasWritten = true
+    await writeChunk_(data)
+  }
+
+  let firstChunk = true
+
+  while (true) {
+    const { value: part, done } = await reader.read()
+
+    if (firstChunk) {
+      firstChunk = false
+
+      latencyTime = performance.now() - startTime
+      details.latency = Math.floor(latencyTime)
+
+      if (part?.type !== 'error') {
+        // @ts-expect-error: type 'metadata' must not be in LanguageModelV2StreamPart
+        const _: LanguageModelV2StreamPart['type'] = 'metadata'
+
+        // Only send metadata when we received the first chunk
+        await writeChunk({
+          type: 'metadata',
+          ...metadata,
+        })
+      }
+    }
+
+    if (done) {
+      details.generationTime = Math.max(
+        Math.floor(performance.now() - startTime - (latencyTime ?? 0)),
+        0,
+      )
+      break
+    }
+
+    // Process different types of stream parts
+    switch (part.type) {
+      case 'stream-start': {
+        details.warnings = part.warnings
+        break
+      }
+      case 'response-metadata': {
+        const { type: _, ...responseMetadata } = part
+        details.responseMetadata = responseMetadata
+        break
+      }
+      case 'error': {
+        // Only throw error if we haven't written anything yet
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!hasWritten && APICallError.isInstance(part.error)) {
+          const statusCode = part.error.statusCode
+          if (
+            // unauthorized
+            statusCode === 401 ||
+            // forbidden
+            statusCode === 403 ||
+            // request timeout
+            statusCode === 408 ||
+            // too many requests
+            statusCode === 429 ||
+            // server error
+            (statusCode && statusCode >= 500)
+          ) {
+            throw part.error
+          }
+        }
+
+        if (part.error instanceof Error) {
+          // Serialize error to ensure it can be properly transferred across the network
+          part.error = serializeError(part.error)
+          ;(part as Record<string, unknown>).errorSerialized = true
+        }
+
+        break
+      }
+      case 'finish': {
+        details.finishReason = part.finishReason
+        details.usage = part.usage
+        details.providerMetadata = part.providerMetadata
+        break
+      }
+    }
+
+    await writeChunk(part)
   }
 }
 
@@ -338,7 +654,7 @@ export function makeResponseJson<JsonBody>(
 export function handleError(
   keyManager: ProviderKeyManager,
   key: ProviderKeyState,
-  error: any,
+  error: unknown,
   details: {
     latency: number
   },
@@ -351,7 +667,7 @@ export function handleError(
       latency: details.latency,
       retryAfter:
         statusCode === 429
-          ? error.responseHeaders?.['Retry-After'] || error.responseHeaders?.['X-Retry-After']
+          ? (error.responseHeaders?.['Retry-After'] ?? error.responseHeaders?.['X-Retry-After'])
           : undefined,
     })
 
