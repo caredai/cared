@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { format } from 'date-fns'
-import { Server } from 'lucide-react'
+import { KeyRound, Server } from 'lucide-react'
 
 import type { Expense } from '@cared/db/schema'
 import type { GenerationDetails } from '@cared/providers'
@@ -13,6 +13,7 @@ import { Spinner } from '@cared/ui/components/spinner'
 
 import type { ColumnDef } from '@tanstack/react-table'
 import { SectionTitle } from '@/components/section'
+import { TextTooltip } from '@/components/tooltip'
 import { useExpenses } from '@/hooks/use-expense'
 import { useModels, useProviders } from '@/hooks/use-model'
 
@@ -149,7 +150,30 @@ function createColumns(
       header: 'Cost',
       cell: ({ row }) => {
         const cost = row.getValue<string | null>('cost')
-        return <span className="font-mono">{cost ? `$ ${cost}` : 'N/A'}</span>
+        const details = row.original.details
+        const isByok = details.byok === true
+
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-mono">{cost ? `$ ${cost}` : 'N/A'}</span>
+            {cost && isByok && (
+              <TextTooltip
+                content={
+                  <div className="space-y-1">
+                    <p className="font-medium">BYOK (Bring Your Own Key)</p>
+                    <p className="text-sm">This usage was billed using your own API keys.</p>
+                    <p className="text-sm">
+                      The first 500 calls per day are free, after that <br /> usage is billed at 5%
+                      of the upstream provider's cost.
+                    </p>
+                  </div>
+                }
+              >
+                <KeyRound className="size-3" />
+              </TextTooltip>
+            )}
+          </div>
+        )
       },
     },
     {

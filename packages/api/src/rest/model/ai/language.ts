@@ -14,6 +14,7 @@ import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema, SuperJSON } from '@cared/shared'
 
 import type { ProviderKeyState } from '../../../operation'
+import type { TelemetrySettings } from '../../../telemetry'
 import type {
   LanguageModelV2,
   LanguageModelV2CallOptions,
@@ -21,6 +22,13 @@ import type {
 } from '@ai-sdk/provider'
 import { authenticate } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
+import {
+  extractTextContent,
+  getTracer,
+  recordSpan,
+  selectTelemetryAttributes,
+  stringifyForTelemetry,
+} from '../../../telemetry'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -405,7 +413,7 @@ async function processWithPolling({
               if (handleError(keyManager, key, error, details)) {
                 return false
               } else {
-                await keyManager.saveState() // TODO: waitUntil
+                keyManager.saveState()
                 throw error
               }
             }
@@ -425,7 +433,7 @@ async function processWithPolling({
               if (handleError(keyManager, key, error, details)) {
                 return false
               } else {
-                await keyManager.saveState() // TODO: waitUntil
+                keyManager.saveState()
                 throw error
               }
             }
@@ -440,7 +448,7 @@ async function processWithPolling({
           continue
         }
 
-        await expenseManager.billGeneration(
+        expenseManager.billGeneration(
           {
             type: 'language',
             ...modelInfo,
@@ -453,12 +461,12 @@ async function processWithPolling({
           latency: details.latency,
         })
 
-        await keyManager.saveState() // TODO: waitUntil
+        keyManager.saveState()
 
         return result
       }
 
-      await keyManager.saveState() // TODO: waitUntil
+      keyManager.saveState()
     }
 
     if (lastError) {
@@ -519,18 +527,64 @@ async function doGenerate({
   callOptions: LanguageModelV2CallOptions
   details: LanguageGenerationDetails
 }): Promise<Response> {
-  const startTime = performance.now()
-  const gen = await model.doGenerate(callOptions)
+  const telemetry: TelemetrySettings = {
+    isEnabled: true,
+  }
+  const tracer = getTracer(telemetry)
 
-  details.generationTime = Math.max(Math.floor(performance.now() - startTime - details.latency), 0)
-  details.finishReason = gen.finishReason
-  details.usage = gen.usage
-  details.providerMetadata = gen.providerMetadata
-  const { headers: _, body: __, ...responseMetadata } = gen.response ?? {}
-  details.responseMetadata = gen.response ? responseMetadata : undefined
-  details.warnings = gen.warnings
+  return recordSpan({
+    name: 'ai.doGenerate',
+    attributes: selectTelemetryAttributes({
+      telemetry,
+      attributes: {
+        'gen_ai.operation.name': 'chat',
+        'gen_ai.provider.name': model.provider,
+        'gen_ai.request.model': model.modelId,
+        'gen_ai.request.seed': callOptions.seed,
+        'gen_ai.request.frequency_penalty': callOptions.frequencyPenalty,
+        'gen_ai.request.max_tokens': callOptions.maxOutputTokens,
+        'gen_ai.request.presence_penalty': callOptions.presencePenalty,
+        'gen_ai.request.stop_sequences': callOptions.stopSequences,
+        'gen_ai.request.temperature': callOptions.temperature,
+        'gen_ai.request.top_k': callOptions.topK,
+        'gen_ai.request.top_p': callOptions.topP,
+        'gen_ai.output.type': callOptions.responseFormat?.type === 'json' ? 'json' : 'text',
+        'gen_ai.input.messages': { input: () => stringifyForTelemetry(callOptions.prompt) },
+      },
+    }),
+    tracer,
+    fn: async (span) => {
+      const startTime = performance.now()
+      const gen = await model.doGenerate(callOptions)
 
-  return makeResponseJson(gen)
+      details.generationTime = Math.max(
+        Math.floor(performance.now() - startTime - details.latency),
+        0,
+      )
+      details.finishReason = gen.finishReason
+      details.usage = gen.usage
+      details.providerMetadata = gen.providerMetadata
+      const { headers: _, body: __, ...responseMetadata } = gen.response ?? {}
+      details.responseMetadata = gen.response ? responseMetadata : undefined
+      details.warnings = gen.warnings
+
+      span.setAttributes(
+        selectTelemetryAttributes({
+          telemetry,
+          attributes: {
+            'gen_ai.response.finish_reasons': [gen.finishReason],
+            'gen_ai.response.id': responseMetadata.id,
+            'gen_ai.response.model': responseMetadata.modelId,
+            'gen_ai.usage.input_tokens': gen.usage.inputTokens,
+            'gen_ai.usage.output_tokens': gen.usage.outputTokens,
+            'gen_ai.output.messages': { output: () => extractTextContent(gen.content) },
+          },
+        }),
+      )
+
+      return makeResponseJson(gen)
+    },
+  })
 }
 
 async function doStream({
@@ -544,100 +598,150 @@ async function doStream({
   writeChunk: (data: any) => Promise<void>
   details: LanguageGenerationDetails
 }): Promise<void> {
-  const startTime = performance.now()
-  let latencyTime: number | undefined
-
-  const { stream, ...metadata } = await model.doStream(callOptions)
-
-  const reader = stream.getReader()
-
-  let hasWritten = false
-  const writeChunk = async (data: any) => {
-    hasWritten = true
-    await writeChunk_(data)
+  const telemetry: TelemetrySettings = {
+    isEnabled: true,
   }
+  const tracer = getTracer(telemetry)
 
-  let firstChunk = true
+  return recordSpan({
+    name: 'ai.doGenerate',
+    attributes: selectTelemetryAttributes({
+      telemetry,
+      attributes: {
+        'gen_ai.operation.name': 'chat',
+        'gen_ai.provider.name': model.provider,
+        'gen_ai.request.model': model.modelId,
+        'gen_ai.request.seed': callOptions.seed,
+        'gen_ai.request.frequency_penalty': callOptions.frequencyPenalty,
+        'gen_ai.request.max_tokens': callOptions.maxOutputTokens,
+        'gen_ai.request.presence_penalty': callOptions.presencePenalty,
+        'gen_ai.request.stop_sequences': callOptions.stopSequences,
+        'gen_ai.request.temperature': callOptions.temperature,
+        'gen_ai.request.top_k': callOptions.topK,
+        'gen_ai.request.top_p': callOptions.topP,
+        'gen_ai.output.type': callOptions.responseFormat?.type === 'json' ? 'json' : 'text',
+        'gen_ai.input.messages': { input: () => stringifyForTelemetry(callOptions.prompt) },
+      },
+    }),
+    tracer,
+    fn: async (span) => {
+      const startTime = performance.now()
+      let latencyTime: number | undefined
 
-  while (true) {
-    const { value: part, done } = await reader.read()
+      const { stream, ...metadata } = await model.doStream(callOptions)
 
-    if (firstChunk) {
-      firstChunk = false
+      const reader = stream.getReader()
 
-      latencyTime = performance.now() - startTime
-      details.latency = Math.floor(latencyTime)
-
-      if (part?.type !== 'error') {
-        // @ts-expect-error: type 'metadata' must not be in LanguageModelV2StreamPart
-        const _: LanguageModelV2StreamPart['type'] = 'metadata'
-
-        // Only send metadata when we received the first chunk
-        await writeChunk({
-          type: 'metadata',
-          ...metadata,
-        })
+      let hasWritten = false
+      const writeChunk = async (data: any) => {
+        hasWritten = true
+        await writeChunk_(data)
       }
-    }
 
-    if (done) {
-      details.generationTime = Math.max(
-        Math.floor(performance.now() - startTime - (latencyTime ?? 0)),
-        0,
-      )
-      break
-    }
+      let firstChunk = true
 
-    // Process different types of stream parts
-    switch (part.type) {
-      case 'stream-start': {
-        details.warnings = part.warnings
-        break
-      }
-      case 'response-metadata': {
-        const { type: _, ...responseMetadata } = part
-        details.responseMetadata = responseMetadata
-        break
-      }
-      case 'error': {
-        // Only throw error if we haven't written anything yet
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        if (!hasWritten && APICallError.isInstance(part.error)) {
-          const statusCode = part.error.statusCode
-          if (
-            // unauthorized
-            statusCode === 401 ||
-            // forbidden
-            statusCode === 403 ||
-            // request timeout
-            statusCode === 408 ||
-            // too many requests
-            statusCode === 429 ||
-            // server error
-            (statusCode && statusCode >= 500)
-          ) {
-            throw part.error
+      let activeText = ''
+
+      while (true) {
+        const { value: part, done } = await reader.read()
+
+        if (firstChunk) {
+          firstChunk = false
+
+          latencyTime = performance.now() - startTime
+          details.latency = Math.floor(latencyTime)
+
+          if (part?.type !== 'error') {
+            // @ts-expect-error: type 'metadata' must not be in LanguageModelV2StreamPart
+            const _: LanguageModelV2StreamPart['type'] = 'metadata'
+
+            // Only send metadata when we received the first chunk
+            await writeChunk({
+              type: 'metadata',
+              ...metadata,
+            })
           }
         }
 
-        if (part.error instanceof Error) {
-          // Serialize error to ensure it can be properly transferred across the network
-          part.error = serializeError(part.error)
-          ;(part as Record<string, unknown>).errorSerialized = true
+        if (done) {
+          details.generationTime = Math.max(
+            Math.floor(performance.now() - startTime - (latencyTime ?? 0)),
+            0,
+          )
+
+          span.setAttributes(
+            selectTelemetryAttributes({
+              telemetry,
+              attributes: {
+                'gen_ai.response.finish_reasons': [details.finishReason],
+                'gen_ai.response.id': details.responseMetadata?.id,
+                'gen_ai.response.model': details.responseMetadata?.modelId,
+                'gen_ai.usage.input_tokens': details.usage.inputTokens,
+                'gen_ai.usage.output_tokens': details.usage.outputTokens,
+                'gen_ai.output.messages': { output: () => activeText },
+              },
+            }),
+          )
+
+          break
         }
 
-        break
-      }
-      case 'finish': {
-        details.finishReason = part.finishReason
-        details.usage = part.usage
-        details.providerMetadata = part.providerMetadata
-        break
-      }
-    }
+        // Process different types of stream parts
+        switch (part.type) {
+          case 'stream-start': {
+            details.warnings = part.warnings
+            break
+          }
+          case 'response-metadata': {
+            const { type: _, ...responseMetadata } = part
+            details.responseMetadata = responseMetadata
+            break
+          }
+          case 'text-delta': {
+            activeText += part.delta
+            break
+          }
+          case 'error': {
+            // Only throw error if we haven't written anything yet
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+            if (!hasWritten && APICallError.isInstance(part.error)) {
+              const statusCode = part.error.statusCode
+              if (
+                // unauthorized
+                statusCode === 401 ||
+                // forbidden
+                statusCode === 403 ||
+                // request timeout
+                statusCode === 408 ||
+                // too many requests
+                statusCode === 429 ||
+                // server error
+                (statusCode && statusCode >= 500)
+              ) {
+                throw part.error
+              }
+            }
 
-    await writeChunk(part)
-  }
+            if (part.error instanceof Error) {
+              // Serialize error to ensure it can be properly transferred across the network
+              part.error = serializeError(part.error)
+              ;(part as Record<string, unknown>).errorSerialized = true
+            }
+
+            break
+          }
+          case 'finish': {
+            details.finishReason = part.finishReason
+            details.usage = part.usage
+            details.providerMetadata = part.providerMetadata
+            break
+          }
+        }
+
+        await writeChunk(part)
+      }
+    },
+  })
 }
 
 export async function requestJson(request: NextRequest): Promise<object> {

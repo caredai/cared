@@ -1,3 +1,8 @@
+import { LangfuseSpanProcessor } from '@langfuse/otel'
+import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
+
+import type { ShouldExportSpan } from '@langfuse/otel'
+
 export async function register() {
   if (
     // eslint-disable-next-line no-restricted-properties
@@ -9,3 +14,17 @@ export async function register() {
     await import('@/lib/proxy')
   }
 }
+
+const shouldExportSpan: ShouldExportSpan = (span) => {
+  return span.otelSpan.instrumentationScope.name !== 'next.js'
+}
+
+const langfuseSpanProcessor = new LangfuseSpanProcessor({
+  shouldExportSpan,
+})
+
+const tracerProvider = new NodeTracerProvider({
+  spanProcessors: [langfuseSpanProcessor],
+})
+
+tracerProvider.register()

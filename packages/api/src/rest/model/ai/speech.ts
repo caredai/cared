@@ -147,7 +147,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           const { headers: _, body: __, ...responseMetadata } = result.response
           details.responseMetadata = responseMetadata
 
-          await expenseManager.billGeneration(
+          expenseManager.billGeneration(
             {
               type: 'speech',
               ...modelInfo,
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest): Promise<Response> {
             latency: details.latency,
           })
 
-          await keyManager.saveState() // TODO: waitUntil
+          keyManager.saveState()
 
           return makeResponseJson(result)
         } catch (error: any) {
@@ -169,13 +169,13 @@ export async function POST(req: NextRequest): Promise<Response> {
             // Try the next model/key if available
             continue
           } else {
-            await keyManager.saveState() // TODO: waitUntil
+            keyManager.saveState()
             throw error
           }
         }
       }
 
-      await keyManager.saveState() // TODO: waitUntil
+      keyManager.saveState()
     }
 
     if (lastError) {

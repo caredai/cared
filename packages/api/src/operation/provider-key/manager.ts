@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { after } from 'next/server'
 
 import type { ModelFullId, ProviderId, ProviderKey as ProviderKeyContent } from '@cared/providers'
 import { and, desc, eq } from '@cared/db'
@@ -144,7 +145,7 @@ export class ProviderKeyManager {
         })
       })
     }
-    void manager.saveState() // TODO: waitUntil
+    manager.saveState()
 
     return manager
   }
@@ -313,57 +314,59 @@ export class ProviderKeyManager {
 
   private savingPromise: Promise<any> | undefined = undefined
 
-  async saveState() {
-    // Clear changes after saving
-    const systemKeysChanges = this.systemKeysChanges
-    const userOrOrgKeysChanges = this.userOrOrgKeysChanges
-    this.systemKeysChanges = []
-    this.userOrOrgKeysChanges = []
+  saveState() {
+    after(async () => {
+      // Clear changes after saving
+      const systemKeysChanges = this.systemKeysChanges
+      const userOrOrgKeysChanges = this.userOrOrgKeysChanges
+      this.systemKeysChanges = []
+      this.userOrOrgKeysChanges = []
 
-    if (this.savingPromise) {
-      try {
-        await this.savingPromise
-      } catch {
-        // ignore
+      if (this.savingPromise) {
+        try {
+          await this.savingPromise
+        } catch {
+          // ignore
+        }
       }
-    }
 
-    const request = {
-      keyTtl,
-      now: Date.now(),
-      window,
-    } as ProviderKeyChangeRequest
+      const request = {
+        keyTtl,
+        now: Date.now(),
+        window,
+      } as ProviderKeyChangeRequest
 
-    try {
-      this.savingPromise = Promise.all([
-        systemKeysChanges.length > 0 &&
-          kv.eval(
-            scripts.providerKeysStates,
-            [kv.key(systemKeysStateKey(this.modelFullId))],
-            [
-              JSON.stringify({
-                ...request,
-                changes: systemKeysChanges,
-              }),
-            ],
-          ),
-        userOrOrgKeysChanges.length > 0 &&
-          kv.eval(
-            scripts.providerKeysStates,
-            [kv.key(userOrOrgKeysStateKey(this.auth, this.modelFullId))],
-            [
-              JSON.stringify({
-                ...request,
-                changes: userOrOrgKeysChanges,
-              }),
-            ],
-          ),
-      ])
+      try {
+        this.savingPromise = Promise.all([
+          systemKeysChanges.length > 0 &&
+            kv.eval(
+              scripts.providerKeysStates,
+              [kv.key(systemKeysStateKey(this.modelFullId))],
+              [
+                JSON.stringify({
+                  ...request,
+                  changes: systemKeysChanges,
+                }),
+              ],
+            ),
+          userOrOrgKeysChanges.length > 0 &&
+            kv.eval(
+              scripts.providerKeysStates,
+              [kv.key(userOrOrgKeysStateKey(this.auth, this.modelFullId))],
+              [
+                JSON.stringify({
+                  ...request,
+                  changes: userOrOrgKeysChanges,
+                }),
+              ],
+            ),
+        ])
 
-      await this.savingPromise
-    } finally {
-      this.savingPromise = undefined
-    }
+        await this.savingPromise
+      } finally {
+        this.savingPromise = undefined
+      }
+    })
   }
 }
 

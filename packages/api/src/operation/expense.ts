@@ -1,4 +1,5 @@
 import assert from 'assert'
+import { after } from 'next/server'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Decimal } from 'decimal.js'
 
@@ -155,17 +156,12 @@ export class ExpenseManager {
     throw new Error('Insufficient credits')
   }
 
-  private async waitUntil(cb: () => Promise<void>) {
-    // TODO: use cloudflare ctx.waitUntil()
-    await cb()
-  }
-
-  async billGeneration(model: TypedModelInfo, details: GenerationDetails) {
+  billGeneration(model: TypedModelInfo, details: GenerationDetails) {
     if (!model.chargeable && !details.byok) {
       throw new Error('Model is not chargeable')
     }
 
-    await this.waitUntil(async () => {
+    after(async () => {
       const creditsCandidates = await this.prepare()
 
       if (creditsCandidates.some((credits) => new Decimal(credits.credits).isNegative())) {

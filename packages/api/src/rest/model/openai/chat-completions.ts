@@ -299,7 +299,7 @@ export async function POST(req: NextRequest): Promise<Response> {
               if (handleError(keyManager, key, error, details)) {
                 return false
               } else {
-                await keyManager.saveState() // TODO: waitUntil
+                keyManager.saveState()
                 throw error
               }
             }
@@ -321,7 +321,7 @@ export async function POST(req: NextRequest): Promise<Response> {
               if (handleError(keyManager, key, error, details)) {
                 return false
               } else {
-                await keyManager.saveState() // TODO: waitUntil
+                keyManager.saveState()
                 throw error
               }
             }
@@ -336,7 +336,7 @@ export async function POST(req: NextRequest): Promise<Response> {
           continue
         }
 
-        await expenseManager.billGeneration(
+        expenseManager.billGeneration(
           {
             type: 'language',
             ...modelInfo,
@@ -349,12 +349,12 @@ export async function POST(req: NextRequest): Promise<Response> {
           latency: details.latency,
         })
 
-        await keyManager.saveState() // TODO: waitUntil
+        keyManager.saveState()
 
         return result
       }
 
-      await keyManager.saveState() // TODO: waitUntil
+      keyManager.saveState()
     }
 
     if (lastError) {

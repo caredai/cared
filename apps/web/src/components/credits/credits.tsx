@@ -267,17 +267,13 @@ function OrdersTable({
 
         switch (statusType) {
           case 'paid':
-            return (
-              <Badge variant="default" className="bg-green-500">
-                Completed
-              </Badge>
-            )
+            return <Badge>Completed</Badge>
           case 'pending':
             return <Badge variant="secondary">Pending</Badge>
           case 'canceled':
-            return <Badge variant="destructive">Canceled</Badge>
+            return <Badge variant="outline">Canceled</Badge>
           default:
-            return <Badge variant="destructive">Failed</Badge>
+            return <Badge variant="outline">Failed</Badge>
         }
       },
     },
