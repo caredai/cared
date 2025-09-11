@@ -1,6 +1,5 @@
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
-
 import type { AppRouter } from './root'
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
 import { authenticate } from './auth'
 import { generateOpenApiDocument } from './openapi'
 import { appRouter } from './root'
@@ -36,4 +35,5 @@ export type { AppRouter, RouterInputs, RouterOutputs }
 
 export * from './types'
 export * from './rest'
+export { registerTelemetry } from './telemetry'
 export type { ApiKeyMetadataInput, OptionalApiKeyMetadataInput } from './operation'

@@ -56,6 +56,7 @@ async function main() {
   console.log(`📄 Response: ${generateResult.text}`)
   console.log(`📊 Usage: ${JSON.stringify(generateResult.usage)}`)
 
+
   // Test 2: Stream text
   console.log('\n🌊 Testing streamText...')
   const streamResult = streamText({
@@ -80,6 +81,8 @@ async function main() {
 
   console.log('\n✅ streamText completed successfully')
   console.log(`📊 Final usage: ${JSON.stringify(await streamResult.totalUsage)}`)
+
+  return
 
   // Test 3: Generate image
   console.log('\n🖼️ Testing image generation...')
