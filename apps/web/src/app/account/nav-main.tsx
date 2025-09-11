@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, Brain, CircleDollarSign, Key, ShieldCheck, UserRound, Wallet } from 'lucide-react'
+import { Activity, Bot, Brain, CircleDollarSign, Key, ShieldCheck, UserRound, Wallet } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 
@@ -45,6 +45,11 @@ const items = [
     title: 'Applications',
     url: '/applications',
     icon: Bot,
+  },
+  {
+    title: 'Tracing',
+    url: '/tracing',
+    icon: Activity,
   },
 ]
 

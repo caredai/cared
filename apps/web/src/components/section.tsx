@@ -9,14 +9,16 @@ export function Section({ children }: { children: ReactNode }) {
 
 export function SectionTitle({ title, description }: { title: string; description?: string }) {
   return (
-    <div className="flex flex-col md:grid md:grid-cols-[min-content_min-content_max-content] md:items-center gap-x-4 md:-ml-11">
+    <div className="flex flex-col md:grid md:grid-cols-[min-content_min-content_1fr] md:items-center gap-x-4 md:-ml-11">
       <SidebarTrigger className="hidden md:flex" />
 
       <Separator orientation="vertical" className="hidden md:flex max-h-4" />
 
       <h1 className="text-2xl font-bold">{title}</h1>
 
-      {description && <p className="col-start-3 text-muted-foreground">{description}</p>}
+      {description && (
+        <p className="col-start-3 text-muted-foreground line-clamp-3">{description}</p>
+      )}
     </div>
   )
 }

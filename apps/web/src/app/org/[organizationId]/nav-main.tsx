@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  Activity,
   Boxes,
   Brain,
   CircleDollarSign,
@@ -42,6 +43,11 @@ const items = [
     title: 'Members',
     url: '/members',
     icon: Users,
+  },
+  {
+    title: 'Tracing',
+    url: '/tracing',
+    icon: Activity,
   },
   {
     title: 'Settings',

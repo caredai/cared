@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { Bot, Database, Key, Puzzle, Settings2, Wrench } from 'lucide-react'
+import { Activity, Bot, Database, Key, Puzzle, Settings2, Wrench } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
@@ -31,6 +31,11 @@ const items = [
     title: 'API Keys',
     url: '/api-keys',
     icon: Key,
+  },
+  {
+    title: 'Tracing',
+    url: '/tracing',
+    icon: Activity,
   },
   {
     title: 'Settings',

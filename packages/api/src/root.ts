@@ -15,6 +15,7 @@ import { organizationRouter } from './trpc/organization'
 import { providerKeyRouter } from './trpc/provider-key'
 import { storageRouter } from './trpc/storage'
 import { stripeRouter } from './trpc/stripe'
+import { telemetryRouter } from './trpc/telemetry'
 import { tokenizerRouter } from './trpc/tokenizer'
 import { userRouter } from './trpc/user'
 import { workspaceRouter } from './trpc/workspace'
@@ -39,6 +40,7 @@ export const appRouter = createTRPCRouter({
   credits: creditsRouter,
   expense: expenseRouter,
   stripe: stripeRouter,
+  telemetry: telemetryRouter,
 })
 
 // export type definition of API
