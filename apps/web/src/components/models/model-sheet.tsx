@@ -308,7 +308,7 @@ export function ModelSheet({
         <Tabs
           value={activeTab}
           onValueChange={(value) => setActiveTab(value as ModelType)}
-          className="h-[calc(100%-92px)]"
+          className="min-h-0 flex-1"
         >
           <div className="relative w-full">
             <div

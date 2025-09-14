@@ -10,11 +10,19 @@ import {
   CircleQuestionMarkIcon,
   ClockIcon,
   ExternalLinkIcon,
+  MoreHorizontalIcon,
   RefreshCwIcon,
+  TrashIcon,
 } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
 import { DataTable } from '@cared/ui/components/data-table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@cared/ui/components/dropdown-menu'
 import {
   Select,
   SelectContent,
@@ -30,8 +38,11 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { SectionTitle } from '@/components/section'
 import { PopoverTooltip } from '@/components/tooltip'
 import { useApps } from '@/hooks/use-app'
-import { useTraces } from '@/hooks/use-telemetry'
+import { useSession } from '@/hooks/use-session'
+import { useDeleteTraces, useTraces } from '@/hooks/use-telemetry'
 import { useWorkspaces } from '@/hooks/use-workspace'
+import { DeleteTraceDialog } from './DeleteTraceDialog'
+import { TraceDetailsSheet } from './TraceDetailsSheet'
 
 type TraceScope = 'user' | 'organization' | 'workspace' | 'app'
 
@@ -170,6 +181,11 @@ function TracingInner({
 }) {
   const [pageSize, setPageSize] = useState(20)
   const [dateRange, setDateRange] = useState<string>('7d')
+  const [selectedTrace, setSelectedTrace] = useState<TraceWithDetails | null>(null)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const [selectedRows, setSelectedRows] = useState<string[]>([])
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [tracesToDelete, setTracesToDelete] = useState<string[]>([])
 
   // Calculate date range filters
   const dateRangeFilters = useMemo(() => {
@@ -208,15 +224,55 @@ function TracingInner({
     return { fromTimestamp }
   }, [dateRange])
 
+  const { user } = useSession()
+  const deleteTraces = useDeleteTraces()
+
   const { traces, isLoading, isFetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useTraces({
-      userId: scope === 'user' ? undefined : undefined, // Will be handled by auth context
+      userId: scope === 'user' ? user.id : undefined, // Will be handled by auth context
       organizationId: scope === 'organization' ? organizationId : undefined,
       workspaceId: scope === 'workspace' ? workspaceId : undefined,
       appId: scope === 'app' ? appId : undefined,
       pageSize,
       ...dateRangeFilters,
     })
+
+  // Handle row selection change
+  const handleSelectionChange = (selection: Record<string, boolean>) => {
+    console.log(selection)
+    // Now selection keys are the actual trace IDs instead of indices
+    const selectedIds = Object.keys(selection).filter((id) => selection[id])
+    setSelectedRows(selectedIds)
+  }
+
+  // Handle bulk delete
+  const handleBulkDelete = () => {
+    if (selectedRows.length === 0) return
+    setTracesToDelete(selectedRows)
+    setDeleteDialogOpen(true)
+  }
+
+  // Handle single trace delete
+  const handleDeleteTrace = (traceId: string) => {
+    setTracesToDelete([traceId])
+    setDeleteDialogOpen(true)
+  }
+
+  // Handle confirmed delete
+  const handleConfirmDelete = async () => {
+    await deleteTraces({
+      traceIds: tracesToDelete,
+      userId: scope === 'user' ? user.id : undefined,
+      organizationId: scope === 'organization' ? organizationId : undefined,
+      workspaceId: scope === 'workspace' ? workspaceId : undefined,
+      appId: scope === 'app' ? appId : undefined,
+    })
+
+    // Clear selection if bulk delete
+    if (tracesToDelete.length > 1) {
+      setSelectedRows([])
+    }
+  }
 
   // Define table columns
   const columns: ColumnDef<TraceWithDetails>[] = [
@@ -242,10 +298,73 @@ function TracingInner({
       header: 'Name',
       cell: ({ row }) => {
         const trace = row.original
+        return <p className=" max-w-50 font-medium whitespace-normal line-clamp-1">{trace.name}</p>
+      },
+    },
+    {
+      accessorKey: 'input',
+      header: 'Input',
+      cell: ({ row }) => {
+        const trace = row.original
+        const inputText = trace.input ? JSON.stringify(trace.input) : ''
         return (
-          <div className="flex flex-col max-w-50">
-            <span className="font-medium truncate">{trace.name}</span>
+          <p className="w-80 whitespace-normal text-sm line-clamp-2" title={inputText}>
+            {inputText}
+          </p>
+        )
+      },
+    },
+    {
+      accessorKey: 'output',
+      header: 'Output',
+      cell: ({ row }) => {
+        const trace = row.original
+        const outputText =
+          typeof trace.output === 'object'
+            ? JSON.stringify(trace.output)
+            : trace.output
+              ? // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                String(trace.output)
+              : ''
+        return (
+          <p className="w-80 whitespace-normal text-sm line-clamp-1" title={outputText}>
+            {outputText}
+          </p>
+        )
+      },
+    },
+    {
+      accessorKey: 'observations',
+      header: 'Observations',
+      cell: ({ row }) => {
+        const trace = row.original
+        const observations = trace.observations
+        const count = Array.isArray(observations) ? observations.length : 0
+        return (
+          <div>
+            <span className="text-sm">{count}</span>
           </div>
+        )
+      },
+    },
+    {
+      accessorKey: 'cost',
+      header: 'Cost',
+      cell: ({ row }) => {
+        const trace = row.original
+        return <span className="font-mono">{`$ ${trace.totalCost}`}</span>
+      },
+    },
+    {
+      accessorKey: 'metadata',
+      header: 'Metadata',
+      cell: ({ row }) => {
+        const trace = row.original
+        const metadataText = trace.metadata ? JSON.stringify(trace.metadata) : ''
+        return (
+          <p className="w-80 whitespace-normal text-sm line-clamp-2" title={metadataText}>
+            {metadataText}
+          </p>
         )
       },
     },
@@ -256,7 +375,7 @@ function TracingInner({
         const trace = row.original
         return (
           <div className="flex items-center gap-1">
-            <ClockIcon className="h-4 w-4 text-muted-foreground" />
+            <ClockIcon className="h-3 w-3 text-muted-foreground" />
             <span className="text-sm">{trace.latency ? `${trace.latency}s` : 'N/A'}</span>
           </div>
         )
@@ -268,19 +387,37 @@ function TracingInner({
       cell: ({ row }) => {
         const trace = row.original
         return (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Open trace details in new tab or modal
-                window.open(`/traces/${trace.id}`, '_blank')
-              }}
-            >
-              <ExternalLinkIcon className="h-4 w-4" />
-              View
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontalIcon className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedTrace(trace)
+                  setIsSheetOpen(true)
+                }}
+              >
+                <ExternalLinkIcon className="mr-2 h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDeleteTrace(trace.id)}
+                className="text-destructive"
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )
       },
     },
@@ -345,11 +482,46 @@ function TracingInner({
               pageSize={pageSize}
               onPageSizeChange={setPageSize}
               pageSizeOptions={[10, 20, 50]}
+              enableRowSelection={true}
+              onSelectionChange={handleSelectionChange}
+              getRowId={(trace) => trace.id}
+              bulkActions={[
+                {
+                  label: `Delete ${selectedRows.length} trace${selectedRows.length > 1 ? 's' : ''}`,
+                  icon: TrashIcon,
+                  action: () => handleBulkDelete(),
+                  variant: 'destructive',
+                },
+              ]}
+              onRowClick={(trace: TraceWithDetails) => {
+                setSelectedTrace(trace)
+                setIsSheetOpen(true)
+              }}
               className="text-muted-foreground"
             />
           </>
         )}
       </div>
+
+      {/* Trace Details Sheet */}
+      {selectedTrace && (
+        <TraceDetailsSheet
+          trace={selectedTrace}
+          isOpen={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+          organizationId={organizationId}
+          workspaceId={workspaceId}
+          appId={appId}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteTraceDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        traceIds={tracesToDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   )
 }

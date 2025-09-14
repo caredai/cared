@@ -72,6 +72,13 @@ interface DataTableProps<TData, TValue> {
   isFetchingNextPage?: boolean
   onFetchNextPage?: () => Promise<unknown> | void
   className?: string
+  onRowClick?: (row: TData) => void
+  /**
+   * Function to get the unique ID for each row. If not provided, row index will be used.
+   * This is important for row selection to work correctly with data IDs instead of indices.
+   * @example (row) => row.id - uses the 'id' field as the row identifier
+   */
+  getRowId?: (row: TData) => string
 }
 
 export function DataTable<TData, TValue>({
@@ -93,6 +100,8 @@ export function DataTable<TData, TValue>({
   isFetchingNextPage = false,
   onFetchNextPage,
   className,
+  onRowClick,
+  getRowId,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting)
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -120,7 +129,11 @@ export function DataTable<TData, TValue>({
       return searchKeys.some((key) => {
         const cellValue = row.getValue(key)
         if (cellValue == null) return false
-        return String(cellValue).toLowerCase().includes(searchValue)
+        // Handle object values properly
+        const stringValue = typeof cellValue === 'object' && cellValue !== null 
+          ? JSON.stringify(cellValue) 
+          : String(cellValue)
+        return stringValue.toLowerCase().includes(searchValue)
       })
     },
     [searchKeys],
@@ -140,6 +153,7 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
+    getRowId,
     onSortingChange: enableSorting ? setSorting : undefined,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
@@ -251,7 +265,7 @@ export function DataTable<TData, TValue>({
             {bulkActions.map((action, index) => (
               <Button
                 key={index}
-                variant={action.variant || 'outline'}
+                variant={action.variant ?? 'outline'}
                 size="sm"
                 onClick={() => action.action(selectedRows)}
                 className="flex items-center gap-2"
@@ -266,7 +280,7 @@ export function DataTable<TData, TValue>({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
+              Columns <ChevronDownIcon className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -341,7 +355,17 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className={row.getIsSelected() ? 'bg-muted/50' : ''}
+                  className={cn(
+                    row.getIsSelected() ? 'bg-muted/50' : '',
+                    onRowClick ? 'cursor-pointer hover:bg-muted/30' : ''
+                  )}
+                  onClick={(e) => {
+                    // Check if the click originated from an interactive element
+                    if (e.defaultPrevented || e.isPropagationStopped()) {
+                      return
+                    }
+                    onRowClick?.(row.original)
+                  }}
                 >
                   {/* Selection checkbox cell */}
                   {enableRowSelection && (
@@ -351,6 +375,7 @@ export function DataTable<TData, TValue>({
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
                         aria-label={`Select row ${row.id}`}
                         className="translate-y-[2px]"
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </TableCell>
                   )}

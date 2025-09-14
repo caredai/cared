@@ -4,6 +4,8 @@
 
 @import './helio.css';
 
+@import '@xyflow/react/dist/style.css';
+
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 @source "../../../node_modules/@daveyplate/better-auth-ui";

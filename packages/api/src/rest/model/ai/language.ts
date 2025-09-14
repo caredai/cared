@@ -1,5 +1,4 @@
 import assert from 'assert'
-import type { ToolCallPart, ToolResultPart } from 'ai'
 import type { NextRequest } from 'next/server'
 import { after, NextResponse } from 'next/server'
 import { APICallError } from '@ai-sdk/provider'
@@ -15,6 +14,7 @@ import { serializeError, sharedV2ProviderOptionsSchema, SuperJSON } from '@cared
 
 import type { AuthObject } from '../../../auth'
 import type { ProviderKeyState } from '../../../operation'
+import type { TelemetrySettings } from '../../../telemetry'
 import type {
   LanguageModelV2,
   LanguageModelV2CallOptions,
@@ -24,14 +24,15 @@ import type { Span } from '@opentelemetry/api'
 import { authenticate } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
 import {
+  asToolCalls,
   extractTextContent,
   getTracer,
   langfuseSpanProcessor,
   recordSpan,
   selectTelemetryAttributes,
   stringifyForTelemetry,
-  TelemetrySettings,
 } from '../../../telemetry'
+import { languageModelV2MessageSchema } from '../../../types'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -63,100 +64,6 @@ const languageModelV2ToolChoiceSchema = z.union([
     toolName: z.string(),
   }),
 ])
-
-const textPartSchema = z.object({
-  type: z.literal('text'),
-  text: z.string(),
-  providerOptions: sharedV2ProviderOptionsSchema.optional(),
-})
-
-const filePartSchema = z.object({
-  type: z.literal('file'),
-  data: z.union([
-    z.string(),
-    z.url().transform((url) => new URL(url)),
-    z.array(z.uint32().max(255)).transform((array) => Uint8Array.from(array)),
-  ]),
-  filename: z.string().optional(),
-  mediaType: z.string(),
-  providerOptions: sharedV2ProviderOptionsSchema.optional(),
-})
-
-const reasoningPartSchema = z.object({
-  type: z.literal('reasoning'),
-  text: z.string(),
-  providerOptions: sharedV2ProviderOptionsSchema.optional(),
-})
-
-const toolCallPartSchema = z.object({
-  type: z.literal('tool-call'),
-  toolCallId: z.string(),
-  toolName: z.string(),
-  input: z.unknown(),
-  providerExecuted: z.boolean().optional(),
-  providerOptions: sharedV2ProviderOptionsSchema.optional(),
-}) as z.ZodType<ToolCallPart>
-
-const toolResultContentSchema = z.union([
-  z.object({ type: z.literal('text'), value: z.string() }),
-  z.object({ type: z.literal('json'), value: z.json() }),
-  z.object({ type: z.literal('error-text'), value: z.string() }),
-  z.object({ type: z.literal('error-json'), value: z.json() }),
-  z.object({
-    type: z.literal('content'),
-    value: z.array(
-      z.union([
-        z.object({ type: z.literal('text'), text: z.string() }),
-        z.object({
-          type: z.literal('media'),
-          data: z.string(),
-          mediaType: z.string(),
-        }),
-      ]),
-    ),
-  }),
-])
-
-const toolResultPartSchema = z.object({
-  type: z.literal('tool-result'),
-  toolCallId: z.string(),
-  toolName: z.string(),
-  output: toolResultContentSchema,
-  providerOptions: sharedV2ProviderOptionsSchema.optional(),
-}) as z.ZodType<ToolResultPart>
-
-const languageModelV2MessageSchema = z
-  .union([
-    z.object({
-      role: z.literal('system'),
-      content: z.string(),
-    }),
-    z.object({
-      role: z.literal('user'),
-      content: z.array(z.union([textPartSchema, filePartSchema])),
-    }),
-    z.object({
-      role: z.literal('assistant'),
-      content: z.array(
-        z.union([
-          textPartSchema,
-          filePartSchema,
-          reasoningPartSchema,
-          toolCallPartSchema,
-          toolResultPartSchema,
-        ]),
-      ),
-    }),
-    z.object({
-      role: z.literal('tool'),
-      content: z.array(toolResultPartSchema),
-    }),
-  ])
-  .and(
-    z.object({
-      providerOptions: sharedV2ProviderOptionsSchema.optional(),
-    }),
-  )
 
 const requestArgsSchema = z.object({
   modelId: z.string(),
@@ -583,6 +490,9 @@ async function doGenerate({
   details.responseMetadata = gen.response ? responseMetadata : undefined
   details.warnings = gen.warnings
 
+  const textContent = extractTextContent(gen.content)
+  const toolCalls = asToolCalls(gen.content)
+
   span.setAttributes(
     selectTelemetryAttributes({
       telemetry,
@@ -592,8 +502,10 @@ async function doGenerate({
         'gen_ai.response.model': responseMetadata.modelId,
         'gen_ai.usage.input_tokens': gen.usage.inputTokens,
         'gen_ai.usage.output_tokens': gen.usage.outputTokens,
-        'langfuse.trace.output': { output: () => extractTextContent(gen.content) },
-        'langfuse.observation.output': { output: () => extractTextContent(gen.content) },
+        'langfuse.trace.output': { output: () => textContent },
+        'langfuse.observation.output': {
+          output: () => textContent || (toolCalls?.length ? JSON.stringify(toolCalls) : undefined),
+        },
         'langfuse.observation.completion_start_time': JSON.stringify(new Date().toISOString()),
       },
     }),
@@ -634,6 +546,7 @@ async function doStream({
   let firstChunk = true
 
   let activeText = ''
+  const stepToolCalls: any[] = []
 
   while (true) {
     const { value: part, done } = await reader.read()
@@ -673,7 +586,11 @@ async function doStream({
             'gen_ai.usage.input_tokens': details.usage.inputTokens,
             'gen_ai.usage.output_tokens': details.usage.outputTokens,
             'langfuse.trace.output': { output: () => activeText },
-            'langfuse.observation.output': { output: () => activeText },
+            'langfuse.observation.output': {
+              output: () =>
+                activeText ||
+                (stepToolCalls.length > 0 ? JSON.stringify(stepToolCalls) : undefined),
+            },
             'langfuse.observation.completion_start_time': JSON.stringify(latencyDate.toISOString()),
           },
         }),
@@ -695,6 +612,16 @@ async function doStream({
       }
       case 'text-delta': {
         activeText += part.delta
+        break
+      }
+      case 'tool-call': {
+        const { toolCallId, toolName, input, providerExecuted } = part
+        stepToolCalls.push({
+          toolCallId,
+          toolName,
+          input,
+          providerExecuted,
+        })
         break
       }
       case 'error': {
