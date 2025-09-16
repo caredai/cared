@@ -1,4 +1,5 @@
 import { Decimal } from 'decimal.js'
+
 import type { ObservationsView, TraceWithDetails } from '@langfuse/core'
 
 export const heatMapTextColor = (p: {
@@ -41,15 +42,13 @@ export type TreeNode =
 // Calculate duration for a node
 export const calculateDuration = (node: TreeNode) => {
   const isTraceRoot = 'isTraceRoot' in node
-  return !isTraceRoot &&
-    'endTime' in node &&
-    'startTime' in node &&
-    node.endTime &&
-    node.startTime
-    ? new Date(node.endTime).getTime() - new Date(node.startTime).getTime()
-    : node.latency
-      ? node.latency * 1000
-      : undefined
+  if (isTraceRoot) {
+    return node.latency * 1000
+  } else if (node.endTime) {
+    return new Date(node.endTime).getTime() - new Date(node.startTime).getTime()
+  } else {
+    return (node.latency ?? 0) * 1000
+  }
 }
 
 // Format duration for display
@@ -75,7 +74,7 @@ export const formatTokenUsage = (input?: number, output?: number, total?: number
 export const buildTraceTree = (
   trace: TraceWithDetails,
   observations: ObservationsView[],
-  sortByStartTime = false
+  sortByStartTime = false,
 ): TreeNode[] => {
   // Create a map of observations by ID for efficient lookup
   const observationMap = new Map<string, ObservationsView>()
@@ -91,7 +90,7 @@ export const buildTraceTree = (
   // Build tree structure recursively
   const buildTree = (parentId: string): TreeNode[] => {
     const filteredObservations = observations.filter((obs) => obs.parentObservationId === parentId)
-    
+
     const sortedObservations = sortByStartTime
       ? filteredObservations.sort((a, b) => {
           // Sort by start time if both have start times
@@ -105,7 +104,7 @@ export const buildTraceTree = (
           return a.id.localeCompare(b.id)
         })
       : filteredObservations
-    
+
     return sortedObservations.map((obs) => ({
       ...obs,
       children: buildTree(obs.id),
@@ -158,7 +157,7 @@ export const getAllNodeIds = (nodes: TreeNode[]): string[] => {
 // Flatten tree to get all nodes in chronological order
 export const flattenTreeToTimeline = (nodes: TreeNode[]): TreeNode[] => {
   const result: TreeNode[] = []
-  
+
   const flatten = (nodeList: TreeNode[]) => {
     nodeList.forEach((node) => {
       result.push(node)
@@ -167,76 +166,59 @@ export const flattenTreeToTimeline = (nodes: TreeNode[]): TreeNode[] => {
       }
     })
   }
-  
+
   flatten(nodes)
   return result
 }
 
 // Get start time for a node
-export const getNodeStartTime = (node: TreeNode): Date | null => {
+export const getNodeStartTime = (node: TreeNode): Date => {
   const isTraceRoot = 'isTraceRoot' in node
   if (isTraceRoot) {
-    return node.timestamp ? new Date(node.timestamp) : null
-  }
-  
-  if ('startTime' in node && node.startTime) {
+    return new Date(node.timestamp)
+  } else {
     return new Date(node.startTime)
   }
-  
-  return null
 }
 
 // Get end time for a node
-export const getNodeEndTime = (node: TreeNode): Date | null => {
+export const getNodeEndTime = (node: TreeNode): Date => {
   const isTraceRoot = 'isTraceRoot' in node
   if (isTraceRoot) {
     // For trace root, calculate end time from start time + latency
     const startTime = getNodeStartTime(node)
-    if (startTime && node.latency) {
-      return new Date(startTime.getTime() + node.latency * 1000)
-    }
-    return startTime
-  }
-  
-  if ('endTime' in node && node.endTime) {
-    return new Date(node.endTime)
-  }
-  
-  // If no end time, use start time + latency
-  const startTime = getNodeStartTime(node)
-  if (startTime && 'latency' in node && node.latency) {
     return new Date(startTime.getTime() + node.latency * 1000)
+  } else if (node.endTime) {
+    return new Date(node.endTime)
+  } else {
+    // If no end time, use start time + latency
+    const startTime = getNodeStartTime(node)
+    return new Date(startTime.getTime() + (node.latency ?? 0) * 1000)
   }
-  
-  return startTime
 }
 
 // Calculate timeline bounds (earliest start time and latest end time)
 export const calculateTimelineBounds = (nodes: TreeNode[]): { start: Date; end: Date } | null => {
   if (nodes.length === 0) return null
-  
+
   let earliestStart: Date | undefined
   let latestEnd: Date | undefined
-  
+
   nodes.forEach((node) => {
     const startTime = getNodeStartTime(node)
     const endTime = getNodeEndTime(node)
-    
-    if (startTime) {
-      if (!earliestStart || startTime < earliestStart) {
-        earliestStart = startTime
-      }
+
+    if (!earliestStart || startTime < earliestStart) {
+      earliestStart = startTime
     }
-    
-    if (endTime) {
-      if (!latestEnd || endTime > latestEnd) {
-        latestEnd = endTime
-      }
+
+    if (!latestEnd || endTime > latestEnd) {
+      latestEnd = endTime
     }
   })
-  
+
   if (!earliestStart || !latestEnd) return null
-  
+
   return { start: earliestStart, end: latestEnd }
 }
 
@@ -244,38 +226,35 @@ export const calculateTimelineBounds = (nodes: TreeNode[]): { start: Date; end: 
 export const calculateTimelinePosition = (
   node: TreeNode,
   bounds: { start: Date; end: Date },
-  rootDuration?: number
+  rootDuration?: number,
 ): { left: number; width: number } | null => {
   const startTime = getNodeStartTime(node)
   const endTime = getNodeEndTime(node)
-  
-  if (!startTime || !endTime) return null
-  
+
   const isTraceRoot = 'isTraceRoot' in node
   const nodeDuration = endTime.getTime() - startTime.getTime()
-  
+
   // If this is the root trace node, use fixed width of 600px
   if (isTraceRoot) {
     return { left: 0, width: 600 }
   }
-  
+
   // For other nodes, calculate width based on ratio with root duration
   if (rootDuration && rootDuration > 0) {
-    const ratio = nodeDuration / rootDuration
-    const width = ratio * 600 // Scale based on root's 600px width
+    const width = (nodeDuration / rootDuration) * 600 // Scale based on root's 600px width
     const totalDuration = bounds.end.getTime() - bounds.start.getTime()
     const nodeStart = startTime.getTime() - bounds.start.getTime()
     const left = (nodeStart / totalDuration) * 600 // Scale left position to 600px container
-    
+
     return { left: Math.max(0, left), width: Math.max(1, width) }
   }
-  
+
   // Fallback to original percentage-based calculation
   const totalDuration = bounds.end.getTime() - bounds.start.getTime()
   const nodeStart = startTime.getTime() - bounds.start.getTime()
-  
+
   const left = (nodeStart / totalDuration) * 100
   const width = (nodeDuration / totalDuration) * 100
-  
+
   return { left: Math.max(0, left), width: Math.max(0.1, width) }
 }

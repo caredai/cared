@@ -14,15 +14,15 @@ import { ChevronRight } from 'lucide-react'
 import { Button } from '@cared/ui/components/button'
 import { cn } from '@cared/ui/lib/utils'
 
+import type { TreeNode } from './utils'
 import type { ObservationsView, TraceWithDetails } from '@langfuse/core'
 import { ItemBadge } from './ItemBadge'
 import { LevelColors } from './level-colors'
-import type { TreeNode } from './utils'
 import {
   buildTraceTree,
   calculateDuration,
-  formatDuration,
   formatCost,
+  formatDuration,
   formatTokenUsage,
   getAllNodeIds,
   heatMapTextColor,
@@ -68,9 +68,8 @@ export const TraceTree = forwardRef<
 
     // Build tree structure from observations, with trace root node as the first item
     const tree: TreeNode[] = useMemo(() => {
-      return buildTraceTree(trace, observations)
+      return buildTraceTree(trace, observations, true)
     }, [observations, trace])
-
 
     // Handle expand all
     const handleExpandAll = useCallback(() => {
@@ -97,7 +96,6 @@ export const TraceTree = forwardRef<
       handleExpandAll()
     }, [handleExpandAll])
 
-
     // Render node content following SpanItem layout
     const renderNodeContent = (node: TreeNode, parentTotalDuration?: number) => {
       const isTraceRoot = 'isTraceRoot' in node
@@ -105,16 +103,13 @@ export const TraceTree = forwardRef<
       // Calculate duration
       const duration = calculateDuration(node)
 
-
       // Check if we should render metrics
       const shouldRenderMetrics =
         showMetrics &&
         Boolean(
-          duration ??
-            (!isTraceRoot && 'costDetails' in node && node.costDetails?.total) ??
-            (!isTraceRoot &&
-              'usageDetails' in node &&
-              (node.usageDetails?.input ?? node.usageDetails?.output)),
+          duration ||
+            (!isTraceRoot && node.costDetails?.total) ||
+            (!isTraceRoot && (node.usageDetails?.input ?? node.usageDetails?.output)),
         )
 
       return (
@@ -137,24 +132,21 @@ export const TraceTree = forwardRef<
 
               <div className="flex items-center gap-2">
                 {/* Level badge for observations only */}
-                {!isTraceRoot &&
-                  node.type !== 'TRACE' &&
-                  'level' in node &&
-                  node.level !== 'DEFAULT' && (
-                    <div className="flex">
-                      <span
-                        className={cn(
-                          'rounded-sm p-0.5 text-xs',
-                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                          LevelColors[node.level]?.bg,
-                          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                          LevelColors[node.level]?.text,
-                        )}
-                      >
-                        {node.level}
-                      </span>
-                    </div>
-                  )}
+                {!isTraceRoot && node.type !== 'TRACE' && node.level !== 'DEFAULT' && (
+                  <div className="flex">
+                    <span
+                      className={cn(
+                        'rounded-sm px-1 py-0.5 text-xs',
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                        LevelColors[node.level]?.bg,
+                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+                        LevelColors[node.level]?.text,
+                      )}
+                    >
+                      {node.level}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -1,6 +1,7 @@
 import assert from 'assert'
 import type { NextRequest } from 'next/server'
 import type { OpenAI } from 'openai'
+import { after } from 'next/server'
 import { APICallError } from '@ai-sdk/provider'
 import { z } from 'zod/v4'
 
@@ -10,6 +11,7 @@ import { createCustomJsonFetch, splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { generateId } from '@cared/shared'
 
+import type { TelemetrySettings } from '../../../telemetry'
 import type {
   LanguageModelV2,
   LanguageModelV2CallOptions,
@@ -17,9 +19,20 @@ import type {
   LanguageModelV2Usage,
   SharedV2ProviderMetadata,
 } from '@ai-sdk/provider'
+import type { Span } from '@opentelemetry/api'
 import { authenticate } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
-import { handleError, jsonSchema7Schema } from '../ai/language'
+import {
+  asToolCalls,
+  extractTextContent,
+  getTracer,
+  langfuseSpanProcessor,
+  recordErrorOnSpan,
+  recordSpan,
+  selectTelemetryAttributes,
+  stringifyForTelemetry,
+} from '../../../telemetry'
+import { authId, handleError, jsonSchema7Schema } from '../ai/language'
 import {
   ChatCompletionContentPartTextSchema,
   ChatCompletionMessageSchema,
@@ -158,255 +171,328 @@ const ChatCompletionRequestArgsSchema = z.object({
 })
 
 export async function POST(req: NextRequest): Promise<Response> {
-  const validatedArgs = ChatCompletionRequestArgsSchema.safeParse(await req.json())
-  if (!validatedArgs.success) {
-    return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
-  }
+  try {
+    const validatedArgs = ChatCompletionRequestArgsSchema.safeParse(await req.json())
+    if (!validatedArgs.success) {
+      return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
+    }
 
-  const { model: modelId, stream: isStream, payerOrganizationId, ...args } = validatedArgs.data
+    const { model: modelId, stream: isStream, payerOrganizationId, ...args } = validatedArgs.data
 
-  const auth = await authenticate()
-  if (!auth.isAuthenticated()) {
-    return new Response('Unauthorized', { status: 401 })
-  }
+    const auth = await authenticate()
+    if (!auth.isAuthenticated()) {
+      return new Response('Unauthorized', { status: 401 })
+    }
 
-  const expenseManager = ExpenseManager.from({
-    auth: auth.auth!,
-    payerOrganizationId,
-  })
+    const telemetry: TelemetrySettings = {
+      isEnabled: true,
+    }
+    const tracer = getTracer(telemetry)
 
-  // Allow modelId without provider prefix
-  const models = await findProvidersByModel(auth.auth!, modelId, 'language')
-  log.info(`Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`)
-  if (!models.length) {
-    return new Response('Model not found', {
-      status: 400,
+    const expenseManager = ExpenseManager.from({
+      auth: auth.auth!,
+      payerOrganizationId,
     })
-  }
 
-  let responseStream,
-    closeStream: (() => Promise<void>) | undefined,
-    writeChunk: ((data: any, notJson?: boolean) => Promise<void>) | undefined
-
-  if (isStream) {
-    // Create a TransformStream to convert LanguageModelV2StreamPart to OpenAI streaming format
-    const { readable, writable } = new TransformStream()
-    const writer = writable.getWriter()
-
-    responseStream = readable
-
-    let closed = false
-    closeStream = async () => {
-      if (closed) {
-        return
-      }
-      closed = true
-      await writer.close()
-    }
-
-    // Helper function to write data to the stream
-    writeChunk = async (data: any, notJson?: boolean) => {
-      if (closed) {
-        return
-      }
-      // SSE format
-      await writer.write(`data: ${!notJson ? JSON.stringify(data) : data}\n\n`)
-    }
-  }
-
-  async function process() {
-    let lastError: Error | undefined
-
-    for (const modelInfo of models) {
-      const modelId = modelInfo.id
-      const providerId = splitModelFullId(modelId).providerId
-
-      const keyManager = await ProviderKeyManager.from({
-        auth: auth.auth!,
-        modelId,
-        onlyByok: !modelInfo.chargeable,
-      })
-
-      const keys = keyManager.selectKeys()
-
-      for (const key of keys) {
-        log.info(`Using provider key ${key.id} for model ${modelId}`)
-
-        const callOptions = buildCallOptions({
-          args,
-          providerId,
-          signal: req.signal,
-        })
-
-        await expenseManager.canAfford(
-          {
-            type: 'language',
-            ...modelInfo,
-          },
-          {
-            type: 'language',
-            ...callOptions,
-          },
-          key.byok,
-        )
-
-        const {
-          prompt: _a,
-          responseFormat: _b,
-          tools: _c,
-          abortSignal: _d,
-          headers: _e,
-          responseFormat: _f,
-          ...callOptions_
-        } = callOptions
-        const details: LanguageGenerationDetails = {
-          modelId,
-          byok: key.byok,
-          latency: 0,
-          generationTime: 0,
-
-          type: 'language',
-          callOptions: {
-            ...callOptions_,
-            responseFormat: callOptions.responseFormat?.type,
-          },
-          stream: !!isStream,
-          finishReason: 'stop',
-          usage: { inputTokens: undefined, outputTokens: undefined, totalTokens: undefined },
-          warnings: [],
-        }
-
-        const customFetch = createCustomJsonFetch({
-          onLatency: (latency) => {
-            details.latency = latency
-          },
-        })
-
-        const model = getModel(modelId, 'language', key.key, customFetch)
-
-        const execute = async () => {
-          if (!isStream) {
-            try {
-              return await doGenerate({
-                model,
-                callOptions,
-                providerId,
-                modelId,
-                details,
-              })
-            } catch (error: unknown) {
-              lastError = error instanceof Error ? error : new Error(String(error))
-              if (handleError(keyManager, key, error, details)) {
-                return false
-              } else {
-                keyManager.saveState()
-                throw error
-              }
-            }
-          } else {
-            assert(writeChunk)
-            assert(closeStream)
-
-            try {
-              await doStream({
-                model,
-                callOptions,
-                providerId,
-                modelId,
-                writeChunk,
-                details,
-              })
-            } catch (error: unknown) {
-              lastError = error instanceof Error ? error : new Error(String(error))
-              if (handleError(keyManager, key, error, details)) {
-                return false
-              } else {
-                keyManager.saveState()
-                throw error
-              }
-            }
-
-            await closeStream()
-          }
-        }
-
-        const result = await execute()
-        if (result === false) {
-          // Try the next model/key if available
-          continue
-        }
-
-        expenseManager.billGeneration(
-          {
-            type: 'language',
-            ...modelInfo,
-          },
-          details,
-        )
-
-        keyManager.updateState(key, {
-          success: true,
-          latency: details.latency,
-        })
-
-        keyManager.saveState()
-
-        return result
-      }
-
-      keyManager.saveState()
-    }
-
-    if (lastError) {
-      throw lastError
-    }
-
-    if (!isStream) {
+    // Allow modelId without provider prefix
+    const models = await recordSpan({
+      name: 'findProvidersByModel',
+      attributes: selectTelemetryAttributes({
+        telemetry,
+        attributes: {
+          'langfuse.trace.name': 'Chat Generate (OpenAI Compatible)',
+          'langfuse.user.id': authId(auth.auth!),
+        },
+      }),
+      tracer,
+      fn: async () => await findProvidersByModel(auth.auth!, modelId, 'language'),
+    })
+    log.info(
+      `Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`,
+    )
+    if (!models.length) {
       return new Response('Model not found', {
         status: 400,
       })
+    }
+
+    let responseStream,
+      closeStream: (() => Promise<void>) | undefined,
+      writeChunk: ((data: any, notJson?: boolean) => Promise<void>) | undefined
+
+    if (isStream) {
+      // Create a TransformStream to convert LanguageModelV2StreamPart to OpenAI streaming format
+      const { readable, writable } = new TransformStream()
+      const writer = writable.getWriter()
+
+      responseStream = readable
+
+      let closed = false
+      closeStream = async () => {
+        if (closed) {
+          return
+        }
+        closed = true
+        await writer.close()
+      }
+
+      // Helper function to write data to the stream
+      writeChunk = async (data: any, notJson?: boolean) => {
+        if (closed) {
+          return
+        }
+        // SSE format
+        await writer.write(`data: ${!notJson ? JSON.stringify(data) : data}\n\n`)
+      }
+    }
+
+    async function process() {
+      let lastError: Error | undefined
+
+      for (const modelInfo of models) {
+        const modelId = modelInfo.id
+        const providerId = splitModelFullId(modelId).providerId
+
+        const keyManager = await recordSpan({
+          name: 'findAPIKeysByProvider',
+          attributes: {},
+          tracer,
+          fn: async () => {
+            return await ProviderKeyManager.from({
+              auth: auth.auth!,
+              modelId,
+              onlyByok: !modelInfo.chargeable,
+            })
+          },
+        })
+
+        const keys = keyManager.selectKeys()
+
+        for (const key of keys) {
+          log.info(`Using provider key ${key.id} for model ${modelId}`)
+
+          const callOptions = buildCallOptions({
+            args,
+            providerId,
+            signal: req.signal,
+          })
+
+          await recordSpan({
+            name: 'canAfford',
+            attributes: selectTelemetryAttributes({
+              telemetry,
+              attributes: {},
+            }),
+            tracer,
+            fn: async () => {
+              await expenseManager.canAfford(
+                {
+                  type: 'language',
+                  ...modelInfo,
+                },
+                {
+                  type: 'language',
+                  ...callOptions,
+                },
+                key.byok,
+              )
+            },
+          })
+
+          const {
+            prompt: _a,
+            responseFormat: _b,
+            tools: _c,
+            abortSignal: _d,
+            headers: _e,
+            responseFormat: _f,
+            ...callOptions_
+          } = callOptions
+          const details: LanguageGenerationDetails = {
+            modelId,
+            byok: key.byok,
+            latency: 0,
+            generationTime: 0,
+
+            type: 'language',
+            callOptions: {
+              ...callOptions_,
+              responseFormat: callOptions.responseFormat?.type,
+            },
+            stream: !!isStream,
+            finishReason: 'stop',
+            usage: { inputTokens: undefined, outputTokens: undefined, totalTokens: undefined },
+            warnings: [],
+          }
+
+          const customFetch = createCustomJsonFetch({
+            onLatency: (latency) => {
+              details.latency = latency
+            },
+          })
+
+          const model = getModel(modelId, 'language', key.key, customFetch)
+
+          const result = await recordSpan({
+            name: !isStream ? 'ai.doGenerate' : 'ai.doStream',
+            attributes: selectTelemetryAttributes({
+              telemetry,
+              attributes: {
+                'gen_ai.operation.name': 'chat',
+                'gen_ai.provider.name': model.provider,
+                'gen_ai.request.model': model.modelId,
+                'gen_ai.request.seed': callOptions.seed,
+                'gen_ai.request.frequency_penalty': callOptions.frequencyPenalty,
+                'gen_ai.request.max_tokens': callOptions.maxOutputTokens,
+                'gen_ai.request.presence_penalty': callOptions.presencePenalty,
+                'gen_ai.request.stop_sequences': callOptions.stopSequences,
+                'gen_ai.request.temperature': callOptions.temperature,
+                'gen_ai.request.top_p': callOptions.topP,
+                'gen_ai.output.type': callOptions.responseFormat?.type === 'json' ? 'json' : 'text',
+                'langfuse.observation.type': 'generation',
+                'langfuse.trace.input': { input: () => stringifyForTelemetry(callOptions.prompt) },
+                'langfuse.observation.input': {
+                  input: () => stringifyForTelemetry(callOptions.prompt),
+                },
+              },
+            }),
+            tracer,
+            fn: async (span) => {
+              if (!isStream) {
+                try {
+                  return await doGenerate({
+                    model,
+                    callOptions,
+                    providerId,
+                    modelId,
+                    details,
+                    telemetry,
+                    span,
+                  })
+                } catch (error: unknown) {
+                  lastError = error instanceof Error ? error : new Error(String(error))
+                  recordErrorOnSpan(span, error)
+                  if (handleError(keyManager, key, error, details)) {
+                    return false
+                  } else {
+                    keyManager.saveState()
+                    throw error
+                  }
+                }
+              } else {
+                assert(writeChunk)
+                assert(closeStream)
+
+                try {
+                  await doStream({
+                    model,
+                    callOptions,
+                    providerId,
+                    modelId,
+                    writeChunk,
+                    details,
+                    telemetry,
+                    span,
+                  })
+                } catch (error: unknown) {
+                  lastError = error instanceof Error ? error : new Error(String(error))
+                  recordErrorOnSpan(span, error)
+                  if (handleError(keyManager, key, error, details)) {
+                    return false
+                  } else {
+                    keyManager.saveState()
+                    throw error
+                  }
+                }
+
+                await closeStream()
+              }
+            },
+          })
+
+          if (result === false) {
+            // Try the next model/key if available
+            continue
+          }
+
+          expenseManager.billGeneration(
+            {
+              type: 'language',
+              ...modelInfo,
+            },
+            details,
+          )
+
+          keyManager.updateState(key, {
+            success: true,
+            latency: details.latency,
+          })
+
+          keyManager.saveState()
+
+          return result
+        }
+
+        keyManager.saveState()
+      }
+
+      if (lastError) {
+        throw lastError
+      }
+
+      if (!isStream) {
+        return new Response('Model not found', {
+          status: 400,
+        })
+      } else {
+        assert(writeChunk)
+        assert(closeStream)
+
+        await writeChunk({
+          error: {
+            message: 'Model not found',
+          },
+        })
+        await closeStream()
+      }
+    }
+
+    if (!isStream) {
+      return (await process())!
     } else {
+      // Processing the stream asynchronously
       assert(writeChunk)
       assert(closeStream)
+      void process()
+        .catch(async (error) => {
+          console.error(error)
+          const errorChunk = {
+            error: {
+              message: APICallError.isInstance(error)
+                ? error.message + '\n' + error.responseBody
+                : error instanceof Error
+                  ? error.message
+                  : JSON.stringify(error),
+            },
+          }
+          await writeChunk(errorChunk)
+          await closeStream()
+        })
+        .finally(() => {
+          after(langfuseSpanProcessor.forceFlush())
+        })
 
-      await writeChunk({
-        error: {
-          message: 'Model not found',
+      // Return the streaming response
+      return new Response(responseStream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
         },
       })
-      await closeStream()
     }
-  }
-
-  if (!isStream) {
-    return (await process())!
-  } else {
-    // Processing the stream asynchronously
-    assert(writeChunk)
-    assert(closeStream)
-    void process().catch(async (error) => {
-      console.error(error)
-      const errorChunk = {
-        error: {
-          message: APICallError.isInstance(error)
-            ? error.message + '\n' + error.responseBody
-            : error instanceof Error
-              ? error.message
-              : JSON.stringify(error),
-        },
-      }
-      await writeChunk(errorChunk)
-      await closeStream()
-    })
-
-    // Return the streaming response
-    return new Response(responseStream, {
-      headers: {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        Connection: 'keep-alive',
-      },
-    })
+  } finally {
+    after(langfuseSpanProcessor.forceFlush())
   }
 }
 
@@ -482,12 +568,16 @@ async function doGenerate({
   providerId,
   modelId,
   details,
+  telemetry,
+  span,
 }: {
   model: LanguageModelV2
   callOptions: LanguageModelV2CallOptions
   providerId: string
   modelId: string
   details: LanguageGenerationDetails
+  telemetry: TelemetrySettings
+  span: Span
 }): Promise<Response> {
   const startTime = performance.now()
   const gen = await model.doGenerate(callOptions)
@@ -512,11 +602,33 @@ async function doGenerate({
       },
     }))
 
+  const textContent = extractTextContent(gen.content)
+  const toolCalls_ = asToolCalls(gen.content)
+
   const rawResponse: any = gen.response?.body
   const logprobs =
     gen.providerMetadata?.[providerId]?.logprobs ?? rawResponse?.choices?.at(0)?.logprobs?.content
 
   const finishReason = chatCompletionsFinishReason(gen.finishReason)
+
+  span.setAttributes(
+    selectTelemetryAttributes({
+      telemetry,
+      attributes: {
+        'gen_ai.response.finish_reasons': [gen.finishReason],
+        'gen_ai.response.id': gen.response?.id,
+        'gen_ai.response.model': responseMetadata.modelId,
+        'gen_ai.usage.input_tokens': gen.usage.inputTokens,
+        'gen_ai.usage.output_tokens': gen.usage.outputTokens,
+        'langfuse.trace.output': { output: () => textContent },
+        'langfuse.observation.output': {
+          output: () =>
+            textContent || (toolCalls_?.length ? JSON.stringify(toolCalls_) : undefined),
+        },
+        'langfuse.observation.completion_start_time': JSON.stringify(new Date().toISOString()),
+      },
+    }),
+  )
 
   const response: OpenAI.ChatCompletion = {
     id: gen.response?.id ?? generateId('chatcmpl', '-'),
@@ -561,6 +673,8 @@ async function doStream({
   modelId,
   writeChunk: writeChunk_,
   details,
+  telemetry,
+  span,
 }: {
   model: LanguageModelV2
   callOptions: LanguageModelV2CallOptions
@@ -568,9 +682,12 @@ async function doStream({
   modelId: string
   writeChunk: (data: any, notJson?: boolean) => Promise<void>
   details: LanguageGenerationDetails
+  telemetry: TelemetrySettings
+  span: Span
 }) {
   const startTime = performance.now()
   let latencyTime: number | undefined
+  let latencyDate!: Date
 
   const { stream } = await model.doStream(callOptions)
 
@@ -590,12 +707,16 @@ async function doStream({
 
   let firstChunk = true
 
+  let activeText = ''
+  const stepToolCalls: any[] = []
+
   while (true) {
     const { value: part, done } = await reader.read()
 
     if (firstChunk) {
       firstChunk = false
       latencyTime = performance.now() - startTime
+      latencyDate = new Date()
       details.latency = Math.floor(latencyTime)
     }
 
@@ -604,6 +725,27 @@ async function doStream({
         Math.floor(performance.now() - startTime - (latencyTime ?? 0)),
         0,
       )
+
+      span.setAttributes(
+        selectTelemetryAttributes({
+          telemetry,
+          attributes: {
+            'gen_ai.response.finish_reasons': [details.finishReason],
+            'gen_ai.response.id': details.responseMetadata?.id,
+            'gen_ai.response.model': details.responseMetadata?.modelId,
+            'gen_ai.usage.input_tokens': details.usage.inputTokens,
+            'gen_ai.usage.output_tokens': details.usage.outputTokens,
+            'langfuse.trace.output': { output: () => activeText },
+            'langfuse.observation.output': {
+              output: () =>
+                activeText ||
+                (stepToolCalls.length > 0 ? JSON.stringify(stepToolCalls) : undefined),
+            },
+            'langfuse.observation.completion_start_time': JSON.stringify(latencyDate.toISOString()),
+          },
+        }),
+      )
+
       await writeChunk('[DONE]', true)
       break
     }
@@ -654,6 +796,8 @@ async function doStream({
             ],
           }
           await writeChunk(chunk)
+
+          activeText += part.delta
         }
         break
 
@@ -698,6 +842,7 @@ async function doStream({
           ],
         }
         await writeChunk(chunk)
+
         break
       }
 
@@ -732,14 +877,23 @@ async function doStream({
           ],
         }
         await writeChunk(chunk)
+
         break
       }
 
       case 'tool-input-end':
         break
 
-      case 'tool-call':
+      case 'tool-call': {
+        const { toolCallId, toolName, input, providerExecuted } = part
+        stepToolCalls.push({
+          toolCallId,
+          toolName,
+          input,
+          providerExecuted,
+        })
         break
+      }
 
       case 'tool-result':
         break
@@ -754,6 +908,7 @@ async function doStream({
         break
 
       case 'error': {
+        // Only throw error if we haven't written anything yet
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!hasWritten && APICallError.isInstance(part.error)) {
           const statusCode = part.error.statusCode

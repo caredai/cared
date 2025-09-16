@@ -25,8 +25,6 @@ import {
   formatCost,
   formatDuration,
   getAllNodeIds,
-  getNodeEndTime,
-  getNodeStartTime,
   heatMapTextColor,
 } from './utils'
 
@@ -169,8 +167,6 @@ export const TraceTimeline = forwardRef<TraceTimelineRef, TraceTimelineProps>(
       const isTraceRoot = 'isTraceRoot' in node
       const isSelected = currentNodeId === node.id
       const duration = calculateDuration(node)
-      const startTime = getNodeStartTime(node)
-      const endTime = getNodeEndTime(node)
       const hasChildren = node.children.length > 0
       const isNodeExpanded = isExpanded(node.id)
 
@@ -183,7 +179,7 @@ export const TraceTimeline = forwardRef<TraceTimelineRef, TraceTimelineProps>(
       const shouldRenderCost =
         showMetrics && !isTraceRoot && 'costDetails' in node && Boolean(node.costDetails?.total)
 
-      if (!(timelinePosition && startTime && endTime)) {
+      if (!timelinePosition) {
         return null
       }
 
@@ -288,7 +284,7 @@ export const TraceTimeline = forwardRef<TraceTimelineRef, TraceTimelineProps>(
     }
 
     return (
-      <div className="h-full overflow-auto p-4 flex flex-col gap-2">
+      <div className="h-full overflow-auto p-2 flex flex-col gap-2">
         {/* Timeline items */}
         {timelineNodes.map((node) => renderTimelineItem(node))}
 

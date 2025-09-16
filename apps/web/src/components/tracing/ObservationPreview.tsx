@@ -124,6 +124,14 @@ export function ObservationPreview({
             {typeof observation.latency === 'number' && (
               <Badge variant="outline">Latency: {formatDuration(observation.latency)}</Badge>
             )}
+
+            {/* Time to first token */}
+            {typeof observation.timeToFirstToken === 'number' && (
+              <Badge variant="outline">
+                Time to first token: {formatDuration(observation.timeToFirstToken)}
+              </Badge>
+            )}
+
             {observation.type === 'GENERATION' && (
               <>
                 {observation.costDetails?.total && (
@@ -131,7 +139,7 @@ export function ObservationPreview({
                     <span>Cost: ${observation.costDetails.total.toFixed(6)}</span>
                   </Badge>
                 )}
-                {observation.usageDetails && (
+                {typeof observation.usageDetails?.total === 'number' && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <span>
                       {formatTokenUsage(
@@ -144,6 +152,33 @@ export function ObservationPreview({
                 )}
               </>
             )}
+
+            {/* Model information */}
+            {observation.model && <Badge>{observation.model}</Badge>}
+
+            {/* Model parameters */}
+            {observation.modelParameters && typeof observation.modelParameters === 'object' && (
+              <>
+                {Object.entries(observation.modelParameters)
+                  .filter(([_, value]) => value != null)
+                  .map(([key, value]) => {
+                    const valueString =
+                      typeof value === 'object' ? JSON.stringify(value) : String(value)
+                    return (
+                      <Badge
+                        variant="outline"
+                        key={key}
+                        className="h-6 max-w-md"
+                        title={`${key}: ${valueString}`}
+                      >
+                        <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                          {key}: {valueString}
+                        </span>
+                      </Badge>
+                    )
+                  })}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -151,7 +186,7 @@ export function ObservationPreview({
       {/* Content Tabs */}
       <TabsBar
         value={selectedTab}
-        onValueChange={(value) => setSelectedTab(value as any)}
+        onValueChange={(value) => setSelectedTab(value as 'preview' | 'scores')}
         className="min-h-0 flex-1 flex flex-col"
       >
         <TabsBarList>
@@ -191,14 +226,11 @@ export function ObservationPreview({
 
             {/* Status Message */}
             {observation.statusMessage ? (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium">Status Message</h4>
-                <PrettyJsonView
-                  title="Status Message"
-                  json={observation.statusMessage}
-                  currentView={currentView}
-                />
-              </div>
+              <PrettyJsonView
+                title="Status Message"
+                json={observation.statusMessage}
+                currentView={currentView}
+              />
             ) : null}
 
             {/* Metadata */}

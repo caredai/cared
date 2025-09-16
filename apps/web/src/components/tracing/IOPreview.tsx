@@ -180,8 +180,8 @@ export const ModelMessageView: React.FC<{
     collapseLongHistory && messages.length > COLLAPSE_THRESHOLD ? true : null,
   )
 
-  const shouldRenderContent = (_message: LanguageModelV2MessageExtra) => {
-    return true
+  const shouldRenderContent = (message: LanguageModelV2MessageExtra) => {
+    return typeof message.content === 'string' ? !!message.content : !!message.content.length
   }
 
   const shouldRenderJson = (message: LanguageModelV2MessageExtra) => {
@@ -238,13 +238,15 @@ export const ModelMessageView: React.FC<{
                 )}
                 {shouldRenderJson(message) && (
                   <PrettyJsonView
-                    title={message.content ? undefined : message.role}
+                    title={shouldRenderContent(message) ? undefined : message.role}
                     json={message.json}
                     className={cn(!!message.content && 'rounded-t-none border-t-0')}
                     currentView={shouldRenderMarkdown ? 'pretty' : 'json'}
                   />
                 )}
-                {isCollapsed !== null && index === 0 ? (
+                {isCollapsed !== null &&
+                index === 0 &&
+                messagesToRender.length - COLLAPSE_THRESHOLD > 0 ? (
                   <Button
                     variant="ghost"
                     size="sm"

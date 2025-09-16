@@ -78,6 +78,34 @@ export function TraceGraphView({ trace, observations, selected, onSelect }: Trac
         children: buildTree(obs.id),
       }))
 
+      // Sort all children recursively by start time if available, otherwise by id
+      const sortChildren = (nodes: GraphNode[]): GraphNode[] => {
+        return nodes
+          .sort((a, b) => {
+            // Only sort observations, not trace nodes
+            if (a.nodeType === 'trace' || b.nodeType === 'trace') {
+              return a.id.localeCompare(b.id)
+            }
+            
+            // Sort by start time if both have start times
+            if (a.startTime && b.startTime) {
+              return new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+            }
+            // If only one has start time, prioritize the one with start time
+            if (a.startTime && !b.startTime) return -1
+            if (!a.startTime && b.startTime) return 1
+            // If neither has start time, sort by id as fallback
+            return a.id.localeCompare(b.id)
+          })
+          .map((node) => ({
+            ...node,
+            children: sortChildren(node.children),
+          }))
+      }
+
+      // Sort the trace node's children
+      traceNode.children = sortChildren(traceNode.children)
+
       return traceNode
     }
 

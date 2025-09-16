@@ -20,7 +20,7 @@ import type {
   LanguageModelV2CallOptions,
   LanguageModelV2StreamPart,
 } from '@ai-sdk/provider'
-import type { Span } from '@opentelemetry/api'
+import type { Span, Tracer } from '@opentelemetry/api'
 import { authenticate } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
 import {
@@ -28,6 +28,7 @@ import {
   extractTextContent,
   getTracer,
   langfuseSpanProcessor,
+  recordErrorOnSpan,
   recordSpan,
   selectTelemetryAttributes,
   stringifyForTelemetry,
@@ -158,13 +159,29 @@ export async function POST(req: NextRequest): Promise<Response> {
       return new Response('Unauthorized', { status: 401 })
     }
 
+    const telemetry: TelemetrySettings = {
+      isEnabled: true,
+    }
+    const tracer = getTracer(telemetry)
+
     const expenseManager = ExpenseManager.from({
       auth: auth.auth!,
       payerOrganizationId,
     })
 
     // Allow modelId without provider prefix
-    const models = await findProvidersByModel(auth.auth!, modelId, 'language')
+    const models = await recordSpan({
+      name: 'findProvidersByModel',
+      attributes: selectTelemetryAttributes({
+        telemetry,
+        attributes: {
+          'langfuse.trace.name': 'Chat Generate',
+          'langfuse.user.id': authId(auth.auth!),
+        },
+      }),
+      tracer,
+      fn: async () => await findProvidersByModel(auth.auth!, modelId, 'language'),
+    })
     log.info(
       `Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`,
     )
@@ -182,6 +199,8 @@ export async function POST(req: NextRequest): Promise<Response> {
       auth: auth.auth!,
       isStream,
       req,
+      telemetry,
+      tracer,
     })
   } catch (error: any) {
     log.error('Call language model error', error)
@@ -191,6 +210,8 @@ export async function POST(req: NextRequest): Promise<Response> {
       },
       { status: 500 },
     )
+  } finally {
+    after(langfuseSpanProcessor.forceFlush())
   }
 }
 
@@ -201,6 +222,8 @@ async function processWithPolling({
   auth,
   isStream,
   req,
+  telemetry,
+  tracer,
 }: {
   models: Awaited<ReturnType<typeof findProvidersByModel>>
   languageModelV2CallOptions: Omit<
@@ -211,6 +234,8 @@ async function processWithPolling({
   auth: AuthObject
   isStream: boolean
   req: NextRequest
+  telemetry: TelemetrySettings
+  tracer: Tracer
 }): Promise<Response> {
   let responseStream: ReadableStream | undefined
   let closeStream: (() => Promise<void>) | undefined
@@ -248,10 +273,17 @@ async function processWithPolling({
     for (const modelInfo of models) {
       const modelId = modelInfo.id
 
-      const keyManager = await ProviderKeyManager.from({
-        auth,
-        modelId,
-        onlyByok: !modelInfo.chargeable,
+      const keyManager = await recordSpan({
+        name: 'findAPIKeysByProvider',
+        attributes: {},
+        tracer,
+        fn: async () => {
+          return await ProviderKeyManager.from({
+            auth,
+            modelId,
+            onlyByok: !modelInfo.chargeable,
+          })
+        },
       })
 
       const keys = keyManager.selectKeys()
@@ -264,17 +296,27 @@ async function processWithPolling({
           abortSignal: req.signal,
         }
 
-        await expenseManager.canAfford(
-          {
-            type: 'language',
-            ...modelInfo,
+        await recordSpan({
+          name: 'canAfford',
+          attributes: selectTelemetryAttributes({
+            telemetry,
+            attributes: {},
+          }),
+          tracer,
+          fn: async () => {
+            await expenseManager.canAfford(
+              {
+                type: 'language',
+                ...modelInfo,
+              },
+              {
+                type: 'language',
+                ...callOptions,
+              },
+              key.byok,
+            )
           },
-          {
-            type: 'language',
-            ...callOptions,
-          },
-          key.byok,
-        )
+        })
 
         const {
           prompt: _a,
@@ -310,11 +352,6 @@ async function processWithPolling({
 
         const model = getModel(modelId, 'language', key.key, customFetch)
 
-        const telemetry: TelemetrySettings = {
-          isEnabled: true,
-        }
-        const tracer = getTracer(telemetry)
-
         const result = await recordSpan({
           name: !isStream ? 'ai.doGenerate' : 'ai.doStream',
           attributes: selectTelemetryAttributes({
@@ -332,8 +369,6 @@ async function processWithPolling({
               'gen_ai.request.top_k': callOptions.topK,
               'gen_ai.request.top_p': callOptions.topP,
               'gen_ai.output.type': callOptions.responseFormat?.type === 'json' ? 'json' : 'text',
-              'langfuse.trace.name': 'Chat Generate',
-              'langfuse.user.id': authId(auth),
               'langfuse.observation.type': 'generation',
               'langfuse.trace.input': { input: () => stringifyForTelemetry(callOptions.prompt) },
               'langfuse.observation.input': {
@@ -354,6 +389,7 @@ async function processWithPolling({
                 })
               } catch (error: unknown) {
                 lastError = error instanceof Error ? error : new Error(String(error))
+                recordErrorOnSpan(span, error)
                 if (handleError(keyManager, key, error, details)) {
                   return false
                 } else {
@@ -376,6 +412,7 @@ async function processWithPolling({
                 })
               } catch (error: unknown) {
                 lastError = error instanceof Error ? error : new Error(String(error))
+                recordErrorOnSpan(span, error)
                 if (handleError(keyManager, key, error, details)) {
                   return false
                 } else {
@@ -388,8 +425,6 @@ async function processWithPolling({
             }
           },
         })
-
-        after(langfuseSpanProcessor.forceFlush())
 
         if (result === false) {
           // Try the next model/key if available
@@ -453,6 +488,8 @@ async function processWithPolling({
       }
       await writeChunk(errorChunk)
       await closeStream()
+    }).finally(() => {
+      after(langfuseSpanProcessor.forceFlush())
     })
 
     // Return the streaming response
