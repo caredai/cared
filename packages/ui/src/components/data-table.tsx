@@ -23,6 +23,7 @@ import {
 import type {
   ColumnDef,
   ColumnFiltersState,
+  Row,
   RowSelectionState,
   SortingState,
   VisibilityState,
@@ -58,6 +59,7 @@ interface DataTableProps<TData, TValue> {
   onPageSizeChange?: (pageSize: number) => void
   enableRowSelection?: boolean
   enableSorting?: boolean
+  rowSelection?: RowSelectionState
   onSelectionChange?: (selection: RowSelectionState) => void
   bulkActions?: {
     label: string
@@ -92,6 +94,7 @@ export function DataTable<TData, TValue>({
   onPageSizeChange,
   enableRowSelection = false,
   enableSorting = false,
+  rowSelection,
   onSelectionChange,
   bulkActions = [],
   defaultSorting = [],
@@ -106,7 +109,6 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting)
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: pageSize ?? defaultPageSize,
@@ -122,32 +124,36 @@ export function DataTable<TData, TValue>({
 
   // Custom global filter function for multiple search keys
   const globalFilterFn = React.useCallback(
-    (row: any, columnId: string, filterValue: string) => {
+    (row: Row<TData>, columnId: string, filterValue: string) => {
       if (!searchKeys || searchKeys.length === 0 || !filterValue) return true
 
       const searchValue = filterValue.toLowerCase()
       return searchKeys.some((key) => {
-        const cellValue = row.getValue(key)
-        if (cellValue == null) return false
+        const cellValue = row.getValue(key as string)
+        if (!cellValue) return false
         // Handle object values properly
-        const stringValue = typeof cellValue === 'object' && cellValue !== null 
-          ? JSON.stringify(cellValue) 
-          : String(cellValue)
+        const stringValue =
+          typeof cellValue === 'object'
+            ? JSON.stringify(cellValue)
+            : // eslint-disable-next-line @typescript-eslint/no-base-to-string
+              String(cellValue)
         return stringValue.toLowerCase().includes(searchValue)
       })
     },
     [searchKeys],
   )
 
+  // Use controlled rowSelection if provided, otherwise use empty object
+  const rowSelection_ = React.useMemo(() => rowSelection ?? {}, [rowSelection])
+
   // Handle row selection change
-  const handleRowSelectionChange = React.useCallback(
+  const onRowSelectionChange_ = React.useCallback(
     (updaterOrValue: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)) => {
       const newSelection =
-        typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection) : updaterOrValue
-      setRowSelection(newSelection)
+        typeof updaterOrValue === 'function' ? updaterOrValue(rowSelection_) : updaterOrValue
       onSelectionChange?.(newSelection)
     },
-    [rowSelection, onSelectionChange],
+    [rowSelection_, onSelectionChange],
   )
 
   const table = useReactTable({
@@ -162,7 +168,7 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: handleRowSelectionChange,
+    onRowSelectionChange: onRowSelectionChange_,
     onPaginationChange: setPagination,
     enableRowSelection: enableRowSelection,
     enableSorting: enableSorting,
@@ -171,7 +177,7 @@ export function DataTable<TData, TValue>({
       sorting: enableSorting ? sorting : [],
       columnFilters,
       columnVisibility,
-      rowSelection,
+      rowSelection: rowSelection_,
       pagination,
       globalFilter,
     },
@@ -248,7 +254,7 @@ export function DataTable<TData, TValue>({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full text-table-foreground">
       <div className="flex items-center gap-4 py-4">
         {searchKeys && searchKeys.length > 0 && (
           <Input
@@ -357,7 +363,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && 'selected'}
                   className={cn(
                     row.getIsSelected() ? 'bg-muted/50' : '',
-                    onRowClick ? 'cursor-pointer hover:bg-muted/30' : ''
+                    onRowClick ? 'cursor-pointer hover:bg-muted/30' : '',
                   )}
                   onClick={(e) => {
                     // Check if the click originated from an interactive element

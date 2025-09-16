@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 
 import { authClient } from '@cared/auth/client'
@@ -37,7 +37,7 @@ export function useSessionPublic() {
 
   const refetchSession = useRefetchSession()
 
-  const { data } = useQuery(
+  const { data, isSuccess } = useQuery(
     trpc.user.session.queryOptions({
       auth: false,
     }),
@@ -45,8 +45,19 @@ export function useSessionPublic() {
   return {
     session: data?.session,
     user: data?.user,
+    isSuccess,
     refetchSession,
   }
+}
+
+export function useCheckSession() {
+  const { user, isSuccess } = useSessionPublic()
+
+  useEffect(() => {
+    if (isSuccess && !user) {
+      window.location.href = '/auth/sign-in'
+    }
+  }, [user, isSuccess])
 }
 
 export function useSession() {

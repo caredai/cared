@@ -241,7 +241,6 @@ export function Expenses({ organizationId }: { organizationId?: string }) {
         pageSize={pageSize}
         onPageSizeChange={setPageSize}
         pageSizeOptions={[10, 20, 50]}
-        className="text-muted-foreground"
       />
     </>
   )

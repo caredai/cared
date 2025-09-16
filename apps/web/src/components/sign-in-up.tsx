@@ -1,6 +1,5 @@
 'use client'
 
-import type { SocialProvider } from '@/lib/auth-providers'
 import * as React from 'react'
 import { useState } from 'react'
 import Link from 'next/link'
@@ -30,17 +29,18 @@ import {
 } from '@cared/ui/components/form'
 import { Input } from '@cared/ui/components/input'
 import { Separator } from '@cared/ui/components/separator'
+import { CircleSpinner } from '@cared/ui/components/spinner'
 
+import type { SocialProvider } from '@/lib/auth-providers'
 import { EmailVerificationPrompt } from '@/components/email-verification-prompt'
 import {
   PasswordStrengthIndicator,
   validatePasswordStrength,
 } from '@/components/password-strength-indicator'
-import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useSessionPublic } from '@/hooks/use-session'
 import { allowedProviders } from '@/lib/auth-providers'
-import { BETTER_AUTH_ERROR_MESSAGES } from '@/lib/error'
 import { useAuthRedirect } from '@/lib/auth-utils'
+import { BETTER_AUTH_ERROR_MESSAGES } from '@/lib/error'
 
 // Sign-up form schema with password strength validation
 const signUpSchema = z.object({
@@ -82,7 +82,7 @@ export function SignInUp({ mode }: SignInUpProps) {
   const [showEmailVerification, setShowEmailVerification] = useState(false)
   const [unverifiedEmail, setUnverifiedEmail] = useState('')
 
-  const { user } = useSessionPublic()
+  const { user, isSuccess } = useSessionPublic()
   const { redirectTo, createAuthUrl } = useAuthRedirect()
 
   // Initialize form based on mode
@@ -105,7 +105,7 @@ export function SignInUp({ mode }: SignInUpProps) {
   // Use appropriate form based on mode
   const form = mode === 'sign-up' ? signUpForm : signInForm
 
-  if (user) {
+  if (isSuccess && user) {
     window.location.href = redirectTo
   }
 

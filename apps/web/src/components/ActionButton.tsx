@@ -146,8 +146,16 @@ const ButtonContent = React.forwardRef<
       {...buttonProps}
       asChild={renderLink ? true : undefined}
     >
-      {loading && <CircleSpinner />}
-      {renderLink ? <Link href={href}>{content}</Link> : content}
+      <>
+        {loading && <CircleSpinner />}
+        {renderLink ? (
+          <Link href={href} target="_blank" className="underline-offset-4 underline">
+            {content}
+          </Link>
+        ) : (
+          content
+        )}
+      </>
     </Button>
   )
 })

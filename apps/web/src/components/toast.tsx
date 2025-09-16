@@ -1,10 +1,11 @@
 'use client'
 
-import { ComponentProps } from 'react'
+import type { ComponentProps } from 'react'
 import { AlertTriangle, BadgeCheck, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@cared/ui/components/button'
+import { cn } from '@cared/ui/lib/utils'
 
 import { ActionButton } from './ActionButton'
 
@@ -16,12 +17,7 @@ export const showSuccessToast = ({
 }) => {
   toast.custom((t) => <SuccessNotification {...params} onDismiss={() => toast.dismiss(t)} />, {
     duration,
-    style: {
-      padding: '1rem',
-      border: '1px solid hsl(var(--green-600))',
-      borderRadius: '0.5rem',
-      backgroundColor: 'hsl(var(--green-600))',
-    },
+    className: 'p-4 border rounded-lg border-green-600! bg-green-600!',
   })
 }
 
@@ -35,16 +31,16 @@ const SuccessNotification: React.FC<{
   }
 }> = ({ title, description, onDismiss, link }) => {
   return (
-    <div className="flex justify-between">
+    <div className="flex justify-between text-primary-foreground">
       <div className="flex min-w-[300px] flex-1 flex-col gap-2">
         <div className="flex items-center gap-2">
-          <BadgeCheck size={20} className="text-primary-foreground" />
-          <div className="m-0 text-sm font-medium leading-tight text-primary-foreground">
+          <BadgeCheck size={20} />
+          <div className="m-0 text-sm font-medium leading-tight">
             {title}
           </div>
         </div>
         {description && (
-          <div className="text-sm leading-tight text-primary-foreground">{description}</div>
+          <div className="text-sm leading-tight">{description}</div>
         )}
         {link && (
           <ActionButton href={link.href} size="sm" variant="secondary" className="self-start">
@@ -53,7 +49,7 @@ const SuccessNotification: React.FC<{
         )}
       </div>
       <button
-        className="flex h-6 w-6 cursor-pointer items-start justify-end border-none bg-transparent p-0 text-primary-foreground transition-colors duration-200"
+        className="flex h-6 w-6 cursor-pointer items-start justify-end border-none bg-transparent p-0 transition-colors duration-200"
         onClick={onDismiss}
         aria-label="Close"
       >
@@ -82,23 +78,14 @@ export const showErrorToast = (
     ),
     {
       duration: Infinity,
-      style: {
-        padding: '1rem',
-        borderRadius: '0.5rem',
-        ...(type === 'ERROR' ? toastErrorStyleProps : toastWarningStyleProps),
-      },
+      className: cn(
+        'p-4 rounded-lg border',
+        type === 'ERROR'
+          ? 'border-destructive! bg-destructive!'
+          : 'border-yellow-50! bg-yellow-50!',
+      ),
     },
   )
-}
-
-const toastErrorStyleProps = {
-  border: '1px solid hsl(var(--destructive))',
-  backgroundColor: 'hsl(var(--destructive))',
-}
-
-const toastWarningStyleProps = {
-  border: '1px solid hsl(var(--yellow-50))',
-  backgroundColor: 'hsl(var(--yellow-50))',
 }
 
 export const ErrorNotification: React.FC<{
@@ -132,6 +119,7 @@ export const ErrorNotification: React.FC<{
             className="bg-destructive-foreground/90 text-destructive hover:bg-destructive-foreground/80"
             onClick={() => {
               // TODO
+              dismissToast(toast)
             }}
           >
             Report issue to Cared team

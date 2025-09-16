@@ -123,6 +123,7 @@ export function useDeleteTraces() {
         showErrorToast(
           `Failed to delete ${input.traceIds.length > 1 ? 'traces' : 'trace'}`,
           error.message,
+          'WARNING',
         )
       },
     }),
@@ -138,6 +139,7 @@ export function useDeleteTraces() {
     }) => {
       return await deleteMutation.mutateAsync(input)
     },
-    [deleteMutation],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 }

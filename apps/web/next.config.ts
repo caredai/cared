@@ -29,7 +29,7 @@ const config = {
 
   experimental: {
     useCache: true,
-    dynamicIO: true,
+    cacheComponents: true,
     // https://nextjs.org/docs/app/building-your-application/data-fetching/fetching#preventing-sensitive-data-from-being-exposed-to-the-client
     taint: true,
   },

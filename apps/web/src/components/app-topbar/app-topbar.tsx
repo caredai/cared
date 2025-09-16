@@ -7,6 +7,7 @@ import { Button } from '@cared/ui/components/button'
 import { useSidebar } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
+import { useCheckSession } from '@/hooks/use-session'
 import { AdminEnterButton } from './admin-enter-button'
 import { AppSwitcher } from './app-switcher'
 import { OrganizationAndAccountSwitcher } from './organization-switcher'
@@ -14,6 +15,8 @@ import { TopBarActions } from './top-bar-actions'
 import { WorkspaceSwitcher } from './workspace-switcher'
 
 export function AppTopBar() {
+  useCheckSession()
+
   const { toggleSidebar } = useSidebar()
 
   return (

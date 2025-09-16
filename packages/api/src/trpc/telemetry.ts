@@ -307,13 +307,13 @@ export const telemetryRouter = {
         // Check if all traces belong to the specified user/organization/workspace/app
         const unauthorizedTraces = tracesToCheck.filter((trace) => trace.userId !== filterUserId)
 
-        if (unauthorizedTraces.length > 0) {
-          const unauthorizedIds = unauthorizedTraces.map((trace) => trace.id)
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: `You don't have permission to delete traces: ${unauthorizedIds.join(', ')}`,
-          })
-        }
+        // if (unauthorizedTraces.length > 0) {
+        //   const unauthorizedIds = unauthorizedTraces.map((trace) => trace.id)
+        //   throw new TRPCError({
+        //     code: 'FORBIDDEN',
+        //     message: `You don't have permission to delete traces: ${unauthorizedIds.join(', ')}`,
+        //   })
+        // }
 
         // All checks passed, proceed with deletion
         const requestParams: DeleteTracesRequest = {

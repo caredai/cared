@@ -9,7 +9,6 @@ import {
   Box,
   CircleQuestionMarkIcon,
   ClockIcon,
-  ExternalLinkIcon,
   MoreHorizontalIcon,
   RefreshCwIcon,
   TrashIcon,
@@ -181,9 +180,12 @@ function TracingInner({
 }) {
   const [pageSize, setPageSize] = useState(20)
   const [dateRange, setDateRange] = useState<string>('7d')
+
   const [selectedTrace, setSelectedTrace] = useState<TraceWithDetails | null>(null)
+
   const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const [selectedRows, setSelectedRows] = useState<string[]>([])
+
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({})
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [tracesToDelete, setTracesToDelete] = useState<string[]>([])
 
@@ -229,7 +231,7 @@ function TracingInner({
 
   const { traces, isLoading, isFetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useTraces({
-      userId: scope === 'user' ? user.id : undefined, // Will be handled by auth context
+      userId: scope === 'user' ? user.id : undefined,
       organizationId: scope === 'organization' ? organizationId : undefined,
       workspaceId: scope === 'workspace' ? workspaceId : undefined,
       appId: scope === 'app' ? appId : undefined,
@@ -237,13 +239,10 @@ function TracingInner({
       ...dateRangeFilters,
     })
 
-  // Handle row selection change
-  const handleSelectionChange = (selection: Record<string, boolean>) => {
-    console.log(selection)
-    // Now selection keys are the actual trace IDs instead of indices
-    const selectedIds = Object.keys(selection).filter((id) => selection[id])
-    setSelectedRows(selectedIds)
-  }
+  // Calculate selected rows from rowSelection
+  const selectedRows = useMemo(() => {
+    return Object.keys(rowSelection).filter((id) => rowSelection[id])
+  }, [rowSelection])
 
   // Handle bulk delete
   const handleBulkDelete = () => {
@@ -258,6 +257,14 @@ function TracingInner({
     setDeleteDialogOpen(true)
   }
 
+  // Handle trace navigation
+  const handleNavigate = (traceId: string) => {
+    const targetTrace = traces.find((trace) => trace.id === traceId)
+    if (targetTrace) {
+      setSelectedTrace(targetTrace)
+    }
+  }
+
   // Handle confirmed delete
   const handleConfirmDelete = async () => {
     await deleteTraces({
@@ -269,9 +276,8 @@ function TracingInner({
     })
 
     // Clear selection if bulk delete
-    if (tracesToDelete.length > 1) {
-      setSelectedRows([])
-    }
+    setRowSelection({})
+    setTracesToDelete([])
   }
 
   // Define table columns
@@ -283,7 +289,7 @@ function TracingInner({
         const trace = row.original
         return (
           <div className="flex flex-col">
-            <span className="text-sm">
+            <span className="text-xs">
               {formatDistance(new Date(trace.timestamp), new Date(), { addSuffix: true })}
             </span>
             <span className="text-xs text-muted-foreground">
@@ -298,7 +304,11 @@ function TracingInner({
       header: 'Name',
       cell: ({ row }) => {
         const trace = row.original
-        return <p className=" max-w-50 font-medium whitespace-normal line-clamp-1">{trace.name}</p>
+        return (
+          <p className=" max-w-50 text-xs font-medium whitespace-normal line-clamp-1">
+            {trace.name}
+          </p>
+        )
       },
     },
     {
@@ -308,7 +318,7 @@ function TracingInner({
         const trace = row.original
         const inputText = trace.input ? JSON.stringify(trace.input) : ''
         return (
-          <p className="w-80 whitespace-normal text-sm line-clamp-2" title={inputText}>
+          <p className="w-80 whitespace-normal text-xs line-clamp-2" title={inputText}>
             {inputText}
           </p>
         )
@@ -327,7 +337,7 @@ function TracingInner({
                 String(trace.output)
               : ''
         return (
-          <p className="w-80 whitespace-normal text-sm line-clamp-1" title={outputText}>
+          <p className="w-80 whitespace-normal text-xs line-clamp-1" title={outputText}>
             {outputText}
           </p>
         )
@@ -342,7 +352,7 @@ function TracingInner({
         const count = Array.isArray(observations) ? observations.length : 0
         return (
           <div>
-            <span className="text-sm">{count}</span>
+            <span className="text-xs">{count}</span>
           </div>
         )
       },
@@ -352,7 +362,7 @@ function TracingInner({
       header: 'Cost',
       cell: ({ row }) => {
         const trace = row.original
-        return <span className="font-mono">{`$ ${trace.totalCost}`}</span>
+        return <span className="font-mono text-xs">{`$ ${trace.totalCost}`}</span>
       },
     },
     {
@@ -362,7 +372,7 @@ function TracingInner({
         const trace = row.original
         const metadataText = trace.metadata ? JSON.stringify(trace.metadata) : ''
         return (
-          <p className="w-80 whitespace-normal text-sm line-clamp-2" title={metadataText}>
+          <p className="w-80 whitespace-normal text-xs line-clamp-2" title={metadataText}>
             {metadataText}
           </p>
         )
@@ -375,8 +385,8 @@ function TracingInner({
         const trace = row.original
         return (
           <div className="flex items-center gap-1">
-            <ClockIcon className="h-3 w-3 text-muted-foreground" />
-            <span className="text-sm">{trace.latency ? `${trace.latency}s` : 'N/A'}</span>
+            <ClockIcon className="h-3 w-3" />
+            <span className="text-xs">{trace.latency ? `${trace.latency}s` : 'N/A'}</span>
           </div>
         )
       },
@@ -401,19 +411,10 @@ function TracingInner({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() => {
-                  setSelectedTrace(trace)
-                  setIsSheetOpen(true)
-                }}
-              >
-                <ExternalLinkIcon className="mr-2 h-4 w-4" />
-                View Details
-              </DropdownMenuItem>
-              <DropdownMenuItem
                 onClick={() => handleDeleteTrace(trace.id)}
-                className="text-destructive"
+                className="text-destructive focus:text-destructive cursor-pointer"
               >
-                <TrashIcon className="mr-2 h-4 w-4" />
+                <TrashIcon className="h-4 w-4" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -483,7 +484,8 @@ function TracingInner({
               onPageSizeChange={setPageSize}
               pageSizeOptions={[10, 20, 50]}
               enableRowSelection={true}
-              onSelectionChange={handleSelectionChange}
+              rowSelection={rowSelection}
+              onSelectionChange={setRowSelection}
               getRowId={(trace) => trace.id}
               bulkActions={[
                 {
@@ -497,7 +499,6 @@ function TracingInner({
                 setSelectedTrace(trace)
                 setIsSheetOpen(true)
               }}
-              className="text-muted-foreground"
             />
           </>
         )}
@@ -512,6 +513,8 @@ function TracingInner({
           organizationId={organizationId}
           workspaceId={workspaceId}
           appId={appId}
+          traces={traces}
+          onNavigate={handleNavigate}
         />
       )}
 
@@ -520,7 +523,7 @@ function TracingInner({
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         traceIds={tracesToDelete}
-        onConfirm={handleConfirmDelete}
+        onDelete={handleConfirmDelete}
       />
     </>
   )

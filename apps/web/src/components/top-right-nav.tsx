@@ -12,7 +12,11 @@ import { useSessionPublic } from '@/hooks/use-session'
 
 export function TopRightNav() {
   const router = useRouter()
-  const { user } = useSessionPublic()
+  const { user, isSuccess } = useSessionPublic()
+
+  if (!isSuccess) {
+    return null
+  }
 
   return (
     <nav className="flex items-center gap-4">

@@ -15,18 +15,18 @@ import { Button } from '@cared/ui/components/button'
 import { cn } from '@cared/ui/lib/utils'
 
 import type { ObservationsView, TraceWithDetails } from '@langfuse/core'
-import { ItemBadge } from '@/components/tracing/ItemBadge'
+import { ItemBadge } from './ItemBadge'
 import { LevelColors } from './level-colors'
-
-type TreeNode =
-  | (ObservationsView & { children: TreeNode[] })
-  | {
-      id: string
-      name: string
-      type: 'TRACE'
-      isTraceRoot: true
-      children: TreeNode[]
-    }
+import type { TreeNode } from './utils'
+import {
+  buildTraceTree,
+  calculateDuration,
+  formatDuration,
+  formatCost,
+  formatTokenUsage,
+  getAllNodeIds,
+  heatMapTextColor,
+} from './utils'
 
 export interface TraceTreeRef {
   expandAll: () => void
@@ -41,8 +41,6 @@ export const TraceTree = forwardRef<
     currentNodeId?: string
     setCurrentNodeId: (id: string) => void
     showMetrics: boolean
-    showScores: boolean
-    showComments: boolean
     colorCodeMetrics: boolean
     onExpandedChange?: (isExpanded: boolean) => void
   }
@@ -54,9 +52,7 @@ export const TraceTree = forwardRef<
       currentNodeId,
       setCurrentNodeId,
       showMetrics,
-      showScores: _showScores,
-      showComments: _showComments,
-      colorCodeMetrics: _colorCodeMetrics,
+      colorCodeMetrics,
       onExpandedChange,
     },
     ref,
@@ -72,62 +68,15 @@ export const TraceTree = forwardRef<
 
     // Build tree structure from observations, with trace root node as the first item
     const tree: TreeNode[] = useMemo(() => {
-      // Create a map of observations by ID for efficient lookup
-      const observationMap = new Map<string, ObservationsView>()
-      observations.forEach((obs) => {
-        observationMap.set(obs.id, obs)
-      })
+      return buildTraceTree(trace, observations)
+    }, [observations, trace])
 
-      // Find root observations (those whose parentObservationId doesn't exist in the observations list)
-      const rootObservations = observations.filter(
-        (obs) => !obs.parentObservationId || !observationMap.has(obs.parentObservationId),
-      )
-
-      // Build tree structure recursively
-      const buildTree = (parentId: string): TreeNode[] => {
-        return observations
-          .filter((obs) => obs.parentObservationId === parentId)
-          .map((obs) => ({
-            ...obs,
-            children: buildTree(obs.id),
-          }))
-      }
-
-      // Create trace root node
-      const traceRootNode: TreeNode = {
-        id: trace.id,
-        name: trace.name ?? 'Untitled Trace',
-        type: 'TRACE',
-        isTraceRoot: true,
-        children: rootObservations.map((obs) => ({
-          ...obs,
-          children: buildTree(obs.id),
-        })),
-      }
-
-      return [traceRootNode]
-    }, [observations, trace.id, trace.name])
-
-    // Collect all node IDs for expand/collapse functionality
-    const getAllNodeIds = useCallback((nodes: TreeNode[]): string[] => {
-      const ids: string[] = []
-      const collectIds = (nodeList: TreeNode[]) => {
-        nodeList.forEach((node) => {
-          ids.push(node.id)
-          if (node.children.length) {
-            collectIds(node.children)
-          }
-        })
-      }
-      collectIds(nodes)
-      return ids
-    }, [])
 
     // Handle expand all
     const handleExpandAll = useCallback(() => {
       const allIds = getAllNodeIds(tree)
       setExpandedItems(allIds)
-    }, [tree, getAllNodeIds])
+    }, [tree])
 
     // Handle collapse all
     const handleCollapseAll = useCallback(() => {
@@ -148,36 +97,14 @@ export const TraceTree = forwardRef<
       handleExpandAll()
     }, [handleExpandAll])
 
+
     // Render node content following SpanItem layout
-    const renderNodeContent = (node: TreeNode) => {
+    const renderNodeContent = (node: TreeNode, parentTotalDuration?: number) => {
       const isTraceRoot = 'isTraceRoot' in node
 
       // Calculate duration
-      const duration =
-        !isTraceRoot && 'endTime' in node && 'startTime' in node && node.endTime && node.startTime
-          ? new Date(node.endTime).getTime() - new Date(node.startTime).getTime()
-          : !isTraceRoot && 'latency' in node && node.latency
-            ? node.latency * 1000
-            : undefined
+      const duration = calculateDuration(node)
 
-      // Format duration for display
-      const formatDuration = (ms: number) => {
-        if (ms < 1000) return `${ms.toFixed(0)}ms`
-        return `${(ms / 1000).toFixed(2)}s`
-      }
-
-      // Format cost for display
-      const formatCost = (cost: number) => {
-        return `$${cost.toFixed(6)}`
-      }
-
-      // Format token usage
-      const formatTokenUsage = (input?: number, output?: number, total?: number) => {
-        const inputTokens = input ?? 0
-        const outputTokens = output ?? 0
-        const totalTokens = total ?? 0
-        return `${inputTokens} → ${outputTokens} (∑ ${totalTokens})`
-      }
 
       // Check if we should render metrics
       const shouldRenderMetrics =
@@ -235,18 +162,32 @@ export const TraceTree = forwardRef<
             {shouldRenderMetrics && (
               <div className="flex flex-wrap gap-2 mt-1">
                 {duration && (
-                  <span className="text-xs text-muted-foreground">{formatDuration(duration)}</span>
-                )}
-
-                {!isTraceRoot && 'usageDetails' in node && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatTokenUsage(
-                      node.usageDetails?.input,
-                      node.usageDetails?.output,
-                      node.usageDetails?.total,
+                  <span
+                    className={cn(
+                      'text-xs text-muted-foreground',
+                      colorCodeMetrics &&
+                        parentTotalDuration &&
+                        heatMapTextColor({
+                          max: parentTotalDuration,
+                          value: duration,
+                        }),
                     )}
+                  >
+                    {formatDuration(duration)}
                   </span>
                 )}
+
+                {!isTraceRoot &&
+                  'usageDetails' in node &&
+                  typeof node.usageDetails?.total === 'number' && (
+                    <span className="text-xs text-muted-foreground">
+                      {formatTokenUsage(
+                        node.usageDetails.input,
+                        node.usageDetails.output,
+                        node.usageDetails.total,
+                      )}
+                    </span>
+                  )}
 
                 {!isTraceRoot && 'costDetails' in node && node.costDetails?.total && (
                   <span className="text-xs text-muted-foreground">
@@ -296,7 +237,7 @@ export const TraceTree = forwardRef<
       nodes: TreeNode[],
       level = 0,
       treeLines: boolean[] = [],
-      _isLastSibling = true,
+      parentTotalDuration?: number,
     ) => {
       return nodes.map((node, index) => {
         const hasChildren = node.children.length > 0
@@ -371,7 +312,7 @@ export const TraceTree = forwardRef<
                   )}
                   ref={isSelected ? currentNodeRef : undefined}
                 >
-                  {renderNodeContent(node)}
+                  {renderNodeContent(node, parentTotalDuration)}
                 </button>
 
                 {/* Expand/Collapse button */}
@@ -389,7 +330,7 @@ export const TraceTree = forwardRef<
                       <span
                         className={cn(
                           'inline-block h-4 w-4 transform transition-transform duration-200 ease-in-out',
-                          isNodeExpanded ? 'rotate-0' : 'rotate-90',
+                          !isNodeExpanded ? 'rotate-0' : 'rotate-90',
                         )}
                       >
                         <ChevronRight className="h-4 w-4" />
@@ -403,7 +344,7 @@ export const TraceTree = forwardRef<
             {/* Children */}
             {hasChildren && isNodeExpanded && (
               <div className="flex w-full flex-col">
-                {renderTreeItems(node.children, level + 1, childTreeLines, isChildLastSibling)}
+                {renderTreeItems(node.children, level + 1, childTreeLines, calculateDuration(node))}
               </div>
             )}
           </div>
@@ -414,7 +355,7 @@ export const TraceTree = forwardRef<
     return (
       <div className="h-full overflow-y-auto p-2 text-sm">
         {/* Render unified tree structure */}
-        {renderTreeItems(tree, 0)}
+        {renderTreeItems(tree, 0, [], tree[0] ? calculateDuration(tree[0]) : undefined)}
       </div>
     )
   },

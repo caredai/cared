@@ -20,6 +20,12 @@ export async function prefetchAndCheckSession(
     return false
   }
 
+  setData(
+    trpc.user.session.queryKey({
+      auth: false,
+    }),
+    session,
+  )
   setData(trpc.user.session.queryKey(), session)
 
   return true

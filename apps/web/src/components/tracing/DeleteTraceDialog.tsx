@@ -19,24 +19,24 @@ interface DeleteTraceDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   traceIds: string[]
-  onConfirm: () => Promise<void>
+  onDelete: () => Promise<void>
 }
 
 export function DeleteTraceDialog({
   open,
   onOpenChange,
   traceIds,
-  onConfirm,
+  onDelete,
 }: DeleteTraceDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const handleConfirm = async () => {
+  const handleDelete = async () => {
     setIsDeleting(true)
     try {
-      await onConfirm()
-      onOpenChange(false)
+      await onDelete()
     } finally {
       setIsDeleting(false)
+      onOpenChange(false)
     }
   }
 
@@ -56,7 +56,10 @@ export function DeleteTraceDialog({
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleConfirm}
+            onClick={(e) => {
+              e.preventDefault()
+              void handleDelete()
+            }}
             disabled={isDeleting}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
