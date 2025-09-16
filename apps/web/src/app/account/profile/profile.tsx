@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import * as React from 'react'
 import { LucideCheck, LucidePencil, LucidePlus, LucideX } from 'lucide-react'
 import { toast } from 'sonner'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import { authClient } from '@cared/auth/client'
 import { Avatar, AvatarFallback, AvatarImage } from '@cared/ui/components/avatar'

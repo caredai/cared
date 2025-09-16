@@ -38,9 +38,9 @@
   "prettier": "@cared/prettier-config",
   "pnpm": {
     "overrides": {
+      "next": "15.6.0-canary.8",
       "uuid": "11.1.0",
-      "zod": "3.25.51",
-      "next": "15.4.2-canary.46"
+      "zod": "3.25.51"
     }
   }
 }

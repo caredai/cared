@@ -1,9 +1,7 @@
 // Import env files to validate at build time.
-import '@/env'
+import './src/env'
 
 import path from 'path'
-
-const preview = process.env.DEPLOYMENT_PREVIEW === 'true'
 
 /** @type {import("next").NextConfig} */
 const config = {

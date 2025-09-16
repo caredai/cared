@@ -8,7 +8,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-q
 import { CheckIcon, CopyIcon, PlusIcon, TrashIcon, XIcon } from 'lucide-react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { toast } from 'sonner'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
 import type { RouterOutputs } from '@cared/api'
 import { Button } from '@cared/ui/components/button'

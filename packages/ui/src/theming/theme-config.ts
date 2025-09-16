@@ -1,17 +1,17 @@
 import { default as Colorjs } from 'colorjs.io'
-import { z } from 'zod'
+import { z } from 'zod/v4'
 
-export const ColorSchema = z.string().refine(
-  (color) => {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition,no-constant-binary-expression
-      return new Colorjs(color) && true
-    } catch {
-      return false
-    }
-  },
-  (val) => ({ message: `Could not parse '${val}' as a color` }),
-)
+export const ColorSchema = z.string().superRefine((color, ctx) => {
+  try {
+    const _ = new Colorjs(color)
+  } catch {
+    ctx.addIssue({
+      code: 'custom',
+      message: `Could not parse '${color}' as a color`,
+      input: color,
+    })
+  }
+})
 
 export type Color = z.infer<typeof ColorSchema>
 

@@ -36,7 +36,7 @@
     "eslint": "catalog:",
     "prettier": "catalog:",
     "stripe": "^18.3.0",
-    "trpc-to-openapi": "^2.1.4",
+    "trpc-to-openapi": "^3.0.1",
     "tsup": "^8.3.6",
     "tsx": "^4.19.3",
     "typescript": "catalog:"
