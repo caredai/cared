@@ -2,8 +2,8 @@ import { Suspense } from 'react'
 
 import { SkeletonCard } from '@/components/skeleton'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { OAuthApp } from './oauth-app'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function Page({
   params,
@@ -16,7 +16,7 @@ export default async function Page({
   const appId = addIdPrefix(appIdNoPrefix, 'app')
 
   prefetch(
-    trpc.oauthApp.list.queryOptions({
+    orpc.oauthApp.list.queryOptions({
       appId,
     }),
   )

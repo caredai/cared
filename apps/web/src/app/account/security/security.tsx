@@ -30,11 +30,11 @@ import {
 
 import { SectionTitle } from '@/components/section'
 import { useAccounts, useSession } from '@/hooks/use-session'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 import { ChangePasswordDialog } from './change-password-dialog'
 
 export function Security() {
-  const trpc = useTRPC()
+  
   const { accounts } = useAccounts()
   const [isRevoking, setIsRevoking] = useState(false)
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)
@@ -44,7 +44,7 @@ export function Security() {
     data: { sessions: sessionsData },
     refetch: refetchSessions,
   } = useSuspenseQuery({
-    ...trpc.user.sessions.queryOptions(),
+    ...orpc.user.sessions.queryOptions(),
   })
 
   // Check if user has a credential account (email/password authentication)

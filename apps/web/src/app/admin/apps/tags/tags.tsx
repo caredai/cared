@@ -25,10 +25,10 @@ import {
 } from '@cared/ui/components/table'
 
 import { CircleSpinner } from '@cared/ui/components/spinner'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function Tags() {
-  const trpc = useTRPC()
+  
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [isSelectAll, setIsSelectAll] = useState(false)
@@ -37,7 +37,7 @@ export function Tags() {
 
   // Fetch tags using paginated query
   const { data, isPending, refetch } = useQuery({
-    ...trpc.app.listTags.queryOptions({
+    ...orpc.app.listTags.queryOptions({
       limit: PAGE_SIZE,
       ...cursor,
     }),
@@ -46,7 +46,7 @@ export function Tags() {
 
   // Delete tags mutation
   const deleteMutation = useMutation({
-    ...trpc.admin.deleteTags.mutationOptions({
+    ...orpc.admin.deleteTags.mutationOptions({
       onSuccess: () => {
         toast.success('Tags deleted successfully')
         setIsDeleteDialogOpen(false)

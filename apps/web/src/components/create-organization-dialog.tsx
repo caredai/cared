@@ -21,7 +21,7 @@ import { Label } from '@cared/ui/components/label'
 
 import { CircleSpinner } from '@cared/ui/components/spinner'
 import { stripIdPrefix } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function CreateOrganizationDialog({
   menu,
@@ -33,7 +33,7 @@ export function CreateOrganizationDialog({
   onSuccess?: () => void
 }) {
   const router = useRouter()
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const [name, setName] = useState('')
@@ -47,9 +47,9 @@ export function CreateOrganizationDialog({
   }, [open])
 
   const createOrganization = useMutation(
-    trpc.organization.create.mutationOptions({
+    orpc.organization.create.mutationOptions({
       onSuccess: async (data) => {
-        await queryClient.invalidateQueries(trpc.organization.list.queryOptions())
+        await queryClient.invalidateQueries(orpc.organization.list.queryOptions())
 
         if (onSuccess) {
           onSuccess()

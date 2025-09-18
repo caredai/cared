@@ -4,9 +4,6 @@ import { getModel } from './providers'
 
 export async function embed(text: string, modelFullId: string): Promise<number[]> {
   const embeddingModel = getModel(modelFullId, 'textEmbedding')
-  if (!embeddingModel) {
-    throw new Error(`Embedding model ${modelFullId} not found`)
-  }
   const { embedding } = await _embed({
     model: embeddingModel,
     value: text,
@@ -16,9 +13,6 @@ export async function embed(text: string, modelFullId: string): Promise<number[]
 
 export async function embedMany(texts: string[], modelFullId: string): Promise<number[][]> {
   const embeddingModel = getModel(modelFullId, 'textEmbedding')
-  if (!embeddingModel) {
-    throw new Error(`Embedding model ${modelFullId} not found`)
-  }
   const { embeddings } = await _embedMany({
     model: embeddingModel,
     values: texts,

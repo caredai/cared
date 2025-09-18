@@ -1,13 +1,11 @@
 import { redirect } from 'next/navigation'
 
-import { createCaller } from '@cared/api'
-
 import { stripIdPrefix } from '@/lib/utils'
-import { createContext } from '@/trpc/server'
+import { orpcClient } from '@/orpc/client'
 import Landing from './landing/page'
 
 export default async function Page() {
-  const session = await createCaller(createContext).user.session({
+  const session = await orpcClient.user.session({
     auth: false,
   })
   const userId = session?.user.id

@@ -1,8 +1,9 @@
-import { prefetch, trpc } from '@/trpc/server'
+
 import { Applications } from './applications'
+import { orpc, prefetch } from '@/orpc/client'
 
 export default function Page() {
-  prefetch(trpc.user.oauthApps.queryOptions())
+  prefetch(orpc.user.oauthApps.queryOptions())
 
   return <Applications />
 }

@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation'
 
 import { prefetchAndCheckSession } from '@/lib/session'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AcceptInvitation } from './accept-invitation'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function Page({ params }: { params: Promise<{ invitationId: string }> }) {
   const { invitationId } = await params
@@ -22,7 +22,7 @@ export default async function Page({ params }: { params: Promise<{ invitationId:
   }
 
   prefetch(
-    trpc.organization.getInvitation.queryOptions({
+    orpc.organization.getInvitation.queryOptions({
       invitationId,
     }),
   )

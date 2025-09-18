@@ -1,15 +1,16 @@
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+
 import { Apps } from './apps'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 /**
  * Apps page component
  * Renders the Apps component with client-side hydration
  */
 export default function Page() {
-  prefetch(trpc.app.list.queryOptions())
-  prefetch(trpc.app.listCategories.queryOptions())
-  prefetch(trpc.model.listProvidersModels.queryOptions())
-  prefetch(trpc.model.listDefaultModels.queryOptions())
+  prefetch(orpc.app.list.queryOptions())
+  prefetch(orpc.app.listCategories.queryOptions())
+  prefetch(orpc.model.listProvidersModels.queryOptions())
+  prefetch(orpc.model.listDefaultModels.queryOptions())
 
   return (
     <HydrateClient>

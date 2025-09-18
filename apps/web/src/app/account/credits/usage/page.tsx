@@ -1,9 +1,9 @@
 import { Expenses } from '@/components/expenses'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default function Page() {
-  prefetch(trpc.model.listProviders.queryOptions())
-  prefetch(trpc.model.listModels.queryOptions({}))
+  prefetch(orpc.model.listProviders.queryOptions())
+  prefetch(orpc.model.listModels.queryOptions())
 
   return (
     <HydrateClient>

@@ -9,8 +9,8 @@ import { ErrorFallback } from '@/components/error-fallback'
 import { Section } from '@/components/section'
 import { prefetchAndCheckSession } from '@/lib/session'
 import { addIdPrefix } from '@/lib/utils'
-import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AppNavMain } from './nav-main'
+import { fetch, HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function Layout({
   params,
@@ -28,14 +28,14 @@ export default async function Layout({
     return
   }
 
-  prefetch(trpc.organization.list.queryOptions())
-  prefetch(trpc.workspace.list.queryOptions())
-  prefetch(trpc.app.list.queryOptions())
-  prefetch(trpc.model.listProvidersModels.queryOptions())
-  prefetch(trpc.model.listDefaultModels.queryOptions())
+  prefetch(orpc.organization.list.queryOptions())
+  prefetch(orpc.workspace.list.queryOptions())
+  prefetch(orpc.app.list.queryOptions())
+  prefetch(orpc.model.listProvidersModels.queryOptions())
+  prefetch(orpc.model.listDefaultModels.queryOptions())
 
   await fetch(
-    trpc.app.byId.queryOptions({
+    orpc.app.byId.queryOptions({
       id: appId,
     }),
   )

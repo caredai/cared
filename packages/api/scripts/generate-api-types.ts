@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Define paths
-const ROOT_DTS_PATH = path.resolve(__dirname, '../dist/root.d.ts')
+const ROOT_DTS_PATH = path.resolve(__dirname, '../dist/src/orpc/router.d.ts')
 const OUTPUT_PATH = path.resolve(__dirname, '../../sdk/src/api.d.ts')
 const PACKAGES_ROOT = path.resolve(__dirname, '../../')
 
@@ -211,11 +211,7 @@ output = output
     '// eslint-disable-next-line @typescript-eslint/no-unused-vars\ndeclare const appRouter',
   )
   .replace(/ctx: \{[^}]+\}/g, 'ctx: any')
-  .replace(/export type AppRouter/g, 'export type CaredTrpcRouter')
-  .replace(
-    /errorShape: \{[\s\S]*?data: \{[\s\S]*?\};[\s\S]*?\}/g,
-    'errorShape: import("@trpc/server/unstable-core-do-not-import").DefaultErrorShape',
-  )
+  .replace(/export type AppRouter/g, 'export type CaredOrpcRouter')
   // Remove sourceMappingURL
   .replace(/\/\/# sourceMappingURL=.*$/m, '')
 

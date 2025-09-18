@@ -4,7 +4,7 @@ import { ApiKeysWithSelector } from '@/components/api-keys'
 import { SectionTitle } from '@/components/section'
 import { SkeletonCard } from '@/components/skeleton'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function OrganizationApiKeyPage({
   params,
@@ -14,7 +14,7 @@ export default async function OrganizationApiKeyPage({
   const { organizationId: organizationIdNoPrefix } = await params
   const organizationId = addIdPrefix(organizationIdNoPrefix, 'org')
 
-  prefetch(trpc.apiKey.list.queryOptions())
+  prefetch(orpc.apiKey.list.queryOptions())
 
   return (
     <HydrateClient>

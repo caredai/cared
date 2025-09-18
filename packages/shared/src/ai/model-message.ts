@@ -22,7 +22,7 @@ const imagePartSchema = z.object({
   type: z.literal('image'),
   image: z.union([
     z.string(),
-    z.instanceof(Uint8Array),
+    z.instanceof(Uint8Array<ArrayBufferLike>),
     z.instanceof(ArrayBuffer),
     z.instanceof(Buffer),
     z.array(z.uint32().max(255)).transform((array) => Uint8Array.from(array)),
@@ -36,7 +36,7 @@ const filePartSchema = z.object({
   type: z.literal('file'),
   data: z.union([
     z.string(),
-    z.instanceof(Uint8Array),
+    z.instanceof(Uint8Array<ArrayBufferLike>),
     z.instanceof(ArrayBuffer),
     z.instanceof(Buffer),
     z.array(z.uint32().max(255)).transform((array) => Uint8Array.from(array)),

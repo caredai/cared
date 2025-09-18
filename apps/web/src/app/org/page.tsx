@@ -1,7 +1,5 @@
-import { createCaller } from '@cared/api'
-
 import { prefetchAndCheckSession } from '@/lib/session'
-import { createContext, HydrateClient } from '@/trpc/server'
+import { HydrateClient, orpcClient } from '@/orpc/client'
 import { Redirect } from './redirect'
 
 export default async function Page() {
@@ -9,7 +7,7 @@ export default async function Page() {
     return
   }
 
-  await createCaller(createContext).organization.setActive({
+  await orpcClient.organization.setActive({
     organizationId: null,
   })
 

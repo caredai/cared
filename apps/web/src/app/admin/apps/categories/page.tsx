@@ -1,9 +1,10 @@
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+
 import { Categories } from './categories'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default function Page() {
   prefetch(
-    trpc.app.listCategories.queryOptions({
+    orpc.app.listCategories.queryOptions({
       limit: 100,
     }),
   )

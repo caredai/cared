@@ -1,6 +1,7 @@
 {
   "extends": "@cared/tsconfig/internal-package.json",
   "compilerOptions": {
+    "composite": true,
     "jsx": "preserve"
   },
   "include": ["src"],

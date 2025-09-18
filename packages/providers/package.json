@@ -61,7 +61,7 @@
     "@portkey-ai/vercel-provider": "^2.1.0",
     "@requesty/ai-sdk": "^0.0.9",
     "ai": "^5.0.38",
-    "ai-gateway-provider": "^0.0.11",
+    "ai-gateway-provider": "^2.0.0",
     "ajv": "^8.17.1",
     "cohere-ai": "^7.18.1",
     "decimal.js": "^10.6.0",

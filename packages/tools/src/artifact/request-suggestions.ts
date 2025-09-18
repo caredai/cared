@@ -27,11 +27,6 @@ export const requestSuggestions = (ctx: Context) =>
       }
 
       const model = getLanguageModelFromContext(ctx)
-      if (!model) {
-        return {
-          error: 'No language model found',
-        }
-      }
 
       const suggestions: Omit<ArtifactSuggestion, 'artifactVersion' | 'createdAt' | 'updatedAt'>[] =
         []

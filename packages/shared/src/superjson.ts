@@ -15,7 +15,7 @@ SuperJSON.registerCustom<ArrayBuffer, string>(
   {
     isApplicable: (v): v is ArrayBuffer => typeof v === 'object' && v?.constructor === ArrayBuffer,
     serialize: (v) => SuperJSON.stringify(new Uint8Array(v)),
-    deserialize: (v) => SuperJSON.parse<Uint8Array>(v).buffer,
+    deserialize: (v) => SuperJSON.parse<Uint8Array>(v).buffer as ArrayBuffer,
   },
   'ArrayBuffer',
 )

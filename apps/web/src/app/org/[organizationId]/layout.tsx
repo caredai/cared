@@ -3,7 +3,6 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { ErrorBoundary } from 'react-error-boundary'
 
-import { createCaller } from '@cared/api'
 import { SidebarInset, SidebarProvider } from '@cared/ui/components/sidebar'
 
 import { OrganizationNavMain } from '@/app/org/[organizationId]/nav-main'
@@ -14,9 +13,9 @@ import { RememberOrganization } from '@/components/remember-organization'
 import { Section } from '@/components/section'
 import { getActiveOrganizationId } from '@/lib/active'
 import { lastWorkspaceCookieName } from '@/lib/cookie'
-import { stripIdPrefix } from '@/lib/utils'
-import { createContext, fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { prefetchAndCheckSession } from '@/lib/session'
+import { stripIdPrefix } from '@/lib/utils'
+import { fetch, HydrateClient, orpc, orpcClient, prefetch } from '@/orpc/client'
 
 export default async function OrganizationLayout({
   children,
@@ -32,11 +31,11 @@ export default async function OrganizationLayout({
     return
   }
 
-  const { organizations } = await fetch(trpc.organization.list.queryOptions())
+  const { organizations } = await fetch(orpc.organization.list.queryOptions())
 
   const organization = organizations.find((w) => w.id === activeOrganizationId)
   if (!organization) {
-    await createCaller(createContext).organization.setActive({
+    await orpcClient.organization.setActive({
       organizationId: null,
     })
 
@@ -49,9 +48,9 @@ export default async function OrganizationLayout({
   // TODO: preference
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!redirectToWorkspace) {
-    prefetch(trpc.workspace.list.queryOptions())
+    prefetch(orpc.workspace.list.queryOptions())
   } else {
-    const { workspaces: allWorkspaces } = await fetch(trpc.workspace.list.queryOptions())
+    const { workspaces: allWorkspaces } = await fetch(orpc.workspace.list.queryOptions())
     const workspaces = allWorkspaces.filter((w) => w.organizationId === activeOrganizationId)
 
     let lastWorkspace = (await cookies()).get(lastWorkspaceCookieName)?.value
@@ -64,7 +63,7 @@ export default async function OrganizationLayout({
     }
   }
 
-  prefetch(trpc.app.list.queryOptions())
+  prefetch(orpc.app.list.queryOptions())
 
   return (
     <HydrateClient>

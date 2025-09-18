@@ -9,19 +9,19 @@ import {
 import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 const PAGE_SIZE = 100
 
 export function useCredits(organizationId?: string) {
-  const trpc = useTRPC()
-
   const {
     data: { credits },
     refetch: refetchCredits,
   } = useSuspenseQuery(
-    trpc.credits.getCredits.queryOptions({
-      organizationId,
+    orpc.credits.getCredits.queryOptions({
+      input: {
+        organizationId,
+      },
     }),
   )
   return {
@@ -33,23 +33,21 @@ export function useCredits(organizationId?: string) {
 const hasAttemptedFetchAtom = atom(false)
 
 export function useListCreditsOrders(organizationId?: string) {
-  const trpc = useTRPC()
-
   const { data, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
-    trpc.credits.listOrders.infiniteQueryOptions(
-      {
+    orpc.credits.listOrders.infiniteOptions({
+      input: (cursor?: string) => ({
         organizationId,
         // statuses: ['open', 'complete', 'draft', 'paid'],
+        cursor,
         limit: PAGE_SIZE,
+      }),
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage) => {
+        if (!lastPage.hasMore) return undefined
+        return lastPage.cursor
       },
-      {
-        getNextPageParam: (lastPage) => {
-          if (!lastPage.hasMore) return undefined
-          return lastPage.cursor
-        },
-        placeholderData: keepPreviousData,
-      },
-    ),
+      placeholderData: keepPreviousData,
+    }),
   )
 
   const [hasAttemptedFetch, setHasAttemptedFetch] = useAtom(hasAttemptedFetchAtom)
@@ -69,13 +67,11 @@ export function useListCreditsOrders(organizationId?: string) {
 }
 
 export function useCreateCreditsOnetimeCheckout(organizationId?: string) {
-  const trpc = useTRPC()
-
   const { refetchCredits } = useCredits(organizationId)
   const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
 
   const createMutation = useMutation(
-    trpc.credits.createOnetimeCheckout.mutationOptions({
+    orpc.credits.createOnetimeCheckout.mutationOptions({
       onSuccess: () => {
         void refetchCredits()
         void refetchCreditsOrders()
@@ -96,11 +92,11 @@ export function useCreateCreditsOnetimeCheckout(organizationId?: string) {
 }
 
 export function useListCreditsSubscriptions(organizationId?: string) {
-  const trpc = useTRPC()
-
   const { data, refetch } = useQuery({
-    ...trpc.credits.listSubscriptions.queryOptions({
-      organizationId,
+    ...orpc.credits.listSubscriptions.queryOptions({
+      input: {
+        organizationId,
+      },
     }),
     staleTime: Infinity,
     gcTime: Infinity,
@@ -113,12 +109,10 @@ export function useListCreditsSubscriptions(organizationId?: string) {
 }
 
 export function useUpdateAutoRechargeCreditsSettings(organizationId?: string) {
-  const trpc = useTRPC()
-
   const { refetchCredits } = useCredits(organizationId)
 
   const updateMutation = useMutation(
-    trpc.credits.updateAutoRechargeSettings.mutationOptions({
+    orpc.credits.updateAutoRechargeSettings.mutationOptions({
       onSuccess: () => {
         void refetchCredits()
       },
@@ -146,13 +140,11 @@ export function useUpdateAutoRechargeCreditsSettings(organizationId?: string) {
  * Hook to cancel a credits order
  */
 export function useCancelCreditsOrder(organizationId?: string) {
-  const trpc = useTRPC()
-
   const { refetchCredits } = useCredits(organizationId)
   const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
 
   const cancelMutation = useMutation(
-    trpc.credits.cancelOrder.mutationOptions({
+    orpc.credits.cancelOrder.mutationOptions({
       onSuccess: () => {
         void refetchCredits()
         void refetchCreditsOrders()

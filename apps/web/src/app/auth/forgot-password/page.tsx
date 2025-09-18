@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { ForgotPassword } from '@/components/forgot-password'
-import { fetch, HydrateClient, trpc } from '@/trpc/server'
+import { fetch, HydrateClient, orpc } from '@/orpc/client'
 
 export const metadata: Metadata = {
   title: 'Forgot password | Cared',
@@ -16,7 +16,7 @@ export default async function Page({
   const redirectToUrl = (await searchParams).redirectTo ?? '/'
 
   const session = await fetch(
-    trpc.user.session.queryOptions({
+    orpc.user.session.queryOptions({
       auth: false,
     }),
   )

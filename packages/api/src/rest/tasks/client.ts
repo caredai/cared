@@ -1,17 +1,39 @@
 import * as path from 'path'
 import { Client } from '@upstash/workflow'
 
+import type { TriggerOptions } from '@upstash/workflow'
 import { env } from '../../env'
 
 class WorkflowClient extends Client {
-  override trigger(config: Parameters<Client['trigger']>[0]) {
-    return super.trigger({
-      ...config,
-      url: new URL(
-        path.posix.join(tasksApiRoutePath ?? '', config.url),
-        env.UPSTASH_WORKFLOW_URL,
-      ).toString(),
-    })
+  trigger(options: TriggerOptions): Promise<{
+    workflowRunId: string
+  }>
+  trigger(options: TriggerOptions[]): Promise<
+    {
+      workflowRunId: string
+    }[]
+  >
+
+  override async trigger(options: TriggerOptions | TriggerOptions[]) {
+    if (!Array.isArray(options)) {
+      return await super.trigger({
+        ...options,
+        url: new URL(
+          path.posix.join(tasksApiRoutePath ?? '', options.url),
+          env.UPSTASH_WORKFLOW_URL,
+        ).toString(),
+      })
+    } else {
+      return await super.trigger(
+        options.map((config) => ({
+          ...config,
+          url: new URL(
+            path.posix.join(tasksApiRoutePath ?? '', config.url),
+            env.UPSTASH_WORKFLOW_URL,
+          ).toString(),
+        })),
+      )
+    }
   }
 }
 

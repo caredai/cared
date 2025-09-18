@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { useInfiniteQuery, useMutation } from '@tanstack/react-query'
 
 import { showErrorToast, showSuccessToast } from '@/components/toast'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function useTraces(input?: {
   userId?: string
@@ -14,22 +14,20 @@ export function useTraces(input?: {
   toTimestamp?: string
   pageSize?: number
 }) {
-  const trpc = useTRPC()
-
   const { data, isLoading, isFetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery(
-      trpc.telemetry.listTraces.infiniteQueryOptions(
-        {
+      orpc.telemetry.listTraces.infiniteOptions({
+        input: (cursor?: number) => ({
           ...input,
+          cursor,
           limit: input?.pageSize ?? 50,
+        }),
+        initialPageParam: undefined,
+        getNextPageParam: (lastPage) => {
+          if (!lastPage.hasMore) return undefined
+          return lastPage.cursor
         },
-        {
-          getNextPageParam: (lastPage) => {
-            if (!lastPage.hasMore) return undefined
-            return lastPage.cursor
-          },
-        },
-      ),
+      }),
     )
 
   const traces = useMemo(() => {
@@ -63,8 +61,6 @@ export function useObservations(input?: {
   toStartTime?: string
   pageSize?: number
 }) {
-  const trpc = useTRPC()
-
   const {
     data,
     isSuccess,
@@ -75,18 +71,18 @@ export function useObservations(input?: {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-    trpc.telemetry.listObservations.infiniteQueryOptions(
-      {
+    orpc.telemetry.listObservations.infiniteOptions({
+      input: (cursor?: number) => ({
         ...input,
+        cursor,
         limit: input?.pageSize ?? 50,
+      }),
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage) => {
+        if (!lastPage.hasMore) return undefined
+        return lastPage.cursor
       },
-      {
-        getNextPageParam: (lastPage) => {
-          if (!lastPage.hasMore) return undefined
-          return lastPage.cursor
-        },
-      },
-    ),
+    }),
   )
 
   const observations = useMemo(() => {
@@ -109,10 +105,8 @@ export function useObservations(input?: {
 }
 
 export function useDeleteTraces() {
-  const trpc = useTRPC()
-
   const deleteMutation = useMutation(
-    trpc.telemetry.deleteTraces.mutationOptions({
+    orpc.telemetry.deleteTraces.mutationOptions({
       onSuccess: (_, input) => {
         showSuccessToast({
           title: `${input.traceIds.length > 1 ? 'traces' : 'trace'} deleted`,

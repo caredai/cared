@@ -11,6 +11,8 @@ import { Toaster } from '@cared/ui/components/sonner'
 
 import { Providers } from '@/components/providers'
 
+import '../orpc/server'
+
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -23,7 +25,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Cared | AI + Web3 SaaS Platform',
-  description: 'Transform your business with Cared - the leading AI and Web3 SaaS platform. Build, deploy, and scale intelligent decentralized applications with cutting-edge technology.',
+  description:
+    'Transform your business with Cared - the leading AI and Web3 SaaS platform. Build, deploy, and scale intelligent decentralized applications with cutting-edge technology.',
 }
 
 export default function RootLayout({

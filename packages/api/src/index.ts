@@ -1,18 +1,8 @@
-import type { AppRouter } from './root'
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server'
+import type { AppRouter } from './orpc/router'
+import type { InferRouterInputs, InferRouterOutputs } from '@orpc/server'
 import { authenticate } from './auth'
-import { generateOpenApiDocument } from './openapi'
-import { appRouter } from './root'
-import { createCallerFactory, createTRPCContext } from './trpc'
-
-/**
- * Create a server-side caller for the tRPC API
- * @example
- * const trpc = createCaller(createContext);
- * const res = await trpc.post.all();
- *       ^? Post[]
- */
-const createCaller = createCallerFactory(appRouter)
+import { createORPCContext } from './orpc'
+import { appRouter } from './orpc/router'
 
 /**
  * Inference helpers for input types
@@ -20,7 +10,7 @@ const createCaller = createCallerFactory(appRouter)
  * type PostByIdInput = RouterInputs['post']['byId']
  *      ^? { id: number }
  **/
-type RouterInputs = inferRouterInputs<AppRouter>
+type RouterInputs = InferRouterInputs<AppRouter>
 
 /**
  * Inference helpers for output types
@@ -28,9 +18,9 @@ type RouterInputs = inferRouterInputs<AppRouter>
  * type AllPostsOutput = RouterOutputs['post']['all']
  *      ^? Post[]
  **/
-type RouterOutputs = inferRouterOutputs<AppRouter>
+type RouterOutputs = InferRouterOutputs<AppRouter>
 
-export { createTRPCContext, appRouter, createCaller, generateOpenApiDocument, authenticate }
+export { createORPCContext, appRouter, authenticate }
 export type { AppRouter, RouterInputs, RouterOutputs }
 
 export * from './types'

@@ -17,7 +17,7 @@ import { Logo } from '@/components/logo'
 import { ThemeProvider } from '@/components/theme'
 import { env } from '@/env'
 import { usePrivyJwtAuth } from '@/hooks/use-privy'
-import { TRPCReactProvider } from '@/trpc/client'
+import { RPCReactProvider } from '@/orpc/client'
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -92,14 +92,14 @@ function InnerProviders({ children }: { children: ReactNode }) {
       credentials={false}
       providers={['google', 'twitter', 'discord', 'github']}
     >
-      <TRPCReactProvider>
+      <RPCReactProvider>
         <JotaiProvider>
           <PrivyProvider appId={env.NEXT_PUBLIC_PRIVY_APP_ID} config={privyConfig}>
             <PrivyJwtAuth />
             {children}
           </PrivyProvider>
         </JotaiProvider>
-      </TRPCReactProvider>
+      </RPCReactProvider>
     </AuthUIProvider>
   )
 }

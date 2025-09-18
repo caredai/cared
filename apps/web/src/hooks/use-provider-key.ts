@@ -4,16 +4,16 @@ import { toast } from 'sonner'
 
 import type { ProviderId, ProviderKey } from '@cared/providers'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function useProviderKeys(input?: { isSystem?: boolean; organizationId?: string }) {
-  const trpc = useTRPC()
+  
 
   const {
     data: { providerKeys },
     refetch: refetchProviderKeys,
   } = useSuspenseQuery(
-    trpc.providerKey.list.queryOptions({
+    orpc.providerKey.list.queryOptions({
       isSystem: input?.isSystem,
       organizationId: input?.organizationId,
     }),
@@ -60,14 +60,14 @@ export function useCreateProviderKey({
   isSystem?: boolean
   organizationId?: string
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const createMutation = useMutation(
-    trpc.providerKey.create.mutationOptions({
+    orpc.providerKey.create.mutationOptions({
       onSuccess: (_, variables) => {
         void queryClient.invalidateQueries({
-          queryKey: trpc.providerKey.list.queryOptions({
+          queryKey: orpc.providerKey.list.queryOptions({
             isSystem: variables.isSystem,
             organizationId: variables.organizationId,
           }).queryKey,
@@ -94,14 +94,14 @@ export function useCreateProviderKey({
 }
 
 export function useUpdateProviderKey() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    trpc.providerKey.update.mutationOptions({
+    orpc.providerKey.update.mutationOptions({
       onSuccess: ({ providerKey }) => {
         void queryClient.invalidateQueries({
-          queryKey: trpc.providerKey.list.queryOptions({
+          queryKey: orpc.providerKey.list.queryOptions({
             isSystem: providerKey.isSystem ?? undefined,
             organizationId: providerKey.organizationId ?? undefined,
           }).queryKey,
@@ -124,14 +124,14 @@ export function useUpdateProviderKey() {
 }
 
 export function useDeleteProviderKey() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    trpc.providerKey.delete.mutationOptions({
+    orpc.providerKey.delete.mutationOptions({
       onSuccess: ({ providerKey }) => {
         void queryClient.invalidateQueries({
-          queryKey: trpc.providerKey.list.queryOptions({
+          queryKey: orpc.providerKey.list.queryOptions({
             isSystem: providerKey.isSystem ?? undefined,
             organizationId: providerKey.organizationId ?? undefined,
           }).queryKey,

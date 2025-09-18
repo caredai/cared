@@ -1,5 +1,5 @@
-import { HydrateClient } from '@/trpc/server'
 import { Settings } from './settings'
+import { HydrateClient } from '@/orpc/client'
 
 export default async function Page({
   params,

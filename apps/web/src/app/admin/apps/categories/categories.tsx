@@ -37,10 +37,10 @@ import {
 } from '@cared/ui/components/table'
 
 import { CircleSpinner } from '@cared/ui/components/spinner'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function Categories() {
-  const trpc = useTRPC()
+  
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -48,14 +48,14 @@ export function Categories() {
 
   // Fetch all categories using suspense
   const { data, refetch } = useSuspenseQuery({
-    ...trpc.app.listCategories.queryOptions({
+    ...orpc.app.listCategories.queryOptions({
       limit: 100,
     }),
   })
 
   // Create category mutation
   const createMutation = useMutation({
-    ...trpc.admin.createCategory.mutationOptions({
+    ...orpc.admin.createCategory.mutationOptions({
       onSuccess: () => {
         toast.success('Category created successfully')
         setIsCreateDialogOpen(false)
@@ -71,7 +71,7 @@ export function Categories() {
 
   // Update category mutation
   const updateMutation = useMutation({
-    ...trpc.admin.updateCategory.mutationOptions({
+    ...orpc.admin.updateCategory.mutationOptions({
       onSuccess: () => {
         toast.success('Category updated successfully')
         setIsEditDialogOpen(false)
@@ -87,7 +87,7 @@ export function Categories() {
 
   // Delete category mutation
   const deleteMutation = useMutation({
-    ...trpc.admin.deleteCategory.mutationOptions({
+    ...orpc.admin.deleteCategory.mutationOptions({
       onSuccess: () => {
         toast.success('Category deleted successfully')
         setIsDeleteDialogOpen(false)

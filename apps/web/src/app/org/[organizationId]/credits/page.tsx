@@ -1,13 +1,13 @@
 import { Credits } from '@/components/credits'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function Page({ params }: { params: Promise<{ organizationId: string }> }) {
   const { organizationId: organizationIdNoPrefix } = await params
   const organizationId = addIdPrefix(organizationIdNoPrefix, 'org')
 
   prefetch(
-    trpc.credits.getCredits.queryOptions({
+    orpc.credits.getCredits.queryOptions({
       organizationId,
     }),
   )

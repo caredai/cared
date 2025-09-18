@@ -11,14 +11,14 @@ import { RemoteImage } from '@/components/image'
 import { SectionTitle } from '@/components/section'
 import { CircleSpinner } from '@cared/ui/components/spinner'
 import defaultLogo from '@/public/images/agent.png'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function Applications() {
-  const trpc = useTRPC()
-  const { data: apps, refetch } = useSuspenseQuery(trpc.user.oauthApps.queryOptions())
+  
+  const { data: apps, refetch } = useSuspenseQuery(orpc.user.oauthApps.queryOptions())
 
   const revokeMutation = useMutation(
-    trpc.user.revokeOauthApp.mutationOptions({
+    orpc.user.revokeOauthApp.mutationOptions({
       onSuccess: () => {
         void refetch()
       },

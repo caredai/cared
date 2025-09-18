@@ -1,6 +1,6 @@
 import assert from 'assert'
 import type Stripe from 'stripe'
-import { TRPCError } from '@trpc/server'
+import { ORPCError } from '@orpc/server'
 import { Decimal } from 'decimal.js'
 
 import type { CreditsMetadata, OrderKind, OrderStatus } from '@cared/db/schema'
@@ -9,7 +9,7 @@ import { db } from '@cared/db/client'
 import { Credits, CreditsOrder } from '@cared/db/schema'
 import log from '@cared/log'
 
-import type { UserContext } from '../trpc'
+import type { UserContext } from '../orpc'
 import { getStripe } from '../client/stripe'
 import { cfg } from '../config'
 import { env } from '../env'
@@ -48,8 +48,7 @@ export async function cancelCreditsOrder(
     )[0]
 
     if (!order) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
+      throw new ORPCError('NOT_FOUND', {
         message: 'Order not found',
       })
     }
@@ -69,8 +68,7 @@ export async function cancelCreditsOrder(
       (order.status === 'draft' && (order.object as Stripe.Invoice).billing_reason !== 'manual')
     ) {
       if (forceCancel) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw new ORPCError('BAD_REQUEST', {
           message: `Order cannot be canceled in current status: ${order.status}`,
         })
       }
@@ -165,8 +163,7 @@ export async function cancelCreditsOrdersByKind(
   })
 
   if (!credits) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
+    throw new ORPCError('NOT_FOUND', {
       message: 'Credits  not found',
     })
   }
@@ -205,8 +202,7 @@ export async function cancelCreditsOrdersByKind(
 
   if (!order) {
     if (throwOnInconsistency) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
+      throw new ORPCError('NOT_FOUND', {
         message: `Order with objectId ${relevantId} not found`,
       })
     }
@@ -263,22 +259,19 @@ export async function createAutoRechargeInvoice(
       : eq(Credits.userId, ctx.auth.userId),
   })
   if (!credits) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
+    throw new ORPCError('NOT_FOUND', {
       message: 'Credits record not found',
     })
   }
 
   const metadata = credits.metadata
   if (!metadata.autoRechargeSubscriptionId) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
+    throw new ORPCError('BAD_REQUEST', {
       message: 'Auto-recharge subscription does not exist',
     })
   }
   if (Number(credits.credits) > metadata.autoRechargeThreshold!) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
+    throw new ORPCError('BAD_REQUEST', {
       message: `You have enough credits (${credits.credits}), no need to recharge`,
     })
   }
@@ -286,16 +279,14 @@ export async function createAutoRechargeInvoice(
   // Get customer ID from credits metadata
   const customerId = metadata.customerId
   if (!customerId) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
+    throw new ORPCError('BAD_REQUEST', {
       message: 'Customer ID not found in credits metadata',
     })
   }
 
   // Get recharge price
   if (!env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID) {
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
+    throw new ORPCError('INTERNAL_SERVER_ERROR', {
       message: 'Stripe top-up price ID is not configured',
     })
   }
@@ -310,14 +301,12 @@ export async function createAutoRechargeInvoice(
         false,
       )
       if (cancelled === false) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw new ORPCError('BAD_REQUEST', {
           message: 'Cannot cancel existing auto-recharge invoice order',
         })
       }
     } else {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
+      throw new ORPCError('BAD_REQUEST', {
         message: 'Auto-recharge invoice already exists',
       })
     }
@@ -335,8 +324,7 @@ export async function createAutoRechargeInvoice(
     )
   ) {
     log.error(`Stripe top-up price is not configured correctly:`, price)
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
+    throw new ORPCError('INTERNAL_SERVER_ERROR', {
       message: 'Stripe top-up price is not configured correctly',
     })
   }
@@ -388,8 +376,7 @@ export async function createAutoRechargeInvoice(
       )[0]!
 
       if (lockedCredits.metadata.autoRechargeInvoiceId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw new ORPCError('BAD_REQUEST', {
           message: 'Auto-recharge invoice already exists',
         })
       }
@@ -428,8 +415,7 @@ export async function triggerAutoRechargePaymentIntent(
 
   const customerId = metadata.customerId
   if (!customerId) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
+    throw new ORPCError('BAD_REQUEST', {
       message: 'Customer ID not found in credits metadata',
     })
   }
@@ -444,8 +430,7 @@ export async function triggerAutoRechargePaymentIntent(
         false,
       )
       if (cancelled === false) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw new ORPCError('BAD_REQUEST', {
           message: 'Cannot cancel existing auto-recharge payment intent order',
         })
       }
@@ -459,8 +444,7 @@ export async function triggerAutoRechargePaymentIntent(
   // Get customer to check for default payment method
   const customer = await stripe.customers.retrieve(customerId)
   if (customer.deleted) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
+    throw new ORPCError('BAD_REQUEST', {
       message: 'Customer not found',
     })
   }

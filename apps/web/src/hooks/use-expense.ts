@@ -1,6 +1,6 @@
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function useExpenses({
   organizationId,
@@ -11,24 +11,22 @@ export function useExpenses({
   appId?: string
   pageSize?: number
 }) {
-  const trpc = useTRPC()
-
   const { data, isLoading, refetch, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery(
-      trpc.expense.list.infiniteQueryOptions(
-        {
+      orpc.expense.list.infiniteOptions({
+        input: (cursor?: string) => ({
           organizationId,
           appId,
+          cursor,
           limit: pageSize,
+        }),
+        initialPageParam: undefined,
+        getNextPageParam: (lastPage) => {
+          if (!lastPage.hasMore) return undefined
+          return lastPage.cursor
         },
-        {
-          getNextPageParam: (lastPage) => {
-            if (!lastPage.hasMore) return undefined
-            return lastPage.cursor
-          },
-          placeholderData: keepPreviousData,
-        },
-      ),
+        placeholderData: keepPreviousData,
+      }),
     )
 
   return {

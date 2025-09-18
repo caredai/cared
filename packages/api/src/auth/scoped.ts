@@ -1,4 +1,4 @@
-import { TRPCError } from '@trpc/server'
+import { ORPCError } from '@orpc/server'
 
 import type { OrganizationStatementsSubset } from '@cared/auth'
 import type { Database, Transaction } from '@cared/db/client'
@@ -18,8 +18,7 @@ export class OrganizationScope {
 
   static fromOrganization(ctx: Context, organizationId: string) {
     if (ctx.auth && !ctx.auth.checkOrganization({ organizationId })) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
+      throw new ORPCError('FORBIDDEN', {
         message: 'You do not have permission to access this organization',
       })
     }
@@ -32,8 +31,7 @@ export class OrganizationScope {
         where: eq(Workspace.id, workspaceId),
       })
       if (!workspace) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
+        throw new ORPCError('NOT_FOUND', {
           message: 'Workspace not found',
         })
       }
@@ -41,8 +39,7 @@ export class OrganizationScope {
     }
 
     if (ctx.auth && !ctx.auth.checkWorkspace({ workspaceId, organizationId })) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
+      throw new ORPCError('FORBIDDEN', {
         message: 'You do not have permission to access this workspace',
       })
     }
@@ -67,8 +64,7 @@ export class OrganizationScope {
           where: eq(Workspace.id, app.workspaceId),
         })
         if (!workspace) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
+          throw new ORPCError('NOT_FOUND', {
             message: 'Workspace not found',
           })
         }
@@ -88,8 +84,7 @@ export class OrganizationScope {
           .where(eq(App.id, app))
           .limit(1)
         if (!result) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
+          throw new ORPCError('NOT_FOUND', {
             message: 'App not found',
           })
         }
@@ -100,8 +95,7 @@ export class OrganizationScope {
     }
 
     if (ctx.auth && !ctx.auth.checkApp({ appId, workspaceId, organizationId })) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
+      throw new ORPCError('FORBIDDEN', {
         message: 'You do not have permission to access this app',
       })
     }
@@ -122,8 +116,7 @@ export class OrganizationScope {
       //   organizationId: this.organizationId,
       //   permissions,
       // })
-      throw new TRPCError({
-        code: 'FORBIDDEN',
+      throw new ORPCError('FORBIDDEN', {
         message: 'You do not have permission to perform this action',
       })
     }

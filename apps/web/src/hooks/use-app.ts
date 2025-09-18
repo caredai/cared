@@ -4,14 +4,14 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 
 import { useWorkspaces } from '@/hooks/use-workspace'
 import { stripIdPrefix } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function useAllApps() {
-  const trpc = useTRPC()
+
 
   const {
     data: { apps },
-  } = useSuspenseQuery(trpc.app.list.queryOptions())
+  } = useSuspenseQuery(orpc.app.list.queryOptions())
 
   return apps
 }

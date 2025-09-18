@@ -5,7 +5,7 @@ import Cookies from 'js-cookie'
 
 import { lastWorkspaceCookieName } from '@/lib/cookie'
 import { stripIdPrefix } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function useLastWorkspace() {
   const lastWorkspace = Cookies.get(lastWorkspaceCookieName)
@@ -27,11 +27,11 @@ export function useLastWorkspace() {
 export type Workspace = ReturnType<typeof useWorkspaces>[number]
 
 export function useAllWorkspaces() {
-  const trpc = useTRPC()
+  
 
   const {
     data: { workspaces },
-  } = useSuspenseQuery(trpc.workspace.list.queryOptions())
+  } = useSuspenseQuery(orpc.workspace.list.queryOptions())
 
   return workspaces
 }

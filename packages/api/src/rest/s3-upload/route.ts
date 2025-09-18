@@ -1,5 +1,5 @@
 import type { NextRequest } from 'next/server'
-import { TRPCError } from '@trpc/server'
+import { ORPCError } from '@orpc/server'
 import mime from 'mime'
 import { sanitizeKey } from 'next-s3-upload'
 import { POST as APIRoute } from 'next-s3-upload/route'
@@ -96,7 +96,7 @@ const _APIRoute = APIRoute.configure({
   async key(req, filename) {
     const auth = await authenticate()
     if (!auth.isAuthenticated()) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' })
+      throw new ORPCError('UNAUTHORIZED')
     }
 
     const params = new URL(req.url).searchParams
@@ -106,8 +106,7 @@ const _APIRoute = APIRoute.configure({
     const mimeType = location.mimeType
     const fileType = mimeType ? mime.getExtension(mimeType) : filename.split('.').pop()
     if (!fileType || !allowedExtensions.includes(fileType)) {
-      throw new TRPCError({
-        code: 'BAD_REQUEST',
+      throw new ORPCError('BAD_REQUEST', {
         message: 'Invalid file type',
       })
     }
@@ -125,8 +124,7 @@ const _APIRoute = APIRoute.configure({
           where: eq(Workspace.id, location.workspaceId),
         })
         if (!workspace) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
+          throw new ORPCError('NOT_FOUND', {
             message: 'Workspace not found',
           })
         }
@@ -145,8 +143,7 @@ const _APIRoute = APIRoute.configure({
           where: eq(Dataset.id, location.datasetId),
         })
         if (!dataset) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
+          throw new ORPCError('NOT_FOUND', {
             message: 'Dataset not found',
           })
         }
@@ -165,8 +162,7 @@ const _APIRoute = APIRoute.configure({
           where: eq(App.id, location.appId),
         })
         if (!app) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
+          throw new ORPCError('NOT_FOUND', {
             message: 'App not found',
           })
         }
@@ -185,8 +181,7 @@ const _APIRoute = APIRoute.configure({
           where: eq(Chat.id, location.chatId),
         })
         if (!chat) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
+          throw new ORPCError('NOT_FOUND', {
             message: 'Chat not found',
           })
         }
@@ -196,24 +191,20 @@ const _APIRoute = APIRoute.configure({
           where: eq(App.id, chat.appId),
         })
         if (!app) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
+          throw new ORPCError('NOT_FOUND', {
             message: 'App not found for this chat',
           })
         }
 
         if (!auth.isUser()) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-          })
+          throw new ORPCError('FORBIDDEN')
         }
 
         return `${app.workspaceId}/${chat.appId}/${location.chatId}/${name}`
       }
 
       default:
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
+        throw new ORPCError('BAD_REQUEST', {
           message: 'Invalid location type',
         })
     }

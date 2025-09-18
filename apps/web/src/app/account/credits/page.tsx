@@ -1,8 +1,9 @@
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+
 import { Credits } from '@/components/credits'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default function Page() {
-  prefetch(trpc.credits.getCredits.queryOptions({}))
+  prefetch(orpc.credits.getCredits.queryOptions())
 
   return (
     <HydrateClient>

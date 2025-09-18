@@ -1,17 +1,17 @@
 import { Models } from '@/components/models'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 /**
  * Models page component
  * Renders the Models component with client-side hydration
  */
 export default function Page() {
-  prefetch(trpc.model.listProviders.queryOptions())
-  prefetch(trpc.model.listModels.queryOptions({
+  prefetch(orpc.model.listProviders.queryOptions())
+  prefetch(orpc.model.listModels.queryOptions({
     source: 'system'
   }))
   prefetch(
-    trpc.providerKey.list.queryOptions({
+    orpc.providerKey.list.queryOptions({
       isSystem: true,
     }),
   )

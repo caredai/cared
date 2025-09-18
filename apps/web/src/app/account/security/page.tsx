@@ -1,9 +1,10 @@
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+
 import { Security } from './security'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default function Page() {
-  prefetch(trpc.user.sessions.queryOptions())
-  prefetch(trpc.user.accounts.queryOptions())
+  prefetch(orpc.user.sessions.queryOptions())
+  prefetch(orpc.user.accounts.queryOptions())
 
   return (
     <HydrateClient>

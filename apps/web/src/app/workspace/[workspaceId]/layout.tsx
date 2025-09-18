@@ -10,9 +10,9 @@ import { ErrorFallback } from '@/components/error-fallback'
 import { RememberWorkspace } from '@/components/remember-workspace'
 import { Section } from '@/components/section'
 import { addIdPrefix } from '@/lib/utils'
-import { fetch, HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { WorkspaceNavMain } from './nav-main'
 import { prefetchAndCheckSession } from '@/lib/session'
+import { fetch, HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function WorkspaceLayout({
   children,
@@ -28,7 +28,7 @@ export default async function WorkspaceLayout({
     return
   }
 
-  const { workspaces } = await fetch(trpc.workspace.list.queryOptions())
+  const { workspaces } = await fetch(orpc.workspace.list.queryOptions())
 
   const workspace = workspaces.find((w) => w.id === workspaceId)
   if (!workspace) {
@@ -36,8 +36,8 @@ export default async function WorkspaceLayout({
     return null
   }
 
-  prefetch(trpc.organization.list.queryOptions())
-  prefetch(trpc.app.list.queryOptions())
+  prefetch(orpc.organization.list.queryOptions())
+  prefetch(orpc.app.list.queryOptions())
 
   return (
     <HydrateClient>

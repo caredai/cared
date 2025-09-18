@@ -9,7 +9,7 @@ import { ErrorFallback } from '@/components/error-fallback'
 import { ForgetOrganization } from '@/components/remember-organization'
 import { Section } from '@/components/section'
 import { prefetchAndCheckSession } from '@/lib/session'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 import { AccountNavMain } from './nav-main'
 
 export default async function Layout({
@@ -21,9 +21,9 @@ export default async function Layout({
     return
   }
 
-  prefetch(trpc.organization.list.queryOptions())
-  prefetch(trpc.workspace.list.queryOptions())
-  prefetch(trpc.app.list.queryOptions())
+  prefetch(orpc.organization.list.queryOptions())
+  prefetch(orpc.workspace.list.queryOptions())
+  prefetch(orpc.app.list.queryOptions())
 
   return (
     <HydrateClient>

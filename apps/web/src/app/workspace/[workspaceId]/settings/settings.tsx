@@ -60,7 +60,7 @@ import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useActive } from '@/hooks/use-active'
 import { useMembers } from '@/hooks/use-members'
 import { useSession } from '@/hooks/use-session'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 /**
  * General settings component for workspace
@@ -68,7 +68,7 @@ import { useTRPC } from '@/trpc/client'
  */
 export function Settings() {
   const router = useRouter()
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const { activeWorkspace, activeOrganization } = useActive()
@@ -100,11 +100,11 @@ export function Settings() {
 
   // Update workspace mutation
   const updateWorkspaceMutation = useMutation(
-    trpc.workspace.update.mutationOptions({
+    orpc.workspace.update.mutationOptions({
       onSuccess: (data) => {
         form.reset({ name: data.workspace.name })
         void queryClient.invalidateQueries(
-          trpc.workspace.get.queryOptions({ id: activeWorkspace?.id ?? '' }),
+          orpc.workspace.get.queryOptions({ input: { id: activeWorkspace?.id ?? '' } }),
         )
         toast.success('Workspace name updated successfully')
       },
@@ -117,7 +117,7 @@ export function Settings() {
 
   // Delete workspace mutation
   const deleteWorkspaceMutation = useMutation(
-    trpc.workspace.delete.mutationOptions({
+    orpc.workspace.delete.mutationOptions({
       onSuccess: () => {
         setIsDeleteDialogOpen(false)
         toast.success('Workspace deleted successfully')
@@ -133,7 +133,7 @@ export function Settings() {
 
   // Transfer ownership mutation
   const transferOwnershipMutation = useMutation(
-    trpc.workspace.transferOwnership.mutationOptions({
+    orpc.workspace.transferOwnership.mutationOptions({
       onSuccess: () => {
         setIsTransferDialogOpen(false)
         setSelectedOrganizationId('')
@@ -141,7 +141,7 @@ export function Settings() {
 
         // Refresh workspace data
         void queryClient.invalidateQueries(
-          trpc.workspace.get.queryOptions({ id: activeWorkspace?.id ?? '' }),
+          orpc.workspace.get.queryOptions({ input: { id: activeWorkspace?.id ?? '' } }),
         )
       },
       onError: (error: unknown) => {

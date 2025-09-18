@@ -33,14 +33,14 @@ import { RemoteImage } from '@/components/image'
 import { useApps } from '@/hooks/use-app'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 import defaultLogo from '@/public/images/agent.png'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 // Constant for all categories filter value
 const ALL_CATEGORIES = 'all'
 
 export function Apps() {
   const router = useRouter()
-  const trpc = useTRPC()
+  
   const { workspaceId: workspaceIdNoPrefix } = useParams<{ workspaceId: string }>()
   const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
   const [searchTerm, setSearchTerm] = useState('')
@@ -51,7 +51,7 @@ export function Apps() {
   })
 
   // Get all categories
-  const { data: categoriesData } = useSuspenseQuery(trpc.app.listCategories.queryOptions())
+  const { data: categoriesData } = useSuspenseQuery(orpc.app.listCategories.queryOptions())
 
   // Search and filter functionality
   const filteredApps = apps.filter((appData) => {

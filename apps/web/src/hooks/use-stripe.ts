@@ -2,16 +2,16 @@ import { useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 /**
  * Hook to get customer information
  */
 export function useCustomer(organizationId?: string) {
-  const trpc = useTRPC()
+  
 
   const { data, refetch, isLoading } = useQuery({
-    ...trpc.stripe.getCustomer.queryOptions({
+    ...orpc.stripe.getCustomer.queryOptions({
       organizationId,
     }),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -35,10 +35,10 @@ export function useDefaultPaymentMethodId(organizationId?: string) {
  * Hook to list payment methods for a customer
  */
 export function useListPaymentMethods(organizationId?: string) {
-  const trpc = useTRPC()
+  
 
   const { data, refetch, isLoading } = useQuery({
-    ...trpc.stripe.listPaymentMethods.queryOptions({
+    ...orpc.stripe.listPaymentMethods.queryOptions({
       organizationId,
     }),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -56,15 +56,15 @@ export function useListPaymentMethods(organizationId?: string) {
  * Hook to add a new payment method using SetupIntent
  */
 export function useAddPaymentMethod(organizationId?: string) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const addMutation = useMutation(
-    trpc.stripe.addPaymentMethod.mutationOptions({
+    orpc.stripe.addPaymentMethod.mutationOptions({
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: trpc.stripe.listPaymentMethods.queryKey({
+          queryKey: orpc.stripe.listPaymentMethods.queryKey({
             organizationId,
           }),
         })
@@ -90,15 +90,15 @@ export function useAddPaymentMethod(organizationId?: string) {
  * Hook to remove a payment method
  */
 export function useRemovePaymentMethod(organizationId?: string) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const removeMutation = useMutation(
-    trpc.stripe.removePaymentMethod.mutationOptions({
+    orpc.stripe.removePaymentMethod.mutationOptions({
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: trpc.stripe.listPaymentMethods.queryKey({
+          queryKey: orpc.stripe.listPaymentMethods.queryKey({
             organizationId,
           }),
         })
@@ -125,15 +125,15 @@ export function useRemovePaymentMethod(organizationId?: string) {
  * Hook to update customer's default payment method
  */
 export function useUpdateDefaultPaymentMethod(organizationId?: string) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    trpc.stripe.updateDefaultPaymentMethod.mutationOptions({
+    orpc.stripe.updateDefaultPaymentMethod.mutationOptions({
       onSuccess: () => {
         // Invalidate customer data to refresh the default payment method
         void queryClient.invalidateQueries({
-          queryKey: trpc.stripe.getCustomer.queryKey({
+          queryKey: orpc.stripe.getCustomer.queryKey({
             organizationId,
           }),
         })

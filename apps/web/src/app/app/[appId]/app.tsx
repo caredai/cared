@@ -9,16 +9,16 @@ import type { App as AppType } from '@cared/db/schema'
 import { SectionTitle } from '@/components/section'
 import { UploadLogo } from '@/components/upload-logo'
 import defaultLogo from '@/public/images/agent.png'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function App({ appId }: { appId: string }) {
-  const trpc = useTRPC()
+  
 
   // Get app information
   const {
     data: { app },
   } = useSuspenseQuery({
-    ...trpc.app.byId.queryOptions({
+    ...orpc.app.byId.queryOptions({
       id: appId,
     }),
   })
@@ -27,15 +27,15 @@ export function App({ appId }: { appId: string }) {
 }
 
 function UpdateAppLogo({ app }: { app: AppType }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   // App update mutation
   const updateMutation = useMutation({
-    ...trpc.app.update.mutationOptions({
+    ...orpc.app.update.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(
-          trpc.app.byId.queryOptions({
+          orpc.app.byId.queryOptions({
             id: app.id,
           }),
         )

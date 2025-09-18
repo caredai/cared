@@ -27,6 +27,7 @@
     "@cared/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
+    "tsup": "^8.3.6",
     "typescript": "catalog:"
   },
   "prettier": "@cared/prettier-config",
@@ -35,6 +36,7 @@
     "uuid": "11.1.0"
   },
   "peerDependencies": {
+    "ai": ">=5.0.38",
     "drizzle-orm": ">=0.38.4",
     "zod": ">=3.24.2"
   }

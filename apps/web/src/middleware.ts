@@ -8,7 +8,7 @@ export default function middleware(request: NextRequest) {
   if (
     pathname === '/' ||
     pathname.startsWith('/api/auth') ||
-    pathname === '/api/trpc/user.session' ||
+    pathname === '/api/rpc/user.session' ||
     (pathname.startsWith('/auth') && !pathname.startsWith('/auth/settings')) ||
     pathname.startsWith('/api/v1/webhooks')
   ) {

@@ -4,7 +4,7 @@ import { ApiKeysWithSelector } from '@/components/api-keys'
 import { SectionTitle } from '@/components/section'
 import { SkeletonCard } from '@/components/skeleton'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function WorkspaceApiKeyPage({
   params,
@@ -14,7 +14,7 @@ export default async function WorkspaceApiKeyPage({
   const { workspaceId: workspaceIdNoPrefix } = await params
   const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')
 
-  prefetch(trpc.apiKey.list.queryOptions())
+  prefetch(orpc.apiKey.list.queryOptions())
 
   return (
     <HydrateClient>

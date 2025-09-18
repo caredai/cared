@@ -42,14 +42,14 @@ import { Label } from '@cared/ui/components/label'
 import { Switch } from '@cared/ui/components/switch'
 
 import { CircleSpinner } from '@cared/ui/components/spinner'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function OAuthApp({ appId }: { appId: string }) {
-  const trpc = useTRPC()
+  
   const {
     data: { oauthApps },
   } = useSuspenseQuery({
-    ...trpc.oauthApp.list.queryOptions({
+    ...orpc.oauthApp.list.queryOptions({
       appId,
     }),
   })
@@ -136,7 +136,7 @@ function CreateOAuthApp({
   setShowSecretDialog: (show: boolean) => void
   setSecretToShow: (secret: string) => void
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   // Form setup
@@ -155,12 +155,12 @@ function CreateOAuthApp({
 
   // Create OAuth app mutation
   const createMutation = useMutation({
-    ...trpc.oauthApp.create.mutationOptions({
+    ...orpc.oauthApp.create.mutationOptions({
       onSuccess: (data) => {
         setShowSecretDialog(true)
         setSecretToShow(data.oauthApp.clientSecret!)
         void queryClient.invalidateQueries({
-          queryKey: trpc.oauthApp.list.queryKey({ appId }),
+          queryKey: orpc.oauthApp.list.queryKey({ appId }),
         })
       },
       onError: (error) => {
@@ -302,7 +302,7 @@ function UpdateOAuthApp({
   secretToShow?: string
   setSecretToShow: (secret: string) => void
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
   const [showRotateDialog, setShowRotateDialog] = useState(false)
   const [redirectUris, setRedirectUris] = useState<string[]>(oauthApp.redirectUris)
@@ -312,10 +312,10 @@ function UpdateOAuthApp({
 
   // Update OAuth app mutation
   const updateMutation = useMutation({
-    ...trpc.oauthApp.update.mutationOptions({
+    ...orpc.oauthApp.update.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: trpc.oauthApp.list.queryKey({ appId }),
+          queryKey: orpc.oauthApp.list.queryKey({ appId }),
         })
         setNewRedirectUri('')
       },
@@ -326,10 +326,10 @@ function UpdateOAuthApp({
   })
 
   const rotateSecretMutation = useMutation({
-    ...trpc.oauthApp.rotateSecret.mutationOptions({
+    ...orpc.oauthApp.rotateSecret.mutationOptions({
       onSuccess: (data) => {
         void queryClient.invalidateQueries({
-          queryKey: trpc.oauthApp.list.queryKey({ appId }),
+          queryKey: orpc.oauthApp.list.queryKey({ appId }),
         })
         setSecretToShow(data.oauthApp.clientSecret!)
         setShowSecretDialog(true)

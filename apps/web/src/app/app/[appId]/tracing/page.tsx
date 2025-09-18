@@ -1,6 +1,7 @@
 import { Tracing } from '@/components/tracing'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient } from '@/trpc/server'
+
+import { HydrateClient } from '@/orpc/client'
 
 export default async function AppTracingPage({ params }: { params: Promise<{ appId: string }> }) {
   const { appId: appIdNoPrefix } = await params

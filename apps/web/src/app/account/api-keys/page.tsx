@@ -3,10 +3,10 @@ import { Suspense } from 'react'
 import { ApiKeys } from '@/components/api-keys'
 import { SectionTitle } from '@/components/section'
 import { SkeletonCard } from '@/components/skeleton'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default function UserApiKeyPage() {
-  prefetch(trpc.apiKey.list.queryOptions())
+  prefetch(orpc.apiKey.list.queryOptions())
 
   return (
     <HydrateClient>

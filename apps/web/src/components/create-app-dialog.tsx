@@ -41,7 +41,7 @@ import { Textarea } from '@cared/ui/components/textarea'
 
 import { ModelSelect } from '@/components/model-select'
 import { stripIdPrefix } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 // Schema for app form values
 const createAppSchema = z.object({
@@ -68,14 +68,14 @@ export function CreateAppDialog({
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   // Get models data for selection
-  const { data: modelsData } = useSuspenseQuery(trpc.model.listProvidersModels.queryOptions())
+  const { data: modelsData } = useSuspenseQuery(orpc.model.listProvidersModels.queryOptions())
 
   // Get default models data
-  const { data: defaultModelsData } = useSuspenseQuery(trpc.model.listDefaultModels.queryOptions())
+  const { data: defaultModelsData } = useSuspenseQuery(orpc.model.listDefaultModels.queryOptions())
 
   // Process model data with memoization to improve performance
   const { languageModelItems, embeddingModelItems, imageModelItems } = useMemo(() => {
@@ -158,11 +158,11 @@ export function CreateAppDialog({
 
   // Create app mutation
   const createAppMutation = useMutation(
-    trpc.app.create.mutationOptions({
+    orpc.app.create.mutationOptions({
       onSuccess: (data) => {
         toast.success(`App "${data.app.name}" created successfully`)
         setOpen(false)
-        void queryClient.invalidateQueries(trpc.app.list.queryOptions())
+        void queryClient.invalidateQueries(orpc.app.list.queryOptions())
 
         // Call onSuccess callback if provided, otherwise navigate to the new app page
         if (onSuccess) {

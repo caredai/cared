@@ -1,6 +1,5 @@
 'use client'
 
-import type { TRPCClientErrorLike } from '@trpc/client'
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Database, Loader2, XCircle } from 'lucide-react'
@@ -16,9 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@cared/ui/components/card'
-
 import { CircleSpinner } from '@cared/ui/components/spinner'
-import { useTRPC } from '@/trpc/client'
+
+import { orpc } from '@/orpc/client'
 
 /**
  * Admin Mock Page
@@ -26,26 +25,27 @@ import { useTRPC } from '@/trpc/client'
  * Can only be executed once - checks if data already exists by counting users
  */
 export default function Page() {
-  const trpc = useTRPC()
   const [isMocked, setIsMocked] = useState(false)
 
   // Query to check if data has already been mocked
   const { data, isLoading, isError, refetch } = useQuery({
-    ...trpc.admin.listUsers.queryOptions({
-      limit: 11, // Get 11 users to check if there are more than 10
+    ...orpc.admin.listUsers.queryOptions({
+      input: {
+        limit: 11, // Get 11 users to check if there are more than 10
+      },
     }),
     retry: 1,
   })
 
   // Mock data mutation
   const mockMutation = useMutation(
-    trpc.admin.mock.mutationOptions({
+    orpc.admin.mock.mutationOptions({
       onSuccess: () => {
         toast.success('Data successfully added to database')
         setIsMocked(true)
         void refetch() // Refresh the user list to confirm data was added
       },
-      onError: (error: TRPCClientErrorLike<any>) => {
+      onError: (error) => {
         console.error('Failed to mock data:', error)
         toast.error('Failed to add data')
       },
@@ -106,7 +106,7 @@ export default function Page() {
           </CardContent>
           <CardFooter>
             <Button
-              onClick={() => mockMutation.mutateAsync()}
+              onClick={() => mockMutation.mutateAsync({})}
               disabled={isLoading || hasBeenMocked || isMocked || mockMutation.isPending}
             >
               {mockMutation.isPending ? (

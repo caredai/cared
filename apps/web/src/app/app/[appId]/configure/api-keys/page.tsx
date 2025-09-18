@@ -3,13 +3,13 @@ import { Suspense } from 'react'
 import { ApiKeys } from '@/components/api-keys'
 import { SkeletonCard } from '@/components/skeleton'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function ApiKeyPage({ params }: { params: Promise<{ appId: string }> }) {
   const { appId: appIdNoPrefix } = await params
   const appId = addIdPrefix(appIdNoPrefix, 'app')
 
-  prefetch(trpc.apiKey.list.queryOptions())
+  prefetch(orpc.apiKey.list.queryOptions())
 
   return (
     <HydrateClient>

@@ -7,8 +7,8 @@ import { AppSidebar } from '@/components/app-sidebar'
 import { ErrorFallback } from '@/components/error-fallback'
 import { Section } from '@/components/section'
 import { prefetchAndCheckSession } from '@/lib/session'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { AdminNavMain } from './nav-main'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default async function Layout({
   children,
@@ -19,7 +19,7 @@ export default async function Layout({
     return
   }
 
-  prefetch(trpc.user.accounts.queryOptions())
+  prefetch(orpc.user.accounts.queryOptions())
 
   return (
     <HydrateClient>

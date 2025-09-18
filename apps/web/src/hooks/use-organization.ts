@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 
 import { useSession, useSessionPublic } from '@/hooks/use-session'
 import { stripIdPrefix } from '@/lib/utils'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export type Organization = ReturnType<typeof useOrganizations>[number]
 
@@ -17,9 +17,9 @@ export function useLastOrganization() {
 export function useSetLastOrganization() {
   const { session, refetchSession } = useSessionPublic()
 
-  const trpc = useTRPC()
+  
 
-  const setActiveMutation = useMutation(trpc.organization.setActive.mutationOptions())
+  const setActiveMutation = useMutation(orpc.organization.setActive.mutationOptions())
 
   const [disabledSetLastOrganization, setDisabledSetLastOrganization] = useState(false)
 
@@ -45,11 +45,11 @@ export function useSetLastOrganization() {
 }
 
 export function useOrganizations() {
-  const trpc = useTRPC()
+  
 
   const {
     data: { organizations },
-  } = useSuspenseQuery(trpc.organization.list.queryOptions())
+  } = useSuspenseQuery(orpc.organization.list.queryOptions())
 
   return organizations
 }
@@ -59,14 +59,14 @@ export function useOrganizations() {
  * Provides mutation for updating organization name and other properties
  */
 export function useUpdateOrganization() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    trpc.organization.update.mutationOptions({
+    orpc.organization.update.mutationOptions({
       onSuccess: () => {
         // Invalidate organization queries to refresh data
-        void queryClient.invalidateQueries(trpc.organization.list.queryOptions())
+        void queryClient.invalidateQueries(orpc.organization.list.queryOptions())
       },
       onError: (error) => {
         console.error('Failed to update organization:', error)
@@ -89,14 +89,14 @@ export function useUpdateOrganization() {
  * Provides mutation for transferring ownership between members
  */
 export function useTransferOrganizationOwnership() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const transferMutation = useMutation(
-    trpc.organization.transferOwnership.mutationOptions({
+    orpc.organization.transferOwnership.mutationOptions({
       onSuccess: () => {
         // Invalidate organization queries to refresh data
-        void queryClient.invalidateQueries(trpc.organization.list.queryOptions())
+        void queryClient.invalidateQueries(orpc.organization.list.queryOptions())
       },
       onError: (error) => {
         console.error('Failed to transfer organization ownership:', error)

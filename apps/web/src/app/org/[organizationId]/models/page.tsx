@@ -1,6 +1,6 @@
 import { Models } from '@/components/models'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 /**
  * Models page component
@@ -10,12 +10,12 @@ export default async function Page({ params }: { params: Promise<{ organizationI
   const { organizationId: orgIdNoPrefix } = await params
   const organizationId = addIdPrefix(orgIdNoPrefix, 'org')
 
-  prefetch(trpc.model.listProviders.queryOptions())
-  prefetch(trpc.model.listModels.queryOptions({
+  prefetch(orpc.model.listProviders.queryOptions())
+  prefetch(orpc.model.listModels.queryOptions({
     organizationId
   }))
   prefetch(
-    trpc.providerKey.list.queryOptions({
+    orpc.providerKey.list.queryOptions({
       organizationId,
     }),
   )

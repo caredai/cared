@@ -1,16 +1,16 @@
 import { useCallback } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 // Query hooks
 export function useMembers(organizationId = '') {
-  const trpc = useTRPC()
+  
 
   const {
     data: { members },
   } = useSuspenseQuery(
-    trpc.organization.listMembers.queryOptions({
+    orpc.organization.listMembers.queryOptions({
       organizationId,
     }),
   )
@@ -19,12 +19,12 @@ export function useMembers(organizationId = '') {
 }
 
 export function useInvitations(organizationId: string) {
-  const trpc = useTRPC()
+  
 
   const {
     data: { invitations },
   } = useSuspenseQuery(
-    trpc.organization.listInvitations.queryOptions({
+    orpc.organization.listInvitations.queryOptions({
       organizationId,
     }),
   )
@@ -34,15 +34,15 @@ export function useInvitations(organizationId: string) {
 
 // Mutation hooks
 export function useAddMember() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    trpc.organization.addMember.mutationOptions({
+    orpc.organization.addMember.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate members list for the specific organization
         void queryClient.invalidateQueries({
-          queryKey: trpc.organization.listMembers.queryOptions({
+          queryKey: orpc.organization.listMembers.queryOptions({
             organizationId: variables.organizationId,
           }).queryKey,
         })
@@ -61,15 +61,15 @@ export function useAddMember() {
 }
 
 export function useRemoveMember() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    trpc.organization.removeMember.mutationOptions({
+    orpc.organization.removeMember.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate members list for the specific organization
         void queryClient.invalidateQueries({
-          queryKey: trpc.organization.listMembers.queryOptions({
+          queryKey: orpc.organization.listMembers.queryOptions({
             organizationId: variables.organizationId,
           }).queryKey,
         })
@@ -87,15 +87,15 @@ export function useRemoveMember() {
 }
 
 export function useUpdateMemberRole() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    trpc.organization.updateMemberRole.mutationOptions({
+    orpc.organization.updateMemberRole.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate members list for the specific organization
         void queryClient.invalidateQueries({
-          queryKey: trpc.organization.listMembers.queryOptions({
+          queryKey: orpc.organization.listMembers.queryOptions({
             organizationId: variables.organizationId,
           }).queryKey,
         })
@@ -114,15 +114,15 @@ export function useUpdateMemberRole() {
 }
 
 export function useCreateInvitation() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    trpc.organization.createInvitation.mutationOptions({
+    orpc.organization.createInvitation.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate invitations list for the specific organization
         void queryClient.invalidateQueries({
-          queryKey: trpc.organization.listInvitations.queryOptions({
+          queryKey: orpc.organization.listInvitations.queryOptions({
             organizationId: variables.organizationId,
           }).queryKey,
         })
@@ -140,15 +140,15 @@ export function useCreateInvitation() {
 }
 
 export function useCancelInvitation() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    trpc.organization.cancelInvitation.mutationOptions({
+    orpc.organization.cancelInvitation.mutationOptions({
       onSuccess: (data) => {
         // Invalidate invitations list for the specific organization
         void queryClient.invalidateQueries({
-          queryKey: trpc.organization.listInvitations.queryOptions({
+          queryKey: orpc.organization.listInvitations.queryOptions({
             organizationId: data.invitation.organizationId,
           }).queryKey,
         })

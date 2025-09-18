@@ -3,13 +3,13 @@ import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-quer
 
 import { authClient } from '@cared/auth/client'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export type User = (typeof authClient.$Infer.Session)['user']
 export type Session = (typeof authClient.$Infer.Session)['session']
 
 function useRefetchSession() {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   return useCallback(async () => {
@@ -21,9 +21,9 @@ function useRefetchSession() {
       })
     ).data
 
-    queryClient.setQueryData(trpc.user.session.queryKey(), session)
+    queryClient.setQueryData(orpc.user.session.queryKey(), session)
     queryClient.setQueryData(
-      trpc.user.session.queryKey({
+      orpc.user.session.queryKey({
         auth: false,
       }),
       session,
@@ -33,12 +33,12 @@ function useRefetchSession() {
 }
 
 export function useSessionPublic() {
-  const trpc = useTRPC()
+  
 
   const refetchSession = useRefetchSession()
 
   const { data, isSuccess } = useQuery(
-    trpc.user.session.queryOptions({
+    orpc.user.session.queryOptions({
       auth: false,
     }),
   )
@@ -61,11 +61,11 @@ export function useCheckSession() {
 }
 
 export function useSession() {
-  const trpc = useTRPC()
+  
 
   const refetchSession = useRefetchSession()
 
-  const { data } = useSuspenseQuery(trpc.user.session.queryOptions())
+  const { data } = useSuspenseQuery(orpc.user.session.queryOptions())
   // Since this query throws an error when the return value is null, using non-null assertion is safe here
   return {
     session: data!.session,
@@ -75,12 +75,12 @@ export function useSession() {
 }
 
 export function useAccounts() {
-  const trpc = useTRPC()
+  
 
   const {
     data: { accounts },
     refetch: refetchAccounts,
-  } = useSuspenseQuery(trpc.user.accounts.queryOptions())
+  } = useSuspenseQuery(orpc.user.accounts.queryOptions())
   return {
     accounts,
     refetchAccounts,

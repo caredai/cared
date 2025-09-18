@@ -1,6 +1,7 @@
 import { TracingWithSelector } from '@/components/tracing'
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient } from '@/trpc/server'
+
+import { HydrateClient } from '@/orpc/client'
 
 export default async function WorkspaceTracingPage({
   params,

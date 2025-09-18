@@ -1,6 +1,6 @@
 import { getActiveOrganizationId } from '@/lib/active'
-import { HydrateClient, prefetch, trpc } from '@/trpc/server'
 import { Settings } from './settings'
+import { HydrateClient, orpc, prefetch } from '@/orpc/client'
 
 export default function Page({ params }: { params: Promise<{ organizationId: string }> }) {
   return <HydrateSettings params={params} />
@@ -14,7 +14,7 @@ export async function HydrateSettings({
   const { activeOrganizationId } = await getActiveOrganizationId(params)
 
   prefetch(
-    trpc.organization.listMembers.queryOptions({
+    orpc.organization.listMembers.queryOptions({
       organizationId: activeOrganizationId,
     }),
   )

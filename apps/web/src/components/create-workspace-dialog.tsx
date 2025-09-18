@@ -31,7 +31,7 @@ import { Input } from '@cared/ui/components/input'
 
 import { CircleSpinner } from '@cared/ui/components/spinner'
 import { useReplaceRouteWithWorkspaceId } from '@/hooks/use-workspace'
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function CreateWorkspaceDialog({
   organizationId,
@@ -47,7 +47,7 @@ export function CreateWorkspaceDialog({
   const router = useRouter()
   const replaceRouteWithWorkspaceId = useReplaceRouteWithWorkspaceId()
 
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const form = useForm({
@@ -66,13 +66,13 @@ export function CreateWorkspaceDialog({
   }, [open, form])
 
   const createWorkspace = useMutation(
-    trpc.workspace.create.mutationOptions({
+    orpc.workspace.create.mutationOptions({
       onSuccess: async (workspace) => {
         setOpen(false)
 
         toast.success('Workspace created successfully')
 
-        await queryClient.invalidateQueries(trpc.workspace.list.queryOptions())
+        await queryClient.invalidateQueries(orpc.workspace.list.queryOptions())
 
         // Redirect to new workspace or call success callback
         if (onSuccess) {

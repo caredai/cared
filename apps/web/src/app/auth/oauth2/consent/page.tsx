@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from '@cared/ui/components/card'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export default function Page() {
   const searchParams = useSearchParams()
@@ -34,9 +34,9 @@ export default function Page() {
     return scopes.indexOf(scope) === index
   })
 
-  const trpc = useTRPC()
+  
   const { data: app } = useQuery(
-    trpc.oauthApp.info.queryOptions({
+    orpc.oauthApp.info.queryOptions({
       clientId: clientId!,
     }),
   )

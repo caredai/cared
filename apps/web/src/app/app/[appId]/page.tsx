@@ -1,6 +1,6 @@
 import { addIdPrefix } from '@/lib/utils'
-import { HydrateClient } from '@/trpc/server'
 import { App } from './app'
+import { HydrateClient } from '@/orpc/client'
 
 export default async function Page({
   params,

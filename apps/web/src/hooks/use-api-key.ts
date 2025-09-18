@@ -4,15 +4,15 @@ import { toast } from 'sonner'
 
 import type { ApiKeyMetadataInput } from '@cared/api'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function useApiKeys() {
-  const trpc = useTRPC()
+
 
   const {
     data: { keys },
     refetch: refetchApiKeys,
-  } = useSuspenseQuery(trpc.apiKey.list.queryOptions())
+  } = useSuspenseQuery(orpc.apiKey.list.queryOptions())
 
   return {
     apiKeys: keys,
@@ -84,15 +84,15 @@ export function useAppApiKeys(appId?: string) {
 }
 
 export function useCreateApiKey() {
-  const trpc = useTRPC()
+
   const queryClient = useQueryClient()
 
   const createMutation = useMutation(
-    trpc.apiKey.create.mutationOptions({
+    orpc.apiKey.create.mutationOptions({
       onSuccess: () => {
         // Invalidate all API key queries since we're doing full query now
         void queryClient.invalidateQueries({
-          queryKey: trpc.apiKey.list.queryOptions().queryKey,
+          queryKey: orpc.apiKey.list.queryOptions().queryKey,
         })
       },
       onError: (error) => {
@@ -115,15 +115,15 @@ export function useCreateApiKey() {
 }
 
 export function useRotateApiKey() {
-  const trpc = useTRPC()
+
   const queryClient = useQueryClient()
 
   const rotateMutation = useMutation(
-    trpc.apiKey.rotate.mutationOptions({
+    orpc.apiKey.rotate.mutationOptions({
       onSuccess: () => {
         // Invalidate all API key queries since we're doing full query now
         void queryClient.invalidateQueries({
-          queryKey: trpc.apiKey.list.queryOptions().queryKey,
+          queryKey: orpc.apiKey.list.queryOptions().queryKey,
         })
       },
       onError: (error) => {
@@ -142,15 +142,15 @@ export function useRotateApiKey() {
 }
 
 export function useDeleteApiKey() {
-  const trpc = useTRPC()
+
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    trpc.apiKey.delete.mutationOptions({
+    orpc.apiKey.delete.mutationOptions({
       onSuccess: () => {
         // Invalidate all API key queries since we're doing full query now
         void queryClient.invalidateQueries({
-          queryKey: trpc.apiKey.list.queryOptions().queryKey,
+          queryKey: orpc.apiKey.list.queryOptions().queryKey,
         })
       },
       onError: (error) => {

@@ -9,9 +9,6 @@ export class CaredLLM implements LLM {
 
   static create(fullModelId: string) {
     const model = getModel(fullModelId, 'language')
-    if (!model) {
-      return
-    }
     return new CaredLLM(model)
   }
 

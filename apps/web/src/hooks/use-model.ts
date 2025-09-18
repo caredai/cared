@@ -5,14 +5,14 @@ import { toast } from 'sonner'
 import type { UpdateModelArgs, UpdateModelsArgs } from '@cared/api'
 import type { ModelFullId, ModelType, ProviderId } from '@cared/providers'
 
-import { useTRPC } from '@/trpc/client'
+import { orpc } from '@/orpc/client'
 
 export function useDefaultModels() {
-  const trpc = useTRPC()
+  
 
   const {
     data: { defaultModels },
-  } = useSuspenseQuery(trpc.model.listDefaultModels.queryOptions())
+  } = useSuspenseQuery(orpc.model.listDefaultModels.queryOptions())
 
   return {
     defaultModels,
@@ -20,12 +20,12 @@ export function useDefaultModels() {
 }
 
 export function useProviders() {
-  const trpc = useTRPC()
+  
 
   const {
     data: { providers },
     refetch: refetchProviders,
-  } = useSuspenseQuery(trpc.model.listProviders.queryOptions())
+  } = useSuspenseQuery(orpc.model.listProviders.queryOptions())
 
   return {
     providers,
@@ -38,12 +38,12 @@ export function useProvidersModels(input?: {
   type?: ModelType
   source?: 'system' | 'custom'
 }) {
-  const trpc = useTRPC()
+  
 
   const {
     data: { models },
     refetch: refetchProvidersModels,
-  } = useSuspenseQuery(trpc.model.listProvidersModels.queryOptions(input))
+  } = useSuspenseQuery(orpc.model.listProvidersModels.queryOptions({ input }))
 
   return {
     models,
@@ -56,12 +56,12 @@ export function useModels(input?: {
   type?: ModelType
   source?: 'system' | 'custom'
 }) {
-  const trpc = useTRPC()
+  
 
   const {
     data: { models },
     refetch: refetchModels,
-  } = useSuspenseQuery(trpc.model.listModels.queryOptions(input))
+  } = useSuspenseQuery(orpc.model.listModels.queryOptions({ input }))
 
   return {
     models,
@@ -76,23 +76,27 @@ export function useUpdateModel({
   isSystem?: boolean
   organizationId?: string
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    trpc.model.updateModel.mutationOptions({
+    orpc.model.updateModel.mutationOptions({
       onSuccess: () => {
         // Invalidate relevant queries
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listProvidersModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listProvidersModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
       },
@@ -127,23 +131,27 @@ export function useUpdateModels({
   isSystem?: boolean
   organizationId?: string
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    trpc.model.updateModels.mutationOptions({
+    orpc.model.updateModels.mutationOptions({
       onSuccess: () => {
         // Invalidate relevant queries
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listProvidersModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listProvidersModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
       },
@@ -178,23 +186,27 @@ export function useDeleteModel({
   isSystem?: boolean
   organizationId?: string
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    trpc.model.deleteModel.mutationOptions({
+    orpc.model.deleteModel.mutationOptions({
       onSuccess: () => {
         // Invalidate relevant queries
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listProvidersModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listProvidersModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
       },
@@ -225,23 +237,27 @@ export function useDeleteModels({
   isSystem?: boolean
   organizationId?: string
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    trpc.model.deleteModels.mutationOptions({
+    orpc.model.deleteModels.mutationOptions({
       onSuccess: () => {
         // Invalidate relevant queries
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listProvidersModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listProvidersModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
       },
@@ -272,23 +288,27 @@ export function useSortModels({
   isSystem?: boolean
   organizationId?: string
 }) {
-  const trpc = useTRPC()
+  
   const queryClient = useQueryClient()
 
   const sortMutation = useMutation(
-    trpc.model.sortModels.mutationOptions({
+    orpc.model.sortModels.mutationOptions({
       onSuccess: () => {
         // Invalidate relevant queries
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
         void queryClient.invalidateQueries({
-          queryKey: trpc.model.listProvidersModels.queryOptions({
-            organizationId,
-            source: isSystem ? 'system' : undefined,
+          queryKey: orpc.model.listProvidersModels.queryOptions({
+            input: {
+              organizationId,
+              source: isSystem ? 'system' : undefined,
+            },
           }).queryKey,
         })
       },
