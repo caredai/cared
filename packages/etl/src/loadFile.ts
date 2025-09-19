@@ -54,7 +54,7 @@ export async function loadFile(
       case 'pdf':
         loader = new PDFLoader(blob, {
           splitPages: true,
-          pdfjs: () => import('pdfjs-dist'),
+          pdfjs: () => import('pdfjs-serverless'),
         })
         break
       case 'doc':
