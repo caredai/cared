@@ -1,15 +1,17 @@
 'use client'
 
-import type { Wallet } from '@/hooks/use-wallets'
 import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
 import {
   useCreateWallet,
   useFundWallet as useFundEthereumWallet,
+  useLinkWithSiws,
   usePrivy,
-  useSolanaWallets,
 } from '@privy-io/react-auth'
-import { useFundWallet as useFundSolanaWallet } from '@privy-io/react-auth/solana'
+import {
+  useCreateWallet as useCreateSolanaWallet,
+  useFundWallet as useFundSolanaWallet,
+} from '@privy-io/react-auth/solana'
 import { Link1Icon, PlusIcon } from '@radix-ui/react-icons'
 import {
   BadgeAlertIcon,
@@ -20,7 +22,7 @@ import {
   HelpCircleIcon,
   QrCodeIcon,
 } from 'lucide-react'
-import { useAsync, useCopyToClipboard } from 'react-use'
+import { useCopyToClipboard } from 'react-use'
 
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
@@ -37,9 +39,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@cared/ui/components/dropdown-menu'
-
-import { SectionTitle } from '@/components/section'
 import { CircleSpinner, Spinner } from '@cared/ui/components/spinner'
+
+import type { Wallet } from '@/hooks/use-wallets'
+import { SectionTitle } from '@/components/section'
 import { PopoverTooltip } from '@/components/tooltip'
 import { WalletAddress } from '@/components/wallet-address'
 import { useWallets, walletType } from '@/hooks/use-wallets'
@@ -52,6 +55,7 @@ export default function WalletPage() {
 
   const { fundWallet: fundSolanaWallet } = useFundSolanaWallet()
   const { fundWallet: fundEthereumWallet } = useFundEthereumWallet()
+  const { generateSiwsMessage, linkWithSiws } = useLinkWithSiws()
 
   useEffect(() => {
     console.log('User:', user)
@@ -62,7 +66,7 @@ export default function WalletPage() {
   }, [user, ethereumWallets, solanaWallets, embeddedWallets, externalWallets])
 
   const { createWallet: createEthereumWallet } = useCreateWallet()
-  const { createWallet: createSolanaWallet } = useSolanaWallets()
+  const { createWallet: createSolanaWallet } = useCreateSolanaWallet()
 
   const [inActionWallets, setInActionWallets] = useState<Set<string>>(new Set())
   const [isCreatingWallet, setIsCreatingWallet] = useState(false)
@@ -115,51 +119,61 @@ export default function WalletPage() {
   }, [createSolanaWallet, solanaWallets.length])
 
   const handleDisconnectWallet = useCallback(async (wallet: Wallet) => {
-    if (wallet.walletClientType === 'privy' || !('isConnected' in wallet)) {
+    if (wallet.embedded || !('isConnected' in wallet.wallet)) {
       return
     }
 
-    addInActionWallet(wallet.address)
+    addInActionWallet(wallet.wallet.address)
 
     try {
-      if (await wallet.isConnected()) {
-        wallet.disconnect()
+      if (await wallet.wallet.isConnected()) {
+        wallet.wallet.disconnect()
       }
     } finally {
-      removeInActionWallet(wallet.address)
+      removeInActionWallet(wallet.wallet.address)
     }
   }, [])
 
-  const handleLinkWallet = useCallback(async (wallet: Wallet) => {
-    if (wallet.walletClientType === 'privy' || !('loginOrLink' in wallet)) {
-      return
-    }
-
-    addInActionWallet(wallet.address)
-
-    try {
-      await wallet.loginOrLink()
-    } finally {
-      removeInActionWallet(wallet.address)
-    }
-  }, [])
-
-  const handleUnlinkWallet = useCallback(
+  const handleLinkWallet = useCallback(
     async (wallet: Wallet) => {
-      if (wallet.walletClientType === 'privy' || !wallet.linked) {
+      if (wallet.linked) {
         return
       }
 
-      addInActionWallet(wallet.address)
+      addInActionWallet(wallet.wallet.address)
 
       try {
-        if ('unlink' in wallet) {
-          await wallet.unlink()
+        if (wallet.chainType === 'ethereum') {
+          await wallet.wallet.loginOrLink()
         } else {
-          await unlinkWallet(wallet.address)
+          const message = await generateSiwsMessage({ address: wallet.wallet.address })
+          const encodedMessage = new TextEncoder().encode(message)
+          const results = await wallet.wallet.signMessage({ message: encodedMessage })
+          await linkWithSiws({ message, signature: new TextDecoder().decode(results.signature) })
         }
       } finally {
-        removeInActionWallet(wallet.address)
+        removeInActionWallet(wallet.wallet.address)
+      }
+    },
+    [generateSiwsMessage, linkWithSiws],
+  )
+
+  const handleUnlinkWallet = useCallback(
+    async (wallet: Wallet) => {
+      if (!wallet.linked) {
+        return
+      }
+
+      addInActionWallet(wallet.wallet.address)
+
+      try {
+        if (wallet.chainType === 'ethereum' && wallet.connected) {
+          await wallet.wallet.unlink()
+        } else {
+          await unlinkWallet(wallet.wallet.address)
+        }
+      } finally {
+        removeInActionWallet(wallet.wallet.address)
       }
     },
     [unlinkWallet],
@@ -168,9 +182,9 @@ export default function WalletPage() {
   const handleFundWallet = useCallback(
     async (wallet: Wallet) => {
       if (walletType(wallet) === 'ethereum') {
-        await fundEthereumWallet(wallet.address)
+        await fundEthereumWallet({ address: wallet.wallet.address })
       } else {
-        await fundSolanaWallet(wallet.address)
+        await fundSolanaWallet({ address: wallet.wallet.address })
       }
     },
     [fundEthereumWallet, fundSolanaWallet],
@@ -234,7 +248,7 @@ export default function WalletPage() {
                   onClick={handleCreateEthereumWallet}
                   disabled={
                     isCreatingWallet ||
-                    embeddedWallets.filter((w) => w.type === 'ethereum').length >= 3
+                    embeddedWallets.filter((w) => w.chainType === 'ethereum').length >= 3
                   }
                 >
                   <div className="flex items-center gap-2">Ethereum</div>
@@ -244,7 +258,7 @@ export default function WalletPage() {
                   onClick={handleCreateSolanaWallet}
                   disabled={
                     isCreatingWallet ||
-                    embeddedWallets.filter((w) => w.type === 'solana').length >= 3
+                    embeddedWallets.filter((w) => w.chainType === 'solana').length >= 3
                   }
                 >
                   <div className="flex items-center gap-2">Solana</div>
@@ -262,7 +276,7 @@ export default function WalletPage() {
             <div className="space-y-4">
               {embeddedWallets.map((wallet) => (
                 <WalletItem
-                  key={wallet.address}
+                  key={wallet.wallet.address}
                   wallet={wallet}
                   onFund={() => handleFundWallet(wallet)}
                   copyToClipboard={copyToClipboard}
@@ -318,7 +332,7 @@ export default function WalletPage() {
             <div className="space-y-4">
               {externalWallets.map((wallet) => (
                 <WalletItem
-                  key={wallet.address}
+                  key={wallet.wallet.address}
                   wallet={wallet}
                   copyToClipboard={copyToClipboard}
                   onLink={() => handleLinkWallet(wallet)}
@@ -327,7 +341,7 @@ export default function WalletPage() {
                   onFund={() => handleFundWallet(wallet)}
                   isExternal={true}
                   onOpenQrDialog={openQrDialog}
-                  inAction={inActionWallets.has(wallet.address)}
+                  inAction={inActionWallets.has(wallet.wallet.address)}
                 />
               ))}
             </div>
@@ -368,10 +382,7 @@ function WalletItem({
   onOpenQrDialog?: (wallet: Wallet) => void
 }) {
   const isLinked = wallet.linked
-  const { value: isConnected } = useAsync(
-    async () => 'isConnected' in wallet && (await wallet.isConnected()),
-    [wallet],
-  )
+  const isConnected = wallet.connected
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 p-2 border rounded-lg">
@@ -381,7 +392,7 @@ function WalletItem({
             {walletType(wallet) === 'ethereum' ? 'Ethereum' : 'Solana'}
           </Badge>
         </div>
-        <WalletAddress address={wallet.address} copyToClipboard={copyToClipboard} />
+        <WalletAddress address={wallet.wallet.address} copyToClipboard={copyToClipboard} />
       </div>
       <div className="flex items-center gap-2">
         {isExternal && (
@@ -403,7 +414,7 @@ function WalletItem({
                 Connected
               </Badge>
             )}
-            {isConnected === false && (
+            {!isConnected && (
               <Badge variant="secondary">
                 <BadgeAlertIcon />
                 Not connected
