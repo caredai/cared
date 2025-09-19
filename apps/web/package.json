@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "pnpm with-env next build --debug",
+    "build": "pnpm with-env next build",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "clean": "git clean -xdf .cache .next .turbo node_modules",
     "dev": "pnpm with-env next dev --turbopack",
     "//": "add `--experimental-https` to avoid privy error: embedded wallet is only available over https",
@@ -28,6 +32,7 @@
     "@daveyplate/better-auth-tanstack": "^1.3.6",
     "@daveyplate/better-auth-ui": "^1.7.4",
     "@icons-pack/react-simple-icons": "^12.2.0",
+    "@opennextjs/cloudflare": "^1.8.3",
     "@orpc/client": "^1.8.9",
     "@orpc/server": "^1.8.9",
     "@orpc/tanstack-query": "^1.8.9",
@@ -77,6 +82,7 @@
     "postcss": "^8.5.3",
     "prettier": "catalog:",
     "tailwindcss": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "wrangler": "^4.38.0"
   }
 }

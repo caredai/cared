@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
 import { createJiti } from 'jiti'
 
 const jiti = createJiti(import.meta.url)
@@ -53,3 +54,5 @@ const config = {
 }
 
 export default config
+
+initOpenNextCloudflareForDev()
