@@ -1,7 +1,9 @@
+import { vercel } from '@t3-oss/env-core/presets-zod'
 import { createEnv } from '@t3-oss/env-nextjs'
 import { z } from 'zod/v4'
 
 export const env = createEnv({
+  extends: [vercel()],
   server: {
     ENCRYPTION_KEY: z
       .string()
@@ -18,7 +20,7 @@ export const env = createEnv({
     QSTASH_CURRENT_SIGNING_KEY: z.string().min(1).optional(),
     QSTASH_NEXT_SIGNING_KEY: z.string().min(1).optional(),
     QSTASH_URL: z.string().min(1).optional(),
-    UPSTASH_WORKFLOW_URL: z.string().min(1),
+    UPSTASH_WORKFLOW_URL: z.string().min(1).optional(),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     WHITELIST_CARED_APPS: z
