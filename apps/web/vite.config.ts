@@ -8,21 +8,25 @@ import commonjs from 'vite-plugin-commonjs'
 // import mkcert from 'vite-plugin-mkcert'
 import tsConfigPaths from 'vite-tsconfig-paths'
 
-export default defineConfig(async ({ mode }) => {
+export default defineConfig(async ({ command, mode }) => {
   return {
     envDir: '../../',
     server: {
       port: 3000,
     },
     plugins: [
+      ...(command === 'build'
+        ? [
+            cloudflare({
+              viteEnvironment: { name: 'ssr' },
+            }),
+          ]
+        : []),
       // mkcert(),
       commonjs(),
       tsConfigPaths(),
       tailwindcss(),
       tanstackStart(),
-      cloudflare({
-        viteEnvironment: { name: 'ssr' },
-      }),
       viteReact(),
     ],
     build: {

@@ -4,7 +4,7 @@ import { Expenses } from '@/components/expenses'
 import { orpc } from '@/lib/orpc'
 import { addIdPrefix } from '@/lib/utils'
 
-export const Route = createFileRoute('/org/$organizationId/credits/usage')({
+export const Route = createFileRoute('/org/$organizationId/credits_/usage')({
   loader: ({ context, params }) => {
     const organizationId = addIdPrefix(params.organizationId, 'org')
 

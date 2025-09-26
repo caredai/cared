@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@aws-sdk/s3-request-presigner": "^3.893.0",
+    "@aws-sdk/signature-v4-multi-region": "^3.896.0",
     "@cared/auth": "workspace:*",
     "@cared/db": "workspace:*",
     "@cared/email": "workspace:*",

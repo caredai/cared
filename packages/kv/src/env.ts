@@ -22,7 +22,7 @@ export const env = createEnv({
    */
   client: {},
 
-  runtimeEnv: process.env,
+  runtimeEnv: Object.assign({}, process.env, import.meta.env),
 
   emptyStringAsUndefined: true,
 

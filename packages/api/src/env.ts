@@ -49,7 +49,7 @@ export const env = createEnv({
     VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID: z.string().min(1).optional(),
   },
 
-  runtimeEnv: process.env,
+  runtimeEnv: Object.assign({}, process.env, import.meta.env),
 
   emptyStringAsUndefined: true,
 

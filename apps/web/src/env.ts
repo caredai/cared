@@ -1,11 +1,7 @@
 import { createEnv } from '@t3-oss/env-core'
-import { vite } from '@t3-oss/env-core/presets-zod'
 import { z } from 'zod/v4'
 
-console.log('import.meta.env', import.meta.env)
 export const env = createEnv({
-  extends: [vite()],
-
   shared: {
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   },
@@ -32,7 +28,7 @@ export const env = createEnv({
     VITE_HELIO_CREDITS_PAYLINK_ID: z.string().min(1).optional(),
   },
 
-  runtimeEnv: import.meta.env,
+  runtimeEnv: Object.assign({}, process.env, import.meta.env),
 
   emptyStringAsUndefined: true,
 

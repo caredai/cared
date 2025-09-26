@@ -42,7 +42,7 @@ export const env = createEnv({
     VITE_WEB_URL: z.string().optional(),
   },
 
-  runtimeEnv: process.env,
+  runtimeEnv: Object.assign({}, process.env, import.meta.env),
 
   emptyStringAsUndefined: true,
 

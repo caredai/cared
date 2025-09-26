@@ -56,10 +56,10 @@ import { Route as AuthOauth2ConsentRouteImport } from './routes/auth/oauth2.cons
 import { Route as AppAppIdTracingRouteImport } from './routes/app/$appId/tracing'
 import { Route as AdminAppsTagsRouteImport } from './routes/admin/apps/tags'
 import { Route as AdminAppsCategoriesRouteImport } from './routes/admin/apps/categories'
-import { Route as AccountCreditsUsageRouteImport } from './routes/account/credits.usage'
+import { Route as AccountCreditsUsageRouteImport } from './routes/account/credits_.usage'
 import { Route as AppAppIdConfigureRouteRouteImport } from './routes/app/$appId/configure/route'
-import { Route as OrgOrganizationIdMembersInvitationsRouteImport } from './routes/org/$organizationId/members.invitations'
-import { Route as OrgOrganizationIdCreditsUsageRouteImport } from './routes/org/$organizationId/credits.usage'
+import { Route as OrgOrganizationIdMembersInvitationsRouteImport } from './routes/org/$organizationId/members_.invitations'
+import { Route as OrgOrganizationIdCreditsUsageRouteImport } from './routes/org/$organizationId/credits_.usage'
 import { Route as AppAppIdConfigureOauthApplicationRouteImport } from './routes/app/$appId/configure/oauth-application'
 import { Route as AppAppIdConfigureApiKeysRouteImport } from './routes/app/$appId/configure/api-keys'
 
@@ -313,9 +313,9 @@ const AdminAppsCategoriesRoute = AdminAppsCategoriesRouteImport.update({
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AccountCreditsUsageRoute = AccountCreditsUsageRouteImport.update({
-  id: '/usage',
-  path: '/usage',
-  getParentRoute: () => AccountCreditsRoute,
+  id: '/credits_/usage',
+  path: '/credits/usage',
+  getParentRoute: () => AccountRouteRoute,
 } as any)
 const AppAppIdConfigureRouteRoute = AppAppIdConfigureRouteRouteImport.update({
   id: '/configure',
@@ -324,15 +324,15 @@ const AppAppIdConfigureRouteRoute = AppAppIdConfigureRouteRouteImport.update({
 } as any)
 const OrgOrganizationIdMembersInvitationsRoute =
   OrgOrganizationIdMembersInvitationsRouteImport.update({
-    id: '/invitations',
-    path: '/invitations',
-    getParentRoute: () => OrgOrganizationIdMembersRoute,
+    id: '/members_/invitations',
+    path: '/members/invitations',
+    getParentRoute: () => OrgOrganizationIdRouteRoute,
   } as any)
 const OrgOrganizationIdCreditsUsageRoute =
   OrgOrganizationIdCreditsUsageRouteImport.update({
-    id: '/usage',
-    path: '/usage',
-    getParentRoute: () => OrgOrganizationIdCreditsRoute,
+    id: '/credits_/usage',
+    path: '/credits/usage',
+    getParentRoute: () => OrgOrganizationIdRouteRoute,
   } as any)
 const AppAppIdConfigureOauthApplicationRoute =
   AppAppIdConfigureOauthApplicationRouteImport.update({
@@ -357,7 +357,7 @@ export interface FileRoutesByFullPath {
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
   '/account/api-keys': typeof AccountApiKeysRoute
   '/account/applications': typeof AccountApplicationsRoute
-  '/account/credits': typeof AccountCreditsRouteWithChildren
+  '/account/credits': typeof AccountCreditsRoute
   '/account/models': typeof AccountModelsRoute
   '/account/pricing': typeof AccountPricingRoute
   '/account/profile': typeof AccountProfileRoute
@@ -379,8 +379,8 @@ export interface FileRoutesByFullPath {
   '/app/$appId/tracing': typeof AppAppIdTracingRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
   '/org/$organizationId/api-keys': typeof OrgOrganizationIdApiKeysRoute
-  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRouteWithChildren
-  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRouteWithChildren
+  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRoute
+  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRoute
   '/org/$organizationId/models': typeof OrgOrganizationIdModelsRoute
   '/org/$organizationId/settings': typeof OrgOrganizationIdSettingsRoute
   '/org/$organizationId/tracing': typeof OrgOrganizationIdTracingRoute
@@ -408,7 +408,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/account/api-keys': typeof AccountApiKeysRoute
   '/account/applications': typeof AccountApplicationsRoute
-  '/account/credits': typeof AccountCreditsRouteWithChildren
+  '/account/credits': typeof AccountCreditsRoute
   '/account/models': typeof AccountModelsRoute
   '/account/pricing': typeof AccountPricingRoute
   '/account/profile': typeof AccountProfileRoute
@@ -430,8 +430,8 @@ export interface FileRoutesByTo {
   '/app/$appId/tracing': typeof AppAppIdTracingRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
   '/org/$organizationId/api-keys': typeof OrgOrganizationIdApiKeysRoute
-  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRouteWithChildren
-  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRouteWithChildren
+  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRoute
+  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRoute
   '/org/$organizationId/models': typeof OrgOrganizationIdModelsRoute
   '/org/$organizationId/settings': typeof OrgOrganizationIdSettingsRoute
   '/org/$organizationId/tracing': typeof OrgOrganizationIdTracingRoute
@@ -464,7 +464,7 @@ export interface FileRoutesById {
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
   '/account/api-keys': typeof AccountApiKeysRoute
   '/account/applications': typeof AccountApplicationsRoute
-  '/account/credits': typeof AccountCreditsRouteWithChildren
+  '/account/credits': typeof AccountCreditsRoute
   '/account/models': typeof AccountModelsRoute
   '/account/pricing': typeof AccountPricingRoute
   '/account/profile': typeof AccountProfileRoute
@@ -480,14 +480,14 @@ export interface FileRoutesById {
   '/landing/': typeof LandingIndexRoute
   '/org/': typeof OrgIndexRoute
   '/app/$appId/configure': typeof AppAppIdConfigureRouteRouteWithChildren
-  '/account/credits/usage': typeof AccountCreditsUsageRoute
+  '/account/credits_/usage': typeof AccountCreditsUsageRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
   '/app/$appId/tracing': typeof AppAppIdTracingRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
   '/org/$organizationId/api-keys': typeof OrgOrganizationIdApiKeysRoute
-  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRouteWithChildren
-  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRouteWithChildren
+  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRoute
+  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRoute
   '/org/$organizationId/models': typeof OrgOrganizationIdModelsRoute
   '/org/$organizationId/settings': typeof OrgOrganizationIdSettingsRoute
   '/org/$organizationId/tracing': typeof OrgOrganizationIdTracingRoute
@@ -506,8 +506,8 @@ export interface FileRoutesById {
   '/workspace/$workspaceId/': typeof WorkspaceWorkspaceIdIndexRoute
   '/app/$appId/configure/api-keys': typeof AppAppIdConfigureApiKeysRoute
   '/app/$appId/configure/oauth-application': typeof AppAppIdConfigureOauthApplicationRoute
-  '/org/$organizationId/credits/usage': typeof OrgOrganizationIdCreditsUsageRoute
-  '/org/$organizationId/members/invitations': typeof OrgOrganizationIdMembersInvitationsRoute
+  '/org/$organizationId/credits_/usage': typeof OrgOrganizationIdCreditsUsageRoute
+  '/org/$organizationId/members_/invitations': typeof OrgOrganizationIdMembersInvitationsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -643,7 +643,7 @@ export interface FileRouteTypes {
     | '/landing/'
     | '/org/'
     | '/app/$appId/configure'
-    | '/account/credits/usage'
+    | '/account/credits_/usage'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
     | '/app/$appId/tracing'
@@ -669,8 +669,8 @@ export interface FileRouteTypes {
     | '/workspace/$workspaceId/'
     | '/app/$appId/configure/api-keys'
     | '/app/$appId/configure/oauth-application'
-    | '/org/$organizationId/credits/usage'
-    | '/org/$organizationId/members/invitations'
+    | '/org/$organizationId/credits_/usage'
+    | '/org/$organizationId/members_/invitations'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1023,12 +1023,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAppsCategoriesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/account/credits/usage': {
-      id: '/account/credits/usage'
-      path: '/usage'
+    '/account/credits_/usage': {
+      id: '/account/credits_/usage'
+      path: '/credits/usage'
       fullPath: '/account/credits/usage'
       preLoaderRoute: typeof AccountCreditsUsageRouteImport
-      parentRoute: typeof AccountCreditsRoute
+      parentRoute: typeof AccountRouteRoute
     }
     '/app/$appId/configure': {
       id: '/app/$appId/configure'
@@ -1037,19 +1037,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAppIdConfigureRouteRouteImport
       parentRoute: typeof AppAppIdRouteRoute
     }
-    '/org/$organizationId/members/invitations': {
-      id: '/org/$organizationId/members/invitations'
-      path: '/invitations'
+    '/org/$organizationId/members_/invitations': {
+      id: '/org/$organizationId/members_/invitations'
+      path: '/members/invitations'
       fullPath: '/org/$organizationId/members/invitations'
       preLoaderRoute: typeof OrgOrganizationIdMembersInvitationsRouteImport
-      parentRoute: typeof OrgOrganizationIdMembersRoute
+      parentRoute: typeof OrgOrganizationIdRouteRoute
     }
-    '/org/$organizationId/credits/usage': {
-      id: '/org/$organizationId/credits/usage'
-      path: '/usage'
+    '/org/$organizationId/credits_/usage': {
+      id: '/org/$organizationId/credits_/usage'
+      path: '/credits/usage'
       fullPath: '/org/$organizationId/credits/usage'
       preLoaderRoute: typeof OrgOrganizationIdCreditsUsageRouteImport
-      parentRoute: typeof OrgOrganizationIdCreditsRoute
+      parentRoute: typeof OrgOrganizationIdRouteRoute
     }
     '/app/$appId/configure/oauth-application': {
       id: '/app/$appId/configure/oauth-application'
@@ -1068,26 +1068,15 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AccountCreditsRouteChildren {
-  AccountCreditsUsageRoute: typeof AccountCreditsUsageRoute
-}
-
-const AccountCreditsRouteChildren: AccountCreditsRouteChildren = {
-  AccountCreditsUsageRoute: AccountCreditsUsageRoute,
-}
-
-const AccountCreditsRouteWithChildren = AccountCreditsRoute._addFileChildren(
-  AccountCreditsRouteChildren,
-)
-
 interface AccountRouteRouteChildren {
   AccountApiKeysRoute: typeof AccountApiKeysRoute
   AccountApplicationsRoute: typeof AccountApplicationsRoute
-  AccountCreditsRoute: typeof AccountCreditsRouteWithChildren
+  AccountCreditsRoute: typeof AccountCreditsRoute
   AccountModelsRoute: typeof AccountModelsRoute
   AccountPricingRoute: typeof AccountPricingRoute
   AccountProfileRoute: typeof AccountProfileRoute
   AccountTracingRoute: typeof AccountTracingRoute
+  AccountCreditsUsageRoute: typeof AccountCreditsUsageRoute
   AccountSecurityIndexRoute: typeof AccountSecurityIndexRoute
   AccountWalletIndexRoute: typeof AccountWalletIndexRoute
 }
@@ -1095,11 +1084,12 @@ interface AccountRouteRouteChildren {
 const AccountRouteRouteChildren: AccountRouteRouteChildren = {
   AccountApiKeysRoute: AccountApiKeysRoute,
   AccountApplicationsRoute: AccountApplicationsRoute,
-  AccountCreditsRoute: AccountCreditsRouteWithChildren,
+  AccountCreditsRoute: AccountCreditsRoute,
   AccountModelsRoute: AccountModelsRoute,
   AccountPricingRoute: AccountPricingRoute,
   AccountProfileRoute: AccountProfileRoute,
   AccountTracingRoute: AccountTracingRoute,
+  AccountCreditsUsageRoute: AccountCreditsUsageRoute,
   AccountSecurityIndexRoute: AccountSecurityIndexRoute,
   AccountWalletIndexRoute: AccountWalletIndexRoute,
 }
@@ -1163,56 +1153,32 @@ const AppAppIdRouteRouteWithChildren = AppAppIdRouteRoute._addFileChildren(
   AppAppIdRouteRouteChildren,
 )
 
-interface OrgOrganizationIdCreditsRouteChildren {
-  OrgOrganizationIdCreditsUsageRoute: typeof OrgOrganizationIdCreditsUsageRoute
-}
-
-const OrgOrganizationIdCreditsRouteChildren: OrgOrganizationIdCreditsRouteChildren =
-  {
-    OrgOrganizationIdCreditsUsageRoute: OrgOrganizationIdCreditsUsageRoute,
-  }
-
-const OrgOrganizationIdCreditsRouteWithChildren =
-  OrgOrganizationIdCreditsRoute._addFileChildren(
-    OrgOrganizationIdCreditsRouteChildren,
-  )
-
-interface OrgOrganizationIdMembersRouteChildren {
-  OrgOrganizationIdMembersInvitationsRoute: typeof OrgOrganizationIdMembersInvitationsRoute
-}
-
-const OrgOrganizationIdMembersRouteChildren: OrgOrganizationIdMembersRouteChildren =
-  {
-    OrgOrganizationIdMembersInvitationsRoute:
-      OrgOrganizationIdMembersInvitationsRoute,
-  }
-
-const OrgOrganizationIdMembersRouteWithChildren =
-  OrgOrganizationIdMembersRoute._addFileChildren(
-    OrgOrganizationIdMembersRouteChildren,
-  )
-
 interface OrgOrganizationIdRouteRouteChildren {
   OrgOrganizationIdApiKeysRoute: typeof OrgOrganizationIdApiKeysRoute
-  OrgOrganizationIdCreditsRoute: typeof OrgOrganizationIdCreditsRouteWithChildren
-  OrgOrganizationIdMembersRoute: typeof OrgOrganizationIdMembersRouteWithChildren
+  OrgOrganizationIdCreditsRoute: typeof OrgOrganizationIdCreditsRoute
+  OrgOrganizationIdMembersRoute: typeof OrgOrganizationIdMembersRoute
   OrgOrganizationIdModelsRoute: typeof OrgOrganizationIdModelsRoute
   OrgOrganizationIdSettingsRoute: typeof OrgOrganizationIdSettingsRoute
   OrgOrganizationIdTracingRoute: typeof OrgOrganizationIdTracingRoute
   OrgOrganizationIdWorkspacesRoute: typeof OrgOrganizationIdWorkspacesRoute
   OrgOrganizationIdIndexRoute: typeof OrgOrganizationIdIndexRoute
+  OrgOrganizationIdCreditsUsageRoute: typeof OrgOrganizationIdCreditsUsageRoute
+  OrgOrganizationIdMembersInvitationsRoute: typeof OrgOrganizationIdMembersInvitationsRoute
 }
 
 const OrgOrganizationIdRouteRouteChildren: OrgOrganizationIdRouteRouteChildren =
   {
     OrgOrganizationIdApiKeysRoute: OrgOrganizationIdApiKeysRoute,
-    OrgOrganizationIdCreditsRoute: OrgOrganizationIdCreditsRouteWithChildren,
-    OrgOrganizationIdMembersRoute: OrgOrganizationIdMembersRouteWithChildren,
+    OrgOrganizationIdCreditsRoute: OrgOrganizationIdCreditsRoute,
+    OrgOrganizationIdMembersRoute: OrgOrganizationIdMembersRoute,
     OrgOrganizationIdModelsRoute: OrgOrganizationIdModelsRoute,
     OrgOrganizationIdSettingsRoute: OrgOrganizationIdSettingsRoute,
     OrgOrganizationIdTracingRoute: OrgOrganizationIdTracingRoute,
     OrgOrganizationIdWorkspacesRoute: OrgOrganizationIdWorkspacesRoute,
     OrgOrganizationIdIndexRoute: OrgOrganizationIdIndexRoute,
+    OrgOrganizationIdCreditsUsageRoute: OrgOrganizationIdCreditsUsageRoute,
+    OrgOrganizationIdMembersInvitationsRoute:
+      OrgOrganizationIdMembersInvitationsRoute,
   }
 
 const OrgOrganizationIdRouteRouteWithChildren =
@@ -1270,6 +1236,7 @@ import type { getRouter } from './router.tsx'
 import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
+    ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
     config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }

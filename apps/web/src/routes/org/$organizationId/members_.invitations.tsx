@@ -4,7 +4,7 @@ import { getActiveOrganizationId } from '@/lib/active'
 import { orpc } from '@/lib/orpc'
 import { Members } from './members'
 
-export const Route = createFileRoute('/org/$organizationId/members/invitations')({
+export const Route = createFileRoute('/org/$organizationId/members_/invitations')({
   loader: async ({ context, params }) => {
     const { activeOrganizationId } = await getActiveOrganizationId(params)
 
