@@ -1,9 +1,7 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import { Button } from '@cared/ui/components/button'
@@ -54,7 +52,7 @@ export function CreateOrganizationDialog({
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push(`/org/${stripIdPrefix(data.organization.id)}`)
+          void router.navigate({ to: `/org/${stripIdPrefix(data.organization.id)}` })
         }
       },
       onError: (error) => {

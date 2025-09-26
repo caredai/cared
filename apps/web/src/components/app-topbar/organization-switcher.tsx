@@ -1,9 +1,6 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { Link, useRouter } from '@tanstack/react-router'
 import { Boxes, ChevronsUpDown, Plus, UserIcon } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -59,14 +56,14 @@ export function OrganizationAndAccountSwitcherInner({
     e.preventDefault() // Prevent default navigation
     setIsOpen(false) // Close the dropdown menu
     await setLastOrganization(orgId, true)
-    router.push(href) // Use router.push for navigation
+    void router.navigate({ to: href })
   }
 
   const handleAccountClick = async (e: React.MouseEvent) => {
     e.preventDefault() // Prevent default navigation
     setIsOpen(false) // Close the dropdown menu
     await setLastOrganization(undefined, true)
-    router.push('/account/credits') // Use router.push for navigation
+    void router.navigate({ to: '/account/credits' })
   }
 
   return (
@@ -77,8 +74,11 @@ export function OrganizationAndAccountSwitcherInner({
         asChild
       >
         <Link
-          href={
-            activeOrganization ? `/org/${stripIdPrefix(activeOrganization.id)}` : `/account/credits`
+          to={activeOrganization ? `/org/$organizationId` : `/account/credits`}
+          params={
+            activeOrganization
+              ? { organizationId: stripIdPrefix(activeOrganization.id) }
+              : undefined
           }
         >
           {!activeOrganization ? (
@@ -122,7 +122,7 @@ export function OrganizationAndAccountSwitcherInner({
             return (
               <DropdownMenuItem key={org.id} className="max-w-56 gap-2 p-2 cursor-pointer" asChild>
                 <Link
-                  href={href}
+                  to={href}
                   className="flex w-full items-center gap-2"
                   onClick={(e) => handleOrganizationClick(e, org.id, href)}
                 >
@@ -146,7 +146,7 @@ export function OrganizationAndAccountSwitcherInner({
           <DropdownMenuLabel className="text-xs text-muted-foreground">Account</DropdownMenuLabel>
           <DropdownMenuItem className="gap-2 p-2 cursor-pointer" asChild>
             <Link
-              href="/account/credits"
+              to="/account/credits"
               className="flex w-full items-center gap-2"
               onClick={handleAccountClick}
             >

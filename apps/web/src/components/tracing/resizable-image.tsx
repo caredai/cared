@@ -1,19 +1,18 @@
 import { useState } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import { ImageIcon, ImageOff, Maximize2, Minimize2 } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
 import { cn } from '@cared/ui/lib/utils'
 
-import imageLoader from '@/image-loader'
+import { RemoteImage } from '@/components/image'
 
 const ImageErrorDisplay = ({ src, displayError }: { src: string; displayError: string }) => (
   <div className="grid grid-cols-[auto,1fr] items-center gap-2">
     <span title={displayError} className="h-4 w-4">
       <ImageOff className="h-4 w-4" />
     </span>
-    <Link href={src} className="truncate text-sm underline" target="_blank">
+    <Link to={src} className="truncate text-sm underline" target="_blank">
       {src}
     </Link>
   </div>
@@ -47,8 +46,7 @@ export const ResizableImage = ({
         >
           {isImageVisible ? (
             <>
-              <Image
-                loader={imageLoader}
+              <RemoteImage
                 src={src}
                 alt={alt ?? `Markdown Image-${Math.random()}`}
                 loading="lazy"
@@ -86,7 +84,7 @@ export const ResizableImage = ({
                 <ImageIcon className="h-4 w-4" />
               </Button>
               <div className="flex items-center overflow-hidden">
-                <Link href={src} title={src} className="overflow-hidden underline" target="_blank">
+                <Link to={src} title={src} className="overflow-hidden underline" target="_blank">
                   <div className="h-8 overflow-hidden overflow-ellipsis">{src}</div>
                 </Link>
               </div>

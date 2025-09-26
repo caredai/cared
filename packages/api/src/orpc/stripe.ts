@@ -24,7 +24,10 @@ export const stripeRouter = {
     )
     .handler(async ({ context, input }) => {
       if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, input.organizationId)
+        const scope = OrganizationScope.fromOrganization(
+          { headers: context.headers, db: context.db },
+          input.organizationId,
+        )
         await scope.checkPermissions()
       }
 
@@ -60,7 +63,10 @@ export const stripeRouter = {
     )
     .handler(async ({ context, input }) => {
       if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, input.organizationId)
+        const scope = OrganizationScope.fromOrganization(
+          { headers: context.headers, db: context.db },
+          input.organizationId,
+        )
         await scope.checkPermissions()
       }
 
@@ -93,7 +99,10 @@ export const stripeRouter = {
     )
     .handler(async ({ context, input }) => {
       if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, input.organizationId)
+        const scope = OrganizationScope.fromOrganization(
+          { headers: context.headers, db: context.db },
+          input.organizationId,
+        )
         await scope.checkPermissions({ credits: ['create'] })
       }
 
@@ -135,7 +144,10 @@ export const stripeRouter = {
     )
     .handler(async ({ context, input }) => {
       if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, input.organizationId)
+        const scope = OrganizationScope.fromOrganization(
+          { headers: context.headers, db: context.db },
+          input.organizationId,
+        )
         await scope.checkPermissions({ credits: ['delete'] })
       }
 
@@ -169,7 +181,10 @@ export const stripeRouter = {
     )
     .handler(async ({ context, input }) => {
       if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, input.organizationId)
+        const scope = OrganizationScope.fromOrganization(
+          { headers: context.headers, db: context.db },
+          input.organizationId,
+        )
         await scope.checkPermissions({ credits: ['update'] })
       }
 
@@ -207,7 +222,10 @@ export const stripeRouter = {
     )
     .handler(async ({ context, input }) => {
       if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, input.organizationId)
+        const scope = OrganizationScope.fromOrganization(
+          { headers: context.headers, db: context.db },
+          input.organizationId,
+        )
         await scope.checkPermissions({ credits: ['create'] })
       }
 

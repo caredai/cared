@@ -1,23 +1,21 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import { useMemo } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { AuthUIProvider } from '@daveyplate/better-auth-ui'
 import { PrivyProvider } from '@privy-io/react-auth'
 import { toSolanaWalletConnectors } from '@privy-io/react-auth/solana'
 import { Provider as JotaiProvider } from 'jotai'
 import { useTheme } from 'next-themes'
 
-import { authClient } from '@cared/auth/client'
+import { mergeWithoutUndefined } from '@cared/shared'
 
+import type { ImageConfigComplete } from '@/lib/image/image-config'
 import type { PrivyClientConfig } from '@privy-io/react-auth'
 import { Logo } from '@/components/logo'
 import { ThemeProvider } from '@/components/theme'
 import { env } from '@/env'
 import { usePrivyJwtAuth } from '@/hooks/use-privy'
-import { RPCReactProvider } from '@/lib/orpc'
+import { imageConfig } from '@/lib/config'
+import { imageConfigDefault } from '@/lib/image/image-config'
+import { ImageConfigContext } from '@/lib/image/image-config-context.shared-runtime'
 
 export function Providers({ children }: { children: ReactNode }) {
   return (
@@ -28,7 +26,6 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 
 function InnerProviders({ children }: { children: ReactNode }) {
-  const router = useRouter()
   const { resolvedTheme } = useTheme()
 
   const privyConfig = useMemo(() => {
@@ -55,7 +52,7 @@ function InnerProviders({ children }: { children: ReactNode }) {
         showWalletLoginFirst: true,
       },
       loginMethods: ['wallet'], // NOTE: just a placeholder to avoid the "You must enable at least one login method" error
-      walletConnectCloudProjectId: env.NEXT_PUBLIC_REOWN_PROJECT_ID,
+      walletConnectCloudProjectId: env.VITE_REOWN_PROJECT_ID,
       externalWallets: {
         solana: {
           connectors: toSolanaWalletConnectors({
@@ -79,28 +76,17 @@ function InnerProviders({ children }: { children: ReactNode }) {
   }, [resolvedTheme])
 
   return (
-    <AuthUIProvider
-      // @ts-ignore
-      authClient={authClient}
-      /* eslint-disable-next-line @typescript-eslint/unbound-method */
-      navigate={router.push}
-      /* eslint-disable-next-line @typescript-eslint/unbound-method */
-      replace={router.replace}
-      onSessionChange={() => router.refresh()}
-      Link={Link}
-      signUp={false}
-      credentials={false}
-      providers={['google', 'twitter', 'discord', 'github']}
-    >
-      <RPCReactProvider>
-        <JotaiProvider>
-          <PrivyProvider appId={env.NEXT_PUBLIC_PRIVY_APP_ID} config={privyConfig}>
-            <PrivyJwtAuth />
-            {children}
-          </PrivyProvider>
-        </JotaiProvider>
-      </RPCReactProvider>
-    </AuthUIProvider>
+    <JotaiProvider>
+      <PrivyProvider appId={env.VITE_PRIVY_APP_ID} config={privyConfig}>
+        <PrivyJwtAuth />
+        <ImageConfigContext.Provider
+          // @ts-ignore
+          value={mergeWithoutUndefined<ImageConfigComplete>(imageConfigDefault, imageConfig)}
+        >
+          {children}
+        </ImageConfigContext.Provider>
+      </PrivyProvider>
+    </JotaiProvider>
   )
 }
 

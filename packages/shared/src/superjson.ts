@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import { SuperJSON } from 'superjson'
 
 export * from 'superjson'

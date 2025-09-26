@@ -1,7 +1,5 @@
-'use client'
-
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@tanstack/react-router'
 import { UserIcon } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -21,7 +19,7 @@ export function TopRightNav() {
   return (
     <nav className="flex items-center gap-4">
       {!user ? (
-        <Button variant="ghost" onClick={() => router.push('/auth/sign-in')}>
+        <Button variant="ghost" onClick={() => router.navigate({ to: '/auth/sign-in' })}>
           Sign in
         </Button>
       ) : (

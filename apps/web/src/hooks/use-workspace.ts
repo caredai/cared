@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
 import Cookies from 'js-cookie'
 
 import { lastWorkspaceCookieName } from '@/lib/cookie'
@@ -49,14 +49,17 @@ export function replaceRouteWithWorkspaceId(route: string, id: string) {
 }
 
 export function useReplaceRouteWithWorkspaceId() {
-  const pathname = usePathname()
-  return useCallback((id: string) => replaceRouteWithWorkspaceId(pathname, id), [pathname])
+  const router = useRouter()
+  return useCallback(
+    (id: string) => replaceRouteWithWorkspaceId(router.state.location.pathname, id),
+    [router],
+  )
 }
 
 export function useRedirectWorkspace(id: string) {
   const router = useRouter()
 
   return useCallback(() => {
-    router.replace(`/workspace/${stripIdPrefix(id)}/apps`)
+    void router.navigate({ to: `/workspace/${stripIdPrefix(id)}/apps` })
   }, [router, id])
 }

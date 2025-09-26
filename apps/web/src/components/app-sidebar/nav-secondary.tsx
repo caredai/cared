@@ -1,8 +1,6 @@
-'use client'
-
 import type { ComponentPropsWithoutRef } from 'react'
-import Link from 'next/link'
 import { SiDiscord, SiX } from '@icons-pack/react-simple-icons'
+import { Link } from '@tanstack/react-router'
 import { GraduationCap } from 'lucide-react'
 
 import { SidebarGroup, SidebarGroupContent, useSidebar } from '@cared/ui/components/sidebar'
@@ -23,7 +21,7 @@ export function NavSecondary({
           {open && (
             <>
               <Link
-                href="/docs"
+                to="/docs"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
@@ -32,7 +30,7 @@ export function NavSecondary({
                 <span className="sr-only">Docs</span>
               </Link>
               <Link
-                href={siteConfig.links.twitter}
+                to={siteConfig.links.twitter}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
@@ -41,7 +39,7 @@ export function NavSecondary({
                 <span className="sr-only">X (Twitter)</span>
               </Link>
               <Link
-                href={siteConfig.links.discord}
+                to={siteConfig.links.discord}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-muted-foreground hover:text-foreground transition-colors"
@@ -50,7 +48,7 @@ export function NavSecondary({
                 <span className="sr-only">Discord</span>
               </Link>
               {/*<Link*/}
-              {/*  href={siteConfig.links.github}*/}
+              {/*  to={siteConfig.links.github}*/}
               {/*  target="_blank"*/}
               {/*  rel="noopener noreferrer"*/}
               {/*  className="text-muted-foreground hover:text-foreground transition-colors"*/}

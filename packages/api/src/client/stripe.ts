@@ -9,7 +9,7 @@ export function getStripe() {
       message: 'Stripe secret key is not set',
     })
   }
-  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID) {
+  if (!env.VITE_STRIPE_CREDITS_PRICE_ID) {
     throw new ORPCError('INTERNAL_SERVER_ERROR', {
       message: 'Stripe credits price ID is not set',
     })

@@ -1,6 +1,4 @@
-'use client'
-
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import { Bot, ChevronsUpDown, Plus } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -52,7 +50,12 @@ export function AppSwitcher() {
             className="h-8 gap-2 px-1 has-[>svg]:px-1 text-sm font-medium hover:bg-inherit hover:text-inherit"
             asChild
           >
-            <Link href={`/app/${stripIdPrefix(activeApp.app.id)}`}>
+            <Link
+              to="/app/$appId"
+              params={{
+                appId: stripIdPrefix(activeApp.app.id),
+              }}
+            >
               <Bot className="text-muted-foreground/70" />
               <span className="truncate max-w-20">{activeApp.app.name}</span>
             </Link>
@@ -81,7 +84,7 @@ export function AppSwitcher() {
                     asChild
                   >
                     <Link
-                      href={replaceRouteWithAppId(app.app.id)}
+                      to={replaceRouteWithAppId(app.app.id)}
                       className="flex w-full items-center gap-2"
                     >
                       <div className="flex size-6 items-center justify-center rounded-sm border">

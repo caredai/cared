@@ -285,7 +285,7 @@ export async function createAutoRechargeInvoice(
   }
 
   // Get recharge price
-  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID) {
+  if (!env.VITE_STRIPE_CREDITS_PRICE_ID) {
     throw new ORPCError('INTERNAL_SERVER_ERROR', {
       message: 'Stripe top-up price ID is not configured',
     })
@@ -312,7 +312,7 @@ export async function createAutoRechargeInvoice(
     }
   }
 
-  const price = await stripe.prices.retrieve(env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID, {
+  const price = await stripe.prices.retrieve(env.VITE_STRIPE_CREDITS_PRICE_ID, {
     expand: ['product'],
   })
   if (

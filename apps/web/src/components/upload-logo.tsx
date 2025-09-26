@@ -1,8 +1,5 @@
-'use client'
-
 import type { ChangeEvent, ComponentProps } from 'react'
 import { useCallback, useState } from 'react'
-import Image from 'next/image'
 import { PencilIcon, UploadIcon, XIcon } from 'lucide-react'
 import { usePresignedUpload } from 'next-s3-upload'
 import { toast } from 'sonner'
@@ -18,7 +15,7 @@ import {
 import { Spinner } from '@cared/ui/components/spinner'
 import { cn } from '@cared/ui/lib/utils'
 
-import { RemoteImage } from '@/components/image'
+import { LocalImage, RemoteImage } from '@/components/image'
 import { env } from '@/env'
 
 export interface UploadLogoProps {
@@ -34,7 +31,7 @@ export interface UploadLogoProps {
    * Callback function when logo changes
    */
   onLogoUrlChange?: (url: string) => void | Promise<void>
-  defaultLogo: ComponentProps<typeof Image>['src']
+  defaultLogo: ComponentProps<typeof LocalImage>['src']
   /**
    * Logo container width
    */
@@ -72,8 +69,8 @@ export function UploadLogo({
         throw new Error('Only image files are allowed')
       }
 
-      if (!env.NEXT_PUBLIC_IMAGE_URL) {
-        throw new Error('Environment variable NEXT_PUBLIC_IMAGE_URL is not set')
+      if (!env.VITE_IMAGE_URL) {
+        throw new Error('Environment variable VITE_IMAGE_URL is not set')
       }
 
       // Start uploading
@@ -99,7 +96,7 @@ export function UploadLogo({
       }
 
       try {
-        await onLogoUrlChange?.(`${env.NEXT_PUBLIC_IMAGE_URL}/${key}`)
+        await onLogoUrlChange?.(`${env.VITE_IMAGE_URL}/${key}`)
       } finally {
         setIsUploading(false)
       }
@@ -140,7 +137,7 @@ export function UploadLogo({
         />
       ) : (
         // Show default logo if nothing else
-        <Image
+        <LocalImage
           src={defaultLogo}
           alt="App Logo"
           width={width}

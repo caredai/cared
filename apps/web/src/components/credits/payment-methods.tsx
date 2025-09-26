@@ -1,8 +1,5 @@
-'use client'
-
 import type { Stripe } from 'stripe'
 import React, { useState } from 'react'
-import Image from 'next/image'
 import { format } from 'date-fns'
 import { CreditCardIcon, PlusIcon, Trash2Icon } from 'lucide-react'
 
@@ -31,6 +28,7 @@ import { Dialog, DialogTrigger } from '@cared/ui/components/dialog'
 
 import type { PaymentMethodDisplayInfo } from '@/lib/payment-method-utils'
 import type { ColumnDef } from '@tanstack/react-table'
+import { RemoteImage } from '@/components/image'
 import {
   useDefaultPaymentMethodId,
   useListPaymentMethods,
@@ -160,7 +158,7 @@ function PaymentMethodsTable({
         return (
           <div className="flex items-center gap-2">
             {typeof icon === 'string' ? (
-              <Image
+              <RemoteImage
                 src={icon}
                 alt={displayInfo.brand}
                 width={16}

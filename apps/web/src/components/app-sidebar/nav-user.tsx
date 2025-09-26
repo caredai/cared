@@ -1,5 +1,3 @@
-'use client'
-
 import { ChevronsUpDown } from 'lucide-react'
 
 import { DropdownMenu, DropdownMenuTrigger } from '@cared/ui/components/dropdown-menu'

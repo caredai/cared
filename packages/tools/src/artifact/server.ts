@@ -35,15 +35,17 @@ export function createArtifactHandler<T extends ArtifactKind>(config: {
     onCreateArtifact: async (args: CreateArtifactCallbackProps) => {
       const draftContent = await config.onCreateArtifact(args)
 
-      await getDb().insert(Artifact).values({
-        id: args.id,
-        version: Math.floor(Date.now() / 1000),
-        userId: args.ctx.userId,
-        chatId: args.ctx.chatId,
-        kind: config.kind,
-        title: args.title,
-        content: draftContent,
-      })
+      await getDb()
+        .insert(Artifact)
+        .values({
+          id: args.id,
+          version: Math.floor(Date.now() / 1000),
+          userId: args.ctx.userId,
+          chatId: args.ctx.chatId,
+          kind: config.kind,
+          title: args.title,
+          content: draftContent,
+        })
     },
     onUpdateArtifact: async (args: UpdateArtifactCallbackProps) => {
       const draftContent = await config.onUpdateArtifact(args)

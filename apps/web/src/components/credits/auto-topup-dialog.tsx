@@ -1,5 +1,3 @@
-'use client'
-
 import type Stripe from 'stripe'
 import { useEffect, useState } from 'react'
 import { CreditCardIcon, PlusIcon } from 'lucide-react'

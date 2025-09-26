@@ -2,6 +2,9 @@
 
 @import '../../../packages/ui/src/tailwindcss-animate.css';
 
+@import '@fontsource/geist-sans';
+@import '@fontsource-variable/geist-mono';
+
 @import './helio.css';
 
 @import '@xyflow/react/dist/style.css';
@@ -200,8 +203,8 @@
     }
   }
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Geist Sans', sans-serif;
+  --font-mono: 'Geist Mono Variable', monospace;
 }
 
 @layer base {

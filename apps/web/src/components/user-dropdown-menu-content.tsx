@@ -1,6 +1,4 @@
-'use client'
-
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import {
   CircleDollarSignIcon,
   LogOutIcon,
@@ -44,25 +42,25 @@ export function UserDropdownMenuContent({ user }: { user: User }) {
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuItem asChild>
-          <Link href="/account/credits" className="cursor-pointer">
+          <Link to="/account/credits" className="cursor-pointer">
             <CircleDollarSignIcon />
             Billing
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account/wallet" className="cursor-pointer">
+          <Link to="/account/wallet" className="cursor-pointer">
             <WalletIcon />
             Wallet
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/account/profile" className="cursor-pointer">
+          <Link to="/account/profile" className="cursor-pointer">
             <UserRoundIcon />
             Account
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/landing" className="cursor-pointer">
+          <Link to="/landing" className="cursor-pointer">
             <SparklesIcon />
             Landing
           </Link>

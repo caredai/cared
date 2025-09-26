@@ -1,7 +1,5 @@
-'use client'
-
 import * as React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@tanstack/react-router'
 import { File, Laptop, Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
@@ -80,7 +78,7 @@ export function CommandMenu({ ...props }: React.ComponentProps<typeof Dialog>) {
                   value={navItem.title}
                   onSelect={() => {
                     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                    runCommand(() => router.push(navItem.href!))
+                    runCommand(() => router.navigate({ to: navItem.href! }))
                   }}
                 >
                   <File />

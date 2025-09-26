@@ -16,15 +16,17 @@ export class CaredHistoryManager implements HistoryManager {
     updatedAt?: string,
     isDeleted?: number,
   ): Promise<void> {
-    await getDb().insert(Mem0History).values({
-      memoryId,
-      previousValue,
-      newValue,
-      action,
-      createdAt: createdAt ? new Date(createdAt) : undefined,
-      updatedAt: updatedAt ? new Date(updatedAt) : undefined,
-      isDeleted: isDeleted,
-    })
+    await getDb()
+      .insert(Mem0History)
+      .values({
+        memoryId,
+        previousValue,
+        newValue,
+        action,
+        createdAt: createdAt ? new Date(createdAt) : undefined,
+        updatedAt: updatedAt ? new Date(updatedAt) : undefined,
+        isDeleted: isDeleted,
+      })
   }
 
   async getHistory(memoryId: string): Promise<any[]> {

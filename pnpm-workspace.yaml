@@ -2,11 +2,9 @@ packages:
   - apps/*
   - packages/*
   - tooling/*
-  - '!packages/workflow'
   - '!packages/sdk'
 
 catalog:
-  next: 15.5.3
   "@tanstack/react-query": ^5.66.7
   eslint: ^9.18.0
   prettier: ^3.4.2

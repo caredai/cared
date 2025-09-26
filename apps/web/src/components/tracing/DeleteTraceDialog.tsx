@@ -1,5 +1,3 @@
-'use client'
-
 import { useState } from 'react'
 import { TrashIcon } from 'lucide-react'
 

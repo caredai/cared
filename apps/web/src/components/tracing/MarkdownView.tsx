@@ -4,7 +4,7 @@ import type {
   Options as ReactMarkdownOptions,
 } from 'react-markdown'
 import { Children, createElement, isValidElement, memo } from 'react'
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import DOMPurify from 'dompurify'
 import { Info } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -113,7 +113,7 @@ function MarkdownRenderer({
               if (safeHref) {
                 return (
                   <Link
-                    href={safeHref}
+                    to={safeHref}
                     className="underline"
                     target="_blank"
                     rel="noopener noreferrer"

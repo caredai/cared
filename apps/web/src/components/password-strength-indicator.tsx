@@ -1,5 +1,3 @@
-'use client'
-
 import * as React from 'react'
 import { zxcvbn, zxcvbnOptions } from '@zxcvbn-ts/core'
 import * as zxcvbnCommonPackage from '@zxcvbn-ts/language-common'

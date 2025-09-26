@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useLocation } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import { useSession, useSessionPublic } from '@/hooks/use-session'
@@ -113,6 +113,7 @@ export function replaceRouteWithOrganizationId(route: string, id: string) {
 }
 
 export function useReplaceRouteWithOrganizationId() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useCallback((id: string) => replaceRouteWithOrganizationId(pathname, id), [pathname])
 }

@@ -1,5 +1,3 @@
-'use client'
-
 import { ChevronDownIcon, ChevronUpIcon, EditIcon, Trash2Icon } from 'lucide-react'
 import { zuji } from 'zuji'
 

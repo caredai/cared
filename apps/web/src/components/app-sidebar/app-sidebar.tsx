@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react'
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 
 import {
   Sidebar,
@@ -37,7 +37,7 @@ export function AppSidebar({
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton size="lg" className="h-10 py-1" asChild>
-                  <Link href={baseUrl} className="mr-4 flex items-center gap-2 lg:mr-6">
+                  <Link to={baseUrl} className="mr-4 flex items-center gap-2 lg:mr-6">
                     <Logo />
                   </Link>
                 </SidebarMenuButton>

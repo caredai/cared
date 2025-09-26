@@ -1,6 +1,4 @@
-'use client'
-
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import { Box, ChevronsUpDown, Plus } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -56,7 +54,10 @@ export function WorkspaceSwitcher() {
             className="h-8 gap-2 px-1 has-[>svg]:px-1 text-sm font-medium hover:bg-inherit hover:text-inherit"
             asChild
           >
-            <Link href={`/workspace/${stripIdPrefix(activeWorkspace.id)}`}>
+            <Link
+              to="/workspace/$workspaceId"
+              params={{ workspaceId: stripIdPrefix(activeWorkspace.id) }}
+            >
               <Box className="text-muted-foreground/70" />
               <span className={cn('truncate max-w-20 md:inline', activeApp && 'hidden')}>
                 {activeWorkspace.name}
@@ -90,7 +91,7 @@ export function WorkspaceSwitcher() {
                     asChild
                   >
                     <Link
-                      href={replaceRouteWithWorkspaceId(space.id)}
+                      to={replaceRouteWithWorkspaceId(space.id)}
                       className="flex w-full items-center gap-2"
                       onClick={() => setLastWorkspace(space.id)}
                     >

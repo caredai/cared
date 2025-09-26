@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react'
 import React from 'react'
-import Link from 'next/link'
 import { HoverCardPortal } from '@radix-ui/react-hover-card'
+import { Link } from '@tanstack/react-router'
 import { AlertCircle, Lock, Sparkle } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -149,7 +149,7 @@ const ButtonContent = React.forwardRef<
       <>
         {loading && <CircleSpinner />}
         {renderLink ? (
-          <Link href={href} target="_blank" className="underline-offset-4 underline">
+          <Link to={href} target="_blank" className="underline-offset-4 underline">
             {content}
           </Link>
         ) : (

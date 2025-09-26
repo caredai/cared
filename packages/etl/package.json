@@ -32,6 +32,7 @@
     "html-to-text": "^9.0.5",
     "langchain": "^0.3.34",
     "mammoth": "^1.9.0",
+    "memfs": "^4.46.0",
     "mime": "^4.0.6",
     "officeparser": "^5.2.0",
     "pdf-parse": "^1.1.1",

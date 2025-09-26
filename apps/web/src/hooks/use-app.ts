@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
-import { usePathname } from 'next/navigation'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useLocation } from '@tanstack/react-router'
 
 import { useWorkspaces } from '@/hooks/use-workspace'
 import { orpc } from '@/lib/orpc'
@@ -62,6 +62,7 @@ export function replaceRouteWithAppId(route: string, id: string) {
 }
 
 export function useReplaceRouteWithAppId() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useCallback((id: string) => replaceRouteWithAppId(pathname, id), [pathname])
 }

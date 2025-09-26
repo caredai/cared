@@ -1,5 +1,3 @@
-'use client'
-
 import { Button } from '@cared/ui/components/button'
 import { DropdownMenu, DropdownMenuTrigger } from '@cared/ui/components/dropdown-menu'
 

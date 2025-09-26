@@ -11,7 +11,7 @@ export function useMembers(organizationId = '') {
     orpc.organization.listMembers.queryOptions({
       input: {
         organizationId,
-      }
+      },
     }),
   )
 
@@ -25,7 +25,7 @@ export function useInvitations(organizationId: string) {
     orpc.organization.listInvitations.queryOptions({
       input: {
         organizationId,
-      }
+      },
     }),
   )
 
@@ -44,7 +44,7 @@ export function useAddMember() {
           queryKey: orpc.organization.listMembers.queryOptions({
             input: {
               organizationId: variables.organizationId,
-            }
+            },
           }).queryKey,
         })
       },
@@ -72,7 +72,7 @@ export function useRemoveMember() {
           queryKey: orpc.organization.listMembers.queryOptions({
             input: {
               organizationId: variables.organizationId,
-            }
+            },
           }).queryKey,
         })
       },
@@ -99,7 +99,7 @@ export function useUpdateMemberRole() {
           queryKey: orpc.organization.listMembers.queryOptions({
             input: {
               organizationId: variables.organizationId,
-            }
+            },
           }).queryKey,
         })
       },
@@ -127,7 +127,7 @@ export function useCreateInvitation() {
           queryKey: orpc.organization.listInvitations.queryOptions({
             input: {
               organizationId: variables.organizationId,
-            }
+            },
           }).queryKey,
         })
       },
@@ -154,7 +154,7 @@ export function useCancelInvitation() {
           queryKey: orpc.organization.listInvitations.queryOptions({
             input: {
               organizationId: data.invitation.organizationId,
-            }
+            },
           }).queryKey,
         })
       },

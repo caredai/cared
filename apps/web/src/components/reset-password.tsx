@@ -1,10 +1,7 @@
-'use client'
-
 import * as React from 'react'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { getRouteApi, Link, useRouter } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod/v4'
@@ -58,6 +55,8 @@ const resetPasswordSchema = z
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>
 
+const routeApi = getRouteApi('/auth/reset-password')
+
 /**
  * Reset password component that allows users to set a new password
  */
@@ -69,7 +68,7 @@ export function ResetPassword() {
   const [tokenError, setTokenError] = useState<string | null>(null)
 
   const router = useRouter()
-  const searchParams = useSearchParams()
+  const searchParams = routeApi.useSearch()
   const { createAuthUrl } = useAuthRedirect()
 
   const form = useForm<ResetPasswordFormData>({
@@ -82,8 +81,8 @@ export function ResetPassword() {
 
   // Check for token in URL params on component mount
   useEffect(() => {
-    const tokenParam = searchParams.get('token')
-    const errorParam = searchParams.get('error')
+    const tokenParam = searchParams.token
+    const errorParam = searchParams.error
 
     if (errorParam === 'INVALID_TOKEN') {
       setTokenError('Invalid or expired reset token. Please request a new password reset.')
@@ -142,7 +141,7 @@ export function ResetPassword() {
               <Button
                 variant="outline"
                 className="w-full h-12 rounded-2xl transition-all duration-300"
-                onClick={() => router.push('/auth/forgot-password')}
+                onClick={() => router.navigate({ to: '/auth/forgot-password', search: {} })}
               >
                 Request New Reset
               </Button>
@@ -151,7 +150,7 @@ export function ResetPassword() {
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
                   Remember your password?{' '}
-                  <Link href="/auth/sign-in" className="text-primary hover:underline font-medium">
+                  <Link to="/auth/sign-in" className="text-primary hover:underline font-medium">
                     Sign in
                   </Link>
                 </p>
@@ -182,7 +181,7 @@ export function ResetPassword() {
               <Button
                 variant="outline"
                 className="w-full h-12 rounded-2xl transition-all duration-300"
-                onClick={() => router.push('/auth/sign-in')}
+                onClick={() => router.navigate({ to: '/auth/sign-in' })}
               >
                 Sign In
               </Button>
@@ -288,7 +287,7 @@ export function ResetPassword() {
               <p className="text-sm text-muted-foreground">
                 Remember your password?{' '}
                 <Link
-                  href={createAuthUrl('/auth/sign-in')}
+                  to={createAuthUrl('/auth/sign-in')}
                   className="text-primary hover:underline font-medium"
                 >
                   Sign in

@@ -1,0 +1,13 @@
+diff --git a/dist/index.js b/dist/index.js
+index 598620108c8d1fa47012243400ee2ca74c87c59b..bd78b17fcde04839e8be79f8d506cdc366ac77ec 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -17095,7 +17095,7 @@ function resolvePluginConfig(pluginConfig, userConfig, viteEnv) {
+     experimental: pluginConfig.experimental ?? {}
+   };
+   const root = userConfig.root ? path13.resolve(userConfig.root) : process.cwd();
+-  const prefixedEnv = vite5.loadEnv(viteEnv.mode, root, [
++  const prefixedEnv = vite5.loadEnv(viteEnv.mode, userConfig.envDir ? path13.resolve(root, userConfig.envDir) : root, [
+     "CLOUDFLARE_",
+     // TODO: Remove deprecated WRANGLER prefix support in next major version
+     "WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_"

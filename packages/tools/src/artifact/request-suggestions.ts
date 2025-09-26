@@ -63,12 +63,14 @@ export const requestSuggestions = (ctx: Context) =>
         suggestions.push(suggestion)
       }
 
-      await getDb().insert(ArtifactSuggestion).values(
-        suggestions.map((suggestion) => ({
-          ...suggestion,
-          artifactVersion: artifact.version,
-        })),
-      )
+      await getDb()
+        .insert(ArtifactSuggestion)
+        .values(
+          suggestions.map((suggestion) => ({
+            ...suggestion,
+            artifactVersion: artifact.version,
+          })),
+        )
 
       return {
         id: artifactId,

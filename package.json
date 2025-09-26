@@ -3,9 +3,9 @@
   "private": true,
   "engines": {
     "node": ">=20.18.1",
-    "pnpm": "^9.14.2"
+    "pnpm": "^10.17.1"
   },
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.17.1",
   "scripts": {
     "build": "turbo run build",
     "clean": "git clean -xdf node_modules",
@@ -38,13 +38,13 @@
   "prettier": "@cared/prettier-config",
   "pnpm": {
     "overrides": {
-      "next": "catalog:",
       "uuid": "11.1.0",
-      "zod": "4.1.11",
-      "miniflare>zod": "3.22.3",
       "minimatch": "10.0.3",
       "pdfjs-dist": "4.7.76",
       "pdfjs-dist>canvas": "npm:non-existent-package@0.0.0"
+    },
+    "patchedDependencies": {
+      "@cloudflare/vite-plugin": "patches/@cloudflare__vite-plugin.patch"
     }
   }
 }

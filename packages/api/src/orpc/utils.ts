@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import {
   DeleteObjectCommand,
   DeleteObjectsCommand,
@@ -13,13 +14,13 @@ import { env } from '../env'
 import { measure } from '../utils'
 
 export function imageUrl() {
-  if (!env.NEXT_PUBLIC_IMAGE_URL) {
+  if (!env.VITE_IMAGE_URL) {
     throw new ORPCError('INTERNAL_SERVER_ERROR', {
-      message: 'Environment variable NEXT_PUBLIC_IMAGE_URL is not set',
+      message: 'Environment variable VITE_IMAGE_URL is not set',
     })
   }
 
-  return env.NEXT_PUBLIC_IMAGE_URL
+  return env.VITE_IMAGE_URL
 }
 
 export async function uploadImage(

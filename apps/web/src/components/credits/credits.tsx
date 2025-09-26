@@ -1,5 +1,3 @@
-'use client'
-
 import assert from 'assert'
 import type { Stripe } from 'stripe'
 import { useState } from 'react'

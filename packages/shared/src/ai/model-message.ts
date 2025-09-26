@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import type { ModelMessage, ToolCallPart, ToolResultPart } from 'ai'
 import { z } from 'zod/v4'
 

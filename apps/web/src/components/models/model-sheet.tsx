@@ -1,5 +1,3 @@
-'use client'
-
 import type { VirtualizerHandle } from 'virtua'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { PlusIcon, ServerIcon } from 'lucide-react'

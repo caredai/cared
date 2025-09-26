@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
+  "main": "./src/server.ts",
   "name": "cared-web",
   "compatibility_date": "2025-09-19",
   "compatibility_flags": [
@@ -8,53 +8,26 @@
     "global_fetch_strictly_public",
     "nodejs_compat_populate_process_env"
   ],
-  "assets": {
-    "directory": ".open-next/assets",
-    "binding": "ASSETS"
-  },
-  "services": [
-    {
-      "binding": "WORKER_SELF_REFERENCE",
-      "service": "cared-web"
-    }
-  ],
-  "r2_buckets": [
-    // Use R2 incremental cache
-    // See https://opennext.js.org/cloudflare/caching
-    {
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      // Create the bucket before deploying
-      // You can change the bucket name if you want
-      // See https://developers.cloudflare.com/workers/wrangler/commands/#r2-bucket-create
-      "bucket_name": "cared-web-next-inc-cache"
-    }
-  ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "NEXT_CACHE_DO_QUEUE",
-        "class_name": "DOQueueHandler"
-      },
-      {
-        "name": "NEXT_TAG_CACHE_DO_SHARDED",
-        "class_name": "DOShardedTagCache"
-      },
-      {
-        "name": "NEXT_CACHE_DO_PURGE",
-        "class_name": "BucketCachePurge"
-      }
-    ]
-  },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache", "BucketCachePurge"]
-    }
-  ],
   "observability": {
-    "logs": {
-      "enabled": true
-    }
+    "enabled": true
   },
-  "send_metrics": false
+  "keep_names": false,
+  "keep_vars": true,
+  "send_metrics": false,
+  "env": {
+    "production": {
+      "vars": {
+        "VITE_WEB_URL": "https://cared.dev",
+        "VITE_API_URL": "https://cared.dev",
+        "VITE_IMAGE_URL": "https://r2.mindai.world",
+        "VITE_PRIVY_APP_ID": "cm9s5y8e100kkld0n1973p6qf",
+        "VITE_REOWN_PROJECT_ID": "7febcbc732202c542f7168947851f3cd",
+        "VITE_STRIPE_PUBLISHABLE_KEY": "pk_test_51ROBc1QLbtAeySaIzWCN0SOngTh1ghiXvnM5IiJv4W2nlJhStST2uPJZ75LjfA8ws5xvkzSA0G4MJ2I3E1aNogTM007UjjrHTF",
+        "VITE_STRIPE_PRICING_TABLE_ID": "prctbl_1S4JQHQLbtAeySaI3iTekIj2",
+        "VITE_STRIPE_CREDITS_PRICE_ID": "price_1RtOpVQLbtAeySaIocJ0z5OG",
+        "VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID": "price_1RtOL6QLbtAeySaIinqZqCOW",
+        "VITE_HELIO_CREDITS_PAYLINK_ID": "68944e66c2dafb368aa0a7f3"
+      }
+    }
+  }
 }

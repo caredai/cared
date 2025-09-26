@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 
 import { cn } from '@cared/ui/lib/utils'
 
@@ -51,14 +51,14 @@ function BaseHeader({ ...props }: HeaderProps & { level: 'h3' | 'h4' | 'h5' }) {
             {props.help ? (
               <DocPopup
                 description={props.help.description}
-                href={props.help.href}
+                to={props.help.href}
                 className={props.help.className}
               />
             ) : null}
           </div>
           {props.status && <StatusBadge type={props.status} />}
           {props.label && (
-            <Link href={props.label.href}>
+            <Link to={props.label.href}>
               <StatusBadge type={props.label.text} />
             </Link>
           )}

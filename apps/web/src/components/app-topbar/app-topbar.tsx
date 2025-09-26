@@ -1,6 +1,4 @@
-'use client'
-
-import Link from 'next/link'
+import { Link } from '@tanstack/react-router'
 import { MenuIcon } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
@@ -23,7 +21,7 @@ export function AppTopBar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="mx-auto w-full h-14 px-4 flex">
         <div className="flex items-center gap-1 md:gap-4">
-          <Link href="/" className="hidden md:inline">
+          <Link to="/" className="hidden md:inline">
             <Logo />
           </Link>
 

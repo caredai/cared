@@ -12,7 +12,7 @@ export function useCustomer(organizationId?: string) {
     ...orpc.stripe.getCustomer.queryOptions({
       input: {
         organizationId,
-      }
+      },
     }),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: Infinity,
@@ -39,7 +39,7 @@ export function useListPaymentMethods(organizationId?: string) {
     ...orpc.stripe.listPaymentMethods.queryOptions({
       input: {
         organizationId,
-      }
+      },
     }),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: Infinity,

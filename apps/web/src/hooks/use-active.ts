@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { usePathname } from 'next/navigation'
+import { useLocation } from '@tanstack/react-router'
 
 import { useAllApps } from '@/hooks/use-app'
 import { useOrganizations } from '@/hooks/use-organization'
@@ -7,7 +7,8 @@ import { useAllWorkspaces } from '@/hooks/use-workspace'
 import { addIdPrefix } from '@/lib/utils'
 
 export function useActive() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
 
   const activeApp = useApp(pathname)
   const activeWorkspace = useWorkspace(pathname, activeApp?.app.workspaceId)
@@ -21,17 +22,20 @@ export function useActive() {
 }
 
 export function useActiveOrganization() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useOrganization(pathname)
 }
 
 export function useActiveWorkspace() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useWorkspace(pathname)
 }
 
 export function useActiveApp() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useApp(pathname)
 }
 
@@ -72,7 +76,8 @@ function useApp(pathname: string, id?: string) {
 }
 
 export function useActiveOrganizationId() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useMemo(
     () => ({
       activeOrganizationId: getOrganizationId(pathname),
@@ -83,7 +88,8 @@ export function useActiveOrganizationId() {
 }
 
 export function useActiveWorkspaceId() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useMemo(
     () => ({
       activeWorkspaceId: getWorkspaceId(pathname),
@@ -94,7 +100,8 @@ export function useActiveWorkspaceId() {
 }
 
 export function useActiveAppId() {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   return useMemo(
     () => ({
       activeAppId: getAppId(pathname),

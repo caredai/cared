@@ -1,5 +1,5 @@
-import { useRouter } from 'next/navigation'
 import { useLogout } from '@privy-io/react-auth'
+import { useRouter } from '@tanstack/react-router'
 
 import { authClient } from '@cared/auth/client'
 
@@ -18,7 +18,7 @@ export function useSignOut() {
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          router.push('/')
+          void router.navigate({ to: '/' })
         },
       },
     })

@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect } from 'react'
 import { HelioCheckout } from '@heliofi/checkout-react'
 import { useTheme } from 'next-themes'
@@ -23,7 +21,7 @@ export function HelioCheckoutForm({
     <RemoveCssWrapper>
       <HelioCheckout
         config={{
-          paylinkId: env.NEXT_PUBLIC_HELIO_CREDITS_PAYLINK_ID,
+          paylinkId: env.VITE_HELIO_CREDITS_PAYLINK_ID,
           amount: credits.toFixed(2),
           additionalJSON: {
             customerId: user.id,

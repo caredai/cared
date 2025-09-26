@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer'
+
 const IV_LENGTH = 12 // For AES-GCM, this is always 12
 
 // Alternatively: openssl rand -hex 32

@@ -12,7 +12,10 @@ coverage
 .next/
 out/
 next-env.d.ts
-.open-next/
+
+# tanstack
+.tanstack/
+.react-router/
 
 # nitro
 .nitro/
@@ -40,11 +43,15 @@ yarn-error.log*
 
 # local env files
 .env
-.env*.local
+.env.*
+!.env.example
 .dev.vars
 
 # vercel
 .vercel
+
+# cloudflare
+.wrangler
 
 # typescript
 dist/

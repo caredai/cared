@@ -26,7 +26,7 @@ export const getDb = cache(() => {
       casing: 'camelCase',
       logger: env.NODE_ENV === 'development',
     })
-  } else if (env.VERCEL) {
+  } else if (process.env.VERCEL) {
     return drizzleVercel({
       client: sql,
       schema,

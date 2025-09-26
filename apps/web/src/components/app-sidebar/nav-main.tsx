@@ -1,10 +1,7 @@
-'use client'
-
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 
 import {
@@ -44,7 +41,8 @@ export function NavMain({
   baseUrl: string
   children?: ReactNode
 }) {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   const [activeUrl, setActiveUrl] = useState<string>()
 
   const isItemActive = (url: string) => {
@@ -83,7 +81,7 @@ export function NavMain({
                     setActiveUrl(item.url)
                   }}
                 >
-                  <Link href={`${baseUrl}${item.url}`}>
+                  <Link to={`${baseUrl}${item.url}`}>
                     <Icon />
                     <span>{item.title}</span>
                   </Link>
@@ -111,7 +109,7 @@ export function NavMain({
                                   setActiveUrl(url)
                                 }}
                               >
-                                <Link href={`${baseUrl}${url}`}>
+                                <Link to={`${baseUrl}${url}`}>
                                   <span>{subItem.title}</span>
                                 </Link>
                               </SidebarMenuSubButton>

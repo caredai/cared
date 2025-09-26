@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm with-env wrangler dev --port 3001 --env-file ../../.env",
-    "deploy": "wrangler deploy --minify --keep-vars",
+    "deploy": "wrangler deploy --env production --minify --keep-vars",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",
     "with-env": "dotenv -e ../../.env --"
   },

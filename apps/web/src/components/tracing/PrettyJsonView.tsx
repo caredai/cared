@@ -1,5 +1,3 @@
-'use client'
-
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { FoldVertical, UnfoldVertical } from 'lucide-react'
 

@@ -1,9 +1,7 @@
-'use client'
-
 import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
+import { useRouter } from '@tanstack/react-router'
 
 import { Spinner } from '@cared/ui/components/spinner'
 
@@ -14,7 +12,7 @@ import {
   useListCreditsOrders,
 } from '@/hooks/use-credits'
 
-const stripePromise = loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
+const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
 
 export function StripeCheckoutForm({
   organizationId,
@@ -86,7 +84,7 @@ export function useCheckStripeCheckoutSessionReturnUrl(organizationId?: string) 
 
         const url = new URL(window.location.toString())
         url.search = ''
-        router.replace(url.toString())
+        void router.navigate({ to: url.toString(), replace: true })
       }
     })
   }, [refetchCreditsOrders, router])

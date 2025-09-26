@@ -1,5 +1,3 @@
-'use client'
-
 import { useEffect, useRef, useState } from 'react'
 import * as React from 'react'
 import { Activity, FoldVertical, Settings2, UnfoldVertical, XIcon } from 'lucide-react'

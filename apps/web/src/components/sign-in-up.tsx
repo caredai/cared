@@ -1,9 +1,7 @@
-'use client'
-
 import * as React from 'react'
 import { useState } from 'react'
-import Link from 'next/link'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { generateFromEmail } from 'unique-username-generator'
@@ -298,7 +296,7 @@ export function SignInUp({ mode }: SignInUpProps) {
                         {!isSignUp && (
                           <div className="text-right">
                             <Link
-                              href={createAuthUrl('/auth/forgot-password')}
+                              to={createAuthUrl('/auth/forgot-password')}
                               className="text-sm text-primary hover:underline"
                             >
                               Forgot password?
@@ -348,7 +346,7 @@ export function SignInUp({ mode }: SignInUpProps) {
               <p className="text-sm text-muted-foreground">
                 {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
                 <Link
-                  href={isSignUp ? createAuthUrl('/auth/sign-in') : createAuthUrl('/auth/sign-up')}
+                  to={isSignUp ? createAuthUrl('/auth/sign-in') : createAuthUrl('/auth/sign-up')}
                   className="text-primary hover:underline font-medium"
                 >
                   {isSignUp ? 'Sign in' : 'Sign up'}

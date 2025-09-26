@@ -133,13 +133,13 @@ export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizat
 }
 
 async function getRechargePrice(stripe: Stripe) {
-  if (!env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID) {
+  if (!env.VITE_STRIPE_CREDITS_PRICE_ID) {
     throw new ORPCError('INTERNAL_SERVER_ERROR', {
       message: 'Stripe top-up price ID is not configured',
     })
   }
 
-  const price = await stripe.prices.retrieve(env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID, {
+  const price = await stripe.prices.retrieve(env.VITE_STRIPE_CREDITS_PRICE_ID, {
     expand: ['product'],
   })
   if (

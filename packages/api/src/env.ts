@@ -1,9 +1,11 @@
-import { vercel } from '@t3-oss/env-core/presets-zod'
-import { createEnv } from '@t3-oss/env-nextjs'
+import { createEnv } from "@t3-oss/env-core";
 import { z } from 'zod/v4'
 
 export const env = createEnv({
-  extends: [vercel()],
+  /**
+   * Specify your server-side environment variables schema here.
+   * This way you can ensure the app isn't built with invalid env vars.
+   */
   server: {
     ENCRYPTION_KEY: z
       .string()
@@ -34,16 +36,22 @@ export const env = createEnv({
       .optional(),
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
+
+  clientPrefix: "VITE_",
+
+  /**
+   * Specify your client-side environment variables schema here.
+   * For them to be exposed to the client, prefix them with `VITE_`.
+   */
   client: {
-    NEXT_PUBLIC_IMAGE_URL: z.string().url().optional(),
-    NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID: z.string().min(1).optional(),
-    NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID: z.string().min(1).optional(),
+    VITE_IMAGE_URL: z.string().url().optional(),
+    VITE_STRIPE_CREDITS_PRICE_ID: z.string().min(1).optional(),
+    VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID: z.string().min(1).optional(),
   },
-  experimental__runtimeEnv: {
-    NEXT_PUBLIC_IMAGE_URL: process.env.NEXT_PUBLIC_IMAGE_URL,
-    NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_CREDITS_PRICE_ID,
-    NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID:
-      process.env.NEXT_PUBLIC_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID,
-  },
+
+  runtimeEnv: process.env,
+
+  emptyStringAsUndefined: true,
+
   skipValidation: !!process.env.CI || process.env.npm_lifecycle_event === 'lint',
 })

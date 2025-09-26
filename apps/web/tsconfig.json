@@ -16,17 +16,9 @@
         "./src/*"
       ]
     },
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
     "module": "esnext"
   },
-  "include": [
-    ".",
-    ".next/types/**/*.ts"
-  ],
+  "include": ["src/**/*", "cloudflare-env.d.ts", "vite.config.ts"],
   "exclude": [
     "node_modules"
   ]

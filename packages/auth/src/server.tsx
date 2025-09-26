@@ -5,7 +5,6 @@ import { emailHarmony } from 'better-auth-harmony'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { setSessionCookie } from 'better-auth/cookies'
-import { nextCookies } from 'better-auth/next-js'
 import {
   admin,
   apiKey,
@@ -19,6 +18,7 @@ import {
   twoFactor,
 } from 'better-auth/plugins'
 import { passkey } from 'better-auth/plugins/passkey'
+import { reactStartCookies } from 'better-auth/react-start'
 import { sha256 } from 'viem'
 
 import { eq } from '@cared/db'
@@ -324,8 +324,8 @@ const options = {
     emailHarmony(),
     customPlugin(),
     // Make sure this is the last plugin in the array
-    // https://www.better-auth.com/docs/integrations/next#server-action-cookies
-    nextCookies(),
+    // https://www.better-auth.com/docs/integrations/tanstack#usage-tips
+    reactStartCookies(),
   ],
   onAPIError: {
     errorURL: getWebUrl() + '/auth/error',

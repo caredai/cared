@@ -2,15 +2,15 @@
  * Utility functions for authentication pages
  */
 
-import { useSearchParams } from 'next/navigation'
+import { useSearch } from '@tanstack/react-router'
 
 /**
  * Gets the current redirectTo parameter from URL search params
  * @param searchParams - URL search parameters
  * @returns The redirectTo value or default path
  */
-export function getRedirectTo(searchParams: URLSearchParams): string {
-  return searchParams.get('redirectTo') ?? '/'
+export function getRedirectTo(searchParams: Record<string, string>): string {
+  return searchParams.redirectTo ?? '/'
 }
 
 /**
@@ -31,7 +31,7 @@ export function createAuthUrl(path: string, redirectTo: string): string {
  * @returns Object with redirectTo value and helper functions
  */
 export function useAuthRedirect() {
-  const searchParams = useSearchParams()
+  const searchParams = useSearch({ strict: false })
 
   const redirectTo = getRedirectTo(searchParams)
   const fullRedirectTo =

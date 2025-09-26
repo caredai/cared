@@ -1,5 +1,3 @@
-'use client'
-
 import type { JSONValue } from 'ai'
 import { useMemo, useState } from 'react'
 import { formatDistance } from 'date-fns'

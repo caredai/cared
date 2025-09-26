@@ -40,7 +40,7 @@ export function useSessionPublic() {
     orpc.user.session.queryOptions({
       input: {
         auth: false,
-      }
+      },
     }),
   )
   return {

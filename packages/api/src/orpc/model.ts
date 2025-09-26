@@ -761,7 +761,10 @@ async function checkPermissions(context: Context, organizationId?: string, isSys
     case 'user':
     case 'appUser':
       if (organizationId) {
-        const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, organizationId)
+        const scope = OrganizationScope.fromOrganization(
+          { headers: context.headers, db: context.db },
+          organizationId,
+        )
         await scope.checkPermissions()
       } else {
         if (isSystem && auth.type === 'user' && !auth.isAdmin) {
@@ -774,7 +777,10 @@ async function checkPermissions(context: Context, organizationId?: string, isSys
       switch (auth.scope) {
         case 'user':
           if (organizationId) {
-            const scope = OrganizationScope.fromOrganization({ headers: context.headers, db: context.db }, organizationId)
+            const scope = OrganizationScope.fromOrganization(
+              { headers: context.headers, db: context.db },
+              organizationId,
+            )
             await scope.checkPermissions()
           } else {
             if (isSystem && !auth.isAdmin) {

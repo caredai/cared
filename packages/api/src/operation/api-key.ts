@@ -124,12 +124,14 @@ export async function deleteApiKeys(
     return
   }
 
-  await getDb().delete(ApiKey).where(
-    inArray(
-      ApiKey.id,
-      apiKeys.map((key) => key.id),
-    ),
-  )
+  await getDb()
+    .delete(ApiKey)
+    .where(
+      inArray(
+        ApiKey.id,
+        apiKeys.map((key) => key.id),
+      ),
+    )
 
   // Call again to check
   await deleteApiKeys(ctx, input)

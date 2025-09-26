@@ -1,5 +1,3 @@
-'use client'
-
 import type { ComponentProps } from 'react'
 import { AlertTriangle, BadgeCheck, X } from 'lucide-react'
 import { toast } from 'sonner'

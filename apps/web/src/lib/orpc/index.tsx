@@ -3,8 +3,9 @@ import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
 import { BatchLinkPlugin } from '@orpc/client/plugins'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
-import { dehydrate, HydrationBoundary, QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
+import { createIsomorphicFn } from '@tanstack/react-start'
+import { getRequestHeaders } from '@tanstack/react-start/server'
 
 import type { AppRouter } from '@cared/api'
 import { getApiUrl } from '@cared/auth/client'
@@ -15,25 +16,22 @@ import type {
   DefaultError,
   FetchQueryOptions,
   InferDataFromTag,
-  QueryClient,
   QueryKey,
   SetDataOptions,
   Updater,
 } from '@tanstack/react-query'
 import { createQueryClient } from './query-client'
 
+const getHeaders = createIsomorphicFn()
+  .server(() => new Headers(getRequestHeaders()))
+  .client(() => new Headers())
+
 const link = new RPCLink({
   url: () => {
     return `${getApiUrl()}/api/rpc`
   },
-  headers: async () => {
-    let headers
-    if (typeof window !== 'undefined') {
-      headers = new Headers()
-    } else {
-      headers = new Headers(await (await import('next/headers')).headers())
-    }
-
+  headers: () => {
+    const headers = getHeaders()
     headers.set('x-orpc-source', 'cared-web')
     return headers
   },
@@ -57,28 +55,6 @@ const link = new RPCLink({
 
 export const orpcClient: RouterClient<AppRouter> = createORPCClient(link)
 export const orpc = createTanstackQueryUtils(orpcClient)
-
-let clientQueryClientSingleton: QueryClient | undefined = undefined
-const getQueryClient = () => {
-  if (typeof window === 'undefined') {
-    // Server: always make a new query client
-    return createQueryClient()
-  } else {
-    // Browser: use singleton pattern to keep the same query client
-    return (clientQueryClientSingleton ??= createQueryClient())
-  }
-}
-
-export function RPCReactProvider({ children }: { children: React.ReactNode }) {
-  const queryClient = getQueryClient()
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ReactQueryDevtools initialIsOpen={false} />
-      {children}
-    </QueryClientProvider>
-  )
-}
 
 export const getCachedQueryClient = cache(createQueryClient)
 

@@ -13,10 +13,24 @@
       "enabled": true
     }
   },
-  "send_metrics": false
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
+  "keep_vars": true,
+  "send_metrics": false,
+  "env": {
+    "production": {
+      "vars": {
+        "VITE_WEB_URL": "https://cared.dev",
+        "VITE_API_URL": "https://cared.dev",
+        "VITE_IMAGE_URL": "https://r2.mindai.world",
+        "VITE_PRIVY_APP_ID": "cm9s5y8e100kkld0n1973p6qf",
+        "VITE_REOWN_PROJECT_ID": "7febcbc732202c542f7168947851f3cd",
+        "VITE_STRIPE_PUBLISHABLE_KEY": "pk_test_51ROBc1QLbtAeySaIzWCN0SOngTh1ghiXvnM5IiJv4W2nlJhStST2uPJZ75LjfA8ws5xvkzSA0G4MJ2I3E1aNogTM007UjjrHTF",
+        "VITE_STRIPE_PRICING_TABLE_ID": "prctbl_1S4JQHQLbtAeySaI3iTekIj2",
+        "VITE_STRIPE_CREDITS_PRICE_ID": "price_1RtOpVQLbtAeySaIocJ0z5OG",
+        "VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID": "price_1RtOL6QLbtAeySaIinqZqCOW",
+        "VITE_HELIO_CREDITS_PAYLINK_ID": "68944e66c2dafb368aa0a7f3"
+      }
+    }
+  }
   // "kv_namespaces": [
   //   {
   //     "binding": "MY_KV_NAMESPACE",

@@ -1,7 +1,4 @@
-'use client'
-
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   AddressElement,
   Elements,
@@ -11,6 +8,7 @@ import {
   useStripe,
 } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
+import { useRouter } from '@tanstack/react-router'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 
@@ -29,7 +27,7 @@ import { env } from '@/env'
 import { useAddPaymentMethod, useCustomer } from '@/hooks/use-stripe'
 import { stripIdPrefix } from '@/lib/utils'
 
-const stripePromise = loadStripe(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '')
+const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
 
 interface PaymentMethodDialogProps {
   organizationId?: string
@@ -216,7 +214,7 @@ export function useCheckPaymentMethodSetupReturnUrl() {
 
           const url = new URL(window.location.toString())
           url.search = ''
-          router.replace(url.toString())
+          void router.navigate({ to: url.toString(), replace: true })
         })
       }
     })

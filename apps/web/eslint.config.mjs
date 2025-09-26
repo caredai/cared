@@ -1,14 +1,28 @@
+import pluginRouter from '@tanstack/eslint-plugin-router'
+
 import baseConfig, { restrictEnvAccess } from '@cared/eslint-config/base'
-import nextjsConfig from '@cared/eslint-config/nextjs'
 import reactConfig from '@cared/eslint-config/react'
 
 /** @type {import('typescript-eslint').Config} */
 export default [
   {
-    ignores: ['.next/**'],
+    rules: {
+      '@typescript-eslint/only-throw-error': [
+        'error',
+        {
+          allow: [
+            {
+              from: 'package',
+              package: '@tanstack/router-core',
+              name: 'Redirect',
+            },
+          ],
+        },
+      ],
+    },
   },
   ...baseConfig,
   ...reactConfig,
-  ...nextjsConfig,
   ...restrictEnvAccess,
+  ...pluginRouter.configs['flat/recommended'],
 ]

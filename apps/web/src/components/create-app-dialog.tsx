@@ -1,10 +1,8 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
 import { BotIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -168,7 +166,7 @@ export function CreateAppDialog({
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push(`/app/${stripIdPrefix(data.app.id)}`)
+          void router.navigate({ to: `/app/${stripIdPrefix(data.app.id)}` })
         }
       },
       onError: (error) => {

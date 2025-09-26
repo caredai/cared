@@ -1,7 +1,4 @@
-'use client'
-
 import { useState } from 'react'
-import Image from 'next/image'
 import { ChevronDown, ChevronUp, CloudCog, KeyRound, Server } from 'lucide-react'
 import { useCopyToClipboard } from 'react-use'
 
@@ -22,6 +19,7 @@ import {
 } from '@cared/ui/components/collapsible'
 import { cn } from '@cared/ui/lib/utils'
 
+import { LocalImage } from '@/components/image'
 import { SectionTitle } from '@/components/section'
 import { TextTooltip } from '@/components/tooltip'
 import { useModels, useProviders } from '@/hooks/use-model'
@@ -248,7 +246,7 @@ export function Models({
                 <CardHeader>
                   <CardTitle className="flex items-center gap-4">
                     <div className="relative h-10 w-10 overflow-hidden rounded-sm flex items-center">
-                      <Image
+                      <LocalImage
                         src={`/images/providers/${provider.icon}`}
                         alt={`${provider.name} logo`}
                         unoptimized={true}

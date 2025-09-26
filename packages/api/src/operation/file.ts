@@ -240,7 +240,7 @@ export type ParsedS3Url = {
  * @returns An object containing parsed storage location, UUID and filename
  */
 export function parseS3Url(url: string): ParsedS3Url | false | undefined {
-  if (!env.NEXT_PUBLIC_IMAGE_URL || !url.startsWith(env.NEXT_PUBLIC_IMAGE_URL)) {
+  if (!env.VITE_IMAGE_URL || !url.startsWith(env.VITE_IMAGE_URL)) {
     return undefined
   }
 

@@ -1,7 +1,4 @@
-'use client'
-
 import { useMemo, useState } from 'react'
-import Image from 'next/image'
 import { format } from 'date-fns'
 import { KeyRound, Server } from 'lucide-react'
 
@@ -12,6 +9,7 @@ import { DataTable } from '@cared/ui/components/data-table'
 import { Spinner } from '@cared/ui/components/spinner'
 
 import type { ColumnDef } from '@tanstack/react-table'
+import { RemoteImage } from '@/components/image'
 import { SectionTitle } from '@/components/section'
 import { TextTooltip } from '@/components/tooltip'
 import { useExpenses } from '@/hooks/use-expense'
@@ -115,7 +113,7 @@ function createColumns(
           <div className="flex items-center gap-2">
             <div className="relative h-5 w-5 overflow-hidden rounded-sm flex items-center">
               {provider?.icon ? (
-                <Image
+                <RemoteImage
                   src={`/images/providers/${provider.icon}`}
                   alt={`${provider.name} logo`}
                   unoptimized={true}

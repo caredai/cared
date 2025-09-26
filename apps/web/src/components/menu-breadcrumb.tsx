@@ -1,7 +1,4 @@
-'use client'
-
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, useLocation } from '@tanstack/react-router'
 
 import {
   Breadcrumb,
@@ -16,7 +13,8 @@ import { Separator } from '@cared/ui/components/separator'
 import type { NavItem } from './app-sidebar/nav-main'
 
 export function MenuBreadcrumb({ items, baseUrl }: { items: NavItem[]; baseUrl: string }) {
-  const pathname = usePathname()
+  const location = useLocation()
+  const pathname = location.pathname
   const [, key, subKey] = pathname.split('/').filter(Boolean)
 
   const item = items.find((item) => item.url.startsWith(`/${key}`))
@@ -43,7 +41,7 @@ export function MenuBreadcrumb({ items, baseUrl }: { items: NavItem[]; baseUrl: 
             <BreadcrumbItem className="hidden md:block">
               {item.isRoute ? (
                 <BreadcrumbLink asChild>
-                  <Link href={`${baseUrl}/${key}`}>{item.title}</Link>
+                  <Link to={`${baseUrl}/${key}`}>{item.title}</Link>
                 </BreadcrumbLink>
               ) : (
                 <BreadcrumbPage>{item.title}</BreadcrumbPage>

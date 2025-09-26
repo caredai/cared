@@ -1,9 +1,7 @@
-'use client'
-
 import * as React from 'react'
 import { useState } from 'react'
-import Link from 'next/link'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Link } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod/v4'
@@ -178,7 +176,7 @@ export function ForgotPassword() {
               <p className="text-sm text-muted-foreground">
                 Remember your password?{' '}
                 <Link
-                  href={createAuthUrl('/auth/sign-in')}
+                  to={createAuthUrl('/auth/sign-in')}
                   className="text-primary hover:underline font-medium"
                 >
                   Sign in

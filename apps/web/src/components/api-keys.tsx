@@ -1,5 +1,3 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'

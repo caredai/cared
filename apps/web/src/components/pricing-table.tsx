@@ -1,4 +1,4 @@
-import Script from 'next/script'
+import { useEffect } from 'react'
 
 import { env } from '@/env'
 
@@ -15,14 +15,27 @@ declare global {
 }
 
 export function PricingTable() {
+  useEffect(() => {
+    // Load Stripe pricing table script
+    const script = document.createElement('script')
+    script.src = 'https://js.stripe.com/v3/pricing-table.js'
+    script.async = true
+    document.head.appendChild(script)
+
+    return () => {
+      // Cleanup script on unmount
+      if (document.head.contains(script)) {
+        document.head.removeChild(script)
+      }
+    }
+  }, [])
+
   return (
     <>
-      <Script src="https://js.stripe.com/v3/pricing-table.js" strategy="lazyOnload" />
-
       {/* @ts-ignore */}
       <stripe-pricing-table
-        pricing-table-id={env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID}
-        publishable-key={env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+        pricing-table-id={env.VITE_STRIPE_PRICING_TABLE_ID}
+        publishable-key={env.VITE_STRIPE_PUBLISHABLE_KEY}
       />
     </>
   )

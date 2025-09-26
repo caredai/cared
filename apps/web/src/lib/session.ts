@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation'
+import { redirect } from '@tanstack/react-router'
 
 import type { authClient } from '@cared/auth/client'
 
@@ -14,12 +14,11 @@ export async function prefetchAndCheckSession(
     orpc.user.session.queryOptions({
       input: {
         auth: false,
-      }
+      },
     }),
   )
   if (!session || (check && !check(session))) {
-    redirect(redirectTo)
-    return false
+    throw redirect({ to: redirectTo })
   }
 
   setData(
@@ -31,6 +30,4 @@ export async function prefetchAndCheckSession(
     session,
   )
   setData(orpc.user.session.queryKey(), session)
-
-  return true
 }

@@ -15,7 +15,7 @@ export function useProviderKeys(input?: { isSystem?: boolean; organizationId?: s
       input: {
         isSystem: input?.isSystem,
         organizationId: input?.organizationId,
-      }
+      },
     }),
   )
 
@@ -70,7 +70,7 @@ export function useCreateProviderKey({
             input: {
               isSystem: variables.isSystem,
               organizationId: variables.organizationId,
-            }
+            },
           }).queryKey,
         })
       },
@@ -105,7 +105,7 @@ export function useUpdateProviderKey() {
             input: {
               isSystem: providerKey.isSystem ?? undefined,
               organizationId: providerKey.organizationId ?? undefined,
-            }
+            },
           }).queryKey,
         })
       },
@@ -136,7 +136,7 @@ export function useDeleteProviderKey() {
             input: {
               isSystem: providerKey.isSystem ?? undefined,
               organizationId: providerKey.organizationId ?? undefined,
-            }
+            },
           }).queryKey,
         })
       },

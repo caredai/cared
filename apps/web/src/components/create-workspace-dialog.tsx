@@ -1,10 +1,8 @@
-'use client'
-
 import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
@@ -77,7 +75,7 @@ export function CreateWorkspaceDialog({
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push(replaceRouteWithWorkspaceId(workspace.workspace.id))
+          void router.navigate({ to: replaceRouteWithWorkspaceId(workspace.workspace.id) })
         }
       },
       onError: (error) => {
