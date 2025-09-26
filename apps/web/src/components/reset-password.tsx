@@ -141,7 +141,7 @@ export function ResetPassword() {
               <Button
                 variant="outline"
                 className="w-full h-12 rounded-2xl transition-all duration-300"
-                onClick={() => router.navigate({ to: '/auth/forgot-password', search: {} })}
+                onClick={() => router.navigate({ to: '/auth/forgot-password' })}
               >
                 Request New Reset
               </Button>

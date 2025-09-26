@@ -169,7 +169,7 @@ export const installTemplate = async ({
   }
 
   /** Copy the version from package.json or override for tests. */
-  // eslint-disable-next-line no-restricted-properties
+  // eslint-disable-next-line no-restricted-properties,turbo/no-undeclared-env-vars
   const version = process.env.NEXT_PRIVATE_TEST_VERSION ?? pkg.version
 
   /** Create a package.json for the new project and write it to disk. */

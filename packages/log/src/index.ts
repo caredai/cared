@@ -6,7 +6,7 @@ let log = console
 
 async function setup() {
   // @ts-ignore
-  if (typeof globalThis.window !== 'undefined' || process.env.NEXT_RUNTIME !== 'nodejs') {
+  if (typeof globalThis.window !== 'undefined') {
     return
   }
 
@@ -14,7 +14,7 @@ async function setup() {
   const pretty = await import('pino-pretty')
 
   const createStream = () => {
-    if (env.LOG_FORMAT === 'pretty' && process.env.NEXT_RUNTIME === 'nodejs') {
+    if (env.LOG_FORMAT === 'pretty') {
       return pretty.default({
         colorize: true,
         translateTime: 'yyyy-mm-dd HH:MM:ss',

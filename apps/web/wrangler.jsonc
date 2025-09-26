@@ -6,10 +6,10 @@
   "compatibility_flags": [
     "nodejs_compat",
     "global_fetch_strictly_public",
-    "nodejs_compat_populate_process_env"
+    "nodejs_compat_populate_process_env",
   ],
   "observability": {
-    "enabled": true
+    "enabled": true,
   },
   "keep_names": false,
   "keep_vars": true,
@@ -26,8 +26,8 @@
         "VITE_STRIPE_PRICING_TABLE_ID": "prctbl_1S4JQHQLbtAeySaI3iTekIj2",
         "VITE_STRIPE_CREDITS_PRICE_ID": "price_1RtOpVQLbtAeySaIocJ0z5OG",
         "VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID": "price_1RtOL6QLbtAeySaIinqZqCOW",
-        "VITE_HELIO_CREDITS_PAYLINK_ID": "68944e66c2dafb368aa0a7f3"
-      }
-    }
-  }
+        "VITE_HELIO_CREDITS_PAYLINK_ID": "68944e66c2dafb368aa0a7f3",
+      },
+    },
+  },
 }

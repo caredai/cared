@@ -1,4 +1,4 @@
-import { createEnv } from "@t3-oss/env-core";
+import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod/v4'
 
 export const env = createEnv({
@@ -12,7 +12,7 @@ export const env = createEnv({
     NEO4J_PASSWORD: z.string().min(1).optional(),
   },
 
-  clientPrefix: "VITE_",
+  clientPrefix: 'VITE_',
 
   /**
    * Specify your client-side environment variables schema here.

@@ -1,4 +1,4 @@
-import { createEnv } from "@t3-oss/env-core";
+import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod/v4'
 
 export const env = createEnv({
@@ -37,7 +37,7 @@ export const env = createEnv({
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
 
-  clientPrefix: "VITE_",
+  clientPrefix: 'VITE_',
 
   /**
    * Specify your client-side environment variables schema here.

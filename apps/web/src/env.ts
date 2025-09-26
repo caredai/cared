@@ -1,5 +1,5 @@
-import { vite } from "@t3-oss/env-core/presets-zod";
-import { createEnv } from "@t3-oss/env-core";
+import { createEnv } from '@t3-oss/env-core'
+import { vite } from '@t3-oss/env-core/presets-zod'
 import { z } from 'zod/v4'
 
 console.log('import.meta.env', import.meta.env)
@@ -16,7 +16,7 @@ export const env = createEnv({
    */
   server: {},
 
-  clientPrefix: "VITE_",
+  clientPrefix: 'VITE_',
 
   /**
    * Specify your client-side environment variables schema here.
