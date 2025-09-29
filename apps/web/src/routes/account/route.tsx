@@ -11,8 +11,8 @@ import { prefetchAndCheckSession } from '@/lib/session'
 import { AccountNavMain } from './-nav-main'
 
 export const Route = createFileRoute('/account')({
-  beforeLoad: async () => {
-    await prefetchAndCheckSession()
+  beforeLoad: async ({ context }) => {
+    await prefetchAndCheckSession(context.queryClient)
   },
   loader: ({ context }) => {
     void context.queryClient.prefetchQuery(orpc.organization.list.queryOptions())

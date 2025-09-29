@@ -5,8 +5,8 @@ import { prefetchAndCheckSession } from '@/lib/session'
 import { Redirect } from './-redirect'
 
 export const Route = createFileRoute('/org/')({
-  beforeLoad: async () => {
-    await prefetchAndCheckSession()
+  beforeLoad: async ({ context }) => {
+    await prefetchAndCheckSession(context.queryClient)
 
     await orpcClient.organization.setActive({
       organizationId: null,

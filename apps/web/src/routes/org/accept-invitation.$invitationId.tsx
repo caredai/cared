@@ -29,13 +29,14 @@ import { prefetchAndCheckSession } from '@/lib/session'
 import { stripIdPrefix } from '@/lib/utils'
 
 export const Route = createFileRoute('/org/accept-invitation/$invitationId')({
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ context, params }) => {
     // Redirect if no invitationId
     if (!params.invitationId) {
       throw redirect({ to: '/' })
     }
 
     await prefetchAndCheckSession(
+      context.queryClient,
       `/auth/sign-in?redirectTo=/org/accept-invitation/${params.invitationId}`,
     )
   },

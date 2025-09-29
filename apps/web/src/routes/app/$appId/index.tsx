@@ -9,7 +9,7 @@ import { SectionTitle } from '@/components/section'
 import { UploadLogo } from '@/components/upload-logo'
 import { orpc } from '@/lib/orpc'
 import { addIdPrefix } from '@/lib/utils'
-import defaultLogo from '@/public/images/agent.png'
+import defaultLogo from '/images/agent.png'
 
 export const Route = createFileRoute('/app/$appId/')({
   component: App,

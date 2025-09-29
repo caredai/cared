@@ -18,7 +18,16 @@
     },
     "module": "esnext"
   },
-  "include": ["src/**/*", "cloudflare-env.d.ts", "vite.config.ts"],
+  "references": [
+    {
+      "path": "../../packages/api"
+    }
+  ],
+  "include": [
+    "src/**/*",
+    "vite.config.ts",
+    "worker-configuration.d.ts"
+  ],
   "exclude": [
     "node_modules"
   ]

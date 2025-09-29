@@ -9,7 +9,7 @@ import { CircleSpinner } from '@cared/ui/components/spinner'
 import { LocalImage, RemoteImage } from '@/components/image'
 import { SectionTitle } from '@/components/section'
 import { orpc } from '@/lib/orpc'
-import defaultLogo from '@/public/images/agent.png'
+import defaultLogo from '/images/agent.png'
 
 export const Route = createFileRoute('/account/applications')({
   loader: ({ context }) => {

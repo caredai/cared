@@ -2,14 +2,15 @@
   "name": "api",
   "type": "module",
   "scripts": {
-    "dev": "pnpm with-env wrangler dev --port 3001 --env-file ../../.env",
+    "dev": "env NODE_ENV=development pnpm with-env wrangler dev --port 3001 --env-file ../../.env",
     "deploy": "wrangler deploy --env production --minify --keep-vars",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "cf-typegen": "wrangler types --env production --env-interface CloudflareEnv",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "@cared/api": "workspace:*",
     "@cared/auth": "workspace:*",
+    "@cared/db": "workspace:*",
     "hono": "^4.9.8"
   },
   "devDependencies": {

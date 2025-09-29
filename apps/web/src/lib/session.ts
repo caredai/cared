@@ -2,15 +2,17 @@ import { redirect } from '@tanstack/react-router'
 
 import type { authClient } from '@cared/auth/client'
 
-import { fetch, orpc, setData } from '@/lib/orpc'
+import type { QueryClient } from '@tanstack/react-query'
+import { orpc } from '@/lib/orpc'
 
 export type Session = typeof authClient.$Infer.Session
 
 export async function prefetchAndCheckSession(
+  queryClient: QueryClient,
   redirectTo = '/auth/sign-in',
   check?: (session: Session) => boolean,
 ) {
-  const session = await fetch(
+  const session = await queryClient.fetchQuery(
     orpc.user.session.queryOptions({
       input: {
         auth: false,
@@ -21,7 +23,7 @@ export async function prefetchAndCheckSession(
     throw redirect({ to: redirectTo })
   }
 
-  setData(
+  queryClient.setQueryData(
     orpc.user.session.queryKey({
       input: {
         auth: false,
@@ -29,5 +31,5 @@ export async function prefetchAndCheckSession(
     }),
     session,
   )
-  setData(orpc.user.session.queryKey(), session)
+  queryClient.setQueryData(orpc.user.session.queryKey(), session)
 }

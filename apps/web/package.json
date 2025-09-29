@@ -9,7 +9,7 @@
     "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build",
     "preview": "NODE_OPTIONS='--max-old-space-size=8192' vite build --mode development && vite preview --mode development --port 3000",
     "deploy": "wrangler deploy",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "cf-typegen": "wrangler types --env production --env-interface CloudflareEnv",
     "clean": "git clean -xdf .cache .output .turbo node_modules",
     "//": "add `--experimental-https` to avoid privy error: embedded wallet is only available over https",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",

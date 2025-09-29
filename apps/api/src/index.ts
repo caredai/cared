@@ -1,10 +1,13 @@
 import type { Hono } from 'hono'
+import { WorkerEntrypoint } from "cloudflare:workers";
 
-let app: Hono | undefined = undefined
+import type { Bindings } from './app'
 
-export default {
-  async fetch(request: any, env: any, ctx: any) {
+let app: Hono<{ Bindings: Bindings }> | undefined = undefined
+
+export default class extends WorkerEntrypoint {
+  async fetch(request: Request): Promise<Response> {
     app ??= (await import('./app')).default
-    return app.fetch(request, env, ctx)
-  },
+    return app.fetch(request, this.env, this.ctx);
+  }
 }

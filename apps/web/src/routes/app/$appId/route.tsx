@@ -11,8 +11,8 @@ import { addIdPrefix } from '@/lib/utils'
 import { AppNavMain } from './-nav-main'
 
 export const Route = createFileRoute('/app/$appId')({
-  beforeLoad: async ({ params }) => {
-    await prefetchAndCheckSession()
+  beforeLoad: async ({ context, params }) => {
+    await prefetchAndCheckSession(context.queryClient)
 
     const { appId: appIdNoPrefix } = params
     const appId = addIdPrefix(appIdNoPrefix, 'app')

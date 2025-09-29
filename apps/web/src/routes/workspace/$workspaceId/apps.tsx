@@ -30,7 +30,7 @@ import { LocalImage, RemoteImage } from '@/components/image'
 import { useApps } from '@/hooks/use-app'
 import { orpc } from '@/lib/orpc'
 import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
-import defaultLogo from '@/public/images/agent.png'
+import defaultLogo from '/images/agent.png'
 
 // Constant for all categories filter value
 const ALL_CATEGORIES = 'all'
@@ -199,9 +199,10 @@ function Apps() {
                         />
                       ) : (
                         <LocalImage
-                          src={defaultLogo.src}
+                          src={defaultLogo}
                           alt="App Logo"
-                          className="object-cover w-full h-full"
+                          fill
+                          className="object-cover"
                         />
                       )}
                     </div>

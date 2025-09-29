@@ -28,6 +28,15 @@
         "VITE_STRIPE_CREDITS_PRICE_ID": "price_1RtOpVQLbtAeySaIocJ0z5OG",
         "VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID": "price_1RtOL6QLbtAeySaIinqZqCOW",
         "VITE_HELIO_CREDITS_PAYLINK_ID": "68944e66c2dafb368aa0a7f3"
+      },
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "92609d22d31b4115a05e92b18e0d0710"
+        }
+      ],
+      "placement": {
+        "mode": "smart"
       }
     }
   }

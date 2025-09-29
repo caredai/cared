@@ -28,6 +28,12 @@
         "VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID": "price_1RtOL6QLbtAeySaIinqZqCOW",
         "VITE_HELIO_CREDITS_PAYLINK_ID": "68944e66c2dafb368aa0a7f3",
       },
+      "services": [
+        {
+          "binding": "API",
+          "service": "cared-api-production"
+        }
+      ]
     },
   },
 }

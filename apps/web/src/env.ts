@@ -28,7 +28,15 @@ export const env = createEnv({
     VITE_HELIO_CREDITS_PAYLINK_ID: z.string().min(1).optional(),
   },
 
-  runtimeEnv: Object.assign({}, process.env, import.meta.env),
+  runtimeEnv: Object.assign(
+    {},
+    process.env,
+    import.meta.env,
+    !process.env?.NODE_ENV &&
+      import.meta.env?.PROD && {
+        NODE_ENV: 'production',
+      },
+  ),
 
   emptyStringAsUndefined: true,
 

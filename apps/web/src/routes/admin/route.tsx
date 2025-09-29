@@ -9,9 +9,13 @@ import { prefetchAndCheckSession } from '@/lib/session'
 import { AdminNavMain } from './-nav-main'
 
 export const Route = createFileRoute('/admin')({
-  beforeLoad: async () => {
+  beforeLoad: async ({ context }) => {
     // Check if user has admin role
-    await prefetchAndCheckSession('/', (session) => session.user.role === 'admin')
+    await prefetchAndCheckSession(
+      context.queryClient,
+      '/',
+      (session) => session.user.role === 'admin',
+    )
   },
   loader: ({ context }) => {
     void context.queryClient.prefetchQuery(orpc.user.accounts.queryOptions())

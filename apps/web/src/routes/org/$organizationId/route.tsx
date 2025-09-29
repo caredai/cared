@@ -19,7 +19,7 @@ const getLastWorkspace = createServerFn().handler(() => getCookie(lastWorkspaceC
 
 export const Route = createFileRoute('/org/$organizationId')({
   beforeLoad: async ({ context, params }) => {
-    await prefetchAndCheckSession()
+    await prefetchAndCheckSession(context.queryClient)
 
     const { activeOrganizationId, activeOrganizationIdNoPrefix } =
       await getActiveOrganizationId(params)
@@ -54,7 +54,12 @@ export const Route = createFileRoute('/org/$organizationId')({
       }
 
       if (lastWorkspace) {
-        throw redirect({ to: `/workspace/${stripIdPrefix(lastWorkspace)}/apps` })
+        throw redirect({
+          to: `/workspace/$workspaceId/apps`,
+          params: {
+            workspaceId: stripIdPrefix(lastWorkspace),
+          },
+        })
       }
     }
 

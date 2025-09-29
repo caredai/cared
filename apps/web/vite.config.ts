@@ -37,5 +37,11 @@ export default defineConfig(async ({ command, mode }) => {
         },
       },
     },
+    ssr: {
+      noExternal: ['react-use'],
+    },
+    optimizeDeps: {
+      include: ['react-use'],
+    },
   }
 })

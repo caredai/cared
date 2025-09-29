@@ -22,7 +22,7 @@ import { reactStartCookies } from 'better-auth/react-start'
 import { sha256 } from 'viem'
 
 import { eq } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { db, getDb } from '@cared/db/client'
 import { Account, User } from '@cared/db/schema'
 import { emails, getEmailAddresses } from '@cared/email'
 import InvitationEmail from '@cared/email/emails/invitation-email'
@@ -163,7 +163,7 @@ const options = {
       allowDifferentEmails: false,
     },
   },
-  database: drizzleAdapter(getDb(), {
+  database: drizzleAdapter(db, {
     provider: 'pg',
   }),
   databaseHooks: {
@@ -309,6 +309,16 @@ const options = {
     }),
     apiKey({
       apiKeyHeaders: 'X-API-KEY',
+      customAPIKeyGetter: (ctx) => {
+        let apiKey = ctx.headers?.get('X-API-KEY')
+        if (!apiKey) {
+          const bearerToken = ctx.headers?.get('Authorization')?.replace('Bearer ', '')
+          if (bearerToken?.startsWith('sk_')) {
+            apiKey = bearerToken
+          }
+        }
+        return apiKey ? apiKey : null
+      },
       defaultPrefix: 'sk_',
       minimumNameLength: 0,
       maximumNameLength: 64,

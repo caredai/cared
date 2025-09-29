@@ -13,7 +13,7 @@ import { WorkspaceNavMain } from './-nav-main'
 
 export const Route = createFileRoute('/workspace/$workspaceId')({
   beforeLoad: async ({ context, params }) => {
-    await prefetchAndCheckSession()
+    await prefetchAndCheckSession(context.queryClient)
 
     const workspaceIdNoPrefix = params.workspaceId
     const workspaceId = addIdPrefix(workspaceIdNoPrefix, 'workspace')

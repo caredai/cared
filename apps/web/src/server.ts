@@ -1,5 +1,7 @@
 import handler from '@tanstack/react-start/server-entry'
 
+import { setApiWorker } from '@/lib/orpc'
+
 // import { registerTelemetry } from '@cared/api'
 //
 // registerTelemetry()
@@ -12,7 +14,11 @@ if (
 }
 
 export default {
-  fetch(request: Request) {
+  fetch(request: Request, env?: CloudflareEnv) {
+    if (env?.API) {
+      setApiWorker(env.API)
+    }
+
     return handler.fetch(request)
   },
 }
