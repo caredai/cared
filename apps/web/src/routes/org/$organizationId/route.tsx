@@ -10,7 +10,7 @@ import { RememberOrganization } from '@/components/remember-organization'
 import { Section } from '@/components/section'
 import { getActiveOrganizationId } from '@/lib/active'
 import { lastWorkspaceCookieName } from '@/lib/cookie'
-import { orpc, orpcClient } from '@/lib/orpc'
+import { orpc } from '@/lib/orpc'
 import { prefetchAndCheckSession } from '@/lib/session'
 import { stripIdPrefix } from '@/lib/utils'
 import { OrganizationNavMain } from './-nav-main'
@@ -30,10 +30,7 @@ export const Route = createFileRoute('/org/$organizationId')({
 
     const organization = organizations.find((w) => w.id === activeOrganizationId)
     if (!organization) {
-      await orpcClient.organization.setActive({
-        organizationId: null,
-      })
-      throw redirect({ to: '/org' })
+      throw redirect({ to: '/' })
     }
 
     const redirectToWorkspace = false
@@ -91,7 +88,7 @@ function RouteComponent() {
               <Outlet />
             </Section>
 
-            <RememberOrganization id={activeOrganizationId as string | undefined} />
+            <RememberOrganization id={activeOrganizationId} />
           </SidebarInset>
         </div>
       </div>

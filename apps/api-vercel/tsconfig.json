@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "lib": [
+      "ESNext", "DOM", "DOM.Iterable"
+    ],
+    "jsx": "react-jsx",
+    "jsxImportSource": "hono/jsx",
+    "types": ["node", "vite/client"]
+  },
+  "references": [
+    {
+      "path": "../../packages/api"
+    }
+  ],
+  "exclude": ["node_modules"]
+}

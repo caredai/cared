@@ -18,7 +18,7 @@
     "production": {
       "vars": {
         "VITE_WEB_URL": "https://cared.dev",
-        "VITE_API_URL": "https://cared.dev",
+        "VITE_API_URL": "https://api.cared.dev",
         "VITE_IMAGE_URL": "https://r2.mindai.world",
         "VITE_PRIVY_APP_ID": "cm9s5y8e100kkld0n1973p6qf",
         "VITE_REOWN_PROJECT_ID": "7febcbc732202c542f7168947851f3cd",

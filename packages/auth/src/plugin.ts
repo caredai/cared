@@ -4,6 +4,8 @@ import { parseSetCookieHeader } from 'better-auth/cookies'
 import { parseSessionOutput } from 'better-auth/db'
 import { createAuthEndpoint } from 'better-auth/plugins'
 
+import { getApiPath } from './client'
+
 export const customPlugin = () => {
   return {
     id: 'custom',
@@ -39,7 +41,7 @@ export const customPlugin = () => {
               await ctx.setSignedCookie(cookieName, signedValue, ctx.context.secret, {
                 ...cookieAttributes,
                 // The original cookie path doesn't work for the '/api/auth/*' post-processing from the oidc plugin. So we use '/api/auth' here.
-                path: '/api/auth',
+                path: `${getApiPath()}/auth`,
               })
             }
 

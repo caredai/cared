@@ -1,4 +1,4 @@
-import { getApiUrl } from '@cared/auth/client'
+import { getApiPath, getApiUrl } from '@cared/auth/client'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const restrictedCountries = [
@@ -38,7 +38,7 @@ const restrictedCountryCodes = [
 
 let restrictedColo: string | undefined = undefined
 
-export const innerCheckPath = '/api/inner/' + Math.random().toString(36).substring(2)
+export const innerCheckPath = `${getApiPath()}/inner/` + Math.random().toString(36).substring(2)
 
 export function checkRestrictedColoHandler(headers: Headers) {
   const country = headers.get('cf-ipcountry')
@@ -84,6 +84,6 @@ export async function checkRestrictedColo() {
     // Intentionally create high latency for restricted regions to prevent
     // Cloudflare Smart Placement from routing requests to these locations
     console.warn(`Country restricted: ${restrictedColo}`)
-    await new Promise((resolve) => setTimeout(resolve, 10000))
+    // await new Promise((resolve) => setTimeout(resolve, 10000))
   }
 }

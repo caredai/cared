@@ -5,7 +5,9 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./types": "./src/types/index.ts"
+    "./types": "./src/types/index.ts",
+    "./hono": "./src/hono/app.ts",
+    "./telemetry": "./src/telemetry/index.ts"
   },
   "license": "MIT",
   "scripts": {

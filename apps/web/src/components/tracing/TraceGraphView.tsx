@@ -11,8 +11,6 @@ import {
 
 import type { Edge, Node } from '@xyflow/react'
 
-import '@xyflow/react/dist/style.css'
-
 import { cn } from '@cared/ui/lib/utils'
 
 import type { ObservationsView, TraceWithDetails } from '@langfuse/core'

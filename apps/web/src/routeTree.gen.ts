@@ -13,7 +13,6 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AccountRouteRouteImport } from './routes/account/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OrgIndexRouteImport } from './routes/org/index'
 import { Route as LandingIndexRouteImport } from './routes/landing/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
@@ -81,11 +80,6 @@ const AccountRouteRoute = AccountRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrgIndexRoute = OrgIndexRouteImport.update({
-  id: '/org/',
-  path: '/org/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LandingIndexRoute = LandingIndexRouteImport.update({
@@ -371,7 +365,6 @@ export interface FileRoutesByFullPath {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/admin/': typeof AdminIndexRoute
   '/landing': typeof LandingIndexRoute
-  '/org': typeof OrgIndexRoute
   '/app/$appId/configure': typeof AppAppIdConfigureRouteRouteWithChildren
   '/account/credits/usage': typeof AccountCreditsUsageRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
@@ -422,7 +415,6 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/admin': typeof AdminIndexRoute
   '/landing': typeof LandingIndexRoute
-  '/org': typeof OrgIndexRoute
   '/app/$appId/configure': typeof AppAppIdConfigureRouteRouteWithChildren
   '/account/credits/usage': typeof AccountCreditsUsageRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
@@ -478,7 +470,6 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/admin/': typeof AdminIndexRoute
   '/landing/': typeof LandingIndexRoute
-  '/org/': typeof OrgIndexRoute
   '/app/$appId/configure': typeof AppAppIdConfigureRouteRouteWithChildren
   '/account/credits_/usage': typeof AccountCreditsUsageRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
@@ -535,7 +526,6 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/admin/'
     | '/landing'
-    | '/org'
     | '/app/$appId/configure'
     | '/account/credits/usage'
     | '/admin/apps/categories'
@@ -586,7 +576,6 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/admin'
     | '/landing'
-    | '/org'
     | '/app/$appId/configure'
     | '/account/credits/usage'
     | '/admin/apps/categories'
@@ -641,7 +630,6 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/admin/'
     | '/landing/'
-    | '/org/'
     | '/app/$appId/configure'
     | '/account/credits_/usage'
     | '/admin/apps/categories'
@@ -687,7 +675,6 @@ export interface RootRouteChildren {
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   LandingIndexRoute: typeof LandingIndexRoute
-  OrgIndexRoute: typeof OrgIndexRoute
   AuthOauth2ConsentRoute: typeof AuthOauth2ConsentRoute
   OrgAcceptInvitationInvitationIdRoute: typeof OrgAcceptInvitationInvitationIdRoute
 }
@@ -720,13 +707,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/org/': {
-      id: '/org/'
-      path: '/org'
-      fullPath: '/org'
-      preLoaderRoute: typeof OrgIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/landing/': {
@@ -1224,7 +1204,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   LandingIndexRoute: LandingIndexRoute,
-  OrgIndexRoute: OrgIndexRoute,
   AuthOauth2ConsentRoute: AuthOauth2ConsentRoute,
   OrgAcceptInvitationInvitationIdRoute: OrgAcceptInvitationInvitationIdRoute,
 }

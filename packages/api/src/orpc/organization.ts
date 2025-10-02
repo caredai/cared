@@ -108,10 +108,8 @@ export const organizationRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      // NOTE: The method `auth.api.setActiveOrganization()` will set the session cookie.
-      // However, since orpc cannot return headers here, the client must call `authClient.getSession()`
-      // again with the parameter `{ disableCookieCache: true }` to refresh the session cookie.
-      const org = await auth.api.setActiveOrganization({
+      const { headers: resHeaders, response: org } = await auth.api.setActiveOrganization({
+        returnHeaders: true,
         headers: headers(context.headers),
         body: {
           organizationId: input.organizationId,
@@ -121,6 +119,11 @@ export const organizationRouter = {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
           message: 'Failed to set active organization',
         })
+      }
+      // Set the set-cookie header
+      const setCookie = resHeaders.get('set-cookie')
+      if (setCookie) {
+        context.resHeaders?.append('set-cookie', setCookie)
       }
     }),
 

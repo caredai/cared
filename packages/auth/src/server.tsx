@@ -31,7 +31,7 @@ import VerificationEmail from '@cared/email/emails/verification-email'
 import { getKV } from '@cared/kv'
 import { generateId } from '@cared/shared'
 
-import { getApiUrl, getWebUrl } from './client'
+import { getApiPath, getApiUrl, getRootDomain, getWebUrl, hasSameRootDomain } from './client'
 import { env } from './env'
 import { orgAc, orgRoles } from './permissions'
 import { customPlugin } from './plugin'
@@ -53,7 +53,7 @@ export function headers(headers: Headers) {
 const options = {
   appName: 'cared',
   baseURL: getApiUrl(),
-  basePath: '/api/auth',
+  basePath: `${getApiPath()}/auth`,
   secret: env.BETTER_AUTH_SECRET,
   session: {
     cookieCache: {
@@ -192,9 +192,10 @@ const options = {
     // https://developer.mozilla.org/en-US/docs/Web/Security/Practical_implementation_guides/Cookies#domain
     crossSubDomainCookies: {
       enabled: true,
+      domain: getRootDomain(getApiUrl()),
     },
     cookiePrefix: 'cared',
-    ...(getWebUrl() !== getApiUrl() && {
+    ...(!hasSameRootDomain() && {
       defaultCookieAttributes: {
         sameSite: 'none',
         secure: true,

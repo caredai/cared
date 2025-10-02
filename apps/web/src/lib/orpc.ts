@@ -7,7 +7,7 @@ import { createIsomorphicFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 
 import type { AppRouter } from '@cared/api'
-import { getApiUrl } from '@cared/auth/client'
+import { getApiPath, getApiUrl } from '@cared/auth/client'
 
 import type { RouterClient } from '@orpc/server'
 
@@ -59,7 +59,7 @@ const isomorphicRedirect = createIsomorphicFn()
 
 const link = new RPCLink({
   url: () => {
-    return `${getApiUrl()}/api/rpc`
+    return `${getApiUrl()}${getApiPath()}/rpc`
   },
   headers: () => isomorphicHeaders(),
   fetch: (request, init) => {

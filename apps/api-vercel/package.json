@@ -1,0 +1,20 @@
+{
+  "name": "@cared/api-vercel",
+  "scripts": {
+    "dev": "env JITI_JSX=1 pnpm with-env srvx --import=jiti/register --port 3002",
+    "build": "esbuild --bundle --platform=node --minify --sourcemap=inline --outfile=dist/index.js src/index.ts",
+    "deploy": "vercel build && cp -r dist/* .vercel/output/functions/index.func/src/ && vercel deploy --prebuilt",
+    "deploy:prod": "vercel build --prod && cp -r dist/* .vercel/output/functions/index.func/src/ && vercel deploy --prebuilt --prod",
+    "with-env": "dotenv -e ../../.env --"
+  },
+  "dependencies": {
+    "@cared/api": "workspace:*",
+    "@vercel/functions": "^3.1.0",
+    "hono": "^4.9.8"
+  },
+  "devDependencies": {
+    "@cared/eslint-config": "workspace:*",
+    "srvx": "^0.8.9",
+    "vercel": "^48.1.6"
+  }
+}

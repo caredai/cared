@@ -33,6 +33,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.4.2",
     "prettier": "catalog:",
+    "ts-node": "^10.9.2",
     "turbo": "^2.5.6",
     "typescript": "catalog:"
   },
@@ -42,10 +43,13 @@
       "uuid": "11.1.0",
       "minimatch": "10.0.3",
       "pdfjs-dist": "4.7.76",
-      "pdfjs-dist>canvas": "npm:non-existent-package@0.0.0"
+      "pdfjs-dist>canvas": "npm:non-existent-package@0.0.0",
+      "@vercel/node>ts-node": "$ts-node",
+      "@vercel/node>typescript": "$typescript"
     },
     "patchedDependencies": {
-      "@cloudflare/vite-plugin": "patches/@cloudflare__vite-plugin.patch"
+      "@cloudflare/vite-plugin": "patches/@cloudflare__vite-plugin.patch",
+      "ansi-color": "patches/ansi-color.patch"
     }
   }
 }

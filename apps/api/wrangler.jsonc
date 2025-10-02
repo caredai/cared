@@ -35,9 +35,16 @@
           "id": "92609d22d31b4115a05e92b18e0d0710"
         }
       ],
-      "placement": {
-        "mode": "smart"
-      }
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "cared-apac",
+          "database_id": "992d2311-5e35-4ae6-b280-9bb0cbbbd594"
+        }
+      ]
+      // "placement": {
+      //   "mode": "smart"
+      // }
     }
   }
   // "kv_namespaces": [

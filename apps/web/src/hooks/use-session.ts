@@ -20,7 +20,9 @@ function useRefetchSession() {
       })
     ).data
 
-    // queryClient.setQueryData(orpc.user.session.queryKey(), session)
+    if (session) {
+      queryClient.setQueryData(orpc.user.session.queryKey(), session)
+    }
     queryClient.setQueryData(
       orpc.user.session.queryKey({
         input: {
