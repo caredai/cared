@@ -228,6 +228,9 @@ const options = {
           alg: 'RS256', // NOTE: Privy requires RS256
         },
       },
+      // Disable setting jwt header in the `/get-session` after hook
+      // https://github.com/better-auth/better-auth/blob/b0664526b0ded74caed07ef2e1310f2407526daf/packages/better-auth/src/plugins/jwt/index.ts#L235
+      disableSettingJwtHeader: true,
     }),
     passkey(),
     twoFactor(),

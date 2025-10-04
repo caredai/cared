@@ -14,7 +14,7 @@ export enum MeasureUnit {
  */
 export async function measure<T>(
   fn: (() => Promise<T>) | Promise<T>,
-  unit: MeasureUnit = MeasureUnit.SECONDS,
+  unit: MeasureUnit = MeasureUnit.MILLISECONDS,
 ): Promise<[number, T]> {
   const startTime = performance.now()
   const result = typeof fn === 'function' ? await fn() : await fn

@@ -9,9 +9,10 @@ import {
   Wallet,
 } from 'lucide-react'
 
+import type { NavItem } from '@/components/app-sidebar/nav-main'
 import { NavMain } from '@/components/app-sidebar/nav-main'
 
-const items = [
+const items: NavItem[] = [
   {
     title: 'Credits',
     url: '/credits',
@@ -29,6 +30,9 @@ const items = [
     icon: Wallet,
   },
   {
+    type: 'separator',
+  },
+  {
     title: 'Models',
     url: '/models',
     icon: Brain,
@@ -37,6 +41,14 @@ const items = [
     title: 'API Keys',
     url: '/api-keys',
     icon: Key,
+  },
+  {
+    title: 'Tracing',
+    url: '/tracing',
+    icon: Activity,
+  },
+  {
+    type: 'separator',
   },
   {
     title: 'Profile',
@@ -52,11 +64,6 @@ const items = [
     title: 'Applications',
     url: '/applications',
     icon: Bot,
-  },
-  {
-    title: 'Tracing',
-    url: '/tracing',
-    icon: Activity,
   },
 ]
 

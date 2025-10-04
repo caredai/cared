@@ -18,6 +18,11 @@ import { useActive } from '@/hooks/use-active'
 import { useApps, useReplaceRouteWithAppId } from '@/hooks/use-app'
 import { stripIdPrefix } from '@/lib/utils'
 
+export function useHasAppSwitcher() {
+  const { activeApp, activeWorkspace } = useActive()
+  return Boolean(activeApp && activeWorkspace)
+}
+
 export function AppSwitcher() {
   const { activeApp, activeWorkspace } = useActive()
   const apps = useApps({ workspaceId: activeWorkspace?.id })

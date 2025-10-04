@@ -1,6 +1,8 @@
 import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod/v4'
 
+import { runtimeEnv } from '@cared/shared'
+
 export const env = createEnv({
   /**
    * Specify your server-side environment variables schema here.
@@ -42,7 +44,7 @@ export const env = createEnv({
     VITE_WEB_URL: z.string().optional(),
   },
 
-  runtimeEnv: Object.assign({}, process.env, import.meta.env),
+  runtimeEnv: runtimeEnv(),
 
   emptyStringAsUndefined: true,
 

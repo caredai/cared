@@ -74,7 +74,12 @@ export async function checkRestrictedColo() {
           restrictedColo = ''
         }
       } catch (error) {
-        console.error('checkRestrictedColo', error, error instanceof SyntaxError ? text : undefined)
+        console.error(
+          'checkRestrictedColo',
+          getApiUrl() + innerCheckPath,
+          error,
+          error instanceof SyntaxError ? text : undefined,
+        )
         throw error
       }
     }

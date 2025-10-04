@@ -1,9 +1,10 @@
-export function Logo() {
+import CaredLogo from '/cared.svg?react'
+
+export function Logo({ showWordMark }: { showWordMark?: boolean }) {
   return (
-    <div className="flex items-center">
-      <span className="text-xl font-bold inline-block text-transparent bg-clip-text bg-gradient-to-br from-cyan-700 via-red-500 to-yellow-500 animate-text">
-        cared
-      </span>
+    <div className="flex items-center gap-1.5 transform cursor-pointer duration-100 ease-in-out">
+      <CaredLogo className="size-6" />
+      {showWordMark && <span>Cared</span>}
     </div>
   )
 }

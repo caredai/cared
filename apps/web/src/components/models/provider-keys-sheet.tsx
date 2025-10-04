@@ -817,5 +817,5 @@ function ProviderKeyItemEdit({
 }
 
 function formatDecryptedKey(key: string): string {
-  return key + '••••••••'
+  return key + '...'
 }

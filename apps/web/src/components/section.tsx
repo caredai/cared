@@ -1,10 +1,17 @@
 import type { ReactNode } from 'react'
+import { Suspense } from 'react'
 
 import { Separator } from '@cared/ui/components/separator'
 import { SidebarTrigger } from '@cared/ui/components/sidebar'
 
+import { SkeletonCard } from '@/components/skeleton'
+
 export function Section({ children }: { children: ReactNode }) {
-  return <div className="container max-w-7xl mx-auto py-6 px-4 sm:px-14 space-y-8">{children}</div>
+  return (
+    <div className="container max-w-7xl mx-auto py-6 px-4 sm:px-14 space-y-8">
+      <Suspense fallback={<SkeletonCard />}>{children}</Suspense>
+    </div>
+  )
 }
 
 export function SectionTitle({ title, description }: { title: string; description?: string }) {

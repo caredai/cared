@@ -5,6 +5,7 @@ import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import commonjs from 'vite-plugin-commonjs'
+import svgr from 'vite-plugin-svgr'
 // import mkcert from 'vite-plugin-mkcert'
 import tsConfigPaths from 'vite-tsconfig-paths'
 
@@ -27,6 +28,7 @@ export default defineConfig(async ({ command, mode }) => {
       tsConfigPaths(),
       tailwindcss(),
       tanstackStart(),
+      svgr(),
       viteReact(),
     ],
     build: {

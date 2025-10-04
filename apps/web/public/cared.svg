@@ -1,0 +1,28 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <title>Cared</title>
+    <defs>
+        <style>
+            :root {
+                --heart-fill: #030213;
+                --heart-stroke: #ffffff;
+            }
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --heart-fill: #ffffff;
+                    --heart-stroke: #030213;
+                }
+            }
+            .dark,
+            html.dark,
+            [data-theme='dark'] {
+                --heart-fill: #ffffff;
+                --heart-stroke: #030213;
+            }
+        </style>
+    </defs>
+    <path d="M2 9c0-4.5 3.5-8 8-8s8 3.5 8 8c0 2-1 4-2.5 5.5L10 19l-5.5-4.5C3 13 2 11 2 9z" fill="var(--heart-fill)"
+          opacity="0.9"></path>
+    <path d="M4 9c0-3 2.5-5.5 5.5-5.5S15 6 15 9c0 1.5-0.5 3-1.5 4L10 16l-3.5-3C5.5 12 4 10.5 4 9z"
+          fill="transparent" stroke="var(--heart-stroke)" stroke-width="2"></path>
+    <path d="M6 9c0-2 1.5-3.5 3.5-3.5" stroke="var(--heart-stroke)" stroke-width="2.5" stroke-linecap="round"></path>
+</svg>

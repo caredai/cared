@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { orpcClient } from '@/lib/orpc'
 import { stripIdPrefix } from '@/lib/utils'
-import { Landing } from './landing'
+import { Landing } from './landing/-landing'
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {

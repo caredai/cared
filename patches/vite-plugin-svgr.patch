@@ -1,0 +1,18 @@
+diff --git a/dist/index.js b/dist/index.js
+index 3d473346f2323504b737e19d11e9e21a0bd75e2a..a7acb231f180faa0925b8c165d3946811942cc04 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -17,7 +17,12 @@ export default function vitePluginSvgr({ svgrOptions, esbuildOptions, include =
+                 const { transform } = await import("@svgr/core");
+                 const { default: jsx } = await import("@svgr/plugin-jsx");
+                 const filePath = id.replace(postfixRE, "");
+-                const svgCode = await fs.promises.readFile(filePath, "utf8");
++                let svgCode;
++                try {
++                    svgCode = await fs.promises.readFile(filePath, "utf8");
++                } catch {
++                    svgCode = await fs.promises.readFile("public" + filePath, "utf8");
++                }
+                 const componentCode = await transform(svgCode, svgrOptions, {
+                     filePath,
+                     caller: {

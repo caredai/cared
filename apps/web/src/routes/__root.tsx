@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-svgr/client" />
 
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
@@ -30,8 +31,38 @@ export const Route = createRootRouteWithContext<{
         content:
           'Transform your business with Cared - the leading AI and Web3 SaaS platform. Build, deploy, and scale intelligent decentralized applications with cutting-edge technology.',
       },
+      {
+        name: 'apple-mobile-web-app-title',
+        content: 'Cared',
+      },
     ],
-    links: [{ rel: 'stylesheet', href: globalsCss }],
+    links: [
+      {
+        rel: 'icon',
+        href: '/favicon-96x96.png',
+        type: 'image/png',
+        sizes: '96x96',
+      },
+      {
+        rel: 'icon',
+        href: '/cared.svg',
+        type: 'image/svg+xml',
+      },
+      {
+        rel: 'shortcut icon',
+        href: '/favicon.ico',
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/apple-touch-icon.png',
+        sizes: '180x180',
+      },
+      {
+        rel: 'manifest',
+        href: '/site.webmanifest',
+      },
+      { rel: 'stylesheet', href: globalsCss },
+    ],
   }),
   component: RootLayout,
   notFoundComponent: NotFoundComponent,

@@ -1,5 +1,6 @@
 import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod/v4'
+import { runtimeEnv } from '@cared/shared'
 
 export const env = createEnv({
   /**
@@ -49,7 +50,7 @@ export const env = createEnv({
     VITE_STRIPE_CREDITS_AUTO_TOPUP_PRICE_ID: z.string().min(1).optional(),
   },
 
-  runtimeEnv: Object.assign({}, process.env, import.meta.env),
+  runtimeEnv: runtimeEnv(),
 
   emptyStringAsUndefined: true,
 

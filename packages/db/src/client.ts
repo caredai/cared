@@ -1,13 +1,15 @@
+import type { NeonDatabase } from 'drizzle-orm/neon-serverless'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import type { VercelPgDatabase } from 'drizzle-orm/vercel-postgres/driver'
 import { cache } from 'react'
-import { sql } from '@vercel/postgres'
+import { neonConfig, Pool as NeonPool } from '@neondatabase/serverless'
+import { attachDatabasePool } from '@vercel/functions'
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless'
 import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres'
 import { drizzle as drizzlePostgresJs } from 'drizzle-orm/postgres-js'
-import { drizzle as drizzleVercelPg } from 'drizzle-orm/vercel-postgres'
 import { Pool } from 'pg'
 import postgresJs from 'postgres'
+import ws from 'ws'
 
 import type { Hyperdrive } from '@cloudflare/workers-types'
 import { env } from './env'
@@ -16,7 +18,7 @@ import * as schema from './schema'
 export type Database =
   | PostgresJsDatabase<typeof schema>
   | NodePgDatabase<typeof schema>
-  | VercelPgDatabase<typeof schema>
+  | NeonDatabase<typeof schema>
 export type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0]
 
 let hyperdriveConnStr: string | undefined
@@ -24,6 +26,13 @@ let hyperdriveConnStr: string | undefined
 export function setDb(hyperdrive: Hyperdrive) {
   hyperdriveConnStr ??= hyperdrive.connectionString
 }
+
+export const db = new Proxy({} as Database, {
+  get(target, prop) {
+    const db = getDb()
+    return db[prop as keyof Database]
+  },
+})
 
 export const getDb = cache(() => {
   if (hyperdriveConnStr) {
@@ -42,43 +51,78 @@ export const getDb = cache(() => {
   }
 
   if (globalThis.navigator.userAgent.includes('Cloudflare-Workers')) {
-    const pool = new Pool({
-      connectionString: env.POSTGRES_URL,
-      // You don't want to reuse the same connection for multiple requests
-      maxUses: 1,
-    })
-    return drizzleNodePg({
-      client: pool,
-      schema,
-      casing: 'camelCase',
-      logger: env.NODE_ENV === 'development',
-    })
-  } else if (process.env.VERCEL) {
-    return drizzleVercelPg({
-      client: sql,
-      schema,
-      casing: 'camelCase',
-      logger: env.NODE_ENV === 'development',
-    })
+    if (!env.POSTGRES_URL?.includes('neon.tech')) {
+      const pool = new Pool({
+        connectionString: env.POSTGRES_URL,
+        // You don't want to reuse the same connection for multiple requests
+        maxUses: 1,
+      })
+      return drizzleNodePg({
+        client: pool,
+        schema,
+        casing: 'camelCase',
+        logger: env.NODE_ENV === 'development',
+      })
+    } else {
+      neonConfig.webSocketConstructor = ws
+      neonConfig.poolQueryViaFetch = true
+      const pool = new NeonPool({ connectionString: env.POSTGRES_URL })
+      return drizzleNeon({
+        client: pool,
+        schema,
+        casing: 'camelCase',
+        logger: env.NODE_ENV === 'development',
+      })
+    }
   } else {
-    return drizzlePostgresJs({
-      connection: {
-        url: env.POSTGRES_URL,
-        prepare: false,
-        idle_timeout: 10,
-        connect_timeout: 30,
-        max_lifetime: 60 * (30 + Math.random() * 30),
-      },
-      schema,
-      casing: 'camelCase',
-      logger: env.NODE_ENV === 'development',
-    })
+    return getCachedDb()
   }
 })
 
-export const db = new Proxy({} as Database, {
-  get(target, prop) {
-    const db = getDb()
-    return db[prop as keyof Database]
-  },
-})
+let cachedDb: Database | undefined = undefined
+
+function getCachedDb() {
+  if (!cachedDb) {
+    if (process.env.VERCEL) {
+      // https://vercel.com/blog/the-real-serverless-compute-to-database-connection-problem-solved
+      // https://vercel.com/guides/connection-pooling-with-functions
+      const pool = new NeonPool({
+        connectionString: env.POSTGRES_URL,
+        idleTimeoutMillis: 5000,
+        min: 1,
+      })
+      attachDatabasePool(pool)
+
+      cachedDb = drizzleNeon({
+        client: pool,
+        schema,
+        casing: 'camelCase',
+        logger: env.NODE_ENV === 'development',
+      })
+    } else if (env.POSTGRES_URL?.includes('neon.tech')) {
+      neonConfig.webSocketConstructor = ws
+      neonConfig.poolQueryViaFetch = true
+      const pool = new NeonPool({ connectionString: env.POSTGRES_URL })
+      return drizzleNeon({
+        client: pool,
+        schema,
+        casing: 'camelCase',
+        logger: env.NODE_ENV === 'development',
+      })
+    } else {
+      cachedDb = drizzlePostgresJs({
+        connection: {
+          url: env.POSTGRES_URL,
+          prepare: false,
+          idle_timeout: 10,
+          connect_timeout: 30,
+          max_lifetime: 60 * (30 + Math.random() * 30),
+        },
+        schema,
+        casing: 'camelCase',
+        logger: env.NODE_ENV === 'development',
+      })
+    }
+  }
+  return cachedDb
+}

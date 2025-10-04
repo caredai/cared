@@ -26,12 +26,13 @@
   "dependencies": {
     "@cared/providers": "workspace:*",
     "@cared/shared": "workspace:*",
-    "@vercel/postgres": "^0.10.0",
-    "drizzle-orm": "^0.38.4",
+    "@neondatabase/serverless": "^1.0.2",
+    "drizzle-orm": "^0.44.6",
     "drizzle-zod": "^0.8.3",
     "nanoid": "^5.0.9",
     "pg": "^8.16.3",
     "postgres": "^3.4.7",
+    "ws": "^8.18.3",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -39,6 +40,7 @@
     "@cared/prettier-config": "workspace:*",
     "@cared/tsconfig": "workspace:*",
     "@types/pg": "^8.15.5",
+    "@types/ws": "^8.18.1",
     "dotenv-cli": "^8.0.0",
     "drizzle-kit": "^0.30.6",
     "eslint": "catalog:",

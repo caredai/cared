@@ -7,6 +7,7 @@ import type { Auth } from './auth'
 import type { ResponseHeadersPluginContext } from '@orpc/server/plugins'
 import { authenticate } from './auth'
 import { env } from './env'
+import { measure } from './utils'
 
 export interface BaseContext extends ResponseHeadersPluginContext {
   db: Database
@@ -18,9 +19,15 @@ export type Context = BaseContext & {
 }
 
 export const createORPCContext = async ({ headers }: { headers: Headers }): Promise<Context> => {
-  const auth = await authenticate(headers)
+  const [execMs, auth] = await measure(authenticate(headers))
 
-  console.log('>>> oRPC Request from', headers.get('x-orpc-source') ?? 'unknown', 'by', auth.by())
+  console.log(
+    '>>> oRPC Request from',
+    headers.get('x-orpc-source') ?? 'unknown',
+    'by',
+    auth.by(),
+    `(${execMs}ms)`,
+  )
 
   return {
     auth,
@@ -32,20 +39,19 @@ export const createORPCContext = async ({ headers }: { headers: Headers }): Prom
 const o = os.$context<Context>()
 
 const timingMiddleware = o.middleware(async ({ next, path }) => {
-  const start = performance.now()
+  const [execMs, result] = await measure(async () => {
+    // Check if we're in development mode
+    const isDev = env.NODE_ENV === 'development'
+    if (isDev) {
+      // artificial delay in dev 100-500ms
+      // const waitMs = Math.floor(Math.random() * 400) + 100
+      // await new Promise((resolve) => setTimeout(resolve, waitMs))
+    }
 
-  // Check if we're in development mode
-  const isDev = env.NODE_ENV === 'development'
-  if (isDev) {
-    // artificial delay in dev 100-500ms
-    const waitMs = Math.floor(Math.random() * 400) + 100
-    await new Promise((resolve) => setTimeout(resolve, waitMs))
-  }
+    return await next()
+  })
 
-  const result = await next()
-
-  const end = performance.now()
-  console.log(`[ORPC] ${String(path)} took ${Math.floor(end - start)}ms to execute`)
+  console.log(`[ORPC] ${String(path)} took ${execMs}ms to execute`)
 
   return result
 })

@@ -5,31 +5,41 @@ import { Button } from '@cared/ui/components/button'
 import { useSidebar } from '@cared/ui/components/sidebar'
 
 import { Logo } from '@/components/logo'
+import { Slash } from '@/components/slash'
 import { useCheckSession } from '@/hooks/use-session'
 import { AdminEnterButton } from './admin-enter-button'
-import { AppSwitcher } from './app-switcher'
+import { AppSwitcher, useHasAppSwitcher } from './app-switcher'
 import { OrganizationAndAccountSwitcher } from './organization-switcher'
 import { TopBarActions } from './top-bar-actions'
-import { WorkspaceSwitcher } from './workspace-switcher'
+import { useHasWorkspaceSwitcher, WorkspaceSwitcher } from './workspace-switcher'
 
 export function AppTopBar() {
   useCheckSession()
 
   const { toggleSidebar } = useSidebar()
 
+  const hasWorkspaceSwitcher = useHasWorkspaceSwitcher()
+  const hasAppSwitcher = useHasAppSwitcher()
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="mx-auto w-full h-14 px-4 flex">
-        <div className="flex items-center gap-1 md:gap-4">
-          <Link to="/" className="hidden md:inline">
+        <div className="flex items-center gap-1 md:gap-2">
+          <Link to="/" className="p-1 hidden md:inline">
             <Logo />
           </Link>
+
+          <Slash className="hidden md:inline" />
 
           {/* Organization and Account Switcher */}
           <OrganizationAndAccountSwitcher />
 
+          {hasWorkspaceSwitcher && <Slash className="hidden md:inline" />}
+
           {/* Workspace Switcher - only show in workspace context */}
           <WorkspaceSwitcher />
+
+          {hasAppSwitcher && <Slash className="hidden md:inline" />}
 
           {/* App Switcher - only show in workspace context */}
           <AppSwitcher />

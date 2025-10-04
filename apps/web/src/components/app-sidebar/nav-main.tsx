@@ -19,18 +19,24 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarSeparator,
+  useSidebar,
 } from '@cared/ui/components/sidebar'
 
-export interface NavItem {
-  title: string
-  url: string
-  icon: LucideIcon
-  isRoute?: boolean
-  items?: {
-    title: string
-    url: string
-  }[]
-}
+export type NavItem =
+  | {
+      type?: 'menu'
+      title: string
+      url: string
+      icon: LucideIcon
+      isRoute?: boolean
+      items?: {
+        title: string
+        url: string
+      }[]
+    }
+  | {
+      type: 'separator'
+    }
 
 export function NavMain({
   items,
@@ -56,6 +62,8 @@ export function NavMain({
     return routeKey === urlKey
   }
 
+  const { setOpenMobile } = useSidebar()
+
   return (
     <SidebarGroup>
       <SidebarMenu>
@@ -67,6 +75,10 @@ export function NavMain({
         )}
 
         {items.map((item) => {
+          if (item.type === 'separator') {
+            return <SidebarSeparator className="my-2" />
+          }
+
           const active = isItemActive(item.url)
           const Icon = item.icon
           return (
@@ -79,6 +91,7 @@ export function NavMain({
                   onClick={() => {
                     // Set active state immediately on click
                     setActiveUrl(item.url)
+                    setOpenMobile(false)
                   }}
                 >
                   <Link to={`${baseUrl}${item.url}`}>
@@ -107,6 +120,7 @@ export function NavMain({
                                 onClick={() => {
                                   // Set active state immediately on click
                                   setActiveUrl(url)
+                                  setOpenMobile(false)
                                 }}
                               >
                                 <Link to={`${baseUrl}${url}`}>

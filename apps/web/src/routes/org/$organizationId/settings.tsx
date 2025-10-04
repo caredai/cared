@@ -79,7 +79,7 @@ const updateOrganizationSchema = z.object({
  * Organization settings component
  * Allows updating organization name, transferring ownership, and deleting organization
  */
-export function Settings() {
+function Settings() {
   const { user } = useSession()
 
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false)

@@ -38,7 +38,7 @@ export function AppSidebar({
               <SidebarMenuItem>
                 <SidebarMenuButton size="lg" className="h-10 py-1" asChild>
                   <Link to={baseUrl} className="mr-4 flex items-center gap-2 lg:mr-6">
-                    <Logo />
+                    <Logo showWordMark />
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

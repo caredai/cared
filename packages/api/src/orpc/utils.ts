@@ -50,11 +50,11 @@ export async function uploadImage(
     ContentType: 'image/png',
   })
 
-  const [execSeconds] = await measure(s3Client.send(command))
+  const [execMs] = await measure(s3Client.send(command))
   console.log('Upload image to object storage', {
     key,
     size: buffer.length,
-    execSeconds,
+    execMs,
   })
 
   return new URL(key, imageUrl()).toString()
@@ -116,7 +116,7 @@ export async function retrieveImage(url: string): Promise<Uint8Array> {
     Key: key,
   })
 
-  const [execSeconds, response] = await measure(s3Client.send(command))
+  const [execMs, response] = await measure(s3Client.send(command))
   const { Body } = response
 
   if (!Body) {
@@ -130,7 +130,7 @@ export async function retrieveImage(url: string): Promise<Uint8Array> {
   console.log('Retrieved image from object storage', {
     key,
     size: bytes.length,
-    execSeconds,
+    execMs,
   })
 
   return bytes

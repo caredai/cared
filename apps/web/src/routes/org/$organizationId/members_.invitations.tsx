@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { getActiveOrganizationId } from '@/lib/active'
 import { orpc } from '@/lib/orpc'
-import { Members } from './members'
+import { Members } from './-members'
 
 export const Route = createFileRoute('/org/$organizationId/members_/invitations')({
   loader: async ({ context, params }) => {

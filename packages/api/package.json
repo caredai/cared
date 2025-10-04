@@ -41,6 +41,7 @@
     "@cared/vdb": "workspace:*",
     "@langfuse/client": "^4.0.0",
     "@langfuse/otel": "^4.0.0",
+    "@microlabs/otel-cf-workers": "1.0.0-rc.52",
     "@opentelemetry/exporter-jaeger": "^2.1.0",
     "@opentelemetry/sdk-node": "^0.205.0",
     "@orpc/client": "^1.8.9",

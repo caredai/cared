@@ -40,7 +40,7 @@ export const Route = createFileRoute('/account/security/')({
   component: () => <Security />,
 })
 
-export function Security() {
+function Security() {
   const { accounts } = useAccounts()
   const [isRevoking, setIsRevoking] = useState(false)
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)

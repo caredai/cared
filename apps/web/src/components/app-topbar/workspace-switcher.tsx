@@ -22,6 +22,11 @@ import {
 } from '@/hooks/use-workspace'
 import { stripIdPrefix } from '@/lib/utils'
 
+export function useHasWorkspaceSwitcher() {
+  const { activeWorkspace } = useActive()
+  return Boolean(activeWorkspace)
+}
+
 export function WorkspaceSwitcher() {
   const { activeWorkspace, activeApp } = useActive()
   const workspaces = useWorkspaces(activeWorkspace?.organizationId)
