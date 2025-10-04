@@ -1,8 +1,8 @@
 diff --git a/dist/index.js b/dist/index.js
-index 598620108c8d1fa47012243400ee2ca74c87c59b..bd78b17fcde04839e8be79f8d506cdc366ac77ec 100644
+index 4baa1eec66fe28f7578309243a9e552428c5406a..b093aa7bf52055dc6d4fa449b30a8f291662e5e3 100644
 --- a/dist/index.js
 +++ b/dist/index.js
-@@ -17095,7 +17095,7 @@ function resolvePluginConfig(pluginConfig, userConfig, viteEnv) {
+@@ -17411,7 +17411,7 @@ function resolvePluginConfig(pluginConfig, userConfig, viteEnv) {
      experimental: pluginConfig.experimental ?? {}
    };
    const root = userConfig.root ? path13.resolve(userConfig.root) : process.cwd();
