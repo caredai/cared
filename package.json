@@ -50,7 +50,8 @@
     "patchedDependencies": {
       "@cloudflare/vite-plugin": "patches/@cloudflare__vite-plugin.patch",
       "ansi-color": "patches/ansi-color.patch",
-      "vite-plugin-svgr": "patches/vite-plugin-svgr.patch"
+      "vite-plugin-svgr": "patches/vite-plugin-svgr.patch",
+      "fumadocs-mdx": "patches/fumadocs-mdx.patch"
     }
   }
 }

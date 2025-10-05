@@ -1,8 +1,7 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
-
-import Header from '../components/Header'
+import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { RootProvider } from 'fumadocs-ui/provider/tanstack'
 
 import appCss from '../styles.css?url'
 
@@ -25,6 +24,18 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      {
+        rel: 'icon',
+        href: '/docs/logo192.png',
+      },
+      {
+        rel: 'shortcut icon',
+        href: '/docs/favicon.ico',
+      },
+      {
+        rel: 'manifest',
+        href: '/docs/manifest.json'
+      }
     ],
   }),
 
@@ -33,13 +44,12 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        <Header />
-        {children}
+        <RootProvider>{children}</RootProvider>
         <TanStackDevtools
           config={{
             position: 'bottom-right',
