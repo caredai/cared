@@ -287,12 +287,12 @@ importers:
       '@daveyplate/better-auth-ui':
         specifier: ^1.7.4
         version: 1.7.4(8a901c86dbc144e75efbd269a8f27818)
+      '@fontsource-variable/geist':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@fontsource-variable/geist-mono':
         specifier: ^5.2.7
         version: 5.2.7
-      '@fontsource/geist-sans':
-        specifier: ^5.2.5
-        version: 5.2.5
       '@icons-pack/react-simple-icons':
         specifier: ^12.2.0
         version: 12.9.0(react@19.1.1)
@@ -3895,8 +3895,8 @@ packages:
   '@fontsource-variable/geist-mono@5.2.7':
     resolution: {integrity: sha512-ZKlZ5sjtalb2TwXKs400mAGDlt/+2ENLNySPx0wTz3bP3mWARCsUW+rpxzZc7e05d2qGch70pItt3K4qttbIYA==}
 
-  '@fontsource/geist-sans@5.2.5':
-    resolution: {integrity: sha512-anllOHyJbElRs9fV15TeDRqAeb1IKm4bSknPl6ZMoyPTx1BBy7logudcUwpNjmQLkzn4Q0JGQLRCUKJYoyST6A==}
+  '@fontsource-variable/geist@5.2.8':
+    resolution: {integrity: sha512-cJ6m9e+8MQ5dCYJsLylfZrgBh6KkG4bOLckB35Tr9J/EqdkEM6QllH5PxqP1dhTvFup+HtMRPuz9xOjxXJggxw==}
 
   '@formatjs/intl-localematcher@0.5.10':
     resolution: {integrity: sha512-af3qATX+m4Rnd9+wHcjJ4w2ijq+rAVP3CCinJQvFv1kgSu1W6jypUmvleJxcewdxmutM8dmIRZFxO/IQBZmP2Q==}
@@ -20664,7 +20664,7 @@ snapshots:
 
   '@fontsource-variable/geist-mono@5.2.7': {}
 
-  '@fontsource/geist-sans@5.2.5': {}
+  '@fontsource-variable/geist@5.2.8': {}
 
   '@formatjs/intl-localematcher@0.5.10':
     dependencies:

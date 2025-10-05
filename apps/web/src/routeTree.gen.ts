@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DocsRouteImport } from './routes/docs'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AccountRouteRouteImport } from './routes/account/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -62,11 +61,6 @@ import { Route as OrgOrganizationIdCreditsUsageRouteImport } from './routes/org/
 import { Route as AppAppIdConfigureOauthApplicationRouteImport } from './routes/app/$appId/configure/oauth-application'
 import { Route as AppAppIdConfigureApiKeysRouteImport } from './routes/app/$appId/configure/api-keys'
 
-const DocsRoute = DocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -345,7 +339,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
-  '/docs': typeof DocsRoute
   '/app/$appId': typeof AppAppIdRouteRouteWithChildren
   '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
@@ -398,7 +391,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
-  '/docs': typeof DocsRoute
   '/account/api-keys': typeof AccountApiKeysRoute
   '/account/applications': typeof AccountApplicationsRoute
   '/account/credits': typeof AccountCreditsRoute
@@ -450,7 +442,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
-  '/docs': typeof DocsRoute
   '/app/$appId': typeof AppAppIdRouteRouteWithChildren
   '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
@@ -506,7 +497,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
-    | '/docs'
     | '/app/$appId'
     | '/org/$organizationId'
     | '/workspace/$workspaceId'
@@ -559,7 +549,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
-    | '/docs'
     | '/account/api-keys'
     | '/account/applications'
     | '/account/credits'
@@ -610,7 +599,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
-    | '/docs'
     | '/app/$appId'
     | '/org/$organizationId'
     | '/workspace/$workspaceId'
@@ -665,7 +653,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRouteRoute: typeof AccountRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
-  DocsRoute: typeof DocsRoute
   AppAppIdRouteRoute: typeof AppAppIdRouteRouteWithChildren
   OrgOrganizationIdRouteRoute: typeof OrgOrganizationIdRouteRouteWithChildren
   WorkspaceWorkspaceIdRouteRoute: typeof WorkspaceWorkspaceIdRouteRouteWithChildren
@@ -681,13 +668,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/docs': {
-      id: '/docs'
-      path: '/docs'
-      fullPath: '/docs'
-      preLoaderRoute: typeof DocsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -1194,7 +1174,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRouteRoute: AccountRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
-  DocsRoute: DocsRoute,
   AppAppIdRouteRoute: AppAppIdRouteRouteWithChildren,
   OrgOrganizationIdRouteRoute: OrgOrganizationIdRouteRouteWithChildren,
   WorkspaceWorkspaceIdRouteRoute: WorkspaceWorkspaceIdRouteRouteWithChildren,

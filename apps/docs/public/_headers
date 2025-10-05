@@ -1,0 +1,18 @@
+/docs/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/docs/*.svg
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/docs/*.png
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/docs/*.ico
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+/docs/manifest.json
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+https://:version.:subdomain.workers.dev/*
+  X-Robots-Tag: noindex
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: document-domain=()
+  Content-Security-Policy: script-src 'self'; frame-ancestors 'none';
