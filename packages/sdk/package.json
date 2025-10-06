@@ -1,12 +1,16 @@
 {
   "name": "@cared/sdk",
-  "version": "0.1.8",
+  "version": "0.1.11",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": {
+        "import": "./dist/index.d.mts",
+        "require": "./dist/index.d.ts",
+        "default": "./dist/index.d.ts"
+      },
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
@@ -19,40 +23,44 @@
   ],
   "license": "MIT",
   "scripts": {
-    "build": "tsup",
     "dev": "tsup --watch",
+    "build": "tsup && prettier --check --write ./dist/_tsup*",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "prepublishOnly": "tsx ./scripts/prepare-publish.ts",
+    "postpublish": "mv package.json.bak package.json",
     "test-client": "env NODE_TLS_REJECT_UNAUTHORIZED=0 tsx ./scripts/test-client.ts"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.787.0",
+    "@cared/api": "workspace:*",
+    "@cared/auth": "workspace:*",
+    "@cared/db": "workspace:*",
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
+    "@cared/providers": "workspace:*",
+    "@cared/shared": "workspace:*",
     "@cared/tsconfig": "workspace:*",
-    "@trpc/server": "catalog:",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "stripe": "^18.3.0",
-    "trpc-to-openapi": "^3.0.1",
-    "tsup": "^8.3.6",
-    "tsx": "^4.19.3",
     "typescript": "catalog:"
   },
   "prettier": "@cared/prettier-config",
-  "dependencies": {
-    "@cared/shared": "workspace:*",
-    "@tanstack/react-query": "catalog:",
-    "@trpc/client": "catalog:",
-    "@trpc/tanstack-react-query": "catalog:",
-    "server-only": "^0.0.1",
-    "superjson": "2.2.2"
-  },
   "peerDependencies": {
     "@ai-sdk/provider": ">=2.0.0",
+    "@langfuse/core": ">=4.1.0",
+    "@orpc/client": ">=1.8.9",
+    "@orpc/server": ">=1.8.9",
+    "@orpc/tanstack-query": ">=1.8.9",
+    "@tanstack/react-query": ">=5.66.7",
     "ai": ">=5.0.38",
-    "react": ">=19.0.0"
+    "better-auth": ">=1.3.12",
+    "buffer": ">=6.0.3",
+    "drizzle-orm": ">=0.44.6",
+    "react": ">=19.0.0",
+    "stripe": ">=18.3.0",
+    "superjson": ">=2.2.2",
+    "zod": ">=4.1.11"
   }
 }

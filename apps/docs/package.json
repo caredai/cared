@@ -7,8 +7,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "test": "vitest run",
-    "format": "biome format",
-    "lint": "biome lint",
+    "biome:format": "biome format",
+    "biome:lint": "biome lint",
     "check": "biome check",
     "deploy": "wrangler deploy"
   },

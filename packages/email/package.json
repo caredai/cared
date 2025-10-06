@@ -4,14 +4,21 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./emails/*": "./emails/*.tsx"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./emails/*": {
+      "types": "./dist/emails/*.d.ts",
+      "default": "./src/emails/*.tsx"
+    }
   },
   "license": "MIT",
   "scripts": {
     "build": "tsc",
+    "dev": "tsc",
+    "dev:emails": "email dev -d ./src/emails --port 3010",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "email dev --port 3010",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"

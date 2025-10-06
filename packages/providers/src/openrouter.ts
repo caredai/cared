@@ -33,10 +33,6 @@ export async function getOpenRouterModels() {
     await fetch('https://openrouter.ai/api/v1/models', {
       // @ts-ignore
       cache: 'force-cache',
-      next: {
-        revalidate: 7200,
-        tags: ['openrouter-models'],
-      },
     })
   ).json()
   const models = (r as any).data as OpenRouterModelInfo[]

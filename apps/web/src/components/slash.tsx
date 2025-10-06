@@ -9,11 +9,11 @@ export function Slash({ className, ...props }: ComponentPropsWithoutRef<'svg'>) 
       width="16"
       height="16"
       stroke="currentColor"
-      stroke-width="1"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+      strokeWidth="1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
       fill="none"
-      shape-rendering="geometricPrecision"
+      shapeRendering="geometricPrecision"
       className={cn('text-muted-foreground', className)}
       {...props}
     >

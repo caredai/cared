@@ -9,11 +9,10 @@ import {
   useNodesState,
 } from '@xyflow/react'
 
-import type { Edge, Node } from '@xyflow/react'
-
 import { cn } from '@cared/ui/lib/utils'
 
 import type { ObservationsView, TraceWithDetails } from '@langfuse/core'
+import type { Edge, Node } from '@xyflow/react'
 
 // Discriminated union for graph nodes
 type GraphNode =

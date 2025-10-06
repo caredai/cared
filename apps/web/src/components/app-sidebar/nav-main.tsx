@@ -74,9 +74,9 @@ export function NavMain({
           </>
         )}
 
-        {items.map((item) => {
+        {items.map((item, index) => {
           if (item.type === 'separator') {
-            return <SidebarSeparator className="my-2" />
+            return <SidebarSeparator key={index} className="my-2" />
           }
 
           const active = isItemActive(item.url)

@@ -1,6 +1,6 @@
 {
-  "extends": "@cared/tsconfig/internal-package.json",
+  "extends": "@cared/tsconfig/compiled-package.json",
   "compilerOptions": {},
-  "include": ["*.ts", "src"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }

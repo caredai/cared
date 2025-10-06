@@ -1,9 +1,8 @@
-import type { SpeechModelV2, SpeechModelV2CallOptions } from '@ai-sdk/provider'
-
 import { deserializeError, SuperJSON } from '@cared/shared'
 
 import type { CaredClientOptions } from '../client'
 import type { NonMethodProperties } from './language'
+import type { SpeechModelV2, SpeechModelV2CallOptions } from '@ai-sdk/provider'
 import { makeHeaders } from '../client'
 import { responseJson } from './language'
 

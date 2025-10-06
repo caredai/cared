@@ -1,17 +1,23 @@
 {
   "name": "@cared/i18n",
-  "private": true,
   "version": "0.1.0",
+  "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.tsx"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./src/*.tsx"
+    }
   },
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "clean": "git clean -xdf .cache .turbo dist node_modules",
     "dev": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"

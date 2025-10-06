@@ -1,5 +1,7 @@
-import { createEnv } from "@t3-oss/env-core";
+import { createEnv } from '@t3-oss/env-core'
 import { z } from 'zod/v4'
+
+import { runtimeEnv } from '@cared/shared'
 
 export const env = createEnv({
   /**
@@ -11,7 +13,7 @@ export const env = createEnv({
     CARED_API_URL: z.string().min(1).optional(),
   },
 
-  clientPrefix: "VITE_",
+  clientPrefix: 'VITE_',
 
   /**
    * Specify your client-side environment variables schema here.
@@ -19,7 +21,7 @@ export const env = createEnv({
    */
   client: {},
 
-  runtimeEnv: Object.assign({}, process.env, import.meta.env),
+  runtimeEnv: runtimeEnv(),
 
   emptyStringAsUndefined: true,
 

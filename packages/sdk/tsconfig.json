@@ -1,12 +1,10 @@
 {
-  "extends": "@cared/tsconfig/base.json",
+  "extends": "@cared/tsconfig/compiled-package.json",
   "compilerOptions": {
-    "lib": ["ES2022", "dom", "dom.iterable"],
-    "jsx": "preserve",
-    "declaration": true,
-    "declarationMap": true,
-    "noEmit": false,
-    "outDir": "${configDir}/dist"
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext", "dom", "dom.iterable"],
+    "jsx": "preserve"
   },
   "include": ["src"],
   "exclude": ["node_modules"]

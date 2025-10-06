@@ -4,6 +4,8 @@ import { WorkerEntrypoint } from 'cloudflare:workers'
 
 import type { HonoApp } from '@cared/api/hono'
 
+import './polyfills'
+
 let app: HonoApp | undefined = undefined
 
 export default class extends WorkerEntrypoint {

@@ -8,7 +8,5 @@
     "emitDeclarationOnly": true,
     "noEmit": false,
     "outDir": "${configDir}/dist",
-
-    "types": ["node", "vite/client"]
   }
 }

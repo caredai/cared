@@ -1,7 +1,7 @@
 import type { UIMessage } from '@cared/shared'
 import { generateId } from '@cared/shared'
 
-import type { Message } from './trpc'
+import type { Message } from './orpc'
 
 export function generateMessageId() {
   return generateId('msg')

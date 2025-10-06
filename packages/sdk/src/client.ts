@@ -1,3 +1,4 @@
+import type { CaredOrpcClient, CaredOrpcQueryClient } from './orpc'
 import { env } from './env'
 import {
   createEmbeddingModel,
@@ -6,7 +7,7 @@ import {
   createSpeechModel,
   createTranscriptionModel,
 } from './model'
-import { createCaredTrpcClient } from './trpc'
+import { createCaredOrpcClient } from './orpc'
 
 export type CaredClientOptions = {
   apiUrl?: string
@@ -27,15 +28,18 @@ export class CaredClient {
   constructor(opts: CaredClientOptions) {
     this.opts = {
       ...opts,
-      apiUrl: new URL(opts.apiUrl || env.CARED_API_URL || 'https://cared.dev').origin,
+      apiUrl: new URL(opts.apiUrl || env.CARED_API_URL || 'https://api.cared.dev').origin,
     }
 
-    this.trpc = createCaredTrpcClient(this.opts)
+    const { orpcClient, orpc } = createCaredOrpcClient(this.opts)
+    this.orpcClient = orpcClient
+    this.orpc = orpc
   }
 
   private readonly opts: CaredClientOptions & Required<Pick<CaredClientOptions, 'apiUrl'>>
 
-  trpc: CaredTrpcClient
+  orpcClient: CaredOrpcClient
+  orpc: CaredOrpcQueryClient
 
   createLanguageModel(modelId: string) {
     return createLanguageModel(modelId, this.opts)
@@ -57,8 +61,6 @@ export class CaredClient {
     return createEmbeddingModel(modelId, this.opts)
   }
 }
-
-export type CaredTrpcClient = ReturnType<typeof createCaredTrpcClient>
 
 export async function makeHeaders(opts: CaredClientOptions) {
   const headers = new Headers()

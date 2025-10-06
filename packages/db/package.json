@@ -4,10 +4,22 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./*": "./src/*.ts",
-    "./schema": "./src/schema/index.ts",
-    "./schema/*": "./src/schema/*.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./src/*.ts"
+    },
+    "./schema": {
+      "types": "./dist/schema/index.d.ts",
+      "default": "./src/schema/index.ts"
+    },
+    "./schema/*": {
+      "types": "./dist/schema/*.d.ts",
+      "default": "./src/schema/*.ts"
+    }
   },
   "license": "MIT",
   "scripts": {

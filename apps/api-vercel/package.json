@@ -1,5 +1,6 @@
 {
   "name": "@cared/api-vercel",
+  "private": true,
   "scripts": {
     "dev": "env JITI_JSX=1 pnpm with-env srvx --import=jiti/register --port 3002",
     "build": "esbuild --bundle --platform=node --minify --sourcemap=external --outfile=dist/index.js src/index.ts",

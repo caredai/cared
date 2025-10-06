@@ -1,0 +1,32 @@
+diff --git a/dist/index.js b/dist/index.js
+index dad05aa7384e706f83b20ad64852bed8405d1ecf..84d350f9000e18ed59977a8e9a22c109a217a55c 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -1280,7 +1280,7 @@ function formatDistributionExport(declaration, dest) {
+ 
+ // src/api-extractor.ts
+ var logger2 = _chunkVGC3FXLUjs.createLogger.call(void 0, );
+-function rollupDtsFile(inputFilePath, outputFilePath, tsconfigFilePath) {
++function rollupDtsFile(inputFilePath, outputFilePath, tsconfigFilePath, options) {
+   const cwd = process.cwd();
+   const packageJsonFullPath = _path2.default.join(cwd, "package.json");
+   const configObject = {
+@@ -1300,7 +1300,8 @@ function rollupDtsFile(inputFilePath, outputFilePath, tsconfigFilePath) {
+       tsconfigFilePath
+     },
+     projectFolder: cwd,
+-    newlineKind: "lf"
++    newlineKind: "lf",
++    bundledPackages: (options.noExternal || []).filter(item => typeof item === 'string')
+   };
+   const prepareOptions = {
+     configObject,
+@@ -1346,7 +1347,7 @@ async function rollupDtsFiles(options, exports, format) {
+     dtsInputFilePath,
+     formatAggregationExports(exports, declarationDir)
+   );
+-  rollupDtsFile(dtsInputFilePath, dtsOutputFilePath, tsconfig);
++  rollupDtsFile(dtsInputFilePath, dtsOutputFilePath, tsconfig, options);
+   for (let [out, sourceFileName] of Object.entries(
+     options.experimentalDts.entry
+   )) {

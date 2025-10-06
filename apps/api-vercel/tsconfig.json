@@ -12,10 +12,5 @@
     "jsxImportSource": "hono/jsx",
     "types": ["node", "vite/client"]
   },
-  "references": [
-    {
-      "path": "../../packages/api"
-    }
-  ],
   "exclude": ["node_modules"]
 }

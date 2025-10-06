@@ -7,7 +7,7 @@ import { CaredClient } from '../src/client'
 
 async function main() {
   // Read configuration from environment variables
-  const apiUrl = process.env.API_URL || 'https://localhost:3000'
+  const apiUrl = process.env.API_URL || 'http://localhost:3001'
   const apiKey = process.env.API_KEY
 
   if (!apiUrl || !apiKey) {
@@ -16,7 +16,7 @@ async function main() {
     console.error('   API_KEY - The API key for authentication')
     console.error('')
     console.error('Example:')
-    console.error('   API_URL=https://localhost:3000 API_KEY=your-key pnpm test-client')
+    console.error('   API_URL=http://localhost:3000 API_KEY=your-key pnpm test-client')
     process.exit(1)
   }
 
@@ -55,7 +55,6 @@ async function main() {
   console.log('✅ generateText completed successfully')
   console.log(`📄 Response: ${generateResult.text}`)
   console.log(`📊 Usage: ${JSON.stringify(generateResult.usage)}`)
-
 
   // Test 2: Stream text
   console.log('\n🌊 Testing streamText...')

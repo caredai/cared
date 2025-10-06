@@ -1,3 +1,4 @@
+import * as console from 'node:console'
 import { experimental_SmartCoercionPlugin as SmartCoercionPlugin } from '@orpc/json-schema'
 import { OpenAPIHandler } from '@orpc/openapi/fetch'
 import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins'
@@ -14,7 +15,6 @@ import { setDb } from '@cared/db/client'
 
 import type { Hyperdrive } from '@cloudflare/workers-types'
 import { appRouter, createORPCContext, model, tasks, webhooks } from '..'
-import * as console from 'node:console'
 
 export interface Bindings {
   HYPERDRIVE?: Hyperdrive

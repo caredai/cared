@@ -14,7 +14,7 @@ const config = {
     'prettier-plugin-tailwindcss',
     'prettier-plugin-multiline-arrays',
   ],
-  tailwindConfig: fileURLToPath(new URL('../../tooling/tailwind/web.ts', import.meta.url)),
+  tailwindStylesheet: fileURLToPath(new URL('../../apps/web/src/globals.css', import.meta.url)),
   tailwindFunctions: ['cn', 'cva'],
   importOrder: [
     '<TYPES>',

@@ -33,10 +33,6 @@ export async function getLiteLLMModels() {
       {
         // @ts-ignore
         cache: 'force-cache',
-        next: {
-          revalidate: 7200,
-          tags: ['litellm-models'],
-        },
       },
     )
   ).json()

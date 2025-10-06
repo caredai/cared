@@ -11,9 +11,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "dev": "tsc",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",

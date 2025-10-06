@@ -4,7 +4,14 @@ export default defineConfig({
   entry: [
     'src/index.ts',
   ],
-  format: ['cjs', 'esm'],
-  dts: true,
-  sourcemap: true,
+  noExternal: [
+    '@cared/shared',
+    '@cared/api',
+    '@cared/db',
+    '@cared/providers',
+    '@cared/auth',
+  ],
+  format: ['esm', 'cjs'],
+  // dts: true,
+  experimentalDts: true,
 })

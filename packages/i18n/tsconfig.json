@@ -1,9 +1,9 @@
 {
-  "extends": "@cared/tsconfig/internal-package.json",
+  "extends": "@cared/tsconfig/compiled-package.json",
   "compilerOptions": {
     "lib": ["ES2022", "dom", "dom.iterable"],
     "jsx": "preserve"
   },
-  "include": ["src"],
+  "include": ["src", "src/**/*.json"],
   "exclude": ["node_modules"]
 }

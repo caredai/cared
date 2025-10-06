@@ -221,7 +221,7 @@
   }
 
   body {
-    @apply bg-background text-foreground min-h-screen font-sans antialiased;
+    @apply min-h-screen bg-background font-sans text-foreground antialiased;
 
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;

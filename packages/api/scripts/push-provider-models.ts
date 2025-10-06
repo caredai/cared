@@ -10,6 +10,7 @@ import { and, eq } from '@cared/db'
 import { getDb } from '@cared/db/client'
 // @ts-ignore
 import { ProviderModels } from '@cared/db/schema'
+// @ts-ignore
 import log from '@cared/log'
 
 // @ts-ignore

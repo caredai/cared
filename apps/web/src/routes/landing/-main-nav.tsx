@@ -12,12 +12,14 @@ export function MainNav() {
 
   return (
     <div className="mr-4 hidden md:flex">
-      <Link to="/apps/web/public" className="mr-4 flex items-center gap-2 lg:mr-6">
-        <Logo />
+      <Link to="/" className="mr-8 flex items-center gap-2">
+        <Logo showWordMark />
       </Link>
-      <nav className="flex items-center gap-4 text-sm xl:gap-6">
+      <nav className="flex items-center gap-4 text-sm font-medium">
         <Link
+          // @ts-expect-error `/docs` should be another site
           to="/docs"
+          preload={false}
           className={cn(
             'transition-colors hover:text-foreground/80',
             pathname === '/docs' ? 'text-foreground' : 'text-foreground/80',
