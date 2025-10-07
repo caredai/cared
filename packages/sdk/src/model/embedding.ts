@@ -10,7 +10,7 @@ export async function createEmbeddingModel(
   modelId: string,
   opts: CaredClientOptions,
 ): Promise<EmbeddingModelV2<string>> {
-  const url = opts.apiUrl + '/api/v1/model/embedding'
+  const url = opts.apiUrl + '/v1/model/embedding'
 
   const getUrl = new URL(url)
   getUrl.searchParams.set('modelId', modelId)

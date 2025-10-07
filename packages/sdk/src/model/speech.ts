@@ -10,7 +10,7 @@ export async function createSpeechModel(
   modelId: string,
   opts: CaredClientOptions,
 ): Promise<SpeechModelV2> {
-  const url = opts.apiUrl + '/api/v1/model/speech'
+  const url = opts.apiUrl + '/v1/model/speech'
 
   const getUrl = new URL(url)
   getUrl.searchParams.set('modelId', modelId)

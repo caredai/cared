@@ -20,6 +20,7 @@ import {
 } from '../../../telemetry'
 import { waitUntil } from '../../../utils'
 import { authId, handleError } from './language'
+import { makeResponseJson, requestJson } from './utils'
 
 // Schema for TranscriptionModelV2 call options
 const transcriptionModelV2CallOptionsSchema = z.object({
@@ -56,21 +57,16 @@ export function GET(c: Context): Response {
     ...modelConfig
   } = model
 
-  return Response.json(modelConfig)
+  return makeResponseJson(modelConfig)
 }
 
 export async function POST(c: Context): Promise<Response> {
   try {
-    const validatedArgs = requestArgsSchema.safeParse(await c.req.json())
+    const validatedArgs = requestArgsSchema.safeParse(await requestJson(c.req))
     if (!validatedArgs.success) {
-      return Response.json(
-        {
-          error: z.prettifyError(validatedArgs.error),
-        },
-        {
-          status: 400,
-        },
-      )
+      return new Response(z.prettifyError(validatedArgs.error), {
+        status: 400,
+      })
     }
 
     const { modelId, payerOrganizationId, ...transcriptionModelV2CallOptions } = validatedArgs.data
@@ -229,7 +225,7 @@ export async function POST(c: Context): Promise<Response> {
                 }),
               )
 
-              return Response.json(result)
+              return makeResponseJson(result)
             } catch (error: any) {
               recordErrorOnSpan(span, error)
               lastError = error
@@ -263,7 +259,7 @@ export async function POST(c: Context): Promise<Response> {
     })
   } catch (error: any) {
     log.error('Call transcription model error', error)
-    return Response.json(
+    return makeResponseJson(
       {
         error:
           error instanceof Error

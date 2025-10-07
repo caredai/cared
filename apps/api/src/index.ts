@@ -28,6 +28,13 @@ export default class extends WorkerEntrypoint {
       app.get(innerCheckPath, (c) => c.json(checkRestrictedColoHandler(c.req.raw.headers)))
     }
 
-    return app.fetch(request, this.env, this.ctx)
+    return app.fetch(
+      request,
+      {
+        ...this.env,
+        CLOUDFLARE: true,
+      },
+      this.ctx,
+    )
   }
 }

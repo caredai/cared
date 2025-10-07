@@ -17,6 +17,7 @@ import type { Hyperdrive } from '@cloudflare/workers-types'
 import { appRouter, createORPCContext, model, tasks, webhooks } from '..'
 
 export interface Bindings {
+  CLOUDFLARE?: boolean
   HYPERDRIVE?: Hyperdrive
 }
 

@@ -13,8 +13,7 @@ const proxiedApp = new Proxy(app, {
     if (prop === 'fetch') {
       return function (request: Request) {
         // Call the original fetch method
-        return target.fetch.call(
-          receiver,
+        return target.fetch(
           request,
           {},
           {

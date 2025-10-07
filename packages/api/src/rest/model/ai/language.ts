@@ -33,6 +33,7 @@ import {
 } from '../../../telemetry'
 import { languageModelV2MessageSchema } from '../../../types'
 import { waitUntil } from '../../../utils'
+import { makeResponseJson, requestJson } from './utils'
 
 const ajv = new Ajv({ allErrors: true })
 
@@ -129,7 +130,7 @@ export async function GET(c: Context): Promise<Response> {
     ...modelConfig
   } = model
 
-  return Response.json({
+  return makeResponseJson({
     ...modelConfig,
     supportedUrls: Object.entries(await supportedUrls).map(([mediaType, regexArray]) => [
       mediaType,
@@ -140,7 +141,7 @@ export async function GET(c: Context): Promise<Response> {
 
 export async function POST(c: Context): Promise<Response> {
   try {
-    const validatedArgs = requestArgsSchema.safeParse(await c.req.json())
+    const validatedArgs = requestArgsSchema.safeParse(await requestJson(c.req))
     if (!validatedArgs.success) {
       return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
     }
@@ -203,7 +204,7 @@ export async function POST(c: Context): Promise<Response> {
     })
   } catch (error: any) {
     log.error('Call language model error', error)
-    return Response.json(
+    return makeResponseJson(
       {
         error: error.message ?? 'An unknown error occurred',
       },
@@ -256,13 +257,18 @@ async function processWithPolling({
       await writer.close()
     }
 
+    const encoder = new TextEncoder()
+
     // Helper function to write data to the stream
     writeChunk = async (data: any) => {
       if (closed) {
         return
       }
       // SSE format
-      await writer.write(`data: ${JSON.stringify(data)}\n\n`)
+      const chunk = `data: ${JSON.stringify(data)}\n\n`
+      // Chunk must be encoded into bytes in Cloudflare Workers
+      // https://community.cloudflare.com/t/server-sent-events-readablestream-not-working/645073
+      await writer.write(c.env.CLOUDFLARE ? encoder.encode(chunk) : chunk)
     }
   }
 
@@ -550,7 +556,7 @@ async function doGenerate({
     }),
   )
 
-  return Response.json(gen)
+  return makeResponseJson(gen)
 }
 
 async function doStream({

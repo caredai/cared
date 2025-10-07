@@ -10,7 +10,7 @@ export async function createImageModel(
   modelId: string,
   opts: CaredClientOptions,
 ): Promise<ImageModelV2> {
-  const url = opts.apiUrl + '/api/v1/model/image'
+  const url = opts.apiUrl + '/v1/model/image'
 
   const getUrl = new URL(url)
   getUrl.searchParams.set('modelId', modelId)
