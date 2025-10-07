@@ -1,4 +1,10 @@
-import type { ErrorResponse } from 'resend'
+import type {
+  CreateEmailOptions,
+  CreateEmailRequestOptions,
+  CreateEmailResponse,
+  ErrorResponse,
+  GetEmailResponse,
+} from 'resend'
 import { Resend } from 'resend'
 
 import { env } from './env'
@@ -38,19 +44,31 @@ type CancelEmailResponse =
       error: ErrorResponse
     }
 
-const resend = new Resend(env.RESEND_API_KEY)
+let resend: Resend | undefined
+
+function getResend() {
+  resend ??= new Resend(env.RESEND_API_KEY)
+  return resend
+}
 
 export class Emails {
-  send = resend.emails.send.bind(resend.emails)
+  send(
+    payload: CreateEmailOptions,
+    options?: CreateEmailRequestOptions,
+  ): Promise<CreateEmailResponse> {
+    return getResend().emails.send(payload, options)
+  }
 
-  get = resend.emails.get.bind(resend.emails)
+  get(id: string): Promise<GetEmailResponse> {
+    return getResend().emails.get(id)
+  }
 
   update(payload: UpdateEmailOptions): Promise<UpdateEmailResponse> {
-    return resend.emails.update(payload)
+    return getResend().emails.update(payload)
   }
 
   cancel(id: string): Promise<CancelEmailResponse> {
-    return resend.emails.cancel(id)
+    return getResend().emails.cancel(id)
   }
 }
 

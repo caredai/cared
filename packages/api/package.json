@@ -23,7 +23,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "build": "tsc && pnpm generate-orpc-contract",
+    "build": "tsc",
     "dev": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",

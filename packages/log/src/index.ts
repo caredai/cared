@@ -24,7 +24,7 @@ async function setup() {
   }
 
   const options: LoggerOptions = {
-    level: env.LOG_LEVEL,
+    level: env.LOG_LEVEL ?? 'info',
     hooks: {
       // @ts-ignore
       logMethod(inputArgs: [string | Record<string, unknown>, ...unknown[]], method: LogFn): void {
