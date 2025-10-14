@@ -1,27 +1,59 @@
+import { getModel } from '@cared/providers/providers'
 import { deserializeError, SuperJSON } from '@cared/shared'
 
 import type { CaredClientOptions } from '../client'
-import type { NonMethodProperties } from './language'
 import type { EmbeddingModelV2 } from '@ai-sdk/provider'
 import { makeHeaders } from '../client'
 import { responseJson } from './language'
 
-export async function createEmbeddingModel(
+export function createEmbeddingModel(
   modelId: string,
   opts: CaredClientOptions,
-): Promise<EmbeddingModelV2<string>> {
+): EmbeddingModelV2<string> {
+  const {
+    // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
+    doEmbed,
+    maxEmbeddingsPerCall,
+    supportsParallelCalls,
+    ...modelConfig
+  } = getModel(modelId, 'textEmbedding')
+
   const url = opts.apiUrl + '/v1/model/embedding'
 
-  const getUrl = new URL(url)
-  getUrl.searchParams.set('modelId', modelId)
-  const attributes = await responseJson(
-    await fetch(getUrl, {
-      headers: await makeHeaders(opts),
-    }),
-  )
+  const getModelConfig = async () => {
+    const getUrl = new URL(url)
+    getUrl.searchParams.set('modelId', modelId)
+    return await responseJson(
+      await fetch(getUrl, {
+        headers: await makeHeaders(opts),
+      }),
+    )
+  }
+
+  let getModelConfigPromise: Promise<any> | undefined = undefined
 
   return {
-    ...(attributes as NonMethodProperties<EmbeddingModelV2<string>>),
+    ...modelConfig,
+
+    maxEmbeddingsPerCall: (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (!(maxEmbeddingsPerCall as PromiseLike<any>).then) {
+        return maxEmbeddingsPerCall as number | undefined
+      }
+
+      getModelConfigPromise ??= getModelConfig()
+      return (await getModelConfigPromise).maxEmbeddingsPerCall as number | undefined
+    })(),
+
+    supportsParallelCalls: (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (!(supportsParallelCalls as PromiseLike<any>).then) {
+        return supportsParallelCalls as boolean
+      }
+
+      getModelConfigPromise ??= getModelConfig()
+      return (await getModelConfigPromise).supportsParallelCalls as boolean
+    })(),
 
     doEmbed: async ({
       abortSignal,

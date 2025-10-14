@@ -17,26 +17,29 @@ export function MainNav() {
       </Link>
       <nav className="flex items-center gap-4 text-sm font-medium">
         <Link
-          // @ts-expect-error `/docs` should be another site
-          to="/docs"
+          to="/models"
           preload={false}
           className={cn(
             'transition-colors hover:text-foreground/80',
-            pathname === '/docs' ? 'text-foreground' : 'text-foreground/80',
+            pathname === '/models' ? 'text-foreground/80' : 'text-foreground',
           )}
         >
-          Docs
+          Models
         </Link>
         <Link
-          to="/wallet"
-          className={cn(
-            'transition-colors hover:text-foreground/80',
-            pathname.startsWith('/docs/components') && !pathname.startsWith('/docs/component/chart')
-              ? 'text-foreground'
-              : 'text-foreground/80',
-          )}
+          // @ts-expect-error `/chat` should be another site
+          to="/chat"
+          preload={false}
+          className={cn('transition-colors hover:text-foreground/80', 'text-foreground')}
         >
-          Wallet
+          Chat
+        </Link>
+        <Link
+          // @ts-expect-error `/docs` should be another site
+          to="/docs"
+          className={cn('transition-colors hover:text-foreground/80', 'text-foreground')}
+        >
+          Docs
         </Link>
       </nav>
     </div>

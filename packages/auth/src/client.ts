@@ -32,6 +32,10 @@ export const authClient = createAuthClient({
 
 export const allowedSocialProviders = ['google', 'twitter', 'discord', 'github'] as const
 
+export function getTrustedOrigins() {
+  return [getApiUrl(), getWebUrl(), ...(env.BETTER_AUTH_TRUSTED_ORIGINS ?? [])]
+}
+
 export function getApiUrl(): string {
   if (env.VITE_API_URL) return env.VITE_API_URL
   // @ts-ignore

@@ -1,27 +1,48 @@
+import { splitModelFullId } from '@cared/providers'
+import { getModel } from '@cared/providers/providers'
 import { deserializeError, SuperJSON } from '@cared/shared'
 
 import type { CaredClientOptions } from '../client'
-import type { NonMethodProperties } from './language'
 import type { ImageModelV2, ImageModelV2CallOptions } from '@ai-sdk/provider'
 import { makeHeaders } from '../client'
 import { responseJson } from './language'
 
-export async function createImageModel(
-  modelId: string,
-  opts: CaredClientOptions,
-): Promise<ImageModelV2> {
+export function createImageModel(modelFullId: string, opts: CaredClientOptions): ImageModelV2 {
+  const {
+    // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
+    doGenerate,
+    maxImagesPerCall,
+    ...modelConfig
+  } = getModel(modelFullId, 'image')
+
   const url = opts.apiUrl + '/v1/model/image'
 
-  const getUrl = new URL(url)
-  getUrl.searchParams.set('modelId', modelId)
-  const attributes = await responseJson(
-    await fetch(getUrl, {
-      headers: await makeHeaders(opts),
-    }),
-  )
-
   return {
-    ...(attributes as NonMethodProperties<ImageModelV2>),
+    ...modelConfig,
+
+    maxImagesPerCall: async () => {
+      if (typeof maxImagesPerCall !== 'function') {
+        return maxImagesPerCall
+      } else {
+        const { modelId } = splitModelFullId(modelFullId)
+        const gotMaxImagesPerCall = maxImagesPerCall({
+          modelId,
+        })
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!(gotMaxImagesPerCall as PromiseLike<any>).then) {
+          return gotMaxImagesPerCall as number | undefined
+        }
+      }
+
+      const getUrl = new URL(url)
+      getUrl.searchParams.set('modelId', modelFullId)
+      const { maxImagesPerCall: gotMaxImagesPerCall } = await responseJson(
+        await fetch(getUrl, {
+          headers: await makeHeaders(opts),
+        }),
+      )
+      return gotMaxImagesPerCall as number | undefined
+    },
 
     doGenerate: async ({ abortSignal, ...options }: ImageModelV2CallOptions) => {
       const headers = await makeHeaders(opts)
@@ -31,7 +52,7 @@ export async function createImageModel(
         method: 'POST',
         headers,
         body: SuperJSON.stringify({
-          modelId,
+          modelId: modelFullId,
           ...options,
         }),
         signal: abortSignal,

@@ -1,6 +1,7 @@
 import { parseJsonEventStream } from '@ai-sdk/provider-utils'
 import { z } from 'zod/v4'
 
+import { getModel } from '@cared/providers/providers'
 import { deserializeError, regexFromString, SuperJSON } from '@cared/shared'
 
 import type { CaredClientOptions } from '../client'
@@ -34,29 +35,41 @@ export type NonMethodProperties<T> = {
   [K in keyof T as T[K] extends (...args: any[]) => any ? never : K]: T[K]
 }
 
-export async function createLanguageModel(
-  modelId: string,
-  opts: CaredClientOptions,
-): Promise<LanguageModelV2> {
+export function createLanguageModel(modelId: string, opts: CaredClientOptions): LanguageModelV2 {
+  const {
+    // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
+    doGenerate,
+    // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
+    doStream,
+    supportedUrls,
+    ...attributes
+  } = getModel(modelId, 'language')
+
   const url = opts.apiUrl + '/v1/model/language'
 
-  const getUrl = new URL(url)
-  getUrl.searchParams.set('modelId', modelId)
-  const { supportedUrls, ...attributes } = await responseJson(
-    await fetch(getUrl, {
-      headers: await makeHeaders(opts),
-    }),
-  )
-
   return {
-    ...(attributes as NonMethodProperties<LanguageModelV2>),
+    ...attributes,
 
-    supportedUrls: Object.fromEntries(
-      (supportedUrls as [string, string[]][]).map(([mediaType, regexArray]) => [
-        mediaType,
-        regexArray.map(regexFromString).filter(Boolean),
-      ]),
-    ) as Record<string, RegExp[]>,
+    supportedUrls: (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (!(supportedUrls as PromiseLike<any>).then) {
+        return supportedUrls as Record<string, RegExp[]>
+      }
+
+      const getUrl = new URL(url)
+      getUrl.searchParams.set('modelId', modelId)
+      const { supportedUrls: gotSupportedUrls } = await responseJson(
+        await fetch(getUrl, {
+          headers: await makeHeaders(opts),
+        }),
+      )
+      return Object.fromEntries(
+        (gotSupportedUrls as [string, string[]][]).map(([mediaType, regexArray]) => [
+          mediaType,
+          regexArray.map(regexFromString).filter(Boolean),
+        ]),
+      ) as Record<string, RegExp[]>
+    })(),
 
     doGenerate: async ({ abortSignal, ...options }: LanguageModelV2CallOptions) => {
       const headers = await makeHeaders(opts)

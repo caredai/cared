@@ -14,11 +14,11 @@ if (
 }
 
 export default {
-  fetch(request: Request, env?: CloudflareEnv) {
+  async fetch(request: Request, env?: CloudflareEnv) {
     if (env?.API) {
       // setApiWorker(env.API)
     }
 
-    return handler.fetch(request)
+    return await handler.fetch(request)
   },
 }

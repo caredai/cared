@@ -26,5 +26,6 @@ export type { AppRouter, RouterInputs, RouterOutputs }
 
 export * from './types'
 export * from './rest'
+export * from './orpc/router'
 export { registerTelemetry } from './telemetry'
 export type { ApiKeyMetadataInput, OptionalApiKeyMetadataInput, S3Location } from './operation'

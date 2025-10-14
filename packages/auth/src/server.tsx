@@ -31,7 +31,14 @@ import VerificationEmail from '@cared/email/emails/verification-email'
 import { getKV } from '@cared/kv'
 import { generateId } from '@cared/shared'
 
-import { getApiPath, getApiUrl, getRootDomain, getWebUrl, hasSameRootDomain } from './client'
+import {
+  getApiPath,
+  getApiUrl,
+  getRootDomain,
+  getTrustedOrigins,
+  getWebUrl,
+  hasSameRootDomain,
+} from './client'
 import { env } from './env'
 import { orgAc, orgRoles } from './permissions'
 import { customPlugin } from './plugin'
@@ -177,7 +184,7 @@ const options = {
     },
   },
   secondaryStorage: kv,
-  trustedOrigins: [getApiUrl(), getWebUrl(), ...(env.BETTER_AUTH_TRUSTED_ORIGINS ?? [])],
+  trustedOrigins: getTrustedOrigins(),
   rateLimit: {
     enabled: true,
     window: 10,

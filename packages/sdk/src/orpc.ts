@@ -10,6 +10,22 @@ import type { InferRouterInputs, InferRouterOutputs, RouterClient } from '@orpc/
 import type { RouterUtils } from '@orpc/tanstack-query'
 import { makeHeaders } from './client'
 
+export type {
+  ProviderInfo,
+  LanguageProviderModelsInfo,
+  ImageProviderModelsInfo,
+  SpeechProviderModelsInfo,
+  TranscriptionProviderModelsInfo,
+  EmbeddingProviderModelsInfo,
+  ProviderModelsInfo,
+  LanguageModelInfo,
+  ImageModelInfo,
+  SpeechModelInfo,
+  TranscriptionModelInfo,
+  EmbeddingModelInfo,
+  ModelsInfo,
+} from '@cared/api'
+
 export type CaredOrpcRouterInputs = InferRouterInputs<AppRouter>
 export type CaredOrpcRouterOutputs = InferRouterOutputs<AppRouter>
 
@@ -23,7 +39,7 @@ export function createCaredOrpcClient(
   orpc: CaredOrpcQueryClient
 } {
   const link = new RPCLink({
-    url: opts.apiUrl + '/orpc',
+    url: opts.apiUrl + '/rpc',
     headers: async () => makeHeaders(opts),
     fetch: (request, init) => {
       return globalThis.fetch(request, {

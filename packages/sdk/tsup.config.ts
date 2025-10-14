@@ -12,6 +12,5 @@ export default defineConfig({
     '@cared/auth',
   ],
   format: ['esm', 'cjs'],
-  // dts: true,
-  experimentalDts: true,
+  // experimentalDts: true,
 })

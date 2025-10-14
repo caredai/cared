@@ -40,7 +40,6 @@ export const Route = createFileRoute('/workspace/$workspaceId/apps')({
     void context.queryClient.prefetchQuery(orpc.app.list.queryOptions())
     void context.queryClient.prefetchQuery(orpc.app.listCategories.queryOptions())
     void context.queryClient.prefetchQuery(orpc.model.listProvidersModels.queryOptions())
-    void context.queryClient.prefetchQuery(orpc.model.listDefaultModels.queryOptions())
   },
   component: Apps,
 })

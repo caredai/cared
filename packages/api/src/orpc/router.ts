@@ -20,6 +20,8 @@ import { telemetryRouter } from './telemetry'
 import { userRouter } from './user'
 import { workspaceRouter } from './workspace'
 
+export * from './model'
+
 export const appRouter = {
   admin: adminRouter,
   organization: organizationRouter,

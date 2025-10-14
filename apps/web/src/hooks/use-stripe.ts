@@ -64,7 +64,9 @@ export function useAddPaymentMethod(organizationId?: string) {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
           queryKey: orpc.stripe.listPaymentMethods.queryKey({
-            organizationId,
+            input: {
+              organizationId,
+            },
           }),
         })
       },
@@ -97,7 +99,9 @@ export function useRemovePaymentMethod(organizationId?: string) {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
           queryKey: orpc.stripe.listPaymentMethods.queryKey({
-            organizationId,
+            input: {
+              organizationId,
+            },
           }),
         })
       },
@@ -131,7 +135,9 @@ export function useUpdateDefaultPaymentMethod(organizationId?: string) {
         // Invalidate customer data to refresh the default payment method
         void queryClient.invalidateQueries({
           queryKey: orpc.stripe.getCustomer.queryKey({
-            organizationId,
+            input: {
+              organizationId,
+            },
           }),
         })
       },

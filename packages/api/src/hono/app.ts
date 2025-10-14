@@ -10,7 +10,7 @@ import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 
 import { auth } from '@cared/auth'
-import { getApiPath, getWebUrl } from '@cared/auth/client'
+import { getApiPath, getTrustedOrigins } from '@cared/auth/client'
 import { setDb } from '@cared/db/client'
 
 import type { Hyperdrive } from '@cloudflare/workers-types'
@@ -26,11 +26,15 @@ export type HonoApp = Hono<{ Bindings?: Bindings }>
 export function newHonoApp(): HonoApp {
   const app = new Hono<{ Bindings?: Bindings }>()
 
+  const trustedOrigins = getTrustedOrigins()
+
   app.use(logger())
   app.use(
     '/*',
     cors({
-      origin: getWebUrl(),
+      origin: (origin: string) => {
+        return trustedOrigins.includes(origin) ? origin : undefined
+      },
       allowMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PATCH', 'DELETE'],
       allowHeaders: [
         'Content-Type',

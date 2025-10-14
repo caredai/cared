@@ -43,7 +43,7 @@ export function MobileNav() {
           <span className="sr-only">Toggle Menu</span>
         </Button>
       </DrawerTrigger>
-      <DrawerContent className="max-h-[60svh] p-0">
+      <DrawerContent className="max-h-[60dvh] p-0">
         <div className="overflow-auto p-6">
           <div className="flex flex-col space-y-3">
             {menuConfig.mainNav.map(

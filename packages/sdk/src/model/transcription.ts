@@ -1,27 +1,25 @@
+import { getModel } from '@cared/providers/providers'
 import { deserializeError, SuperJSON } from '@cared/shared'
 
 import type { CaredClientOptions } from '../client'
-import type { NonMethodProperties } from './language'
 import type { TranscriptionModelV2, TranscriptionModelV2CallOptions } from '@ai-sdk/provider'
 import { makeHeaders } from '../client'
 import { responseJson } from './language'
 
-export async function createTranscriptionModel(
+export function createTranscriptionModel(
   modelId: string,
   opts: CaredClientOptions,
-): Promise<TranscriptionModelV2> {
+): TranscriptionModelV2 {
+  const {
+    // eslint-disable-next-line @typescript-eslint/unbound-method,@typescript-eslint/no-unused-vars
+    doGenerate,
+    ...modelConfig
+  } = getModel(modelId, 'transcription')
+
   const url = opts.apiUrl + '/v1/model/transcription'
 
-  const getUrl = new URL(url)
-  getUrl.searchParams.set('modelId', modelId)
-  const attributes = await responseJson(
-    await fetch(getUrl, {
-      headers: await makeHeaders(opts),
-    }),
-  )
-
   return {
-    ...(attributes as NonMethodProperties<TranscriptionModelV2>),
+    ...modelConfig,
 
     doGenerate: async ({ abortSignal, ...options }: TranscriptionModelV2CallOptions) => {
       const headers = await makeHeaders(opts)

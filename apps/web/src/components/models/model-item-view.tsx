@@ -5,10 +5,10 @@ import type {
   EmbeddingModelInfo,
   ImageModelInfo,
   LanguageModelInfo,
-  ProviderId,
   SpeechModelInfo,
   TranscriptionModelInfo,
-} from '@cared/providers'
+} from '@cared/api'
+import type { ProviderId } from '@cared/providers'
 import { Button } from '@cared/ui/components/button'
 import { CircleSpinner } from '@cared/ui/components/spinner'
 import {
@@ -168,63 +168,74 @@ export function ModelItemView({
       )}
 
       {/* Render model-specific view based on type */}
-      {model.type === 'language' && (
-        <LanguageModelItemView model={model.model as LanguageModelInfo} />
-      )}
-      {model.type === 'image' && <ImageModelItemView model={model.model as ImageModelInfo} />}
-      {model.type === 'speech' && <SpeechModelItemView model={model.model as SpeechModelInfo} />}
-      {model.type === 'transcription' && (
-        <TranscriptionModelItemView model={model.model as TranscriptionModelInfo} />
-      )}
-      {model.type === 'textEmbedding' && (
-        <EmbeddingModelItemView model={model.model as EmbeddingModelInfo} />
-      )}
+      {model.type === 'language' && <LanguageModelItemView model={model.model} />}
+      {model.type === 'image' && <ImageModelItemView model={model.model} />}
+      {model.type === 'speech' && <SpeechModelItemView model={model.model} />}
+      {model.type === 'transcription' && <TranscriptionModelItemView model={model.model} />}
+      {model.type === 'textEmbedding' && <EmbeddingModelItemView model={model.model} />}
     </div>
   )
 }
 
 // Language Model Item View
-function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
+export function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
+  if (
+    !(
+      model.contextWindow ||
+      model.maxOutputTokens ||
+      model.inputTokenPrice ||
+      model.outputTokenPrice ||
+      model.cachedInputTokenPrice ||
+      model.cacheInputTokenPrice
+    )
+  ) {
+    return null
+  }
+
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      <div className="flex flex-wrap gap-x-4">
-        {model.contextWindow && (
-          <div>
-            Context length:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.contextWindow, 'compact-decimal')}
-            </span>
-          </div>
-        )}
-        {model.maxOutputTokens && (
-          <div>
-            Max output length:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.maxOutputTokens, 'compact-decimal')}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-x-4">
-        {model.inputTokenPrice && (
-          <div>
-            Input:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.inputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-        {model.outputTokenPrice && (
-          <div>
-            Output:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.outputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-      </div>
+      {Boolean(model.contextWindow || model.maxOutputTokens) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.contextWindow && (
+            <div>
+              Context length:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.contextWindow, 'compact-decimal')}
+              </span>
+            </div>
+          )}
+          {model.maxOutputTokens && (
+            <div>
+              Max output length:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.maxOutputTokens, 'compact-decimal')}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+      {Boolean(model.inputTokenPrice || model.outputTokenPrice) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.inputTokenPrice && (
+            <div>
+              Input:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.inputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+          {model.outputTokenPrice && (
+            <div>
+              Output:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.outputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+        </div>
+      )}
       {Boolean(
         model.cachedInputTokenPrice ||
           (model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice === 'string'),
@@ -250,7 +261,7 @@ function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
           )}
         </div>
       )}
-      {model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice !== 'string' && (
+      {!!(model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice !== 'string') && (
         <div>
           Cache write:
           <CacheInputTokenPriceTable cacheInputTokenPrice={model.cacheInputTokenPrice} />
@@ -261,7 +272,20 @@ function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
 }
 
 // Image Model Item View
-function ImageModelItemView({ model }: { model: ImageModelInfo }) {
+export function ImageModelItemView({ model }: { model: ImageModelInfo }) {
+  if (
+    !(
+      model.imageInputTokenPrice ||
+      model.imageOutputTokenPrice ||
+      model.textInputTokenPrice ||
+      model.textCachedInputTokenPrice ||
+      model.imageCachedInputTokenPrice ||
+      model.pricePerImage
+    )
+  ) {
+    return null
+  }
+
   return (
     <div className="text-sm text-muted-foreground space-y-1">
       {Boolean(model.imageInputTokenPrice || model.imageOutputTokenPrice) && (
@@ -344,84 +368,104 @@ function ImageModelItemView({ model }: { model: ImageModelInfo }) {
 }
 
 // Speech Model Item View
-function SpeechModelItemView({ model }: { model: SpeechModelInfo }) {
+export function SpeechModelItemView({ model }: { model: SpeechModelInfo }) {
+  if (!(model.maxInputTokens || model.textTokenPrice || model.audioTokenPrice)) {
+    return null
+  }
+
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      <div className="flex flex-wrap gap-x-4">
-        {model.maxInputTokens && (
-          <div>
-            Max input length:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.maxInputTokens, 'compact-decimal')}
-            </span>
-          </div>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-x-4">
-        {model.textTokenPrice && (
-          <div>
-            Text tokens:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.textTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-        {model.audioTokenPrice && (
-          <div>
-            Audio tokens:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.audioTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-      </div>
+      {!!model.maxInputTokens && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.maxInputTokens && (
+            <div>
+              Max input length:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.maxInputTokens, 'compact-decimal')}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+      {!!(model.textTokenPrice || model.audioTokenPrice) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.textTokenPrice && (
+            <div>
+              Text tokens:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.textTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+          {model.audioTokenPrice && (
+            <div>
+              Audio tokens:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.audioTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 // Transcription Model Item View
-function TranscriptionModelItemView({ model }: { model: TranscriptionModelInfo }) {
+export function TranscriptionModelItemView({ model }: { model: TranscriptionModelInfo }) {
+  if (!(model.audioTokenPrice || model.textInputTokenPrice || model.textOutputTokenPrice)) {
+    return null
+  }
+
   return (
     <div className="text-sm text-muted-foreground space-y-1">
-      <div className="flex flex-wrap gap-x-4">
-        {model.audioTokenPrice && (
-          <div>
-            Audio tokens:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.audioTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-x-4">
-        {model.textInputTokenPrice && (
-          <div>
-            Text input:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.textInputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-        {model.textOutputTokenPrice && (
-          <div>
-            Text output:{' '}
-            <span className="font-mono font-medium text-foreground">
-              {zuji(model.textOutputTokenPrice, 'standard-currency-usd')}/M
-            </span>{' '}
-            tokens
-          </div>
-        )}
-      </div>
+      {!!model.audioTokenPrice && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.audioTokenPrice && (
+            <div>
+              Audio tokens:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.audioTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+        </div>
+      )}
+      {!!(model.textInputTokenPrice || model.textOutputTokenPrice) && (
+        <div className="flex flex-wrap gap-x-4">
+          {model.textInputTokenPrice && (
+            <div>
+              Text input:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.textInputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+          {model.textOutputTokenPrice && (
+            <div>
+              Text output:{' '}
+              <span className="font-mono font-medium text-foreground">
+                {zuji(model.textOutputTokenPrice, 'standard-currency-usd')}/M
+              </span>{' '}
+              tokens
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 // Embedding Model Item View
-function EmbeddingModelItemView({ model }: { model: EmbeddingModelInfo }) {
+export function EmbeddingModelItemView({ model }: { model: EmbeddingModelInfo }) {
+  if (!(model.tokenPrice || model.dimensions)) {
+    return null
+  }
+
   return (
     <div className="text-sm text-muted-foreground space-y-1">
       {(model.tokenPrice || model.dimensions) && (

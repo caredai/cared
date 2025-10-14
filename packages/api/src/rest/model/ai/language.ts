@@ -35,11 +35,11 @@ import { languageModelV2MessageSchema } from '../../../types'
 import { waitUntil } from '../../../utils'
 import { makeResponseJson, requestJson } from './utils'
 
-const ajv = new Ajv({ allErrors: true })
+const _ajv = new Ajv({ allErrors: true })
 
 export const jsonSchema7Schema = z
   .record(z.string(), z.any())
-  .refine((schema) => ajv.validateSchema(schema), 'Invalid JSON Schema')
+  // .refine((schema) => ajv.validateSchema(schema), 'Invalid JSON Schema')
 
 const languageModelV2FunctionToolSchema = z.object({
   type: z.literal('function'),

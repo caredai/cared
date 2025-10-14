@@ -31,6 +31,6 @@
   "dependencies": {
     "base-x": "^5.0.1",
     "buffer": "^6.0.3",
-    "uuid": "11.1.0"
+    "uuid": "13.0.0"
   }
 }

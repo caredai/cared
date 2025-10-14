@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod/v4'
 
+import { defaultModels } from '@cared/providers'
 import { Button } from '@cared/ui/components/button'
 import {
   Dialog,
@@ -37,7 +38,7 @@ import {
 } from '@cared/ui/components/select'
 import { Textarea } from '@cared/ui/components/textarea'
 
-import { ModelSelect } from '@/components/model-select'
+import { ModelSelect } from '@/components/models/model-select'
 import { orpc } from '@/lib/orpc'
 import { stripIdPrefix } from '@/lib/utils'
 
@@ -72,66 +73,32 @@ export function CreateAppDialog({
   // Get models data for selection
   const { data: modelsData } = useSuspenseQuery(orpc.model.listProvidersModels.queryOptions())
 
-  // Get default models data
-  const { data: defaultModelsData } = useSuspenseQuery(orpc.model.listDefaultModels.queryOptions())
-
   // Process model data with memoization to improve performance
-  const { languageModelItems, embeddingModelItems, imageModelItems } = useMemo(() => {
-    // Transform model data structure to match the required group[] type
-    const processModelsToGroups = (models: any[] | undefined) => {
-      if (!models) return []
-
-      // Convert each provider into a group object
-      return models.map((provider) => ({
-        label: provider.name,
-        items: provider.models.map((model: { name: string; id: string }) => ({
-          label: model.name,
-          value: model.id,
-        })),
-      }))
-    }
-
-    // Process different types of model data
-    const languageModelItems = processModelsToGroups(modelsData.models.language)
-    const embeddingModelItems = processModelsToGroups(modelsData.models.textEmbedding)
-    const imageModelItems = processModelsToGroups(modelsData.models.image)
-
+  const { languageModelProviders, embeddingModelProviders, imageModelProviders } = useMemo(() => {
     return {
-      languageModelItems,
-      embeddingModelItems,
-      imageModelItems,
+      languageModelProviders: modelsData.models.language ?? [],
+      embeddingModelProviders: modelsData.models.textEmbedding ?? [],
+      imageModelProviders: modelsData.models.image ?? [],
     }
   }, [modelsData.models])
 
   // Compute default model values with memoization
   const defaultValues = useMemo(() => {
-    // Find the first available model value from the processed groups
-    const getFirstModelValue = (
-      groups: { label: string; items: { label: string; value: string }[] }[],
-    ) => {
-      for (const group of groups) {
-        if (group.items.length > 0) {
-          return group.items[0]!.value
-        }
-      }
-      return ''
-    }
-
     // Get first available model from each type
-    const firstLanguageModel = getFirstModelValue(languageModelItems)
-    const firstEmbeddingModel = getFirstModelValue(embeddingModelItems)
-    const firstImageModel = getFirstModelValue(imageModelItems)
+    const firstLanguageModel = modelsData.models.language?.at(0)?.models.at(0)?.id
+    const firstEmbeddingModel = modelsData.models.textEmbedding?.at(0)?.models.at(0)?.id
+    const firstImageModel = modelsData.models.image?.at(0)?.models.at(0)?.id
 
     // Use API-provided default models or fallback to first available models
     const defaultLanguageModel =
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      defaultModelsData.defaultModels.app.languageModel || firstLanguageModel
+      defaultModels.app.languageModel || firstLanguageModel
     const defaultEmbeddingModel =
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      defaultModelsData.defaultModels.app.embeddingModel || firstEmbeddingModel
+      defaultModels.app.embeddingModel || firstEmbeddingModel
     const defaultImageModel =
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      defaultModelsData.defaultModels.app.imageModel || firstImageModel
+      defaultModels.app.imageModel || firstImageModel
 
     return {
       name: '',
@@ -141,12 +108,7 @@ export function CreateAppDialog({
       embeddingModel: defaultEmbeddingModel,
       imageModel: defaultImageModel,
     }
-  }, [
-    defaultModelsData.defaultModels,
-    languageModelItems,
-    embeddingModelItems,
-    imageModelItems,
-  ])
+  }, [modelsData])
 
   // Set up form with validation
   const form = useForm<CreateAppFormValues>({
@@ -197,15 +159,15 @@ export function CreateAppDialog({
       }
 
       // Only add models to metadata when they differ from default models
-      if (values.languageModel !== defaultModelsData.defaultModels.app.languageModel) {
+      if (values.languageModel !== defaultModels.app.languageModel) {
         metadata.languageModel = values.languageModel
       }
 
-      if (values.embeddingModel !== defaultModelsData.defaultModels.app.embeddingModel) {
+      if (values.embeddingModel !== defaultModels.app.embeddingModel) {
         metadata.embeddingModel = values.embeddingModel
       }
 
-      if (values.imageModel !== defaultModelsData.defaultModels.app.imageModel) {
+      if (values.imageModel !== defaultModels.app.imageModel) {
         metadata.imageModel = values.imageModel
       }
 
@@ -324,28 +286,64 @@ export function CreateAppDialog({
                 <div className="space-y-4">
                   <div className="mb-2 text-sm font-medium">Model Selection</div>
 
-                  <ModelSelect
+                  <FormField
+                    control={form.control}
                     name="languageModel"
-                    label="Language Model"
-                    description="The language model for text generation"
-                    groups={languageModelItems}
-                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Language Model</FormLabel>
+                        <FormControl>
+                          <ModelSelect
+                            value={field.value as any}
+                            onValueChange={field.onChange}
+                            modelType="language"
+                            providerModels={languageModelProviders}
+                          />
+                        </FormControl>
+                        <FormDescription>The language model for text generation</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
 
-                  <ModelSelect
+                  <FormField
+                    control={form.control}
                     name="embeddingModel"
-                    label="Embedding Model"
-                    description="Used for embedding memories and knowledge"
-                    groups={embeddingModelItems}
-                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Embedding Model</FormLabel>
+                        <FormControl>
+                          <ModelSelect
+                            value={field.value as any}
+                            onValueChange={field.onChange}
+                            modelType="textEmbedding"
+                            providerModels={embeddingModelProviders}
+                          />
+                        </FormControl>
+                        <FormDescription>Used for embedding memories and knowledge</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
 
-                  <ModelSelect
-                    name="imageModel"
-                    label="Image Model"
-                    description="Used for image generation and understanding"
-                    groups={imageModelItems}
+                  <FormField
                     control={form.control}
+                    name="imageModel"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Image Model</FormLabel>
+                        <FormControl>
+                          <ModelSelect
+                            value={field.value as any}
+                            onValueChange={field.onChange}
+                            modelType="image"
+                            providerModels={imageModelProviders}
+                          />
+                        </FormControl>
+                        <FormDescription>Used for image generation and understanding</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
               </div>

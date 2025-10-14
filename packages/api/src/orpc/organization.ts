@@ -225,7 +225,7 @@ export const organizationRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const inv = await auth.api.createInvitation({
+      const inv = (await auth.api.createInvitation({
         headers: headers(context.headers),
         body: {
           organizationId: input.organizationId,
@@ -234,7 +234,11 @@ export const organizationRouter = {
           resend: input.resend,
           teamId: input.teamId,
         },
-      })
+      })) as Omit<Invitation, 'status' | 'role' | 'teamId'> & {
+        status: InvitationStatus
+        role: OrganizationRole
+        teamId?: string | null
+      }
       return { invitation: formatInvitation(inv) }
     }),
 

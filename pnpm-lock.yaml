@@ -42,7 +42,7 @@ catalogs:
       version: 19.1.1
 
 overrides:
-  uuid: 11.1.0
+  uuid: 13.0.0
   minimatch: 10.0.3
   pdfjs-dist: 4.7.76
   pdfjs-dist>canvas: npm:non-existent-package@0.0.0
@@ -66,6 +66,9 @@ patchedDependencies:
   tsup:
     hash: 4600130ecf102e01aa5e01305c0a26b96b516ec8f2e95f6c26dc0d7d0523f0d8
     path: patches/tsup.patch
+  uuid:
+    hash: 02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28
+    path: patches/uuid.patch
   vite-plugin-svgr:
     hash: db84d82af5d0c31dc273279045aa084e7d52121dbc6f052d4473c9a1a0302533
     path: patches/vite-plugin-svgr.patch
@@ -302,10 +305,10 @@ importers:
         version: link:../../packages/ui
       '@daveyplate/better-auth-tanstack':
         specifier: ^1.3.6
-        version: 1.3.6(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0(react@19.1.1))(better-auth@1.3.13(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+        version: 1.3.6(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0(react@19.1.1))(better-auth@1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@daveyplate/better-auth-ui':
         specifier: ^1.7.4
-        version: 1.7.4(8a901c86dbc144e75efbd269a8f27818)
+        version: 1.7.4(00efb3e8ee8dd0e7d25f9df06f2a0457)
       '@fontsource-variable/geist':
         specifier: ^5.2.8
         version: 5.2.8
@@ -657,14 +660,14 @@ importers:
         specifier: workspace:*
         version: link:../shared
       better-auth:
-        specifier: 1.3.12
-        version: 1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+        specifier: ^1.3.27
+        version: 1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       better-auth-harmony:
         specifier: ^1.2.5
-        version: 1.2.5(better-auth@1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))
+        version: 1.2.5(better-auth@1.3.27)
       validation-better-auth:
         specifier: ^1.3.4
-        version: 1.3.4(better-auth@1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))
+        version: 1.3.4(better-auth@1.3.27)
     devDependencies:
       '@cared/eslint-config':
         specifier: workspace:*
@@ -1271,6 +1274,9 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.1.11
+      zod-from-json-schema:
+        specifier: ^0.5.0
+        version: 0.5.0
     devDependencies:
       '@cared/eslint-config':
         specifier: workspace:*
@@ -1315,8 +1321,8 @@ importers:
         specifier: '>=5.0.38'
         version: 5.0.45(zod@4.1.11)
       better-auth:
-        specifier: '>=1.3.12'
-        version: 1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+        specifier: '>=1.3.27'
+        version: 1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       buffer:
         specifier: '>=6.0.3'
         version: 6.0.3
@@ -1379,8 +1385,8 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
       uuid:
-        specifier: 11.1.0
-        version: 11.1.0
+        specifier: 13.0.0
+        version: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     devDependencies:
       '@cared/eslint-config':
         specifier: workspace:*
@@ -2736,6 +2742,9 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@better-auth/core@1.3.27':
+    resolution: {integrity: sha512-3Sfdax6MQyronY+znx7bOsfQHI6m1SThvJWb0RDscFEAhfqLy95k1sl+/PgGyg0cwc2cUXoEiAOSqYdFYrg3vA==}
 
   '@better-auth/utils@0.3.0':
     resolution: {integrity: sha512-W+Adw6ZA6mgvnSnhOki270rwJ42t4XzSK6YWGF//BbVXL6SwCLWfyzBc1lN2m/4RM28KubdBKQ4X5VMoLRNPQw==}
@@ -5567,6 +5576,7 @@ packages:
   '@opentelemetry/exporter-jaeger@2.1.0':
     resolution: {integrity: sha512-qtUMsp8061pQn6ZN9dngH6okiiF0NlHYBLWprzLeeCmNN7i5UHM+V8GmxvUH4L/zXlNBsySq7p3fZHIIbmK9xg==}
     engines: {node: ^18.19.0 || >=20.6.0}
+    deprecated: Jaeger now has native support for OTLP. Please use @opentelemetry/exporter-trace-otlp-proto instead.
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
 
@@ -9977,46 +9987,17 @@ packages:
     peerDependencies:
       better-auth: ^1.0.3
 
-  better-auth@1.3.12:
-    resolution: {integrity: sha512-FckxiAexCkkk2F0EOPmhXjWhYYE8eYg2x68lOIirSgyQ0TWc4JDvA5y8Vax5Jc7iyXk5MjJBY3DfwTPDZ87Lbg==}
+  better-auth@1.3.27:
+    resolution: {integrity: sha512-SwiGAJ7yU6dBhNg0NdV1h5M8T5sa7/AszZVc4vBfMDrLLmvUfbt9JoJ0uRUJUEdKRAAxTyl9yA+F3+GhtAD80w==}
     peerDependencies:
       '@lynx-js/react': '*'
-      '@sveltejs/kit': ^2.0.0
-      next: ^14.0.0 || ^15.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-      solid-js: ^1.0.0
-      svelte: ^4.0.0 || ^5.0.0
-      vue: ^3.0.0
-    peerDependenciesMeta:
-      '@lynx-js/react':
-        optional: true
-      '@sveltejs/kit':
-        optional: true
-      next:
-        optional: true
-      react:
-        optional: true
-      react-dom:
-        optional: true
-      solid-js:
-        optional: true
-      svelte:
-        optional: true
-      vue:
-        optional: true
-
-  better-auth@1.3.13:
-    resolution: {integrity: sha512-vNIVExB87JTM19+1+p6SZ6xbzZFLw4ug8ir61qCArE8UbIN3SZQi0T3/PjubpWPwsLjINBsVizeHxPf5S7Ss0A==}
-    peerDependencies:
-      '@lynx-js/react': '*'
-      '@sveltejs/kit': ^2.0.0
-      next: ^14.0.0 || ^15.0.0
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-      solid-js: ^1.0.0
-      svelte: ^4.0.0 || ^5.0.0
-      vue: ^3.0.0
+      '@sveltejs/kit': '*'
+      next: '*'
+      react: '*'
+      react-dom: '*'
+      solid-js: '*'
+      svelte: '*'
+      vue: '*'
     peerDependenciesMeta:
       '@lynx-js/react':
         optional: true
@@ -17153,8 +17134,8 @@ packages:
   util@0.12.5:
     resolution: {integrity: sha512-kZf/K6hEIrWHI6XqOFUiiMa+79wE/D8Q+NCNAWclkyg3b4d2k7s0QGepNjiABc+aR3N1PAyHL7p6UcLY6LmrnA==}
 
-  uuid@11.1.0:
-    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
     hasBin: true
 
   v8-compile-cache-lib@3.0.1:
@@ -17769,6 +17750,9 @@ packages:
 
   youch@4.1.0-beta.10:
     resolution: {integrity: sha512-rLfVLB4FgQneDr0dv1oddCVZmKjcJ6yX6mS4pU82Mq/Dt9a3cLZQ62pDBL4AUO+uVrCvtWz3ZFUL2HFAFJ/BXQ==}
+
+  zod-from-json-schema@0.5.0:
+    resolution: {integrity: sha512-W1v1YIoimOJfvuorGGp1QroizLL3jEGELJtgrHiVg/ytxVZdh/BTTVyPypGB7YK30LHrCkkebbjuyHIjBGCEzw==}
 
   zod-to-json-schema@3.24.6:
     resolution: {integrity: sha512-h/z3PKvcTcTetyjl1fkj79MHNEjm+HpD6NXheWjzOekY7kV+lwDYnHw+ivHkijnCSMz1yJaWBD9vu/Fcmk+vEg==}
@@ -18388,7 +18372,7 @@ snapshots:
       '@smithy/util-waiter': 4.2.0
       '@types/uuid': 9.0.8
       tslib: 2.8.1
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - aws-crt
     optional: true
@@ -18548,7 +18532,7 @@ snapshots:
       '@smithy/util-waiter': 4.1.1
       '@types/uuid': 9.0.8
       tslib: 2.8.1
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - aws-crt
 
@@ -19932,6 +19916,11 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
+  '@better-auth/core@1.3.27':
+    dependencies:
+      better-call: 1.0.19
+      zod: 4.1.11
+
   '@better-auth/utils@0.3.0': {}
 
   '@better-fetch/fetch@1.1.18': {}
@@ -20316,18 +20305,18 @@ snapshots:
       luxon: 3.7.2
       type-fest: 4.41.0
 
-  '@daveyplate/better-auth-tanstack@1.3.6(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0(react@19.1.1))(better-auth@1.3.13(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+  '@daveyplate/better-auth-tanstack@1.3.6(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0(react@19.1.1))(better-auth@1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
     dependencies:
       '@tanstack/query-core': 5.89.0
       '@tanstack/react-query': 5.89.0(react@19.1.1)
-      better-auth: 1.3.13(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+      better-auth: 1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       react: 19.1.1
       react-dom: 19.1.1(react@19.1.1)
 
-  '@daveyplate/better-auth-ui@1.7.4(8a901c86dbc144e75efbd269a8f27818)':
+  '@daveyplate/better-auth-ui@1.7.4(00efb3e8ee8dd0e7d25f9df06f2a0457)':
     dependencies:
       '@better-fetch/fetch': 1.1.18
-      '@daveyplate/better-auth-tanstack': 1.3.6(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0(react@19.1.1))(better-auth@1.3.13(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@daveyplate/better-auth-tanstack': 1.3.6(@tanstack/query-core@5.89.0)(@tanstack/react-query@5.89.0(react@19.1.1))(better-auth@1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@hcaptcha/react-hcaptcha': 1.12.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       '@hookform/resolvers': 5.2.2(react-hook-form@7.63.0(react@19.1.1))
       '@instantdb/react': 0.21.17(react@19.1.1)
@@ -20350,7 +20339,7 @@ snapshots:
       '@triplit/client': 1.0.50(typescript@5.9.2)
       '@triplit/react': 1.0.51(react@19.1.1)(typescript@5.9.2)
       '@wojtekmaj/react-recaptcha-v3': 0.1.4(@types/react@19.1.13)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      better-auth: 1.3.13(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+      better-auth: 1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       class-variance-authority: 0.7.1
       clsx: 2.1.1
       input-otp: 1.4.2(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -21565,7 +21554,7 @@ snapshots:
     dependencies:
       '@instantdb/version': 0.21.17
       mutative: 1.2.0
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
 
   '@instantdb/react@0.21.17(react@19.1.1)':
     dependencies:
@@ -21867,7 +21856,7 @@ snapshots:
       langchain: 0.3.34(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.11)))(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(axios@1.12.2)(cheerio@1.1.2)(handlebars@4.7.8)(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.11))(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       langsmith: 0.3.69(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.11))
       openai: 5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.11)
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       zod: 3.25.76
     optionalDependencies:
       '@aws-crypto/sha256-js': 5.2.0
@@ -21941,7 +21930,7 @@ snapshots:
       mustache: 4.2.0
       p-queue: 6.6.2
       p-retry: 4.6.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       zod: 3.25.76
       zod-to-json-schema: 3.24.6(zod@3.25.76)
     transitivePeerDependencies:
@@ -21961,7 +21950,7 @@ snapshots:
       mustache: 4.2.0
       p-queue: 6.6.2
       p-retry: 4.6.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       zod: 3.25.76
       zod-to-json-schema: 3.24.6(zod@3.25.76)
     transitivePeerDependencies:
@@ -21987,7 +21976,7 @@ snapshots:
   '@langchain/weaviate@0.2.3(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.11)))(encoding@0.1.13)':
     dependencies:
       '@langchain/core': 0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.11))
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       weaviate-client: 3.8.1(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
@@ -22202,7 +22191,7 @@ snapshots:
       readable-stream: 3.6.2
       socket.io-client: 4.8.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       utf-8-validate: 5.0.10
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - supports-color
 
@@ -22230,7 +22219,7 @@ snapshots:
       socket.io-client: 4.8.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       tslib: 2.8.1
       util: 0.12.5
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -22251,7 +22240,7 @@ snapshots:
       lodash: 4.17.21
       pony-cause: 2.1.11
       semver: 7.7.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - supports-color
 
@@ -22284,7 +22273,7 @@ snapshots:
       debug: 4.4.3
       pony-cause: 2.1.11
       semver: 7.7.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - supports-color
 
@@ -22298,7 +22287,7 @@ snapshots:
       debug: 4.4.3
       pony-cause: 2.1.11
       semver: 7.7.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - supports-color
 
@@ -23165,7 +23154,7 @@ snapshots:
       js-cookie: 3.0.5
       libphonenumber-js: 1.12.17
       set-cookie-parser: 2.7.1
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     optionalDependencies:
       viem: 2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
@@ -23225,7 +23214,7 @@ snapshots:
       styled-components: 6.1.19(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       stylis: 4.3.6
       tinycolor2: 1.6.0
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       viem: 2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       zustand: 5.0.8(@types/react@19.1.13)(react@19.1.1)(use-sync-external-store@1.4.0(react@19.1.1))
     optionalDependencies:
@@ -25459,7 +25448,7 @@ snapshots:
       '@smithy/util-retry': 4.1.2
       '@types/uuid': 9.0.8
       tslib: 2.8.1
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
 
   '@smithy/middleware-retry@4.4.0':
     dependencies:
@@ -29295,35 +29284,16 @@ snapshots:
 
   bech32@2.0.0: {}
 
-  better-auth-harmony@1.2.5(better-auth@1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)):
+  better-auth-harmony@1.2.5(better-auth@1.3.27):
     dependencies:
-      better-auth: 1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+      better-auth: 1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
       libphonenumber-js: 1.12.17
       mailchecker: 6.0.18
       validator: 13.15.15
 
-  better-auth@1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9):
+  better-auth@1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9):
     dependencies:
-      '@better-auth/utils': 0.3.0
-      '@better-fetch/fetch': 1.1.18
-      '@noble/ciphers': 2.0.0
-      '@noble/hashes': 2.0.0
-      '@simplewebauthn/browser': 13.2.0
-      '@simplewebauthn/server': 13.2.1
-      better-call: 1.0.19
-      defu: 6.1.4
-      jose: 6.1.0
-      kysely: 0.28.7
-      nanostores: 1.0.1
-      zod: 4.1.11
-    optionalDependencies:
-      next: 15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      solid-js: 1.9.9
-
-  better-auth@1.3.13(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9):
-    dependencies:
+      '@better-auth/core': 1.3.27
       '@better-auth/utils': 0.3.0
       '@better-fetch/fetch': 1.1.18
       '@noble/ciphers': 2.0.0
@@ -31682,7 +31652,7 @@ snapshots:
       https-proxy-agent: 7.0.6
       is-stream: 2.0.1
       node-fetch: 2.7.0(encoding@0.1.13)
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -32183,7 +32153,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.12.2)
+      retry-axios: 2.6.0(axios@1.12.2(debug@4.4.3))
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -32613,7 +32583,7 @@ snapshots:
       node-int64: 0.4.0
       opentracing: 0.14.7
       thriftrw: 3.11.4
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       xorshift: 1.2.0
 
   jayson@4.2.0(bufferutil@4.0.9)(utf-8-validate@5.0.10):
@@ -32628,7 +32598,7 @@ snapshots:
       isomorphic-ws: 4.0.1(ws@7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       json-stringify-safe: 5.0.1
       stream-json: 1.9.1
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       ws: 7.5.10(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     transitivePeerDependencies:
       - bufferutil
@@ -33210,7 +33180,7 @@ snapshots:
       langsmith: 0.3.69(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.11))
       openapi-types: 12.1.3
       p-retry: 4.6.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       yaml: 2.8.1
       zod: 3.25.76
     optionalDependencies:
@@ -33232,7 +33202,7 @@ snapshots:
       p-queue: 6.6.2
       p-retry: 4.6.2
       semver: 7.7.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/exporter-trace-otlp-proto': 0.205.0(@opentelemetry/api@1.9.0)
@@ -33247,7 +33217,7 @@ snapshots:
       p-queue: 6.6.2
       p-retry: 4.6.2
       semver: 7.7.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
       '@opentelemetry/exporter-trace-otlp-proto': 0.205.0(@opentelemetry/api@1.9.0)
@@ -33762,7 +33732,7 @@ snapshots:
       pg: 8.16.3
       redis: 4.7.1
       sqlite3: 5.1.7
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       zod: 3.25.76
     transitivePeerDependencies:
       - debug
@@ -33790,7 +33760,7 @@ snapshots:
       pg: 8.16.3
       redis: 4.7.1
       sqlite3: 5.1.7
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       zod: 3.25.76
     transitivePeerDependencies:
       - debug
@@ -34334,7 +34304,7 @@ snapshots:
       '@smithy/fetch-http-handler': 2.5.0
       next: 15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react: 19.1.1
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - aws-crt
 
@@ -36075,7 +36045,7 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  retry-axios@2.6.0(axios@1.12.2):
+  retry-axios@2.6.0(axios@1.12.2(debug@4.4.3)):
     dependencies:
       axios: 1.12.2(debug@4.4.3)
 
@@ -36157,7 +36127,7 @@ snapshots:
       '@types/ws': 8.18.1
       buffer: 6.0.3
       eventemitter3: 5.0.1
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
       ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       bufferutil: 4.0.9
@@ -36956,7 +36926,7 @@ snapshots:
       es6-promise: 4.2.8
       fast-sha256: 1.3.0
       url-parse: 1.5.10
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
 
   swap-case@1.1.2:
     dependencies:
@@ -37777,7 +37747,7 @@ snapshots:
       is-typed-array: 1.1.15
       which-typed-array: 1.1.19
 
-  uuid@11.1.0: {}
+  uuid@13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28): {}
 
   v8-compile-cache-lib@3.0.1: {}
 
@@ -37791,9 +37761,9 @@ snapshots:
 
   validate-npm-package-name@6.0.0: {}
 
-  validation-better-auth@1.3.4(better-auth@1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)):
+  validation-better-auth@1.3.4(better-auth@1.3.27):
     dependencies:
-      better-auth: 1.3.12(next@15.5.3(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
+      better-auth: 1.3.27(next@15.5.3(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(@playwright/test@1.55.0)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)(solid-js@1.9.9)
 
   validator@13.15.15: {}
 
@@ -38167,7 +38137,7 @@ snapshots:
       nice-grpc: 2.1.12
       nice-grpc-client-middleware-retry: 3.1.11
       nice-grpc-common: 2.0.2
-      uuid: 11.1.0
+      uuid: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)
     transitivePeerDependencies:
       - encoding
 
@@ -38560,6 +38530,10 @@ snapshots:
       '@speed-highlight/core': 1.2.7
       cookie: 1.0.2
       youch-core: 0.3.3
+
+  zod-from-json-schema@0.5.0:
+    dependencies:
+      zod: 4.1.11
 
   zod-to-json-schema@3.24.6(zod@3.25.76):
     dependencies:

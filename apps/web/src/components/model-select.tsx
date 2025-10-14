@@ -7,7 +7,7 @@ import {
   ComboboxEmpty,
   ComboboxGroup,
   ComboboxInput,
-  ComboboxItem,
+  ComboboxItem
 } from '@cared/ui/components/combobox'
 import {
   FormControl,
@@ -15,9 +15,11 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage
 } from '@cared/ui/components/form'
 import { Virtualized, VirtualizedVirtualizer } from '@cared/ui/components/virtualized'
+import { cn } from '@cared/ui/lib/utils'
+import { Separator } from '@cared/ui/components/separator'
 
 interface ModelSelectProps<
   TFieldValues extends {
@@ -121,10 +123,13 @@ export function ModelSelect<
                 {filtered.length > 0 && (
                   <ComboboxGroup>
                     <VirtualizedVirtualizer startMargin={32}>
-                      {filtered.flatMap((group) => [
+                      {filtered.filter(group => group.items.length).flatMap((group, index) => [
+                        index > 0 && <Separator className="my-2" />,
                         <div
                           key={group.label}
-                          className="px-2 py-1.5 text-sm font-semibold text-muted-foreground"
+                          className={cn(
+                            'px-2 py-1.5 text-sm font-semibold text-muted-foreground'
+                          )}
                         >
                           {group.label}
                         </div>,
@@ -132,11 +137,11 @@ export function ModelSelect<
                           <ComboboxItem
                             key={item.value}
                             value={item.value}
-                            className="cursor-pointer"
+                            className="cursor-pointer font-medium"
                           >
                             {item.label}
                           </ComboboxItem>
-                        )),
+                        ))
                       ])}
                     </VirtualizedVirtualizer>
                   </ComboboxGroup>

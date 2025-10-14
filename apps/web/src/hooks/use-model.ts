@@ -7,16 +7,6 @@ import type { ModelFullId, ModelType, ProviderId } from '@cared/providers'
 
 import { orpc } from '@/lib/orpc'
 
-export function useDefaultModels() {
-  const {
-    data: { defaultModels },
-  } = useSuspenseQuery(orpc.model.listDefaultModels.queryOptions())
-
-  return {
-    defaultModels,
-  }
-}
-
 export function useProviders() {
   const {
     data: { providers },

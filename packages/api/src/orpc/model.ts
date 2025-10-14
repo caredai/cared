@@ -1,11 +1,21 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import type { BaseModelInfo, ModelInfos, ModelType } from '@cared/providers'
+import type {
+  BaseModelInfo,
+  BaseProviderInfo,
+  EmbeddingModelInfo as EmbeddingModelInfo_,
+  ImageModelInfo as ImageModelInfo_,
+  LanguageModelInfo as LanguageModelInfo_,
+  ModelFullId,
+  ModelInfos,
+  ModelType,
+  SpeechModelInfo as SpeechModelInfo_,
+  TranscriptionModelInfo as TranscriptionModelInfo_,
+} from '@cared/providers'
 import { and, eq, or } from '@cared/db'
-import { ProviderModels, ProviderSettings } from '@cared/db/schema'
+import { ProviderModels as ProviderModelsTable, ProviderSettings } from '@cared/db/schema'
 import {
-  defaultModels,
   getBaseProviderInfos,
   modelFullId,
   modelFullIdSchema,
@@ -21,23 +31,64 @@ import { getProviderModelInfos, sourceSchema } from '../operation'
 import { protectedProcedure, publicProcedure } from '../orpc'
 import { updateModelArgsSchema, updateModelsArgsSchema } from '../types'
 
-export const modelRouter = {
-  /**
-   * List default models used by the platform.
-   * Accessible by anyone.
-   * @returns Default models
-   */
-  listDefaultModels: publicProcedure
-    .route({
-      method: 'GET',
-      path: '/v1/default-models',
-      tags: ['models'],
-      summary: 'Get default models used by the platform',
-    })
-    .handler(() => {
-      return { defaultModels }
-    }),
+export type ProviderInfo = BaseProviderInfo & {
+  enabled: boolean
+}
 
+export type LanguageProviderModelsInfo = BaseProviderInfo & {
+  models: LanguageModelInfo[]
+}
+export type ImageProviderModelsInfo = BaseProviderInfo & {
+  models: ImageModelInfo[]
+}
+export type SpeechProviderModelsInfo = BaseProviderInfo & {
+  models: SpeechModelInfo[]
+}
+export type TranscriptionProviderModelsInfo = BaseProviderInfo & {
+  models: TranscriptionModelInfo[]
+}
+export type EmbeddingProviderModelsInfo = BaseProviderInfo & {
+  models: EmbeddingModelInfo[]
+}
+
+export interface ProviderModelsInfo {
+  language?: LanguageProviderModelsInfo[]
+  image?: ImageProviderModelsInfo[]
+  speech?: SpeechProviderModelsInfo[]
+  transcription?: TranscriptionProviderModelsInfo[]
+  textEmbedding?: EmbeddingProviderModelsInfo[]
+}
+
+export type LanguageModelInfo = LanguageModelInfo_ & {
+  isSystem?: boolean
+  id: ModelFullId
+}
+export type ImageModelInfo = ImageModelInfo_ & {
+  isSystem?: boolean
+  id: ModelFullId
+}
+export type SpeechModelInfo = SpeechModelInfo_ & {
+  isSystem?: boolean
+  id: ModelFullId
+}
+export type TranscriptionModelInfo = TranscriptionModelInfo_ & {
+  isSystem?: boolean
+  id: ModelFullId
+}
+export type EmbeddingModelInfo = EmbeddingModelInfo_ & {
+  isSystem?: boolean
+  id: ModelFullId
+}
+
+export interface ModelsInfo {
+  language?: LanguageModelInfo[]
+  image?: ImageModelInfo[]
+  speech?: SpeechModelInfo[]
+  transcription?: TranscriptionModelInfo[]
+  textEmbedding?: EmbeddingModelInfo[]
+}
+
+export const modelRouter = {
   /**
    * List all available model providers.
    * Accessible by anyone.
@@ -59,11 +110,13 @@ export const modelRouter = {
         })
       )?.settings
 
+      const result: ProviderInfo[] = providers.map((provider) => ({
+        ...provider,
+        enabled: Boolean(providerSettings?.providers[provider.id]?.enabled),
+      }))
+
       return {
-        providers: providers.map((provider) => ({
-          ...provider,
-          enabled: Boolean(providerSettings?.providers[provider.id]?.enabled),
-        })),
+        providers: result,
       }
     }),
 
@@ -122,15 +175,15 @@ export const modelRouter = {
         textEmbedding.push(format(provider, provider.textEmbeddingModels))
       }
 
-      return {
-        models: {
-          language: !input.type || input.type === 'language' ? language : undefined,
-          image: !input.type || input.type === 'image' ? image : undefined,
-          speech: !input.type || input.type === 'speech' ? speech : undefined,
-          transcription: !input.type || input.type === 'transcription' ? transcription : undefined,
-          textEmbedding: !input.type || input.type === 'textEmbedding' ? textEmbedding : undefined,
-        },
+      const models: ProviderModelsInfo = {
+        language: !input.type || input.type === 'language' ? language : undefined,
+        image: !input.type || input.type === 'image' ? image : undefined,
+        speech: !input.type || input.type === 'speech' ? speech : undefined,
+        transcription: !input.type || input.type === 'transcription' ? transcription : undefined,
+        textEmbedding: !input.type || input.type === 'textEmbedding' ? textEmbedding : undefined,
       }
+
+      return { models }
     }),
 
   /**
@@ -182,15 +235,15 @@ export const modelRouter = {
         textEmbedding.push(...format(provider, provider.textEmbeddingModels))
       }
 
-      return {
-        models: {
-          language: !input.type || input.type === 'language' ? language : undefined,
-          image: !input.type || input.type === 'image' ? image : undefined,
-          speech: !input.type || input.type === 'speech' ? speech : undefined,
-          transcription: !input.type || input.type === 'transcription' ? transcription : undefined,
-          textEmbedding: !input.type || input.type === 'textEmbedding' ? textEmbedding : undefined,
-        },
+      const models: ModelsInfo = {
+        language: !input.type || input.type === 'language' ? language : undefined,
+        image: !input.type || input.type === 'image' ? image : undefined,
+        speech: !input.type || input.type === 'speech' ? speech : undefined,
+        transcription: !input.type || input.type === 'transcription' ? transcription : undefined,
+        textEmbedding: !input.type || input.type === 'textEmbedding' ? textEmbedding : undefined,
       }
+
+      return { models }
     }),
 
   /**
@@ -222,16 +275,16 @@ export const modelRouter = {
       // Get provider models from database (system + user/organization)
       const providerModels = await context.db
         .select()
-        .from(ProviderModels)
+        .from(ProviderModelsTable)
         .where(
           and(
             or(
-              eq(ProviderModels.isSystem, true),
+              eq(ProviderModelsTable.isSystem, true),
               input.organizationId
-                ? eq(ProviderModels.organizationId, input.organizationId)
-                : eq(ProviderModels.userId, userId!),
+                ? eq(ProviderModelsTable.organizationId, input.organizationId)
+                : eq(ProviderModelsTable.userId, userId!),
             ),
-            eq(ProviderModels.providerId, providerId),
+            eq(ProviderModelsTable.providerId, providerId),
           ),
         )
 
@@ -261,12 +314,19 @@ export const modelRouter = {
         })
       }
 
+      const result:
+        | LanguageModelInfo
+        | ImageModelInfo
+        | SpeechModelInfo
+        | TranscriptionModelInfo
+        | EmbeddingModelInfo = {
+        ...model,
+        id: input.id,
+        isSystem: model === systemModel,
+      }
+
       return {
-        model: {
-          ...model,
-          id: input.id,
-          isSystem: model === systemModel,
-        },
+        model: result,
       }
     }),
 
@@ -301,18 +361,18 @@ export const modelRouter = {
       let providerModels = await context.db.query.ProviderModels.findFirst({
         where: and(
           input.isSystem
-            ? eq(ProviderModels.isSystem, true)
+            ? eq(ProviderModelsTable.isSystem, true)
             : input.organizationId
-              ? eq(ProviderModels.organizationId, input.organizationId)
-              : eq(ProviderModels.userId, userId!),
-          eq(ProviderModels.providerId, input.providerId),
+              ? eq(ProviderModelsTable.organizationId, input.organizationId)
+              : eq(ProviderModelsTable.userId, userId!),
+          eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
 
       if (!providerModels) {
         providerModels = (
           await context.db
-            .insert(ProviderModels)
+            .insert(ProviderModelsTable)
             .values({
               isSystem: input.isSystem ?? false,
               userId: !input.isSystem && !input.organizationId ? userId! : undefined,
@@ -356,15 +416,22 @@ export const modelRouter = {
 
       // Update the existing record
       await context.db
-        .update(ProviderModels)
+        .update(ProviderModelsTable)
         .set({ models: providerModels.models })
-        .where(eq(ProviderModels.id, providerModels.id))
+        .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      const result:
+        | LanguageModelInfo
+        | ImageModelInfo
+        | SpeechModelInfo
+        | TranscriptionModelInfo
+        | EmbeddingModelInfo = {
+        ...model,
+        isSystem: providerModels.isSystem,
+      }
 
       return {
-        model: {
-          ...model,
-          isSystem: providerModels.isSystem,
-        },
+        model: result,
       }
     }),
 
@@ -398,18 +465,18 @@ export const modelRouter = {
       let providerModels = await context.db.query.ProviderModels.findFirst({
         where: and(
           input.isSystem
-            ? eq(ProviderModels.isSystem, true)
+            ? eq(ProviderModelsTable.isSystem, true)
             : input.organizationId
-              ? eq(ProviderModels.organizationId, input.organizationId)
-              : eq(ProviderModels.userId, userId!),
-          eq(ProviderModels.providerId, input.providerId),
+              ? eq(ProviderModelsTable.organizationId, input.organizationId)
+              : eq(ProviderModelsTable.userId, userId!),
+          eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
 
       if (!providerModels) {
         providerModels = (
           await context.db
-            .insert(ProviderModels)
+            .insert(ProviderModelsTable)
             .values({
               isSystem: input.isSystem ?? false,
               userId: !input.isSystem && !input.organizationId ? userId! : undefined,
@@ -460,16 +527,24 @@ export const modelRouter = {
 
       // Update the existing record
       await context.db
-        .update(ProviderModels)
+        .update(ProviderModelsTable)
         .set({ models: providerModels.models })
-        .where(eq(ProviderModels.id, providerModels.id))
+        .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      const result: (
+        | LanguageModelInfo
+        | ImageModelInfo
+        | SpeechModelInfo
+        | TranscriptionModelInfo
+        | EmbeddingModelInfo
+      )[] = validatedModels.map((model) => ({
+        ...model,
+        id: modelFullId(input.providerId, model.id),
+        isSystem: providerModels.isSystem,
+      }))
 
       return {
-        models: validatedModels.map((model) => ({
-          ...model,
-          id: modelFullId(input.providerId, model.id),
-          isSystem: providerModels.isSystem,
-        })),
+        models: result,
       }
     }),
 
@@ -504,11 +579,11 @@ export const modelRouter = {
       const providerModels = await context.db.query.ProviderModels.findFirst({
         where: and(
           input.isSystem
-            ? eq(ProviderModels.isSystem, true)
+            ? eq(ProviderModelsTable.isSystem, true)
             : input.organizationId
-              ? eq(ProviderModels.organizationId, input.organizationId)
-              : eq(ProviderModels.userId, userId!),
-          eq(ProviderModels.providerId, input.providerId),
+              ? eq(ProviderModelsTable.organizationId, input.organizationId)
+              : eq(ProviderModelsTable.userId, userId!),
+          eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
 
@@ -575,16 +650,24 @@ export const modelRouter = {
 
       // Update the database record
       await context.db
-        .update(ProviderModels)
+        .update(ProviderModelsTable)
         .set({ models: providerModels.models })
-        .where(eq(ProviderModels.id, providerModels.id))
+        .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      const result: (
+        | LanguageModelInfo
+        | ImageModelInfo
+        | SpeechModelInfo
+        | TranscriptionModelInfo
+        | EmbeddingModelInfo
+      )[] = sortedModels.map((model) => ({
+        ...model,
+        id: modelFullId(input.providerId, model.id),
+        isSystem: providerModels.isSystem,
+      }))
 
       return {
-        models: sortedModels.map((model) => ({
-          ...model,
-          id: modelFullId(input.providerId, model.id),
-          isSystem: providerModels.isSystem,
-        })),
+        models: result,
       }
     }),
 
@@ -616,11 +699,11 @@ export const modelRouter = {
       const providerModels = await context.db.query.ProviderModels.findFirst({
         where: and(
           input.isSystem
-            ? eq(ProviderModels.isSystem, true)
+            ? eq(ProviderModelsTable.isSystem, true)
             : input.organizationId
-              ? eq(ProviderModels.organizationId, input.organizationId)
-              : eq(ProviderModels.userId, userId!),
-          eq(ProviderModels.providerId, providerId),
+              ? eq(ProviderModelsTable.organizationId, input.organizationId)
+              : eq(ProviderModelsTable.userId, userId!),
+          eq(ProviderModelsTable.providerId, providerId),
         ),
       })
 
@@ -652,16 +735,23 @@ export const modelRouter = {
 
       // Update the database record
       await context.db
-        .update(ProviderModels)
+        .update(ProviderModelsTable)
         .set({ models: providerModels.models })
-        .where(eq(ProviderModels.id, providerModels.id))
+        .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      const result:
+        | LanguageModelInfo
+        | ImageModelInfo
+        | SpeechModelInfo
+        | TranscriptionModelInfo
+        | EmbeddingModelInfo = {
+        ...deletedModel,
+        id: input.id,
+        isSystem: providerModels.isSystem,
+      }
 
       return {
-        model: {
-          ...deletedModel,
-          id: input.id,
-          isSystem: providerModels.isSystem,
-        },
+        model: result,
       }
     }),
 
@@ -703,11 +793,11 @@ export const modelRouter = {
       const providerModels = await context.db.query.ProviderModels.findFirst({
         where: and(
           input.isSystem
-            ? eq(ProviderModels.isSystem, true)
+            ? eq(ProviderModelsTable.isSystem, true)
             : input.organizationId
-              ? eq(ProviderModels.organizationId, input.organizationId)
-              : eq(ProviderModels.userId, userId!),
-          eq(ProviderModels.providerId, input.providerId),
+              ? eq(ProviderModelsTable.organizationId, input.organizationId)
+              : eq(ProviderModelsTable.userId, userId!),
+          eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
 
@@ -741,16 +831,24 @@ export const modelRouter = {
 
       // Update the database record
       await context.db
-        .update(ProviderModels)
+        .update(ProviderModelsTable)
         .set({ models: providerModels.models })
-        .where(eq(ProviderModels.id, providerModels.id))
+        .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      const result: (
+        | LanguageModelInfo
+        | ImageModelInfo
+        | SpeechModelInfo
+        | TranscriptionModelInfo
+        | EmbeddingModelInfo
+      )[] = deletedModels.map((model) => ({
+        ...model,
+        id: modelFullId(input.providerId, model.id),
+        isSystem: providerModels.isSystem,
+      }))
 
       return {
-        models: deletedModels.map((model) => ({
-          ...model,
-          id: modelFullId(input.providerId, model.id),
-          isSystem: providerModels.isSystem,
-        })),
+        models: result,
       }
     }),
 }

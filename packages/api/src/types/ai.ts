@@ -16,7 +16,9 @@ export const filePartSchema = z.object({
   type: z.literal('file'),
   data: z.union([
     z.string(),
+    z.instanceof(URL),
     z.url().transform((url) => new URL(url)),
+    z.instanceof(Uint8Array),
     z
       .array(z.uint32().max(255))
       .transform((array) => Uint8Array.from(array) as Uint8Array<ArrayBufferLike>),

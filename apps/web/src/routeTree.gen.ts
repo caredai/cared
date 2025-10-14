@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ModelsRouteImport } from './routes/models'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AccountRouteRouteImport } from './routes/account/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -61,6 +62,11 @@ import { Route as OrgOrganizationIdCreditsUsageRouteImport } from './routes/org/
 import { Route as AppAppIdConfigureOauthApplicationRouteImport } from './routes/app/$appId/configure/oauth-application'
 import { Route as AppAppIdConfigureApiKeysRouteImport } from './routes/app/$appId/configure/api-keys'
 
+const ModelsRoute = ModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -339,6 +345,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
+  '/models': typeof ModelsRoute
   '/app/$appId': typeof AppAppIdRouteRouteWithChildren
   '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
@@ -391,6 +398,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
+  '/models': typeof ModelsRoute
   '/account/api-keys': typeof AccountApiKeysRoute
   '/account/applications': typeof AccountApplicationsRoute
   '/account/credits': typeof AccountCreditsRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
+  '/models': typeof ModelsRoute
   '/app/$appId': typeof AppAppIdRouteRouteWithChildren
   '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
   '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
@@ -497,6 +506,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/models'
     | '/app/$appId'
     | '/org/$organizationId'
     | '/workspace/$workspaceId'
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/models'
     | '/account/api-keys'
     | '/account/applications'
     | '/account/credits'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/models'
     | '/app/$appId'
     | '/org/$organizationId'
     | '/workspace/$workspaceId'
@@ -653,6 +665,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRouteRoute: typeof AccountRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  ModelsRoute: typeof ModelsRoute
   AppAppIdRouteRoute: typeof AppAppIdRouteRouteWithChildren
   OrgOrganizationIdRouteRoute: typeof OrgOrganizationIdRouteRouteWithChildren
   WorkspaceWorkspaceIdRouteRoute: typeof WorkspaceWorkspaceIdRouteRouteWithChildren
@@ -668,6 +681,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/models': {
+      id: '/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -1174,6 +1194,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRouteRoute: AccountRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  ModelsRoute: ModelsRoute,
   AppAppIdRouteRoute: AppAppIdRouteRouteWithChildren,
   OrgOrganizationIdRouteRoute: OrgOrganizationIdRouteRouteWithChildren,
   WorkspaceWorkspaceIdRouteRoute: WorkspaceWorkspaceIdRouteRouteWithChildren,

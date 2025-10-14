@@ -22,6 +22,9 @@ export type CaredClientOptions = {
       sessionToken: string | (() => string | Promise<string>) // user session token retrieved from the login flow
       appId: string
     }
+  | {
+      headers: Headers | (() => Headers | Promise<Headers>)
+    }
 )
 
 export class CaredClient {
@@ -63,6 +66,13 @@ export class CaredClient {
 }
 
 export async function makeHeaders(opts: CaredClientOptions) {
+  const { headers: getHeaders } = opts as {
+    headers?: Headers | (() => Headers | Promise<Headers>)
+  }
+  if (getHeaders) {
+    return typeof getHeaders === 'function' ? await getHeaders() : getHeaders
+  }
+
   const headers = new Headers()
 
   const { apiKey } = opts as {

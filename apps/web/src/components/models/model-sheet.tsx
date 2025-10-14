@@ -133,7 +133,7 @@ export function ModelSheet({
         vListRef.current?.scrollToIndex(scrollIndex, { align: 'start', smooth: true })
       }, 100)
     },
-    [providerId, activeTab],
+    [isSystem, providerId, activeTab],
   )
 
   // Handle editing existing model

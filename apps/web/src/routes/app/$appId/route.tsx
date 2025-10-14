@@ -30,7 +30,6 @@ export const Route = createFileRoute('/app/$appId')({
     void context.queryClient.prefetchQuery(orpc.workspace.list.queryOptions())
     void context.queryClient.prefetchQuery(orpc.app.list.queryOptions())
     void context.queryClient.prefetchQuery(orpc.model.listProvidersModels.queryOptions())
-    void context.queryClient.prefetchQuery(orpc.model.listDefaultModels.queryOptions())
 
     // Ensure app data is loaded
     await context.queryClient.ensureQueryData(
@@ -56,7 +55,7 @@ function AppLayout() {
           <AppNavMain baseUrl={`/app/${appIdNoPrefix}`} />
         </AppSidebar>
 
-        <div className="flex-1 flex flex-col h-[calc(100svh-57px)] overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 flex flex-col h-[calc(100dvh-57px)] overflow-y-auto overflow-x-hidden">
           <SidebarInset>
             <Section>
               <Outlet />

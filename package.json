@@ -44,7 +44,7 @@
   "prettier": "@cared/prettier-config",
   "pnpm": {
     "overrides": {
-      "uuid": "11.1.0",
+      "uuid": "13.0.0",
       "minimatch": "10.0.3",
       "pdfjs-dist": "4.7.76",
       "pdfjs-dist>canvas": "npm:non-existent-package@0.0.0",
@@ -60,7 +60,8 @@
       "ansi-color": "patches/ansi-color.patch",
       "vite-plugin-svgr": "patches/vite-plugin-svgr.patch",
       "fumadocs-mdx": "patches/fumadocs-mdx.patch",
-      "tsup": "patches/tsup.patch"
+      "tsup": "patches/tsup.patch",
+      "uuid": "patches/uuid.patch"
     }
   }
 }
