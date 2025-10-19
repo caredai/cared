@@ -11,7 +11,9 @@ let app: HonoApp | undefined = undefined
 export default class extends WorkerEntrypoint {
   async fetch(request: Request): Promise<Response> {
     if (!app) {
-      app = (await import('@cared/api/hono')).newHonoApp()
+      app = (await import('@cared/api/hono')).newHonoApp({
+        cacheMaxSize: 50 * 1024 * 1024, // 50MB
+      })
 
       const { checkRestrictedColo, checkRestrictedColoHandler, innerCheckPath } = await import(
         './colo'

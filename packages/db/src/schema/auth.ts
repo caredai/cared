@@ -25,6 +25,7 @@ export const user = pgTable(
   (table) => [
     index().on(table.name),
     index().on(table.email),
+    index().on(table.role),
     ...timestampsIndices(table),
   ],
 )

@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis'
 
+import type { SetCommandOptions } from '@upstash/redis'
 import { KV } from './base'
 
 export class UpstashKV extends KV {
@@ -23,12 +24,39 @@ export class UpstashKV extends KV {
     return await this.redis.get<string>(this.key(key))
   }
 
-  async set(key: string, value: string, expirationTtl?: number): Promise<void> {
-    if (expirationTtl) {
-      await this.redis.set(this.key(key), value, { ex: expirationTtl })
-    } else {
-      await this.redis.set(this.key(key), value)
-    }
+  async getex(
+    key: string,
+    opts: {
+      ex?: number
+      px?: number
+      exat?: number
+      pxat?: number
+      persist?: boolean
+    },
+  ): Promise<string | null> {
+    return await this.redis.getex<string>(this.key(key), opts as any)
+  }
+
+  async set(
+    key: string,
+    value: string,
+    opts?:
+      | {
+          ex?: number
+          px?: number
+          exat?: number
+          pxat?: number
+          nx?: true
+          xx?: true
+          keepTtl?: true
+        }
+      | number,
+  ): Promise<void> {
+    await this.redis.set(
+      this.key(key),
+      value,
+      typeof opts === 'number' ? { ex: opts } : (opts as SetCommandOptions),
+    )
   }
 
   async delete(key: string): Promise<void> {

@@ -15,6 +15,8 @@ import { setDb } from '@cared/db/client'
 
 import type { Hyperdrive } from '@cloudflare/workers-types'
 import { appRouter, createORPCContext, model, tasks, webhooks } from '..'
+import { Cache } from '../operation/cache'
+import { registerTelemetry } from '../telemetry'
 
 export interface Bindings {
   CLOUDFLARE?: boolean
@@ -23,7 +25,11 @@ export interface Bindings {
 
 export type HonoApp = Hono<{ Bindings?: Bindings }>
 
-export function newHonoApp(): HonoApp {
+export function newHonoApp({ cacheMaxSize }: { cacheMaxSize?: number }): HonoApp {
+  Cache.setup(cacheMaxSize)
+
+  registerTelemetry()
+
   const app = new Hono<{ Bindings?: Bindings }>()
 
   const trustedOrigins = getTrustedOrigins()
@@ -34,9 +40,11 @@ export function newHonoApp(): HonoApp {
     cors({
       origin: (origin: string) => {
         return trustedOrigins.includes(origin) ? origin : undefined
+        // return '*' // TODO
       },
-      allowMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PATCH', 'DELETE'],
+      allowMethods: ['GET', 'HEAD', 'OPTIONS', 'POST', 'PATCH', 'PUT', 'DELETE'],
       allowHeaders: [
+        '*', // TODO
         'Content-Type',
         'Authorization',
         'x-orpc-batch',
@@ -68,8 +76,13 @@ export function newHonoApp(): HonoApp {
   app.get('/v1/model/embedding', model.ai.embedding.GET)
   app.post('/v1/model/embedding', model.ai.embedding.POST)
 
-  app.post('/openai/v1/chat/completions', model.openai.chatCompletions.POST)
   app.post('/v1/openai/chat/completions', model.openai.chatCompletions.POST)
+  app.post('/openai/v1/chat/completions', model.openai.chatCompletions.POST)
+
+  app.post('/openrouter/v1/chat/completions', model.openai.chatCompletions.POST)
+  app.get('/openrouter/v1/credits', model.openrouter.credits.GET)
+  app.get('/openrouter/v1/key', model.openrouter.key.GET)
+  app.get('/openrouter/v1/auth/key', model.openrouter.key.GET)
 
   app.post('/v1/webhooks/tasks/:task', tasks.POST)
 

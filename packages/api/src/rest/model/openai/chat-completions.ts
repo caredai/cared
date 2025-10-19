@@ -237,13 +237,16 @@ export async function POST(c: Context): Promise<Response> {
         await writer.close()
       }
 
+      const encoder = new TextEncoder()
+
       // Helper function to write data to the stream
       writeChunk = async (data: any, notJson?: boolean) => {
         if (closed) {
           return
         }
         // SSE format
-        await writer.write(`data: ${!notJson ? JSON.stringify(data) : data}\n\n`)
+        const chunk = `data: ${!notJson ? JSON.stringify(data) : data}\n\n`
+        await writer.write(c.env.CLOUDFLARE ? encoder.encode(chunk) : chunk)
       }
     }
 
@@ -978,11 +981,11 @@ function chatCompletionsUsage(
   rawUsage?: any,
 ): OpenAI.ChatCompletion['usage'] {
   return {
-    prompt_tokens: usage.inputTokens ?? 0,
-    completion_tokens: usage.outputTokens ?? 0,
-    total_tokens: usage.totalTokens ?? 0,
+    prompt_tokens: formatNumber(usage.inputTokens),
+    completion_tokens: formatNumber(usage.outputTokens),
+    total_tokens: formatNumber(usage.totalTokens),
     completion_tokens_details: {
-      reasoning_tokens: usage.reasoningTokens ?? 0,
+      reasoning_tokens: formatNumber(usage.reasoningTokens),
       accepted_prediction_tokens: (providerMetadata?.[providerId]?.acceptedPredictionTokens ??
         rawUsage?.completion_tokens_details?.accepted_prediction_tokens ??
         0) as number,
@@ -992,8 +995,12 @@ function chatCompletionsUsage(
       audio_tokens: rawUsage?.completion_tokens_details?.audio_tokens ?? 0,
     },
     prompt_tokens_details: {
-      cached_tokens: usage.cachedInputTokens ?? 0,
+      cached_tokens: formatNumber(usage.cachedInputTokens),
       audio_tokens: rawUsage?.prompt_tokens_details?.audio_tokens ?? 0,
     },
   }
+}
+
+function formatNumber(n?: number) {
+  return !isNaN(n ?? 0) ? (n ?? 0) : 0
 }

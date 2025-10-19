@@ -31,6 +31,7 @@
   "dependencies": {
     "base-x": "^5.0.1",
     "buffer": "^6.0.3",
+    "lru-cache": "^11.2.2",
     "uuid": "13.0.0"
   }
 }

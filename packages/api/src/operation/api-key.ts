@@ -1,12 +1,15 @@
+import { base64Url } from '@better-auth/utils/base64'
+import { createHash } from '@better-auth/utils/hash'
 import { z } from 'zod/v4'
 
 import { auth, headers } from '@cared/auth'
-import { inArray } from '@cared/db'
+import { eq, inArray } from '@cared/db'
 import { getDb } from '@cared/db/client'
 import { ApiKey } from '@cared/db/schema'
 
 import type { BaseContext } from '../orpc'
 import type { ApiKeyMetadata } from '../types'
+import { Cache } from './cache'
 
 export const apiKeyMetadataSchema = z.discriminatedUnion('scope', [
   z.object({
@@ -53,18 +56,56 @@ export type OptionalApiKeyMetadataInput = z.infer<typeof optionalApiKeyMetadataS
 export function formatApiKey(key: {
   id: string
   name: string | null
-  metadata: Record<string, any> | null
+  userId: string
+  metadata: Record<string, any> | string | null
   start: string | null
   createdAt: Date
   updatedAt: Date
 }) {
+  const { userId: _, metadata, ...result } = _formatApiKey(key)
+  return {
+    ...result,
+    ...metadata,
+  }
+}
+
+function _formatApiKey(key: Parameters<typeof formatApiKey>[0]) {
+  const metadata = // NOTE: metadata is stringified twice in better-auth
+    (
+      typeof key.metadata === 'string' ? JSON.parse(JSON.parse(key.metadata)) : key.metadata
+    ) as ApiKeyMetadata
+
   return {
     id: key.id,
     name: key.name ?? '',
-    ...(key.metadata as ApiKeyMetadata),
+    userId: key.userId,
+    metadata,
     start: key.start ?? '',
     createdAt: key.createdAt,
     updatedAt: key.updatedAt,
+  }
+}
+
+const cache = new Cache<ApiKey>('apiKey', (key) =>
+  getDb().query.ApiKey.findFirst({
+    where: eq(ApiKey.key, key),
+  }),
+)
+
+export async function invalidateApiKeyCache(apiKeyHash: string) {
+  await cache.invalidate(apiKeyHash)
+}
+
+export async function getApiKey(apiKey: string) {
+  // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
+  const hash = await createHash('SHA-256').digest(new TextEncoder().encode(apiKey))
+  const hashed = base64Url.encode(new Uint8Array(hash), {
+    padding: false,
+  })
+
+  const key = await cache.get(hashed)
+  if (key) {
+    return _formatApiKey(key)
   }
 }
 

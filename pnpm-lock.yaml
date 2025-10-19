@@ -1384,6 +1384,9 @@ importers:
       buffer:
         specifier: ^6.0.3
         version: 6.0.3
+      lru-cache:
+        specifier: ^11.2.2
+        version: 11.2.2
       uuid:
         specifier: 13.0.0
         version: 13.0.0(patch_hash=02d72010290a5c43ba8178dbb2feae49857ab068140779bd79d4672efdb81c28)

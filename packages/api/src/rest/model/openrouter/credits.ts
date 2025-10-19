@@ -16,8 +16,8 @@ export async function GET(c: Context): Promise<Response> {
   const credits = await getDb().query.Credits.findFirst({
     where:
       auth.type === 'user' || auth.type === 'appUser' || auth.scope === 'user'
-        ? eq(Credits.organizationId, auth.userId)
-        : eq(Credits.userId, auth.organizationId),
+        ? eq(Credits.userId, auth.userId)
+        : eq(Credits.organizationId, auth.organizationId),
   })
   if (!credits) {
     throw new Error('Credits not found')

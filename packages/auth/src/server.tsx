@@ -1,4 +1,10 @@
-import type { Account as AuthAccount, BetterAuthOptions, LiteralUnion, Models } from 'better-auth'
+import type {
+  Account as AuthAccount,
+  BetterAuthOptions,
+  LiteralUnion,
+  Models,
+  SecondaryStorage,
+} from 'better-auth'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
 import { betterAuth } from 'better-auth'
 import { emailHarmony } from 'better-auth-harmony'
@@ -183,7 +189,7 @@ const options = {
       },
     },
   },
-  secondaryStorage: kv,
+  secondaryStorage: kv as SecondaryStorage,
   trustedOrigins: getTrustedOrigins(),
   rateLimit: {
     enabled: true,
@@ -477,7 +483,7 @@ export const auth = betterAuth({
 })
 
 async function cacheProfileForAccount(id: string, profile: Record<string, any>) {
-  await kv.set(`profile:${id}`, JSON.stringify(profile), 60)
+  await kv.set(`profile:${id}`, JSON.stringify(profile), { ex: 60 })
 }
 
 async function getProfileForAccount(id: string): Promise<string | null | undefined> {

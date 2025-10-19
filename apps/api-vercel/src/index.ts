@@ -4,7 +4,9 @@ import { waitUntil } from '@vercel/functions'
 
 import { newHonoApp } from '@cared/api/hono'
 
-const app = newHonoApp()
+const app = newHonoApp({
+  cacheMaxSize: 500 * 1024 * 1024, // 500MB
+})
 
 // Create a proxy wrapper for the app to intercept fetch method
 const proxiedApp = new Proxy(app, {

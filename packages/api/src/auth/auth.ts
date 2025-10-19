@@ -1,13 +1,12 @@
-import { cache } from 'react'
-import { base64Url } from '@better-auth/utils/base64'
-import { createHash } from '@better-auth/utils/hash'
-
 import { auth as authApi, headers as authHeaders } from '@cared/auth'
 import { eq } from '@cared/db'
 import { getDb } from '@cared/db/client'
-import { ApiKey, App, OAuthAccessToken, OAuthApplication, User } from '@cared/db/schema'
+import { App } from '@cared/db/schema'
 
-import type { ApiKeyAuth, ApiKeyMetadata } from '../types'
+import type { ApiKeyAuth } from '../types'
+import { getApiKey } from '../operation'
+import { getAccessToken } from '../operation/oauth-app'
+import { isAdminUser } from '../operation/user'
 
 export type AuthObject =
   | {
@@ -145,75 +144,43 @@ export class Auth {
   }
 }
 
-export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
-  const authorization = headers.get('Authorization')
-  const bearerToken = authorization?.replace('Bearer ', '') ?? ''
+export async function authenticate(headers: Headers): Promise<Auth> {
+  const bearerToken = headers.get('Authorization')?.replace('Bearer ', '') ?? ''
 
-  let apiKey = headers.get('X-API-KEY')
-  if (!apiKey && bearerToken.startsWith('sk_')) {
-    apiKey = bearerToken
-  }
-
+  const apiKey = bearerToken.startsWith('sk_') ? bearerToken : headers.get('X-API-KEY')
   if (apiKey) {
-    // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
-    const hash = await createHash('SHA-256').digest(new TextEncoder().encode(apiKey))
-    const hashed = base64Url.encode(new Uint8Array(hash), {
-      padding: false,
-    })
-
-    // TODO: cache
-    const key = await getDb().query.ApiKey.findFirst({
-      where: eq(ApiKey.key, hashed),
-    })
-
-    if (key?.metadata) {
-      // NOTE: metadata is stringified twice in better-auth
-      const metadata = JSON.parse(JSON.parse(key.metadata)) as ApiKeyMetadata
-
-      const auth = {
-        ...metadata,
-      } as ApiKeyAuth
-
-      if (auth.scope === 'user') {
-        auth.userId = key.userId
-
-        const user = await getDb().query.User.findFirst({
-          where: eq(User.id, key.userId),
-        })
-        if (!user) {
-          return new Auth()
-        }
-
-        auth.isAdmin = user.role === 'admin'
-      }
-
-      return new Auth({
-        type: 'apiKey',
-        ownerId: key.userId,
-        ...auth,
-      })
+    const key = await getApiKey(apiKey)
+    if (!key) {
+      return new Auth()
     }
+
+    const auth = {
+      ...key.metadata,
+    } as ApiKeyAuth
+
+    if (auth.scope === 'user') {
+      auth.userId = key.userId
+      auth.isAdmin = await isAdminUser(auth.userId)
+    }
+
+    return new Auth({
+      type: 'apiKey',
+      ownerId: key.userId,
+      ...auth,
+    })
   }
 
-  if (bearerToken) {
-    // TODO: cache
-    const accessToken = await getDb().query.OAuthAccessToken.findFirst({
-      where: eq(OAuthAccessToken.accessToken, bearerToken),
-    })
-    if (accessToken) {
-      // TODO: cache
-      const oauthApp = await getDb().query.OAuthApplication.findFirst({
-        where: eq(OAuthApplication.clientId, accessToken.clientId!),
-      })
-      if (oauthApp?.metadata) {
-        const appId = JSON.parse(oauthApp.metadata).appId! as string
-        return new Auth({
-          type: 'appUser',
-          appId,
-          userId: accessToken.userId!,
-        })
-      }
+  const accessToken = !bearerToken.startsWith('sk_') ? bearerToken : ''
+  if (accessToken) {
+    const info = await getAccessToken(accessToken)
+    if (!info) {
+      return new Auth()
     }
+
+    return new Auth({
+      type: 'appUser',
+      ...info,
+    })
   }
 
   const { user, session } =
@@ -233,6 +200,7 @@ export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
       if (!app) {
         return new Auth()
       }
+
       return new Auth({
         type: 'appUser',
         appId,
@@ -246,4 +214,4 @@ export const authenticate = cache(async (headers: Headers): Promise<Auth> => {
     userId: session.userId,
     isAdmin: user.role === 'admin',
   })
-})
+}

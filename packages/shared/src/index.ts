@@ -1,4 +1,5 @@
 export * from './utils'
+export * from './cache'
 export * from './db'
 export * from './encryption'
 export * from './key'

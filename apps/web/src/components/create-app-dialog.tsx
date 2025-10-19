@@ -340,7 +340,9 @@ export function CreateAppDialog({
                             providerModels={imageModelProviders}
                           />
                         </FormControl>
-                        <FormDescription>Used for image generation and understanding</FormDescription>
+                        <FormDescription>
+                          Used for image generation and understanding
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

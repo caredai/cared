@@ -22,6 +22,13 @@ const globalMiddleware = createMiddleware()
       return next()
     }
 
+    if (pathname === '/chat') {
+      throw redirect({
+        // @ts-ignore
+        to: '/chat',
+      })
+    }
+
     const sessionCookie = getSessionCookie(request, {
       cookiePrefix: 'cared',
     })
@@ -32,6 +39,13 @@ const globalMiddleware = createMiddleware()
         search: {
           redirectTo: url.pathname + url.search,
         },
+      })
+    }
+
+    if (pathname.startsWith('/chat')) {
+      throw redirect({
+        // @ts-ignore
+        to: pathname,
       })
     }
 

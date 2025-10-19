@@ -2,8 +2,8 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
 import { auth, headers } from '@cared/auth'
-import { eq } from '@cared/db'
-import { App, Workspace } from '@cared/db/schema'
+import { and, eq } from '@cared/db'
+import { ApiKey, App, Workspace } from '@cared/db/schema'
 
 import type { UserContext } from '../orpc'
 import type { ApiKeyMetadata, ApiKeyScope } from '../types'
@@ -11,9 +11,9 @@ import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
 import {
   apiKeyMetadataSchema,
-  formatApiKey,
+  formatApiKey, invalidateApiKeyCache,
   listApiKeys,
-  optionalApiKeyMetadataSchema,
+  optionalApiKeyMetadataSchema
 } from '../operation'
 import { userPlainProtectedProcedure } from '../orpc'
 
@@ -294,12 +294,14 @@ export const apiKeyRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const existingApiKey = await auth.api.getApiKey({
-        headers: headers(context.headers),
-        query: {
-          id: input.id,
-        },
+      const existingApiKey = await context.db.query.ApiKey.findFirst({
+        where: and(eq(ApiKey.id, input.id), eq(ApiKey.userId, context.auth.userId))
       })
+      if (!existingApiKey) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Api key not found',
+        })
+      }
 
       // Delete existing key
       await auth.api.deleteApiKey({
@@ -309,13 +311,17 @@ export const apiKeyRouter = {
         },
       })
 
+      await invalidateApiKeyCache(existingApiKey.key)
+
+      const metadata = JSON.parse(existingApiKey.metadata!) as ApiKeyMetadata
+
       // Create new API key with same metadata
       const apiKey = await auth.api.createApiKey({
         headers: headers(context.headers),
         body: {
           name: existingApiKey.name!,
-          prefix: apiKeyPrefix(existingApiKey.metadata?.scope),
-          metadata: existingApiKey.metadata,
+          prefix: apiKeyPrefix(metadata.scope),
+          metadata: metadata,
         },
       })
 
@@ -377,12 +383,14 @@ export const apiKeyRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const apiKey = await auth.api.getApiKey({
-        headers: headers(context.headers),
-        query: {
-          id: input.id,
-        },
+      const apiKey = await context.db.query.ApiKey.findFirst({
+        where: and(eq(ApiKey.id, input.id), eq(ApiKey.userId, context.auth.userId))
       })
+      if (!apiKey) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Api key not found',
+        })
+      }
 
       await auth.api.deleteApiKey({
         headers: headers(context.headers),
@@ -390,5 +398,7 @@ export const apiKeyRouter = {
           keyId: apiKey.id,
         },
       })
+
+      await invalidateApiKeyCache(apiKey.key)
     }),
 }

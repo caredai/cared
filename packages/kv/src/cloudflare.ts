@@ -38,17 +38,48 @@ export class CloudflareKV extends KV {
     return data.value
   }
 
+  getex(
+    _key: string,
+    _opts: {
+      ex?: number
+      px?: number
+      exat?: number
+      pxat?: number
+      persist?: boolean
+    },
+  ): Promise<string | null> {
+    throw new Error('Not implemented')
+  }
+
   /**
    * Set key-value pair
    */
-  async set(key: string, value: string, expirationTtl?: number): Promise<void> {
+  async set(
+    key: string,
+    value: string,
+    opts?:
+      | {
+          ex?: number
+          px?: number
+          exat?: number
+          pxat?: number
+          nx?: true
+          xx?: true
+          keepTtl?: true
+        }
+      | number,
+  ): Promise<void> {
+    if (typeof opts === 'object' && typeof opts.ex !== 'number') {
+      throw new Error('Options not implemented')
+    }
+
     const response = await fetch(`${this.baseUrl}/api/kv/${encodeURIComponent(this.key(key))}`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${this.apiToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ value, expirationTtl }),
+      body: JSON.stringify({ value, expirationTtl: typeof opts === 'number' ? opts : opts?.ex }),
     })
 
     if (!response.ok) {

@@ -37,9 +37,8 @@ import { makeResponseJson, requestJson } from './utils'
 
 const _ajv = new Ajv({ allErrors: true })
 
-export const jsonSchema7Schema = z
-  .record(z.string(), z.any())
-  // .refine((schema) => ajv.validateSchema(schema), 'Invalid JSON Schema')
+export const jsonSchema7Schema = z.record(z.string(), z.any())
+// .refine((schema) => ajv.validateSchema(schema), 'Invalid JSON Schema')
 
 const languageModelV2FunctionToolSchema = z.object({
   type: z.literal('function'),
