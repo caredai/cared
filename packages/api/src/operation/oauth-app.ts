@@ -33,13 +33,13 @@ const cache = new Cache<{
       return
     }
 
-    return [
-      {
+    return {
+      value: {
         appId,
         userId: data.userId,
       },
-      data.accessTokenExpiresAt,
-    ]
+      ttl: data.accessTokenExpiresAt,
+    }
   },
   undefined,
 )

@@ -36,6 +36,8 @@ export default defineConfig(async ({ command, mode }) => {
       viteReact(),
     ],
     build: {
+      minify: true,
+      sourcemap: true,
       commonjsOptions: { transformMixedEsModules: true },
       rollupOptions: {
         onwarn(warning: RollupLog, defaultHandler: (warning: string | RollupLog) => void) {

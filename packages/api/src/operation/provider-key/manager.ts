@@ -62,9 +62,9 @@ export class ProviderKeyManager {
     ])
 
     let systemKeysState: ProviderKeyState[] | null =
-      systemKeysStateStr && JSON.parse(systemKeysStateStr as any)
+      systemKeysStateStr && JSON.parse(systemKeysStateStr as any).states
     let userOrOrgKeysState: ProviderKeyState[] | null =
-      userOrOrgKeysStateStr && JSON.parse(userOrOrgKeysStateStr as any)
+      userOrOrgKeysStateStr && JSON.parse(userOrOrgKeysStateStr as any).states
     let shouldCacheSystemKeys = false
     let shouldCacheUserOrOrgKeys = false
 
@@ -347,7 +347,7 @@ export class ProviderKeyManager {
           systemKeysChanges.length > 0 &&
             kv.eval(
               scripts.providerKeysStates,
-              [kv.key(systemKeysStateKey(this.modelFullId))],
+              [systemKeysStateKey(this.modelFullId)],
               [
                 JSON.stringify({
                   ...request,
@@ -359,7 +359,7 @@ export class ProviderKeyManager {
           userOrOrgKeysChanges.length > 0 &&
             kv.eval(
               scripts.providerKeysStates,
-              [kv.key(userOrOrgKeysStateKey(this.auth, this.modelFullId))],
+              [userOrOrgKeysStateKey(this.auth, this.modelFullId)],
               [
                 JSON.stringify({
                   ...request,

@@ -4,7 +4,7 @@ import { NodeSDK } from '@opentelemetry/sdk-node'
 import type { ShouldExportSpan } from '@langfuse/otel'
 
 const shouldExportSpan: ShouldExportSpan = (span) => {
-  return span.otelSpan.instrumentationScope.name !== 'next.js'
+  return span.otelSpan.instrumentationScope.name !== '@hono/otel'
 }
 
 export const langfuseSpanProcessor = new LangfuseSpanProcessor({

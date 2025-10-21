@@ -2,7 +2,7 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import type { BaseProviderInfo, ModelFullId, ModelInfos, ModelType } from '@cared/providers'
-import { eq, inArray, or, sql } from '@cared/db'
+import { eq, inArray, sql } from '@cared/db'
 import { getDb } from '@cared/db/client'
 import { ProviderModels } from '@cared/db/schema'
 import log from '@cared/log'
@@ -14,6 +14,7 @@ import {
 } from '@cared/providers'
 
 import type { AuthObject } from '../auth'
+import { Cache } from './cache'
 
 export type ReturnedProviderInfo = BaseProviderInfo & ReturnedModelInfos
 
@@ -26,7 +27,37 @@ export type ReturnedModelInfos = {
 export const sourceSchema = z.enum(['system', 'custom'])
 export type Source = z.infer<typeof sourceSchema>
 
-// TODO: cache
+const cache = new Cache<ProviderModels[]>('providerModels', async (key) => {
+  const type = key.split('_', 1)[0]
+  let value
+  switch (type) {
+    case 'system':
+      value = await getDb().select().from(ProviderModels).where(eq(ProviderModels.isSystem, true))
+      break
+    case 'org':
+      value = await getDb()
+        .select()
+        .from(ProviderModels)
+        .where(eq(ProviderModels.organizationId, key))
+      break
+    case 'user':
+      value = await getDb().select().from(ProviderModels).where(eq(ProviderModels.userId, key))
+      break
+    default:
+      throw new Error(`Unknown type '${type}'`)
+  }
+  return {
+    value,
+  }
+})
+
+export async function invalidateProviderModelsCache(key: string | ProviderModels) {
+  if (typeof key !== 'string') {
+    key = key.isSystem ? 'system' : (key.organizationId ?? key.userId!)
+  }
+  await cache.invalidate(key)
+}
+
 export async function getProviderModelInfos(
   source?: Source,
   organizationId?: string,
@@ -35,24 +66,17 @@ export async function getProviderModelInfos(
   const baseProviderInfos = getBaseProviderInfos()
 
   // Get provider models from database (system + user/organization)
-  const providerModelsList = await getDb()
-    .select()
-    .from(ProviderModels)
-    .where(
-      source === 'system' // only system models
-        ? eq(ProviderModels.isSystem, true)
-        : source === 'custom' // only user/organization customized models
-          ? organizationId
-            ? eq(ProviderModels.organizationId, organizationId)
-            : eq(ProviderModels.userId, userId!)
-          : or(
-              // both system models and user/organization customized models
-              eq(ProviderModels.isSystem, true),
-              organizationId
-                ? eq(ProviderModels.organizationId, organizationId)
-                : eq(ProviderModels.userId, userId!),
-            ),
-    )
+  const providerModelsList =
+    source === 'system'
+      ? await cache.getOrDefault('system', [])
+      : source === 'custom'
+        ? await cache.getOrDefault(organizationId ?? userId!, [])
+        : (
+            await Promise.all([
+              cache.getOrDefault('system', []),
+              cache.getOrDefault(organizationId ?? userId!, []),
+            ])
+          ).flat()
 
   // Separate system and user/organization models
   const systemProviderModels = new Map<string, ProviderModels>()
@@ -97,12 +121,7 @@ export async function getProviderModelInfos(
         models.textEmbeddingModels?.length
       ) {
         updateIds.push(userOrg.id)
-        updateSqlChunks.push(sql`when
-        ${ProviderModels.id}
-        =
-        ${userOrg.id}
-        then
-        ${userOrg.models}`)
+        updateSqlChunks.push(sql`when ${ProviderModels.id} = ${userOrg.id} then ${userOrg.models}`)
       } else {
         // If all model arrays are empty, delete the record
         deleteIds.push(userOrg.id)
@@ -110,8 +129,7 @@ export async function getProviderModelInfos(
     }
   }
 
-  updateSqlChunks.push(sql`end
-  )`)
+  updateSqlChunks.push(sql`end)`)
 
   if (updateIds.length) {
     const finalSql: SQL = sql.join(updateSqlChunks, sql.raw(' '))
@@ -123,6 +141,19 @@ export async function getProviderModelInfos(
 
   if (deleteIds.length) {
     await getDb().delete(ProviderModels).where(inArray(ProviderModels.id, deleteIds))
+  }
+
+  if (updateIds.length || deleteIds.length) {
+    if (source === 'system') {
+      await invalidateProviderModelsCache('system')
+    } else if (source === 'custom') {
+      await invalidateProviderModelsCache(organizationId ?? userId!)
+    } else {
+      await Promise.all([
+        invalidateProviderModelsCache('system'),
+        invalidateProviderModelsCache(organizationId ?? userId!),
+      ])
+    }
   }
 
   return providers

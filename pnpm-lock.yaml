@@ -559,6 +559,9 @@ importers:
       '@cared/vdb':
         specifier: workspace:*
         version: link:../vdb
+      '@hono/otel':
+        specifier: ^0.6.0
+        version: 0.6.0(hono@4.9.9)
       '@langfuse/client':
         specifier: ^4.0.0
         version: 4.1.0(@opentelemetry/api@1.9.0)
@@ -595,6 +598,9 @@ importers:
       '@upstash/workflow':
         specifier: ^0.2.19
         version: 0.2.19(react@19.1.1)
+      hono:
+        specifier: ^4.9.8
+        version: 4.9.9
       mime:
         specifier: ^4.0.6
         version: 4.1.0
@@ -4132,6 +4138,11 @@ packages:
 
   '@hexagon/base64@1.1.28':
     resolution: {integrity: sha512-lhqDEAvWixy3bZ+UOYbPwUbBkwBq5C1LAJ/xPC8Oi+lL54oyakv/npbA0aU2hgCsx/1NUd4IBvV03+aUBWxerw==}
+
+  '@hono/otel@0.6.0':
+    resolution: {integrity: sha512-fdd0GWhrn54Ysstbx0BAB77/HGGHd1PftSmE5wk4Vt5YiCI/Kd3cUJ2v0lqOZrl49GBHGtJhUOPKsS0g+KeOrg==}
+    peerDependencies:
+      hono: '>=4.0.0'
 
   '@hookform/resolvers@5.2.2':
     resolution: {integrity: sha512-A/IxlMLShx3KjV/HeTcTfaMxdwy690+L/ZADoeaTltLx+CVuzkeVIPuybK3jrRfw7YZnmdKsVVHAlEPIAEUNlA==}
@@ -21254,6 +21265,12 @@ snapshots:
 
   '@hexagon/base64@1.1.28': {}
 
+  '@hono/otel@0.6.0(hono@4.9.9)':
+    dependencies:
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/semantic-conventions': 1.37.0
+      hono: 4.9.9
+
   '@hookform/resolvers@5.2.2(react-hook-form@7.63.0(react@19.1.1))':
     dependencies:
       '@standard-schema/utils': 0.3.0
@@ -32156,7 +32173,7 @@ snapshots:
       isstream: 0.1.2
       jsonwebtoken: 9.0.2
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.12.2(debug@4.4.3))
+      retry-axios: 2.6.0(axios@1.12.2)
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -36048,7 +36065,7 @@ snapshots:
       onetime: 7.0.0
       signal-exit: 4.1.0
 
-  retry-axios@2.6.0(axios@1.12.2(debug@4.4.3)):
+  retry-axios@2.6.0(axios@1.12.2):
     dependencies:
       axios: 1.12.2(debug@4.4.3)
 

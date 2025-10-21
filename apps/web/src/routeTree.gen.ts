@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ModelsRouteImport } from './routes/models'
+import { Route as DocsRouteImport } from './routes/docs'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AccountRouteRouteImport } from './routes/account/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -65,6 +67,16 @@ import { Route as AppAppIdConfigureApiKeysRouteImport } from './routes/app/$appI
 const ModelsRoute = ModelsRouteImport.update({
   id: '/models',
   path: '/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -345,6 +357,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
+  '/chat': typeof ChatRoute
+  '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
   '/app/$appId': typeof AppAppIdRouteRouteWithChildren
   '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
@@ -398,6 +412,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
+  '/chat': typeof ChatRoute
+  '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
   '/account/api-keys': typeof AccountApiKeysRoute
   '/account/applications': typeof AccountApplicationsRoute
@@ -450,6 +466,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
+  '/chat': typeof ChatRoute
+  '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
   '/app/$appId': typeof AppAppIdRouteRouteWithChildren
   '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
@@ -506,6 +524,8 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/chat'
+    | '/docs'
     | '/models'
     | '/app/$appId'
     | '/org/$organizationId'
@@ -559,6 +579,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/account'
+    | '/chat'
+    | '/docs'
     | '/models'
     | '/account/api-keys'
     | '/account/applications'
@@ -610,6 +632,8 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/admin'
+    | '/chat'
+    | '/docs'
     | '/models'
     | '/app/$appId'
     | '/org/$organizationId'
@@ -665,6 +689,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRouteRoute: typeof AccountRouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  ChatRoute: typeof ChatRoute
+  DocsRoute: typeof DocsRoute
   ModelsRoute: typeof ModelsRoute
   AppAppIdRouteRoute: typeof AppAppIdRouteRouteWithChildren
   OrgOrganizationIdRouteRoute: typeof OrgOrganizationIdRouteRouteWithChildren
@@ -686,6 +712,20 @@ declare module '@tanstack/react-router' {
       path: '/models'
       fullPath: '/models'
       preLoaderRoute: typeof ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -1194,6 +1234,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRouteRoute: AccountRouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  ChatRoute: ChatRoute,
+  DocsRoute: DocsRoute,
   ModelsRoute: ModelsRoute,
   AppAppIdRouteRoute: AppAppIdRouteRouteWithChildren,
   OrgOrganizationIdRouteRoute: OrgOrganizationIdRouteRouteWithChildren,

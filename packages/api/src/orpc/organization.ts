@@ -7,19 +7,10 @@ import { auth, headers } from '@cared/auth'
 import { desc, eq } from '@cared/db'
 import { Member, Organization, User } from '@cared/db/schema'
 
+import { formatOrganization } from '../operation/organization'
 import { userProtectedProcedure } from '../orpc'
 
 type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'canceled'
-
-function formatOrganization(org: Pick<Organization, 'id' | 'name' | 'slug' | 'createdAt'>) {
-  const { id, name, slug, createdAt } = org
-  return {
-    id,
-    name,
-    slug,
-    createdAt,
-  }
-}
 
 function formatInvitation(
   invitation: Omit<Invitation, 'status' | 'role' | 'teamId'> & {

@@ -1,4 +1,5 @@
 import * as console from 'node:console'
+import { otel } from '@hono/otel'
 import { experimental_SmartCoercionPlugin as SmartCoercionPlugin } from '@orpc/json-schema'
 import { OpenAPIHandler } from '@orpc/openapi/fetch'
 import { OpenAPIReferencePlugin } from '@orpc/openapi/plugins'
@@ -34,7 +35,7 @@ export function newHonoApp({ cacheMaxSize }: { cacheMaxSize?: number }): HonoApp
 
   const trustedOrigins = getTrustedOrigins()
 
-  app.use(logger())
+  app.use(logger(), otel())
   app.use(
     '/*',
     cors({

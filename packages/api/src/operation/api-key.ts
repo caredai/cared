@@ -86,11 +86,11 @@ function _formatApiKey(key: Parameters<typeof formatApiKey>[0]) {
   }
 }
 
-const cache = new Cache<ApiKey>('apiKey', (key) =>
-  getDb().query.ApiKey.findFirst({
+const cache = new Cache<ApiKey>('apiKey', async (key) => ({
+  value: await getDb().query.ApiKey.findFirst({
     where: eq(ApiKey.key, key),
   }),
-)
+}))
 
 export async function invalidateApiKeyCache(apiKeyHash: string) {
   await cache.invalidate(apiKeyHash)

@@ -179,15 +179,25 @@ export async function POST(c: Context): Promise<Response> {
 
     const { model: modelId, stream: isStream, payerOrganizationId, ...args } = validatedArgs.data
 
-    const auth = await authenticate(c.req.raw.headers)
-    if (!auth.isAuthenticated()) {
-      return new Response('Unauthorized', { status: 401 })
-    }
-
     const telemetry: TelemetrySettings = {
       isEnabled: true,
     }
     const tracer = getTracer(telemetry)
+
+    const auth = await recordSpan({
+      name: 'authenticate',
+      attributes: selectTelemetryAttributes({
+        telemetry,
+        attributes: {
+          'langfuse.trace.name': 'Chat Generate (OpenAI Compatible)',
+        },
+      }),
+      tracer,
+      fn: async () => await authenticate(c.req.raw.headers),
+    })
+    if (!auth.isAuthenticated()) {
+      return new Response('Unauthorized', { status: 401 })
+    }
 
     const expenseManager = ExpenseManager.from({
       auth: auth.auth!,
@@ -201,7 +211,6 @@ export async function POST(c: Context): Promise<Response> {
       attributes: selectTelemetryAttributes({
         telemetry,
         attributes: {
-          'langfuse.trace.name': 'Chat Generate (OpenAI Compatible)',
           'langfuse.user.id': authId(auth.auth!),
         },
       }),

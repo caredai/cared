@@ -24,10 +24,14 @@ import {
   splitModelFullId,
 } from '@cared/providers'
 
-import type { ReturnedProviderInfo } from '../operation'
 import type { Context } from '../orpc'
 import { OrganizationScope } from '../auth'
-import { getProviderModelInfos, sourceSchema } from '../operation'
+import {
+  getProviderModelInfos,
+  invalidateProviderModelsCache,
+  ReturnedProviderInfo,
+  sourceSchema,
+} from '../operation'
 import { protectedProcedure, publicProcedure } from '../orpc'
 import { updateModelArgsSchema, updateModelsArgsSchema } from '../types'
 
@@ -420,6 +424,8 @@ export const modelRouter = {
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
 
+      await invalidateProviderModelsCache(providerModels)
+
       const result:
         | LanguageModelInfo
         | ImageModelInfo
@@ -530,6 +536,8 @@ export const modelRouter = {
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      await invalidateProviderModelsCache(providerModels)
 
       const result: (
         | LanguageModelInfo
@@ -654,6 +662,8 @@ export const modelRouter = {
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
 
+      await invalidateProviderModelsCache(providerModels)
+
       const result: (
         | LanguageModelInfo
         | ImageModelInfo
@@ -738,6 +748,8 @@ export const modelRouter = {
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      await invalidateProviderModelsCache(providerModels)
 
       const result:
         | LanguageModelInfo
@@ -834,6 +846,8 @@ export const modelRouter = {
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
+
+      await invalidateProviderModelsCache(providerModels)
 
       const result: (
         | LanguageModelInfo

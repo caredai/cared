@@ -27,7 +27,6 @@ export function MainNav() {
           Models
         </Link>
         <Link
-          // @ts-expect-error `/chat` should be another site
           to="/chat"
           preload={false}
           className={cn('transition-colors hover:text-foreground/80', 'text-foreground')}
@@ -35,7 +34,6 @@ export function MainNav() {
           Chat
         </Link>
         <Link
-          // @ts-expect-error `/docs` should be another site
           to="/docs"
           className={cn('transition-colors hover:text-foreground/80', 'text-foreground')}
         >

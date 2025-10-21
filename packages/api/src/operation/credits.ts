@@ -13,6 +13,41 @@ import type { UserContext } from '../orpc'
 import { getStripe } from '../client/stripe'
 import { cfg } from '../config'
 import { env } from '../env'
+import { Cache } from './cache'
+import { getUserOrganizations } from './organization'
+
+const creditsCache = new Cache<Credits>('credits', async (userOrOrgId) => ({
+  value: await getDb().query.Credits.findFirst({
+    where: userOrOrgId.startsWith('user')
+      ? eq(Credits.userId, userOrOrgId)
+      : eq(Credits.organizationId, userOrOrgId),
+  }),
+}))
+
+export function getCreditsUserOrOrgId(credits: Credits) {
+  return credits.userId ?? credits.organizationId!
+}
+
+export async function getCredits(userOrOrgId: string) {
+  return await creditsCache.get(userOrOrgId)
+}
+
+export async function getCreditsForUserAndAllOrganizations(userId: string) {
+  const organizations = await getUserOrganizations(userId)
+  return (
+    await Promise.all(
+      [userId, ...organizations.map((org) => org.id)].map((id) => creditsCache.get(id)),
+    )
+  ).filter(Boolean) as Credits[]
+}
+
+export async function updateCreditsCache(credits: Credits) {
+  await creditsCache.set(getCreditsUserOrOrgId(credits), credits)
+}
+
+export async function invalidateCreditsCache(credits: Credits) {
+  await creditsCache.invalidate(getCreditsUserOrOrgId(credits))
+}
 
 /**
  * Cancel a credits order
@@ -134,6 +169,8 @@ export async function cancelCreditsOrder(
             metadata,
           })
           .where(eq(Credits.id, credits.id))
+
+        await invalidateCreditsCache(credits)
       }
     }
 
@@ -230,6 +267,8 @@ export async function cancelCreditsOrdersByKind(
             metadata,
           })
           .where(eq(Credits.id, lockedCredits.id))
+
+        await invalidateCreditsCache(lockedCredits)
       }
     })
 
@@ -390,6 +429,8 @@ export async function createAutoRechargeInvoice(
           },
         })
         .where(eq(Credits.id, lockedCredits.id))
+
+      await invalidateCreditsCache(lockedCredits)
     })
   } catch (err) {
     // If the order creation fails, we need to void the invoice.
@@ -514,6 +555,8 @@ export async function triggerAutoRechargePaymentIntent(
           }),
         })
         .where(eq(Credits.id, lockedCredits.id))
+
+      await invalidateCreditsCache(lockedCredits)
 
       await tx.insert(CreditsOrder).values({
         type: credits.organizationId ? 'organization' : 'user',

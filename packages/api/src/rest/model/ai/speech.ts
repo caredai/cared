@@ -73,15 +73,25 @@ export async function POST(c: Context): Promise<Response> {
 
     const { modelId, payerOrganizationId, ...speechModelV2CallOptions } = validatedArgs.data
 
-    const auth = await authenticate(c.req.raw.headers)
-    if (!auth.isAuthenticated()) {
-      return new Response('Unauthorized', { status: 401 })
-    }
-
     const telemetry: TelemetrySettings = {
       isEnabled: true,
     }
     const tracer = getTracer(telemetry)
+
+    const auth = await recordSpan({
+      name: 'authenticate',
+      attributes: selectTelemetryAttributes({
+        telemetry,
+        attributes: {
+          'langfuse.trace.name': 'Speech Generate',
+        },
+      }),
+      tracer,
+      fn: async () => await authenticate(c.req.raw.headers),
+    })
+    if (!auth.isAuthenticated()) {
+      return new Response('Unauthorized', { status: 401 })
+    }
 
     const expenseManager = ExpenseManager.from({
       auth: auth.auth!,
@@ -95,7 +105,6 @@ export async function POST(c: Context): Promise<Response> {
       attributes: selectTelemetryAttributes({
         telemetry,
         attributes: {
-          'langfuse.trace.name': 'Speech Generate',
           'langfuse.user.id': authId(auth.auth!),
         },
       }),

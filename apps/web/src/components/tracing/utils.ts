@@ -87,20 +87,32 @@ export const buildTraceTree = (
     (obs) => !obs.parentObservationId || !observationMap.has(obs.parentObservationId),
   )
 
+  const future = Date.now() * 2
+
   // Build tree structure recursively
   const buildTree = (parentId: string): TreeNode[] => {
     const filteredObservations = observations.filter((obs) => obs.parentObservationId === parentId)
 
     const sortedObservations = sortByStartTime
       ? filteredObservations.sort((a, b) => {
-          // Sort by start time if both have start times
-          if (a.startTime && b.startTime) {
-            return new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+          // Sort by start time
+          if (a.startTime || b.startTime) {
+            // If only one has start time, prioritize the one with start time
+            const diff =
+              new Date(a.startTime || future).getTime() - new Date(b.startTime || future).getTime()
+            if (diff !== 0) {
+              return diff
+            }
+            // Sort by end time
+            if (a.endTime || b.endTime) {
+              const diff =
+                new Date(a.endTime || future).getTime() - new Date(b.endTime || future).getTime()
+              if (diff !== 0) {
+                return diff
+              }
+            }
           }
-          // If only one has start time, prioritize the one with start time
-          if (a.startTime && !b.startTime) return -1
-          if (!a.startTime && b.startTime) return 1
-          // If neither has start time, sort by id as fallback
+          // Sort by id as fallback
           return a.id.localeCompare(b.id)
         })
       : filteredObservations
@@ -119,14 +131,24 @@ export const buildTraceTree = (
     isTraceRoot: true,
     children: (sortByStartTime
       ? rootObservations.sort((a, b) => {
-          // Sort by start time if both have start times
-          if (a.startTime && b.startTime) {
-            return new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
+          // Sort by start time
+          if (a.startTime || b.startTime) {
+            // If only one has start time, prioritize the one with start time
+            const diff =
+              new Date(a.startTime || future).getTime() - new Date(b.startTime || future).getTime()
+            if (diff !== 0) {
+              return diff
+            }
+            // Sort by end time
+            if (a.endTime || b.endTime) {
+              const diff =
+                new Date(a.endTime || future).getTime() - new Date(b.endTime || future).getTime()
+              if (diff !== 0) {
+                return diff
+              }
+            }
           }
-          // If only one has start time, prioritize the one with start time
-          if (a.startTime && !b.startTime) return -1
-          if (!a.startTime && b.startTime) return 1
-          // If neither has start time, sort by id as fallback
+          // Sort by id as fallback
           return a.id.localeCompare(b.id)
         })
       : rootObservations

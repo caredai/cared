@@ -18,6 +18,7 @@ import {
   cancelCreditsOrder,
   cancelCreditsOrdersByKind,
   createAutoRechargeInvoice,
+  invalidateCreditsCache,
   triggerAutoRechargePaymentIntent,
 } from '../operation'
 import { userProtectedProcedure } from '../orpc'
@@ -123,6 +124,8 @@ export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizat
           .where(eq(Credits.id, credits.id))
           .returning()
       ).at(0)!
+
+      await invalidateCreditsCache(credits)
     }
 
     return {
@@ -422,6 +425,8 @@ export const creditsRouter = {
               },
             })
             .where(eq(Credits.id, credits.id))
+
+          await invalidateCreditsCache(credits)
         })
       } catch (err) {
         // If the order creation fails, we need to expire the checkout session.
@@ -612,6 +617,8 @@ export const creditsRouter = {
         }
 
         await tx.update(Credits).set({ metadata: updateData }).where(eq(Credits.id, credits.id))
+
+        await invalidateCreditsCache(credits)
       })
     }),
 }

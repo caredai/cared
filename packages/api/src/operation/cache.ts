@@ -14,6 +14,7 @@ export class Cache<VALUE extends object> {
       maxSize,
       sizeCalculation: lruCacheSizeCalculation,
       ttl: DEFAULT_MEMORY_TTL * 1000,
+      allowStale: true, // always allow stale
       // eslint-disable-next-line @typescript-eslint/unbound-method
       fetchMethod: Cache.#fetchMethod,
     })
@@ -40,10 +41,14 @@ export class Cache<VALUE extends object> {
 
   constructor(
     private namespace: string,
-    fetch: (
-      key: string,
-    ) => Promise<VALUE | undefined | [VALUE | undefined, number | Date | undefined]>,
-    ex: number | undefined = DEFAULT_KV_TTL,
+    fetch: (key: string) => Promise<
+      | {
+          value?: VALUE
+          ttl?: number | Date
+        }
+      | undefined
+    >,
+    private ex: number | undefined = DEFAULT_KV_TTL,
   ) {
     Cache.#fetchMethods.set(
       namespace,
@@ -66,28 +71,13 @@ export class Cache<VALUE extends object> {
         console.log('Cache miss')
 
         // eslint-disable-next-line prefer-const
-        let result = await fetch(key)
-        let value, ttl
-        if (Array.isArray(result)) {
-          value = result[0]
-          ttl = result[1]
-        } else {
-          value = result
-        }
+        let { value, ttl } = (await fetch(key)) ?? {}
 
         if (!value) {
           return null
         }
 
-        if (typeof ttl !== 'undefined') {
-          if (ttl instanceof Date) {
-            ttl = Math.max(Math.floor((Number(ttl) - Date.now()) / 1000), 0)
-          }
-        }
-
-        await this.kv.set(key, JSON.stringify(value), {
-          ex: typeof ttl === 'number' ? ttl : ex,
-        })
+        await this.set(key, value, ttl, true)
 
         return value
       },
@@ -96,9 +86,33 @@ export class Cache<VALUE extends object> {
     this.kv = getKV(namespace, 'upstash')
   }
 
-  async get(key: string) {
-    const value = await this.cache().fetch(`${this.namespace}::${key}`)
+  async get(key: string, forceFetch = false) {
+    const value = await this.cache().fetch(`${this.namespace}::${key}`, {
+      forceRefresh: forceFetch,
+    })
     return value ?? undefined
+  }
+
+  async getOrDefault(key: string, defaultValue: VALUE, forceFetch = false) {
+    return (await this.get(key, forceFetch)) ?? defaultValue
+  }
+
+  async set(key: string, value: VALUE, ttl?: number | Date, inFetch = false) {
+    if (typeof ttl !== 'undefined') {
+      if (ttl instanceof Date) {
+        ttl = Math.max(Math.floor((Number(ttl) - Date.now()) / 1000), 0)
+      }
+    }
+
+    if (!inFetch) {
+      this.cache().set(`${this.namespace}::${key}`, value, {
+        ttl,
+      })
+    }
+
+    await this.kv.set(key, JSON.stringify(value), {
+      ex: typeof ttl === 'number' ? ttl : this.ex,
+    })
   }
 
   async invalidate(key: string) {

@@ -41,6 +41,7 @@ export const getDb = cache(() => {
       max: 5,
       // If you are not using array types in your Postgres schema, disable `fetch_types` to avoid an additional round-trip (unnecessary latency)
       fetch_types: false,
+      prepare: true,
     })
     return drizzlePostgresJs({
       client,

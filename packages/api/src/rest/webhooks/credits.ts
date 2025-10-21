@@ -10,6 +10,7 @@ import log from '@cared/log'
 
 import { getStripe } from '../../client/stripe'
 import { env } from '../../env'
+import { updateCreditsCache } from '../../operation'
 
 export async function POST(c: Context): Promise<Response> {
   const stripe = getStripe()
@@ -95,19 +96,23 @@ export async function POST(c: Context): Promise<Response> {
                   )[0]
 
                   if (credits?.metadata.onetimeRechargeSessionId === session.id) {
-                    await tx
-                      .update(Credits)
-                      .set({
-                        credits: new Decimal(credits.credits)
-                          .add(delta)
-                          .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
-                          .toString(),
-                        metadata: {
-                          ...credits.metadata,
-                          onetimeRechargeSessionId: undefined,
-                        },
-                      })
-                      .where(eq(Credits.id, credits.id))
+                    const updatedCredits = (
+                      await tx
+                        .update(Credits)
+                        .set({
+                          credits: new Decimal(credits.credits)
+                            .add(delta)
+                            .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
+                            .toString(),
+                          metadata: {
+                            ...credits.metadata,
+                            onetimeRechargeSessionId: undefined,
+                          },
+                        })
+                        .where(eq(Credits.id, credits.id))
+                        .returning()
+                    ).at(0)!
+                    await updateCreditsCache(updatedCredits)
                   } else {
                     const entityType = order.type === 'organization' ? 'organization' : 'user'
                     const entityId =
@@ -158,15 +163,19 @@ export async function POST(c: Context): Promise<Response> {
                   )[0]
 
                   if (credits?.metadata.autoRechargeSessionId === session.id) {
-                    await tx
-                      .update(Credits)
-                      .set({
-                        metadata: {
-                          ...credits.metadata,
-                          autoRechargeSubscriptionId: subscriptionId,
-                        },
-                      })
-                      .where(eq(Credits.id, credits.id))
+                    const updatedCredits = (
+                      await tx
+                        .update(Credits)
+                        .set({
+                          metadata: {
+                            ...credits.metadata,
+                            autoRechargeSubscriptionId: subscriptionId,
+                          },
+                        })
+                        .where(eq(Credits.id, credits.id))
+                        .returning()
+                    ).at(0)!
+                    await updateCreditsCache(updatedCredits)
                   } else {
                     const entityType = order.type === 'organization' ? 'organization' : 'user'
                     const entityId =
@@ -253,23 +262,27 @@ export async function POST(c: Context): Promise<Response> {
                 )[0]
 
                 if (credits?.metadata.autoRechargePaymentIntentId === paymentIntent.id) {
-                  await tx
-                    .update(Credits)
-                    .set({
-                      ...(quantity &&
-                        delta &&
-                        quantity >= delta && {
-                          credits: new Decimal(credits.credits)
-                            .add(delta)
-                            .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
-                            .toString(),
-                        }),
-                      metadata: {
-                        ...credits.metadata,
-                        autoRechargePaymentIntentId: undefined,
-                      },
-                    })
-                    .where(eq(Credits.id, credits.id))
+                  const updatedCredits = (
+                    await tx
+                      .update(Credits)
+                      .set({
+                        ...(quantity &&
+                          delta &&
+                          quantity >= delta && {
+                            credits: new Decimal(credits.credits)
+                              .add(delta)
+                              .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
+                              .toString(),
+                          }),
+                        metadata: {
+                          ...credits.metadata,
+                          autoRechargePaymentIntentId: undefined,
+                        },
+                      })
+                      .where(eq(Credits.id, credits.id))
+                      .returning()
+                  ).at(0)!
+                  await updateCreditsCache(updatedCredits)
                 } else {
                   const entityType = order.type === 'organization' ? 'organization' : 'user'
                   const entityId =
@@ -355,19 +368,23 @@ export async function POST(c: Context): Promise<Response> {
                   )[0]
 
                   if (credits?.metadata.autoRechargeInvoiceId === invoice.id!) {
-                    await tx
-                      .update(Credits)
-                      .set({
-                        credits: new Decimal(credits.credits)
-                          .add(delta)
-                          .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
-                          .toString(),
-                        metadata: {
-                          ...credits.metadata,
-                          autoRechargeInvoiceId: undefined,
-                        },
-                      })
-                      .where(eq(Credits.id, credits.id))
+                    const updatedCredits = (
+                      await tx
+                        .update(Credits)
+                        .set({
+                          credits: new Decimal(credits.credits)
+                            .add(delta)
+                            .toDecimalPlaces(10, Decimal.ROUND_FLOOR)
+                            .toString(),
+                          metadata: {
+                            ...credits.metadata,
+                            autoRechargeInvoiceId: undefined,
+                          },
+                        })
+                        .where(eq(Credits.id, credits.id))
+                        .returning()
+                    ).at(0)!
+                    await updateCreditsCache(updatedCredits)
                   } else {
                     const entityType = order.type === 'organization' ? 'organization' : 'user'
                     const entityId =

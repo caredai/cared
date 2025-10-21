@@ -3,16 +3,20 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Decimal } from 'decimal.js'
 
 import type { GenerationDetails, ModelCallOptions, TypedModelInfo } from '@cared/providers'
-import { and, desc, eq, sql } from '@cared/db'
+import { eq, sql } from '@cared/db'
 import { getDb } from '@cared/db/client'
-import { Credits, Expense, Member, Organization } from '@cared/db/schema'
+import { Credits, Expense } from '@cared/db/schema'
 import { getKV } from '@cared/kv'
 import { computeGenerationCost, estimateGenerationCost } from '@cared/providers'
 
 import type { AuthObject } from '../auth'
 import type { WaitUntil } from '../utils'
 import { cfg } from '../config'
-import { triggerAutoRechargePaymentIntent } from './credits'
+import {
+  getCreditsForUserAndAllOrganizations,
+  triggerAutoRechargePaymentIntent,
+  updateCreditsCache,
+} from './credits'
 
 const kv = getKV('expense', 'upstash')
 const cache = new Map()
@@ -35,21 +39,22 @@ export class ExpenseManager {
     payerOrganizationId?: string
     waitUntil: WaitUntil
   }) {
-    if (auth.type === 'user') {
+    if (auth.type === 'user' || auth.type === 'appUser') {
       return new ExpenseManager({
         userId: auth.userId,
-        organizationId: payerOrganizationId,
+        organizationId: payerOrganizationId ?? undefined,
+        appId: auth.type === 'appUser' ? auth.appId : undefined,
         waitUntil,
       })
     } else {
       if (payerOrganizationId) {
-        throw new Error('Cannot use payerOrganizationId with non-user auth')
+        throw new Error('Cannot use payerOrganizationId with non-user/non-appUser auth')
       }
 
-      if (auth.type === 'appUser' || auth.scope === 'user') {
+      if (auth.scope === 'user') {
         return new ExpenseManager({
           userId: auth.userId,
-          appId: auth.type === 'appUser' ? auth.appId : undefined,
+          organizationId: null,
           waitUntil,
         })
       } else {
@@ -64,7 +69,7 @@ export class ExpenseManager {
   }
 
   private readonly userId: string
-  private readonly organizationId?: string
+  private readonly organizationId?: string | null
   private readonly appId?: string
   private readonly waitUntil: WaitUntil
 
@@ -75,7 +80,7 @@ export class ExpenseManager {
     waitUntil,
   }: {
     userId: string
-    organizationId?: string
+    organizationId?: string | null
     appId?: string
     waitUntil: WaitUntil
   }) {
@@ -94,38 +99,17 @@ export class ExpenseManager {
 
     this.creditsCandidates = []
 
-    if (this.organizationId) {
-      const credits = await getDb()
-        .select({
-          credits: Credits,
-        })
-        .from(Member)
-        .innerJoin(Credits, eq(Credits.organizationId, Member.organizationId))
-        .where(and(eq(Member.userId, this.userId), eq(Member.organizationId, this.organizationId)))
-        .then((creditsArray) => creditsArray.at(0)?.credits)
+    const allCredits = await getCreditsForUserAndAllOrganizations(this.userId)
+
+    if (this.organizationId !== undefined) {
+      const credits = allCredits.find((c) =>
+        this.organizationId ? c.organizationId === this.organizationId : c.userId === this.userId,
+      )
       if (credits) {
         this.creditsCandidates.push(credits)
       }
     } else {
-      const creditsArray: Credits[] = (
-        await Promise.all([
-          getDb().query.Credits.findMany({
-            where: eq(Credits.userId, this.userId),
-          }),
-          getDb()
-            .select({
-              credits: Credits,
-            })
-            .from(Member)
-            .innerJoin(Organization, eq(Member.organizationId, Organization.id))
-            .innerJoin(Credits, eq(Credits.organizationId, Organization.id))
-            .where(eq(Member.userId, this.userId))
-            .orderBy(desc(Credits.id))
-            .then((creditsArray) => creditsArray.map(({ credits }) => credits)),
-        ])
-      ).flat()
-
-      this.creditsCandidates.push(...creditsArray)
+      this.creditsCandidates.push(...allCredits)
     }
 
     return this.creditsCandidates
@@ -243,6 +227,8 @@ export class ExpenseManager {
 
         credits.credits = updatedCredits.credits
 
+        await updateCreditsCache(updatedCredits)
+
         await triggerAutoRechargePaymentIntent(updatedCredits)
 
         return
@@ -277,6 +263,8 @@ export class ExpenseManager {
       ).at(0)!
 
       maxCredits.credits = updatedCredits.credits
+
+      await updateCreditsCache(updatedCredits)
 
       await triggerAutoRechargePaymentIntent(updatedCredits)
     })
