@@ -1,5 +1,0 @@
----
-'@cared/sdk': patch
----
-
-Nothing

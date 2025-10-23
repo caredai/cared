@@ -1,5 +1,11 @@
 # @cared/sdk
 
+## 0.1.12
+
+### Patch Changes
+
+- 455216e: Nothing
+
 ## 0.1.11
 
 ### Patch Changes
