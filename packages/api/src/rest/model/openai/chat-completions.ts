@@ -4,7 +4,7 @@ import type { OpenAI } from 'openai'
 import { APICallError } from '@ai-sdk/provider'
 import { z } from 'zod/v4'
 
-import type { LanguageGenerationDetails } from '@cared/providers'
+import type { LanguageGenerationDetails, ProviderId } from '@cared/providers'
 import log from '@cared/log'
 import { createCustomJsonFetch, splitModelFullId } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
@@ -38,137 +38,147 @@ import {
   ChatCompletionMessageSchema,
   convertToLanguageModelV2Messages,
 } from './chat-prompt'
+import { getReasoningOptions, OpenRouterReasoningOptionsSchema } from './reasoning'
 
-const ChatCompletionRequestArgsSchema = z.object({
-  messages: z.array(ChatCompletionMessageSchema),
-  model: z.string(),
-  frequency_penalty: z.number().min(-2).max(2).nullish(),
-  function_call: z
-    .union([
-      z.enum(['none', 'auto']),
-      z.object({
-        name: z.string(),
-      }),
-    ])
-    .optional(),
-  functions: z
-    .array(
-      z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        parameters: jsonSchema7Schema.optional(),
-      }),
-    )
-    .optional(),
-  logit_bias: z.record(z.coerce.number<string>(), z.number()).optional(),
-  logprobs: z.boolean().nullish(),
-  max_completion_tokens: z.int().nullish(),
-  max_tokens: z.int().nullish(),
-  metadata: z.record(z.string().max(64), z.string().max(512)).optional(),
-  modalities: z.array(z.string()).optional(),
-  n: z.int().optional(),
-  parallel_tool_calls: z.boolean().optional(),
-  prediction: z
-    .object({
-      type: z.literal('content'),
-      content: z.union([z.string(), ChatCompletionContentPartTextSchema]),
-    })
-    .optional(),
-  presence_penalty: z.number().min(-2).max(2).nullish(),
-  prompt_cache_key: z.string().optional(),
-  reasoning_effort: z.enum(['low', 'medium', 'high']).nullish(),
-  response_format: z
-    .discriminatedUnion('type', [
-      z.object({
-        type: z.literal('text'),
-      }),
-      z.object({
-        type: z.literal('json_schema'),
-        json_schema: z.object({
+const ChatCompletionRequestArgsSchema = z
+  .object({
+    messages: z.array(ChatCompletionMessageSchema),
+    model: z.string(),
+    frequency_penalty: z.number().min(-2).max(2).nullish(),
+    function_call: z
+      .union([
+        z.enum(['none', 'auto']),
+        z.object({
+          name: z.string(),
+        }),
+      ])
+      .optional(),
+    functions: z
+      .array(
+        z.object({
           name: z.string(),
           description: z.string().optional(),
-          schema: jsonSchema7Schema,
-          strict: z.boolean().nullish(),
+          parameters: jsonSchema7Schema.optional(),
         }),
-      }),
-      z.object({
-        type: z.literal('json_object'),
-      }),
-    ])
-    .optional(),
-  safety_identifier: z.string().optional(),
-  seed: z.int().optional(),
-  service_tier: z.enum(['auto', 'default', 'flex', 'priority']).nullish(),
-  stop: z.union([z.string(), z.array(z.string())]).nullish(),
-  stream: z.boolean().nullish(),
-  stream_options: z
-    .object({
-      include_obfuscation: z.boolean().optional(),
-      include_usage: z.boolean().optional(),
-    })
-    .nullish(),
-  temperature: z.number().min(0).max(2).nullish(),
-  tool_choice: z
-    .union([
-      z.enum(['none', 'auto', 'required']),
-      z.discriminatedUnion('type', [
+      )
+      .optional(),
+    logit_bias: z.record(z.coerce.number<string>(), z.number()).optional(),
+    logprobs: z.boolean().nullish(),
+    max_completion_tokens: z.int().nullish(),
+    max_tokens: z.int().nullish(),
+    metadata: z.record(z.string().max(64), z.string().max(512)).optional(),
+    modalities: z.array(z.string()).optional(),
+    n: z.int().optional(),
+    parallel_tool_calls: z.boolean().optional(),
+    prediction: z
+      .object({
+        type: z.literal('content'),
+        content: z.union([z.string(), ChatCompletionContentPartTextSchema]),
+      })
+      .optional(),
+    presence_penalty: z.number().min(-2).max(2).nullish(),
+    prompt_cache_key: z.string().optional(),
+    reasoning_effort: z.enum(['low', 'medium', 'high']).nullish(),
+    response_format: z
+      .discriminatedUnion('type', [
         z.object({
-          type: z.literal('allowed_tools'),
-          allowed_tools: z.object({
-            mode: z.enum(['auto', 'required']),
-            tools: z.array(
-              z.object({
-                type: z.literal('function'),
-                function: z.object({
-                  name: z.string(),
-                }),
-              }),
-            ),
+          type: z.literal('text'),
+        }),
+        z.object({
+          type: z.literal('json_schema'),
+          json_schema: z.object({
+            name: z.string(),
+            description: z.string().optional(),
+            schema: jsonSchema7Schema,
+            strict: z.boolean().nullish(),
           }),
         }),
+        z.object({
+          type: z.literal('json_object'),
+        }),
+      ])
+      .optional(),
+    safety_identifier: z.string().optional(),
+    seed: z.int().optional(),
+    service_tier: z.enum(['auto', 'default', 'flex', 'priority']).nullish(),
+    stop: z.union([z.string(), z.array(z.string())]).nullish(),
+    stream: z.boolean().nullish(),
+    stream_options: z
+      .object({
+        include_obfuscation: z.boolean().optional(),
+        include_usage: z.boolean().optional(),
+      })
+      .nullish(),
+    temperature: z.number().min(0).max(2).nullish(),
+    tool_choice: z
+      .union([
+        z.enum(['none', 'auto', 'required']),
+        z.discriminatedUnion('type', [
+          z.object({
+            type: z.literal('allowed_tools'),
+            allowed_tools: z.object({
+              mode: z.enum(['auto', 'required']),
+              tools: z.array(
+                z.object({
+                  type: z.literal('function'),
+                  function: z.object({
+                    name: z.string(),
+                  }),
+                }),
+              ),
+            }),
+          }),
+          z.object({
+            type: z.literal('function'),
+            function: z.object({
+              name: z.string(),
+            }),
+          }),
+        ]),
+      ])
+      .optional(),
+    tools: z
+      .array(
         z.object({
           type: z.literal('function'),
           function: z.object({
             name: z.string(),
+            description: z.string().optional(),
+            parameters: jsonSchema7Schema,
+            strict: z.boolean().nullish(),
           }),
         }),
-      ]),
-    ])
-    .optional(),
-  tools: z
-    .array(
-      z.object({
-        type: z.literal('function'),
-        function: z.object({
-          name: z.string(),
-          description: z.string().optional(),
-          parameters: jsonSchema7Schema,
-          strict: z.boolean().nullish(),
+      )
+      .optional(),
+    top_logprobs: z.int().min(0).max(20).nullish(),
+    top_p: z.number().min(0).max(1).nullish(),
+    user: z.string().optional(),
+    verbosity: z.enum(['low', 'medium', 'high']).optional(),
+    web_search_options: z
+      .object({
+        search_context_size: z.enum(['low', 'medium', 'high']).optional(),
+        user_location: z.object({
+          type: z.literal('approximate'),
+          approximate: z.object({
+            city: z.string().optional(),
+            country: z.string().optional(),
+            region: z.string().optional(),
+            timezone: z.string().optional(),
+          }),
         }),
-      }),
-    )
-    .optional(),
-  top_logprobs: z.int().min(0).max(20).nullish(),
-  top_p: z.number().min(0).max(1).nullish(),
-  user: z.string().optional(),
-  verbosity: z.enum(['low', 'medium', 'high']).optional(),
-  web_search_options: z
-    .object({
-      search_context_size: z.enum(['low', 'medium', 'high']).optional(),
-      user_location: z.object({
-        type: z.literal('approximate'),
-        approximate: z.object({
-          city: z.string().optional(),
-          country: z.string().optional(),
-          region: z.string().optional(),
-          timezone: z.string().optional(),
-        }),
-      }),
-    })
-    .optional(),
+      })
+      .optional(),
 
-  payerOrganizationId: z.string().optional(),
-})
+    // For OpenRouter
+    // https://openrouter.ai/docs/use-cases/reasoning-tokens
+    reasoning: OpenRouterReasoningOptionsSchema,
+
+    payerOrganizationId: z.string().optional(),
+  })
+  .refine((data) => !(data.reasoning_effort && data.reasoning), {
+    message: 'Cannot specify both "reasoning_effort" and "reasoning"',
+    path: ['reasoning_effort'],
+  })
 
 export async function POST(c: Context): Promise<Response> {
   try {
@@ -516,12 +526,21 @@ function buildCallOptions({
   signal,
 }: {
   args: Omit<z.infer<typeof ChatCompletionRequestArgsSchema>, 'model' | 'stream'>
-  providerId: string
+  providerId: ProviderId
   signal: AbortSignal
 }) {
+  const maxOutputTokens = args.max_completion_tokens ?? args.max_tokens ?? undefined
+
+  const reasoningOptions = getReasoningOptions(
+    providerId,
+    maxOutputTokens,
+    args.reasoning_effort,
+    args.reasoning,
+  )
+
   const callOptions: LanguageModelV2CallOptions = {
     prompt: convertToLanguageModelV2Messages(args.messages),
-    maxOutputTokens: args.max_completion_tokens ?? args.max_tokens ?? undefined,
+    maxOutputTokens,
     temperature: args.temperature ?? undefined,
     stopSequences: args.stop ? (Array.isArray(args.stop) ? args.stop : [args.stop]) : undefined,
     topP: args.top_p ?? undefined,
@@ -565,12 +584,20 @@ function buildCallOptions({
         }),
         ...(args.user && { user: args.user }),
         ...(args.parallel_tool_calls && { parallelToolCalls: args.parallel_tool_calls }),
-        ...(args.reasoning_effort && { reasoningEffort: args.reasoning_effort }),
         ...(args.response_format?.type === 'json_schema' && { structuredOutputs: true }),
         ...(args.service_tier && { serviceTier: args.service_tier }),
         ...(args.response_format?.type === 'json_schema' &&
           args.response_format.json_schema.strict && { strictJsonSchema: true }),
+        ...(providerId !== 'azure' && providerId !== 'vertex' && reasoningOptions),
       },
+      // https://ai-sdk.dev/providers/ai-sdk-providers/azure#provider-options
+      ...(providerId === 'azure' && {
+        openai: reasoningOptions,
+      }),
+      // https://ai-sdk.dev/providers/ai-sdk-providers/google-vertex#reasoning-thinking-tokens
+      ...(providerId === 'vertex' && {
+        google: reasoningOptions,
+      }),
     },
   }
   return callOptions
@@ -625,6 +652,18 @@ async function doGenerate({
 
   const finishReason = chatCompletionsFinishReason(gen.finishReason)
 
+  // For OpenRouter
+  const reasoningDetails = gen.content
+    .filter((part) => part.type === 'reasoning')
+    .map((part) => ({
+      type: 'reasoning.text',
+      text: part.text,
+      signature: null,
+      id: 'reasoning-text-1',
+      format: 'anthropic-claude-v1',
+      index: 0,
+    }))
+
   span.setAttributes(
     selectTelemetryAttributes({
       telemetry,
@@ -659,6 +698,7 @@ async function doGenerate({
           refusal: null,
           annotations: [],
           audio: null,
+          ...(reasoningDetails.length > 0 && { reasoning_details: reasoningDetails }),
         },
         logprobs: logprobs
           ? {
@@ -822,6 +862,29 @@ async function doStream({
         break
 
       case 'reasoning-delta':
+        // For OpenRouter
+        if (part.delta) {
+          const chunk = {
+            choices: [
+              {
+                index: 0,
+                delta: {
+                  reasoning_details: [
+                    {
+                      type: 'reasoning.text',
+                      text: part.delta,
+                      signature: null,
+                      id: 'reasoning-text-1',
+                      format: 'anthropic-claude-v1',
+                      index: 0,
+                    },
+                  ],
+                },
+              },
+            ],
+          }
+          await writeChunk(chunk)
+        }
         break
 
       case 'reasoning-end':

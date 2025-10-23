@@ -1,7 +1,13 @@
 import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
-import type { BaseProviderInfo, ModelFullId, ModelInfos, ModelType } from '@cared/providers'
+import type {
+  BaseProviderInfo,
+  ModelFullId,
+  ModelInfos,
+  ModelType,
+  ProviderId,
+} from '@cared/providers'
 import { eq, inArray, sql } from '@cared/db'
 import { getDb } from '@cared/db/client'
 import { ProviderModels } from '@cared/db/schema'
@@ -225,8 +231,11 @@ export async function findProvidersByModel<T extends ModelType>(
   const providerModelsArray = await getProviderModelInfos(undefined, organizationId, userId)
 
   const ids = splitModelFullId(queryModelId)
-  const queryProviderId = ids.providerId
-  queryModelId = ids.modelId
+  let queryProviderId: ProviderId | undefined
+  if (providers.has(ids.providerId)) {
+    queryProviderId = ids.providerId
+    queryModelId = ids.modelId
+  }
 
   // provide id => model
   const foundProviderModels = new Map<
@@ -236,7 +245,6 @@ export async function findProvidersByModel<T extends ModelType>(
     }
   >()
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (queryProviderId) {
     // TODO: optimize
     const providerModels = providerModelsArray.find((p) => p.id === queryProviderId)

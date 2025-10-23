@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "env JITI_JSX=1 pnpm with-env srvx --import=jiti/register --port 3002 --prod",
-    "build": "esbuild --bundle --platform=node --minify --sourcemap=external --outfile=dist/index.js src/index.ts",
+    "build": "esbuild --bundle --platform=node --jsx=automatic --minify --sourcemap=external --outfile=dist/index.js src/index.ts",
     "deploy": "vercel build && cp -r dist/index.js .vercel/output/functions/index.func/src/ && vercel deploy --prebuilt",
     "deploy:prod": "vercel build --prod && cp -r dist/index.js .vercel/output/functions/index.func/src/ && vercel deploy --prebuilt --prod",
     "with-env": "dotenv -e ../../.env --"

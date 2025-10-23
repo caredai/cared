@@ -9,6 +9,9 @@
 
 @import '@xyflow/react/dist/style.css';
 
+@import 'react18-json-view/src/style.css';
+@import 'react18-json-view/src/dark.css';
+
 @source "../../../packages/ui/src/**/*.{ts,tsx}";
 
 @source "../../../node_modules/@daveyplate/better-auth-ui";

@@ -21,15 +21,17 @@ export abstract class KV {
   abstract set(
     key: string,
     value: string,
-    opts?: {
-      ex?: number
-      px?: number
-      exat?: number
-      pxat?: number
-      nx?: true // Only set the key if it does not already exist.
-      xx?: true // Only set the key if it already exists.
-      keepTtl?: true // Retain the time to live associated with the key.
-    } | number,
+    opts?:
+      | {
+          ex?: number
+          px?: number
+          exat?: number
+          pxat?: number
+          nx?: true // Only set the key if it does not already exist.
+          xx?: true // Only set the key if it already exists.
+          keepTtl?: true // Retain the time to live associated with the key.
+        }
+      | number,
   ): Promise<void>
 
   abstract delete(key: string): Promise<void>

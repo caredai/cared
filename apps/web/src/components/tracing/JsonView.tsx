@@ -11,10 +11,6 @@ import { copyTextToClipboard } from '@/lib/clipboard'
 import { deepParseJson } from '@/lib/json'
 import { MarkdownJsonViewHeader } from './MarkdownJsonView'
 
-// Remove CSS imports that may cause global scope issues in Cloudflare Workers
-// import 'react18-json-view/src/style.css'
-// import 'react18-json-view/src/dark.css'
-
 export function JSONView(props: {
   canEnableMarkdown?: boolean
   json?: unknown

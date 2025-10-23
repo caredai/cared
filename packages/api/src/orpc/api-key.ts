@@ -11,9 +11,10 @@ import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
 import {
   apiKeyMetadataSchema,
-  formatApiKey, invalidateApiKeyCache,
+  formatApiKey,
+  invalidateApiKeyCache,
   listApiKeys,
-  optionalApiKeyMetadataSchema
+  optionalApiKeyMetadataSchema,
 } from '../operation'
 import { userPlainProtectedProcedure } from '../orpc'
 
@@ -295,7 +296,7 @@ export const apiKeyRouter = {
     )
     .handler(async ({ context, input }) => {
       const existingApiKey = await context.db.query.ApiKey.findFirst({
-        where: and(eq(ApiKey.id, input.id), eq(ApiKey.userId, context.auth.userId))
+        where: and(eq(ApiKey.id, input.id), eq(ApiKey.userId, context.auth.userId)),
       })
       if (!existingApiKey) {
         throw new ORPCError('NOT_FOUND', {
@@ -384,7 +385,7 @@ export const apiKeyRouter = {
     )
     .handler(async ({ context, input }) => {
       const apiKey = await context.db.query.ApiKey.findFirst({
-        where: and(eq(ApiKey.id, input.id), eq(ApiKey.userId, context.auth.userId))
+        where: and(eq(ApiKey.id, input.id), eq(ApiKey.userId, context.auth.userId)),
       })
       if (!apiKey) {
         throw new ORPCError('NOT_FOUND', {
