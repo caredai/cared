@@ -2,8 +2,9 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
-import { auth, headers } from '@cared/auth'
+import { auth, authHeaders } from '@cared/auth'
 import { and, asc, desc, eq, gt, lt, sql } from '@cared/db'
+import { db } from '@cared/db/client'
 import { user as User } from '@cared/db/schema/auth'
 
 import { adminProcedure } from '../../orpc'
@@ -36,7 +37,7 @@ export const userRouter = {
           'Cannot use both after and before cursors',
         ),
     )
-    .handler(async ({ context, input }) => {
+    .handler(async ({ input }) => {
       const conditions: (SQL<unknown> | undefined)[] = []
 
       // Add search conditions
@@ -58,7 +59,7 @@ export const userRouter = {
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      const users = await context.db.query.User.findMany({
+      const users = await db.query.User.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(User.id) : asc(User.id),
         limit: input.limit + 1,
@@ -96,8 +97,8 @@ export const userRouter = {
       summary: 'Get a single user by ID',
     })
     .input(z.string())
-    .handler(async ({ context, input }) => {
-      const user = await context.db.query.User.findFirst({
+    .handler(async ({ input }) => {
+      const user = await db.query.User.findFirst({
         where: eq(User.id, input),
       })
       if (!user) {
@@ -129,7 +130,7 @@ export const userRouter = {
     .handler(async ({ context, input }) => {
       // Delete user from auth system
       await auth.api.removeUser({
-        headers: headers(context.headers),
+        headers: authHeaders(context.headers),
         body: {
           userId: input,
         },

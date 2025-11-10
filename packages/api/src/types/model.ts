@@ -9,6 +9,9 @@ import {
   transcriptionModelInfoSchema,
 } from '@cared/providers'
 
+export const modelSourceSchema = z.enum(['system', 'custom', 'effective'])
+export type ModelSource = z.infer<typeof modelSourceSchema>
+
 export type UpdateModelArgs = z.infer<typeof updateModelArgsSchema>
 
 export const updateModelArgsSchema = z.discriminatedUnion('type', [

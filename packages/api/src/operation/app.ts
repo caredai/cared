@@ -1,9 +1,8 @@
 import { eq } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { db } from '@cared/db/client'
 import { App, Chat } from '@cared/db/schema'
 
 import type { BaseContext } from '../orpc'
-import { deleteApiKeys } from './api-key'
 
 export class AppOperator {
   constructor(
@@ -12,7 +11,7 @@ export class AppOperator {
   ) {}
 
   async isArchived() {
-    const app = await getDb().query.App.findFirst({
+    const app = await db.query.App.findFirst({
       where: eq(App.id, this.appId),
       columns: { archived: true },
     })
@@ -20,7 +19,7 @@ export class AppOperator {
   }
 
   async archive() {
-    await getDb()
+    await db
       .update(App)
       .set({
         archived: true,
@@ -30,7 +29,7 @@ export class AppOperator {
   }
 
   async unarchive() {
-    await getDb()
+    await db
       .update(App)
       .set({
         archived: null,
@@ -40,7 +39,7 @@ export class AppOperator {
   }
 
   async isDeletable() {
-    const hasChat = !!(await getDb().query.Chat.findFirst({
+    const hasChat = !!(await db.query.Chat.findFirst({
       where: eq(Chat.appId, this.appId),
       columns: { id: true },
     }))
@@ -48,7 +47,7 @@ export class AppOperator {
   }
 
   async isDeleted(soft = true) {
-    const app = await getDb().query.App.findFirst({
+    const app = await db.query.App.findFirst({
       where: eq(App.id, this.appId),
       columns: { deleted: true },
     })
@@ -56,7 +55,7 @@ export class AppOperator {
   }
 
   async softDelete() {
-    await getDb()
+    await db
       .update(App)
       .set({
         deleted: true,
@@ -77,12 +76,7 @@ export class AppOperator {
 
     await this.softDelete()
 
-    await deleteApiKeys(this.ctx, {
-      scope: 'app',
-      appId: this.appId,
-    })
-
-    await getDb().transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       await tx.delete(App).where(eq(App.id, this.appId))
     })
   }

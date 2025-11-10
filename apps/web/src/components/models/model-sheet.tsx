@@ -1,5 +1,5 @@
 import type { VirtualizerHandle } from 'virtua'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PlusIcon, ServerIcon } from 'lucide-react'
 import { useCopyToClipboard } from 'react-use'
 import { Virtualizer } from 'virtua'
@@ -38,36 +38,22 @@ const MODEL_TYPES: { value: ModelType; label: string }[] = [
 ]
 
 export function ModelSheet({
-  isSystem,
-  organizationId,
+  scope,
   provider,
   open,
   onOpenChange,
 }: {
-  isSystem?: boolean
-  organizationId?: string
+  scope: 'system' | 'effective'
   provider: BaseProviderInfo
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
   const providerId = provider.id
 
-  const { models, refetchModels } = useModels({
-    organizationId,
-    source: isSystem ? 'system' : undefined,
-  })
-  const updateModel = useUpdateModel({
-    isSystem,
-    organizationId,
-  })
-  const deleteModel = useDeleteModel({
-    isSystem,
-    organizationId,
-  })
-  const sortModels = useSortModels({
-    isSystem,
-    organizationId,
-  })
+  const { models, refetchModels } = useModels({ source: scope })
+  const updateModel = useUpdateModel(scope === 'system' ? 'system' : 'custom')
+  const deleteModel = useDeleteModel(scope === 'system' ? 'system' : 'custom')
+  const sortModels = useSortModels(scope === 'system' ? 'system' : 'custom')
 
   const vListRef = useRef<VirtualizerHandle>(null)
 
@@ -120,7 +106,7 @@ export function ModelSheet({
 
       const newModel: EditableModel = {
         id,
-        isSystem,
+        isSystem: scope === 'system',
         isEditing: true,
         isNew: true,
         ...getDefaultValuesForModelType(providerId, activeTab),
@@ -133,7 +119,7 @@ export function ModelSheet({
         vListRef.current?.scrollToIndex(scrollIndex, { align: 'start', smooth: true })
       }, 100)
     },
-    [isSystem, providerId, activeTab],
+    [scope, providerId, activeTab],
   )
 
   // Handle editing existing model
@@ -258,7 +244,9 @@ export function ModelSheet({
   // Handle moving model up or down
   const handleMoveModel = useCallback(
     async (modelId: string, direction: 'up' | 'down') => {
-      const currentModels = getModelsForCurrentTab(false).filter((m) => isSystem || !m.isSystem)
+      const currentModels = getModelsForCurrentTab(false).filter(
+        (m) => scope === 'system' || !m.isSystem,
+      )
 
       const currentIndex = currentModels.findIndex((m) => m.id === modelId)
 
@@ -282,7 +270,7 @@ export function ModelSheet({
 
       await refetchModels()
     },
-    [getModelsForCurrentTab, sortModels, providerId, refetchModels, isSystem],
+    [getModelsForCurrentTab, sortModels, providerId, refetchModels, scope],
   )
 
   const [_, copyToClipboard] = useCopyToClipboard()
@@ -456,7 +444,9 @@ export function ModelSheet({
                           onMoveUp={() => handleMoveModel(model.id, 'up')}
                           onMoveDown={() => handleMoveModel(model.id, 'down')}
                           copyToClipboard={copyToClipboard}
-                          canMoveUp={index > 0 && (isSystem || !models[index - 1]?.isSystem)}
+                          canMoveUp={
+                            index > 0 && (scope === 'system' || !models[index - 1]?.isSystem)
+                          }
                           canMoveDown={index < models.length - 1}
                           cache={cache[model.id]}
                           setCache={(cacheFn: (prevCache?: any) => any) =>
@@ -468,7 +458,7 @@ export function ModelSheet({
                                 : cache
                             })
                           }
-                          isSystem={isSystem}
+                          scope={scope}
                         />
                       )
                     }}
@@ -499,7 +489,7 @@ function ModelItem({
   canMoveDown,
   cache,
   setCache,
-  isSystem,
+  scope,
 }: {
   index: number
   providerId: ProviderId
@@ -516,7 +506,7 @@ function ModelItem({
   canMoveDown: boolean
   cache?: any
   setCache: (cacheFn: (prevCache?: any) => any) => void
-  isSystem?: boolean
+  scope: 'system' | 'effective'
 }) {
   // Track loading states for specific actions separately
   const [isSaving, setIsSaving] = useState(false)
@@ -570,7 +560,7 @@ function ModelItem({
         index={index}
         providerId={providerId}
         model={model}
-        isSystem={isSystem}
+        isSystem={scope === 'system'}
         isSaving={isSaving}
         isRemoving={isRemoving}
         isSorting={isMovingUp || isMovingDown}
@@ -587,7 +577,7 @@ function ModelItem({
         index={index}
         providerId={providerId}
         model={model}
-        isSystem={isSystem}
+        isSystem={scope === 'system'}
         isSearching={isSearching}
         isSaving={isSaving}
         isRemoving={isRemoving}

@@ -1,10 +1,10 @@
 import type { Context } from 'hono'
 
-import { authenticate } from '../../../auth'
+import { ProtectedAuth } from '../../../auth'
 
 export async function GET(c: Context): Promise<Response> {
-  const a = await authenticate(c.req.raw.headers)
-  if (!a.isAuthenticated()) {
+  const auth = await ProtectedAuth.authenticate(c.req.raw.headers)
+  if (!auth) {
     return new Response('Unauthorized', { status: 401 })
   }
 

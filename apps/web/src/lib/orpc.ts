@@ -2,7 +2,7 @@ import { createORPCClient, ORPCError } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
 import { BatchLinkPlugin } from '@orpc/client/plugins'
 import { createTanstackQueryUtils } from '@orpc/tanstack-query'
-import { redirect } from '@tanstack/react-router'
+// import { redirect } from '@tanstack/react-router'
 import { createIsomorphicFn } from '@tanstack/react-start'
 import { getRequestHeaders } from '@tanstack/react-start/server'
 
@@ -49,9 +49,10 @@ const isomorphicFetch = createIsomorphicFn()
 
 const isomorphicRedirect = createIsomorphicFn()
   .server(() => {
-    throw redirect({
-      to: '/auth/sign-in',
-    })
+    // TODO: solve crash issue
+    // throw redirect({
+    //   to: '/auth/sign-in',
+    // })
   })
   .client(() => {
     window.location.href = '/auth/sign-in'

@@ -5,7 +5,14 @@ import { LRUCache, lruCacheSizeCalculation } from '@cared/shared'
 const DEFAULT_MEMORY_TTL = 5 * 60
 const DEFAULT_KV_TTL = 24 * 60 * 60
 
-export class Cache<VALUE extends object> {
+export class Cache<
+  VALUE extends object,
+  CONTEXT extends
+    | {
+        forceFetch?: boolean
+      }
+    | undefined = undefined,
+> {
   static #cache: LRUCache<string, object> | undefined = undefined
   static #fetchMethods = new Map<string, LRUCache.Fetcher<string, object>>()
 
@@ -34,7 +41,7 @@ export class Cache<VALUE extends object> {
   }
 
   cache() {
-    return Cache.#cache! as unknown as LRUCache<string, VALUE>
+    return Cache.#cache! as unknown as LRUCache<string, VALUE, CONTEXT>
   }
 
   private kv: UpstashKV
@@ -55,20 +62,22 @@ export class Cache<VALUE extends object> {
       async (
         key: string,
         _staleValue: object | undefined,
-        _opts: LRUCache.FetcherOptions<string, object>,
+        opts: LRUCache.FetcherOptions<string, object>,
       ) => {
-        const valueFromKv =
-          typeof ex === 'number'
-            ? await this.kv.getex(key, {
-                ex,
-              })
-            : await this.kv.get(key)
-        if (valueFromKv) {
-          console.log('KV cache hit')
-          return JSON.parse(valueFromKv) as VALUE
-        }
+        if (!(opts.context as CONTEXT)?.forceFetch) {
+          const valueFromKv =
+            typeof ex === 'number'
+              ? await this.kv.getex(key, {
+                  ex,
+                })
+              : await this.kv.get(key)
+          if (valueFromKv) {
+            console.log('KV cache hit')
+            return JSON.parse(valueFromKv) as VALUE
+          }
 
-        console.log('Cache miss')
+          console.log('Cache miss')
+        }
 
         // eslint-disable-next-line prefer-const
         let { value, ttl } = (await fetch(key)) ?? {}
@@ -87,8 +96,12 @@ export class Cache<VALUE extends object> {
   }
 
   async get(key: string, forceFetch = false) {
+    // @ts-ignore
     const value = await this.cache().fetch(`${this.namespace}::${key}`, {
       forceRefresh: forceFetch,
+      context: {
+        forceFetch,
+      },
     })
     return value ?? undefined
   }
@@ -118,5 +131,12 @@ export class Cache<VALUE extends object> {
   async invalidate(key: string) {
     await this.kv.delete(key)
     this.cache().delete(`${this.namespace}::${key}`)
+  }
+
+  async batchInvalidate(...keys: string[]) {
+    await this.kv.batchDelete(...keys)
+    for (const key of keys) {
+      this.cache().delete(`${this.namespace}::${key}`)
+    }
   }
 }

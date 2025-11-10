@@ -1,11 +1,11 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import { auth, generateRandomString, headers } from '@cared/auth'
-import { desc, eq } from '@cared/db'
+import { authHeaders, generateRandomString, getAuth } from '@cared/auth'
+import { asc, count, desc, eq } from '@cared/db'
+import { db } from '@cared/db/client'
 import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@cared/db/schema'
 
-import { OrganizationScope } from '../auth'
 import { protectedProcedure, publicProcedure } from '../orpc'
 import { getAppById } from './app'
 
@@ -17,16 +17,17 @@ import { getAppById } from './app'
  */
 export function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
   return {
-    clientId: app.clientId,
-    ...(includeSecret && { clientSecret: app.clientSecret }),
+    appId: app.appId!,
+    clientId: app.clientId!,
+    ...(includeSecret && { clientSecret: app.clientSecret! }),
     ...(!includeSecret && {
       clientSecretStart: app.clientSecret!.substring(0, 6),
     }),
     redirectUris: app.redirectURLs?.split(',').filter(Boolean) ?? [],
-    disabled: app.disabled,
+    disabled: app.disabled ?? false,
     metadata: app.metadata ? JSON.parse(app.metadata) : {},
-    createdAt: app.createdAt,
-    updatedAt: app.updatedAt,
+    createdAt: app.createdAt!,
+    updatedAt: app.updatedAt!,
   }
 }
 
@@ -36,97 +37,31 @@ export function formatOAuthApp(app: OAuthApplication, includeSecret = false) {
  */
 export const oauthAppRouter = {
   /**
-   * List OAuth applications
-   * Can list apps for a specific workspace or a specific app
-   * Requires either workspaceId or appId parameter
+   * List OAuth applications of all apps in the account
    */
   list: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/oauth-apps',
       tags: ['oauth-apps'],
-      summary: 'List all OAuth apps in a workspace or for a specific app',
+      summary: 'List OAuth apps for a specific app or all apps in account',
     })
-    .input(
-      z
-        .object({
-          workspaceId: z.string().min(32).optional(),
-          appId: z.string().min(32).optional(),
+    .input(z.object({}).default({}))
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions()
+
+      const oauthApps = await db
+        .select({
+          oauthApp: OAuthApplication,
         })
-        .refine((data) => data.workspaceId || data.appId, {
-          message: 'Either workspaceId or appId must be provided',
-        }),
-    )
-    .handler(async ({ context, input }) => {
-      // If appId is provided, verify app ownership
-      if (input.appId) {
-        const app = await getAppById(context, input.appId)
-        const scope = await OrganizationScope.fromApp(context, app)
-        await scope.checkPermissions()
+        .from(App)
+        .innerJoin(OAuthApplication, eq(OAuthApplication.appId, App.id))
+        .where(eq(App.accountId, context.auth.accountId))
+        .orderBy(asc(OAuthApplication.appId), desc(OAuthApplication.id))
 
-        const clientId = app.metadata.clientId
-        if (!clientId) {
-          return { oauthApps: [] }
-        }
-
-        const oauthApp = await context.db.query.OAuthApplication.findFirst({
-          where: eq(OAuthApplication.clientId, clientId),
-        })
-
-        if (!oauthApp) {
-          return { oauthApps: [] }
-        }
-
-        return {
-          oauthApps: [
-            {
-              appId: app.id,
-              oauthApp: formatOAuthApp(oauthApp),
-            },
-          ],
-        }
+      return {
+        oauthApps: oauthApps.map(({ oauthApp }) => formatOAuthApp(oauthApp)),
       }
-
-      // If workspaceId is provided, verify workspace ownership and list all OAuth apps
-      if (input.workspaceId) {
-        const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-        await scope.checkPermissions()
-
-        // Get all apps in the workspace
-        const apps = await context.db.query.App.findMany({
-          where: eq(App.workspaceId, input.workspaceId),
-          orderBy: desc(App.createdAt),
-        })
-
-        // Get OAuth apps for each app
-        const oauthApps = await Promise.all(
-          apps.map(async (app) => {
-            const clientId = app.metadata.clientId
-            if (!clientId) return null
-
-            const oauthApp = await context.db.query.OAuthApplication.findFirst({
-              where: eq(OAuthApplication.clientId, clientId),
-            })
-
-            if (!oauthApp) return null
-
-            return {
-              appId: app.id,
-              oauthApp: formatOAuthApp(oauthApp),
-            }
-          }),
-        )
-
-        // Filter out null values
-        const validOauthApps = oauthApps.filter((item): item is NonNullable<typeof item> => !!item)
-
-        return {
-          oauthApps: validOauthApps,
-        }
-      }
-
-      // This case should never happen due to the input validation
-      return { oauthApps: [] }
     }),
 
   /**
@@ -143,18 +78,10 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.appId)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
-      // Check if clientId exists in application metadata
-      const clientId = app.metadata.clientId
-
-      if (!clientId) {
-        return { exists: false }
-      }
-
-      const oauthApp = await context.db.query.OAuthApplication.findFirst({
-        where: eq(OAuthApplication.clientId, clientId),
+      const oauthApp = await db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.appId, input.appId),
       })
 
       return { exists: !!oauthApp }
@@ -174,19 +101,10 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.appId)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
-      // Get clientId from application metadata
-      const clientId = app.metadata.clientId
-      if (!clientId) {
-        throw new ORPCError('NOT_FOUND', {
-          message: 'OAuth app not found',
-        })
-      }
-
-      const oauthApp = await context.db.query.OAuthApplication.findFirst({
-        where: eq(OAuthApplication.clientId, clientId),
+      const oauthApp = await db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.appId, input.appId),
       })
       if (!oauthApp) {
         throw new ORPCError('NOT_FOUND', {
@@ -211,9 +129,9 @@ export const oauthAppRouter = {
       summary: 'Get OAuth application info by client ID',
     })
     .input(z.object({ clientId: z.string().min(32) }))
-    .handler(async ({ context, input }) => {
+    .handler(async ({ input }) => {
       // Find OAuth application by clientId
-      const _oauthApp = await context.db.query.OAuthApplication.findFirst({
+      const _oauthApp = await db.query.OAuthApplication.findFirst({
         where: eq(OAuthApplication.clientId, input.clientId),
       })
       if (!_oauthApp) {
@@ -223,8 +141,8 @@ export const oauthAppRouter = {
       }
       const oauthApp = formatOAuthApp(_oauthApp)
 
-      const app = await context.db.query.App.findFirst({
-        where: eq(App.id, oauthApp.metadata.appId),
+      const app = await db.query.App.findFirst({
+        where: eq(App.id, oauthApp.appId),
       })
       if (!app) {
         throw new ORPCError('NOT_FOUND', {
@@ -235,6 +153,7 @@ export const oauthAppRouter = {
       return {
         name: app.name,
         imageUrl: app.metadata.imageUrl,
+        appId: app.id,
         clientId: oauthApp.clientId,
         redirectUris: oauthApp.redirectUris,
         disabled: oauthApp.disabled,
@@ -258,12 +177,9 @@ export const oauthAppRouter = {
         appId: z.string().min(32),
         redirectUris: z
           .array(
-            z
-              .string()
-              .url()
-              .refine((uri) => uri.startsWith('http://') || uri.startsWith('https://'), {
-                message: 'Redirect URI must start with http:// or https://',
-              }),
+            z.url().refine((uri) => uri.startsWith('http://') || uri.startsWith('https://'), {
+              message: 'Redirect URI must start with http:// or https://',
+            }),
           )
           .refine((uris) => new Set(uris).size === uris.length, {
             message: 'Redirect URIs must be unique',
@@ -274,35 +190,37 @@ export const oauthAppRouter = {
     )
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.appId)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['update'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
-      // TODO: check if the app already has an OAuth application
-
-      const _oauthApp = await auth.api.registerOAuthApplication({
-        headers: headers(context.headers),
-        body: {
-          redirect_uris: input.redirectUris?.map((u) => u.trim()) ?? [],
-          scope: 'profile email',
-          metadata: { appId: input.appId },
-        },
+      const existingOauthApp = await db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.appId, input.appId),
       })
-
-      return await context.db.transaction(async (tx) => {
-        await tx
-          .update(App)
-          .set({
-            metadata: {
-              ...app.metadata,
-              clientId: _oauthApp.client_id,
-            },
-          })
-          .where(eq(App.id, app.id))
-          .returning()
-
-        const oauthApp = await tx.query.OAuthApplication.findFirst({
-          where: eq(OAuthApplication.clientId, _oauthApp.client_id),
+      if (existingOauthApp) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'OAuth app already exists',
         })
+      }
+
+      return await db.transaction(async (tx) => {
+        const _oauthApp = await getAuth(tx).api.registerOAuthApplication({
+          headers: authHeaders(context.headers),
+          body: {
+            redirect_uris: input.redirectUris ?? [],
+            scope: 'profile email',
+            metadata: {},
+          },
+        })
+
+        const oauthApp = (
+          await tx
+            .update(OAuthApplication)
+            .set({
+              userId: null,
+              appId: app.id,
+            })
+            .where(eq(OAuthApplication.clientId, _oauthApp.client_id))
+            .returning()
+        ).at(0)
         if (!oauthApp) {
           throw new ORPCError('INTERNAL_SERVER_ERROR', {
             message: 'Failed to create OAuth app',
@@ -348,19 +266,10 @@ export const oauthAppRouter = {
     )
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.appId)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['update'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
-      // Get clientId from application metadata
-      const clientId = app.metadata.clientId
-      if (!clientId) {
-        throw new ORPCError('NOT_FOUND', {
-          message: 'OAuth app not found',
-        })
-      }
-
-      const oauthApp = await context.db.query.OAuthApplication.findFirst({
-        where: eq(OAuthApplication.clientId, clientId),
+      const oauthApp = await db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.appId, input.appId),
       })
       if (!oauthApp) {
         throw new ORPCError('NOT_FOUND', {
@@ -368,14 +277,14 @@ export const oauthAppRouter = {
         })
       }
 
-      const [updatedOauthApp] = await context.db
+      const [updatedOauthApp] = await db
         .update(OAuthApplication)
         .set({
-          redirectURLs: input.redirectUris?.map((u) => u.trim()).join(','),
+          redirectURLs: input.redirectUris?.join(','),
           disabled: input.disabled,
           updatedAt: new Date(),
         })
-        .where(eq(OAuthApplication.clientId, clientId))
+        .where(eq(OAuthApplication.clientId, oauthApp.clientId!))
         .returning()
 
       if (!updatedOauthApp) {
@@ -391,7 +300,7 @@ export const oauthAppRouter = {
 
   /**
    * Delete OAuth application and clean up related data
-   * Removes OAuth app, access tokens, consents, and updates app metadata
+   * Removes OAuth app, access tokens, and consents
    */
   delete: protectedProcedure
     .route({
@@ -403,31 +312,36 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.appId)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['update'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
-      // Get clientId from application metadata
-      const clientId = app.metadata.clientId
-      if (!clientId) {
+      const oauthApp = await db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.appId, input.appId),
+      })
+      if (!oauthApp) {
         throw new ORPCError('NOT_FOUND', {
           message: 'OAuth app not found',
         })
       }
 
-      await context.db.transaction(async (tx) => {
-        // Delete related records
-        await tx.delete(OAuthConsent).where(eq(OAuthConsent.clientId, clientId))
-        await tx.delete(OAuthAccessToken).where(eq(OAuthAccessToken.clientId, clientId))
-        await tx.delete(OAuthApplication).where(eq(OAuthApplication.clientId, clientId))
+      // TODO: queue deletion
+      const oauthAccessTokensNum = await db
+        .select({
+          count: count(),
+        })
+        .from(OAuthAccessToken)
+        .where(eq(OAuthAccessToken.clientId, oauthApp.clientId!))
+        .then((r) => r[0]!.count)
+      if (oauthAccessTokensNum > 100) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: 'Cannot delete oauth app since it has too many access tokens',
+        })
+      }
 
-        // Update application metadata, remove clientId
-        const { clientId: _, ...restMetadata } = app.metadata
-        await tx
-          .update(App)
-          .set({
-            metadata: restMetadata,
-          })
-          .where(eq(App.id, app.id))
+      await db.transaction(async (tx) => {
+        // Delete related records
+        await tx.delete(OAuthConsent).where(eq(OAuthConsent.clientId, oauthApp.clientId!))
+        await tx.delete(OAuthAccessToken).where(eq(OAuthAccessToken.clientId, oauthApp.clientId!))
+        await tx.delete(OAuthApplication).where(eq(OAuthApplication.clientId, oauthApp.clientId!))
       })
     }),
 
@@ -445,22 +359,11 @@ export const oauthAppRouter = {
     .input(z.object({ appId: z.string().min(32) }))
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.appId)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['update'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
-      // Get clientId from application metadata
-      const clientId = app.metadata.clientId
-
-      if (!clientId) {
-        throw new ORPCError('NOT_FOUND', {
-          message: 'OAuth app not found',
-        })
-      }
-
-      const oauthApp = await context.db.query.OAuthApplication.findFirst({
-        where: eq(OAuthApplication.clientId, clientId),
+      const oauthApp = await db.query.OAuthApplication.findFirst({
+        where: eq(OAuthApplication.appId, input.appId),
       })
-
       if (!oauthApp) {
         throw new ORPCError('NOT_FOUND', {
           message: 'OAuth app not found',
@@ -471,13 +374,13 @@ export const oauthAppRouter = {
       const newClientSecret = generateRandomString(32, 'a-z', 'A-Z')
 
       // Update client secret of OAuth application
-      const [updatedOauthApp] = await context.db
+      const [updatedOauthApp] = await db
         .update(OAuthApplication)
         .set({
           clientSecret: newClientSecret,
           updatedAt: new Date(),
         })
-        .where(eq(OAuthApplication.clientId, clientId))
+        .where(eq(OAuthApplication.clientId, oauthApp.clientId!))
         .returning()
 
       if (!updatedOauthApp) {

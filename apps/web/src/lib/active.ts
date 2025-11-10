@@ -1,27 +1,16 @@
 import { addIdPrefix } from '@/lib/utils'
 
-export async function getActiveOrganizationId(
+export async function getActiveAccountId(
   params:
-    | { organizationId: string }
+    | { accountIdNoPrefix: string }
     | Promise<{
-        organizationId: string
+        accountIdNoPrefix: string
       }>,
 ) {
-  const { organizationId: activeOrganizationIdNoPrefix } = await params
-  const activeOrganizationId = addIdPrefix(activeOrganizationIdNoPrefix, 'org')
+  const { accountIdNoPrefix: activeAccountIdNoPrefix } = await params
+  const activeAccountId = addIdPrefix(activeAccountIdNoPrefix, 'acc')
   return {
-    activeOrganizationId,
-    activeOrganizationIdNoPrefix,
-  }
-}
-
-export async function getActiveWorkspaceId(
-  params: { workspaceId: string } | Promise<{ workspaceId: string }>,
-) {
-  const { workspaceId: activeWorkspaceIdNoPrefix } = await params
-  const activeWorkspaceId = addIdPrefix(activeWorkspaceIdNoPrefix, 'workspace')
-  return {
-    activeWorkspaceId,
-    activeWorkspaceIdNoPrefix,
+    activeAccountId,
+    activeAccountIdNoPrefix,
   }
 }

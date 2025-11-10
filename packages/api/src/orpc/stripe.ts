@@ -1,38 +1,28 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import { OrganizationScope } from '../auth'
 import { getStripe } from '../client/stripe'
-import { userProtectedProcedure } from '../orpc'
+import { protectedProcedure } from '../orpc'
 import { ensureCustomer } from './credits'
 
 export const stripeRouter = {
-  // Get customer information
-  getCustomer: userProtectedProcedure
+  /**
+   * Get customer information from Stripe
+   * @returns Customer information
+   */
+  getCustomer: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/stripe/customer',
       tags: ['stripe'],
       summary: 'Get customer information from Stripe',
     })
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .handler(async ({ context, input }) => {
-      if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          { headers: context.headers, db: context.db },
-          input.organizationId,
-        )
-        await scope.checkPermissions()
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions()
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, input?.organizationId)
+      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const customer = await stripe.customers.retrieve(customerId)
       if (customer.deleted) {
@@ -46,32 +36,23 @@ export const stripeRouter = {
       }
     }),
 
-  // List payment methods for a customer
-  listPaymentMethods: userProtectedProcedure
+  /**
+   * List payment methods for the account
+   * @returns List of payment methods
+   */
+  listPaymentMethods: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/stripe/payment-methods',
       tags: ['stripe'],
-      summary: 'List payment methods for a customer',
+      summary: 'List payment methods for the account',
     })
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .handler(async ({ context, input }) => {
-      if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          { headers: context.headers, db: context.db },
-          input.organizationId,
-        )
-        await scope.checkPermissions()
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions()
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, input?.organizationId)
+      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const paymentMethods = await stripe.paymentMethods.list({
         customer: customerId,
@@ -84,30 +65,23 @@ export const stripeRouter = {
       }
     }),
 
-  // Add a new payment method using SetupIntent
-  addPaymentMethod: userProtectedProcedure
+  /**
+   * Setup intent of adding a new payment method
+   * @returns Setup intent client secret and ID
+   */
+  setupAddPaymentMethodIntent: protectedProcedure
     .route({
       method: 'POST',
       path: '/v1/stripe/payment-methods',
       tags: ['stripe'],
       summary: 'Add a new payment method using SetupIntent',
     })
-    .input(
-      z.object({
-        organizationId: z.string().optional(),
-      }),
-    )
-    .handler(async ({ context, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          { headers: context.headers, db: context.db },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['create'] })
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, input.organizationId)
+      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const setupIntent = await stripe.setupIntents.create({
         customer: customerId,
@@ -117,8 +91,7 @@ export const stripeRouter = {
           enabled: true,
         },
         metadata: {
-          ...(!input.organizationId && { userId: context.auth.userId }),
-          ...(input.organizationId && { organizationId: input.organizationId }),
+          accountId,
         },
       })
 
@@ -128,8 +101,12 @@ export const stripeRouter = {
       }
     }),
 
-  // Remove a payment method
-  removePaymentMethod: userProtectedProcedure
+  /**
+   * Remove a payment method
+   * @param input - Payment method ID
+   * @returns Success status
+   */
+  removePaymentMethod: protectedProcedure
     .route({
       method: 'DELETE',
       path: '/v1/stripe/payment-methods/{paymentMethodId}',
@@ -138,21 +115,15 @@ export const stripeRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
         paymentMethodId: z.string(),
       }),
     )
     .handler(async ({ context, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          { headers: context.headers, db: context.db },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['delete'] })
-      }
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, input.organizationId)
+      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       // Verify the payment method belongs to the customer
       const paymentMethod = await stripe.paymentMethods.retrieve(input.paymentMethodId)
@@ -165,8 +136,12 @@ export const stripeRouter = {
       await stripe.paymentMethods.detach(input.paymentMethodId)
     }),
 
-  // Update customer's default payment method
-  updateDefaultPaymentMethod: userProtectedProcedure
+  /**
+   * Update customer's default payment method
+   * @param input - Payment method ID
+   * @returns Success status
+   */
+  updateDefaultPaymentMethod: protectedProcedure
     .route({
       method: 'PUT',
       path: '/v1/stripe/payment-methods/{paymentMethodId}/default',
@@ -175,21 +150,15 @@ export const stripeRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
         paymentMethodId: z.string(),
       }),
     )
     .handler(async ({ context, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          { headers: context.headers, db: context.db },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['update'] })
-      }
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, input.organizationId)
+      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       // Verify the payment method belongs to the customer
       const paymentMethod = await stripe.paymentMethods.retrieve(input.paymentMethodId)
@@ -207,30 +176,23 @@ export const stripeRouter = {
       })
     }),
 
-  // Create customer session for pricing table
-  createCustomerSession: userProtectedProcedure
+  /**
+   * Create customer session for pricing table
+   * @returns Customer session
+   */
+  createCustomerSession: protectedProcedure
     .route({
       method: 'POST',
       path: '/v1/stripe/customer-session',
       tags: ['stripe'],
       summary: 'Create customer session for pricing table',
     })
-    .input(
-      z.object({
-        organizationId: z.string().optional(),
-      }),
-    )
-    .handler(async ({ context, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          { headers: context.headers, db: context.db },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['create'] })
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, input.organizationId)
+      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const customerSession = await stripe.customerSessions.create({
         customer: customerId,

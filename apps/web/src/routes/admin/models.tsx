@@ -16,12 +16,12 @@ export const Route = createFileRoute('/admin/models')({
     void context.queryClient.prefetchQuery(
       orpc.providerKey.list.queryOptions({
         input: {
-          isSystem: true,
+          source: 'system',
         },
       }),
     )
   },
   component: () => {
-    return <Models isSystem />
+    return <Models scope="system" />
   },
 })

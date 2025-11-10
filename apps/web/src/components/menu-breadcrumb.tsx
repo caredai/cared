@@ -12,7 +12,13 @@ import { Separator } from '@cared/ui/components/separator'
 
 import type { NavItem } from './app-sidebar/nav-main'
 
-export function MenuBreadcrumb({ items, baseUrl }: { items: NavItem[]; baseUrl: string }) {
+export function MenuBreadcrumb({
+  items,
+  baseUrl,
+}: {
+  items: Extract<NavItem, { type?: 'menu' }>[]
+  baseUrl: string
+}) {
   const location = useLocation()
   const pathname = location.pathname
   const [, key, subKey] = pathname.split('/').filter(Boolean)

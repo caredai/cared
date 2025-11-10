@@ -2,6 +2,8 @@ import { boolean, index, integer, pgTable, text, timestamp } from 'drizzle-orm/p
 
 import { timestampsIndices } from '@cared/shared'
 
+import { App } from './app'
+
 export const user = pgTable(
   'user',
   {
@@ -21,6 +23,9 @@ export const user = pgTable(
     banReason: text('ban_reason'),
     banExpires: timestamp('ban_expires'),
     normalizedEmail: text('normalized_email').unique(),
+    defaultAccountId: text('default_account_id').references(() => Account.id, {
+      onDelete: 'no action',
+    }),
   },
   (table) => [
     index().on(table.name),
@@ -35,21 +40,23 @@ export const session = pgTable('session', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at').notNull(),
   token: text('token').notNull().unique(),
-  createdAt: timestamp('created_at').notNull(),
-  updatedAt: timestamp('updated_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at')
+    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
   impersonatedBy: text('impersonated_by'),
-  activeOrganizationId: text('active_organization_id'),
+  activeAccountId: text('active_account_id'),
   activeTeamId: text('active_team_id'),
   geolocation: text('geolocation'),
 })
 
-export const account = pgTable(
-  'account',
+export const authAccount = pgTable(
+  'auth_account',
   {
     id: text('id').primaryKey(),
     accountId: text('account_id').notNull(),
@@ -150,8 +157,8 @@ export const twoFactor = pgTable(
   ],
 )
 
-export const organization = pgTable(
-  'organization',
+export const Account = pgTable(
+  'account',
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
@@ -171,9 +178,9 @@ export const member = pgTable(
   'member',
   {
     id: text('id').primaryKey(),
-    organizationId: text('organization_id')
+    accountId: text('account_id')
       .notNull()
-      .references(() => organization.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
@@ -181,7 +188,7 @@ export const member = pgTable(
     createdAt: timestamp('created_at').notNull(),
   },
   (table) => [
-    index().on(table.organizationId, table.userId),
+    index().on(table.accountId, table.userId),
     index().on(table.userId),
     index().on(table.createdAt),
   ],
@@ -191,9 +198,9 @@ export const invitation = pgTable(
   'invitation',
   {
     id: text('id').primaryKey(),
-    organizationId: text('organization_id')
+    accountId: text('account_id')
       .notNull()
-      .references(() => organization.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
     email: text('email').notNull(),
     role: text('role'),
     teamId: text('team_id'),
@@ -204,7 +211,7 @@ export const invitation = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
   },
   (table) => [
-    index().on(table.organizationId, table.teamId),
+    index().on(table.accountId, table.teamId),
     index().on(table.email),
     index().on(table.expiresAt),
     index().on(table.inviterId),
@@ -216,14 +223,14 @@ export const team = pgTable(
   {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
-    organizationId: text('organization_id')
+    accountId: text('account_id')
       .notNull()
-      .references(() => organization.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at').notNull(),
     updatedAt: timestamp('updated_at').$onUpdate(() => /* @__PURE__ */ new Date()),
   },
   (table) => [
-    index().on(table.organizationId),
+    index().on(table.accountId),
     ...timestampsIndices(table),
   ],
 )
@@ -260,10 +267,13 @@ export const oauthApplication = pgTable(
     userId: text('user_id').references(() => user.id, { onDelete: 'cascade' }),
     createdAt: timestamp('created_at'),
     updatedAt: timestamp('updated_at'),
+    appId: text('app_id')
+      .unique()
+      .references(() => App.id, { onDelete: 'cascade' }),
   },
   (table) => [
     index().on(table.clientId),
-    index().on(table.userId),
+    index().on(table.appId),
     ...timestampsIndices(table),
   ],
 )
@@ -309,41 +319,6 @@ export const oauthConsent = pgTable(
   (table) => [
     index().on(table.clientId, table.userId),
     index().on(table.userId),
-    ...timestampsIndices(table),
-  ],
-)
-
-export const apikey = pgTable(
-  'apikey',
-  {
-    id: text('id').primaryKey(),
-    name: text('name'),
-    start: text('start'),
-    prefix: text('prefix'),
-    key: text('key').notNull(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    refillInterval: integer('refill_interval'),
-    refillAmount: integer('refill_amount'),
-    lastRefillAt: timestamp('last_refill_at'),
-    enabled: boolean('enabled').default(true),
-    rateLimitEnabled: boolean('rate_limit_enabled').default(true),
-    rateLimitTimeWindow: integer('rate_limit_time_window').default(60000),
-    rateLimitMax: integer('rate_limit_max').default(100),
-    requestCount: integer('request_count').default(0),
-    remaining: integer('remaining'),
-    lastRequest: timestamp('last_request'),
-    expiresAt: timestamp('expires_at'),
-    createdAt: timestamp('created_at').notNull(),
-    updatedAt: timestamp('updated_at').notNull(),
-    permissions: text('permissions'),
-    metadata: text('metadata'),
-  },
-  (table) => [
-    index().on(table.key),
-    index().on(table.userId),
-    index().on(table.expiresAt),
     ...timestampsIndices(table),
   ],
 )

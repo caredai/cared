@@ -3,13 +3,14 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import { and, asc, desc, eq, gt, lt } from '@cared/db'
+import { db } from '@cared/db/client'
 import { Artifact, ArtifactSuggestion, Chat } from '@cared/db/schema'
 
 import type { UserContext } from '../orpc'
 import { userProtectedProcedure } from '../orpc'
 
 async function verifyUserChat(ctx: UserContext, chatId: string) {
-  const chat = await ctx.db.query.Chat.findFirst({
+  const chat = await db.query.Chat.findFirst({
     where: eq(Chat.id, chatId),
   })
 
@@ -23,7 +24,7 @@ async function verifyUserChat(ctx: UserContext, chatId: string) {
 }
 
 async function verifyUserArtifact(ctx: UserContext, artifactId: string) {
-  const artifact = await ctx.db.query.Artifact.findFirst({
+  const artifact = await db.query.Artifact.findFirst({
     where: eq(Artifact.id, artifactId),
     with: {
       chat: true,
@@ -79,7 +80,7 @@ export const artifactRouter = {
       }
 
       // Fetch artifacts with appropriate ordering
-      const artifacts = await context.db
+      const artifacts = await db
         .selectDistinctOn([Artifact.id])
         .from(Artifact)
         .where(and(...conditions))
@@ -144,7 +145,7 @@ export const artifactRouter = {
         conditions.push(lt(Artifact.version, input.before))
       }
 
-      const versions = await context.db.query.Artifact.findMany({
+      const versions = await db.query.Artifact.findMany({
         where: and(...conditions),
         orderBy: input.order === 'desc' ? desc(Artifact.version) : asc(Artifact.version),
         limit: input.limit + 1,
@@ -193,7 +194,7 @@ export const artifactRouter = {
     .handler(async ({ context, input }) => {
       await verifyUserArtifact(context, input.id)
 
-      return await context.db.transaction(async (tx) => {
+      return await db.transaction(async (tx) => {
         // Delete related suggestions first
         await tx
           .delete(ArtifactSuggestion)
@@ -255,7 +256,7 @@ export const artifactRouter = {
         conditions.push(lt(ArtifactSuggestion.id, input.before))
       }
 
-      const suggestions = await context.db.query.ArtifactSuggestion.findMany({
+      const suggestions = await db.query.ArtifactSuggestion.findMany({
         where: and(...conditions),
         orderBy: input.order === 'desc' ? desc(ArtifactSuggestion.id) : asc(ArtifactSuggestion.id),
         limit: input.limit + 1,

@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
+import { db } from '@cared/db/client'
 import type { SQL } from '@cared/db'
 import { and, asc, count, desc, eq, gt, gte, inArray, lt } from '@cared/db'
 import {
@@ -16,13 +17,13 @@ import { appUserProtectedProcedure } from '../orpc'
 import { getChatById } from './chat'
 
 async function findMessageById(ctx: BaseContext, id: string) {
-  return await ctx.db.query.Message.findFirst({
+  return await db.query.Message.findFirst({
     where: eq(Message.id, id),
   })
 }
 
 async function getMessageById(ctx: BaseContext, id: string) {
-  const message = await ctx.db.query.Message.findFirst({
+  const message = await db.query.Message.findFirst({
     where: eq(Message.id, id),
   })
 
@@ -76,7 +77,7 @@ export const messageRouter = {
         conditions.push(lt(Message.id, input.before))
       }
 
-      const messages = await context.db.query.Message.findMany({
+      const messages = await db.query.Message.findMany({
         where: and(...conditions),
         orderBy: input.order === 'desc' ? desc(Message.id) : asc(Message.id),
         limit: input.limit + 1,
@@ -121,7 +122,7 @@ export const messageRouter = {
     .handler(async ({ context, input }) => {
       await getChatById(context, input.chatId)
 
-      const messages = await context.db.query.Message.findMany({
+      const messages = await db.query.Message.findMany({
         where: and(eq(Message.chatId, input.chatId), inArray(Message.id, input.ids)),
       })
 
@@ -191,7 +192,7 @@ export const messageRouter = {
           })
         }
 
-        parent = await context.db.query.Message.findFirst({
+        parent = await db.query.Message.findFirst({
           where: and(eq(Message.chatId, input.chatId), eq(Message.id, input.parentId)),
         })
         if (!parent) {
@@ -202,7 +203,7 @@ export const messageRouter = {
       } else if (!input.isRoot) {
         // If no parentId is provided, get the last (newest) message in the chat.
         // Only empty for the root message to be created.
-        parent = await context.db.query.Message.findFirst({
+        parent = await db.query.Message.findFirst({
           where: eq(Message.chatId, input.chatId),
           orderBy: desc(Message.id),
         })
@@ -215,7 +216,7 @@ export const messageRouter = {
         })
       }
 
-      const [message] = await context.db.insert(Message).values(input).returning()
+      const [message] = await db.insert(Message).values(input).returning()
 
       if (!message) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
@@ -248,7 +249,7 @@ export const messageRouter = {
     .handler(async ({ context, input }) => {
       const message = await getMessageById(context, input.id)
 
-      const [updatedMessage] = await context.db
+      const [updatedMessage] = await db
         .update(Message)
         .set({
           ...(input.content && { content: input.content }),
@@ -298,7 +299,7 @@ export const messageRouter = {
 
       // If deleteTrailing is not set, only delete the specified message
       if (!input.deleteTrailing) {
-        return await context.db.transaction(async (tx) => {
+        return await db.transaction(async (tx) => {
           // Check if there are direct child messages that need parentId update
           const directChildrenCount = await tx
             .select({ count: count() })
@@ -332,7 +333,7 @@ export const messageRouter = {
       }
 
       // First, find all messages that are descendants of the specified message
-      const descendantMessages = await context.db.query.Message.findMany({
+      const descendantMessages = await db.query.Message.findMany({
         where: and(
           eq(Message.chatId, message.chatId),
           (input.excludeSelf ? gt : gte)(Message.id, message.id),
@@ -371,7 +372,7 @@ export const messageRouter = {
       }
 
       // Delete all descendant messages
-      const messages = await context.db
+      const messages = await db
         .delete(Message)
         .where(
           and(eq(Message.chatId, message.chatId), inArray(Message.id, Array.from(descendantIds))),
@@ -398,7 +399,7 @@ export const messageRouter = {
     .handler(async ({ context, input }) => {
       await getMessageById(context, input.messageId)
 
-      const [vote] = await context.db
+      const [vote] = await db
         .insert(MessageVote)
         .values(input)
         .onConflictDoUpdate({

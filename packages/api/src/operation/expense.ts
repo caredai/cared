@@ -4,19 +4,15 @@ import { Decimal } from 'decimal.js'
 
 import type { GenerationDetails, ModelCallOptions, TypedModelInfo } from '@cared/providers'
 import { eq, sql } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { db } from '@cared/db/client'
 import { Credits, Expense } from '@cared/db/schema'
 import { getKV } from '@cared/kv'
 import { computeGenerationCost, estimateGenerationCost } from '@cared/providers'
 
-import type { AuthObject } from '../auth'
+import type { AuthContext } from '../auth'
 import type { WaitUntil } from '../utils'
 import { cfg } from '../config'
-import {
-  getCreditsForUserAndAllOrganizations,
-  triggerAutoRechargePaymentIntent,
-  updateCreditsCache,
-} from './credits'
+import { getCredits, triggerAutoRechargePaymentIntent, updateCreditsCache } from './credits'
 
 const kv = getKV('expense', 'upstash')
 const cache = new Map()
@@ -30,97 +26,50 @@ const freeQuotaRateLimit = new Ratelimit({
 })
 
 export class ExpenseManager {
-  static from({
-    auth,
-    payerOrganizationId,
-    waitUntil,
-  }: {
-    auth: AuthObject
-    payerOrganizationId?: string
-    waitUntil: WaitUntil
-  }) {
-    if (auth.type === 'user' || auth.type === 'appUser') {
-      return new ExpenseManager({
-        userId: auth.userId,
-        organizationId: payerOrganizationId ?? undefined,
-        appId: auth.type === 'appUser' ? auth.appId : undefined,
-        waitUntil,
-      })
-    } else {
-      if (payerOrganizationId) {
-        throw new Error('Cannot use payerOrganizationId with non-user/non-appUser auth')
-      }
-
-      if (auth.scope === 'user') {
-        return new ExpenseManager({
-          userId: auth.userId,
-          organizationId: null,
-          waitUntil,
-        })
-      } else {
-        return new ExpenseManager({
-          userId: auth.ownerId, // as member of organization
-          organizationId: auth.organizationId,
-          appId: auth.scope === 'app' ? auth.appId : undefined,
-          waitUntil,
-        })
-      }
-    }
+  static from({ auth, waitUntil }: { auth: AuthContext; waitUntil: WaitUntil }) {
+    return new ExpenseManager({
+      accountId: auth.accountId,
+      userId: 'userId' in auth ? auth.userId : undefined,
+      appId: auth.type === 'appUser' ? auth.appId : undefined,
+      waitUntil,
+    })
   }
 
-  private readonly userId: string
-  private readonly organizationId?: string | null
+  private readonly userId?: string
+  private readonly accountId: string
   private readonly appId?: string
   private readonly waitUntil: WaitUntil
 
   constructor({
+    accountId,
     userId,
-    organizationId,
     appId,
     waitUntil,
   }: {
-    userId: string
-    organizationId?: string | null
+    accountId: string
+    userId?: string
     appId?: string
     waitUntil: WaitUntil
   }) {
+    this.accountId = accountId
     this.userId = userId
-    this.organizationId = organizationId
     this.appId = appId
     this.waitUntil = waitUntil
   }
 
-  private creditsCandidates?: Credits[]
+  private creditsPromise?: Promise<Credits | undefined>
 
-  private async prepare() {
-    if (this.creditsCandidates) {
-      return this.creditsCandidates
-    }
-
-    this.creditsCandidates = []
-
-    const allCredits = await getCreditsForUserAndAllOrganizations(this.userId)
-
-    if (this.organizationId !== undefined) {
-      const credits = allCredits.find((c) =>
-        this.organizationId ? c.organizationId === this.organizationId : c.userId === this.userId,
-      )
-      if (credits) {
-        this.creditsCandidates.push(credits)
-      }
-    } else {
-      this.creditsCandidates.push(...allCredits)
-    }
-
-    return this.creditsCandidates
+  private async getCredits() {
+    this.creditsPromise ??= getCredits(this.accountId)
+    return await this.creditsPromise
   }
 
-  private hasFreeQuota_: boolean | undefined
+  private hasFreeQuota_: boolean | undefined = undefined
 
-  async hasFreeQuota() {
+  async hasFreeQuota(): Promise<boolean> {
     // Check only once per request
     if (this.hasFreeQuota_ === undefined) {
-      const { success } = await freeQuotaRateLimit.limit(this.userId)
+      const { success } = await freeQuotaRateLimit.limit(this.accountId)
       this.hasFreeQuota_ = success
     }
     return this.hasFreeQuota_
@@ -131,8 +80,11 @@ export class ExpenseManager {
       throw new Error('Model is not chargeable')
     }
 
-    const creditsCandidates = await this.prepare()
-    if (creditsCandidates.some((credits) => new Decimal(credits.credits).isNegative())) {
+    const credits = await this.getCredits()
+    if (!credits) {
+      throw new Error('Credits not found')
+    }
+    if (new Decimal(credits.credits).isNegative()) {
       throw new Error('Negative credits')
     }
 
@@ -146,10 +98,8 @@ export class ExpenseManager {
       return
     }
 
-    for (const credits of creditsCandidates) {
-      if (new Decimal(credits.credits).gte(cost)) {
-        return
-      }
+    if (new Decimal(credits.credits).gte(cost)) {
+      return
     }
 
     throw new Error('Insufficient credits')
@@ -161,9 +111,11 @@ export class ExpenseManager {
     }
 
     this.waitUntil(async () => {
-      const creditsCandidates = await this.prepare()
-
-      if (creditsCandidates.some((credits) => new Decimal(credits.credits).isNegative())) {
+      const credits = await this.getCredits()
+      if (!credits) {
+        throw new Error('Credits not found')
+      }
+      if (new Decimal(credits.credits).isNegative()) {
         throw new Error('Negative credits')
       }
 
@@ -171,8 +123,8 @@ export class ExpenseManager {
 
       if (!cost?.isPositive()) {
         assert(this.hasFreeQuota())
-        await getDb().insert(Expense).values({
-          type: 'user',
+        await db.insert(Expense).values({
+          accountId: this.accountId,
           userId: this.userId,
           appId: this.appId,
           kind: 'generation',
@@ -187,82 +139,26 @@ export class ExpenseManager {
         cost = cost.times(cfg.platform.creditsFeeRate).div(1 + cfg.platform.creditsFeeRate)
       }
 
-      if (!creditsCandidates.length) {
-        throw new Error('No credits available')
-      }
-
-      // Find credits with sufficient balance to fully cover the cost
-
-      let maxCredits: Credits | undefined
-      for (const credits of creditsCandidates) {
-        if (!maxCredits || new Decimal(credits.credits).gt(maxCredits.credits)) {
-          maxCredits = credits
-        }
-
-        if (new Decimal(credits.credits).lt(cost)) {
-          continue
-        }
-
-        await getDb()
-          .insert(Expense)
-          .values({
-            type: credits.type,
-            userId: credits.type === 'user' ? credits.userId! : this.userId,
-            organizationId: credits.organizationId,
-            appId: this.appId,
-            kind: 'generation',
-            cost: cost.toString(),
-            details,
-          })
-
-        const updatedCredits = (
-          await getDb()
-            .update(Credits)
-            .set({
-              credits: sql`${Credits.credits} - ${cost.toString()}`,
-            })
-            .where(eq(Credits.id, credits.id))
-            .returning()
-        ).at(0)!
-
-        credits.credits = updatedCredits.credits
-
-        await updateCreditsCache(updatedCredits)
-
-        await triggerAutoRechargePaymentIntent(updatedCredits)
-
-        return
-      }
-
-      // All available credits have insufficient balance to fully cover the cost.
-      // Use the credits with maximum balance to pay as much as possible.
-      // Note that this will result in negative balance for this credits.
-
-      assert(maxCredits, 'maxCredits should be defined if creditsCandidates is not empty')
-
-      await getDb()
-        .insert(Expense)
-        .values({
-          type: maxCredits.type,
-          userId: maxCredits.type === 'user' ? maxCredits.userId! : this.userId,
-          organizationId: maxCredits.organizationId,
-          appId: this.appId,
-          kind: 'generation',
-          cost: cost.toString(),
-          details,
-        })
+      await db.insert(Expense).values({
+        accountId: this.accountId,
+        userId: this.userId,
+        appId: this.appId,
+        kind: 'generation',
+        cost: cost.toString(),
+        details,
+      })
 
       const updatedCredits = (
-        await getDb()
+        await db
           .update(Credits)
           .set({
             credits: sql`${Credits.credits} - ${cost.toString()}`,
           })
-          .where(eq(Credits.id, maxCredits.id))
+          .where(eq(Credits.id, credits.id))
           .returning()
       ).at(0)!
 
-      maxCredits.credits = updatedCredits.credits
+      credits.credits = updatedCredits.credits
 
       await updateCreditsCache(updatedCredits)
 

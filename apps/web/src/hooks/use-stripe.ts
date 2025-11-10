@@ -7,13 +7,9 @@ import { orpc } from '@/lib/orpc'
 /**
  * Hook to get customer information
  */
-export function useCustomer(organizationId?: string) {
+export function useCustomer() {
   const { data, refetch, isLoading } = useQuery({
-    ...orpc.stripe.getCustomer.queryOptions({
-      input: {
-        organizationId,
-      },
-    }),
+    ...orpc.stripe.getCustomer.queryOptions(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: Infinity,
   })
@@ -25,8 +21,8 @@ export function useCustomer(organizationId?: string) {
   }
 }
 
-export function useDefaultPaymentMethodId(organizationId?: string) {
-  const { customer } = useCustomer(organizationId)
+export function useDefaultPaymentMethodId() {
+  const { customer } = useCustomer()
   const defaultPaymentMethod = customer?.invoice_settings.default_payment_method
   return typeof defaultPaymentMethod === 'string' ? defaultPaymentMethod : defaultPaymentMethod?.id
 }
@@ -34,13 +30,9 @@ export function useDefaultPaymentMethodId(organizationId?: string) {
 /**
  * Hook to list payment methods for a customer
  */
-export function useListPaymentMethods(organizationId?: string) {
+export function useListPaymentMethods() {
   const { data, refetch, isLoading } = useQuery({
-    ...orpc.stripe.listPaymentMethods.queryOptions({
-      input: {
-        organizationId,
-      },
-    }),
+    ...orpc.stripe.listPaymentMethods.queryOptions(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: Infinity,
   })
@@ -55,19 +47,15 @@ export function useListPaymentMethods(organizationId?: string) {
 /**
  * Hook to add a new payment method using SetupIntent
  */
-export function useAddPaymentMethod(organizationId?: string) {
+export function useAddPaymentMethod() {
   const queryClient = useQueryClient()
 
   const addMutation = useMutation(
-    orpc.stripe.addPaymentMethod.mutationOptions({
+    orpc.stripe.setupAddPaymentMethodIntent.mutationOptions({
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: orpc.stripe.listPaymentMethods.queryKey({
-            input: {
-              organizationId,
-            },
-          }),
+          queryKey: orpc.stripe.listPaymentMethods.queryKey(),
         })
       },
       onError: (_error) => {
@@ -78,19 +66,17 @@ export function useAddPaymentMethod(organizationId?: string) {
 
   return useCallback(
     async () => {
-      return await addMutation.mutateAsync({
-        organizationId,
-      })
+      return await addMutation.mutateAsync({})
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [organizationId],
+    [],
   )
 }
 
 /**
  * Hook to remove a payment method
  */
-export function useRemovePaymentMethod(organizationId?: string) {
+export function useRemovePaymentMethod() {
   const queryClient = useQueryClient()
 
   const removeMutation = useMutation(
@@ -98,11 +84,7 @@ export function useRemovePaymentMethod(organizationId?: string) {
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: orpc.stripe.listPaymentMethods.queryKey({
-            input: {
-              organizationId,
-            },
-          }),
+          queryKey: orpc.stripe.listPaymentMethods.queryKey(),
         })
       },
       onError: (error) => {
@@ -115,18 +97,17 @@ export function useRemovePaymentMethod(organizationId?: string) {
     async (paymentMethodId: string) => {
       return await removeMutation.mutateAsync({
         paymentMethodId,
-        organizationId,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [organizationId],
+    [],
   )
 }
 
 /**
  * Hook to update customer's default payment method
  */
-export function useUpdateDefaultPaymentMethod(organizationId?: string) {
+export function useUpdateDefaultPaymentMethod() {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
@@ -134,11 +115,7 @@ export function useUpdateDefaultPaymentMethod(organizationId?: string) {
       onSuccess: () => {
         // Invalidate customer data to refresh the default payment method
         void queryClient.invalidateQueries({
-          queryKey: orpc.stripe.getCustomer.queryKey({
-            input: {
-              organizationId,
-            },
-          }),
+          queryKey: orpc.stripe.getCustomer.queryKey(),
         })
       },
       onError: (error) => {
@@ -150,11 +127,10 @@ export function useUpdateDefaultPaymentMethod(organizationId?: string) {
   return useCallback(
     async (paymentMethodId: string) => {
       return await updateMutation.mutateAsync({
-        organizationId,
         paymentMethodId,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [organizationId],
+    [],
   )
 }

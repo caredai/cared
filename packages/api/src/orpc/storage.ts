@@ -19,13 +19,13 @@ import { z } from 'zod/v4'
 
 import { log } from '@cared/log'
 
-import type { AppContext, BaseContext } from '../orpc'
+import type { AppUserContext, BaseContext } from '../orpc'
 import type { GetObjectCommandOutput, HeadObjectCommandOutput } from '@aws-sdk/client-s3'
 import { s3Client } from '../client/s3'
 import { env } from '../env'
-import { appProtectedProcedure } from '../orpc'
+import { appUserProtectedProcedure } from '../orpc'
 
-function getKeyPrefixByApp(ctx: AppContext) {
+function getKeyPrefixByApp(ctx: AppUserContext) {
   const appId = ctx.auth.appId
   return `${appId}/`
 }
@@ -44,7 +44,7 @@ function getKeyWithPrefix(prefix: string, inputKey?: string) {
   return key
 }
 
-function getKeyByApp(ctx: AppContext, inputKey?: string) {
+function getKeyByApp(ctx: AppUserContext, inputKey?: string) {
   const prefix = getKeyPrefixByApp(ctx)
   return getKeyWithPrefix(prefix, inputKey)
 }
@@ -134,7 +134,7 @@ export const storageRouter = {
   /**
    * Lists objects in the storage bucket.
    */
-  list: appProtectedProcedure
+  list: appUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/storage/list',
@@ -186,7 +186,7 @@ export const storageRouter = {
   /**
    * Retrieves metadata for an object without fetching the object itself.
    */
-  head: appProtectedProcedure
+  head: appUserProtectedProcedure
     .route({
       method: 'HEAD',
       path: '/v1/storage/head',
@@ -235,7 +235,7 @@ export const storageRouter = {
   /**
    * Retrieves an object from the storage, including its metadata and content.
    */
-  get: appProtectedProcedure
+  get: appUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/storage/get',
@@ -279,7 +279,7 @@ export const storageRouter = {
    * Creates a presigned URL for downloading an object.
    * The URL grants temporary access to the object.
    */
-  createPresignedDownloadUrl: appProtectedProcedure
+  createPresignedDownloadUrl: appUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/storage/presigned-download-url',
@@ -305,7 +305,7 @@ export const storageRouter = {
   /**
    * Uploads an object directly to the storage.
    */
-  put: appProtectedProcedure
+  put: appUserProtectedProcedure
     .route({
       method: 'PUT',
       path: '/v1/storage/put',
@@ -340,7 +340,7 @@ export const storageRouter = {
    * Creates a presigned URL for uploading an object (using PUT).put().
    * The URL grants temporary permission to upload data to the specified key.
    */
-  createPresignedUploadUrl: appProtectedProcedure
+  createPresignedUploadUrl: appUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/storage/presigned-upload-url',
@@ -366,7 +366,7 @@ export const storageRouter = {
   /**
    * Deletes one or more objects from the bucket.
    */
-  delete: appProtectedProcedure
+  delete: appUserProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/v1/storage/delete',
@@ -425,7 +425,7 @@ export const storageRouter = {
    * Lists ongoing multipart uploads for the application.
    * Supports prefix, limit (MaxUploads), and pagination markers (KeyMarker, UploadIdMarker).
    */
-  listMultipartUploads: appProtectedProcedure
+  listMultipartUploads: appUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/storage/multipart-uploads',
@@ -479,7 +479,7 @@ export const storageRouter = {
    * Initiates a multipart upload.
    * Returns an upload ID required for subsequent part uploads.
    */
-  createMultipartUpload: appProtectedProcedure
+  createMultipartUpload: appUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/storage/multipart-upload',
@@ -512,7 +512,7 @@ export const storageRouter = {
   /**
    * Uploads a part of a multipart upload.
    */
-  uploadPart: appProtectedProcedure
+  uploadPart: appUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/storage/multipart-upload/part',
@@ -549,7 +549,7 @@ export const storageRouter = {
   /**
    * Creates a presigned URL for uploading a part of a multipart upload.
    */
-  createPresignedUploadPartUrl: appProtectedProcedure
+  createPresignedUploadPartUrl: appUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/storage/multipart-upload/presigned-part-url',
@@ -579,7 +579,7 @@ export const storageRouter = {
    * Completes a multipart upload after all parts have been uploaded.
    * Requires the upload ID and a list of parts with their ETags.
    */
-  completeMultipartUpload: appProtectedProcedure
+  completeMultipartUpload: appUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/storage/multipart-upload/complete',
@@ -623,7 +623,7 @@ export const storageRouter = {
   /**
    * Aborts an ongoing multipart upload, deleting any uploaded parts.
    */
-  abortMultipartUpload: appProtectedProcedure
+  abortMultipartUpload: appUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/storage/multipart-upload/abort',

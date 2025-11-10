@@ -61,7 +61,8 @@
       "vite-plugin-svgr": "patches/vite-plugin-svgr.patch",
       "fumadocs-mdx": "patches/fumadocs-mdx.patch",
       "tsup": "patches/tsup.patch",
-      "uuid": "patches/uuid.patch"
+      "uuid": "patches/uuid.patch",
+      "better-auth": "patches/better-auth.patch"
     }
   }
 }

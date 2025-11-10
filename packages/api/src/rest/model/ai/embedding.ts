@@ -8,7 +8,7 @@ import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema } from '@cared/shared'
 
 import type { TelemetrySettings } from '../../../telemetry'
-import { authenticate } from '../../../auth'
+import { ProtectedAuth } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
 import {
   getTracer,
@@ -32,8 +32,6 @@ const embeddingModelV2CallOptionsSchema = z.object({
 const requestArgsSchema = z.object({
   modelId: z.string(),
   ...embeddingModelV2CallOptionsSchema.shape,
-
-  payerOrganizationId: z.string().optional(),
 })
 
 export async function GET(c: Context): Promise<Response> {
@@ -70,7 +68,7 @@ export async function POST(c: Context): Promise<Response> {
       })
     }
 
-    const { modelId, payerOrganizationId, ...embeddingModelV2CallOptions } = validatedArgs.data
+    const { modelId, ...embeddingModelV2CallOptions } = validatedArgs.data
 
     const telemetry: TelemetrySettings = {
       isEnabled: true,
@@ -86,15 +84,14 @@ export async function POST(c: Context): Promise<Response> {
         },
       }),
       tracer,
-      fn: async () => await authenticate(c.req.raw.headers),
+      fn: async () => await ProtectedAuth.authenticate(c.req.raw.headers),
     })
-    if (!auth.isAuthenticated()) {
+    if (!auth) {
       return new Response('Unauthorized', { status: 401 })
     }
 
     const expenseManager = ExpenseManager.from({
-      auth: auth.auth!,
-      payerOrganizationId,
+      auth: auth.ctx,
       waitUntil: waitUntil(c),
     })
 
@@ -104,11 +101,11 @@ export async function POST(c: Context): Promise<Response> {
       attributes: selectTelemetryAttributes({
         telemetry,
         attributes: {
-          'langfuse.user.id': authId(auth.auth!),
+          'langfuse.user.id': authId(auth.ctx),
         },
       }),
       tracer,
-      fn: async () => await findProvidersByModel(auth.auth!, modelId, 'textEmbedding'),
+      fn: async () => await findProvidersByModel(auth.ctx, modelId, 'textEmbedding'),
     })
     log.info(
       `Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`,
@@ -125,7 +122,7 @@ export async function POST(c: Context): Promise<Response> {
         tracer,
         fn: async () => {
           return await ProviderKeyManager.from({
-            auth: auth.auth!,
+            auth: auth.ctx,
             modelId,
             onlyByok: !modelInfo.chargeable,
             waitUntil: waitUntil(c),

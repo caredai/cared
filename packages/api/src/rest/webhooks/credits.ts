@@ -4,7 +4,7 @@ import { Decimal } from 'decimal.js'
 import hash from 'stable-hash'
 
 import { eq } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { db } from '@cared/db/client'
 import { Credits, CreditsOrder } from '@cared/db/schema'
 import log from '@cared/log'
 
@@ -50,7 +50,7 @@ export async function POST(c: Context): Promise<Response> {
             `Received checkout session event: ${event.type} for checkout session with id ${session.id}`,
           )
 
-          await getDb().transaction(async (tx) => {
+          await db.transaction(async (tx) => {
             const order = (
               await tx
                 .select()
@@ -87,11 +87,7 @@ export async function POST(c: Context): Promise<Response> {
                     await tx
                       .select()
                       .from(Credits)
-                      .where(
-                        order.type === 'organization'
-                          ? eq(Credits.organizationId, order.organizationId!)
-                          : eq(Credits.userId, order.userId!),
-                      )
+                      .where(eq(Credits.accountId, order.accountId))
                       .for('update')
                   )[0]
 
@@ -114,16 +110,13 @@ export async function POST(c: Context): Promise<Response> {
                     ).at(0)!
                     await updateCreditsCache(updatedCredits)
                   } else {
-                    const entityType = order.type === 'organization' ? 'organization' : 'user'
-                    const entityId =
-                      order.type === 'organization' ? order.organizationId : order.userId
                     if (!credits) {
                       log.error(
-                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                        `Credits not found for account with id ${order.accountId}`,
                       )
                     } else {
                       log.error(
-                        `onetimeRechargeSessionId mismatched for ${entityType} with id ${entityId}`,
+                        `onetimeRechargeSessionId mismatched for account with id ${order.accountId}`,
                       )
                     }
                   }
@@ -154,11 +147,7 @@ export async function POST(c: Context): Promise<Response> {
                     await tx
                       .select()
                       .from(Credits)
-                      .where(
-                        order.type === 'organization'
-                          ? eq(Credits.organizationId, order.organizationId!)
-                          : eq(Credits.userId, order.userId!),
-                      )
+                      .where(eq(Credits.accountId, order.accountId))
                       .for('update')
                   )[0]
 
@@ -177,16 +166,13 @@ export async function POST(c: Context): Promise<Response> {
                     ).at(0)!
                     await updateCreditsCache(updatedCredits)
                   } else {
-                    const entityType = order.type === 'organization' ? 'organization' : 'user'
-                    const entityId =
-                      order.type === 'organization' ? order.organizationId : order.userId
                     if (!credits) {
                       log.error(
-                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                        `Credits not found for account with id ${order.accountId}`,
                       )
                     } else {
                       log.error(
-                        `autoRechargeSessionId mismatched for ${entityType} with id ${entityId}`,
+                        `autoRechargeSessionId mismatched for account with id ${order.accountId}`,
                       )
                     }
                   }
@@ -219,7 +205,7 @@ export async function POST(c: Context): Promise<Response> {
             `Received payment intent event: ${event.type} for payment intent with id ${paymentIntent.id}`,
           )
 
-          await getDb().transaction(async (tx) => {
+          await db.transaction(async (tx) => {
             const order = (
               await tx
                 .select()
@@ -253,11 +239,7 @@ export async function POST(c: Context): Promise<Response> {
                   await tx
                     .select()
                     .from(Credits)
-                    .where(
-                      order.type === 'organization'
-                        ? eq(Credits.organizationId, order.organizationId!)
-                        : eq(Credits.userId, order.userId!),
-                    )
+                    .where(eq(Credits.accountId, order.accountId))
                     .for('update')
                 )[0]
 
@@ -284,16 +266,13 @@ export async function POST(c: Context): Promise<Response> {
                   ).at(0)!
                   await updateCreditsCache(updatedCredits)
                 } else {
-                  const entityType = order.type === 'organization' ? 'organization' : 'user'
-                  const entityId =
-                    order.type === 'organization' ? order.organizationId : order.userId
                   if (!credits) {
                     log.error(
-                      `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                      `Credits not found for account with id ${order.accountId}`,
                     )
                   } else {
                     log.error(
-                      `autoRechargePaymentIntentId mismatched for ${entityType} with id ${entityId}`,
+                      `autoRechargePaymentIntentId mismatched for account with id ${order.accountId}`,
                     )
                   }
                 }
@@ -324,7 +303,7 @@ export async function POST(c: Context): Promise<Response> {
           const invoice = event.data.object
           log.info(`Received invoice event: ${event.type} for invoice with id ${invoice.id}`)
 
-          await getDb().transaction(async (tx) => {
+          await db.transaction(async (tx) => {
             const order = (
               await tx
                 .select()
@@ -359,11 +338,7 @@ export async function POST(c: Context): Promise<Response> {
                     await tx
                       .select()
                       .from(Credits)
-                      .where(
-                        order.type === 'organization'
-                          ? eq(Credits.organizationId, order.organizationId!)
-                          : eq(Credits.userId, order.userId!),
-                      )
+                      .where(eq(Credits.accountId, order.accountId))
                       .for('update')
                   )[0]
 
@@ -386,16 +361,13 @@ export async function POST(c: Context): Promise<Response> {
                     ).at(0)!
                     await updateCreditsCache(updatedCredits)
                   } else {
-                    const entityType = order.type === 'organization' ? 'organization' : 'user'
-                    const entityId =
-                      order.type === 'organization' ? order.organizationId : order.userId
                     if (!credits) {
                       log.error(
-                        `${entityType} credits not found for ${entityType} with id ${entityId}`,
+                        `Credits not found for account with id ${order.accountId}`,
                       )
                     } else {
                       log.error(
-                        `autoRechargeInvoiceId mismatched for ${entityType} with id ${entityId}`,
+                        `autoRechargeInvoiceId mismatched for account with id ${order.accountId}`,
                       )
                     }
                   }

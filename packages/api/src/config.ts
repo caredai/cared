@@ -1,4 +1,4 @@
-import { maxMembers, maxOrganizations } from '@cared/auth'
+import { maxMembers, maxAccounts } from '@cared/auth'
 
 export const cfg = {
   /**
@@ -42,11 +42,11 @@ export const cfg = {
    */
   perUser: {
     /**
-     * Maximum number of organizations a user can create
+     * Maximum number of accounts a user can create
      */
-    maxOrganizations,
+    maxAccounts,
     /**
-     * Maximum number of organizations a user can create or join
+     * Maximum number of accounts a user can create or join
      */
     maxMemberships: 10,
     /**
@@ -71,22 +71,25 @@ export const cfg = {
     },
   },
   /**
-   * Organization-level resource limitations
-   * Defines the maximum resources allocated to each organization
+   * Account-level resource limitations
+   * Defines the maximum resources allocated to each account
    */
-  perOrganization: {
+  perAccount: {
     /**
-     * Maximum number of members in an organization
+     * Maximum number of members in an account
      */
     maxMembers,
     /**
-     * Maximum number of workspaces an organization can create or join
+     * Maximum number of applications that can be created in an account
      */
-    maxWorkspaces: 5,
+    maxApps: 100,
     /**
-     * Maximum number of organization-scoped API keys that can be created for an organization
+     * Maximum number of account-scoped API keys that can be created for an account
      */
     maxApiKeys: 5,
+    perUser: {
+      maxModelApiKeys: 20,
+    },
     /**
      * Provider-level resource limitations
      * Defines the maximum resources allocated to each provider
@@ -100,35 +103,6 @@ export const cfg = {
   },
 
   /**
-   * Workspace-level resource limitations
-   * Defines the maximum resources allocated to each workspace
-   */
-  perWorkspace: {
-    /**
-     * Maximum number of applications that can be created in a workspace
-     */
-    maxApps: 100,
-    /**
-     * Maximum number of datasets that can be created in a workspace
-     */
-    maxDatasets: 100,
-    /**
-     * Maximum total number of documents across all datasets in a workspace
-     * This limit applies to the sum of all documents in all datasets
-     */
-    maxDocuments: 1000,
-    /**
-     * Maximum total storage size (in GB) for all datasets in a workspace
-     * This limit applies to the combined size of all datasets
-     */
-    maxStorageSizeGB: 20,
-    /**
-     * Maximum number of workspace-scoped API keys that can be created for a workspace
-     */
-    maxApiKeys: 5,
-  },
-
-  /**
    * Application-level resource limitations
    * Defines the maximum resources allocated to each application
    */
@@ -137,10 +111,6 @@ export const cfg = {
      * Maximum number of agents that can be created for an application
      */
     maxAgents: 10,
-    /**
-     * Maximum number of app-scoped API keys that can be created for an application
-     */
-    maxApiKeys: 5,
   },
 
   /**

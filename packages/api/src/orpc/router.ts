@@ -1,6 +1,7 @@
+import { accountRouter } from './account'
 import { adminRouter } from './admin'
 import { agentRouter } from './agent'
-import { apiKeyRouter } from './api-key'
+import { apiTokenRouter } from './api-token'
 import { appRouter as appRouter_ } from './app'
 import { artifactRouter } from './artifact'
 import { chatRouter } from './chat'
@@ -11,25 +12,22 @@ import { fileRouter } from './file'
 import { messageRouter } from './message'
 import { modelRouter } from './model'
 import { oauthAppRouter } from './oauth-app'
-import { organizationRouter } from './organization'
 import { providerKeyRouter } from './provider-key'
 import { storageRouter } from './storage'
 import { stripeRouter } from './stripe'
 import { telemetryRouter } from './telemetry'
 // import { tokenizerRouter } from './tokenizer'
 import { userRouter } from './user'
-import { workspaceRouter } from './workspace'
 
 export * from './model'
 
 export const appRouter = {
   admin: adminRouter,
-  organization: organizationRouter,
-  workspace: workspaceRouter,
+  account: accountRouter,
   user: userRouter,
   providerKey: providerKeyRouter,
   app: appRouter_,
-  apiKey: apiKeyRouter,
+  apiToken: apiTokenRouter,
   oauthApp: oauthAppRouter,
   agent: agentRouter,
   dataset: datasetRouter,

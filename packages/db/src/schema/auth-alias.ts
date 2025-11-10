@@ -1,15 +1,14 @@
 import type { InferSelectModel } from 'drizzle-orm'
 
+import type { Account } from './auth'
 import {
-  account,
-  apikey,
+  authAccount,
   invitation,
   jwks,
   member,
   oauthAccessToken,
   oauthApplication,
   oauthConsent,
-  organization,
   passkey,
   team,
   teamMember,
@@ -19,15 +18,14 @@ import {
 } from './auth'
 
 export {
-  account,
-  apikey,
+  authAccount,
   invitation,
   jwks,
   member,
   oauthAccessToken,
   oauthApplication,
   oauthConsent,
-  organization,
+  Account,
   passkey,
   team,
   teamMember,
@@ -39,8 +37,8 @@ export {
 
 export const User = user
 export type User = InferSelectModel<typeof User>
-export const Account = account
-export type Account = InferSelectModel<typeof Account>
+export const AuthAccount = authAccount
+export type AuthAccount = InferSelectModel<typeof AuthAccount>
 export const Verification = verification
 export type Verification = InferSelectModel<typeof Verification>
 export const Jwks = jwks
@@ -49,8 +47,7 @@ export const Passkey = passkey
 export type Passkey = InferSelectModel<typeof Passkey>
 export const TwoFactor = twoFactor
 export type TwoFactor = InferSelectModel<typeof TwoFactor>
-export const Organization = organization
-export type Organization = InferSelectModel<typeof Organization>
+export type Account = InferSelectModel<typeof Account>
 export const Member = member
 export type Member = InferSelectModel<typeof Member>
 export const Invitation = invitation
@@ -65,5 +62,3 @@ export const OAuthAccessToken = oauthAccessToken
 export type OAuthAccessToken = InferSelectModel<typeof OAuthAccessToken>
 export const OAuthConsent = oauthConsent
 export type OAuthConsent = InferSelectModel<typeof OAuthConsent>
-export const ApiKey = apikey
-export type ApiKey = InferSelectModel<typeof ApiKey>

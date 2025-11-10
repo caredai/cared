@@ -32,19 +32,17 @@ import {
 import { PaymentMethodDialog } from './payment-method-dialog'
 
 export function AutoTopupDialog({
-  organizationId,
   open,
   onOpenChange,
 }: {
-  organizationId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { credits } = useCredits(organizationId)
-  const defaultPaymentMethodId = useDefaultPaymentMethodId(organizationId)
-  const { paymentMethods } = useListPaymentMethods(organizationId)
-  const updateAutoRechargeSettings = useUpdateAutoRechargeCreditsSettings(organizationId)
-  const updateDefaultPaymentMethod = useUpdateDefaultPaymentMethod(organizationId)
+  const { credits } = useCredits()
+  const defaultPaymentMethodId = useDefaultPaymentMethodId()
+  const { paymentMethods } = useListPaymentMethods()
+  const updateAutoRechargeSettings = useUpdateAutoRechargeCreditsSettings()
+  const updateDefaultPaymentMethod = useUpdateDefaultPaymentMethod()
 
   const [isAutoTopupEnabled, setIsAutoTopupEnabled] = useState(true)
   const [autoRechargeThreshold, setAutoRechargeThreshold] = useState(10)
@@ -265,7 +263,6 @@ export function AutoTopupDialog({
       </DialogContent>
 
       <PaymentMethodDialog
-        organizationId={organizationId}
         open={showPaymentMethodDialog}
         onOpenChange={setShowPaymentMethodDialog}
         onSuccess={handlePaymentMethodAdded}

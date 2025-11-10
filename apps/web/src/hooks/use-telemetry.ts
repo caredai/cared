@@ -5,10 +5,8 @@ import { showErrorToast, showSuccessToast } from '@/components/toast'
 import { orpc } from '@/lib/orpc'
 
 export function useTraces(input?: {
+  scope?: 'user' | 'account'
   userId?: string
-  organizationId?: string
-  workspaceId?: string
-  appId?: string
   sessionId?: string
   fromTimestamp?: string
   toTimestamp?: string
@@ -49,10 +47,8 @@ export function useTraces(input?: {
 }
 
 export function useObservations(input?: {
+  scope?: 'user' | 'account'
   userId?: string
-  organizationId?: string
-  workspaceId?: string
-  appId?: string
   traceId?: string
   type?: string
   level?: 'DEBUG' | 'DEFAULT' | 'WARNING' | 'ERROR'
@@ -124,13 +120,7 @@ export function useDeleteTraces() {
   )
 
   return useCallback(
-    async (input: {
-      traceIds: string[]
-      userId?: string
-      organizationId?: string
-      workspaceId?: string
-      appId?: string
-    }) => {
+    async (input: { scope?: 'user' | 'account'; userId?: string; traceIds: string[] }) => {
       return await deleteMutation.mutateAsync(input)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

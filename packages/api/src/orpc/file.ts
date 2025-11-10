@@ -28,7 +28,6 @@ export const fileRouter = {
     .handler(async ({ context, input }) => {
       const { key, mimeType } = await getS3Key({
         auth: context.auth,
-        headers: context.headers,
         location: input,
       })
 

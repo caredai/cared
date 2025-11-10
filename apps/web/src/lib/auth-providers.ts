@@ -6,7 +6,7 @@ import type {
 } from 'better-auth/social-providers'
 import { socialProviders } from '@daveyplate/better-auth-ui'
 
-import type { Account } from '@cared/db/schema'
+import type { AuthAccount } from '@cared/db/schema'
 import { allowedSocialProviders as _allowedSocialProviders } from '@cared/auth/client'
 
 export const allowedProviders = _allowedSocialProviders
@@ -23,7 +23,7 @@ export const allowedProviders = _allowedSocialProviders
 
 export type SocialProvider = (typeof socialProviders)[number]['provider']
 
-export function getAccountInfo(account: Account): { displayUsername?: string } {
+export function getAccountInfo(account: AuthAccount): { displayUsername?: string } {
   if (!account.profile) {
     return {}
   }

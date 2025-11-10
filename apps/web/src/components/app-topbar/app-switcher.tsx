@@ -19,19 +19,19 @@ import { useApps, useReplaceRouteWithAppId } from '@/hooks/use-app'
 import { stripIdPrefix } from '@/lib/utils'
 
 export function useHasAppSwitcher() {
-  const { activeApp, activeWorkspace } = useActive()
-  return Boolean(activeApp && activeWorkspace)
+  const { activeApp } = useActive()
+  return Boolean(activeApp)
 }
 
 export function AppSwitcher() {
-  const { activeApp, activeWorkspace } = useActive()
-  const apps = useApps({ workspaceId: activeWorkspace?.id })
+  const { activeApp, activeAccount } = useActive()
+  const apps = useApps({ accountId: activeAccount?.id })
   const replaceRouteWithAppId = useReplaceRouteWithAppId()
 
   const isMobile = useIsMobile()
 
   // Only show app switcher when in app context
-  if (!activeApp || !activeWorkspace) {
+  if (!activeApp) {
     return null
   }
 
@@ -46,7 +46,6 @@ export function AppSwitcher() {
 
   return (
     <CreateAppDialog
-      workspaceId={activeWorkspace.id}
       menu={({ trigger }) => (
         <div className="flex items-center">
           {/* Title button - displays current app name if available, otherwise shows "Apps" */}
@@ -56,9 +55,10 @@ export function AppSwitcher() {
             asChild
           >
             <Link
-              to="/app/$appId"
+              to="/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}"
               params={{
-                appId: stripIdPrefix(activeApp.app.id),
+                accountIdNoPrefix: stripIdPrefix(activeApp.app.accountId),
+                appIdNoPrefix: stripIdPrefix(activeApp.app.id),
               }}
             >
               <Bot className="text-muted-foreground/70" />

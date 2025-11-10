@@ -13,17 +13,11 @@ import { orpc } from '@/lib/orpc'
 
 const PAGE_SIZE = 100
 
-export function useCredits(organizationId?: string) {
+export function useCredits() {
   const {
     data: { credits },
     refetch: refetchCredits,
-  } = useSuspenseQuery(
-    orpc.credits.getCredits.queryOptions({
-      input: {
-        organizationId,
-      },
-    }),
-  )
+  } = useSuspenseQuery(orpc.credits.getCredits.queryOptions())
   return {
     credits,
     refetchCredits,
@@ -32,11 +26,10 @@ export function useCredits(organizationId?: string) {
 
 const hasAttemptedFetchAtom = atom(false)
 
-export function useListCreditsOrders(organizationId?: string) {
+export function useListCreditsOrders() {
   const { data, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
     orpc.credits.listOrders.infiniteOptions({
       input: (cursor?: string) => ({
-        organizationId,
         // statuses: ['open', 'complete', 'draft', 'paid'],
         cursor,
         limit: PAGE_SIZE,
@@ -66,9 +59,9 @@ export function useListCreditsOrders(organizationId?: string) {
   }
 }
 
-export function useCreateCreditsOnetimeCheckout(organizationId?: string) {
-  const { refetchCredits } = useCredits(organizationId)
-  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
+export function useCreateCreditsOnetimeCheckout() {
+  const { refetchCredits } = useCredits()
+  const { refetchCreditsOrders } = useListCreditsOrders()
 
   const createMutation = useMutation(
     orpc.credits.createOnetimeCheckout.mutationOptions({
@@ -82,22 +75,17 @@ export function useCreateCreditsOnetimeCheckout(organizationId?: string) {
   return useCallback(
     async (credits: number) => {
       return await createMutation.mutateAsync({
-        organizationId,
         credits,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [organizationId],
+    [],
   )
 }
 
-export function useListCreditsSubscriptions(organizationId?: string) {
+export function useListCreditsSubscriptions() {
   const { data, refetch } = useQuery({
-    ...orpc.credits.listSubscriptions.queryOptions({
-      input: {
-        organizationId,
-      },
-    }),
+    ...orpc.credits.listSubscriptions.queryOptions(),
     staleTime: Infinity,
     gcTime: Infinity,
   })
@@ -108,8 +96,8 @@ export function useListCreditsSubscriptions(organizationId?: string) {
   }
 }
 
-export function useUpdateAutoRechargeCreditsSettings(organizationId?: string) {
-  const { refetchCredits } = useCredits(organizationId)
+export function useUpdateAutoRechargeCreditsSettings() {
+  const { refetchCredits } = useCredits()
 
   const updateMutation = useMutation(
     orpc.credits.updateAutoRechargeSettings.mutationOptions({
@@ -125,23 +113,22 @@ export function useUpdateAutoRechargeCreditsSettings(organizationId?: string) {
   return useCallback(
     async (enabled: boolean, threshold?: number, amount?: number) => {
       return await updateMutation.mutateAsync({
-        organizationId,
         enabled,
         threshold,
         amount,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [organizationId],
+    [],
   )
 }
 
 /**
  * Hook to cancel a credits order
  */
-export function useCancelCreditsOrder(organizationId?: string) {
-  const { refetchCredits } = useCredits(organizationId)
-  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
+export function useCancelCreditsOrder() {
+  const { refetchCredits } = useCredits()
+  const { refetchCreditsOrders } = useListCreditsOrders()
 
   const cancelMutation = useMutation(
     orpc.credits.cancelOrder.mutationOptions({
@@ -159,9 +146,9 @@ export function useCancelCreditsOrder(organizationId?: string) {
     async (orderId: string) => {
       return await cancelMutation.mutateAsync({
         orderId,
-        organizationId,
       })
     },
-    [cancelMutation, organizationId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
 }

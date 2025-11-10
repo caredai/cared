@@ -5,80 +5,75 @@ import { Decimal } from 'decimal.js'
 
 import type { CreditsMetadata, OrderKind, OrderStatus } from '@cared/db/schema'
 import { and, eq } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { db } from '@cared/db/client'
 import { Credits, CreditsOrder } from '@cared/db/schema'
 import log from '@cared/log'
 
-import type { UserContext } from '../orpc'
 import { getStripe } from '../client/stripe'
 import { cfg } from '../config'
 import { env } from '../env'
+import { getUserAccounts } from './account'
 import { Cache } from './cache'
-import { getUserOrganizations } from './organization'
 
-const creditsCache = new Cache<Credits>('credits', async (userOrOrgId) => ({
-  value: await getDb().query.Credits.findFirst({
-    where: userOrOrgId.startsWith('user')
-      ? eq(Credits.userId, userOrOrgId)
-      : eq(Credits.organizationId, userOrOrgId),
+/**
+ * Cache for credits records by accountId
+ */
+const creditsCache = new Cache<Credits>('credits', async (accountId) => ({
+  value: await db.query.Credits.findFirst({
+    where: eq(Credits.accountId, accountId),
   }),
 }))
 
-export function getCreditsUserOrOrgId(credits: Credits) {
-  return credits.userId ?? credits.organizationId!
+/**
+ * Get credits record for an account
+ * @param accountId - The account ID
+ * @returns Credits record if found
+ */
+export async function getCredits(accountId: string) {
+  return await creditsCache.get(accountId)
 }
 
-export async function getCredits(userOrOrgId: string) {
-  return await creditsCache.get(userOrOrgId)
-}
-
-export async function getCreditsForUserAndAllOrganizations(userId: string) {
-  const organizations = await getUserOrganizations(userId)
+/**
+ * Get credits records for all accounts a user belongs to
+ * @param userId - The user ID
+ * @returns Array of credits records
+ */
+export async function getCreditsForUserAccounts(userId: string) {
+  const accounts = await getUserAccounts(userId)
   return (
-    await Promise.all(
-      [userId, ...organizations.map((org) => org.id)].map((id) => creditsCache.get(id)),
-    )
+    await Promise.all(accounts.map((account) => account.id).map((id) => creditsCache.get(id)))
   ).filter(Boolean) as Credits[]
 }
 
 export async function updateCreditsCache(credits: Credits) {
-  await creditsCache.set(getCreditsUserOrOrgId(credits), credits)
+  await creditsCache.set(credits.accountId, credits)
 }
 
 export async function invalidateCreditsCache(credits: Credits) {
-  await creditsCache.invalidate(getCreditsUserOrOrgId(credits))
+  await creditsCache.invalidate(credits.accountId)
 }
 
 /**
  * Cancel a credits order
- * @param ctx - User context
  * @param orderId - Order ID to cancel
- * @param organizationId - Optional organization ID
+ * @param accountId - Account ID
  * @param forceCancel - Whether to force cancel the order
  * @returns Promise<boolean> - Returns true if canceled successfully, false if it cannot be canceled
  */
 export async function cancelCreditsOrder(
   orderId: string,
-  userId?: string | null,
-  organizationId?: string | null,
+  accountId: string,
   forceCancel = false,
 ): Promise<boolean> {
   const stripe = getStripe()
 
-  return await getDb().transaction(async (tx) => {
+  return await db.transaction(async (tx) => {
     // Find the order with select for update
     const order = (
       await tx
         .select()
         .from(CreditsOrder)
-        .where(
-          and(
-            eq(CreditsOrder.id, orderId),
-            organizationId
-              ? eq(CreditsOrder.organizationId, organizationId)
-              : eq(CreditsOrder.userId, userId!),
-          ),
-        )
+        .where(and(eq(CreditsOrder.id, orderId), eq(CreditsOrder.accountId, accountId)))
         .for('update')
     )[0]
 
@@ -149,13 +144,7 @@ export async function cancelCreditsOrder(
 
     // Get credits with select for update
     const credits = (
-      await tx
-        .select()
-        .from(Credits)
-        .where(
-          organizationId ? eq(Credits.organizationId, organizationId) : eq(Credits.userId, userId!),
-        )
-        .for('update')
+      await tx.select().from(Credits).where(eq(Credits.accountId, accountId)).for('update')
     )[0]
 
     if (credits) {
@@ -180,23 +169,19 @@ export async function cancelCreditsOrder(
 
 /**
  * Cancel credits orders by OrderKind
- * @param ctx - User context
  * @param orderKind - The kind of order to cancel
- * @param organizationId - Optional organization ID
+ * @param accountId - Account ID
  * @param throwOnInconsistency - Whether to throw an error if inconsistency occurs
  * @returns Promise<boolean | undefined> - Returns true if canceled successfully, false if cannot be canceled, undefined if no need to cancel
  */
 export async function cancelCreditsOrdersByKind(
   orderKind: OrderKind,
-  userId?: string | null,
-  organizationId?: string | null,
+  accountId: string,
   throwOnInconsistency = false,
 ): Promise<boolean | undefined> {
   // First, find the credits record
-  const credits = await getDb().query.Credits.findFirst({
-    where: organizationId
-      ? eq(Credits.organizationId, organizationId)
-      : eq(Credits.userId, userId!),
+  const credits = await db.query.Credits.findFirst({
+    where: eq(Credits.accountId, accountId),
   })
 
   if (!credits) {
@@ -227,13 +212,11 @@ export async function cancelCreditsOrdersByKind(
   }
 
   // Find the specific order using the objectId from metadata
-  const order = await getDb().query.CreditsOrder.findFirst({
+  const order = await db.query.CreditsOrder.findFirst({
     where: and(
       eq(CreditsOrder.objectId, relevantId),
       eq(CreditsOrder.kind, orderKind),
-      organizationId
-        ? eq(CreditsOrder.organizationId, organizationId)
-        : eq(CreditsOrder.userId, userId!),
+      eq(CreditsOrder.accountId, accountId),
     ),
   })
 
@@ -244,18 +227,10 @@ export async function cancelCreditsOrdersByKind(
       })
     }
 
-    await getDb().transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       // Get credits with select for update
       const lockedCredits = (
-        await tx
-          .select()
-          .from(Credits)
-          .where(
-            organizationId
-              ? eq(Credits.organizationId, organizationId)
-              : eq(Credits.userId, userId!),
-          )
-          .for('update')
+        await tx.select().from(Credits).where(eq(Credits.accountId, accountId)).for('update')
       )[0]!
 
       const metadata = lockedCredits.metadata
@@ -275,27 +250,24 @@ export async function cancelCreditsOrdersByKind(
     return undefined
   }
 
-  return await cancelCreditsOrder(order.id, userId, organizationId, false)
+  return await cancelCreditsOrder(order.id, accountId, false)
 }
 
 /**
  * Create automatic recharge invoice
- * @param ctx - User context
- * @param organizationId - Optional organization ID
+ * @param ctx - Base context
+ * @param accountId - Account ID
  * @param allowRecreate - Whether to allow recreating if an invoice already exists
  * @returns Promise<void>
  */
 export async function createAutoRechargeInvoice(
-  ctx: UserContext,
-  organizationId?: string,
+  accountId: string,
   allowRecreate = false,
 ): Promise<void> {
   const stripe = getStripe()
 
-  const credits = await ctx.db.query.Credits.findFirst({
-    where: organizationId
-      ? eq(Credits.organizationId, organizationId)
-      : eq(Credits.userId, ctx.auth.userId),
+  const credits = await db.query.Credits.findFirst({
+    where: eq(Credits.accountId, accountId),
   })
   if (!credits) {
     throw new ORPCError('NOT_FOUND', {
@@ -333,12 +305,7 @@ export async function createAutoRechargeInvoice(
   if (metadata.autoRechargeInvoiceId) {
     if (allowRecreate) {
       // Cancel any existing auto-recharge invoice orders before creating a new one
-      const cancelled = await cancelCreditsOrdersByKind(
-        'stripe-invoice',
-        ctx.auth.userId,
-        organizationId,
-        false,
-      )
+      const cancelled = await cancelCreditsOrdersByKind('stripe-invoice', accountId, false)
       if (cancelled === false) {
         throw new ORPCError('BAD_REQUEST', {
           message: 'Cannot cancel existing auto-recharge invoice order',
@@ -390,11 +357,9 @@ export async function createAutoRechargeInvoice(
   })
 
   try {
-    await ctx.db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       await tx.insert(CreditsOrder).values({
-        type: organizationId ? 'organization' : 'user',
-        userId: organizationId ? undefined : ctx.auth.userId,
-        organizationId: organizationId,
+        accountId,
         kind: 'stripe-invoice',
         status: invoice.status!,
         objectId: invoice.id!,
@@ -403,15 +368,7 @@ export async function createAutoRechargeInvoice(
 
       // Get credits with select for update
       const lockedCredits = (
-        await tx
-          .select()
-          .from(Credits)
-          .where(
-            organizationId
-              ? eq(Credits.organizationId, organizationId)
-              : eq(Credits.userId, ctx.auth.userId),
-          )
-          .for('update')
+        await tx.select().from(Credits).where(eq(Credits.accountId, accountId)).for('update')
       )[0]!
 
       if (lockedCredits.metadata.autoRechargeInvoiceId) {
@@ -440,6 +397,12 @@ export async function createAutoRechargeInvoice(
   }
 }
 
+/**
+ * Trigger auto-recharge payment intent
+ * @param credits - Credits record
+ * @param allowRecreate - Whether to allow recreating if a payment intent already exists
+ * @returns Promise<void>
+ */
 export async function triggerAutoRechargePaymentIntent(
   credits: Credits,
   allowRecreate = false,
@@ -466,8 +429,7 @@ export async function triggerAutoRechargePaymentIntent(
       // Cancel any existing auto-recharge payment intent orders before creating a new one
       const cancelled = await cancelCreditsOrdersByKind(
         'stripe-payment-intent',
-        credits.userId,
-        credits.organizationId,
+        credits.accountId,
         false,
       )
       if (cancelled === false) {
@@ -513,7 +475,7 @@ export async function triggerAutoRechargePaymentIntent(
   let paymentIntent: Stripe.PaymentIntent | undefined
 
   try {
-    await getDb().transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       // Get credits with select for update
       const lockedCredits = (
         await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
@@ -559,9 +521,7 @@ export async function triggerAutoRechargePaymentIntent(
       await invalidateCreditsCache(lockedCredits)
 
       await tx.insert(CreditsOrder).values({
-        type: credits.organizationId ? 'organization' : 'user',
-        userId: credits.organizationId ? undefined : credits.userId,
-        organizationId: credits.organizationId,
+        accountId: credits.accountId,
         kind: 'stripe-payment-intent',
         status: paymentIntent.status,
         objectId: paymentIntent.id,
@@ -582,6 +542,13 @@ export async function triggerAutoRechargePaymentIntent(
   }
 }
 
+/**
+ * Clear order ID from credits metadata based on order kind
+ * @param id - Order object ID
+ * @param metadata - Credits metadata
+ * @param kind - Order kind
+ * @returns true if metadata was updated, false otherwise
+ */
 function clearIdFromMetadataByKind(
   id: string,
   metadata: CreditsMetadata | undefined,

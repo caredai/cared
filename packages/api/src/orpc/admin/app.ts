@@ -3,6 +3,7 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import { and, asc, desc, eq, gt, inArray, lt } from '@cared/db'
+import { db } from '@cared/db/client'
 import {
   AppsToCategories,
   AppsToTags,
@@ -18,7 +19,7 @@ import { getAppById, getApps } from '../app'
 
 export const appRouter = {
   /**
-   * List all apps across all workspaces.
+   * List all apps across all accounts.
    * Only accessible by admin users.
    * @param input - Pagination parameters
    * @returns List of apps with hasMore flag
@@ -28,7 +29,7 @@ export const appRouter = {
       method: 'GET',
       path: '/v1/admin/apps',
       tags: ['admin'],
-      summary: 'List all apps across all workspaces',
+      summary: 'List all apps across all accounts',
     })
     .input(
       z
@@ -60,7 +61,7 @@ export const appRouter = {
     }),
 
   /**
-   * List all apps in a specific category across all workspaces.
+   * List all apps in a specific category across all accounts.
    * Only accessible by admin users.
    * @param input - Object containing categoryId and pagination parameters
    * @returns List of apps in the category
@@ -70,7 +71,7 @@ export const appRouter = {
       method: 'GET',
       path: '/v1/admin/apps/category/{categoryId}',
       tags: ['admin'],
-      summary: 'List all apps in a specific category across all workspaces',
+      summary: 'List all apps in a specific category across all accounts',
     })
     .input(
       z
@@ -104,7 +105,7 @@ export const appRouter = {
     }),
 
   /**
-   * List all apps with any of the specified tags across all workspaces.
+   * List all apps with any of the specified tags across all accounts.
    * Only accessible by admin users.
    * @param input - Object containing tags array and pagination parameters
    * @returns List of apps with matching tags
@@ -114,7 +115,7 @@ export const appRouter = {
       method: 'GET',
       path: '/v1/admin/apps/tags',
       tags: ['admin'],
-      summary: 'List all apps with any of the specified tags across all workspaces',
+      summary: 'List all apps with any of the specified tags across all accounts',
     })
     .input(
       z
@@ -148,7 +149,7 @@ export const appRouter = {
     }),
 
   /**
-   * List all versions of an app across all workspaces.
+   * List all versions of an app across all accounts.
    * Only accessible by admin users.
    * @param input - Object containing app ID and pagination parameters
    * @returns List of app versions sorted by version number
@@ -159,7 +160,7 @@ export const appRouter = {
       method: 'GET',
       path: '/v1/admin/apps/{id}/versions',
       tags: ['admin'],
-      summary: 'List all versions of an app across all workspaces',
+      summary: 'List all versions of an app across all accounts',
     })
     .input(
       z
@@ -190,7 +191,7 @@ export const appRouter = {
 
       const query = and(...conditions)
 
-      const versions = await context.db.query.AppVersion.findMany({
+      const versions = await db.query.AppVersion.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(AppVersion.version) : asc(AppVersion.version),
         limit: input.limit + 1,
@@ -214,7 +215,7 @@ export const appRouter = {
     }),
 
   /**
-   * Get a single app by ID across all workspaces.
+   * Get a single app by ID across all accounts.
    * Only accessible by admin users.
    * @param input - Object containing the app ID
    * @returns The app if found
@@ -225,7 +226,7 @@ export const appRouter = {
       method: 'GET',
       path: '/v1/admin/apps/{id}',
       tags: ['admin'],
-      summary: 'Get a single app by ID across all workspaces',
+      summary: 'Get a single app by ID across all accounts',
     })
     .input(
       z.object({
@@ -251,8 +252,8 @@ export const appRouter = {
       summary: 'Create a new category for apps',
     })
     .input(CreateCategorySchema)
-    .handler(async ({ context, input }) => {
-      const category = await context.db.insert(Category).values(input).returning()
+    .handler(async ({ input }) => {
+      const category = await db.insert(Category).values(input).returning()
       return {
         category,
       }
@@ -273,10 +274,10 @@ export const appRouter = {
       summary: 'Update an existing category',
     })
     .input(UpdateCategorySchema)
-    .handler(async ({ context, input }) => {
+    .handler(async ({ input }) => {
       const { id, ...updates } = input
       // Find category by ID to ensure it exists
-      const [existing] = await context.db
+      const [existing] = await db
         .select()
         .from(Category)
         .where(eq(Category.id, id))
@@ -289,7 +290,7 @@ export const appRouter = {
       }
 
       // Update the category
-      const updatedCategory = await context.db
+      const updatedCategory = await db
         .update(Category)
         .set(updates)
         .where(eq(Category.id, id))
@@ -318,9 +319,9 @@ export const appRouter = {
         id: z.string(),
       }),
     )
-    .handler(async ({ context, input }) => {
+    .handler(async ({ input }) => {
       // Find category by ID to ensure it exists
-      const [existing] = await context.db
+      const [existing] = await db
         .select()
         .from(Category)
         .where(eq(Category.id, input.id))
@@ -334,7 +335,7 @@ export const appRouter = {
 
       // Delete the category
       // Note: This will fail if there are apps associated with this category due to foreign key constraints
-      return context.db.transaction(async (tx) => {
+      return db.transaction(async (tx) => {
         // First delete any associations in AppsToCategories table
         await tx.delete(AppsToCategories).where(eq(AppsToCategories.categoryId, input.id))
 
@@ -361,9 +362,9 @@ export const appRouter = {
         tags: z.array(z.string()).min(1).max(100),
       }),
     )
-    .handler(async ({ context, input }) => {
+    .handler(async ({ input }) => {
       // Verify that all tags exist before attempting to delete
-      const existingTags = await context.db.select().from(Tag).where(inArray(Tag.name, input.tags))
+      const existingTags = await db.select().from(Tag).where(inArray(Tag.name, input.tags))
 
       if (existingTags.length !== input.tags.length) {
         const foundTagNames = existingTags.map((tag) => tag.name)
@@ -375,7 +376,7 @@ export const appRouter = {
       }
 
       // Delete the tags and their associations in a transaction
-      return context.db.transaction(async (tx) => {
+      return db.transaction(async (tx) => {
         // First delete associations in AppsToTags table
         await tx.delete(AppsToTags).where(inArray(AppsToTags.tag, input.tags))
 

@@ -5,11 +5,10 @@ import { v7 as uuid } from 'uuid'
 import { z } from 'zod/v4'
 
 import { eq } from '@cared/db'
-import { getDb } from '@cared/db/client'
-import { App, Chat, Dataset, Workspace } from '@cared/db/schema'
+import { db } from '@cared/db/client'
+import { App, Chat, Dataset } from '@cared/db/schema'
 
 import type { Auth } from '../auth'
-import { OrganizationScope } from '../auth'
 import { env } from '../env'
 
 const allowedExtensions = [
@@ -31,22 +30,22 @@ const allowedExtensions = [
 ]
 
 export const s3LocationSchema = z.discriminatedUnion('type', [
-  // {workspaceId}/{uuid}/{filename}
+  // {accountId}/{uuid}/{filename}
   z.object({
-    type: z.literal('workspace'),
-    workspaceId: z.string(),
+    type: z.literal('account'),
+    accountId: z.string(),
   }),
-  // {workspaceId}/{datasetId}/{uuid}/{filename}
+  // {accountId}/{datasetId}/{uuid}/{filename}
   z.object({
     type: z.literal('dataset'),
     datasetId: z.string(),
   }),
-  // {workspaceId}/{appId}/{uuid}/{filename}
+  // {accountId}/{appId}/{uuid}/{filename}
   z.object({
     type: z.literal('app'),
     appId: z.string(),
   }),
-  // {workspaceId}/{appId}/{chatId}/{uuid}/{filename}
+  // {accountId}/{appId}/{chatId}/{uuid}/{filename}
   z.object({
     type: z.literal('chat'),
     chatId: z.string(),
@@ -69,11 +68,9 @@ export const s3KeyRequestSchema = z
 
 export async function getS3Key({
   auth,
-  headers,
   location,
 }: {
   auth: Auth
-  headers: Headers
   location: z.infer<typeof s3KeyRequestSchema>
 }) {
   const filename = location.filename
@@ -94,30 +91,15 @@ export async function getS3Key({
         // Temporary file storage path
         return `temp/${name}` // TODO: permission check
 
-      case 'workspace': {
-        const workspace = await getDb().query.Workspace.findFirst({
-          where: eq(Workspace.id, location.workspaceId),
-        })
-        if (!workspace) {
-          throw new ORPCError('NOT_FOUND', {
-            message: 'Workspace not found',
-          })
-        }
+      case 'account': {
+        await auth.requirePermissions({ account: ['write'] }, { accountId: location.accountId })
 
-        const scope = await OrganizationScope.fromWorkspace(
-          { auth, headers, db: getDb() },
-          workspace.id,
-        )
-        await scope.checkPermissions({
-          workspace: ['update'],
-        })
-
-        return `${workspace.id}/${name}`
+        return `${location.accountId}/${name}`
       }
 
       case 'dataset': {
-        // Retrieve dataset to get workspaceId
-        const dataset = await getDb().query.Dataset.findFirst({
+        // Retrieve dataset to get accountId
+        const dataset = await db.query.Dataset.findFirst({
           where: eq(Dataset.id, location.datasetId),
         })
         if (!dataset) {
@@ -126,20 +108,14 @@ export async function getS3Key({
           })
         }
 
-        const scope = await OrganizationScope.fromWorkspace(
-          { auth, headers, db: getDb() },
-          dataset.workspaceId,
-        )
-        await scope.checkPermissions({
-          dataset: ['update'],
-        })
+        await auth.requirePermissions({ dataset: ['write'] }, { accountId: dataset.accountId })
 
-        return `${dataset.workspaceId}/${location.datasetId}/${name}`
+        return `${dataset.accountId}/${location.datasetId}/${name}`
       }
 
       case 'app': {
-        // Retrieve app to get workspaceId
-        const app = await getDb().query.App.findFirst({
+        // Retrieve app to get accountId
+        const app = await db.query.App.findFirst({
           where: eq(App.id, location.appId),
         })
         if (!app) {
@@ -148,17 +124,14 @@ export async function getS3Key({
           })
         }
 
-        const scope = await OrganizationScope.fromApp({ auth, headers, db: getDb() }, app)
-        await scope.checkPermissions({
-          app: ['update'],
-        })
+        await auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
-        return `${app.workspaceId}/${location.appId}/${name}`
+        return `${app.accountId}/${location.appId}/${name}`
       }
 
       case 'chat': {
         // Retrieve chat to get appId
-        const chat = await getDb().query.Chat.findFirst({
+        const chat = await db.query.Chat.findFirst({
           where: eq(Chat.id, location.chatId),
         })
         if (!chat) {
@@ -167,8 +140,8 @@ export async function getS3Key({
           })
         }
 
-        // Get app to retrieve workspaceId
-        const app = await getDb().query.App.findFirst({
+        // Get app to retrieve accountId
+        const app = await db.query.App.findFirst({
           where: eq(App.id, chat.appId),
         })
         if (!app) {
@@ -177,11 +150,11 @@ export async function getS3Key({
           })
         }
 
-        if (!auth.isUser()) {
+        if (!auth.isUser) {
           throw new ORPCError('FORBIDDEN')
         }
 
-        return `${app.workspaceId}/${chat.appId}/${location.chatId}/${name}`
+        return `${app.accountId}/${chat.appId}/${location.chatId}/${name}`
       }
 
       default:
@@ -203,27 +176,27 @@ export async function getS3Key({
 export type ParsedS3Url = {
   uuid: string
   filename: string
-} & ( // {workspaceId}/{uuid}/{filename}
+} & ( // {accountId}/{uuid}/{filename}
   | {
-      type: 'workspace'
-      workspaceId: string
+      type: 'account'
+      accountId: string
     }
-  // {workspaceId}/{datasetId}/{uuid}/{filename}
+  // {accountId}/{datasetId}/{uuid}/{filename}
   | {
       type: 'dataset'
-      workspaceId: string
+      accountId: string
       datasetId: string
     }
-  // {workspaceId}/{appId}/{uuid}/{filename}
+  // {accountId}/{appId}/{uuid}/{filename}
   | {
       type: 'app'
-      workspaceId: string
+      accountId: string
       appId: string
     }
-  // {workspaceId}/{appId}/{chatId}/{uuid}/{filename}
+  // {accountId}/{appId}/{chatId}/{uuid}/{filename}
   | {
       type: 'chat'
-      workspaceId: string
+      accountId: string
       appId: string
       chatId: string
     }
@@ -270,17 +243,17 @@ export function parseS3Url(url: string): ParsedS3Url | false | undefined {
     }
   }
 
-  // Check for workspace
-  const workspaceId = firstId
-  if (!workspaceId.startsWith('workspace_')) {
+  // Check for account
+  const accountId = firstId
+  if (!accountId.startsWith('acc_')) {
     return false
   }
 
   const secondId = pathParts[1]
   if (!secondId) {
     return {
-      type: 'workspace',
-      workspaceId,
+      type: 'account',
+      accountId,
       uuid,
       filename,
     }
@@ -290,7 +263,7 @@ export function parseS3Url(url: string): ParsedS3Url | false | undefined {
   if (secondId.startsWith('dataset_')) {
     return {
       type: 'dataset',
-      workspaceId,
+      accountId,
       datasetId: secondId,
       uuid,
       filename,
@@ -309,7 +282,7 @@ export function parseS3Url(url: string): ParsedS3Url | false | undefined {
   if (!chatId) {
     return {
       type: 'app',
-      workspaceId,
+      accountId,
       appId,
       uuid,
       filename,
@@ -323,7 +296,7 @@ export function parseS3Url(url: string): ParsedS3Url | false | undefined {
 
   return {
     type: 'chat',
-    workspaceId,
+    accountId,
     appId,
     chatId,
     uuid,

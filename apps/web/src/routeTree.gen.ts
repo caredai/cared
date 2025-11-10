@@ -12,11 +12,18 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as UserRouteRouteImport } from './routes/user/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
-import { Route as AccountRouteRouteImport } from './routes/account/route'
+import { Route as Acc_Char123accountIdNoPrefixChar125RouteRouteImport } from './routes/acc_{$accountIdNoPrefix}/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UserIndexRouteImport } from './routes/user/index'
 import { Route as LandingIndexRouteImport } from './routes/landing/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as Acc_Char123accountIdNoPrefixChar125IndexRouteImport } from './routes/acc_{$accountIdNoPrefix}/index'
+import { Route as UserProfileRouteImport } from './routes/user/profile'
+import { Route as UserPricingRouteImport } from './routes/user/pricing'
+import { Route as UserApplicationsRouteImport } from './routes/user/applications'
+import { Route as UserApiTokensRouteImport } from './routes/user/api-tokens'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
@@ -24,45 +31,29 @@ import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-pas
 import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as AdminModelsRouteImport } from './routes/admin/models'
 import { Route as AdminMockRouteImport } from './routes/admin/mock'
-import { Route as AccountTracingRouteImport } from './routes/account/tracing'
-import { Route as AccountProfileRouteImport } from './routes/account/profile'
-import { Route as AccountPricingRouteImport } from './routes/account/pricing'
-import { Route as AccountModelsRouteImport } from './routes/account/models'
-import { Route as AccountCreditsRouteImport } from './routes/account/credits'
-import { Route as AccountApplicationsRouteImport } from './routes/account/applications'
-import { Route as AccountApiKeysRouteImport } from './routes/account/api-keys'
-import { Route as WorkspaceWorkspaceIdRouteRouteImport } from './routes/workspace/$workspaceId/route'
-import { Route as OrgOrganizationIdRouteRouteImport } from './routes/org/$organizationId/route'
-import { Route as AppAppIdRouteRouteImport } from './routes/app/$appId/route'
-import { Route as WorkspaceWorkspaceIdIndexRouteImport } from './routes/workspace/$workspaceId/index'
-import { Route as OrgOrganizationIdIndexRouteImport } from './routes/org/$organizationId/index'
-import { Route as AppAppIdIndexRouteImport } from './routes/app/$appId/index'
+import { Route as Acc_Char123accountIdNoPrefixChar125TracingRouteImport } from './routes/acc_{$accountIdNoPrefix}/tracing'
+import { Route as Acc_Char123accountIdNoPrefixChar125SettingsRouteImport } from './routes/acc_{$accountIdNoPrefix}/settings'
+import { Route as Acc_Char123accountIdNoPrefixChar125ModelsRouteImport } from './routes/acc_{$accountIdNoPrefix}/models'
+import { Route as Acc_Char123accountIdNoPrefixChar125MembersRouteImport } from './routes/acc_{$accountIdNoPrefix}/members'
+import { Route as Acc_Char123accountIdNoPrefixChar125CreditsRouteImport } from './routes/acc_{$accountIdNoPrefix}/credits'
+import { Route as Acc_Char123accountIdNoPrefixChar125AppsRouteImport } from './routes/acc_{$accountIdNoPrefix}/apps'
+import { Route as Acc_Char123accountIdNoPrefixChar125ApiTokensRouteImport } from './routes/acc_{$accountIdNoPrefix}/api-tokens'
+import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/route'
+import { Route as UserWalletIndexRouteImport } from './routes/user/wallet/index'
+import { Route as UserSecurityIndexRouteImport } from './routes/user/security/index'
 import { Route as AdminAppsIndexRouteImport } from './routes/admin/apps/index'
-import { Route as AccountWalletIndexRouteImport } from './routes/account/wallet/index'
-import { Route as AccountSecurityIndexRouteImport } from './routes/account/security/index'
-import { Route as WorkspaceWorkspaceIdTracingRouteImport } from './routes/workspace/$workspaceId/tracing'
-import { Route as WorkspaceWorkspaceIdSettingsRouteImport } from './routes/workspace/$workspaceId/settings'
-import { Route as WorkspaceWorkspaceIdDatasetsRouteImport } from './routes/workspace/$workspaceId/datasets'
-import { Route as WorkspaceWorkspaceIdAppsRouteImport } from './routes/workspace/$workspaceId/apps'
-import { Route as WorkspaceWorkspaceIdApiKeysRouteImport } from './routes/workspace/$workspaceId/api-keys'
-import { Route as OrgAcceptInvitationInvitationIdRouteImport } from './routes/org/accept-invitation.$invitationId'
-import { Route as OrgOrganizationIdWorkspacesRouteImport } from './routes/org/$organizationId/workspaces'
-import { Route as OrgOrganizationIdTracingRouteImport } from './routes/org/$organizationId/tracing'
-import { Route as OrgOrganizationIdSettingsRouteImport } from './routes/org/$organizationId/settings'
-import { Route as OrgOrganizationIdModelsRouteImport } from './routes/org/$organizationId/models'
-import { Route as OrgOrganizationIdMembersRouteImport } from './routes/org/$organizationId/members'
-import { Route as OrgOrganizationIdCreditsRouteImport } from './routes/org/$organizationId/credits'
-import { Route as OrgOrganizationIdApiKeysRouteImport } from './routes/org/$organizationId/api-keys'
+import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/index'
+import { Route as UserApiTokensCreateRouteImport } from './routes/user/api-tokens_.create'
 import { Route as AuthOauth2ConsentRouteImport } from './routes/auth/oauth2.consent'
-import { Route as AppAppIdTracingRouteImport } from './routes/app/$appId/tracing'
 import { Route as AdminAppsTagsRouteImport } from './routes/admin/apps/tags'
 import { Route as AdminAppsCategoriesRouteImport } from './routes/admin/apps/categories'
-import { Route as AccountCreditsUsageRouteImport } from './routes/account/credits_.usage'
-import { Route as AppAppIdConfigureRouteRouteImport } from './routes/app/$appId/configure/route'
-import { Route as OrgOrganizationIdMembersInvitationsRouteImport } from './routes/org/$organizationId/members_.invitations'
-import { Route as OrgOrganizationIdCreditsUsageRouteImport } from './routes/org/$organizationId/credits_.usage'
-import { Route as AppAppIdConfigureOauthApplicationRouteImport } from './routes/app/$appId/configure/oauth-application'
-import { Route as AppAppIdConfigureApiKeysRouteImport } from './routes/app/$appId/configure/api-keys'
+import { Route as Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport } from './routes/acc_{$accountIdNoPrefix}_.accept-invitation.$invitationId'
+import { Route as Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport } from './routes/acc_{$accountIdNoPrefix}/members_.invitations'
+import { Route as Acc_Char123accountIdNoPrefixChar125CreditsUsageRouteImport } from './routes/acc_{$accountIdNoPrefix}/credits_.usage'
+import { Route as Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRouteImport } from './routes/acc_{$accountIdNoPrefix}/api-tokens_.create'
+import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/configure/route'
+import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/configure/oauth-application'
+import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/configure/api-tokens'
 
 const ModelsRoute = ModelsRouteImport.update({
   id: '/models',
@@ -79,20 +70,31 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UserRouteRoute = UserRouteRouteImport.update({
+  id: '/user',
+  path: '/user',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountRouteRoute = AccountRouteRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const Acc_Char123accountIdNoPrefixChar125RouteRoute =
+  Acc_Char123accountIdNoPrefixChar125RouteRouteImport.update({
+    id: '/acc_{$accountIdNoPrefix}',
+    path: '/acc_{$accountIdNoPrefix}',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const UserIndexRoute = UserIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => UserRouteRoute,
 } as any)
 const LandingIndexRoute = LandingIndexRouteImport.update({
   id: '/landing/',
@@ -103,6 +105,32 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRouteRoute,
+} as any)
+const Acc_Char123accountIdNoPrefixChar125IndexRoute =
+  Acc_Char123accountIdNoPrefixChar125IndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const UserProfileRoute = UserProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => UserRouteRoute,
+} as any)
+const UserPricingRoute = UserPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => UserRouteRoute,
+} as any)
+const UserApplicationsRoute = UserApplicationsRouteImport.update({
+  id: '/applications',
+  path: '/applications',
+  getParentRoute: () => UserRouteRoute,
+} as any)
+const UserApiTokensRoute = UserApiTokensRouteImport.update({
+  id: '/api-tokens',
+  path: '/api-tokens',
+  getParentRoute: () => UserRouteRoute,
 } as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: '/auth/sign-up',
@@ -139,174 +167,89 @@ const AdminMockRoute = AdminMockRouteImport.update({
   path: '/mock',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AccountTracingRoute = AccountTracingRouteImport.update({
-  id: '/tracing',
-  path: '/tracing',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const AccountProfileRoute = AccountProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const AccountPricingRoute = AccountPricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const AccountModelsRoute = AccountModelsRouteImport.update({
-  id: '/models',
-  path: '/models',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const AccountCreditsRoute = AccountCreditsRouteImport.update({
-  id: '/credits',
-  path: '/credits',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const AccountApplicationsRoute = AccountApplicationsRouteImport.update({
-  id: '/applications',
-  path: '/applications',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const AccountApiKeysRoute = AccountApiKeysRouteImport.update({
-  id: '/api-keys',
-  path: '/api-keys',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const WorkspaceWorkspaceIdRouteRoute =
-  WorkspaceWorkspaceIdRouteRouteImport.update({
-    id: '/workspace/$workspaceId',
-    path: '/workspace/$workspaceId',
-    getParentRoute: () => rootRouteImport,
+const Acc_Char123accountIdNoPrefixChar125TracingRoute =
+  Acc_Char123accountIdNoPrefixChar125TracingRouteImport.update({
+    id: '/tracing',
+    path: '/tracing',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
-const OrgOrganizationIdRouteRoute = OrgOrganizationIdRouteRouteImport.update({
-  id: '/org/$organizationId',
-  path: '/org/$organizationId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppAppIdRouteRoute = AppAppIdRouteRouteImport.update({
-  id: '/app/$appId',
-  path: '/app/$appId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WorkspaceWorkspaceIdIndexRoute =
-  WorkspaceWorkspaceIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => WorkspaceWorkspaceIdRouteRoute,
+const Acc_Char123accountIdNoPrefixChar125SettingsRoute =
+  Acc_Char123accountIdNoPrefixChar125SettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
-const OrgOrganizationIdIndexRoute = OrgOrganizationIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => OrgOrganizationIdRouteRoute,
+const Acc_Char123accountIdNoPrefixChar125ModelsRoute =
+  Acc_Char123accountIdNoPrefixChar125ModelsRouteImport.update({
+    id: '/models',
+    path: '/models',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125MembersRoute =
+  Acc_Char123accountIdNoPrefixChar125MembersRouteImport.update({
+    id: '/members',
+    path: '/members',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125CreditsRoute =
+  Acc_Char123accountIdNoPrefixChar125CreditsRouteImport.update({
+    id: '/credits',
+    path: '/credits',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125AppsRoute =
+  Acc_Char123accountIdNoPrefixChar125AppsRouteImport.update({
+    id: '/apps',
+    path: '/apps',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125ApiTokensRoute =
+  Acc_Char123accountIdNoPrefixChar125ApiTokensRouteImport.update({
+    id: '/api-tokens',
+    path: '/api-tokens',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteImport.update(
+    {
+      id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}',
+      path: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}',
+      getParentRoute: () => rootRouteImport,
+    } as any,
+  )
+const UserWalletIndexRoute = UserWalletIndexRouteImport.update({
+  id: '/wallet/',
+  path: '/wallet/',
+  getParentRoute: () => UserRouteRoute,
 } as any)
-const AppAppIdIndexRoute = AppAppIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppAppIdRouteRoute,
+const UserSecurityIndexRoute = UserSecurityIndexRouteImport.update({
+  id: '/security/',
+  path: '/security/',
+  getParentRoute: () => UserRouteRoute,
 } as any)
 const AdminAppsIndexRoute = AdminAppsIndexRouteImport.update({
   id: '/apps/',
   path: '/apps/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AccountWalletIndexRoute = AccountWalletIndexRouteImport.update({
-  id: '/wallet/',
-  path: '/wallet/',
-  getParentRoute: () => AccountRouteRoute,
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRouteImport.update(
+    {
+      id: '/',
+      path: '/',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const UserApiTokensCreateRoute = UserApiTokensCreateRouteImport.update({
+  id: '/api-tokens_/create',
+  path: '/api-tokens/create',
+  getParentRoute: () => UserRouteRoute,
 } as any)
-const AccountSecurityIndexRoute = AccountSecurityIndexRouteImport.update({
-  id: '/security/',
-  path: '/security/',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const WorkspaceWorkspaceIdTracingRoute =
-  WorkspaceWorkspaceIdTracingRouteImport.update({
-    id: '/tracing',
-    path: '/tracing',
-    getParentRoute: () => WorkspaceWorkspaceIdRouteRoute,
-  } as any)
-const WorkspaceWorkspaceIdSettingsRoute =
-  WorkspaceWorkspaceIdSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => WorkspaceWorkspaceIdRouteRoute,
-  } as any)
-const WorkspaceWorkspaceIdDatasetsRoute =
-  WorkspaceWorkspaceIdDatasetsRouteImport.update({
-    id: '/datasets',
-    path: '/datasets',
-    getParentRoute: () => WorkspaceWorkspaceIdRouteRoute,
-  } as any)
-const WorkspaceWorkspaceIdAppsRoute =
-  WorkspaceWorkspaceIdAppsRouteImport.update({
-    id: '/apps',
-    path: '/apps',
-    getParentRoute: () => WorkspaceWorkspaceIdRouteRoute,
-  } as any)
-const WorkspaceWorkspaceIdApiKeysRoute =
-  WorkspaceWorkspaceIdApiKeysRouteImport.update({
-    id: '/api-keys',
-    path: '/api-keys',
-    getParentRoute: () => WorkspaceWorkspaceIdRouteRoute,
-  } as any)
-const OrgAcceptInvitationInvitationIdRoute =
-  OrgAcceptInvitationInvitationIdRouteImport.update({
-    id: '/org/accept-invitation/$invitationId',
-    path: '/org/accept-invitation/$invitationId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const OrgOrganizationIdWorkspacesRoute =
-  OrgOrganizationIdWorkspacesRouteImport.update({
-    id: '/workspaces',
-    path: '/workspaces',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
-  } as any)
-const OrgOrganizationIdTracingRoute =
-  OrgOrganizationIdTracingRouteImport.update({
-    id: '/tracing',
-    path: '/tracing',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
-  } as any)
-const OrgOrganizationIdSettingsRoute =
-  OrgOrganizationIdSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
-  } as any)
-const OrgOrganizationIdModelsRoute = OrgOrganizationIdModelsRouteImport.update({
-  id: '/models',
-  path: '/models',
-  getParentRoute: () => OrgOrganizationIdRouteRoute,
-} as any)
-const OrgOrganizationIdMembersRoute =
-  OrgOrganizationIdMembersRouteImport.update({
-    id: '/members',
-    path: '/members',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
-  } as any)
-const OrgOrganizationIdCreditsRoute =
-  OrgOrganizationIdCreditsRouteImport.update({
-    id: '/credits',
-    path: '/credits',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
-  } as any)
-const OrgOrganizationIdApiKeysRoute =
-  OrgOrganizationIdApiKeysRouteImport.update({
-    id: '/api-keys',
-    path: '/api-keys',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
-  } as any)
 const AuthOauth2ConsentRoute = AuthOauth2ConsentRouteImport.update({
   id: '/auth/oauth2/consent',
   path: '/auth/oauth2/consent',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppAppIdTracingRoute = AppAppIdTracingRouteImport.update({
-  id: '/tracing',
-  path: '/tracing',
-  getParentRoute: () => AppAppIdRouteRoute,
 } as any)
 const AdminAppsTagsRoute = AdminAppsTagsRouteImport.update({
   id: '/apps/tags',
@@ -318,58 +261,76 @@ const AdminAppsCategoriesRoute = AdminAppsCategoriesRouteImport.update({
   path: '/apps/categories',
   getParentRoute: () => AdminRouteRoute,
 } as any)
-const AccountCreditsUsageRoute = AccountCreditsUsageRouteImport.update({
-  id: '/credits_/usage',
-  path: '/credits/usage',
-  getParentRoute: () => AccountRouteRoute,
-} as any)
-const AppAppIdConfigureRouteRoute = AppAppIdConfigureRouteRouteImport.update({
-  id: '/configure',
-  path: '/configure',
-  getParentRoute: () => AppAppIdRouteRoute,
-} as any)
-const OrgOrganizationIdMembersInvitationsRoute =
-  OrgOrganizationIdMembersInvitationsRouteImport.update({
+const Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute =
+  Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport.update(
+    {
+      id: '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId',
+      path: '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId',
+      getParentRoute: () => rootRouteImport,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute =
+  Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport.update({
     id: '/members_/invitations',
     path: '/members/invitations',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
-const OrgOrganizationIdCreditsUsageRoute =
-  OrgOrganizationIdCreditsUsageRouteImport.update({
+const Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute =
+  Acc_Char123accountIdNoPrefixChar125CreditsUsageRouteImport.update({
     id: '/credits_/usage',
     path: '/credits/usage',
-    getParentRoute: () => OrgOrganizationIdRouteRoute,
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
-const AppAppIdConfigureOauthApplicationRoute =
-  AppAppIdConfigureOauthApplicationRouteImport.update({
-    id: '/oauth-application',
-    path: '/oauth-application',
-    getParentRoute: () => AppAppIdConfigureRouteRoute,
+const Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute =
+  Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRouteImport.update({
+    id: '/api-tokens_/create',
+    path: '/api-tokens/create',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
-const AppAppIdConfigureApiKeysRoute =
-  AppAppIdConfigureApiKeysRouteImport.update({
-    id: '/api-keys',
-    path: '/api-keys',
-    getParentRoute: () => AppAppIdConfigureRouteRoute,
-  } as any)
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteImport.update(
+    {
+      id: '/configure',
+      path: '/configure',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRouteImport.update(
+    {
+      id: '/oauth-application',
+      path: '/oauth-application',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRouteImport.update(
+    {
+      id: '/api-tokens',
+      path: '/api-tokens',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute,
+    } as any,
+  )
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account': typeof AccountRouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125RouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
+  '/user': typeof UserRouteRouteWithChildren
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
-  '/app/$appId': typeof AppAppIdRouteRouteWithChildren
-  '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
-  '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
-  '/account/api-keys': typeof AccountApiKeysRoute
-  '/account/applications': typeof AccountApplicationsRoute
-  '/account/credits': typeof AccountCreditsRoute
-  '/account/models': typeof AccountModelsRoute
-  '/account/pricing': typeof AccountPricingRoute
-  '/account/profile': typeof AccountProfileRoute
-  '/account/tracing': typeof AccountTracingRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
+  '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
+  '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
+  '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
   '/admin/models': typeof AdminModelsRoute
   '/auth/error': typeof AuthErrorRoute
@@ -377,51 +338,42 @@ export interface FileRoutesByFullPath {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/user/api-tokens': typeof UserApiTokensRoute
+  '/user/applications': typeof UserApplicationsRoute
+  '/user/pricing': typeof UserPricingRoute
+  '/user/profile': typeof UserProfileRoute
+  '/acc_{$accountIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125IndexRoute
   '/admin/': typeof AdminIndexRoute
   '/landing': typeof LandingIndexRoute
-  '/app/$appId/configure': typeof AppAppIdConfigureRouteRouteWithChildren
-  '/account/credits/usage': typeof AccountCreditsUsageRoute
+  '/user/': typeof UserIndexRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}/api-tokens/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
+  '/acc_{$accountIdNoPrefix}/credits/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
+  '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
-  '/app/$appId/tracing': typeof AppAppIdTracingRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
-  '/org/$organizationId/api-keys': typeof OrgOrganizationIdApiKeysRoute
-  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRoute
-  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRoute
-  '/org/$organizationId/models': typeof OrgOrganizationIdModelsRoute
-  '/org/$organizationId/settings': typeof OrgOrganizationIdSettingsRoute
-  '/org/$organizationId/tracing': typeof OrgOrganizationIdTracingRoute
-  '/org/$organizationId/workspaces': typeof OrgOrganizationIdWorkspacesRoute
-  '/org/accept-invitation/$invitationId': typeof OrgAcceptInvitationInvitationIdRoute
-  '/workspace/$workspaceId/api-keys': typeof WorkspaceWorkspaceIdApiKeysRoute
-  '/workspace/$workspaceId/apps': typeof WorkspaceWorkspaceIdAppsRoute
-  '/workspace/$workspaceId/datasets': typeof WorkspaceWorkspaceIdDatasetsRoute
-  '/workspace/$workspaceId/settings': typeof WorkspaceWorkspaceIdSettingsRoute
-  '/workspace/$workspaceId/tracing': typeof WorkspaceWorkspaceIdTracingRoute
-  '/account/security': typeof AccountSecurityIndexRoute
-  '/account/wallet': typeof AccountWalletIndexRoute
+  '/user/api-tokens/create': typeof UserApiTokensCreateRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
   '/admin/apps': typeof AdminAppsIndexRoute
-  '/app/$appId/': typeof AppAppIdIndexRoute
-  '/org/$organizationId/': typeof OrgOrganizationIdIndexRoute
-  '/workspace/$workspaceId/': typeof WorkspaceWorkspaceIdIndexRoute
-  '/app/$appId/configure/api-keys': typeof AppAppIdConfigureApiKeysRoute
-  '/app/$appId/configure/oauth-application': typeof AppAppIdConfigureOauthApplicationRoute
-  '/org/$organizationId/credits/usage': typeof OrgOrganizationIdCreditsUsageRoute
-  '/org/$organizationId/members/invitations': typeof OrgOrganizationIdMembersInvitationsRoute
+  '/user/security': typeof UserSecurityIndexRoute
+  '/user/wallet': typeof UserWalletIndexRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/oauth-application': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account': typeof AccountRouteRouteWithChildren
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
-  '/account/api-keys': typeof AccountApiKeysRoute
-  '/account/applications': typeof AccountApplicationsRoute
-  '/account/credits': typeof AccountCreditsRoute
-  '/account/models': typeof AccountModelsRoute
-  '/account/pricing': typeof AccountPricingRoute
-  '/account/profile': typeof AccountProfileRoute
-  '/account/tracing': typeof AccountTracingRoute
+  '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
+  '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
+  '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
+  '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
   '/admin/models': typeof AdminModelsRoute
   '/auth/error': typeof AuthErrorRoute
@@ -429,56 +381,47 @@ export interface FileRoutesByTo {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/user/api-tokens': typeof UserApiTokensRoute
+  '/user/applications': typeof UserApplicationsRoute
+  '/user/pricing': typeof UserPricingRoute
+  '/user/profile': typeof UserProfileRoute
+  '/acc_{$accountIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125IndexRoute
   '/admin': typeof AdminIndexRoute
   '/landing': typeof LandingIndexRoute
-  '/app/$appId/configure': typeof AppAppIdConfigureRouteRouteWithChildren
-  '/account/credits/usage': typeof AccountCreditsUsageRoute
+  '/user': typeof UserIndexRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}/api-tokens/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
+  '/acc_{$accountIdNoPrefix}/credits/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
+  '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
-  '/app/$appId/tracing': typeof AppAppIdTracingRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
-  '/org/$organizationId/api-keys': typeof OrgOrganizationIdApiKeysRoute
-  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRoute
-  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRoute
-  '/org/$organizationId/models': typeof OrgOrganizationIdModelsRoute
-  '/org/$organizationId/settings': typeof OrgOrganizationIdSettingsRoute
-  '/org/$organizationId/tracing': typeof OrgOrganizationIdTracingRoute
-  '/org/$organizationId/workspaces': typeof OrgOrganizationIdWorkspacesRoute
-  '/org/accept-invitation/$invitationId': typeof OrgAcceptInvitationInvitationIdRoute
-  '/workspace/$workspaceId/api-keys': typeof WorkspaceWorkspaceIdApiKeysRoute
-  '/workspace/$workspaceId/apps': typeof WorkspaceWorkspaceIdAppsRoute
-  '/workspace/$workspaceId/datasets': typeof WorkspaceWorkspaceIdDatasetsRoute
-  '/workspace/$workspaceId/settings': typeof WorkspaceWorkspaceIdSettingsRoute
-  '/workspace/$workspaceId/tracing': typeof WorkspaceWorkspaceIdTracingRoute
-  '/account/security': typeof AccountSecurityIndexRoute
-  '/account/wallet': typeof AccountWalletIndexRoute
+  '/user/api-tokens/create': typeof UserApiTokensCreateRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
   '/admin/apps': typeof AdminAppsIndexRoute
-  '/app/$appId': typeof AppAppIdIndexRoute
-  '/org/$organizationId': typeof OrgOrganizationIdIndexRoute
-  '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdIndexRoute
-  '/app/$appId/configure/api-keys': typeof AppAppIdConfigureApiKeysRoute
-  '/app/$appId/configure/oauth-application': typeof AppAppIdConfigureOauthApplicationRoute
-  '/org/$organizationId/credits/usage': typeof OrgOrganizationIdCreditsUsageRoute
-  '/org/$organizationId/members/invitations': typeof OrgOrganizationIdMembersInvitationsRoute
+  '/user/security': typeof UserSecurityIndexRoute
+  '/user/wallet': typeof UserWalletIndexRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/oauth-application': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/account': typeof AccountRouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125RouteRouteWithChildren
   '/admin': typeof AdminRouteRouteWithChildren
+  '/user': typeof UserRouteRouteWithChildren
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
-  '/app/$appId': typeof AppAppIdRouteRouteWithChildren
-  '/org/$organizationId': typeof OrgOrganizationIdRouteRouteWithChildren
-  '/workspace/$workspaceId': typeof WorkspaceWorkspaceIdRouteRouteWithChildren
-  '/account/api-keys': typeof AccountApiKeysRoute
-  '/account/applications': typeof AccountApplicationsRoute
-  '/account/credits': typeof AccountCreditsRoute
-  '/account/models': typeof AccountModelsRoute
-  '/account/pricing': typeof AccountPricingRoute
-  '/account/profile': typeof AccountProfileRoute
-  '/account/tracing': typeof AccountTracingRoute
+  '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
+  '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
+  '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
+  '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
   '/admin/models': typeof AdminModelsRoute
   '/auth/error': typeof AuthErrorRoute
@@ -486,57 +429,48 @@ export interface FileRoutesById {
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/user/api-tokens': typeof UserApiTokensRoute
+  '/user/applications': typeof UserApplicationsRoute
+  '/user/pricing': typeof UserPricingRoute
+  '/user/profile': typeof UserProfileRoute
+  '/acc_{$accountIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125IndexRoute
   '/admin/': typeof AdminIndexRoute
   '/landing/': typeof LandingIndexRoute
-  '/app/$appId/configure': typeof AppAppIdConfigureRouteRouteWithChildren
-  '/account/credits_/usage': typeof AccountCreditsUsageRoute
+  '/user/': typeof UserIndexRoute
+  '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}/api-tokens_/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
+  '/acc_{$accountIdNoPrefix}/credits_/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
+  '/acc_{$accountIdNoPrefix}/members_/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
-  '/app/$appId/tracing': typeof AppAppIdTracingRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
-  '/org/$organizationId/api-keys': typeof OrgOrganizationIdApiKeysRoute
-  '/org/$organizationId/credits': typeof OrgOrganizationIdCreditsRoute
-  '/org/$organizationId/members': typeof OrgOrganizationIdMembersRoute
-  '/org/$organizationId/models': typeof OrgOrganizationIdModelsRoute
-  '/org/$organizationId/settings': typeof OrgOrganizationIdSettingsRoute
-  '/org/$organizationId/tracing': typeof OrgOrganizationIdTracingRoute
-  '/org/$organizationId/workspaces': typeof OrgOrganizationIdWorkspacesRoute
-  '/org/accept-invitation/$invitationId': typeof OrgAcceptInvitationInvitationIdRoute
-  '/workspace/$workspaceId/api-keys': typeof WorkspaceWorkspaceIdApiKeysRoute
-  '/workspace/$workspaceId/apps': typeof WorkspaceWorkspaceIdAppsRoute
-  '/workspace/$workspaceId/datasets': typeof WorkspaceWorkspaceIdDatasetsRoute
-  '/workspace/$workspaceId/settings': typeof WorkspaceWorkspaceIdSettingsRoute
-  '/workspace/$workspaceId/tracing': typeof WorkspaceWorkspaceIdTracingRoute
-  '/account/security/': typeof AccountSecurityIndexRoute
-  '/account/wallet/': typeof AccountWalletIndexRoute
+  '/user/api-tokens_/create': typeof UserApiTokensCreateRoute
+  '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
   '/admin/apps/': typeof AdminAppsIndexRoute
-  '/app/$appId/': typeof AppAppIdIndexRoute
-  '/org/$organizationId/': typeof OrgOrganizationIdIndexRoute
-  '/workspace/$workspaceId/': typeof WorkspaceWorkspaceIdIndexRoute
-  '/app/$appId/configure/api-keys': typeof AppAppIdConfigureApiKeysRoute
-  '/app/$appId/configure/oauth-application': typeof AppAppIdConfigureOauthApplicationRoute
-  '/org/$organizationId/credits_/usage': typeof OrgOrganizationIdCreditsUsageRoute
-  '/org/$organizationId/members_/invitations': typeof OrgOrganizationIdMembersInvitationsRoute
+  '/user/security/': typeof UserSecurityIndexRoute
+  '/user/wallet/': typeof UserWalletIndexRoute
+  '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute
+  '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/oauth-application': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/account'
+    | '/acc_{$accountIdNoPrefix}'
     | '/admin'
+    | '/user'
     | '/chat'
     | '/docs'
     | '/models'
-    | '/app/$appId'
-    | '/org/$organizationId'
-    | '/workspace/$workspaceId'
-    | '/account/api-keys'
-    | '/account/applications'
-    | '/account/credits'
-    | '/account/models'
-    | '/account/pricing'
-    | '/account/profile'
-    | '/account/tracing'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
+    | '/acc_{$accountIdNoPrefix}/api-tokens'
+    | '/acc_{$accountIdNoPrefix}/apps'
+    | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/members'
+    | '/acc_{$accountIdNoPrefix}/models'
+    | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
     | '/admin/models'
     | '/auth/error'
@@ -544,51 +478,42 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/user/api-tokens'
+    | '/user/applications'
+    | '/user/pricing'
+    | '/user/profile'
+    | '/acc_{$accountIdNoPrefix}/'
     | '/admin/'
     | '/landing'
-    | '/app/$appId/configure'
-    | '/account/credits/usage'
+    | '/user/'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure'
+    | '/acc_{$accountIdNoPrefix}/api-tokens/create'
+    | '/acc_{$accountIdNoPrefix}/credits/usage'
+    | '/acc_{$accountIdNoPrefix}/members/invitations'
+    | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
-    | '/app/$appId/tracing'
     | '/auth/oauth2/consent'
-    | '/org/$organizationId/api-keys'
-    | '/org/$organizationId/credits'
-    | '/org/$organizationId/members'
-    | '/org/$organizationId/models'
-    | '/org/$organizationId/settings'
-    | '/org/$organizationId/tracing'
-    | '/org/$organizationId/workspaces'
-    | '/org/accept-invitation/$invitationId'
-    | '/workspace/$workspaceId/api-keys'
-    | '/workspace/$workspaceId/apps'
-    | '/workspace/$workspaceId/datasets'
-    | '/workspace/$workspaceId/settings'
-    | '/workspace/$workspaceId/tracing'
-    | '/account/security'
-    | '/account/wallet'
+    | '/user/api-tokens/create'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/'
     | '/admin/apps'
-    | '/app/$appId/'
-    | '/org/$organizationId/'
-    | '/workspace/$workspaceId/'
-    | '/app/$appId/configure/api-keys'
-    | '/app/$appId/configure/oauth-application'
-    | '/org/$organizationId/credits/usage'
-    | '/org/$organizationId/members/invitations'
+    | '/user/security'
+    | '/user/wallet'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/api-tokens'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/oauth-application'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account'
     | '/chat'
     | '/docs'
     | '/models'
-    | '/account/api-keys'
-    | '/account/applications'
-    | '/account/credits'
-    | '/account/models'
-    | '/account/pricing'
-    | '/account/profile'
-    | '/account/tracing'
+    | '/acc_{$accountIdNoPrefix}/api-tokens'
+    | '/acc_{$accountIdNoPrefix}/apps'
+    | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/members'
+    | '/acc_{$accountIdNoPrefix}/models'
+    | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
     | '/admin/models'
     | '/auth/error'
@@ -596,55 +521,46 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/user/api-tokens'
+    | '/user/applications'
+    | '/user/pricing'
+    | '/user/profile'
+    | '/acc_{$accountIdNoPrefix}'
     | '/admin'
     | '/landing'
-    | '/app/$appId/configure'
-    | '/account/credits/usage'
+    | '/user'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure'
+    | '/acc_{$accountIdNoPrefix}/api-tokens/create'
+    | '/acc_{$accountIdNoPrefix}/credits/usage'
+    | '/acc_{$accountIdNoPrefix}/members/invitations'
+    | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
-    | '/app/$appId/tracing'
     | '/auth/oauth2/consent'
-    | '/org/$organizationId/api-keys'
-    | '/org/$organizationId/credits'
-    | '/org/$organizationId/members'
-    | '/org/$organizationId/models'
-    | '/org/$organizationId/settings'
-    | '/org/$organizationId/tracing'
-    | '/org/$organizationId/workspaces'
-    | '/org/accept-invitation/$invitationId'
-    | '/workspace/$workspaceId/api-keys'
-    | '/workspace/$workspaceId/apps'
-    | '/workspace/$workspaceId/datasets'
-    | '/workspace/$workspaceId/settings'
-    | '/workspace/$workspaceId/tracing'
-    | '/account/security'
-    | '/account/wallet'
+    | '/user/api-tokens/create'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
     | '/admin/apps'
-    | '/app/$appId'
-    | '/org/$organizationId'
-    | '/workspace/$workspaceId'
-    | '/app/$appId/configure/api-keys'
-    | '/app/$appId/configure/oauth-application'
-    | '/org/$organizationId/credits/usage'
-    | '/org/$organizationId/members/invitations'
+    | '/user/security'
+    | '/user/wallet'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/api-tokens'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/oauth-application'
   id:
     | '__root__'
     | '/'
-    | '/account'
+    | '/acc_{$accountIdNoPrefix}'
     | '/admin'
+    | '/user'
     | '/chat'
     | '/docs'
     | '/models'
-    | '/app/$appId'
-    | '/org/$organizationId'
-    | '/workspace/$workspaceId'
-    | '/account/api-keys'
-    | '/account/applications'
-    | '/account/credits'
-    | '/account/models'
-    | '/account/pricing'
-    | '/account/profile'
-    | '/account/tracing'
+    | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}'
+    | '/acc_{$accountIdNoPrefix}/api-tokens'
+    | '/acc_{$accountIdNoPrefix}/apps'
+    | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/members'
+    | '/acc_{$accountIdNoPrefix}/models'
+    | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
     | '/admin/models'
     | '/auth/error'
@@ -652,57 +568,48 @@ export interface FileRouteTypes {
     | '/auth/reset-password'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/user/api-tokens'
+    | '/user/applications'
+    | '/user/pricing'
+    | '/user/profile'
+    | '/acc_{$accountIdNoPrefix}/'
     | '/admin/'
     | '/landing/'
-    | '/app/$appId/configure'
-    | '/account/credits_/usage'
+    | '/user/'
+    | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure'
+    | '/acc_{$accountIdNoPrefix}/api-tokens_/create'
+    | '/acc_{$accountIdNoPrefix}/credits_/usage'
+    | '/acc_{$accountIdNoPrefix}/members_/invitations'
+    | '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
-    | '/app/$appId/tracing'
     | '/auth/oauth2/consent'
-    | '/org/$organizationId/api-keys'
-    | '/org/$organizationId/credits'
-    | '/org/$organizationId/members'
-    | '/org/$organizationId/models'
-    | '/org/$organizationId/settings'
-    | '/org/$organizationId/tracing'
-    | '/org/$organizationId/workspaces'
-    | '/org/accept-invitation/$invitationId'
-    | '/workspace/$workspaceId/api-keys'
-    | '/workspace/$workspaceId/apps'
-    | '/workspace/$workspaceId/datasets'
-    | '/workspace/$workspaceId/settings'
-    | '/workspace/$workspaceId/tracing'
-    | '/account/security/'
-    | '/account/wallet/'
+    | '/user/api-tokens_/create'
+    | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/'
     | '/admin/apps/'
-    | '/app/$appId/'
-    | '/org/$organizationId/'
-    | '/workspace/$workspaceId/'
-    | '/app/$appId/configure/api-keys'
-    | '/app/$appId/configure/oauth-application'
-    | '/org/$organizationId/credits_/usage'
-    | '/org/$organizationId/members_/invitations'
+    | '/user/security/'
+    | '/user/wallet/'
+    | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/api-tokens'
+    | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/oauth-application'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountRouteRoute: typeof AccountRouteRouteWithChildren
+  Acc_Char123accountIdNoPrefixChar125RouteRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRouteWithChildren
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  UserRouteRoute: typeof UserRouteRouteWithChildren
   ChatRoute: typeof ChatRoute
   DocsRoute: typeof DocsRoute
   ModelsRoute: typeof ModelsRoute
-  AppAppIdRouteRoute: typeof AppAppIdRouteRouteWithChildren
-  OrgOrganizationIdRouteRoute: typeof OrgOrganizationIdRouteRouteWithChildren
-  WorkspaceWorkspaceIdRouteRoute: typeof WorkspaceWorkspaceIdRouteRouteWithChildren
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
   AuthErrorRoute: typeof AuthErrorRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   LandingIndexRoute: typeof LandingIndexRoute
+  Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute: typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   AuthOauth2ConsentRoute: typeof AuthOauth2ConsentRoute
-  OrgAcceptInvitationInvitationIdRoute: typeof OrgAcceptInvitationInvitationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -728,6 +635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/user': {
+      id: '/user'
+      path: '/user'
+      fullPath: '/user'
+      preLoaderRoute: typeof UserRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -735,11 +649,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account': {
-      id: '/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AccountRouteRouteImport
+    '/acc_{$accountIdNoPrefix}': {
+      id: '/acc_{$accountIdNoPrefix}'
+      path: '/acc_{$accountIdNoPrefix}'
+      fullPath: '/acc_{$accountIdNoPrefix}'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -748,6 +662,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/user/': {
+      id: '/user/'
+      path: '/'
+      fullPath: '/user/'
+      preLoaderRoute: typeof UserIndexRouteImport
+      parentRoute: typeof UserRouteRoute
     }
     '/landing/': {
       id: '/landing/'
@@ -762,6 +683,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}/': {
+      id: '/acc_{$accountIdNoPrefix}/'
+      path: '/'
+      fullPath: '/acc_{$accountIdNoPrefix}/'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125IndexRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/user/profile': {
+      id: '/user/profile'
+      path: '/profile'
+      fullPath: '/user/profile'
+      preLoaderRoute: typeof UserProfileRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
+    '/user/pricing': {
+      id: '/user/pricing'
+      path: '/pricing'
+      fullPath: '/user/pricing'
+      preLoaderRoute: typeof UserPricingRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
+    '/user/applications': {
+      id: '/user/applications'
+      path: '/applications'
+      fullPath: '/user/applications'
+      preLoaderRoute: typeof UserApplicationsRouteImport
+      parentRoute: typeof UserRouteRoute
+    }
+    '/user/api-tokens': {
+      id: '/user/api-tokens'
+      path: '/api-tokens'
+      fullPath: '/user/api-tokens'
+      preLoaderRoute: typeof UserApiTokensRouteImport
+      parentRoute: typeof UserRouteRoute
     }
     '/auth/sign-up': {
       id: '/auth/sign-up'
@@ -812,96 +768,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMockRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/account/tracing': {
-      id: '/account/tracing'
+    '/acc_{$accountIdNoPrefix}/tracing': {
+      id: '/acc_{$accountIdNoPrefix}/tracing'
       path: '/tracing'
-      fullPath: '/account/tracing'
-      preLoaderRoute: typeof AccountTracingRouteImport
-      parentRoute: typeof AccountRouteRoute
+      fullPath: '/acc_{$accountIdNoPrefix}/tracing'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125TracingRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/account/profile': {
-      id: '/account/profile'
-      path: '/profile'
-      fullPath: '/account/profile'
-      preLoaderRoute: typeof AccountProfileRouteImport
-      parentRoute: typeof AccountRouteRoute
+    '/acc_{$accountIdNoPrefix}/settings': {
+      id: '/acc_{$accountIdNoPrefix}/settings'
+      path: '/settings'
+      fullPath: '/acc_{$accountIdNoPrefix}/settings'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125SettingsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/account/pricing': {
-      id: '/account/pricing'
-      path: '/pricing'
-      fullPath: '/account/pricing'
-      preLoaderRoute: typeof AccountPricingRouteImport
-      parentRoute: typeof AccountRouteRoute
-    }
-    '/account/models': {
-      id: '/account/models'
+    '/acc_{$accountIdNoPrefix}/models': {
+      id: '/acc_{$accountIdNoPrefix}/models'
       path: '/models'
-      fullPath: '/account/models'
-      preLoaderRoute: typeof AccountModelsRouteImport
-      parentRoute: typeof AccountRouteRoute
+      fullPath: '/acc_{$accountIdNoPrefix}/models'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ModelsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/account/credits': {
-      id: '/account/credits'
+    '/acc_{$accountIdNoPrefix}/members': {
+      id: '/acc_{$accountIdNoPrefix}/members'
+      path: '/members'
+      fullPath: '/acc_{$accountIdNoPrefix}/members'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}/credits': {
+      id: '/acc_{$accountIdNoPrefix}/credits'
       path: '/credits'
-      fullPath: '/account/credits'
-      preLoaderRoute: typeof AccountCreditsRouteImport
-      parentRoute: typeof AccountRouteRoute
+      fullPath: '/acc_{$accountIdNoPrefix}/credits'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/account/applications': {
-      id: '/account/applications'
-      path: '/applications'
-      fullPath: '/account/applications'
-      preLoaderRoute: typeof AccountApplicationsRouteImport
-      parentRoute: typeof AccountRouteRoute
+    '/acc_{$accountIdNoPrefix}/apps': {
+      id: '/acc_{$accountIdNoPrefix}/apps'
+      path: '/apps'
+      fullPath: '/acc_{$accountIdNoPrefix}/apps'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125AppsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/account/api-keys': {
-      id: '/account/api-keys'
-      path: '/api-keys'
-      fullPath: '/account/api-keys'
-      preLoaderRoute: typeof AccountApiKeysRouteImport
-      parentRoute: typeof AccountRouteRoute
+    '/acc_{$accountIdNoPrefix}/api-tokens': {
+      id: '/acc_{$accountIdNoPrefix}/api-tokens'
+      path: '/api-tokens'
+      fullPath: '/acc_{$accountIdNoPrefix}/api-tokens'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/workspace/$workspaceId': {
-      id: '/workspace/$workspaceId'
-      path: '/workspace/$workspaceId'
-      fullPath: '/workspace/$workspaceId'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdRouteRouteImport
+    '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}': {
+      id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}'
+      path: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
+      fullPath: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/org/$organizationId': {
-      id: '/org/$organizationId'
-      path: '/org/$organizationId'
-      fullPath: '/org/$organizationId'
-      preLoaderRoute: typeof OrgOrganizationIdRouteRouteImport
-      parentRoute: typeof rootRouteImport
+    '/user/wallet/': {
+      id: '/user/wallet/'
+      path: '/wallet'
+      fullPath: '/user/wallet'
+      preLoaderRoute: typeof UserWalletIndexRouteImport
+      parentRoute: typeof UserRouteRoute
     }
-    '/app/$appId': {
-      id: '/app/$appId'
-      path: '/app/$appId'
-      fullPath: '/app/$appId'
-      preLoaderRoute: typeof AppAppIdRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workspace/$workspaceId/': {
-      id: '/workspace/$workspaceId/'
-      path: '/'
-      fullPath: '/workspace/$workspaceId/'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdIndexRouteImport
-      parentRoute: typeof WorkspaceWorkspaceIdRouteRoute
-    }
-    '/org/$organizationId/': {
-      id: '/org/$organizationId/'
-      path: '/'
-      fullPath: '/org/$organizationId/'
-      preLoaderRoute: typeof OrgOrganizationIdIndexRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
-    }
-    '/app/$appId/': {
-      id: '/app/$appId/'
-      path: '/'
-      fullPath: '/app/$appId/'
-      preLoaderRoute: typeof AppAppIdIndexRouteImport
-      parentRoute: typeof AppAppIdRouteRoute
+    '/user/security/': {
+      id: '/user/security/'
+      path: '/security'
+      fullPath: '/user/security'
+      preLoaderRoute: typeof UserSecurityIndexRouteImport
+      parentRoute: typeof UserRouteRoute
     }
     '/admin/apps/': {
       id: '/admin/apps/'
@@ -910,110 +845,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAppsIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/account/wallet/': {
-      id: '/account/wallet/'
-      path: '/wallet'
-      fullPath: '/account/wallet'
-      preLoaderRoute: typeof AccountWalletIndexRouteImport
-      parentRoute: typeof AccountRouteRoute
+    '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/': {
+      id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/'
+      path: '/'
+      fullPath: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute
     }
-    '/account/security/': {
-      id: '/account/security/'
-      path: '/security'
-      fullPath: '/account/security'
-      preLoaderRoute: typeof AccountSecurityIndexRouteImport
-      parentRoute: typeof AccountRouteRoute
-    }
-    '/workspace/$workspaceId/tracing': {
-      id: '/workspace/$workspaceId/tracing'
-      path: '/tracing'
-      fullPath: '/workspace/$workspaceId/tracing'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdTracingRouteImport
-      parentRoute: typeof WorkspaceWorkspaceIdRouteRoute
-    }
-    '/workspace/$workspaceId/settings': {
-      id: '/workspace/$workspaceId/settings'
-      path: '/settings'
-      fullPath: '/workspace/$workspaceId/settings'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdSettingsRouteImport
-      parentRoute: typeof WorkspaceWorkspaceIdRouteRoute
-    }
-    '/workspace/$workspaceId/datasets': {
-      id: '/workspace/$workspaceId/datasets'
-      path: '/datasets'
-      fullPath: '/workspace/$workspaceId/datasets'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdDatasetsRouteImport
-      parentRoute: typeof WorkspaceWorkspaceIdRouteRoute
-    }
-    '/workspace/$workspaceId/apps': {
-      id: '/workspace/$workspaceId/apps'
-      path: '/apps'
-      fullPath: '/workspace/$workspaceId/apps'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdAppsRouteImport
-      parentRoute: typeof WorkspaceWorkspaceIdRouteRoute
-    }
-    '/workspace/$workspaceId/api-keys': {
-      id: '/workspace/$workspaceId/api-keys'
-      path: '/api-keys'
-      fullPath: '/workspace/$workspaceId/api-keys'
-      preLoaderRoute: typeof WorkspaceWorkspaceIdApiKeysRouteImport
-      parentRoute: typeof WorkspaceWorkspaceIdRouteRoute
-    }
-    '/org/accept-invitation/$invitationId': {
-      id: '/org/accept-invitation/$invitationId'
-      path: '/org/accept-invitation/$invitationId'
-      fullPath: '/org/accept-invitation/$invitationId'
-      preLoaderRoute: typeof OrgAcceptInvitationInvitationIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/org/$organizationId/workspaces': {
-      id: '/org/$organizationId/workspaces'
-      path: '/workspaces'
-      fullPath: '/org/$organizationId/workspaces'
-      preLoaderRoute: typeof OrgOrganizationIdWorkspacesRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
-    }
-    '/org/$organizationId/tracing': {
-      id: '/org/$organizationId/tracing'
-      path: '/tracing'
-      fullPath: '/org/$organizationId/tracing'
-      preLoaderRoute: typeof OrgOrganizationIdTracingRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
-    }
-    '/org/$organizationId/settings': {
-      id: '/org/$organizationId/settings'
-      path: '/settings'
-      fullPath: '/org/$organizationId/settings'
-      preLoaderRoute: typeof OrgOrganizationIdSettingsRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
-    }
-    '/org/$organizationId/models': {
-      id: '/org/$organizationId/models'
-      path: '/models'
-      fullPath: '/org/$organizationId/models'
-      preLoaderRoute: typeof OrgOrganizationIdModelsRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
-    }
-    '/org/$organizationId/members': {
-      id: '/org/$organizationId/members'
-      path: '/members'
-      fullPath: '/org/$organizationId/members'
-      preLoaderRoute: typeof OrgOrganizationIdMembersRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
-    }
-    '/org/$organizationId/credits': {
-      id: '/org/$organizationId/credits'
-      path: '/credits'
-      fullPath: '/org/$organizationId/credits'
-      preLoaderRoute: typeof OrgOrganizationIdCreditsRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
-    }
-    '/org/$organizationId/api-keys': {
-      id: '/org/$organizationId/api-keys'
-      path: '/api-keys'
-      fullPath: '/org/$organizationId/api-keys'
-      preLoaderRoute: typeof OrgOrganizationIdApiKeysRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
+    '/user/api-tokens_/create': {
+      id: '/user/api-tokens_/create'
+      path: '/api-tokens/create'
+      fullPath: '/user/api-tokens/create'
+      preLoaderRoute: typeof UserApiTokensCreateRouteImport
+      parentRoute: typeof UserRouteRoute
     }
     '/auth/oauth2/consent': {
       id: '/auth/oauth2/consent'
@@ -1021,13 +865,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/oauth2/consent'
       preLoaderRoute: typeof AuthOauth2ConsentRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/app/$appId/tracing': {
-      id: '/app/$appId/tracing'
-      path: '/tracing'
-      fullPath: '/app/$appId/tracing'
-      preLoaderRoute: typeof AppAppIdTracingRouteImport
-      parentRoute: typeof AppAppIdRouteRoute
     }
     '/admin/apps/tags': {
       id: '/admin/apps/tags'
@@ -1043,80 +880,102 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAppsCategoriesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
-    '/account/credits_/usage': {
-      id: '/account/credits_/usage'
-      path: '/credits/usage'
-      fullPath: '/account/credits/usage'
-      preLoaderRoute: typeof AccountCreditsUsageRouteImport
-      parentRoute: typeof AccountRouteRoute
+    '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId': {
+      id: '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId'
+      path: '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
+      fullPath: '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/app/$appId/configure': {
-      id: '/app/$appId/configure'
-      path: '/configure'
-      fullPath: '/app/$appId/configure'
-      preLoaderRoute: typeof AppAppIdConfigureRouteRouteImport
-      parentRoute: typeof AppAppIdRouteRoute
-    }
-    '/org/$organizationId/members_/invitations': {
-      id: '/org/$organizationId/members_/invitations'
+    '/acc_{$accountIdNoPrefix}/members_/invitations': {
+      id: '/acc_{$accountIdNoPrefix}/members_/invitations'
       path: '/members/invitations'
-      fullPath: '/org/$organizationId/members/invitations'
-      preLoaderRoute: typeof OrgOrganizationIdMembersInvitationsRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
+      fullPath: '/acc_{$accountIdNoPrefix}/members/invitations'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/org/$organizationId/credits_/usage': {
-      id: '/org/$organizationId/credits_/usage'
+    '/acc_{$accountIdNoPrefix}/credits_/usage': {
+      id: '/acc_{$accountIdNoPrefix}/credits_/usage'
       path: '/credits/usage'
-      fullPath: '/org/$organizationId/credits/usage'
-      preLoaderRoute: typeof OrgOrganizationIdCreditsUsageRouteImport
-      parentRoute: typeof OrgOrganizationIdRouteRoute
+      fullPath: '/acc_{$accountIdNoPrefix}/credits/usage'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
-    '/app/$appId/configure/oauth-application': {
-      id: '/app/$appId/configure/oauth-application'
+    '/acc_{$accountIdNoPrefix}/api-tokens_/create': {
+      id: '/acc_{$accountIdNoPrefix}/api-tokens_/create'
+      path: '/api-tokens/create'
+      fullPath: '/acc_{$accountIdNoPrefix}/api-tokens/create'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure': {
+      id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure'
+      path: '/configure'
+      fullPath: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/oauth-application': {
+      id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/oauth-application'
       path: '/oauth-application'
-      fullPath: '/app/$appId/configure/oauth-application'
-      preLoaderRoute: typeof AppAppIdConfigureOauthApplicationRouteImport
-      parentRoute: typeof AppAppIdConfigureRouteRoute
+      fullPath: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/oauth-application'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute
     }
-    '/app/$appId/configure/api-keys': {
-      id: '/app/$appId/configure/api-keys'
-      path: '/api-keys'
-      fullPath: '/app/$appId/configure/api-keys'
-      preLoaderRoute: typeof AppAppIdConfigureApiKeysRouteImport
-      parentRoute: typeof AppAppIdConfigureRouteRoute
+    '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/api-tokens': {
+      id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/api-tokens'
+      path: '/api-tokens'
+      fullPath: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/api-tokens'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute
     }
   }
 }
 
-interface AccountRouteRouteChildren {
-  AccountApiKeysRoute: typeof AccountApiKeysRoute
-  AccountApplicationsRoute: typeof AccountApplicationsRoute
-  AccountCreditsRoute: typeof AccountCreditsRoute
-  AccountModelsRoute: typeof AccountModelsRoute
-  AccountPricingRoute: typeof AccountPricingRoute
-  AccountProfileRoute: typeof AccountProfileRoute
-  AccountTracingRoute: typeof AccountTracingRoute
-  AccountCreditsUsageRoute: typeof AccountCreditsUsageRoute
-  AccountSecurityIndexRoute: typeof AccountSecurityIndexRoute
-  AccountWalletIndexRoute: typeof AccountWalletIndexRoute
+interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
+  Acc_Char123accountIdNoPrefixChar125ApiTokensRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
+  Acc_Char123accountIdNoPrefixChar125AppsRoute: typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
+  Acc_Char123accountIdNoPrefixChar125CreditsRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  Acc_Char123accountIdNoPrefixChar125MembersRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
+  Acc_Char123accountIdNoPrefixChar125ModelsRoute: typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  Acc_Char123accountIdNoPrefixChar125SettingsRoute: typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  Acc_Char123accountIdNoPrefixChar125TracingRoute: typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
+  Acc_Char123accountIdNoPrefixChar125IndexRoute: typeof Acc_Char123accountIdNoPrefixChar125IndexRoute
+  Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
+  Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
+  Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
 }
 
-const AccountRouteRouteChildren: AccountRouteRouteChildren = {
-  AccountApiKeysRoute: AccountApiKeysRoute,
-  AccountApplicationsRoute: AccountApplicationsRoute,
-  AccountCreditsRoute: AccountCreditsRoute,
-  AccountModelsRoute: AccountModelsRoute,
-  AccountPricingRoute: AccountPricingRoute,
-  AccountProfileRoute: AccountProfileRoute,
-  AccountTracingRoute: AccountTracingRoute,
-  AccountCreditsUsageRoute: AccountCreditsUsageRoute,
-  AccountSecurityIndexRoute: AccountSecurityIndexRoute,
-  AccountWalletIndexRoute: AccountWalletIndexRoute,
-}
+const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountIdNoPrefixChar125RouteRouteChildren =
+  {
+    Acc_Char123accountIdNoPrefixChar125ApiTokensRoute:
+      Acc_Char123accountIdNoPrefixChar125ApiTokensRoute,
+    Acc_Char123accountIdNoPrefixChar125AppsRoute:
+      Acc_Char123accountIdNoPrefixChar125AppsRoute,
+    Acc_Char123accountIdNoPrefixChar125CreditsRoute:
+      Acc_Char123accountIdNoPrefixChar125CreditsRoute,
+    Acc_Char123accountIdNoPrefixChar125MembersRoute:
+      Acc_Char123accountIdNoPrefixChar125MembersRoute,
+    Acc_Char123accountIdNoPrefixChar125ModelsRoute:
+      Acc_Char123accountIdNoPrefixChar125ModelsRoute,
+    Acc_Char123accountIdNoPrefixChar125SettingsRoute:
+      Acc_Char123accountIdNoPrefixChar125SettingsRoute,
+    Acc_Char123accountIdNoPrefixChar125TracingRoute:
+      Acc_Char123accountIdNoPrefixChar125TracingRoute,
+    Acc_Char123accountIdNoPrefixChar125IndexRoute:
+      Acc_Char123accountIdNoPrefixChar125IndexRoute,
+    Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute:
+      Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute,
+    Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute:
+      Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute,
+    Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute:
+      Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute,
+  }
 
-const AccountRouteRouteWithChildren = AccountRouteRoute._addFileChildren(
-  AccountRouteRouteChildren,
-)
+const Acc_Char123accountIdNoPrefixChar125RouteRouteWithChildren =
+  Acc_Char123accountIdNoPrefixChar125RouteRoute._addFileChildren(
+    Acc_Char123accountIdNoPrefixChar125RouteRouteChildren,
+  )
 
 interface AdminRouteRouteChildren {
   AdminMockRoute: typeof AdminMockRoute
@@ -1140,114 +999,88 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
-interface AppAppIdConfigureRouteRouteChildren {
-  AppAppIdConfigureApiKeysRoute: typeof AppAppIdConfigureApiKeysRoute
-  AppAppIdConfigureOauthApplicationRoute: typeof AppAppIdConfigureOauthApplicationRoute
+interface UserRouteRouteChildren {
+  UserApiTokensRoute: typeof UserApiTokensRoute
+  UserApplicationsRoute: typeof UserApplicationsRoute
+  UserPricingRoute: typeof UserPricingRoute
+  UserProfileRoute: typeof UserProfileRoute
+  UserIndexRoute: typeof UserIndexRoute
+  UserApiTokensCreateRoute: typeof UserApiTokensCreateRoute
+  UserSecurityIndexRoute: typeof UserSecurityIndexRoute
+  UserWalletIndexRoute: typeof UserWalletIndexRoute
 }
 
-const AppAppIdConfigureRouteRouteChildren: AppAppIdConfigureRouteRouteChildren =
-  {
-    AppAppIdConfigureApiKeysRoute: AppAppIdConfigureApiKeysRoute,
-    AppAppIdConfigureOauthApplicationRoute:
-      AppAppIdConfigureOauthApplicationRoute,
-  }
-
-const AppAppIdConfigureRouteRouteWithChildren =
-  AppAppIdConfigureRouteRoute._addFileChildren(
-    AppAppIdConfigureRouteRouteChildren,
-  )
-
-interface AppAppIdRouteRouteChildren {
-  AppAppIdConfigureRouteRoute: typeof AppAppIdConfigureRouteRouteWithChildren
-  AppAppIdTracingRoute: typeof AppAppIdTracingRoute
-  AppAppIdIndexRoute: typeof AppAppIdIndexRoute
+const UserRouteRouteChildren: UserRouteRouteChildren = {
+  UserApiTokensRoute: UserApiTokensRoute,
+  UserApplicationsRoute: UserApplicationsRoute,
+  UserPricingRoute: UserPricingRoute,
+  UserProfileRoute: UserProfileRoute,
+  UserIndexRoute: UserIndexRoute,
+  UserApiTokensCreateRoute: UserApiTokensCreateRoute,
+  UserSecurityIndexRoute: UserSecurityIndexRoute,
+  UserWalletIndexRoute: UserWalletIndexRoute,
 }
 
-const AppAppIdRouteRouteChildren: AppAppIdRouteRouteChildren = {
-  AppAppIdConfigureRouteRoute: AppAppIdConfigureRouteRouteWithChildren,
-  AppAppIdTracingRoute: AppAppIdTracingRoute,
-  AppAppIdIndexRoute: AppAppIdIndexRoute,
-}
-
-const AppAppIdRouteRouteWithChildren = AppAppIdRouteRoute._addFileChildren(
-  AppAppIdRouteRouteChildren,
+const UserRouteRouteWithChildren = UserRouteRoute._addFileChildren(
+  UserRouteRouteChildren,
 )
 
-interface OrgOrganizationIdRouteRouteChildren {
-  OrgOrganizationIdApiKeysRoute: typeof OrgOrganizationIdApiKeysRoute
-  OrgOrganizationIdCreditsRoute: typeof OrgOrganizationIdCreditsRoute
-  OrgOrganizationIdMembersRoute: typeof OrgOrganizationIdMembersRoute
-  OrgOrganizationIdModelsRoute: typeof OrgOrganizationIdModelsRoute
-  OrgOrganizationIdSettingsRoute: typeof OrgOrganizationIdSettingsRoute
-  OrgOrganizationIdTracingRoute: typeof OrgOrganizationIdTracingRoute
-  OrgOrganizationIdWorkspacesRoute: typeof OrgOrganizationIdWorkspacesRoute
-  OrgOrganizationIdIndexRoute: typeof OrgOrganizationIdIndexRoute
-  OrgOrganizationIdCreditsUsageRoute: typeof OrgOrganizationIdCreditsUsageRoute
-  OrgOrganizationIdMembersInvitationsRoute: typeof OrgOrganizationIdMembersInvitationsRoute
+interface Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteChildren {
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute
 }
 
-const OrgOrganizationIdRouteRouteChildren: OrgOrganizationIdRouteRouteChildren =
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteChildren: Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteChildren =
   {
-    OrgOrganizationIdApiKeysRoute: OrgOrganizationIdApiKeysRoute,
-    OrgOrganizationIdCreditsRoute: OrgOrganizationIdCreditsRoute,
-    OrgOrganizationIdMembersRoute: OrgOrganizationIdMembersRoute,
-    OrgOrganizationIdModelsRoute: OrgOrganizationIdModelsRoute,
-    OrgOrganizationIdSettingsRoute: OrgOrganizationIdSettingsRoute,
-    OrgOrganizationIdTracingRoute: OrgOrganizationIdTracingRoute,
-    OrgOrganizationIdWorkspacesRoute: OrgOrganizationIdWorkspacesRoute,
-    OrgOrganizationIdIndexRoute: OrgOrganizationIdIndexRoute,
-    OrgOrganizationIdCreditsUsageRoute: OrgOrganizationIdCreditsUsageRoute,
-    OrgOrganizationIdMembersInvitationsRoute:
-      OrgOrganizationIdMembersInvitationsRoute,
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute:
+      Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute,
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute:
+      Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute,
   }
 
-const OrgOrganizationIdRouteRouteWithChildren =
-  OrgOrganizationIdRouteRoute._addFileChildren(
-    OrgOrganizationIdRouteRouteChildren,
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute._addFileChildren(
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteChildren,
   )
 
-interface WorkspaceWorkspaceIdRouteRouteChildren {
-  WorkspaceWorkspaceIdApiKeysRoute: typeof WorkspaceWorkspaceIdApiKeysRoute
-  WorkspaceWorkspaceIdAppsRoute: typeof WorkspaceWorkspaceIdAppsRoute
-  WorkspaceWorkspaceIdDatasetsRoute: typeof WorkspaceWorkspaceIdDatasetsRoute
-  WorkspaceWorkspaceIdSettingsRoute: typeof WorkspaceWorkspaceIdSettingsRoute
-  WorkspaceWorkspaceIdTracingRoute: typeof WorkspaceWorkspaceIdTracingRoute
-  WorkspaceWorkspaceIdIndexRoute: typeof WorkspaceWorkspaceIdIndexRoute
+interface Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteChildren {
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
 }
 
-const WorkspaceWorkspaceIdRouteRouteChildren: WorkspaceWorkspaceIdRouteRouteChildren =
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteChildren =
   {
-    WorkspaceWorkspaceIdApiKeysRoute: WorkspaceWorkspaceIdApiKeysRoute,
-    WorkspaceWorkspaceIdAppsRoute: WorkspaceWorkspaceIdAppsRoute,
-    WorkspaceWorkspaceIdDatasetsRoute: WorkspaceWorkspaceIdDatasetsRoute,
-    WorkspaceWorkspaceIdSettingsRoute: WorkspaceWorkspaceIdSettingsRoute,
-    WorkspaceWorkspaceIdTracingRoute: WorkspaceWorkspaceIdTracingRoute,
-    WorkspaceWorkspaceIdIndexRoute: WorkspaceWorkspaceIdIndexRoute,
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute:
+      Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren,
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute:
+      Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute,
   }
 
-const WorkspaceWorkspaceIdRouteRouteWithChildren =
-  WorkspaceWorkspaceIdRouteRoute._addFileChildren(
-    WorkspaceWorkspaceIdRouteRouteChildren,
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute._addFileChildren(
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteChildren,
   )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountRouteRoute: AccountRouteRouteWithChildren,
+  Acc_Char123accountIdNoPrefixChar125RouteRoute:
+    Acc_Char123accountIdNoPrefixChar125RouteRouteWithChildren,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  UserRouteRoute: UserRouteRouteWithChildren,
   ChatRoute: ChatRoute,
   DocsRoute: DocsRoute,
   ModelsRoute: ModelsRoute,
-  AppAppIdRouteRoute: AppAppIdRouteRouteWithChildren,
-  OrgOrganizationIdRouteRoute: OrgOrganizationIdRouteRouteWithChildren,
-  WorkspaceWorkspaceIdRouteRoute: WorkspaceWorkspaceIdRouteRouteWithChildren,
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute:
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren,
   AuthErrorRoute: AuthErrorRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   LandingIndexRoute: LandingIndexRoute,
+  Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute:
+    Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute,
   AuthOauth2ConsentRoute: AuthOauth2ConsentRoute,
-  OrgAcceptInvitationInvitationIdRoute: OrgAcceptInvitationInvitationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

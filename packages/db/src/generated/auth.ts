@@ -17,9 +17,12 @@ export const user = pgTable('user', {
   banReason: text('ban_reason'),
   banExpires: timestamp('ban_expires'),
   normalizedEmail: text('normalized_email').unique(),
+  defaultAccountId: text('default_account_id').references(() => Account.id, {
+    onDelete: 'no action',
+  }),
 })
 
-export const account = pgTable('account', {
+export const authAccount = pgTable('auth_account', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
@@ -86,9 +89,9 @@ export const twoFactor = pgTable('two_factor', {
 export const team = pgTable('team', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  organizationId: text('organization_id')
+  accountId: text('account_id')
     .notNull()
-    .references(() => organization.id, { onDelete: 'cascade' }),
+    .references(() => Account.id, { onDelete: 'cascade' }),
   createdAt: timestamp('created_at').notNull(),
   updatedAt: timestamp('updated_at').$onUpdate(() => /* @__PURE__ */ new Date()),
 })
@@ -104,10 +107,10 @@ export const teamMember = pgTable('team_member', {
   createdAt: timestamp('created_at'),
 })
 
-export const organization = pgTable('organization', {
+export const Account = pgTable('account', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
-  slug: text('slug').unique(),
+  slug: text('slug').notNull().unique(),
   logo: text('logo'),
   createdAt: timestamp('created_at').notNull(),
   metadata: text('metadata'),
@@ -115,9 +118,9 @@ export const organization = pgTable('organization', {
 
 export const member = pgTable('member', {
   id: text('id').primaryKey(),
-  organizationId: text('organization_id')
+  accountId: text('account_id')
     .notNull()
-    .references(() => organization.id, { onDelete: 'cascade' }),
+    .references(() => Account.id, { onDelete: 'cascade' }),
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
@@ -127,9 +130,9 @@ export const member = pgTable('member', {
 
 export const invitation = pgTable('invitation', {
   id: text('id').primaryKey(),
-  organizationId: text('organization_id')
+  accountId: text('account_id')
     .notNull()
-    .references(() => organization.id, { onDelete: 'cascade' }),
+    .references(() => Account.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
   role: text('role'),
   teamId: text('team_id'),

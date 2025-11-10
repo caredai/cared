@@ -51,13 +51,13 @@ interface PaymentMethodTableData {
   displayInfo: PaymentMethodDisplayInfo
 }
 
-export function PaymentMethods({ organizationId }: { organizationId?: string }) {
-  const defaultPaymentMethodId = useDefaultPaymentMethodId(organizationId)
-  const result = useListPaymentMethods(organizationId)
+export function PaymentMethods() {
+  const defaultPaymentMethodId = useDefaultPaymentMethodId()
+  const result = useListPaymentMethods()
   const paymentMethods = result.paymentMethods
   const isLoading = result.isLoading
   const refetchPaymentMethods = result.refetchPaymentMethods
-  const removePaymentMethod = useRemovePaymentMethod(organizationId)
+  const removePaymentMethod = useRemovePaymentMethod()
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
 
@@ -124,7 +124,6 @@ export function PaymentMethods({ organizationId }: { organizationId?: string }) 
       </CardContent>
 
       <PaymentMethodDialog
-        organizationId={organizationId}
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSuccess={handlePaymentMethodAdded}

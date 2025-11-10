@@ -16,8 +16,8 @@ import { z } from 'zod/v4'
 
 import { hasWhitespace } from '@cared/shared'
 
+import { Account } from './auth-alias'
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
-import { Workspace } from './workspace'
 
 export const appTypeEnumValues = ['single-agent', 'multiple-agents'] as const
 export const appTypeEnum = pgEnum('appType', appTypeEnumValues)
@@ -25,8 +25,6 @@ export const appTypeEnum = pgEnum('appType', appTypeEnumValues)
 export interface AppMetadata {
   description?: string
   imageUrl?: string
-
-  clientId?: string
 
   languageModel: string
   embeddingModel: string // used for embedding memories
@@ -46,7 +44,6 @@ const appMetadataSchema = z
   .object({
     description: z.string().optional(),
     imageUrl: z.string().optional(),
-    clientId: z.string().optional(),
     languageModel: z.string().optional(),
     embeddingModel: z.string().optional(),
     rerankModel: z.string().optional(),
@@ -67,9 +64,9 @@ export const App = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('app')),
-    workspaceId: text()
+    accountId: text()
       .notNull()
-      .references(() => Workspace.id), // No action on delete
+      .references(() => Account.id), // No action on delete
     // Column type, name, metadata are always the same as the latest published version in the app version table.
     // If no version is published, they are always the same as the draft version.
     type: appTypeEnum().notNull().default('single-agent'),
@@ -88,7 +85,7 @@ export const App = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.workspaceId, table.deleted),
+    index().on(table.accountId, table.deleted),
     index().on(table.type),
     index().on(table.name),
     index().on(table.archived, table.archivedAt),
@@ -100,7 +97,7 @@ export const App = pgTable(
 export type App = InferSelectModel<typeof App>
 
 export const CreateAppSchema = createInsertSchema(App, {
-  workspaceId: z.string(),
+  accountId: z.string(),
   type: z.enum(appTypeEnumValues).optional(),
   name: z.string().max(255),
   metadata: appMetadataSchema,
@@ -114,7 +111,7 @@ export const UpdateAppSchema = createUpdateSchema(App, {
   name: z.string().max(255).optional(),
   metadata: appMetadataSchema.optional(),
 }).omit({
-  workspaceId: true,
+  accountId: true,
   type: true,
   ...timestampsOmits,
 })

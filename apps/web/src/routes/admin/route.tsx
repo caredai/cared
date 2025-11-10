@@ -18,7 +18,7 @@ export const Route = createFileRoute('/admin')({
     )
   },
   loader: ({ context }) => {
-    void context.queryClient.prefetchQuery(orpc.user.accounts.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.user.authAccounts.queryOptions())
   },
   component: () => {
     return (

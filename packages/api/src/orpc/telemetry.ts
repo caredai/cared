@@ -21,10 +21,9 @@ export const telemetryRouter = {
    * @param input - Object containing pagination and filtering parameters
    * @param input.cursor - Page number for pagination (starts at 1)
    * @param input.limit - Number of items per page (max 100)
+   * @param input.scope - Scope of the query (user or account)
    * @param input.userId - Filter by user ID (mutually exclusive with other ID filters)
-   * @param input.organizationId - Filter by organization ID (mutually exclusive with other ID filters)
-   * @param input.workspaceId - Filter by workspace ID (mutually exclusive with other ID filters)
-   * @param input.appId - Filter by app ID (mutually exclusive with other ID filters)
+   * @param input.accountId - Filter by accountId ID (mutually exclusive with other ID filters)
    * @param input.sessionId - Filter by session ID
    * @param input.fromTimestamp - Filter traces from this timestamp (ISO 8601)
    * @param input.toTimestamp - Filter traces until this timestamp (ISO 8601)
@@ -40,11 +39,8 @@ export const telemetryRouter = {
     .input(
       z
         .object({
-          // Filtering parameters - only one can be specified
+          scope: z.enum(['user', 'account']).default('user'),
           userId: z.string().optional(),
-          organizationId: z.string().optional(),
-          workspaceId: z.string().optional(),
-          appId: z.string().optional(),
 
           sessionId: z.string().optional(),
 
@@ -57,13 +53,12 @@ export const telemetryRouter = {
           limit: z.number().int().min(1).max(100).default(50),
         })
         .refine(
-          ({ userId, organizationId, workspaceId, appId }) => {
-            const specifiedIds = [userId, organizationId, workspaceId, appId].filter(Boolean)
-            return specifiedIds.length === 1
+          ({ userId, scope }) => {
+            return !userId || scope === 'user'
           },
           {
-            message: 'Only one of userId, organizationId, workspaceId, appId can be specified',
-            path: ['userId', 'organizationId', 'workspaceId', 'appId'],
+            message: 'userId can only be specified if scope is user',
+            path: ['userId'],
           },
         )
         .refine(
@@ -75,11 +70,11 @@ export const telemetryRouter = {
           },
           {
             message: 'fromTimestamp must be before toTimestamp',
-            path: ['fromTimestamp', 'toTimestamp'],
+            path: ['fromTimestamp'],
           },
         ),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ context, input }) => {
       try {
         // Build the request parameters for langfuse.api.trace.list()
         const requestParams: GetTracesRequest = {
@@ -87,15 +82,25 @@ export const telemetryRouter = {
           limit: input.limit,
         }
 
-        // Add user ID filter - only one can be specified
-        if (input.userId) {
-          requestParams.userId = input.userId
-        } else if (input.organizationId) {
-          requestParams.userId = input.organizationId
-        } else if (input.workspaceId) {
-          requestParams.userId = input.workspaceId
-        } else if (input.appId) {
-          requestParams.userId = input.appId
+        const authUserId = 'userId' in context.auth.ctx ? context.auth.ctx.userId : undefined
+
+        // Add user ID filter
+        let isSelfAccess = false
+        if (input.scope === 'user') {
+          const userId = input.userId ?? authUserId
+          if (!userId) {
+            throw new ORPCError('BAD_REQUEST')
+          }
+          requestParams.userId = `${context.auth.accountId}:${userId}`
+          isSelfAccess = userId === authUserId
+        } else {
+          requestParams.userId = context.auth.accountId
+        }
+
+        if (!isSelfAccess) {
+          await context.auth.requirePermissions({ pseudo: [] }, {
+            roles: ['owner', 'admin'],
+          })
         }
 
         // Add optional filters
@@ -114,6 +119,10 @@ export const telemetryRouter = {
           total: response.meta.totalItems,
         }
       } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error
+        }
+
         log.error('Failed to fetch traces from Langfuse:', error)
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
           message: 'Failed to fetch traces',
@@ -127,10 +136,8 @@ export const telemetryRouter = {
    * @param input - Object containing pagination and filtering parameters
    * @param input.cursor - Page number for pagination (starts at 1)
    * @param input.limit - Number of items per page (max 100)
-   * @param input.userId - Filter by user ID (mutually exclusive with other ID filters)
-   * @param input.organizationId - Filter by organization ID (mutually exclusive with other ID filters)
-   * @param input.workspaceId - Filter by workspace ID (mutually exclusive with other ID filters)
-   * @param input.appId - Filter by app ID (mutually exclusive with other ID filters)
+   * @param input.scope - Scope of the query (user or account)
+   * @param input.userId - Filter by user ID (only valid when scope is 'user')
    * @param input.traceId - Filter by trace ID
    * @param input.type - Filter by observation type
    * @param input.level - Filter by observation level (DEBUG, DEFAULT, WARNING, ERROR)
@@ -149,11 +156,8 @@ export const telemetryRouter = {
     .input(
       z
         .object({
-          // Filtering parameters - only one can be specified
+          scope: z.enum(['user', 'account']).default('user'),
           userId: z.string().optional(),
-          organizationId: z.string().optional(),
-          workspaceId: z.string().optional(),
-          appId: z.string().optional(),
 
           traceId: z.string().optional(),
 
@@ -170,13 +174,12 @@ export const telemetryRouter = {
           limit: z.number().int().min(1).max(100).default(50),
         })
         .refine(
-          ({ userId, organizationId, workspaceId, appId }) => {
-            const specifiedIds = [userId, organizationId, workspaceId, appId].filter(Boolean)
-            return specifiedIds.length === 1
+          ({ userId, scope }) => {
+            return !userId || scope === 'user'
           },
           {
-            message: 'Only one of userId, organizationId, workspaceId, appId can be specified',
-            path: ['userId', 'organizationId', 'workspaceId', 'appId'],
+            message: 'userId can only be specified if scope is user',
+            path: ['userId'],
           },
         )
         .refine(
@@ -188,11 +191,11 @@ export const telemetryRouter = {
           },
           {
             message: 'fromStartTime must be before toStartTime',
-            path: ['fromStartTime', 'toStartTime'],
+            path: ['fromStartTime'],
           },
         ),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ context, input }) => {
       try {
         // Build the request parameters for langfuse.api.observations.list()
         const requestParams: GetObservationsRequest = {
@@ -200,15 +203,25 @@ export const telemetryRouter = {
           limit: input.limit,
         }
 
-        // Add user ID filter - only one can be specified
-        if (input.userId) {
-          requestParams.userId = input.userId
-        } else if (input.organizationId) {
-          requestParams.userId = input.organizationId
-        } else if (input.workspaceId) {
-          requestParams.userId = input.workspaceId
-        } else if (input.appId) {
-          requestParams.userId = input.appId
+        const authUserId = 'userId' in context.auth.ctx ? context.auth.ctx.userId : undefined
+
+        // Add user ID filter
+        let isSelfAccess = false
+        if (input.scope === 'user') {
+          const userId = input.userId ?? authUserId
+          if (!userId) {
+            throw new ORPCError('BAD_REQUEST')
+          }
+          requestParams.userId = `${context.auth.accountId}:${userId}`
+          isSelfAccess = userId === authUserId
+        } else {
+          requestParams.userId = context.auth.accountId
+        }
+
+        if (!isSelfAccess) {
+          await context.auth.requirePermissions({ pseudo: [] }, {
+            roles: ['owner', 'admin'],
+          })
         }
 
         // Add optional filters
@@ -230,6 +243,10 @@ export const telemetryRouter = {
           total: response.meta.totalItems,
         }
       } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error
+        }
+
         log.error('Failed to fetch observations from Langfuse:', error)
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
           message: 'Failed to fetch observations',
@@ -241,7 +258,9 @@ export const telemetryRouter = {
    * Delete multiple traces from Langfuse.
    * Only accessible by authenticated users.
    * @param input - Object containing array of trace IDs to delete
-   * @param input.ids - Array of trace IDs to delete
+   * @param input.traceIds - Array of trace IDs to delete
+   * @param input.scope - Scope of the deletion (user or account)
+   * @param input.userId - Filter by user ID (only valid when scope is 'user')
    * @returns Success message
    */
   deleteTraces: protectedProcedure
@@ -254,27 +273,46 @@ export const telemetryRouter = {
     .input(
       z
         .object({
-          // Filtering parameters - only one can be specified
+          scope: z.enum(['user', 'account']).default('user'),
           userId: z.string().optional(),
-          organizationId: z.string().optional(),
-          workspaceId: z.string().optional(),
-          appId: z.string().optional(),
 
           traceIds: z.array(z.string()).min(1, 'At least one trace ID is required'),
         })
         .refine(
-          ({ userId, organizationId, workspaceId, appId }) => {
-            const specifiedIds = [userId, organizationId, workspaceId, appId].filter(Boolean)
-            return specifiedIds.length === 1
+          ({ userId, scope }) => {
+            return !userId || scope === 'user'
           },
           {
-            message: 'Only one of userId, organizationId, workspaceId, appId can be specified',
-            path: ['userId', 'organizationId', 'workspaceId', 'appId'],
+            message: 'userId can only be specified if scope is user',
+            path: ['userId'],
           },
         ),
     )
-    .handler(async ({ input }) => {
+    .handler(async ({ context, input }) => {
       try {
+        const authUserId = 'userId' in context.auth.ctx ? context.auth.ctx.userId : undefined
+
+        // Determine the filter user ID
+        let filterUserId: string | undefined
+        let isSelfAccess = false
+        if (input.scope === 'user') {
+          const userId = input.userId ?? authUserId
+          if (!userId) {
+            throw new ORPCError('BAD_REQUEST')
+          }
+          filterUserId = `${context.auth.accountId}:${userId}`
+          isSelfAccess = userId === authUserId
+        } else {
+          filterUserId = context.auth.accountId
+        }
+
+        // Check permissions if accessing other user's data
+        if (!isSelfAccess) {
+          await context.auth.requirePermissions({ pseudo: [] }, {
+            roles: ['owner', 'admin'],
+          })
+        }
+
         // First, fetch all traces to check permissions
         const tracesToCheck: TraceWithFullDetails[] = []
 
@@ -290,11 +328,7 @@ export const telemetryRouter = {
           }
         }
 
-        // Check permissions based on filtering parameters
-        const filterUserId =
-          input.userId ?? input.organizationId ?? input.workspaceId ?? input.appId
-
-        // Check if all traces belong to the specified user/organization/workspace/app
+        // Check if all traces belong to the specified user/account
         const unauthorizedTraces = tracesToCheck.filter((trace) => trace.userId !== filterUserId)
 
         if (unauthorizedTraces.length > 0) {

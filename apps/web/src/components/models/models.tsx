@@ -40,29 +40,17 @@ const MODEL_TYPE_CONFIG: Record<ModelType, { title: string }> = {
   textEmbedding: { title: 'Text Embedding Models' },
 }
 
-export function Models({
-  isSystem,
-  organizationId,
-}: {
-  isSystem?: boolean
-  organizationId?: string
-}) {
+export function Models({ scope }: { scope: 'system' | 'effective' }) {
   const [_, copyToClipboard] = useCopyToClipboard()
 
   // Get all provider information
   const { providers } = useProviders()
 
   // Get all model information
-  const { models } = useModels({
-    organizationId,
-    source: isSystem ? 'system' : undefined,
-  })
+  const { models } = useModels({ source: scope })
 
   // Get provider keys for the current scope
-  const { providerKeys } = useProviderKeys({
-    isSystem,
-    organizationId,
-  })
+  const { providerKeys } = useProviderKeys({ source: scope === 'system' ? 'system' : 'custom' })
 
   // Track expanded state for each provider
   const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({})
@@ -129,12 +117,15 @@ export function Models({
         {providers.map((provider) => {
           const hasKey = providerKeys.find((key) => key.providerId === provider.id && !key.disabled)
 
-          const models = allModelTypes.reduce(
-            (models, type) => [...models, ...getModelsForProvider(provider.id, type)],
+          const modelsForProvider = allModelTypes.reduce(
+            (acc, type) => {
+              acc.push(...getModelsForProvider(provider.id, type))
+              return acc
+            },
             [] as ReturnType<typeof getModelsForProvider>,
           )
-          const totalCount = models.length
-          const customizedCount = models.filter((model) => !model.isSystem).length
+          const totalCount = modelsForProvider.length
+          const customizedCount = modelsForProvider.filter((model) => !model.isSystem).length
           const systemCount = totalCount - customizedCount
 
           return (
@@ -150,7 +141,7 @@ export function Models({
                     content={
                       <div className="flex flex-col gap-2">
                         <p>Manage {provider.name} API Keys</p>
-                        {!isSystem && hasKey ? (
+                        {scope === 'effective' && hasKey ? (
                           <>
                             <p>
                               Provider <span className="text-blue-500 font-medium">available</span>{' '}
@@ -174,7 +165,7 @@ export function Models({
                               to Cared credits for increased reliability.
                             </p>
                           </>
-                        ) : !isSystem && provider.enabled ? (
+                        ) : scope === 'effective' && provider.enabled ? (
                           <>
                             <p>
                               Provider <span className="text-green-500 font-medium">available</span>{' '}
@@ -199,7 +190,7 @@ export function Models({
                               tag.
                             </p>
                           </>
-                        ) : !isSystem ? (
+                        ) : scope === 'effective' ? (
                           <p>
                             Provider <span className="text-red-500 font-medium">unavailable</span>.
                             <br />
@@ -220,7 +211,7 @@ export function Models({
                       size="icon"
                       className={cn(
                         'h-7 w-7',
-                        !isSystem && hasKey
+                        scope === 'effective' && hasKey
                           ? 'bg-blue-100/40 hover:bg-blue-200/50 dark:bg-blue-100/10 hover:dark:bg-blue-200/20 text-blue-600 hover:text-blue-600'
                           : provider.enabled
                             ? 'text-green-500 dark:text-green-800 hover:text-green-500 hover:dark:text-green-800'
@@ -366,16 +357,14 @@ export function Models({
       {selectedProvider && (
         <>
           <ProviderKeysSheet
-            isSystem={isSystem}
-            organizationId={organizationId}
+            scope={scope === 'system' ? 'system' : 'custom'}
             provider={selectedProvider}
             open={providerKeysSheetOpen}
             onOpenChange={handleCloseProviderKeys}
           />
 
           <ModelSheet
-            isSystem={isSystem}
-            organizationId={organizationId}
+            scope={scope}
             provider={selectedProvider}
             open={modelSheetOpen}
             onOpenChange={handleCloseModelSheet}

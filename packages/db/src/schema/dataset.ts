@@ -3,8 +3,8 @@ import { index, integer, jsonb, pgTable, text, uniqueIndex, varchar } from 'driz
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod/v4'
 
+import { Account } from './auth-alias'
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
-import { Workspace } from './workspace'
 
 const retrievalModes = ['vector-search', 'full-text-search', 'hybrid-search'] as const
 
@@ -49,15 +49,15 @@ export const Dataset = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('dataset')),
-    workspaceId: text()
+    accountId: text()
       .notNull()
-      .references(() => Workspace.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
     name: varchar({ length: 255 }).notNull(),
     metadata: jsonb().$type<DatasetMetadata>().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.workspaceId),
+    index().on(table.accountId),
     index().on(table.name),
     ...timestampsIndices(table),
   ],
@@ -66,11 +66,11 @@ export const Dataset = pgTable(
 export type Dataset = InferSelectModel<typeof Dataset>
 
 export const CreateDatasetSchema = createInsertSchema(Dataset, {
-  workspaceId: z.string(),
   name: z.string().max(255),
   metadata: datasetMetadataSchema,
 }).omit({
   id: true,
+  accountId: true,
   ...timestampsOmits,
 })
 
@@ -79,7 +79,7 @@ export const UpdateDatasetSchema = createUpdateSchema(Dataset, {
   name: z.string().max(255).optional(),
   metadata: datasetMetadataSchema.optional(),
 }).omit({
-  workspaceId: true,
+  accountId: true,
   ...timestampsOmits,
 })
 
@@ -104,9 +104,9 @@ export const Document = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('doc')),
-    workspaceId: text()
+    accountId: text()
       .notNull()
-      .references(() => Workspace.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
     datasetId: text()
       .notNull()
       .references(() => Dataset.id, { onDelete: 'cascade' }),
@@ -115,7 +115,7 @@ export const Document = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.workspaceId, table.datasetId),
+    index().on(table.accountId, table.datasetId),
     index().on(table.datasetId),
     ...timestampsIndices(table),
   ],
@@ -124,12 +124,12 @@ export const Document = pgTable(
 export type Document = InferSelectModel<typeof Document>
 
 export const CreateDocumentSchema = createInsertSchema(Document, {
-  workspaceId: z.string(),
   datasetId: z.string(),
   name: z.string().max(255),
   metadata: documentMetadataSchema.optional(),
 }).omit({
   id: true,
+  accountId: true,
   ...timestampsOmits,
 })
 
@@ -138,7 +138,7 @@ export const UpdateDocumentSchema = createUpdateSchema(Document, {
   name: z.string().max(255).optional(),
   metadata: documentMetadataSchema.optional(),
 }).omit({
-  workspaceId: true,
+  accountId: true,
   datasetId: true,
   ...timestampsOmits,
 })
@@ -150,9 +150,9 @@ export const DocumentSegment = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('dseg')),
-    workspaceId: text()
+    accountId: text()
       .notNull()
-      .references(() => Workspace.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
     datasetId: text()
       .notNull()
       .references(() => Dataset.id, { onDelete: 'cascade' }),
@@ -165,8 +165,8 @@ export const DocumentSegment = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex('document_segment_wddi_index').on(
-      table.workspaceId,
+    uniqueIndex('document_segment_oddi_index').on(
+      table.accountId,
       table.datasetId,
       table.documentId,
       table.index,
@@ -180,7 +180,6 @@ export const DocumentSegment = pgTable(
 export type DocumentSegment = InferSelectModel<typeof DocumentSegment>
 
 export const CreateDocumentSegmentSchema = createInsertSchema(DocumentSegment, {
-  workspaceId: z.string(),
   datasetId: z.string(),
   documentId: z.string(),
   index: z.number().int(),
@@ -188,6 +187,7 @@ export const CreateDocumentSegmentSchema = createInsertSchema(DocumentSegment, {
   metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   id: true,
+  accountId: true,
   ...timestampsOmits,
 })
 
@@ -196,7 +196,7 @@ export const UpdateDocumentSegmentSchema = createUpdateSchema(DocumentSegment, {
   content: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
-  workspaceId: true,
+  accountId: true,
   datasetId: true,
   documentId: true,
   index: true,
@@ -210,9 +210,9 @@ export const DocumentChunk = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('dchunk')),
-    workspaceId: text()
+    accountId: text()
       .notNull()
-      .references(() => Workspace.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
     datasetId: text()
       .notNull()
       .references(() => Dataset.id, { onDelete: 'cascade' }),
@@ -228,8 +228,8 @@ export const DocumentChunk = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex('document_chunk_wddsi_index').on(
-      table.workspaceId,
+    uniqueIndex('document_chunk_oddsi_index').on(
+      table.accountId,
       table.datasetId,
       table.documentId,
       table.segmentId,
@@ -250,7 +250,6 @@ export const DocumentChunk = pgTable(
 export type DocumentChunk = InferSelectModel<typeof DocumentChunk>
 
 export const CreateDocumentChunkSchema = createInsertSchema(DocumentChunk, {
-  workspaceId: z.string(),
   datasetId: z.string(),
   documentId: z.string(),
   segmentId: z.string(),
@@ -259,6 +258,7 @@ export const CreateDocumentChunkSchema = createInsertSchema(DocumentChunk, {
   metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
   id: true,
+  accountId: true,
   ...timestampsOmits,
 })
 
@@ -267,7 +267,7 @@ export const UpdateDocumentChunkSchema = createUpdateSchema(DocumentChunk, {
   content: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 }).omit({
-  workspaceId: true,
+  accountId: true,
   datasetId: true,
   documentId: true,
   segmentId: true,

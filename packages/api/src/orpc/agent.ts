@@ -3,6 +3,7 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import { and, asc, count, desc, eq, gt, inArray, lt } from '@cared/db'
+import { db } from '@cared/db/client'
 import {
   Agent,
   AgentVersion,
@@ -13,9 +14,9 @@ import {
 } from '@cared/db/schema'
 
 import type { BaseContext } from '../orpc'
-import { OrganizationScope } from '../auth'
 import { cfg } from '../config'
 import { protectedProcedure } from '../orpc'
+import { getAppById } from './app'
 
 /**
  * Get an agent by ID.
@@ -25,7 +26,7 @@ import { protectedProcedure } from '../orpc'
  * @throws {ORPCError} If agent not found
  */
 export async function getAgentById(ctx: BaseContext, id: string) {
-  const result = await ctx.db.query.Agent.findFirst({
+  const result = await db.query.Agent.findFirst({
     where: eq(Agent.id, id),
   })
 
@@ -58,11 +59,11 @@ export async function getAgentVersion(
   }
 
   if (version === 'draft') {
-    agentVersion = await ctx.db.query.AgentVersion.findFirst({
+    agentVersion = await db.query.AgentVersion.findFirst({
       where: and(eq(AgentVersion.agentId, agentId), eq(AgentVersion.version, DRAFT_VERSION)),
     })
   } else if (version === 'latest') {
-    agentVersion = await ctx.db.query.AgentVersion.findFirst({
+    agentVersion = await db.query.AgentVersion.findFirst({
       where: and(
         eq(AgentVersion.agentId, agentId),
         lt(AgentVersion.version, DRAFT_VERSION), // Exclude draft version
@@ -70,7 +71,7 @@ export async function getAgentVersion(
       orderBy: desc(AgentVersion.version),
     })
   } else {
-    agentVersion = await ctx.db.query.AgentVersion.findFirst({
+    agentVersion = await db.query.AgentVersion.findFirst({
       where: and(eq(AgentVersion.agentId, agentId), eq(AgentVersion.version, version)),
     })
   }
@@ -87,7 +88,7 @@ export async function getAgentVersion(
 export const agentRouter = {
   /**
    * List all agents for an app.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - Object containing app ID and pagination parameters
    * @returns List of agents with hasMore flag
    * @throws {ORPCError} If app access verification fails
@@ -114,8 +115,8 @@ export const agentRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromApp(context, input.appId)
-      await scope.checkPermissions()
+      const app = await getAppById(context, input.appId)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
       const conditions: SQL<unknown>[] = [eq(Agent.appId, input.appId)]
 
@@ -129,7 +130,7 @@ export const agentRouter = {
 
       const query = and(...conditions)
 
-      const agents = await context.db.query.Agent.findMany({
+      const agents = await db.query.Agent.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(Agent.id) : asc(Agent.id),
         limit: input.limit + 1,
@@ -154,7 +155,7 @@ export const agentRouter = {
 
   /**
    * List all agent versions for a specific app version.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - Object containing app ID and version
    * @returns List of agent versions bound to the specified app version
    * @throws {ORPCError} If app access verification fails
@@ -173,16 +174,16 @@ export const agentRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromApp(context, input.appId)
-      await scope.checkPermissions()
+      const app = await getAppById(context, input.appId)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
-      const agents = await context.db.query.Agent.findMany({
+      const agents = await db.query.Agent.findMany({
         where: eq(Agent.appId, input.appId),
       })
 
       const agentIds = agents.map((agent) => agent.id)
 
-      const versions = await context.db
+      const versions = await db
         .select()
         .from(AgentVersion)
         .where(
@@ -197,7 +198,7 @@ export const agentRouter = {
 
   /**
    * List all versions of an agent.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - Object containing agent ID and pagination parameters
    * @returns List of agent versions sorted by version number
    * @throws {ORPCError} If agent access verification fails
@@ -225,8 +226,8 @@ export const agentRouter = {
     )
     .handler(async ({ context, input }) => {
       const agent = await getAgentById(context, input.agentId)
-      const scope = await OrganizationScope.fromApp(context, agent.appId)
-      await scope.checkPermissions()
+      const app = await getAppById(context, agent.appId)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
       const conditions: SQL<unknown>[] = [eq(AgentVersion.agentId, input.agentId)]
 
@@ -240,7 +241,7 @@ export const agentRouter = {
 
       const query = and(...conditions)
 
-      const versions = await context.db.query.AgentVersion.findMany({
+      const versions = await db.query.AgentVersion.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(AgentVersion.version) : asc(AgentVersion.version),
         limit: input.limit + 1,
@@ -265,7 +266,7 @@ export const agentRouter = {
 
   /**
    * Get a single agent by ID.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - The agent ID
    * @returns The agent if found
    * @throws {ORPCError} If agent not found or access verification fails
@@ -284,14 +285,14 @@ export const agentRouter = {
     )
     .handler(async ({ context, input }) => {
       const agent = await getAgentById(context, input.id)
-      const scope = await OrganizationScope.fromApp(context, agent.appId)
-      await scope.checkPermissions()
+      const app = await getAppById(context, agent.appId)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
       return { agent }
     }),
 
   /**
    * Create a new agent for an app.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - The agent data following the {@link CreateAgentSchema}
    * @returns The created agent and its draft version
    * @throws {ORPCError} If agent creation fails
@@ -305,11 +306,11 @@ export const agentRouter = {
     })
     .input(CreateAgentSchema)
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromApp(context, input.appId)
-      await scope.checkPermissions({ app: ['update'] })
+      const app = await getAppById(context, input.appId)
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
       // Check if the app has reached its agent limit
-      const agentCount = await context.db
+      const agentCount = await db
         .select({ count: count() })
         .from(Agent)
         .where(eq(Agent.appId, input.appId))
@@ -321,7 +322,7 @@ export const agentRouter = {
         })
       }
 
-      return context.db.transaction(async (tx) => {
+      return db.transaction(async (tx) => {
         const [agent] = await tx.insert(Agent).values(input).returning()
 
         if (!agent) {
@@ -358,7 +359,7 @@ export const agentRouter = {
   /**
    * Update an existing agent.
    * Only updates the draft version.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - The agent data following the {@link UpdateAgentSchema}
    * @returns The updated agent and its draft version
    * @throws {ORPCError} If agent update fails
@@ -375,8 +376,8 @@ export const agentRouter = {
       const { id, ...update } = input
 
       const agent = await getAgentById(context, id)
-      const scope = await OrganizationScope.fromApp(context, agent.appId)
-      await scope.checkPermissions({ app: ['update'] })
+      const app = await getAppById(context, agent.appId)
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
       const draft = await getAgentVersion(context, id, 'draft')
       // Check if there's any published version
@@ -390,7 +391,7 @@ export const agentRouter = {
         }
       }
 
-      return context.db.transaction(async (tx) => {
+      return db.transaction(async (tx) => {
         // Update draft version
         const [updatedDraft] = await tx
           .update(AgentVersion)

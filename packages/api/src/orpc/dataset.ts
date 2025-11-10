@@ -5,6 +5,7 @@ import { z } from 'zod/v4'
 import type { SQL } from '@cared/db'
 import type { DatasetMetadata } from '@cared/db/schema'
 import { and, asc, desc, eq, gt, lt } from '@cared/db'
+import { db } from '@cared/db/client'
 import {
   CreateDatasetSchema,
   CreateDocumentChunkSchema,
@@ -23,8 +24,7 @@ import { log } from '@cared/log'
 import { defaultModels } from '@cared/providers'
 import { mergeWithoutUndefined } from '@cared/shared'
 
-import type { Context } from '../orpc'
-import { OrganizationScope } from '../auth'
+import type { BaseContext } from '../orpc'
 import { s3Client } from '../client/s3'
 import { env } from '../env'
 import { protectedProcedure } from '../orpc'
@@ -32,15 +32,14 @@ import { taskTrigger } from '../rest/tasks'
 
 /**
  * Get a dataset by ID.
- * Note: Workspace access verification is handled by the calling function using OrganizationScope.
+ * @param ctx - The context object
+ * @param id - The dataset ID
+ * @returns The dataset if found
+ * @throws {ORPCError} If dataset not found
  */
-async function getDatasetById(context: Context, id: string, workspaceId?: string) {
-  const query = workspaceId
-    ? and(eq(Dataset.id, id), eq(Dataset.workspaceId, workspaceId))
-    : eq(Dataset.id, id)
-
-  const dataset = await context.db.query.Dataset.findFirst({
-    where: query,
+async function getDatasetById(ctx: BaseContext, id: string) {
+  const dataset = await db.query.Dataset.findFirst({
+    where: eq(Dataset.id, id),
   })
 
   if (!dataset) {
@@ -54,20 +53,19 @@ async function getDatasetById(context: Context, id: string, workspaceId?: string
 
 export const datasetRouter = {
   /**
-   * List all datasets in a workspace.
-   * Only accessible by workspace members.
+   * List all datasets in an account.
+   * Only accessible by account members.
    */
   list: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/datasets',
       tags: ['datasets'],
-      summary: 'List all datasets in a workspace',
+      summary: 'List all datasets in an account',
     })
     .input(
       z
         .object({
-          workspaceId: z.string().min(32),
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
@@ -79,10 +77,9 @@ export const datasetRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions()
 
-      const conditions: SQL<unknown>[] = [eq(Dataset.workspaceId, input.workspaceId)]
+      const conditions: SQL<unknown>[] = [eq(Dataset.accountId, context.auth.accountId)]
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
@@ -94,7 +91,7 @@ export const datasetRouter = {
 
       const query = and(...conditions)
 
-      const datasets = await context.db.query.Dataset.findMany({
+      const datasets = await db.query.Dataset.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(Dataset.id) : asc(Dataset.id),
         limit: input.limit + 1,
@@ -118,52 +115,48 @@ export const datasetRouter = {
     }),
 
   /**
-   * Get a single dataset by ID within a workspace.
-   * Only accessible by workspace members.
+   * Get a single dataset by ID.
+   * Only accessible by account members.
    */
   byId: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/datasets/{id}',
       tags: ['datasets'],
-      summary: 'Get a single dataset by ID within a workspace',
+      summary: 'Get a single dataset by ID',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ context, input }) => {
-      const dataset = await context.db.query.Dataset.findFirst({
-        where: eq(Dataset.id, input),
-      })
-
-      if (!dataset) {
-        throw new ORPCError('NOT_FOUND', {
-          message: `Dataset with id ${input} not found`,
-        })
-      }
-
-      const scope = await OrganizationScope.fromWorkspace(context, dataset.workspaceId)
-      await scope.checkPermissions()
+      const dataset = await getDatasetById(context, input.id)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: dataset.accountId })
 
       return { dataset }
     }),
 
   /**
-   * Create a new dataset in a workspace.
-   * Only accessible by workspace members.
+   * Create a new dataset in an account.
+   * Only accessible by account members.
    */
   create: protectedProcedure
     .route({
       method: 'POST',
       path: '/v1/datasets',
       tags: ['datasets'],
-      summary: 'Create a new dataset in a workspace',
+      summary: 'Create a new dataset in an account',
     })
     .input(CreateDatasetSchema)
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions({ dataset: ['create'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      })
 
       const values = {
         ...input,
+        accountId: context.auth.accountId,
         metadata: mergeWithoutUndefined<DatasetMetadata>(
           {
             ...defaultModels.dataset,
@@ -173,7 +166,7 @@ export const datasetRouter = {
         ),
       }
 
-      const [dataset] = await context.db.insert(Dataset).values(values).returning()
+      const [dataset] = await db.insert(Dataset).values(values).returning()
 
       if (!dataset) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
@@ -185,23 +178,24 @@ export const datasetRouter = {
     }),
 
   /**
-   * Update an existing dataset in a workspace.
-   * Only accessible by workspace members.
+   * Update an existing dataset.
+   * Only accessible by account members.
    */
   update: protectedProcedure
     .route({
       method: 'PATCH',
       path: '/v1/datasets/{id}',
       tags: ['datasets'],
-      summary: 'Update an existing dataset in a workspace',
+      summary: 'Update an existing dataset',
     })
     .input(UpdateDatasetSchema)
     .handler(async ({ context, input }) => {
       const { id, ...updates } = input
 
       const dataset = await getDatasetById(context, id)
-      const scope = await OrganizationScope.fromWorkspace(context, dataset.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: dataset.accountId })
 
       // Merge new metadata with existing metadata
       const update = {
@@ -209,7 +203,7 @@ export const datasetRouter = {
         metadata: mergeWithoutUndefined<DatasetMetadata>(dataset.metadata, updates.metadata),
       }
 
-      const [updatedDataset] = await context.db
+      const [updatedDataset] = await db
         .update(Dataset)
         .set(update)
         .where(eq(Dataset.id, id))
@@ -225,30 +219,35 @@ export const datasetRouter = {
     }),
 
   /**
-   * Delete a dataset from a workspace.
+   * Delete a dataset.
    * Also deletes all associated documents, segments, chunks and S3 files.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   delete: protectedProcedure
     .route({
       method: 'DELETE',
       path: '/v1/datasets/{id}',
       tags: ['datasets'],
-      summary: 'Delete a dataset from a workspace',
+      summary: 'Delete a dataset',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ context, input }) => {
-      const dataset = await getDatasetById(context, input)
+      const dataset = await getDatasetById(context, input.id)
 
-      const scope = await OrganizationScope.fromWorkspace(context, dataset.workspaceId)
-      await scope.checkPermissions({ dataset: ['delete'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: dataset.accountId })
 
-      const documentUrls = await context.db
+      const documentUrls = await db
         .select({
           metadata: Document.metadata,
         })
         .from(Document)
-        .where(eq(Document.datasetId, input))
+        .where(eq(Document.datasetId, input.id))
         .then((docs) => docs.map((doc) => doc.metadata.url))
 
       if (dataset.metadata.stats) {
@@ -258,18 +257,18 @@ export const datasetRouter = {
         })
       }
 
-      await context.db.transaction(async (tx) => {
+      await db.transaction(async (tx) => {
         // Delete all document chunks
-        await tx.delete(DocumentChunk).where(eq(DocumentChunk.datasetId, input))
+        await tx.delete(DocumentChunk).where(eq(DocumentChunk.datasetId, input.id))
 
         // Delete all document segments
-        await tx.delete(DocumentSegment).where(eq(DocumentSegment.datasetId, input))
+        await tx.delete(DocumentSegment).where(eq(DocumentSegment.datasetId, input.id))
 
         // Delete all documents
-        await tx.delete(Document).where(eq(Document.datasetId, input))
+        await tx.delete(Document).where(eq(Document.datasetId, input.id))
 
         // Delete the dataset itself
-        await tx.delete(Dataset).where(eq(Dataset.id, input))
+        await tx.delete(Dataset).where(eq(Dataset.id, input.id))
       })
 
       // Delete S3 files if they exist
@@ -293,7 +292,7 @@ export const datasetRouter = {
           )
         } catch (error) {
           log.error('Failed to delete S3 objects', {
-            datasetId: input,
+            datasetId: input.id,
             error,
           })
         }
@@ -302,7 +301,7 @@ export const datasetRouter = {
 
   /**
    * Create a new document in a dataset.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   createDocument: protectedProcedure
     .route({
@@ -313,10 +312,10 @@ export const datasetRouter = {
     })
     .input(CreateDocumentSchema)
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
-
-      const dataset = await getDatasetById(context, input.datasetId, input.workspaceId)
+      const dataset = await getDatasetById(context, input.datasetId)
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: dataset.accountId })
 
       // If document has S3 URL, get file size and update dataset metadata
       let fileSize: number | undefined
@@ -335,8 +334,14 @@ export const datasetRouter = {
         fileSize = headObjectResponse.ContentLength ?? 0
       }
 
-      const document = await context.db.transaction(async (tx) => {
-        const [document] = await tx.insert(Document).values(input).returning()
+      const document = await db.transaction(async (tx) => {
+        const [document] = await tx
+          .insert(Document)
+          .values({
+            ...input,
+            accountId: dataset.accountId,
+          })
+          .returning()
         if (!document) {
           throw new ORPCError('INTERNAL_SERVER_ERROR', {
             message: 'Failed to create document',
@@ -376,7 +381,7 @@ export const datasetRouter = {
 
   /**
    * Update an existing document.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   updateDocument: protectedProcedure
     .route({
@@ -389,7 +394,7 @@ export const datasetRouter = {
     .handler(async ({ context, input }) => {
       const { id, ...update } = input
 
-      const document = await context.db.query.Document.findFirst({
+      const document = await db.query.Document.findFirst({
         where: eq(Document.id, id),
       })
       if (!document) {
@@ -398,10 +403,11 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, document.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: document.accountId })
 
-      const [updatedDocument] = await context.db
+      const [updatedDocument] = await db
         .update(Document)
         .set(update)
         .where(eq(Document.id, id))
@@ -419,7 +425,7 @@ export const datasetRouter = {
   /**
    * Delete a document and all its segments and chunks.
    * Also deletes the associated S3 file if it exists.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   deleteDocument: protectedProcedure
     .route({
@@ -430,22 +436,27 @@ export const datasetRouter = {
       description:
         'Deletes a document and all its related segments and chunks. Also deletes the associated S3 file if it exists.',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ context, input }) => {
-      const document = await context.db.query.Document.findFirst({
-        where: eq(Document.id, input),
+      const document = await db.query.Document.findFirst({
+        where: eq(Document.id, input.id),
       })
 
       if (!document) {
         throw new ORPCError('NOT_FOUND', {
-          message: `Document with id ${input} not found`,
+          message: `Document with id ${input.id} not found`,
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, document.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: document.accountId })
 
-      const dataset = await context.db.query.Dataset.findFirst({
+      const dataset = await db.query.Dataset.findFirst({
         where: eq(Dataset.id, document.datasetId),
       })
       if (!dataset) {
@@ -471,7 +482,7 @@ export const datasetRouter = {
         fileSize = headObjectResponse.ContentLength ?? 0
       }
 
-      await context.db.transaction(async (tx) => {
+      await db.transaction(async (tx) => {
         if (fileSize) {
           // Update total size in dataset metadata
           const updatedMetadata = {
@@ -497,13 +508,13 @@ export const datasetRouter = {
         }
 
         // Delete all chunks
-        await tx.delete(DocumentChunk).where(eq(DocumentChunk.documentId, input))
+        await tx.delete(DocumentChunk).where(eq(DocumentChunk.documentId, input.id))
 
         // Delete all segments
-        await tx.delete(DocumentSegment).where(eq(DocumentSegment.documentId, input))
+        await tx.delete(DocumentSegment).where(eq(DocumentSegment.documentId, input.id))
 
         // Delete the document itself
-        await tx.delete(Document).where(eq(Document.id, input))
+        await tx.delete(Document).where(eq(Document.id, input.id))
       })
 
       // Delete S3 file if exists
@@ -529,9 +540,15 @@ export const datasetRouter = {
 
   /**
    * List all documents in a dataset.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   listDocuments: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/v1/documents',
+      tags: ['datasets'],
+      summary: 'List all documents in a dataset',
+    })
     .input(
       z
         .object({
@@ -547,18 +564,8 @@ export const datasetRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      const dataset = await context.db.query.Dataset.findFirst({
-        where: eq(Dataset.id, input.datasetId),
-      })
-
-      if (!dataset) {
-        throw new ORPCError('NOT_FOUND', {
-          message: `Dataset with id ${input.datasetId} not found`,
-        })
-      }
-
-      const scope = await OrganizationScope.fromWorkspace(context, dataset.workspaceId)
-      await scope.checkPermissions()
+      const dataset = await getDatasetById(context, input.datasetId)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: dataset.accountId })
 
       const conditions: SQL<unknown>[] = [eq(Document.datasetId, input.datasetId)]
 
@@ -572,7 +579,7 @@ export const datasetRouter = {
 
       const query = and(...conditions)
 
-      const documents = await context.db.query.Document.findMany({
+      const documents = await db.query.Document.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(Document.id) : asc(Document.id),
         limit: input.limit + 1,
@@ -597,7 +604,7 @@ export const datasetRouter = {
 
   /**
    * Get a single document by ID.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   getDocument: protectedProcedure
     .route({
@@ -606,27 +613,30 @@ export const datasetRouter = {
       tags: ['datasets'],
       summary: 'Get a single document by ID',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ context, input }) => {
-      const document = await context.db.query.Document.findFirst({
-        where: eq(Document.id, input),
+      const document = await db.query.Document.findFirst({
+        where: eq(Document.id, input.id),
       })
 
       if (!document) {
         throw new ORPCError('NOT_FOUND', {
-          message: `Document with id ${input} not found`,
+          message: `Document with id ${input.id} not found`,
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, document.workspaceId)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: document.accountId })
 
       return { document }
     }),
 
   /**
    * Create a new document segment.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   createSegment: protectedProcedure
     .route({
@@ -637,12 +647,12 @@ export const datasetRouter = {
     })
     .input(CreateDocumentSegmentSchema)
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      const dataset = await getDatasetById(context, input.datasetId)
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: dataset.accountId })
 
-      await getDatasetById(context, input.datasetId, input.workspaceId)
-
-      const document = await context.db.query.Document.findFirst({
+      const document = await db.query.Document.findFirst({
         where: eq(Document.id, input.documentId),
       })
 
@@ -652,13 +662,19 @@ export const datasetRouter = {
         })
       }
 
-      if (document.workspaceId !== input.workspaceId || document.datasetId !== input.datasetId) {
+      if (document.datasetId !== input.datasetId) {
         throw new ORPCError('FORBIDDEN', {
           message: 'You do not have access to this document',
         })
       }
 
-      const [segment] = await context.db.insert(DocumentSegment).values(input).returning()
+      const [segment] = await db
+        .insert(DocumentSegment)
+        .values({
+          ...input,
+          accountId: dataset.accountId,
+        })
+        .returning()
 
       if (!segment) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
@@ -671,7 +687,7 @@ export const datasetRouter = {
 
   /**
    * Update an existing document segment.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   updateSegment: protectedProcedure
     .route({
@@ -684,7 +700,7 @@ export const datasetRouter = {
     .handler(async ({ context, input }) => {
       const { id, ...updateData } = input
 
-      const segment = await context.db.query.DocumentSegment.findFirst({
+      const segment = await db.query.DocumentSegment.findFirst({
         where: eq(DocumentSegment.id, id),
       })
 
@@ -694,10 +710,11 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, segment.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: segment.accountId })
 
-      const [updatedSegment] = await context.db
+      const [updatedSegment] = await db
         .update(DocumentSegment)
         .set(updateData)
         .where(eq(DocumentSegment.id, id))
@@ -714,7 +731,7 @@ export const datasetRouter = {
 
   /**
    * Delete a document segment and all its chunks.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   deleteSegment: protectedProcedure
     .route({
@@ -723,27 +740,32 @@ export const datasetRouter = {
       tags: ['datasets'],
       summary: 'Delete a document segment and all its chunks',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ context, input }) => {
-      const segment = await context.db.query.DocumentSegment.findFirst({
-        where: eq(DocumentSegment.id, input),
+      const segment = await db.query.DocumentSegment.findFirst({
+        where: eq(DocumentSegment.id, input.id),
       })
 
       if (!segment) {
         throw new ORPCError('NOT_FOUND', {
-          message: `Document segment with id ${input} not found`,
+          message: `Document segment with id ${input.id} not found`,
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, segment.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: segment.accountId })
 
-      return await context.db.transaction(async (tx) => {
+      return await db.transaction(async (tx) => {
         // Delete all chunks
-        await tx.delete(DocumentChunk).where(eq(DocumentChunk.segmentId, input))
+        await tx.delete(DocumentChunk).where(eq(DocumentChunk.segmentId, input.id))
 
         // Delete the segment itself
-        await tx.delete(DocumentSegment).where(eq(DocumentSegment.id, input))
+        await tx.delete(DocumentSegment).where(eq(DocumentSegment.id, input.id))
 
         return { success: true }
       })
@@ -751,7 +773,7 @@ export const datasetRouter = {
 
   /**
    * List all segments in a document.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   listSegments: protectedProcedure
     .route({
@@ -775,7 +797,7 @@ export const datasetRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      const document = await context.db.query.Document.findFirst({
+      const document = await db.query.Document.findFirst({
         where: eq(Document.id, input.documentId),
       })
 
@@ -785,8 +807,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, document.workspaceId)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: document.accountId })
 
       const conditions: SQL<unknown>[] = [eq(DocumentSegment.documentId, input.documentId)]
 
@@ -800,7 +821,7 @@ export const datasetRouter = {
 
       const query = and(...conditions)
 
-      const segments = await context.db.query.DocumentSegment.findMany({
+      const segments = await db.query.DocumentSegment.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(DocumentSegment.id) : asc(DocumentSegment.id),
         limit: input.limit + 1,
@@ -825,7 +846,7 @@ export const datasetRouter = {
 
   /**
    * Create a new document chunk.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   createChunk: protectedProcedure
     .route({
@@ -836,12 +857,12 @@ export const datasetRouter = {
     })
     .input(CreateDocumentChunkSchema)
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      const dataset = await getDatasetById(context, input.datasetId)
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: dataset.accountId })
 
-      await getDatasetById(context, input.datasetId, input.workspaceId)
-
-      const segment = await context.db.query.DocumentSegment.findFirst({
+      const segment = await db.query.DocumentSegment.findFirst({
         where: eq(DocumentSegment.id, input.segmentId),
       })
 
@@ -851,17 +872,19 @@ export const datasetRouter = {
         })
       }
 
-      if (
-        segment.workspaceId !== input.workspaceId ||
-        segment.datasetId !== input.datasetId ||
-        segment.documentId !== input.documentId
-      ) {
+      if (segment.datasetId !== input.datasetId || segment.documentId !== input.documentId) {
         throw new ORPCError('FORBIDDEN', {
           message: 'You do not have access to this document segment',
         })
       }
 
-      const [chunk] = await context.db.insert(DocumentChunk).values(input).returning()
+      const [chunk] = await db
+        .insert(DocumentChunk)
+        .values({
+          ...input,
+          accountId: dataset.accountId,
+        })
+        .returning()
 
       if (!chunk) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
@@ -874,7 +897,7 @@ export const datasetRouter = {
 
   /**
    * Update an existing document chunk.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   updateChunk: protectedProcedure
     .route({
@@ -891,7 +914,7 @@ export const datasetRouter = {
         metadata?: Record<string, unknown>
       }
 
-      const chunk = await context.db.query.DocumentChunk.findFirst({
+      const chunk = await db.query.DocumentChunk.findFirst({
         where: eq(DocumentChunk.id, id),
       })
 
@@ -901,10 +924,11 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, chunk.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: chunk.accountId })
 
-      const [updatedChunk] = await context.db
+      const [updatedChunk] = await db
         .update(DocumentChunk)
         .set(updateData)
         .where(eq(DocumentChunk.id, id))
@@ -921,7 +945,7 @@ export const datasetRouter = {
 
   /**
    * Delete a document chunk.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   deleteChunk: protectedProcedure
     .route({
@@ -930,29 +954,34 @@ export const datasetRouter = {
       tags: ['datasets'],
       summary: 'Delete a document chunk',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ context, input }) => {
-      const chunk = await context.db.query.DocumentChunk.findFirst({
-        where: eq(DocumentChunk.id, input),
+      const chunk = await db.query.DocumentChunk.findFirst({
+        where: eq(DocumentChunk.id, input.id),
       })
 
       if (!chunk) {
         throw new ORPCError('NOT_FOUND', {
-          message: `Document chunk with id ${input} not found`,
+          message: `Document chunk with id ${input.id} not found`,
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, chunk.workspaceId)
-      await scope.checkPermissions({ dataset: ['update'] })
+      await context.auth.requirePermissions({
+        dataset: ['write'],
+      }, { accountId: chunk.accountId })
 
-      await context.db.delete(DocumentChunk).where(eq(DocumentChunk.id, input))
+      await db.delete(DocumentChunk).where(eq(DocumentChunk.id, input.id))
 
       return { success: true }
     }),
 
   /**
    * List all chunks in a document segment.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    */
   listChunks: protectedProcedure
     .route({
@@ -976,7 +1005,7 @@ export const datasetRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      const segment = await context.db.query.DocumentSegment.findFirst({
+      const segment = await db.query.DocumentSegment.findFirst({
         where: eq(DocumentSegment.id, input.segmentId),
       })
 
@@ -986,8 +1015,7 @@ export const datasetRouter = {
         })
       }
 
-      const scope = await OrganizationScope.fromWorkspace(context, segment.workspaceId)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: segment.accountId })
 
       const conditions: SQL<unknown>[] = [eq(DocumentChunk.segmentId, input.segmentId)]
 
@@ -1001,7 +1029,7 @@ export const datasetRouter = {
 
       const query = and(...conditions)
 
-      const chunks = await context.db.query.DocumentChunk.findMany({
+      const chunks = await db.query.DocumentChunk.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(DocumentChunk.id) : asc(DocumentChunk.id),
         limit: input.limit + 1,

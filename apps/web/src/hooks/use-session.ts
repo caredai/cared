@@ -1,44 +1,19 @@
-import { useCallback, useEffect } from 'react'
-import { useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
-import { authClient } from '@cared/auth/client'
+import type { authClient } from '@cared/auth/client'
 
 import { orpc } from '@/lib/orpc'
 
 export type User = (typeof authClient.$Infer.Session)['user']
 export type Session = (typeof authClient.$Infer.Session)['session']
 
-function useRefetchSession() {
-  const queryClient = useQueryClient()
-
-  return useCallback(async () => {
-    const session = (
-      await authClient.getSession({
-        query: {
-          disableCookieCache: true,
-        },
-      })
-    ).data
-
-    if (session) {
-      queryClient.setQueryData(orpc.user.session.queryKey(), session)
-    }
-    queryClient.setQueryData(
-      orpc.user.session.queryKey({
-        input: {
-          auth: false,
-        },
-      }),
-      session,
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-}
-
 export function useSessionPublic() {
-  const refetchSession = useRefetchSession()
-
-  const { data, isSuccess } = useQuery(
+  const {
+    data,
+    isSuccess,
+    refetch: refetchSession,
+  } = useQuery(
     orpc.user.session.queryOptions({
       input: {
         auth: false,
@@ -53,6 +28,16 @@ export function useSessionPublic() {
   }
 }
 
+export function useSession() {
+  const { data, refetch: refetchSession } = useSuspenseQuery(orpc.user.session.queryOptions())
+  // Since this query throws an error when the return value is null, using non-null assertion is safe here
+  return {
+    session: data!.session,
+    user: data!.user,
+    refetchSession,
+  }
+}
+
 export function useCheckSession() {
   const { user, isSuccess } = useSessionPublic()
 
@@ -63,25 +48,13 @@ export function useCheckSession() {
   }, [user, isSuccess])
 }
 
-export function useSession() {
-  const refetchSession = useRefetchSession()
-
-  const { data } = useSuspenseQuery(orpc.user.session.queryOptions())
-  // Since this query throws an error when the return value is null, using non-null assertion is safe here
-  return {
-    session: data!.session,
-    user: data!.user,
-    refetchSession,
-  }
-}
-
-export function useAccounts() {
+export function useAuthAccounts() {
   const {
-    data: { accounts },
-    refetch: refetchAccounts,
-  } = useSuspenseQuery(orpc.user.accounts.queryOptions())
+    data: { authAccounts },
+    refetch: refetchAuthAccounts,
+  } = useSuspenseQuery(orpc.user.authAccounts.queryOptions())
   return {
-    accounts,
-    refetchAccounts,
+    authAccounts,
+    refetchAuthAccounts,
   }
 }

@@ -61,3 +61,9 @@ export function waitUntil(ctx: HonoContext): WaitUntil {
     return ctx.executionCtx.waitUntil(promise)
   }
 }
+
+export function forwardSetCookieHeader(target: Headers | undefined, source: Headers | undefined) {
+  source?.getSetCookie().forEach((setCookie) => {
+    target?.append('set-cookie', setCookie)
+  })
+}

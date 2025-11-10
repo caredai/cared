@@ -5,13 +5,16 @@ import { Command } from 'commander'
 // @ts-ignore
 import type { ModelInfos, ProviderId } from '@cared/providers'
 // @ts-ignore
-import { and, eq } from '@cared/db'
+import { eq } from '@cared/db'
 // @ts-ignore
-import { getDb } from '@cared/db/client'
+import { db } from '@cared/db/client'
 // @ts-ignore
 import { ProviderModels } from '@cared/db/schema'
 // @ts-ignore
 import log from '@cared/log'
+
+import { invalidateProviderModelsCache } from '../src/operation'
+import { Cache } from '../src/operation/cache'
 
 // @ts-ignore
 const __filename = fileURLToPath(import.meta.url)
@@ -131,8 +134,8 @@ async function pushProviderModels(providerId: ProviderId, strategy: Strategy) {
   }
 
   // Check if provider models already exist in database
-  const existingRecord = await getDb().query.ProviderModels.findFirst({
-    where: and(eq(ProviderModels.providerId, providerId), eq(ProviderModels.isSystem, true)),
+  const existingRecord = await db.query.ProviderModels.findFirst({
+    where: eq(ProviderModels.providerId, providerId),
   })
 
   if (existingRecord) {
@@ -206,7 +209,7 @@ async function pushProviderModels(providerId: ProviderId, strategy: Strategy) {
         ],
       }
 
-      await getDb()
+      await db
         .update(ProviderModels)
         .set({
           models: mergedModels,
@@ -264,7 +267,7 @@ async function pushProviderModels(providerId: ProviderId, strategy: Strategy) {
         textEmbeddingModels: textEmbeddingModelsResult.mergedModels,
       }
 
-      await getDb()
+      await db
         .update(ProviderModels)
         .set({
           models: mergedModels,
@@ -278,7 +281,7 @@ async function pushProviderModels(providerId: ProviderId, strategy: Strategy) {
       )
 
       // Replace strategy: Completely replace all models with new ones
-      await getDb()
+      await db
         .update(ProviderModels)
         .set({
           models: newModels,
@@ -290,14 +293,16 @@ async function pushProviderModels(providerId: ProviderId, strategy: Strategy) {
   } else {
     log.info(`Creating new provider models record for ${providerId}`)
 
-    await getDb().insert(ProviderModels).values({
-      isSystem: true,
+    await db.insert(ProviderModels).values({
       providerId,
       models: newModels,
     })
 
     logModelInfos(providerId, newModels)
   }
+
+  Cache.setup()
+  await invalidateProviderModelsCache('system')
 }
 
 function logModelInfos(providerId: ProviderId, modelInfos: ModelInfos) {

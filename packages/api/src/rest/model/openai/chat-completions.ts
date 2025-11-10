@@ -19,7 +19,7 @@ import type {
   SharedV2ProviderMetadata,
 } from '@ai-sdk/provider'
 import type { Span } from '@opentelemetry/api'
-import { authenticate } from '../../../auth'
+import { ProtectedAuth } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
 import {
   asToolCalls,
@@ -172,8 +172,6 @@ const ChatCompletionRequestArgsSchema = z
     // For OpenRouter
     // https://openrouter.ai/docs/use-cases/reasoning-tokens
     reasoning: OpenRouterReasoningOptionsSchema,
-
-    payerOrganizationId: z.string().optional(),
   })
   .refine((data) => !(data.reasoning_effort && data.reasoning), {
     message: 'Cannot specify both "reasoning_effort" and "reasoning"',
@@ -187,7 +185,7 @@ export async function POST(c: Context): Promise<Response> {
       return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
     }
 
-    const { model: modelId, stream: isStream, payerOrganizationId, ...args } = validatedArgs.data
+    const { model: modelId, stream: isStream, ...args } = validatedArgs.data
 
     const telemetry: TelemetrySettings = {
       isEnabled: true,
@@ -203,15 +201,14 @@ export async function POST(c: Context): Promise<Response> {
         },
       }),
       tracer,
-      fn: async () => await authenticate(c.req.raw.headers),
+      fn: async () => await ProtectedAuth.authenticate(c.req.raw.headers),
     })
-    if (!auth.isAuthenticated()) {
+    if (!auth) {
       return new Response('Unauthorized', { status: 401 })
     }
 
     const expenseManager = ExpenseManager.from({
-      auth: auth.auth!,
-      payerOrganizationId,
+      auth: auth.ctx,
       waitUntil: waitUntil(c),
     })
 
@@ -221,11 +218,11 @@ export async function POST(c: Context): Promise<Response> {
       attributes: selectTelemetryAttributes({
         telemetry,
         attributes: {
-          'langfuse.user.id': authId(auth.auth!),
+          'langfuse.user.id': authId(auth.ctx),
         },
       }),
       tracer,
-      fn: async () => await findProvidersByModel(auth.auth!, modelId, 'language'),
+      fn: async () => await findProvidersByModel(auth.ctx, modelId, 'language'),
     })
     log.info(
       `Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`,
@@ -282,7 +279,7 @@ export async function POST(c: Context): Promise<Response> {
           tracer,
           fn: async () => {
             return await ProviderKeyManager.from({
-              auth: auth.auth!,
+              auth: auth!.ctx,
               modelId,
               onlyByok: !modelInfo.chargeable,
               waitUntil: waitUntil(c),

@@ -17,7 +17,7 @@ import {
 export default function InvitationEmail({
   link,
   inviter,
-  organizationName,
+  accountName,
   user = 'User',
   app = 'Cared',
   logo = 'https://cared.dev/logo.png',
@@ -25,7 +25,7 @@ export default function InvitationEmail({
 }: {
   link: string
   inviter: string
-  organizationName: string
+  accountName: string
   user?: string
   app?: string
   logo?: string
@@ -37,21 +37,21 @@ export default function InvitationEmail({
   if (!inviter) {
     inviter = 'Jason'
   }
-  if (!organizationName) {
-    organizationName = 'Tavern'
+  if (!accountName) {
+    accountName = 'Tavern'
   }
 
   return (
     <Html>
       <Head>
-        <title>You've Been Invited to Join [{organizationName}]</title>
+        <title>You've Been Invited to Join [{accountName}]</title>
         <meta
           name="description"
-          content={`${inviter} has invited you to join ${organizationName}`}
+          content={`${inviter} has invited you to join ${accountName}`}
         />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-      <Preview>{`${inviter} has invited you to join ${organizationName}`}</Preview>
+      <Preview>{`${inviter} has invited you to join ${accountName}`}</Preview>
 
       <Body style={main}>
         <Container style={container}>
@@ -62,23 +62,23 @@ export default function InvitationEmail({
 
           {/* Main Content */}
           <Section style={content}>
-            <Heading style={h1}>You've Been Invited to Join [{organizationName}]</Heading>
+            <Heading style={h1}>You've Been Invited to Join [{accountName}]</Heading>
 
             <Text style={text}>Hi {user},</Text>
 
             <Text style={text}>
-              {inviter} has invited you to join {organizationName} on {app}. You'll be able to
+              {inviter} has invited you to join {accountName} on {app}. You'll be able to
               collaborate with your team, access shared resources, and participate in organizational
               activities.
             </Text>
 
-            {/* Organization Info */}
-            <Section style={orgInfoContainer}>
-              <Text style={orgInfoTitle}>Organization Details</Text>
-              <Text style={orgInfoText}>
-                <strong>Name:</strong> {organizationName}
+            {/* Account Info */}
+            <Section style={accountInfoContainer}>
+              <Text style={accountInfoTitle}>Account Details</Text>
+              <Text style={accountInfoText}>
+                <strong>Name:</strong> {accountName}
               </Text>
-              <Text style={orgInfoText}>
+              <Text style={accountInfoText}>
                 <strong>Invited by:</strong> {inviter}
               </Text>
             </Section>
@@ -179,7 +179,7 @@ const text = {
   margin: '0 0 16px 0',
 }
 
-const orgInfoContainer = {
+const accountInfoContainer = {
   backgroundColor: '#f8fafc',
   border: '1px solid #e2e8f0',
   borderRadius: '8px',
@@ -187,14 +187,14 @@ const orgInfoContainer = {
   margin: '24px 0',
 }
 
-const orgInfoTitle = {
+const accountInfoTitle = {
   color: '#1f2937',
   fontSize: '18px',
   fontWeight: '600',
   margin: '0 0 16px 0',
 }
 
-const orgInfoText = {
+const accountInfoText = {
   color: '#4b5563',
   fontSize: '14px',
   lineHeight: '20px',

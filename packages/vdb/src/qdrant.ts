@@ -82,7 +82,7 @@ export class QdrantVector extends BaseVector {
 
     if (type === QdrantVector.KNOWLEDGE_PREFIX) {
       await this.client.createPayloadIndex(collectionName, {
-        field_name: 'metadata.workspaceId',
+        field_name: 'metadata.accountId',
         field_schema: {
           type: 'uuid',
           is_tenant: true,
@@ -275,7 +275,7 @@ export class QdrantVector extends BaseVector {
   async searchDocumentsByEmbedding(
     embedding: number[],
     filter?: {
-      workspaceId?: string
+      accountId?: string
       datasetId?: string
       documentId?: string
     },
@@ -284,11 +284,11 @@ export class QdrantVector extends BaseVector {
     await this.init()
 
     const must = []
-    if (filter?.workspaceId) {
+    if (filter?.accountId) {
       must.push({
-        key: 'metadata.workspaceId',
+        key: 'metadata.accountId',
         match: {
-          value: filter.workspaceId,
+          value: filter.accountId,
         },
       })
     }
@@ -353,7 +353,7 @@ export class QdrantVector extends BaseVector {
   async searchDocumentsByFulltext(
     query: string,
     filter?: {
-      workspaceId?: string
+      accountId?: string
       datasetId?: string
       documentId?: string
     },
@@ -369,11 +369,11 @@ export class QdrantVector extends BaseVector {
         },
       },
     ]
-    if (filter?.workspaceId) {
+    if (filter?.accountId) {
       must.push({
-        key: 'metadata.workspaceId',
+        key: 'metadata.accountId',
         match: {
-          value: filter.workspaceId,
+          value: filter.accountId,
         },
       })
     }
@@ -437,15 +437,15 @@ export class QdrantVector extends BaseVector {
   }
 
   async deleteDocumentsByFilter(filter: {
-    workspaceId?: string
+    accountId?: string
     datasetId?: string
     documentId?: string
   }) {
     await this.init()
 
     const match: Record<string, unknown> = {}
-    if (filter.workspaceId) {
-      match['metadata.workspaceId'] = filter.workspaceId
+    if (filter.accountId) {
+      match['metadata.accountId'] = filter.accountId
     }
     if (filter.datasetId) {
       match['metadata.datasetId'] = filter.datasetId

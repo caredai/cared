@@ -1,13 +1,13 @@
 import assert from 'assert'
 
 import type { ModelFullId, ProviderId, ProviderKey as ProviderKeyContent } from '@cared/providers'
-import { and, desc, eq } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { and, desc, eq, isNull } from '@cared/db'
+import { db } from '@cared/db/client'
 import { ProviderKey } from '@cared/db/schema'
 import { getKV, sha1 } from '@cared/kv'
 import { splitModelFullId } from '@cared/providers'
 
-import type { AuthObject } from '../../auth'
+import type { AuthContext } from '../../auth'
 import type { WaitUntil } from '../../utils'
 import type { DeleteKeysByPrefixResult } from './lua-script'
 import { decryptProviderKey } from './encryption'
@@ -34,10 +34,10 @@ const kv = getKV('providerKey', 'upstash')
 
 export class ProviderKeyManager {
   constructor(
-    private auth: AuthObject,
+    private auth: AuthContext,
     private modelFullId: ModelFullId,
     private systemKeys: ProviderKeyState[],
-    private userOrOrgKeys: ProviderKeyState[],
+    private accountKeys: ProviderKeyState[],
     private onlyByok: boolean,
     private waitUntil: WaitUntil,
   ) {}
@@ -48,34 +48,34 @@ export class ProviderKeyManager {
     onlyByok,
     waitUntil,
   }: {
-    auth: AuthObject
+    auth: AuthContext
     modelId: ModelFullId
     onlyByok: boolean
     waitUntil: WaitUntil
   }) {
     const { providerId } = splitModelFullId(modelFullId)
 
-    const [systemKeysStateStr, userOrOrgKeysStateStr] = await Promise.all([
+    const [systemKeysStateStr, accountKeysStateStr] = await Promise.all([
       // eslint-disable-next-line @typescript-eslint/await-thenable
       !onlyByok ? kv.redis.json.get(kv.key(systemKeysStateKey(modelFullId))) : null,
-      kv.redis.json.get(kv.key(userOrOrgKeysStateKey(auth, modelFullId))),
+      kv.redis.json.get(kv.key(accountKeysStateKey(auth, modelFullId))),
     ])
 
     let systemKeysState: ProviderKeyState[] | null =
       systemKeysStateStr && JSON.parse(systemKeysStateStr as any).states
-    let userOrOrgKeysState: ProviderKeyState[] | null =
-      userOrOrgKeysStateStr && JSON.parse(userOrOrgKeysStateStr as any).states
+    let accountKeysState: ProviderKeyState[] | null =
+      accountKeysStateStr && JSON.parse(accountKeysStateStr as any).states
     let shouldCacheSystemKeys = false
-    let shouldCacheUserOrOrgKeys = false
+    let shouldCacheAccountKeys = false
 
     if (!systemKeysState) {
       shouldCacheSystemKeys = true
 
       if (!onlyByok) {
-        const keys = await getDb()
+        const keys = await db
           .select()
           .from(ProviderKey)
-          .where(and(eq(ProviderKey.providerId, providerId), eq(ProviderKey.isSystem, true)))
+          .where(and(eq(ProviderKey.providerId, providerId), isNull(ProviderKey.accountId)))
           .orderBy(desc(ProviderKey.id))
 
         systemKeysState = keys.map((k) => ({
@@ -90,23 +90,18 @@ export class ProviderKeyManager {
       }
     }
 
-    if (!userOrOrgKeysState) {
-      shouldCacheUserOrOrgKeys = true
+    if (!accountKeysState) {
+      shouldCacheAccountKeys = true
 
-      const keys = await getDb()
+      const keys = await db
         .select()
         .from(ProviderKey)
         .where(
-          and(
-            eq(ProviderKey.providerId, providerId),
-            auth.type === 'user' || auth.type === 'appUser' || auth.scope === 'user'
-              ? eq(ProviderKey.userId, auth.userId)
-              : eq(ProviderKey.organizationId, auth.organizationId),
-          ),
+          and(eq(ProviderKey.providerId, providerId), eq(ProviderKey.accountId, auth.accountId)),
         )
         .orderBy(desc(ProviderKey.id))
 
-      userOrOrgKeysState = keys.map((k) => ({
+      accountKeysState = keys.map((k) => ({
         ...defaultProviderKeyState(),
         id: k.id,
         byok: true,
@@ -125,7 +120,7 @@ export class ProviderKeyManager {
         })),
       ),
       await Promise.all(
-        userOrOrgKeysState.map(async (k) => ({
+        accountKeysState.map(async (k) => ({
           ...k,
           key: await decryptProviderKey(k.key, true),
         })),
@@ -142,9 +137,9 @@ export class ProviderKeyManager {
         })
       })
     }
-    if (shouldCacheUserOrOrgKeys) {
-      userOrOrgKeysState.forEach((key) => {
-        manager.userOrOrgKeysChanges.push({
+    if (shouldCacheAccountKeys) {
+      accountKeysState.forEach((key) => {
+        manager.accountKeysChanges.push({
           type: ProviderKeyChangeType.Add,
           ...key,
         })
@@ -157,16 +152,16 @@ export class ProviderKeyManager {
 
   selectKeys() {
     const availableSystemKeys = this.systemKeys.filter((k) => !k.disabled && !k.rateLimited)
-    const availableUserOrOrgKeys = this.userOrOrgKeys.filter((k) => !k.disabled && !k.rateLimited)
+    const availableAccountKeys = this.accountKeys.filter((k) => !k.disabled && !k.rateLimited)
 
     if (!this.onlyByok) {
-      // Combine system and user/org keys, prioritizing user/org keys
+      // Combine system and account keys, prioritizing account keys
       return [
-        ...this.selectKeys_(availableUserOrOrgKeys),
+        ...this.selectKeys_(availableAccountKeys),
         ...this.selectKeys_(availableSystemKeys),
       ]
     } else {
-      return this.selectKeys_(availableUserOrOrgKeys)
+      return this.selectKeys_(availableAccountKeys)
     }
   }
 
@@ -259,7 +254,7 @@ export class ProviderKeyManager {
   }
 
   private systemKeysChanges: ProviderKeyChange[] = []
-  private userOrOrgKeysChanges: ProviderKeyChange[] = []
+  private accountKeysChanges: ProviderKeyChange[] = []
 
   updateState(
     key: ProviderKeyState,
@@ -304,7 +299,7 @@ export class ProviderKeyManager {
       latency,
     }
 
-    const changes = !key.byok ? this.systemKeysChanges : this.userOrOrgKeysChanges
+    const changes = !key.byok ? this.systemKeysChanges : this.accountKeysChanges
 
     if (
       update.key ||
@@ -323,9 +318,9 @@ export class ProviderKeyManager {
     this.waitUntil(async () => {
       // Clear changes after saving
       const systemKeysChanges = this.systemKeysChanges
-      const userOrOrgKeysChanges = this.userOrOrgKeysChanges
+      const accountKeysChanges = this.accountKeysChanges
       this.systemKeysChanges = []
-      this.userOrOrgKeysChanges = []
+      this.accountKeysChanges = []
 
       if (this.savingPromise) {
         try {
@@ -356,14 +351,14 @@ export class ProviderKeyManager {
               ],
             ),
           // eslint-disable-next-line @typescript-eslint/await-thenable
-          userOrOrgKeysChanges.length > 0 &&
+          accountKeysChanges.length > 0 &&
             kv.eval(
               scripts.providerKeysStates,
-              [userOrOrgKeysStateKey(this.auth, this.modelFullId)],
+              [accountKeysStateKey(this.auth, this.modelFullId)],
               [
                 JSON.stringify({
                   ...request,
-                  changes: userOrOrgKeysChanges,
+                  changes: accountKeysChanges,
                 }),
               ],
             ),
@@ -377,30 +372,13 @@ export class ProviderKeyManager {
   }
 }
 
-export async function deleteProviderKeysStateCache({
-  providerId,
-  isSystem,
-  userId,
-  organizationId,
-}: {
-  providerId: ProviderId
-  isSystem?: boolean | null
-  userId?: string | null
-  organizationId?: string | null
-}) {
+export async function deleteProviderKeysStateCache(providerId: ProviderId, accountId?: string) {
   return JSON.parse(
     await kv.eval(
       scripts.deleteKeysByPrefix,
       [],
       [
-        kv.key(
-          providerKeyStateKeyPattern({
-            isSystem,
-            userId,
-            organizationId,
-            providerId,
-          }),
-        ),
+        kv.key(providerKeyStateKeyPattern(providerId, accountId)),
       ],
     ),
   ) as DeleteKeysByPrefixResult
@@ -524,59 +502,18 @@ export interface ProviderKeyRemove {
 }
 
 function systemKeysStateKey(modelId: ModelFullId) {
-  return providerKeyStateKey({ isSystem: true, modelId })
+  return `system:${modelId}:state`
 }
 
-function userOrOrgKeysStateKey(auth: AuthObject, modelId: ModelFullId) {
-  return providerKeyStateKey({
-    userId:
-      auth.type === 'user' || auth.type === 'appUser' || auth.scope === 'user'
-        ? auth.userId
-        : undefined,
-    organizationId: !(auth.type === 'user' || auth.type === 'appUser' || auth.scope === 'user')
-      ? auth.organizationId
-      : undefined,
-    modelId,
-  })
+function accountKeysStateKey(auth: AuthContext, modelId: ModelFullId) {
+  return `${auth.accountId}:${modelId}:state`
 }
 
-function providerKeyStateKey({
-  isSystem,
-  userId,
-  organizationId,
-  modelId,
-}: {
-  isSystem?: boolean
-  userId?: string | null
-  organizationId?: string | null
-  modelId: ModelFullId
-}) {
-  if (isSystem) {
-    return `system:${modelId}:state`
-  } else if (userId) {
-    return `${userId}:${modelId}:state`
-  } else {
-    return `${organizationId!}:${modelId}:state`
-  }
-}
-
-function providerKeyStateKeyPattern({
-  isSystem,
-  userId,
-  organizationId,
-  providerId,
-}: {
-  isSystem?: boolean | null
-  userId?: string | null
-  organizationId?: string | null
-  providerId: ProviderId
-}) {
-  if (isSystem) {
+function providerKeyStateKeyPattern(providerId: ProviderId, accountId?: string) {
+  if (!accountId) {
     return `system:${providerId}*`
-  } else if (userId) {
-    return `${userId}:${providerId}*`
   } else {
-    return `${organizationId!}:${providerId}*`
+    return `${accountId}:${providerId}*`
   }
 }
 

@@ -6,15 +6,16 @@ import type { ProviderId, ProviderKey } from '@cared/providers'
 
 import { orpc } from '@/lib/orpc'
 
-export function useProviderKeys(input?: { isSystem?: boolean; organizationId?: string }) {
+export type ModelSource = 'custom' | 'system'
+
+export function useProviderKeys({ source }: { source: ModelSource }) {
   const {
     data: { providerKeys },
     refetch: refetchProviderKeys,
   } = useSuspenseQuery(
     orpc.providerKey.list.queryOptions({
       input: {
-        isSystem: input?.isSystem,
-        organizationId: input?.organizationId,
+        source,
       },
     }),
   )
@@ -26,24 +27,15 @@ export function useProviderKeys(input?: { isSystem?: boolean; organizationId?: s
 }
 
 export function useProviderKeysByProvider({
-  isSystem,
-  organizationId,
+  source,
   providerId,
 }: {
-  isSystem?: boolean
-  organizationId?: string
-  providerId?: ProviderId
+  source: ModelSource
+  providerId: ProviderId
 }) {
-  const { providerKeys, refetchProviderKeys } = useProviderKeys({
-    isSystem,
-    organizationId,
-  })
+  const { providerKeys, refetchProviderKeys } = useProviderKeys({ source })
 
   const filteredProviderKeys = useMemo(() => {
-    if (!providerId) {
-      return []
-    }
-
     return providerKeys.filter((key) => key.providerId === providerId)
   }, [providerId, providerKeys])
 
@@ -53,13 +45,7 @@ export function useProviderKeysByProvider({
   }
 }
 
-export function useCreateProviderKey({
-  isSystem,
-  organizationId,
-}: {
-  isSystem?: boolean
-  organizationId?: string
-}) {
+export function useCreateProviderKey({ source }: { source: ModelSource }) {
   const queryClient = useQueryClient()
 
   const createMutation = useMutation(
@@ -68,8 +54,7 @@ export function useCreateProviderKey({
         void queryClient.invalidateQueries({
           queryKey: orpc.providerKey.list.queryOptions({
             input: {
-              isSystem: variables.isSystem,
-              organizationId: variables.organizationId,
+              source: variables.source,
             },
           }).queryKey,
         })
@@ -84,13 +69,12 @@ export function useCreateProviderKey({
   return useCallback(
     async (input: { key: ProviderKey; disabled?: boolean }) => {
       return await createMutation.mutateAsync({
-        isSystem,
-        organizationId,
+        source,
         ...input,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [source],
   )
 }
 
@@ -99,12 +83,19 @@ export function useUpdateProviderKey() {
 
   const updateMutation = useMutation(
     orpc.providerKey.update.mutationOptions({
-      onSuccess: ({ providerKey }) => {
+      onSuccess: () => {
+        // Invalidate both custom and system queries as we don't know which one was updated
         void queryClient.invalidateQueries({
           queryKey: orpc.providerKey.list.queryOptions({
             input: {
-              isSystem: providerKey.isSystem ?? undefined,
-              organizationId: providerKey.organizationId ?? undefined,
+              source: 'custom',
+            },
+          }).queryKey,
+        })
+        void queryClient.invalidateQueries({
+          queryKey: orpc.providerKey.list.queryOptions({
+            input: {
+              source: 'system',
             },
           }).queryKey,
         })
@@ -130,12 +121,19 @@ export function useDeleteProviderKey() {
 
   const deleteMutation = useMutation(
     orpc.providerKey.delete.mutationOptions({
-      onSuccess: ({ providerKey }) => {
+      onSuccess: () => {
+        // Invalidate both custom and system queries as we don't know which one was deleted
         void queryClient.invalidateQueries({
           queryKey: orpc.providerKey.list.queryOptions({
             input: {
-              isSystem: providerKey.isSystem ?? undefined,
-              organizationId: providerKey.organizationId ?? undefined,
+              source: 'custom',
+            },
+          }).queryKey,
+        })
+        void queryClient.invalidateQueries({
+          queryKey: orpc.providerKey.list.queryOptions({
+            input: {
+              source: 'system',
             },
           }).queryKey,
         })

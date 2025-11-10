@@ -1,5 +1,3 @@
-import { z } from 'zod/v4'
-
 import type { SQL } from '@cared/db'
 import type {
   BaseProviderInfo,
@@ -8,8 +6,8 @@ import type {
   ModelType,
   ProviderId,
 } from '@cared/providers'
-import { eq, inArray, sql } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { eq, inArray, isNull, sql } from '@cared/db'
+import { db } from '@cared/db/client'
 import { ProviderModels } from '@cared/db/schema'
 import log from '@cared/log'
 import {
@@ -19,7 +17,8 @@ import {
   splitModelFullId,
 } from '@cared/providers'
 
-import type { AuthObject } from '../auth'
+import type { AuthContext } from '../auth'
+import type { ModelSource } from '../types'
 import { Cache } from './cache'
 
 export type ReturnedProviderInfo = BaseProviderInfo & ReturnedModelInfos
@@ -30,27 +29,13 @@ export type ReturnedModelInfos = {
     : never
 }
 
-export const sourceSchema = z.enum(['system', 'custom'])
-export type Source = z.infer<typeof sourceSchema>
-
 const cache = new Cache<ProviderModels[]>('providerModels', async (key) => {
-  const type = key.split('_', 1)[0]
   let value
-  switch (type) {
-    case 'system':
-      value = await getDb().select().from(ProviderModels).where(eq(ProviderModels.isSystem, true))
-      break
-    case 'org':
-      value = await getDb()
-        .select()
-        .from(ProviderModels)
-        .where(eq(ProviderModels.organizationId, key))
-      break
-    case 'user':
-      value = await getDb().select().from(ProviderModels).where(eq(ProviderModels.userId, key))
-      break
-    default:
-      throw new Error(`Unknown type '${type}'`)
+  if (key === 'system') {
+    // When accountId is null, it's system-level
+    value = await db.select().from(ProviderModels).where(isNull(ProviderModels.accountId))
+  } else {
+    value = await db.select().from(ProviderModels).where(eq(ProviderModels.accountId, key))
   }
   return {
     value,
@@ -59,36 +44,35 @@ const cache = new Cache<ProviderModels[]>('providerModels', async (key) => {
 
 export async function invalidateProviderModelsCache(key: string | ProviderModels) {
   if (typeof key !== 'string') {
-    key = key.isSystem ? 'system' : (key.organizationId ?? key.userId!)
+    // When accountId is null, it's system-level
+    key = key.accountId ?? 'system'
   }
   await cache.invalidate(key)
 }
 
-export async function getProviderModelInfos(
-  source?: Source,
-  organizationId?: string,
-  userId?: string,
-) {
+export async function getProviderModelInfos(source: ModelSource, accountId: string) {
   const baseProviderInfos = getBaseProviderInfos()
 
-  // Get provider models from database (system + user/organization)
+  // Get provider models from database (system + account)
   const providerModelsList =
     source === 'system'
-      ? await cache.getOrDefault('system', [])
+      ? await cache.getOrDefault('system', []) // system
       : source === 'custom'
-        ? await cache.getOrDefault(organizationId ?? userId!, [])
+        ? await cache.getOrDefault(accountId, []) // account
         : (
             await Promise.all([
+              // system + account
               cache.getOrDefault('system', []),
-              cache.getOrDefault(organizationId ?? userId!, []),
+              cache.getOrDefault(accountId, []),
             ])
           ).flat()
 
-  // Separate system and user/organization models
-  const systemProviderModels = new Map<string, ProviderModels>()
-  const userOrgProviderModels = new Map<string, ProviderModels>()
+  // Separate system and account models
+  const systemProviderModelsMap = new Map<string, ProviderModels>()
+  const accountProviderModelsMap = new Map<string, ProviderModels>()
   for (const providerModels of providerModelsList) {
-    const map = providerModels.isSystem ? systemProviderModels : userOrgProviderModels
+    // When accountId is null, it's system-level
+    const map = !providerModels.accountId ? systemProviderModelsMap : accountProviderModelsMap
     if (map.has(providerModels.providerId)) {
       log.error('Duplicate provider models found', {
         providerModels,
@@ -106,19 +90,19 @@ export async function getProviderModelInfos(
   updateSqlChunks.push(sql`(case`)
 
   for (const providerInfo of baseProviderInfos) {
-    const system = systemProviderModels.get(providerInfo.id)
-    const userOrg = userOrgProviderModels.get(providerInfo.id)
-    const { shouldUpdateUserOrg, ...models } = mergeModels(
-      system?.models,
-      userOrg?.models, // may be updated in place if deduplicated
+    const systemProviderModels = systemProviderModelsMap.get(providerInfo.id)
+    const accountProviderModels = accountProviderModelsMap.get(providerInfo.id)
+    const { shouldUpdateAccountModels, ...models } = mergeModels(
+      systemProviderModels?.models,
+      accountProviderModels?.models, // may be updated in place if deduplicated
     )
     providers.push({
       ...providerInfo,
       ...models,
     })
 
-    if (shouldUpdateUserOrg && userOrg) {
-      const models = userOrg.models
+    if (shouldUpdateAccountModels && accountProviderModels) {
+      const models = accountProviderModels.models
       if (
         models.languageModels?.length ||
         models.imageModels?.length ||
@@ -126,11 +110,13 @@ export async function getProviderModelInfos(
         models.transcriptionModels?.length ||
         models.textEmbeddingModels?.length
       ) {
-        updateIds.push(userOrg.id)
-        updateSqlChunks.push(sql`when ${ProviderModels.id} = ${userOrg.id} then ${userOrg.models}`)
+        updateIds.push(accountProviderModels.id)
+        updateSqlChunks.push(
+          sql`when ${ProviderModels.id} = ${accountProviderModels.id} then ${accountProviderModels.models}`,
+        )
       } else {
         // If all model arrays are empty, delete the record
-        deleteIds.push(userOrg.id)
+        deleteIds.push(accountProviderModels.id)
       }
     }
   }
@@ -139,25 +125,25 @@ export async function getProviderModelInfos(
 
   if (updateIds.length) {
     const finalSql: SQL = sql.join(updateSqlChunks, sql.raw(' '))
-    await getDb()
+    await db
       .update(ProviderModels)
       .set({ models: finalSql })
       .where(inArray(ProviderModels.id, updateIds))
   }
 
   if (deleteIds.length) {
-    await getDb().delete(ProviderModels).where(inArray(ProviderModels.id, deleteIds))
+    await db.delete(ProviderModels).where(inArray(ProviderModels.id, deleteIds))
   }
 
   if (updateIds.length || deleteIds.length) {
     if (source === 'system') {
       await invalidateProviderModelsCache('system')
     } else if (source === 'custom') {
-      await invalidateProviderModelsCache(organizationId ?? userId!)
+      await invalidateProviderModelsCache(accountId)
     } else {
       await Promise.all([
         invalidateProviderModelsCache('system'),
-        invalidateProviderModelsCache(organizationId ?? userId!),
+        invalidateProviderModelsCache(accountId),
       ])
     }
   }
@@ -165,21 +151,24 @@ export async function getProviderModelInfos(
   return providers
 }
 
-// Merge system and user/organization models, ensuring no duplicates and system models override user models
+// Merge system and account models, ensuring no duplicates and system models override account models
 function mergeModels(
-  system?: ModelInfos,
-  userOrg?: ModelInfos,
+  systemModelInfos?: ModelInfos,
+  accountModelInfos?: ModelInfos,
 ): ReturnedModelInfos & {
-  shouldUpdateUserOrg: boolean
+  shouldUpdateAccountModels: boolean
 } {
-  let shouldUpdateUserOrg = false
+  let shouldUpdateAccountModels = false
 
-  function deduplicate<T extends { id: string; isSystem?: boolean }[]>(system?: T, userOrg?: T) {
-    const newUserOrg = [] as unknown as T
+  function deduplicate<T extends { id: string; isSystem?: boolean }[]>(
+    systemModels?: T,
+    accountModels?: T,
+  ) {
+    const newAccountModels = [] as unknown as T
     const seen = new Set<string>()
-    const sep = system?.length ?? 0
-    const deduplicated = [...(system ?? []), ...(userOrg ?? [])]
-      // ensure system models override user models
+    const sep = systemModels?.length ?? 0
+    const deduplicated = [...(systemModels ?? []), ...(accountModels ?? [])]
+      // ensure system models override account models
       .filter((item, index) => {
         if (seen.has(item.id)) {
           return false
@@ -188,47 +177,49 @@ function mergeModels(
           // Mark it as system if it's from system models
           item.isSystem = true
         } else {
-          // None-duplicate userOrg models
-          newUserOrg.push(item)
+          // None-duplicate account models
+          newAccountModels.push(item)
         }
         seen.add(item.id)
         return true
       })
 
-    // Update userOrg in place if it has fewer models than before
-    if (newUserOrg.length < (userOrg?.length ?? 0)) {
-      shouldUpdateUserOrg = true
-      userOrg?.splice(0, userOrg.length, ...newUserOrg)
+    // Update `accountModels` in place if it has fewer models than before
+    if (newAccountModels.length < (accountModels?.length ?? 0)) {
+      shouldUpdateAccountModels = true
+      accountModels?.splice(0, accountModels.length, ...newAccountModels)
     }
 
     return deduplicated
   }
 
   return {
-    languageModels: deduplicate(system?.languageModels, userOrg?.languageModels),
-    imageModels: deduplicate(system?.imageModels, userOrg?.imageModels),
-    speechModels: deduplicate(system?.speechModels, userOrg?.speechModels),
-    transcriptionModels: deduplicate(system?.transcriptionModels, userOrg?.transcriptionModels),
-    textEmbeddingModels: deduplicate(system?.textEmbeddingModels, userOrg?.textEmbeddingModels),
-    shouldUpdateUserOrg,
+    languageModels: deduplicate(
+      systemModelInfos?.languageModels,
+      accountModelInfos?.languageModels,
+    ),
+    imageModels: deduplicate(systemModelInfos?.imageModels, accountModelInfos?.imageModels),
+    speechModels: deduplicate(systemModelInfos?.speechModels, accountModelInfos?.speechModels),
+    transcriptionModels: deduplicate(
+      systemModelInfos?.transcriptionModels,
+      accountModelInfos?.transcriptionModels,
+    ),
+    textEmbeddingModels: deduplicate(
+      systemModelInfos?.textEmbeddingModels,
+      accountModelInfos?.textEmbeddingModels,
+    ),
+    shouldUpdateAccountModels,
   }
 }
 
 export async function findProvidersByModel<T extends ModelType>(
-  auth: AuthObject,
+  auth: AuthContext,
   queryModelId: string,
   modelType: T,
 ) {
-  let userId, organizationId
-  if (auth.type === 'user' || auth.type === 'appUser' || auth.scope === 'user') {
-    userId = auth.userId
-  } else {
-    organizationId = auth.organizationId
-  }
-
   const providers = new Map(getExtendedBaseProviderInfos().map((info) => [info.id, info]))
 
-  const providerModelsArray = await getProviderModelInfos(undefined, organizationId, userId)
+  const providerModelsArray = await getProviderModelInfos('effective', auth.accountId)
 
   const ids = splitModelFullId(queryModelId)
   let queryProviderId: ProviderId | undefined

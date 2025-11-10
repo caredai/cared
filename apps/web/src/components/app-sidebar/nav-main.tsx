@@ -1,6 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
 import { Link, useLocation } from '@tanstack/react-router'
 import { ChevronRight } from 'lucide-react'
 
@@ -49,13 +48,8 @@ export function NavMain({
 }) {
   const location = useLocation()
   const pathname = location.pathname
-  const [activeUrl, setActiveUrl] = useState<string>()
 
   const isItemActive = (url: string) => {
-    // If we have an activeUrl from click, use that
-    if (activeUrl?.startsWith(url)) return true
-
-    // Otherwise fall back to pathname matching
     const baseRouteKeys = baseUrl.split('/').filter(Boolean)
     const routeKey = pathname.split('/').filter(Boolean).at(baseRouteKeys.length)
     const [urlKey] = url.split('/').filter(Boolean)
@@ -89,8 +83,6 @@ export function NavMain({
                   tooltip={item.title}
                   isActive={active}
                   onClick={() => {
-                    // Set active state immediately on click
-                    setActiveUrl(item.url)
                     setOpenMobile(false)
                   }}
                 >
@@ -111,15 +103,13 @@ export function NavMain({
                       <SidebarMenuSub className="mt-1">
                         {item.items.map((subItem) => {
                           const url = `${item.url}${subItem.url}`
-                          const subActive = activeUrl === url || pathname.endsWith(url)
+                          const subActive = pathname.endsWith(url)
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={subActive}
                                 onClick={() => {
-                                  // Set active state immediately on click
-                                  setActiveUrl(url)
                                   setOpenMobile(false)
                                 }}
                               >

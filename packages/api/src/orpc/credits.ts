@@ -6,11 +6,11 @@ import type { SQL } from '@cared/db'
 import type { OrderStatus } from '@cared/db/schema'
 import { getWebUrl } from '@cared/auth/client'
 import { and, desc, eq, inArray, lt, lte } from '@cared/db'
-import { Credits, CreditsOrder, Member, orderKinds, Organization, User } from '@cared/db/schema'
+import { db } from '@cared/db/client'
+import { Account, Credits, CreditsOrder, Member, orderKinds, User } from '@cared/db/schema'
 import log from '@cared/log'
 
-import type { UserContext } from '../orpc'
-import { OrganizationScope } from '../auth'
+import type { Context } from '../orpc'
 import { getStripe } from '../client/stripe'
 import { cfg } from '../config'
 import { env } from '../env'
@@ -21,23 +21,22 @@ import {
   invalidateCreditsCache,
   triggerAutoRechargePaymentIntent,
 } from '../operation'
-import { userProtectedProcedure } from '../orpc'
+import { protectedProcedure } from '../orpc'
 import { stripIdPrefix } from '../utils'
 
-export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizationId?: string) {
-  return await ctx.db.transaction(async (tx) => {
+/**
+ * Ensure a Stripe customer exists for an account
+ * @param ctx - Context object
+ * @param stripe - Stripe instance
+ * @param accountId - Account ID
+ * @returns Customer ID and credits record
+ */
+export async function ensureCustomer(ctx: Context, stripe: Stripe, accountId: string) {
+  return await db.transaction(async (tx) => {
     let credits = (
-      await tx
-        .select()
-        .from(Credits)
-        .where(
-          organizationId
-            ? eq(Credits.organizationId, organizationId)
-            : eq(Credits.userId, ctx.auth.userId),
-        )
-        .for('update')
-    ) // lock
-      .at(0)
+      await tx.select().from(Credits).where(eq(Credits.accountId, accountId)).for('update')
+    ).at(0)
+
     if (credits?.metadata.customerId) {
       return {
         customerId: credits.metadata.customerId,
@@ -45,65 +44,42 @@ export async function ensureCustomer(ctx: UserContext, stripe: Stripe, organizat
       }
     }
 
-    let customer
+    // Get account and owner information
+    const { account, owner } =
+      (
+        await tx
+          .select({
+            account: Account,
+            owner: User,
+          })
+          .from(Account)
+          .innerJoin(Member, and(eq(Member.accountId, Account.id), eq(Member.role, 'owner')))
+          .innerJoin(User, eq(User.id, Member.userId))
+          .where(eq(Account.id, accountId))
+          .for('update')
+      ).at(0) ?? {}
 
-    if (!organizationId) {
-      const user = (await tx.select().from(User).where(eq(User.id, ctx.auth.userId)).for('update')) // lock
-        .at(0)
-      if (!user) {
-        throw new ORPCError('NOT_FOUND', {
-          message: `User with id ${ctx.auth.userId} not found`,
-        })
-      }
-
-      customer = await stripe.customers.create({
-        name: user.name,
-        email: user.email,
-        metadata: {
-          userId: user.id,
-        },
-      })
-    } else {
-      const { organization, owner } =
-        (
-          await tx
-            .select({
-              organization: Organization,
-              owner: User,
-            })
-            .from(Organization)
-            .innerJoin(
-              Member,
-              and(eq(Member.organizationId, Organization.id), eq(Member.role, 'owner')),
-            )
-            .innerJoin(User, eq(User.id, Member.userId))
-            .where(eq(Organization.id, organizationId))
-            .for('update')
-        ) // lock
-          .at(0) ?? {}
-      if (!organization || !owner) {
-        throw new ORPCError('NOT_FOUND', {
-          message: `Organization with id ${organizationId} not found`,
-        })
-      }
-
-      customer = await stripe.customers.create({
-        name: organization.name,
-        email: owner.email,
-        metadata: {
-          organizationId: organization.id,
-        },
+    if (!account || !owner) {
+      throw new ORPCError('NOT_FOUND', {
+        message: `Account with id ${accountId} not found`,
       })
     }
+
+    const customer = await stripe.customers.create({
+      // TODO: update name and email upon account change
+      name: account.name,
+      email: owner.email,
+      metadata: {
+        accountId: account.id,
+      },
+    })
 
     if (!credits) {
       credits = (
         await tx
           .insert(Credits)
           .values({
-            type: organizationId ? 'organization' : 'user',
-            userId: organizationId ? undefined : ctx.auth.userId,
-            organizationId: organizationId,
+            accountId,
             credits: '0',
             metadata: {
               customerId: customer.id,
@@ -163,50 +139,43 @@ async function getRechargePrice(stripe: Stripe) {
 }
 
 export const creditsRouter = {
-  getCredits: userProtectedProcedure
+  /**
+   * Get credits information for the account
+   * @returns Credits record
+   */
+  getCredits: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/credits',
       tags: ['credits'],
-      summary: 'Get credits information for current user or organization',
+      summary: 'Get credits information for the account',
     })
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .handler(async ({ context, input }) => {
-      if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions()
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions()
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
-      const { credits } = await ensureCustomer(context, stripe, input?.organizationId)
+      const { credits } = await ensureCustomer(context, stripe, accountId)
 
       return {
         credits,
       }
     }),
 
-  listOrders: userProtectedProcedure
+  /**
+   * List credits orders for the account
+   * @param input - Query parameters including orderKinds, statuses, limit, and cursor
+   * @returns List of orders with pagination
+   */
+  listOrders: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/credits/orders',
       tags: ['credits'],
-      summary: 'List credits orders for current user or organization',
+      summary: 'List credits orders for the account',
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
         orderKinds: z.array(z.enum(orderKinds)).optional(),
         statuses: z.array(z.string()).optional(),
         limit: z.number().min(1).max(100).default(50),
@@ -214,22 +183,10 @@ export const creditsRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions()
-      }
+      await context.auth.requirePermissions()
+      const accountId = context.auth.accountId
 
-      const conditions: SQL<unknown>[] = [
-        input.organizationId
-          ? eq(CreditsOrder.organizationId, input.organizationId)
-          : eq(CreditsOrder.userId, context.auth.userId),
-      ]
+      const conditions: SQL<unknown>[] = [eq(CreditsOrder.accountId, accountId)]
       if (input.orderKinds) {
         conditions.push(inArray(CreditsOrder.kind, input.orderKinds))
       }
@@ -242,7 +199,7 @@ export const creditsRouter = {
       const query = and(...conditions)
 
       while (true) {
-        const orders = await context.db
+        const orders = await db
           .select()
           .from(CreditsOrder)
           .where(query)
@@ -264,13 +221,11 @@ export const creditsRouter = {
               order.updatedAt <= oneWeekAgo,
           )
         ) {
-          await context.db
+          await db
             .delete(CreditsOrder)
             .where(
               and(
-                input.organizationId
-                  ? eq(CreditsOrder.organizationId, input.organizationId)
-                  : eq(CreditsOrder.userId, context.auth.userId),
+                eq(CreditsOrder.accountId, accountId),
                 inArray(CreditsOrder.status, ['expired', 'void', 'deleted']),
                 lte(CreditsOrder.updatedAt, oneWeekAgo),
               ),
@@ -290,7 +245,12 @@ export const creditsRouter = {
       }
     }),
 
-  cancelOrder: userProtectedProcedure
+  /**
+   * Cancel a credits order
+   * @param input - Order ID
+   * @returns Success status
+   */
+  cancelOrder: protectedProcedure
     .route({
       method: 'DELETE',
       path: '/v1/credits/orders/{orderId}',
@@ -300,25 +260,21 @@ export const creditsRouter = {
     .input(
       z.object({
         orderId: z.string(),
-        organizationId: z.string().optional(),
       }),
     )
     .handler(async ({ context, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['delete'] })
-      }
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
-      await cancelCreditsOrder(input.orderId, context.auth.userId, input.organizationId, true)
+      await cancelCreditsOrder(input.orderId, accountId, true)
     }),
 
-  createOnetimeCheckout: userProtectedProcedure
+  /**
+   * Create a one-time checkout session for credits purchase
+   * @param input - Credits amount
+   * @returns Checkout session client secret and ID
+   */
+  createOnetimeCheckout: protectedProcedure
     .route({
       method: 'POST',
       path: '/v1/credits/checkout',
@@ -327,41 +283,27 @@ export const creditsRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
         credits: z.int().min(5).max(2500),
       }),
     )
     .handler(async ({ context, input }) => {
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['create'] })
-      }
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
 
       // Cancel any existing onetime recharge orders before creating a new one
-      const cancelled = await cancelCreditsOrdersByKind(
-        'stripe-payment',
-        context.auth.userId,
-        input.organizationId,
-        false,
-      )
+      const cancelled = await cancelCreditsOrdersByKind('stripe-payment', accountId, false)
       if (cancelled === false) {
         throw new ORPCError('BAD_REQUEST', {
           message: 'Cannot cancel existing onetime recharge order',
         })
       }
 
-      const { customerId, credits } = await ensureCustomer(context, stripe, input.organizationId)
+      const { customerId, credits } = await ensureCustomer(context, stripe, accountId)
 
       const returnUrl =
-        getCreditsBaseUrl(input.organizationId) + `?onetimeCheckoutSessionId={CHECKOUT_SESSION_ID}`
+        getCreditsBaseUrl(accountId) + `?onetimeCheckoutSessionId={CHECKOUT_SESSION_ID}`
 
       const price = await getRechargePrice(stripe)
 
@@ -395,11 +337,9 @@ export const creditsRouter = {
       })
 
       try {
-        await context.db.transaction(async (tx) => {
+        await db.transaction(async (tx) => {
           await tx.insert(CreditsOrder).values({
-            type: input.organizationId ? 'organization' : 'user',
-            userId: input.organizationId ? undefined : context.auth.userId,
-            organizationId: input.organizationId,
+            accountId,
             kind: 'stripe-payment',
             status: session.status!,
             objectId: session.id,
@@ -441,35 +381,24 @@ export const creditsRouter = {
       }
     }),
 
-  listSubscriptions: userProtectedProcedure
+  /**
+   * List Stripe subscriptions for the account
+   * @returns List of subscriptions
+   */
+  listSubscriptions: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/credits/subscriptions',
       tags: ['credits'],
-      summary: 'List Stripe subscriptions for current user or organization',
+      summary: 'List Stripe subscriptions for the account',
     })
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .handler(async ({ context, input }) => {
-      if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions()
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions()
+      const accountId = context.auth.accountId
 
       const stripe = getStripe()
 
-      const { customerId } = await ensureCustomer(context, stripe, input?.organizationId)
+      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const result = await stripe.subscriptions.list({
         customer: customerId,
@@ -482,65 +411,41 @@ export const creditsRouter = {
       }
     }),
 
-  createAutoRechargeInvoice: userProtectedProcedure
+  /**
+   * Create an auto-recharge invoice for credits
+   * @returns Success status
+   */
+  createAutoRechargeInvoice: protectedProcedure
     .route({
       method: 'POST',
       path: '/v1/credits/auto-recharge/invoice',
       tags: ['credits'],
       summary: 'Create an auto-recharge invoice for credits',
     })
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .handler(async ({ context, input }) => {
-      if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['create'] })
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
-      await createAutoRechargeInvoice(context, input?.organizationId, true)
+      await createAutoRechargeInvoice(accountId, true)
     }),
 
-  createAutoRechargePayment: userProtectedProcedure
+  /**
+   * Create an auto-recharge payment intent for credits
+   * @returns Success status
+   */
+  createAutoRechargePayment: protectedProcedure
     .route({
       method: 'POST',
       path: '/v1/credits/auto-recharge/payment',
       tags: ['credits'],
       summary: 'Create an auto-recharge payment intent for credits',
     })
-    .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .handler(async ({ context, input }) => {
-      if (input?.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['create'] })
-      }
+    .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
-      const credits = await context.db.query.Credits.findFirst({
-        where: input?.organizationId
-          ? eq(Credits.organizationId, input.organizationId)
-          : eq(Credits.userId, context.auth.userId),
+      const credits = await db.query.Credits.findFirst({
+        where: eq(Credits.accountId, accountId),
       })
       if (!credits) {
         throw new ORPCError('NOT_FOUND', {
@@ -551,7 +456,12 @@ export const creditsRouter = {
       await triggerAutoRechargePaymentIntent(credits, true)
     }),
 
-  updateAutoRechargeSettings: userProtectedProcedure
+  /**
+   * Update auto-recharge settings for credits
+   * @param input - Settings including enabled flag, threshold, and amount
+   * @returns Success status
+   */
+  updateAutoRechargeSettings: protectedProcedure
     .route({
       method: 'PUT',
       path: '/v1/credits/auto-recharge/settings',
@@ -561,7 +471,6 @@ export const creditsRouter = {
     .input(
       z
         .object({
-          organizationId: z.string().optional(),
           enabled: z.boolean().optional(),
           threshold: z.int().min(5).max(2500).optional(),
           amount: z.int().min(5).max(2500).optional(),
@@ -581,21 +490,12 @@ export const creditsRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      // Permission check: select permission based on operation type
-      if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          {
-            headers: context.headers,
-            db: context.db,
-          },
-          input.organizationId,
-        )
-        await scope.checkPermissions({ credits: ['update'] })
-      }
+      await context.auth.requirePermissions({ credits: ['write'] })
+      const accountId = context.auth.accountId
 
-      const { credits } = await ensureCustomer(context, getStripe(), input.organizationId)
+      const { credits } = await ensureCustomer(context, getStripe(), accountId)
 
-      await context.db.transaction(async (tx) => {
+      await db.transaction(async (tx) => {
         // Get credits with select for update to ensure proper locking
         const _lockedCredits = (
           await tx.select().from(Credits).where(eq(Credits.id, credits.id)).for('update')
@@ -623,7 +523,11 @@ export const creditsRouter = {
     }),
 }
 
-export function getCreditsBaseUrl(organizationId?: string) {
-  const segment = organizationId ? `org/${stripIdPrefix(organizationId)}` : 'account'
-  return `${getWebUrl()}/${segment}/credits`
+/**
+ * Get the base URL for credits page
+ * @param accountId - Account ID
+ * @returns Credits page URL
+ */
+export function getCreditsBaseUrl(accountId: string) {
+  return `${getWebUrl()}/${stripIdPrefix(accountId)}/credits`
 }

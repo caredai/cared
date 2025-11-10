@@ -1,7 +1,6 @@
 import type { NeonDatabase } from 'drizzle-orm/neon-serverless'
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
-import { cache } from 'react'
 import { neonConfig, Pool as NeonPool } from '@neondatabase/serverless'
 import { attachDatabasePool } from '@vercel/functions'
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless'
@@ -34,7 +33,7 @@ export const db = new Proxy({} as Database, {
   },
 })
 
-export const getDb = cache(() => {
+function getDb() {
   if (hyperdriveConnStr) {
     const client = postgresJs(hyperdriveConnStr, {
       // Limit the connections for the Worker request to 5 due to Workers' limits on concurrent external connections
@@ -78,7 +77,7 @@ export const getDb = cache(() => {
   } else {
     return getCachedDb()
   }
-})
+}
 
 let cachedDb: Database | undefined = undefined
 

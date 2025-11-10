@@ -10,7 +10,7 @@ import { createCustomFetch } from '@cared/providers'
 import { getModel } from '@cared/providers/providers'
 import { serializeError, sharedV2ProviderOptionsSchema } from '@cared/shared'
 
-import type { AuthObject } from '../../../auth'
+import type { AuthContext } from '../../../auth'
 import type { ProviderKeyState } from '../../../operation'
 import type { TelemetrySettings } from '../../../telemetry'
 import type {
@@ -19,7 +19,7 @@ import type {
   LanguageModelV2StreamPart,
 } from '@ai-sdk/provider'
 import type { Span, Tracer } from '@opentelemetry/api'
-import { authenticate } from '../../../auth'
+import { ProtectedAuth } from '../../../auth'
 import { ExpenseManager, findProvidersByModel, ProviderKeyManager } from '../../../operation'
 import {
   asToolCalls,
@@ -106,8 +106,6 @@ const requestArgsSchema = z.object({
   headers: z.record(z.string(), z.string().or(z.undefined())).optional(),
 
   providerOptions: sharedV2ProviderOptionsSchema.optional(),
-
-  payerOrganizationId: z.string().optional(),
 })
 
 export async function GET(c: Context): Promise<Response> {
@@ -145,12 +143,7 @@ export async function POST(c: Context): Promise<Response> {
       return new Response(z.prettifyError(validatedArgs.error), { status: 400 })
     }
 
-    const {
-      modelId,
-      stream: isStream,
-      payerOrganizationId,
-      ...languageModelV2CallOptions
-    } = validatedArgs.data
+    const { modelId, stream: isStream, ...languageModelV2CallOptions } = validatedArgs.data
 
     const telemetry: TelemetrySettings = {
       isEnabled: true,
@@ -166,15 +159,14 @@ export async function POST(c: Context): Promise<Response> {
         },
       }),
       tracer,
-      fn: async () => await authenticate(c.req.raw.headers),
+      fn: async () => await ProtectedAuth.authenticate(c.req.raw.headers),
     })
-    if (!auth.isAuthenticated()) {
+    if (!auth) {
       return new Response('Unauthorized', { status: 401 })
     }
 
     const expenseManager = ExpenseManager.from({
-      auth: auth.auth!,
-      payerOrganizationId,
+      auth: auth.ctx,
       waitUntil: waitUntil(c),
     })
 
@@ -184,11 +176,11 @@ export async function POST(c: Context): Promise<Response> {
       attributes: selectTelemetryAttributes({
         telemetry,
         attributes: {
-          'langfuse.user.id': authId(auth.auth!),
+          'langfuse.user.id': authId(auth.ctx),
         },
       }),
       tracer,
-      fn: async () => await findProvidersByModel(auth.auth!, modelId, 'language'),
+      fn: async () => await findProvidersByModel(auth.ctx, modelId, 'language'),
     })
     log.info(
       `Input model id: ${modelId}, resolved model ids: ${models.map((m) => m.id).join(', ')}`,
@@ -204,7 +196,7 @@ export async function POST(c: Context): Promise<Response> {
       models,
       languageModelV2CallOptions,
       expenseManager,
-      auth: auth.auth!,
+      auth: auth.ctx,
       isStream,
       c,
       telemetry,
@@ -234,12 +226,9 @@ async function processWithPolling({
   tracer,
 }: {
   models: Awaited<ReturnType<typeof findProvidersByModel>>
-  languageModelV2CallOptions: Omit<
-    z.infer<typeof requestArgsSchema>,
-    'modelId' | 'stream' | 'payerOrganizationId'
-  >
+  languageModelV2CallOptions: Omit<z.infer<typeof requestArgsSchema>, 'modelId' | 'stream'>
   expenseManager: ExpenseManager
-  auth: AuthObject
+  auth: AuthContext
   isStream: boolean
   c: Context
   telemetry: TelemetrySettings
@@ -754,21 +743,14 @@ export function handleError(
   return false
 }
 
-export function authId(auth: AuthObject) {
+export function authId(auth: AuthContext) {
   switch (auth.type) {
-    case 'user':
-    case 'appUser':
-      return auth.userId
-    case 'apiKey':
+    case 'apiToken':
       switch (auth.scope) {
-        case 'user':
-          return auth.userId
-        case 'organization':
-          return auth.organizationId
-        case 'workspace':
-          return auth.workspaceId
-        case 'app':
-          return auth.appId
+        case 'account':
+          return auth.accountId
       }
+      break
   }
+  return `${auth.accountId}:${auth.userId}`
 }

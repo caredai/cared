@@ -1,31 +1,35 @@
 import { useCallback } from 'react'
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { skipToken, useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 
 import { orpc } from '@/lib/orpc'
 
 // Query hooks
-export function useMembers(organizationId = '') {
+export function useMembers(accountId?: string) {
   const {
     data: { members },
   } = useSuspenseQuery(
-    orpc.organization.listMembers.queryOptions({
-      input: {
-        organizationId,
-      },
+    orpc.account.listMembers.queryOptions({
+      input: accountId
+        ? {
+            accountId,
+          }
+        : skipToken,
     }),
   )
 
   return members
 }
 
-export function useInvitations(organizationId: string) {
+export function useInvitations(accountId?: string) {
   const {
     data: { invitations },
   } = useSuspenseQuery(
-    orpc.organization.listInvitations.queryOptions({
-      input: {
-        organizationId,
-      },
+    orpc.account.listInvitations.queryOptions({
+      input: accountId
+        ? {
+            accountId,
+          }
+        : skipToken,
     }),
   )
 
@@ -37,13 +41,13 @@ export function useAddMember() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.organization.addMember.mutationOptions({
+    orpc.account.addMember.mutationOptions({
       onSuccess: (_, variables) => {
-        // Invalidate members list for the specific organization
+        // Invalidate members list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.organization.listMembers.queryOptions({
+          queryKey: orpc.account.listMembers.queryOptions({
             input: {
-              organizationId: variables.organizationId,
+              accountId: variables.accountId,
             },
           }).queryKey,
         })
@@ -51,9 +55,9 @@ export function useAddMember() {
     }),
   )
 
-  return useCallback(async (organizationId: string, userId: string, role: 'admin' | 'member') => {
+  return useCallback(async (accountId: string, userId: string, role: 'admin' | 'member') => {
     return await mutation.mutateAsync({
-      organizationId,
+      accountId,
       userId,
       role,
     })
@@ -65,13 +69,13 @@ export function useRemoveMember() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.organization.removeMember.mutationOptions({
+    orpc.account.removeMember.mutationOptions({
       onSuccess: (_, variables) => {
-        // Invalidate members list for the specific organization
+        // Invalidate members list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.organization.listMembers.queryOptions({
+          queryKey: orpc.account.listMembers.queryOptions({
             input: {
-              organizationId: variables.organizationId,
+              accountId: variables.accountId,
             },
           }).queryKey,
         })
@@ -79,9 +83,9 @@ export function useRemoveMember() {
     }),
   )
 
-  return useCallback(async (organizationId: string, memberId: string) => {
+  return useCallback(async (accountId: string, memberId: string) => {
     return await mutation.mutateAsync({
-      organizationId,
+      accountId,
       memberId,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,13 +96,13 @@ export function useUpdateMemberRole() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.organization.updateMemberRole.mutationOptions({
+    orpc.account.updateMemberRole.mutationOptions({
       onSuccess: (_, variables) => {
-        // Invalidate members list for the specific organization
+        // Invalidate members list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.organization.listMembers.queryOptions({
+          queryKey: orpc.account.listMembers.queryOptions({
             input: {
-              organizationId: variables.organizationId,
+              accountId: variables.accountId,
             },
           }).queryKey,
         })
@@ -106,9 +110,9 @@ export function useUpdateMemberRole() {
     }),
   )
 
-  return useCallback(async (organizationId: string, memberId: string, role: 'admin' | 'member') => {
+  return useCallback(async (accountId: string, memberId: string, role: 'admin' | 'member') => {
     return await mutation.mutateAsync({
-      organizationId,
+      accountId,
       memberId,
       role,
     })
@@ -120,13 +124,13 @@ export function useCreateInvitation() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.organization.createInvitation.mutationOptions({
+    orpc.account.createInvitation.mutationOptions({
       onSuccess: (_, variables) => {
-        // Invalidate invitations list for the specific organization
+        // Invalidate invitations list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.organization.listInvitations.queryOptions({
+          queryKey: orpc.account.listInvitations.queryOptions({
             input: {
-              organizationId: variables.organizationId,
+              accountId: variables.accountId,
             },
           }).queryKey,
         })
@@ -134,9 +138,9 @@ export function useCreateInvitation() {
     }),
   )
 
-  return useCallback(async (organizationId: string, email: string) => {
+  return useCallback(async (accountId: string, email: string) => {
     return await mutation.mutateAsync({
-      organizationId,
+      accountId,
       email,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -147,13 +151,13 @@ export function useCancelInvitation() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.organization.cancelInvitation.mutationOptions({
+    orpc.account.cancelInvitation.mutationOptions({
       onSuccess: (data) => {
-        // Invalidate invitations list for the specific organization
+        // Invalidate invitations list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.organization.listInvitations.queryOptions({
+          queryKey: orpc.account.listInvitations.queryOptions({
             input: {
-              organizationId: data.invitation.organizationId,
+              accountId: data.invitation.accountId,
             },
           }).queryKey,
         })
@@ -161,7 +165,7 @@ export function useCancelInvitation() {
     }),
   )
 
-  return useCallback(async (organizationId: string, invitationId: string) => {
+  return useCallback(async (invitationId: string) => {
     return await mutation.mutateAsync({
       invitationId,
     })

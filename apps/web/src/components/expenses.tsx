@@ -193,7 +193,7 @@ function createColumns(
   ]
 }
 
-export function Expenses({ organizationId }: { organizationId?: string }) {
+export function Expenses() {
   const [pageSize, setPageSize] = useState(20)
 
   const {
@@ -202,11 +202,11 @@ export function Expenses({ organizationId }: { organizationId?: string }) {
     fetchNextExpensesPage,
     hasNextExpensesPage,
     isFetchingNextExpensesPage,
-  } = useExpenses({ organizationId, pageSize })
+  } = useExpenses({ pageSize })
 
   // Get providers and models data
   const { providers } = useProviders()
-  const { models } = useModels({ organizationId })
+  const { models } = useModels({ source: 'effective' })
 
   // Flatten all pages of expenses into a single array
   const allExpenses = useMemo(() => {

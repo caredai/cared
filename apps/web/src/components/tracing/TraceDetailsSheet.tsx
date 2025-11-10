@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import * as React from 'react'
 import { Activity, FoldVertical, Settings2, UnfoldVertical, XIcon } from 'lucide-react'
 
 import { Badge } from '@cared/ui/components/badge'
@@ -44,18 +43,14 @@ export function TraceDetailsSheet({
   trace,
   isOpen,
   onOpenChange,
-  organizationId,
-  workspaceId,
-  appId,
+  scope,
   traces,
   onNavigate,
 }: {
   trace: TraceWithDetails
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  organizationId?: string
-  workspaceId?: string
-  appId?: string
+  scope: 'user' | 'account'
   traces?: TraceWithDetails[]
   onNavigate?: (traceId: string) => void
 }) {
@@ -75,11 +70,9 @@ export function TraceDetailsSheet({
 
   // Get observations for the trace
   const { observations, isLoading: isObservationsLoading } = useObservations({
+    scope,
+    userId: scope === 'user' ? user.id : undefined,
     traceId: trace.id,
-    userId: user.id,
-    organizationId,
-    workspaceId,
-    appId,
   })
 
   const treeRef = useRef<TraceTreeRef>(null)

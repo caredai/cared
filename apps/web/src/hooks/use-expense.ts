@@ -3,11 +3,11 @@ import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { orpc } from '@/lib/orpc'
 
 export function useExpenses({
-  organizationId,
+  allMembers,
   appId,
   pageSize = 50,
 }: {
-  organizationId?: string
+  allMembers?: boolean
   appId?: string
   pageSize?: number
 }) {
@@ -15,7 +15,7 @@ export function useExpenses({
     useInfiniteQuery(
       orpc.expense.list.infiniteOptions({
         input: (cursor?: string) => ({
-          organizationId,
+          allMembers,
           appId,
           cursor,
           limit: pageSize,

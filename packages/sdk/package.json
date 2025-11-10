@@ -50,9 +50,9 @@
   "peerDependencies": {
     "@ai-sdk/provider": ">=2.0.0",
     "@langfuse/core": ">=4.1.0",
-    "@orpc/client": ">=1.8.9",
-    "@orpc/server": ">=1.8.9",
-    "@orpc/tanstack-query": ">=1.8.9",
+    "@orpc/client": ">=1.10.4",
+    "@orpc/server": ">=1.10.4",
+    "@orpc/tanstack-query": ">=1.10.4",
     "@tanstack/react-query": ">=5.66.7",
     "ai": ">=5.0.38",
     "better-auth": ">=1.3.27",

@@ -63,6 +63,10 @@ export class UpstashKV extends KV {
     await this.redis.del(this.key(key))
   }
 
+  async batchDelete(...keys: string[]): Promise<void> {
+    await this.redis.del(...keys.map((key) => this.key(key)))
+  }
+
   /**
    * Runs the specified script with EVALSHA using the scriptHash parameter.
    *

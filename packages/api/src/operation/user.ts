@@ -1,11 +1,11 @@
 import { asc, eq } from '@cared/db'
-import { getDb } from '@cared/db/client'
+import { db } from '@cared/db/client'
 import { User } from '@cared/db/schema'
 
 import { Cache } from './cache'
 
 const cache = new Cache<string[]>('adminUsers', async () => ({
-  value: await getDb()
+  value: await db
     .query.User.findMany({
       columns: {
         id: true,

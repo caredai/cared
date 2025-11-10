@@ -1,9 +1,8 @@
 import { useMemo } from 'react'
 import { useLocation } from '@tanstack/react-router'
 
+import { useAccounts } from '@/hooks/use-account'
 import { useAllApps } from '@/hooks/use-app'
-import { useOrganizations } from '@/hooks/use-organization'
-import { useAllWorkspaces } from '@/hooks/use-workspace'
 import { addIdPrefix } from '@/lib/utils'
 
 export function useActive() {
@@ -11,26 +10,18 @@ export function useActive() {
   const pathname = location.pathname
 
   const activeApp = useApp(pathname)
-  const activeWorkspace = useWorkspace(pathname, activeApp?.app.workspaceId)
-  const activeOrganization = useOrganization(pathname, activeWorkspace?.organizationId)
+  const activeAccount = useAccount(pathname, activeApp?.app.accountId)
 
   return {
-    activeOrganization,
-    activeWorkspace,
+    activeAccount,
     activeApp,
   }
 }
 
-export function useActiveOrganization() {
+export function useActiveAccount() {
   const location = useLocation()
   const pathname = location.pathname
-  return useOrganization(pathname)
-}
-
-export function useActiveWorkspace() {
-  const location = useLocation()
-  const pathname = location.pathname
-  return useWorkspace(pathname)
+  return useAccount(pathname)
 }
 
 export function useActiveApp() {
@@ -39,28 +30,16 @@ export function useActiveApp() {
   return useApp(pathname)
 }
 
-function useOrganization(pathname: string, id?: string) {
-  const organizations = useOrganizations()
+function useAccount(pathname: string, id?: string) {
+  const accounts = useAccounts()
 
   return useMemo(() => {
-    const orgId = id ?? getOrganizationId(pathname)
-    if (!orgId) {
+    const accountId = id ?? getAccountId(pathname)
+    if (!accountId) {
       return
     }
-    return organizations.find((org) => org.id === orgId)
-  }, [organizations, pathname, id])
-}
-
-function useWorkspace(pathname: string, id?: string) {
-  const workspaces = useAllWorkspaces()
-
-  return useMemo(() => {
-    const workspaceId = id ?? getWorkspaceId(pathname)
-    if (!workspaceId) {
-      return
-    }
-    return workspaces.find((w) => w.id === workspaceId)
-  }, [workspaces, pathname, id])
+    return accounts.find((account) => account.id === accountId)
+  }, [accounts, pathname, id])
 }
 
 function useApp(pathname: string, id?: string) {
@@ -75,25 +54,13 @@ function useApp(pathname: string, id?: string) {
   }, [apps, pathname, id])
 }
 
-export function useActiveOrganizationId() {
+export function useActiveAccountId() {
   const location = useLocation()
   const pathname = location.pathname
   return useMemo(
     () => ({
-      activeOrganizationId: getOrganizationId(pathname),
-      activeOrganizationIdNoPrefix: getOrganizationIdNoPrefix(pathname),
-    }),
-    [pathname],
-  )
-}
-
-export function useActiveWorkspaceId() {
-  const location = useLocation()
-  const pathname = location.pathname
-  return useMemo(
-    () => ({
-      activeWorkspaceId: getWorkspaceId(pathname),
-      activeWorkspaceIdNoPrefix: getWorkspaceIdNoPrefix(pathname),
+      activeAccountId: getAccountId(pathname),
+      activeAccountIdNoPrefix: getAccountIdNoPrefix(pathname),
     }),
     [pathname],
   )
@@ -111,23 +78,13 @@ export function useActiveAppId() {
   )
 }
 
-function getOrganizationId(pathname: string) {
-  const idNoPrefix = getOrganizationIdNoPrefix(pathname)
-  return idNoPrefix ? addIdPrefix(idNoPrefix, 'org') : ''
+function getAccountId(pathname: string) {
+  const idNoPrefix = getAccountIdNoPrefix(pathname)
+  return idNoPrefix ? addIdPrefix(idNoPrefix, 'acc') : ''
 }
 
-function getOrganizationIdNoPrefix(pathname: string) {
-  const matched = /\/org\/([^/]+)/.exec(pathname)
-  return matched?.length && matched[1] ? matched[1] : ''
-}
-
-function getWorkspaceId(pathname: string) {
-  const idNoPrefix = getWorkspaceIdNoPrefix(pathname)
-  return idNoPrefix ? addIdPrefix(idNoPrefix, 'workspace') : ''
-}
-
-function getWorkspaceIdNoPrefix(pathname: string) {
-  const matched = /\/workspace\/([^/]+)/.exec(pathname)
+function getAccountIdNoPrefix(pathname: string) {
+  const matched = /\/acc_([^/]+)/.exec(pathname)
   return matched?.length && matched[1] ? matched[1] : ''
 }
 
@@ -137,6 +94,6 @@ function getAppId(pathname: string) {
 }
 
 function getAppIdNoPrefix(pathname: string) {
-  const matched = /\/app\/([^/]+)/.exec(pathname)
+  const matched = /\/acc_[^/]+\/app_([^/]+)/.exec(pathname)
   return matched?.length && matched[1] ? matched[1] : ''
 }

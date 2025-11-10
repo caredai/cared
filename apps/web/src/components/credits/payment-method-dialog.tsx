@@ -24,24 +24,19 @@ import {
 import type { StripeElementsOptions } from '@stripe/stripe-js'
 import { SkeletonCard } from '@/components/skeleton'
 import { env } from '@/env'
+import { useActiveAccountId } from '@/hooks/use-active'
 import { useAddPaymentMethod, useCustomer } from '@/hooks/use-stripe'
 import { stripIdPrefix } from '@/lib/utils'
 
 const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
 
 interface PaymentMethodDialogProps {
-  organizationId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: () => void
 }
 
-export function PaymentMethodDialog({
-  organizationId,
-  open,
-  onOpenChange,
-  onSuccess,
-}: PaymentMethodDialogProps) {
+export function PaymentMethodDialog({ open, onOpenChange, onSuccess }: PaymentMethodDialogProps) {
   const { resolvedTheme } = useTheme()
 
   const options: StripeElementsOptions = {
@@ -60,11 +55,7 @@ export function PaymentMethodDialog({
           <DialogDescription>Securely add a new payment method to your account.</DialogDescription>
         </DialogHeader>
         <Elements stripe={stripePromise} options={options}>
-          <PaymentMethodForm
-            organizationId={organizationId}
-            onSuccess={onSuccess}
-            onCancel={() => onOpenChange(false)}
-          />
+          <PaymentMethodForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
         </Elements>
       </DialogContent>
     </Dialog>
@@ -72,19 +63,19 @@ export function PaymentMethodDialog({
 }
 
 function PaymentMethodForm({
-  organizationId,
   onSuccess,
   onCancel,
 }: {
-  organizationId?: string
   onSuccess?: () => void
   onCancel?: () => void
 }) {
+  const { activeAccountId } = useActiveAccountId()
+
   const stripe = useStripe()
   const elements = useElements()
 
-  const { customer } = useCustomer(organizationId)
-  const addPaymentMethod = useAddPaymentMethod(organizationId)
+  const { customer } = useCustomer()
+  const addPaymentMethod = useAddPaymentMethod()
 
   const [isLoading, setIsLoading] = useState(false)
   const [isPaymentElementReady, setIsPaymentElementReady] = useState(false)
@@ -109,14 +100,12 @@ function PaymentMethodForm({
       const result = await addPaymentMethod()
       const clientSecret = result.setupIntentClientSecret
 
-      const segment = organizationId ? `org/${stripIdPrefix(organizationId)}` : 'account'
-
       // Confirm the SetupIntent
       const { error, setupIntent } = await stripe.confirmSetup({
         elements,
         clientSecret,
         confirmParams: {
-          return_url: `${window.location.origin}/${segment}/credits`,
+          return_url: `${window.location.origin}/acc_${stripIdPrefix(activeAccountId)}/credits`,
           payment_method_data: {
             allow_redisplay: 'always',
           },

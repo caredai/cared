@@ -1,16 +1,6 @@
-import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { formatDistance } from 'date-fns'
-import {
-  Activity,
-  Bot,
-  Box,
-  CircleQuestionMarkIcon,
-  ClockIcon,
-  MoreHorizontalIcon,
-  RefreshCwIcon,
-  TrashIcon,
-} from 'lucide-react'
+import { Activity, ClockIcon, MoreHorizontalIcon, RefreshCwIcon, TrashIcon } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
 import { DataTable } from '@cared/ui/components/data-table'
@@ -28,153 +18,97 @@ import {
   SelectValue,
 } from '@cared/ui/components/select'
 import { RefreshCwSpinner, Spinner } from '@cared/ui/components/spinner'
-import { cn } from '@cared/ui/lib/utils'
 
 import type { TraceWithDetails } from '@langfuse/core'
 import type { ColumnDef } from '@tanstack/react-table'
+import { MemberSelect } from '@/components/member-select'
 import { SectionTitle } from '@/components/section'
-import { PopoverTooltip } from '@/components/tooltip'
-import { useApps } from '@/hooks/use-app'
 import { useSession } from '@/hooks/use-session'
 import { useDeleteTraces, useTraces } from '@/hooks/use-telemetry'
-import { useWorkspaces } from '@/hooks/use-workspace'
 import { DeleteTraceDialog } from './DeleteTraceDialog'
 import { TraceDetailsSheet } from './TraceDetailsSheet'
 
-type TraceScope = 'user' | 'organization' | 'workspace' | 'app'
+type TraceScope = 'user' | 'account'
 
-export function TracingWithSelector({
-  scope,
-  organizationId,
-  workspaceId,
-  appId,
-}: {
-  scope: TraceScope
-  organizationId?: string
-  workspaceId?: string
-  appId?: string
-}) {
-  // State for scope switching
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('none')
-  const [selectedAppId, setSelectedAppId] = useState<string>('none')
+/**
+ * TracingWithSelector component
+ * Default: user scope with current user
+ * If user is owner/admin: show scope selector (empty/user/account)
+ * If "user" scope is selected: show member selector
+ */
+export function TracingWithSelector() {
+  const { user } = useSession()
 
-  // Handle workspace selection change - reset app selection when workspace is cleared
-  const handleWorkspaceChange = (workspaceId: string) => {
-    setSelectedWorkspaceId(workspaceId)
-    setSelectedAppId('none') // Reset app selection when workspace is cleared
-  }
+  // Check if current user is owner or admin
+  const canManageTraces = user.role === 'owner' || user.role === 'admin'
 
-  // Determine effective scope and IDs based on user selection
-  // Priority: app > workspace > original scope
-  const effectiveScope = useMemo(() => {
-    if (selectedAppId !== 'none') return 'app'
-    if (selectedWorkspaceId !== 'none') return 'workspace'
-    return scope
-  }, [selectedAppId, selectedWorkspaceId, scope])
+  // State for scope selection
+  // Options: '' (current user), 'user' (select member), 'account'
+  const [scopeSelection, setScopeSelection] = useState<'' | 'user' | 'account'>('')
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined)
 
-  // Use selected IDs if available, otherwise fall back to props
-  const effectiveOrganizationId = organizationId
-  const effectiveWorkspaceId = selectedWorkspaceId !== 'none' ? selectedWorkspaceId : workspaceId
-  const effectiveAppId = selectedAppId !== 'none' ? selectedAppId : appId
+  useEffect(() => {
+    setSelectedUserId(undefined)
+  }, [scopeSelection])
 
-  // Get workspaces and apps for scope switching
-  const workspaces = useWorkspaces(effectiveOrganizationId)
-  const apps = useApps({ workspaceId: effectiveWorkspaceId })
+  // Determine effective scope and userId
+  const effectiveScope: TraceScope = scopeSelection === 'account' ? 'account' : 'user'
+  const effectiveUserId = scopeSelection === 'user' ? selectedUserId : undefined
 
   return (
     <TracingInner
       scope={effectiveScope}
-      organizationId={effectiveOrganizationId}
-      workspaceId={effectiveWorkspaceId}
-      appId={effectiveAppId}
-      selector={
-        <>
-          {/* Workspace selector - only show for organization scope */}
-          {scope === 'organization' && (
-            <WorkspaceSelector
-              value={selectedWorkspaceId}
-              onValueChange={handleWorkspaceChange}
-              workspaces={workspaces}
-            />
-          )}
-
-          {/* App selector - show for organization scope when workspace is selected, or for workspace scope */}
-          {(scope === 'organization' && effectiveWorkspaceId) || scope === 'workspace' ? (
-            <AppSelector value={selectedAppId} onValueChange={setSelectedAppId} apps={apps} />
-          ) : null}
-
-          <PopoverTooltip
-            icon={CircleQuestionMarkIcon}
-            className="inline-block align-bottom"
-            side="right"
-            align="start"
-            content={
-              <div className="space-y-2">
-                <p className="text-sm">Use the selectors to filter traces by scope:</p>
-                <ul className="text-sm list-disc list-inside space-y-1">
-                  {scope === 'organization' && (
-                    <>
-                      <li>
-                        <strong>Organization:</strong> Default scope when no workspace or app is
-                        selected
-                      </li>
-                      <li>
-                        <strong>Workspace:</strong> Select a workspace to view workspace-scoped
-                        traces
-                      </li>
-                    </>
-                  )}
-                  {scope === 'workspace' && (
-                    <li>
-                      <strong>Workspace:</strong> Default scope when no app is selected
-                    </li>
-                  )}
-                  <li>
-                    <strong>App:</strong> Select an app to view app-scoped traces
-                  </li>
-                </ul>
-              </div>
-            }
-          />
-        </>
+      userId={effectiveUserId}
+      scopeSelector={
+        canManageTraces ? (
+          <div className="flex items-center gap-2">
+            <Select
+              value={scopeSelection}
+              onValueChange={(v) => setScopeSelection(v as '' | 'user' | 'account')}
+            >
+              <SelectTrigger className="w-[160px]">
+                <SelectValue>
+                  <span className="text-muted-foreground/70">
+                    {scopeSelection === ''
+                      ? '--'
+                      : scopeSelection === 'account'
+                        ? 'Account'
+                        : 'Member'}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">-- None --</SelectItem>
+                <SelectItem value="account">Account</SelectItem>
+                <SelectItem value="user">Member</SelectItem>
+              </SelectContent>
+            </Select>
+            {scopeSelection === 'user' && (
+              <MemberSelect
+                value={selectedUserId}
+                onValueChange={setSelectedUserId}
+                className="w-[200px]"
+              />
+            )}
+          </div>
+        ) : undefined
       }
     />
   )
 }
 
-export function Tracing({
-  scope,
-  organizationId,
-  workspaceId,
-  appId,
-}: {
-  scope: TraceScope
-  organizationId?: string
-  workspaceId?: string
-  appId?: string
-}) {
-  return (
-    <TracingInner
-      scope={scope}
-      organizationId={organizationId}
-      workspaceId={workspaceId}
-      appId={appId}
-    />
-  )
+export function Tracing({ scope }: { scope: TraceScope }) {
+  return <TracingInner scope={scope} />
 }
 
 function TracingInner({
   scope,
-  organizationId,
-  workspaceId,
-  appId,
-  selector,
+  userId,
+  scopeSelector,
 }: {
   scope: TraceScope
-  organizationId?: string
-  workspaceId?: string
-  appId?: string
-  selector?: ReactNode
+  userId?: string
+  scopeSelector?: React.ReactNode
 }) {
   const [pageSize, setPageSize] = useState(20)
   const [dateRange, setDateRange] = useState<string>('7d')
@@ -224,15 +158,12 @@ function TracingInner({
     return { fromTimestamp }
   }, [dateRange])
 
-  const { user } = useSession()
   const deleteTraces = useDeleteTraces()
 
   const { traces, isLoading, isFetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useTraces({
-      userId: scope === 'user' ? user.id : undefined,
-      organizationId: scope === 'organization' ? organizationId : undefined,
-      workspaceId: scope === 'workspace' ? workspaceId : undefined,
-      appId: scope === 'app' ? appId : undefined,
+      scope,
+      userId: scope === 'user' ? userId : undefined,
       pageSize,
       ...dateRangeFilters,
     })
@@ -266,11 +197,9 @@ function TracingInner({
   // Handle confirmed delete
   const handleConfirmDelete = async () => {
     await deleteTraces({
+      scope,
+      userId: scope === 'user' ? userId : undefined,
       traceIds: tracesToDelete,
-      userId: scope === 'user' ? user.id : undefined,
-      organizationId: scope === 'organization' ? organizationId : undefined,
-      workspaceId: scope === 'workspace' ? workspaceId : undefined,
-      appId: scope === 'app' ? appId : undefined,
     })
 
     // Clear selection if bulk delete
@@ -424,11 +353,11 @@ function TracingInner({
 
   return (
     <>
-      <SectionTitle title="Tracing" description={getScopeDescription(scope)} />
+      <SectionTitle title="Tracing" description="Monitor and analyze trace data for your account" />
 
       <div>
         <div className="w-full flex flex-wrap items-center gap-2">
-          {selector}
+          {scopeSelector}
 
           <div className="lg:ml-auto flex items-center gap-2">
             {/* Date range filter */}
@@ -508,9 +437,7 @@ function TracingInner({
           trace={selectedTrace}
           isOpen={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          organizationId={organizationId}
-          workspaceId={workspaceId}
-          appId={appId}
+          scope={scope}
           traces={traces}
           onNavigate={handleNavigate}
         />
@@ -524,94 +451,5 @@ function TracingInner({
         onDelete={handleConfirmDelete}
       />
     </>
-  )
-}
-
-// Helper function to get description based on scope
-function getScopeDescription(scope: TraceScope): string {
-  return `Monitor and analyze trace data for your ${scope === 'user' ? 'account' : scope}`
-}
-
-// Workspace selector component
-function WorkspaceSelector({
-  value,
-  onValueChange,
-  workspaces,
-}: {
-  value: string
-  onValueChange: (value: string) => void
-  workspaces: { id: string; name: string }[]
-}) {
-  return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className={cn('w-full sm:w-auto', value === 'none' && 'w-full')}>
-        <SelectValue placeholder="Select workspace">
-          <div className="flex items-center gap-2 pr-2">
-            <Box className="size-4 text-muted-foreground/70" />
-            <span className={cn('flex-1 truncate', value === 'none' && 'text-muted-foreground/70')}>
-              {value !== 'none' ? workspaces.find((w) => w.id === value)?.name : '--'}
-            </span>
-          </div>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="none">
-          <div className="flex items-center gap-2">
-            <Box className="size-4 text-muted-foreground/70" />
-            <span>-- None --</span>
-          </div>
-        </SelectItem>
-        {workspaces.map((workspace) => (
-          <SelectItem key={workspace.id} value={workspace.id}>
-            <div className="flex items-center gap-2">
-              <Box className="size-4 text-muted-foreground/70" />
-              {workspace.name}
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
-
-// App selector component
-function AppSelector({
-  value,
-  onValueChange,
-  apps,
-}: {
-  value: string
-  onValueChange: (value: string) => void
-  apps: { app: { id: string; name: string } }[]
-}) {
-  return (
-    <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-full sm:w-auto">
-        <SelectValue placeholder="Select app">
-          <div className="flex items-center gap-2 pr-2">
-            <Bot className="size-4 text-muted-foreground/70" />
-            <span className={cn('flex-1 truncate', value === 'none' && 'text-muted-foreground/70')}>
-              {value !== 'none' ? apps.find((a) => a.app.id === value)?.app.name : '--'}
-            </span>
-          </div>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="none">
-          <div className="flex items-center gap-2">
-            <Bot className="size-4 text-muted-foreground/70" />
-            <span>-- None --</span>
-          </div>
-        </SelectItem>
-        {apps.map((app) => (
-          <SelectItem key={app.app.id} value={app.app.id}>
-            <div className="flex items-center gap-2">
-              <Bot className="size-4 text-muted-foreground/70" />
-              {app.app.name}
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
   )
 }

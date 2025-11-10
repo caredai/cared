@@ -20,11 +20,9 @@ import { StripeCheckoutForm } from './stripe-checkout-form'
 type PaymentGateway = 'stripe' | 'crypto'
 
 export function RechargeDialog({
-  organizationId,
   open,
   onOpenChange,
 }: {
-  organizationId?: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -141,7 +139,6 @@ export function RechargeDialog({
               <div className="isolate">
                 {selectedPaymentMethod === 'stripe' ? (
                   <StripeCheckoutForm
-                    organizationId={organizationId}
                     credits={rechargeAmount}
                     onSuccess={handleCloseRechargeDialog}
                     onCancel={handleCloseRechargeDialog}

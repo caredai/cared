@@ -2,12 +2,8 @@ import type { InferSelectModel } from 'drizzle-orm'
 import type { Stripe } from 'stripe'
 import { index, jsonb, numeric, pgEnum, pgTable, text, unique } from 'drizzle-orm/pg-core'
 
-import { Organization, timestampsIndices, User } from '.'
+import { Account, timestampsIndices } from '.'
 import { generateId, timestamps } from './utils'
-
-export const ownerTypes = ['user', 'organization'] as const
-export type OwnerType = (typeof ownerTypes)[number]
-export const ownerTypeEnum = pgEnum('ownerType', ownerTypes)
 
 export interface CreditsMetadata {
   customerId?: string
@@ -35,17 +31,15 @@ export const Credits = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('cdb')),
-    type: ownerTypeEnum().notNull(),
-    userId: text().references(() => User.id),
-    organizationId: text().references(() => Organization.id),
+    accountId: text()
+      .notNull()
+      .references(() => Account.id),
     credits: numeric({ precision: 18, scale: 10 }).notNull(),
     metadata: jsonb().$type<CreditsMetadata>().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.type),
-    unique().on(table.userId),
-    unique().on(table.organizationId),
+    unique().on(table.accountId),
     ...timestampsIndices(table),
   ],
 )
@@ -75,9 +69,9 @@ export const CreditsOrder = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('cdo')),
-    type: ownerTypeEnum().notNull(),
-    userId: text().references(() => User.id),
-    organizationId: text().references(() => Organization.id),
+    accountId: text()
+      .notNull()
+      .references(() => Account.id),
     kind: orderKindEnum().notNull(),
     status: text().$type<OrderStatus>().notNull(),
     objectId: text().unique().notNull(),
@@ -87,9 +81,8 @@ export const CreditsOrder = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.type),
-    index().on(table.userId, table.organizationId, table.kind, table.status),
-    index().on(table.userId, table.organizationId, table.status),
+    index().on(table.accountId, table.kind, table.status),
+    index().on(table.accountId, table.status),
     ...timestampsIndices(table),
   ],
 )
@@ -109,9 +102,9 @@ export const CreditsSubscription = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('cds')),
-    type: ownerTypeEnum().notNull(),
-    userId: text().references(() => User.id),
-    organizationId: text().references(() => Organization.id),
+    accountId: text()
+      .notNull()
+      .references(() => Account.id),
     kind: subscriptionKindEnum().notNull(),
     status: text().$type<SubscriptionStatus>().notNull(),
     objectId: text().unique().notNull(),
@@ -119,9 +112,8 @@ export const CreditsSubscription = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.type),
-    index().on(table.userId, table.organizationId, table.kind, table.status),
-    index().on(table.userId, table.organizationId, table.status),
+    index().on(table.accountId, table.kind, table.status),
+    index().on(table.accountId, table.status),
     ...timestampsIndices(table),
   ],
 )

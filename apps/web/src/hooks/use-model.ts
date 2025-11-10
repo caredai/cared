@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import type { UpdateModelArgs, UpdateModelsArgs } from '@cared/api'
 import type { ModelFullId, ModelType, ProviderId } from '@cared/providers'
 
+import type { QueryClient } from '@tanstack/react-query'
 import { orpc } from '@/lib/orpc'
 
 export function useProviders() {
@@ -19,11 +20,7 @@ export function useProviders() {
   }
 }
 
-export function useProvidersModels(input?: {
-  organizationId?: string
-  type?: ModelType
-  source?: 'system' | 'custom'
-}) {
+export function useProvidersModels(input?: { type?: ModelType; source: 'system' | 'effective' }) {
   const {
     data: { models },
     refetch: refetchProvidersModels,
@@ -35,11 +32,7 @@ export function useProvidersModels(input?: {
   }
 }
 
-export function useModels(input?: {
-  organizationId?: string
-  type?: ModelType
-  source?: 'system' | 'custom'
-}) {
+export function useModels(input?: { type?: ModelType; source: 'system' | 'effective' }) {
   const {
     data: { models },
     refetch: refetchModels,
@@ -51,35 +44,32 @@ export function useModels(input?: {
   }
 }
 
-export function useUpdateModel({
-  isSystem,
-  organizationId,
-}: {
-  isSystem?: boolean
-  organizationId?: string
-}) {
+function invalidateModelQueries(source: 'system' | 'custom', queryClient: QueryClient) {
+  void queryClient.invalidateQueries({
+    // Use partial matching key
+    queryKey: orpc.model.listProvidersModels.key({
+      input: {
+        source: source === 'system' ? 'system' : 'effective',
+      },
+    }),
+  })
+  void queryClient.invalidateQueries({
+    // Use partial matching key
+    queryKey: orpc.model.listModels.key({
+      input: {
+        source: source === 'system' ? 'system' : 'effective',
+      },
+    }),
+  })
+}
+
+export function useUpdateModel(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
     orpc.model.updateModel.mutationOptions({
       onSuccess: () => {
-        // Invalidate relevant queries
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listProvidersModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
+        invalidateModelQueries(source, queryClient)
       },
       onError: (error) => {
         console.error('Failed to update model:', error)
@@ -95,45 +85,22 @@ export function useUpdateModel({
       } & UpdateModelArgs,
     ) => {
       return await updateMutation.mutateAsync({
-        isSystem,
-        organizationId,
+        source,
         ...input,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [source],
   )
 }
 
-export function useUpdateModels({
-  isSystem,
-  organizationId,
-}: {
-  isSystem?: boolean
-  organizationId?: string
-}) {
+export function useUpdateModels(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
     orpc.model.updateModels.mutationOptions({
       onSuccess: () => {
-        // Invalidate relevant queries
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listProvidersModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
+        invalidateModelQueries(source, queryClient)
       },
       onError: (error) => {
         console.error('Failed to update models:', error)
@@ -149,45 +116,22 @@ export function useUpdateModels({
       } & UpdateModelsArgs,
     ) => {
       return await updateMutation.mutateAsync({
-        isSystem,
-        organizationId,
+        source,
         ...input,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [source],
   )
 }
 
-export function useDeleteModel({
-  isSystem,
-  organizationId,
-}: {
-  isSystem?: boolean
-  organizationId?: string
-}) {
+export function useDeleteModel(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
     orpc.model.deleteModel.mutationOptions({
       onSuccess: () => {
-        // Invalidate relevant queries
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listProvidersModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
+        invalidateModelQueries(source, queryClient)
       },
       onError: (error) => {
         console.error('Failed to delete model:', error)
@@ -199,45 +143,22 @@ export function useDeleteModel({
   return useCallback(
     async (input: { id: ModelFullId; type: ModelType }) => {
       return await deleteMutation.mutateAsync({
-        isSystem,
-        organizationId,
+        source,
         ...input,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [source],
   )
 }
 
-export function useDeleteModels({
-  isSystem,
-  organizationId,
-}: {
-  isSystem?: boolean
-  organizationId?: string
-}) {
+export function useDeleteModels(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
     orpc.model.deleteModels.mutationOptions({
       onSuccess: () => {
-        // Invalidate relevant queries
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listProvidersModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
+        invalidateModelQueries(source, queryClient)
       },
       onError: (error) => {
         console.error('Failed to delete models:', error)
@@ -249,45 +170,22 @@ export function useDeleteModels({
   return useCallback(
     async (input: { providerId: ProviderId; ids: ModelFullId[]; type: ModelType }) => {
       return await deleteMutation.mutateAsync({
-        isSystem,
-        organizationId,
+        source,
         ...input,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [source],
   )
 }
 
-export function useSortModels({
-  isSystem,
-  organizationId,
-}: {
-  isSystem?: boolean
-  organizationId?: string
-}) {
+export function useSortModels(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const sortMutation = useMutation(
     orpc.model.sortModels.mutationOptions({
       onSuccess: () => {
-        // Invalidate relevant queries
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
-        void queryClient.invalidateQueries({
-          queryKey: orpc.model.listProvidersModels.queryOptions({
-            input: {
-              organizationId,
-              source: isSystem ? 'system' : undefined,
-            },
-          }).queryKey,
-        })
+        invalidateModelQueries(source, queryClient)
       },
       onError: (error) => {
         console.error('Failed to sort models:', error)
@@ -299,12 +197,11 @@ export function useSortModels({
   return useCallback(
     async (input: { providerId: ProviderId; type: ModelType; ids: ModelFullId[] }) => {
       return await sortMutation.mutateAsync({
-        isSystem,
-        organizationId,
+        source,
         ...input,
       })
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [source],
   )
 }

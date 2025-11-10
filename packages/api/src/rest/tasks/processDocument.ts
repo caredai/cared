@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm'
 import { z } from 'zod/v4'
 
 import type { CreateDocumentChunkSchema } from '@cared/db/schema'
-import { getDb } from '@cared/db/client'
+import { db } from '@cared/db/client'
 import { Dataset, Document, DocumentChunk, DocumentSegment } from '@cared/db/schema'
 import { loadFile } from '@cared/etl'
 import { log } from '@cared/log'
@@ -65,7 +65,7 @@ export const POST = serve<string>(
   async (context) => {
     const docId = context.requestPayload
 
-    const doc = await getDb().query.Document.findFirst({
+    const doc = await db.query.Document.findFirst({
       where: eq(Document.id, docId),
     })
 
@@ -84,7 +84,7 @@ export const POST = serve<string>(
       return
     }
 
-    const dataset = await getDb().query.Dataset.findFirst({
+    const dataset = await db.query.Dataset.findFirst({
       where: eq(Dataset.id, doc.datasetId),
     })
 
@@ -175,12 +175,12 @@ Clean up the text by:
     ).then((results) => results.flat())
 
     await context.run('store-embeddings', async () => {
-      await getDb().transaction(async (tx) => {
+      await db.transaction(async (tx) => {
         const vdb = new QdrantVector(dimensions)
 
         // Prepare batch arrays for segments and chunks
         const segmentValues = parentsAndChildren.map((item, index) => ({
-          workspaceId: doc.workspaceId,
+          accountId: doc.accountId,
           datasetId: doc.datasetId,
           documentId: doc.id,
           index,
@@ -191,7 +191,9 @@ Clean up the text by:
         const segments = await tx.insert(DocumentSegment).values(segmentValues).returning()
 
         // Prepare array for batch chunk insertion
-        const chunkValues: z.infer<typeof CreateDocumentChunkSchema>[] = []
+        const chunkValues: (z.infer<typeof CreateDocumentChunkSchema> & {
+          accountId: string
+        })[] = []
 
         // Track embedding indices for each chunk
         const embeddingIndices: number[] = []
@@ -201,7 +203,7 @@ Clean up the text by:
           children.forEach((childContent: string, childIndex: number) => {
             // Add to chunks batch
             chunkValues.push({
-              workspaceId: doc.workspaceId,
+              accountId: doc.accountId,
               datasetId: doc.datasetId,
               documentId: doc.id,
               segmentId: segment.id,
@@ -224,7 +226,7 @@ Clean up the text by:
           content: chunk.content,
           embedding: embeddings[embeddingIndices[index]!]!,
           metadata: {
-            workspaceId: doc.workspaceId,
+            accountId: doc.accountId,
             datasetId: doc.datasetId,
             documentId: doc.id,
           },
@@ -264,7 +266,7 @@ export async function trigger(document: Document) {
     body: document.id,
   })
 
-  await getDb()
+  await db
     .update(Document)
     .set({
       metadata: {

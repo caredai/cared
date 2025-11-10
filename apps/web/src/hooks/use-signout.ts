@@ -4,15 +4,12 @@ import { useRouter } from '@tanstack/react-router'
 import { authClient } from '@cared/auth/client'
 
 import { useSessionPublic } from '@/hooks/use-session'
-import { useLastWorkspace } from '@/hooks/use-workspace'
 
 export function useSignOut() {
   const router = useRouter()
 
   const { refetchSession } = useSessionPublic()
   const { logout } = useLogout()
-
-  const [, setLastWorkspace] = useLastWorkspace()
 
   const signOut = async () => {
     await authClient.signOut({
@@ -30,7 +27,6 @@ export function useSignOut() {
     } catch (err) {
       console.error(err)
     }
-    setLastWorkspace(undefined)
   }
 
   return {

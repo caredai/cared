@@ -39,6 +39,7 @@ import {
 import { Textarea } from '@cared/ui/components/textarea'
 
 import { ModelSelect } from '@/components/models/model-select'
+import { useActive } from '@/hooks/use-active'
 import { orpc } from '@/lib/orpc'
 import { stripIdPrefix } from '@/lib/utils'
 
@@ -55,18 +56,17 @@ const createAppSchema = z.object({
 type CreateAppFormValues = z.infer<typeof createAppSchema>
 
 export function CreateAppDialog({
-  workspaceId,
   menu,
   trigger,
   onSuccess,
 }: {
-  workspaceId: string
   menu?: (props: { trigger: (props: { children: ReactNode }) => ReactNode }) => ReactNode
   trigger?: ReactNode
   onSuccess?: () => void
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const { activeAccount } = useActive()
 
   const queryClient = useQueryClient()
 
@@ -128,7 +128,7 @@ export function CreateAppDialog({
         if (onSuccess) {
           onSuccess()
         } else {
-          void router.navigate({ to: `/app/${stripIdPrefix(data.app.id)}` })
+          void router.navigate({ to: `/${data.app.accountId}/${data.app.id}` })
         }
       },
       onError: (error) => {
@@ -140,6 +140,11 @@ export function CreateAppDialog({
 
   // Handle form submission
   async function onSubmit(values: CreateAppFormValues) {
+    if (!activeAccount) {
+      toast.error('No active account selected')
+      return
+    }
+
     // Trim name and description and update form values
     const trimmedName = values.name.trim()
     const trimmedDescription = values.description?.trim() ?? ''
@@ -172,7 +177,7 @@ export function CreateAppDialog({
       }
 
       createAppMutation.mutate({
-        workspaceId,
+        accountId: activeAccount.id,
         name: trimmedName,
         metadata,
       })

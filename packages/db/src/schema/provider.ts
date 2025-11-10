@@ -9,7 +9,7 @@ import type {
 } from '@cared/providers'
 import { generateId, timestamps } from '@cared/shared'
 
-import { Organization, User } from './auth-alias'
+import { Account } from './auth-alias'
 
 export const ProviderModels = pgTable(
   'provider_models',
@@ -18,17 +18,13 @@ export const ProviderModels = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('pm')),
-    isSystem: boolean().notNull(),
-    userId: text().references(() => User.id, { onDelete: 'cascade' }),
-    organizationId: text().references(() => Organization.id, { onDelete: 'cascade' }),
+    accountId: text().references(() => Account.id, { onDelete: 'cascade' }),
     providerId: text().$type<ProviderId>().notNull(),
     models: jsonb().$type<ModelInfos>().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.isSystem, table.providerId),
-    index().on(table.userId, table.providerId),
-    index().on(table.organizationId, table.providerId),
+    index().on(table.accountId, table.providerId),
   ],
 )
 
@@ -41,16 +37,12 @@ export const ProviderSettings = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('ps')),
-    isSystem: boolean().notNull(),
-    userId: text().references(() => User.id, { onDelete: 'cascade' }),
-    organizationId: text().references(() => Organization.id, { onDelete: 'cascade' }),
+    accountId: text().references(() => Account.id, { onDelete: 'cascade' }),
     settings: jsonb().$type<ProvidersSettingsContent>().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.isSystem),
-    index().on(table.userId),
-    index().on(table.organizationId),
+    index().on(table.accountId),
   ],
 )
 
@@ -63,18 +55,14 @@ export const ProviderKey = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('pak')),
-    isSystem: boolean(),
-    userId: text().references(() => User.id, { onDelete: 'cascade' }),
-    organizationId: text().references(() => Organization.id, { onDelete: 'cascade' }),
+    accountId: text().references(() => Account.id, { onDelete: 'cascade' }),
     providerId: text().$type<ProviderId>().notNull(),
     key: jsonb().$type<ProviderKeyContent>().notNull(),
     disabled: boolean().notNull(),
     ...timestamps,
   },
   (table) => [
-    index().on(table.isSystem, table.providerId),
-    index().on(table.userId, table.providerId),
-    index().on(table.organizationId, table.providerId),
+    index().on(table.accountId, table.providerId),
   ],
 )
 

@@ -1,7 +1,8 @@
 import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
-import { and, desc, eq, inArray, isNull, lt } from '@cared/db'
+import { and, desc, eq, inArray, lt } from '@cared/db'
+import { db } from '@cared/db/client'
 import { Expense, expenseKinds } from '@cared/db/schema'
 
 import { userProtectedProcedure } from '../orpc'
@@ -16,7 +17,7 @@ export const expenseRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
+        allMembers: z.boolean().optional(),
         expenseKinds: z.array(z.enum(expenseKinds)).optional(),
         appId: z.string().optional(),
         limit: z.number().min(1).max(100).default(50),
@@ -26,15 +27,10 @@ export const expenseRouter = {
     .handler(async ({ context, input }) => {
       const conditions: SQL<unknown>[] = []
 
-      // Filter by organization or user
-      if (input.organizationId) {
-        // If organizationId is provided, filter by organization and ensure user is a member
-        conditions.push(eq(Expense.organizationId, input.organizationId))
+      conditions.push(eq(Expense.accountId, context.auth.accountId))
+
+      if (!input.allMembers) {
         conditions.push(eq(Expense.userId, context.auth.userId))
-      } else {
-        // If no organizationId, filter by user only
-        conditions.push(eq(Expense.userId, context.auth.userId))
-        conditions.push(isNull(Expense.organizationId))
       }
 
       // Filter by expense kinds if provided
@@ -54,7 +50,7 @@ export const expenseRouter = {
 
       const query = and(...conditions)
 
-      const expenses = await context.db
+      const expenses = await db
         .select()
         .from(Expense)
         .where(query)

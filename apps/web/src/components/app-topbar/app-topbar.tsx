@@ -9,16 +9,14 @@ import { Slash } from '@/components/slash'
 import { useCheckSession } from '@/hooks/use-session'
 import { AdminEnterButton } from './admin-enter-button'
 import { AppSwitcher, useHasAppSwitcher } from './app-switcher'
-import { OrganizationAndAccountSwitcher } from './organization-switcher'
+import { AccountSwitcher } from './account-switcher'
 import { TopBarActions } from './top-bar-actions'
-import { useHasWorkspaceSwitcher, WorkspaceSwitcher } from './workspace-switcher'
 
 export function AppTopBar() {
   useCheckSession()
 
   const { toggleSidebar } = useSidebar()
 
-  const hasWorkspaceSwitcher = useHasWorkspaceSwitcher()
   const hasAppSwitcher = useHasAppSwitcher()
 
   return (
@@ -31,17 +29,12 @@ export function AppTopBar() {
 
           <Slash className="hidden md:inline" />
 
-          {/* Organization and Account Switcher */}
-          <OrganizationAndAccountSwitcher />
-
-          {hasWorkspaceSwitcher && <Slash className="hidden md:inline" />}
-
-          {/* Workspace Switcher - only show in workspace context */}
-          <WorkspaceSwitcher />
+          {/* Account Switcher */}
+          <AccountSwitcher />
 
           {hasAppSwitcher && <Slash className="hidden md:inline" />}
 
-          {/* App Switcher - only show in workspace context */}
+          {/* App Switcher */}
           <AppSwitcher />
 
           <AdminEnterButton />

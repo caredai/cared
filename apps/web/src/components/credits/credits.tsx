@@ -64,13 +64,13 @@ interface SubscriptionTableData {
   object: Stripe.Subscription
 }
 
-export function Credits({ organizationId }: { organizationId?: string }) {
-  useCheckStripeCheckoutSessionReturnUrl(organizationId)
+export function Credits() {
+  useCheckStripeCheckoutSessionReturnUrl()
   useCheckPaymentMethodSetupReturnUrl()
 
-  const { credits } = useCredits(organizationId)
-  const { creditsOrdersPages } = useListCreditsOrders(organizationId)
-  const { creditsSubscriptions } = useListCreditsSubscriptions(organizationId)
+  const { credits } = useCredits()
+  const { creditsOrdersPages } = useListCreditsOrders()
+  const { creditsSubscriptions } = useListCreditsSubscriptions()
 
   const [isRechargeDialogOpen, setIsRechargeDialogOpen] = useState(false)
   const [isAutoTopupDialogOpen, setIsAutoTopupDialogOpen] = useState(false)
@@ -192,7 +192,7 @@ export function Credits({ organizationId }: { organizationId?: string }) {
             </TabsList>
 
             <TabsContent value="orders" className="space-y-4">
-              <OrdersTable data={ordersData} organizationId={organizationId} />
+              <OrdersTable data={ordersData} />
             </TabsContent>
 
             <TabsContent value="subscriptions" className="space-y-4">
@@ -202,16 +202,14 @@ export function Credits({ organizationId }: { organizationId?: string }) {
         </CardContent>
       </Card>
 
-      <PaymentMethods organizationId={organizationId} />
+      <PaymentMethods />
 
       <RechargeDialog
-        organizationId={organizationId}
         open={isRechargeDialogOpen}
         onOpenChange={setIsRechargeDialogOpen}
       />
 
       <AutoTopupDialog
-        organizationId={organizationId}
         open={isAutoTopupDialogOpen}
         onOpenChange={setIsAutoTopupDialogOpen}
       />
@@ -222,12 +220,10 @@ export function Credits({ organizationId }: { organizationId?: string }) {
 // Orders Table Component
 function OrdersTable({
   data,
-  organizationId,
 }: {
   data: OrderTableData[]
-  organizationId?: string
 }) {
-  const cancelOrder = useCancelCreditsOrder(organizationId)
+  const cancelOrder = useCancelCreditsOrder()
 
   const columns: ColumnDef<OrderTableData>[] = [
     {

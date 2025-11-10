@@ -1,5 +1,5 @@
 import type { VirtualizerHandle } from 'virtua'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { CheckIcon, EditIcon, PlusIcon, ServerIcon, Trash2Icon, XIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -86,14 +86,12 @@ interface EditableProviderKey {
 }
 
 export function ProviderKeysSheet({
-  isSystem,
-  organizationId,
+  scope,
   provider,
   open,
   onOpenChange,
 }: {
-  isSystem?: boolean
-  organizationId?: string
+  scope: 'system' | 'custom'
   provider: BaseProviderInfo
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -101,14 +99,12 @@ export function ProviderKeysSheet({
   const providerId = provider.id
   const { refetchProviders } = useProviders()
   const { providerKeys, refetchProviderKeys } = useProviderKeysByProvider({
-    isSystem,
-    organizationId,
+    source: scope,
     providerId,
   })
   const vListRef = useRef<VirtualizerHandle>(null)
   const createProviderKey = useCreateProviderKey({
-    isSystem,
-    organizationId,
+    source: scope,
   })
   const updateProviderKey = useUpdateProviderKey()
   const deleteProviderKey = useDeleteProviderKey()

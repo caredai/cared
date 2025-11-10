@@ -2,7 +2,7 @@ export interface Document {
   id: string // segmentId or chunkId
   content: string
   metadata: {
-    workspaceId: string
+    accountId: string
     datasetId: string
     documentId: string
     [key: string]: unknown
@@ -45,7 +45,7 @@ export abstract class BaseVector {
   abstract searchDocumentsByEmbedding(
     embedding: number[],
     filter?: {
-      workspaceId?: string
+      accountId?: string
       datasetId?: string
       documentId?: string
     },
@@ -55,7 +55,7 @@ export abstract class BaseVector {
   abstract searchDocumentsByFulltext(
     query: string,
     filter?: {
-      workspaceId?: string
+      accountId?: string
       datasetId?: string
       documentId?: string
     },
@@ -65,7 +65,7 @@ export abstract class BaseVector {
   abstract deleteDocuments(ids: string[]): Promise<void>
 
   abstract deleteDocumentsByFilter(filter: {
-    workspaceId?: string
+    accountId?: string
     datasetId?: string
     documentId?: string
   }): Promise<void>

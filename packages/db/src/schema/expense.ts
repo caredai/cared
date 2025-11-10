@@ -5,11 +5,7 @@ import type { GenerationDetails } from '@cared/providers'
 import { createdAt, generateId } from '@cared/shared'
 
 import { App } from './app'
-import { Organization, User } from './auth-alias'
-
-export const payerTypes = ['user', 'organization'] as const
-export type PayerType = (typeof payerTypes)[number]
-export const payerTypeEnum = pgEnum('payerType', payerTypes)
+import { Account, User } from './auth-alias'
 
 export const expenseKinds = ['generation'] as const
 export type ExpenseKind = (typeof expenseKinds)[number]
@@ -22,11 +18,10 @@ export const Expense = pgTable(
       .primaryKey()
       .notNull()
       .$defaultFn(() => generateId('gen')),
-    type: payerTypeEnum().notNull(),
-    userId: text()
-      .references(() => User.id, { onDelete: 'cascade' })
-      .notNull(), // for user type, or as an organization member for organization type
-    organizationId: text().references(() => Organization.id, { onDelete: 'cascade' }), // for organization type
+    accountId: text()
+      .notNull()
+      .references(() => Account.id, { onDelete: 'cascade' }),
+    userId: text().references(() => User.id, { onDelete: 'cascade' }), // spender
     appId: text().references(() => App.id, { onDelete: 'cascade' }), // when use app
     kind: expenseKindEnum().notNull(),
     cost: numeric({ precision: 18, scale: 10 }), // in credits
@@ -34,9 +29,9 @@ export const Expense = pgTable(
     createdAt,
   },
   (table) => [
-    index().on(table.type, table.userId, table.appId),
-    index().on(table.type, table.organizationId, table.appId),
-    index().on(table.type, table.organizationId, table.userId, table.appId),
+    index().on(table.accountId, table.userId, table.appId),
+    index().on(table.accountId, table.appId),
+    index().on(table.userId, table.appId),
     index().on(table.createdAt),
   ],
 )

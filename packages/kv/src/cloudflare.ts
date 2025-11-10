@@ -103,6 +103,10 @@ export class CloudflareKV extends KV {
     }
   }
 
+  batchDelete(..._keys: string[]): Promise<void> {
+    throw new Error('Not implemented')
+  }
+
   /**
    * List all keys with optional prefix
    */

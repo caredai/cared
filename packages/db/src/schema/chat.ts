@@ -70,7 +70,7 @@ export const Chat = pgTable(
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
     // Whether the chat is in debug mode.
-    // Only workspace owners and members (with RBAC) can create debug chats.
+    // Only account owners and members (with RBAC) can create debug chats.
     // Only one debug chat is allowed per app per user.
     debug: boolean().notNull().default(false),
     metadata: jsonb().$type<ChatMetadata>().notNull(),
@@ -105,7 +105,7 @@ export const UpdateChatSchema = createUpdateSchema(Chat, {
   ...timestampsOmits,
 })
 
-export const messageRoleEnum = pgEnum('message_role', messageRoleEnumValues)
+export const messageRoleEnum = pgEnum('messageRole', messageRoleEnumValues)
 
 export function generateMessageId() {
   return generateId('msg')

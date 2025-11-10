@@ -15,19 +15,17 @@ import {
 const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
 
 export function StripeCheckoutForm({
-  organizationId,
   credits,
   onSuccess,
   onCancel: _,
 }: {
-  organizationId?: string
   credits: number
   onSuccess?: () => void
   onCancel?: () => void
 }) {
-  const createOnetimeCheckout = useCreateCreditsOnetimeCheckout(organizationId)
-  const { refetchCredits } = useCredits(organizationId)
-  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
+  const createOnetimeCheckout = useCreateCreditsOnetimeCheckout()
+  const { refetchCredits } = useCredits()
+  const { refetchCreditsOrders } = useListCreditsOrders()
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -67,9 +65,9 @@ export function StripeCheckoutForm({
   )
 }
 
-export function useCheckStripeCheckoutSessionReturnUrl(organizationId?: string) {
+export function useCheckStripeCheckoutSessionReturnUrl() {
   const router = useRouter()
-  const { refetchCreditsOrders } = useListCreditsOrders(organizationId)
+  const { refetchCreditsOrders } = useListCreditsOrders()
 
   useEffect(() => {
     void stripePromise.then((stripe) => {

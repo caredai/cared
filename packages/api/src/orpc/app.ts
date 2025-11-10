@@ -5,6 +5,7 @@ import { z } from 'zod/v4'
 
 import type { AppMetadata } from '@cared/db/schema'
 import { and, asc, count, desc, eq, gt, inArray, lt, sql } from '@cared/db'
+import { db } from '@cared/db/client'
 import {
   Agent,
   AgentVersion,
@@ -16,21 +17,18 @@ import {
   CreateAgentVersionSchema,
   CreateAppSchema,
   DRAFT_VERSION,
-  Member,
   Tag,
   UpdateAppSchema,
-  Workspace,
 } from '@cared/db/schema'
 import log from '@cared/log'
 import { defaultModels } from '@cared/providers'
 import { mergeWithoutUndefined } from '@cared/shared'
 
 import type { BaseContext, Context } from '../orpc'
-import { OrganizationScope } from '../auth'
 import { s3Client } from '../client/s3'
 import { cfg } from '../config'
 import { env } from '../env'
-import { AppOperator, parseS3Url } from '../operation'
+import { AppOperator, getUserAccounts, parseS3Url } from '../operation'
 import { protectedProcedure, publicProcedure } from '../orpc'
 import { deleteImages } from './utils'
 
@@ -42,7 +40,7 @@ import { deleteImages } from './utils'
  * @throws {ORPCError} If app not found
  */
 export async function getAppById(ctx: BaseContext, id: string) {
-  const app = await ctx.db.query.App.findFirst({
+  const app = await db.query.App.findFirst({
     where: eq(App.id, id),
   })
 
@@ -88,7 +86,7 @@ export async function getApps(
   const query = conditions.length > 0 ? and(...conditions) : undefined
 
   // Get apps with appropriate ordering
-  const apps = await ctx.db.query.App.findMany({
+  const apps = await db.query.App.findMany({
     where: query,
     orderBy: (baseQuery.order ?? 'desc') === 'desc' ? desc(App.id) : asc(App.id),
     limit: baseQuery.limit ? baseQuery.limit + 1 : undefined, // Get one extra to determine hasMore when limit is specified
@@ -122,7 +120,7 @@ export async function getApps(
 
 async function getAppsCategoriesAndTags(ctx: BaseContext, apps: App[]) {
   // Get categories for each app
-  const categories = await ctx.db
+  const categories = await db
     .select({
       appId: AppsToCategories.appId,
       category: {
@@ -140,7 +138,7 @@ async function getAppsCategoriesAndTags(ctx: BaseContext, apps: App[]) {
     )
 
   // Get tags for each app
-  const tags = await ctx.db
+  const tags = await db
     .select({
       appId: AppsToTags.appId,
       tag: {
@@ -194,18 +192,16 @@ export async function getAppVersion(
   appId: string,
   version?: number | 'latest' | 'draft',
 ) {
-  let appVersion
+  version ??= 'latest'
 
-  if (!version) {
-    version = 'latest'
-  }
+  let appVersion: typeof AppVersion.$inferSelect | undefined
 
   if (version === 'draft') {
-    appVersion = await ctx.db.query.AppVersion.findFirst({
+    appVersion = await db.query.AppVersion.findFirst({
       where: and(eq(AppVersion.appId, appId), eq(AppVersion.version, DRAFT_VERSION)),
     })
   } else if (version === 'latest') {
-    appVersion = await ctx.db.query.AppVersion.findFirst({
+    appVersion = await db.query.AppVersion.findFirst({
       where: and(
         eq(AppVersion.appId, appId),
         lt(AppVersion.version, DRAFT_VERSION), // Exclude draft version
@@ -213,7 +209,7 @@ export async function getAppVersion(
       orderBy: desc(AppVersion.version),
     })
   } else {
-    appVersion = await ctx.db.query.AppVersion.findFirst({
+    appVersion = await db.query.AppVersion.findFirst({
       where: and(eq(AppVersion.appId, appId), eq(AppVersion.version, version)),
     })
   }
@@ -229,118 +225,89 @@ export async function getAppVersion(
 
 export const appRouter = {
   /**
-   * List all apps in a workspace or organization.
-   * Only accessible by workspace members or organization members.
-   * @param input - Object containing either workspaceId or organizationId (but not both) and ordering preference
+   * List all apps in an account or user's accounts.
+   * Only accessible by account members.
+   * @param input - Object containing accountId (optional) and ordering preference
    * @returns List of apps with their categories and tags
-   * @throws {ORPCError} If workspace/organization access verification fails
+   * @throws {ORPCError} If account access verification fails
    */
   list: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/apps',
       tags: ['apps'],
-      summary: 'List all apps in a workspace or organization',
+      summary: "List all apps in an account or in any of the user's accounts",
     })
     .input(
       z
         .object({
-          organizationId: z.string().min(32).optional(),
-          workspaceId: z.string().min(32).optional(),
+          all: z.boolean("Whether list all apps of all the user's accounts").optional(),
           order: z.enum(['desc', 'asc']).default('desc'),
-        })
-        .refine((data) => !(data.organizationId && data.workspaceId), {
-          message: "Cannot provide both 'organizationId' and 'workspaceId' at the same time",
-          path: ['organizationId', 'workspaceId'],
         })
         .default({
           order: 'desc',
         }),
     )
     .handler(async ({ context, input }) => {
-      let appsWithCategoriesAndTags: Awaited<ReturnType<typeof getAppsCategoriesAndTags>>
-      if (input.workspaceId) {
-        const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-        await scope.checkPermissions()
+      let apps: Awaited<ReturnType<typeof getAppsCategoriesAndTags>>
 
-        const { apps } = await getApps(context, {
-          where: eq(App.workspaceId, input.workspaceId),
-          order: input.order,
-        })
-        appsWithCategoriesAndTags = apps
-      } else if (input.organizationId) {
-        const scope = OrganizationScope.fromOrganization(context, input.organizationId)
-        await scope.checkPermissions()
-
-        // When organizationId is provided, we need to find apps in workspaces belonging to that organization
-        const apps = await context.db
-          .select({
-            app: App,
+      if (input.all) {
+        const authCtx = context.auth.ctx
+        if (authCtx.type === 'user' || (authCtx.type === 'apiToken' && authCtx.scope === 'user')) {
+          const accounts = await getUserAccounts(authCtx.userId)
+          const result = await getApps(context, {
+            where: inArray(
+              App.accountId,
+              accounts.map(({ id }) => id),
+            ),
+            order: input.order,
           })
-          .from(App)
-          .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
-          .where(eq(Workspace.organizationId, input.organizationId))
-          .orderBy(input.order === 'desc' ? desc(App.id) : asc(App.id))
-
-        appsWithCategoriesAndTags = await getAppsCategoriesAndTags(
-          context,
-          apps.map(({ app }) => app),
-        )
-      } else {
-        const auth = context.auth.auth
-        if (auth?.type !== 'user') {
+          apps = result.apps
+        } else {
           throw new ORPCError('FORBIDDEN')
         }
+      } else {
+        await context.auth.requirePermissions()
 
-        const apps = await context.db
-          .select({
-            app: App,
-          })
-          .from(App)
-          .innerJoin(Workspace, eq(Workspace.id, App.workspaceId))
-          .innerJoin(Member, eq(Member.organizationId, Workspace.organizationId))
-          .where(eq(Member.userId, auth.userId))
-          .orderBy(input.order === 'desc' ? desc(App.id) : asc(App.id))
-
-        appsWithCategoriesAndTags = await getAppsCategoriesAndTags(
-          context,
-          apps.map(({ app }) => app),
-        )
+        const result = await getApps(context, {
+          where: eq(App.accountId, context.auth.accountId),
+          order: input.order,
+        })
+        apps = result.apps
       }
 
       return {
-        apps: appsWithCategoriesAndTags,
+        apps,
       }
     }),
 
   /**
-   * List all apps in a specific category within a workspace.
-   * Only accessible by workspace members.
-   * @param input - Object containing workspaceId, categoryId and ordering preference
+   * List all apps in a specific category within an account.
+   * Only accessible by account members.
+   * @param input - Object containing accountId, categoryId and ordering preference
    * @returns List of apps in the category
-   * @throws {ORPCError} If workspace access verification fails
+   * @throws {ORPCError} If account access verification fails
    */
   listByCategory: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/apps/by-category/{categoryId}',
       tags: ['apps'],
-      summary: 'List all apps in a specific category within a workspace',
+      summary: 'List all apps in a specific category within an account',
     })
     .input(
       z.object({
-        workspaceId: z.string().min(32),
+        accountId: z.string().min(32),
         categoryId: z.string(),
         order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: input.accountId })
 
       const result = await getApps(context, {
         where: and(
-          eq(App.workspaceId, input.workspaceId),
+          eq(App.accountId, input.accountId),
           eq(AppsToCategories.categoryId, input.categoryId),
         ),
         order: input.order,
@@ -352,32 +319,31 @@ export const appRouter = {
     }),
 
   /**
-   * List all apps with any of the specified tags in a workspace.
-   * Only accessible by workspace members.
-   * @param input - Object containing workspaceId, tags array and ordering preference
+   * List all apps with any of the specified tags in an account.
+   * Only accessible by account members.
+   * @param input - Object containing accountId, tags array and ordering preference
    * @returns List of apps with matching tags
-   * @throws {ORPCError} If workspace access verification fails
+   * @throws {ORPCError} If account access verification fails
    */
   listByTags: protectedProcedure
     .route({
       method: 'GET',
       path: '/v1/apps/by-tags',
       tags: ['apps'],
-      summary: 'List all apps with any of the specified tags in a workspace',
+      summary: 'List all apps with any of the specified tags in an account',
     })
     .input(
       z.object({
-        workspaceId: z.string().min(32),
+        accountId: z.string().min(32),
         tags: z.array(z.string()).min(1).max(20),
         order: z.enum(['desc', 'asc']).default('desc'),
       }),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: input.accountId })
 
       const result = await getApps(context, {
-        where: and(eq(App.workspaceId, input.workspaceId), inArray(AppsToTags.tag, input.tags)),
+        where: and(eq(App.accountId, input.accountId), inArray(AppsToTags.tag, input.tags)),
         order: input.order,
       })
 
@@ -388,7 +354,7 @@ export const appRouter = {
 
   /**
    * List all versions of an app.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - Object containing app ID and pagination parameters
    * @returns List of app versions sorted by version number
    * @throws {ORPCError} If app not found or access verification fails
@@ -410,8 +376,8 @@ export const appRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromApp(context, input.id)
-      await scope.checkPermissions()
+      const app = await getAppById(context, input.id)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
       const conditions: SQL<unknown>[] = [eq(AppVersion.appId, input.id)]
 
@@ -422,7 +388,7 @@ export const appRouter = {
         conditions.push(lt(AppVersion.version, input.before))
       }
 
-      const versions = await context.db.query.AppVersion.findMany({
+      const versions = await db.query.AppVersion.findMany({
         where: and(...conditions),
         orderBy: input.order === 'desc' ? desc(AppVersion.version) : AppVersion.version,
         limit: input.limit + 1,
@@ -447,7 +413,7 @@ export const appRouter = {
 
   /**
    * Get a single app by ID.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - The app ID
    * @returns The app if found
    * @throws {ORPCError} If app not found or access verification fails
@@ -466,14 +432,13 @@ export const appRouter = {
     )
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.id)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions()
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
       return { app }
     }),
 
   /**
    * Get a specific version of an app.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - Object containing app ID and version number
    * @returns The app version if found
    * @throws {ORPCError} If app version not found or access verification fails
@@ -492,10 +457,10 @@ export const appRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromApp(context, input.id)
-      await scope.checkPermissions()
+      const app = await getAppById(context, input.id)
+      await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
-      const version = await context.db.query.AppVersion.findFirst({
+      const version = await db.query.AppVersion.findFirst({
         where: and(eq(AppVersion.appId, input.id), eq(AppVersion.version, input.version)),
       })
 
@@ -509,8 +474,8 @@ export const appRouter = {
     }),
 
   /**
-   * Create a new app in a workspace.
-   * Only accessible by workspace members.
+   * Create a new app in an account.
+   * Only accessible by account members.
    * @param input - The app data following the {@link CreateAppSchema}
    * @returns The created app and its draft version
    * @throws {ORPCError} If app creation fails
@@ -520,12 +485,11 @@ export const appRouter = {
       method: 'POST',
       path: '/v1/apps',
       tags: ['apps'],
-      summary: 'Create a new app in a workspace',
+      summary: 'Create a new app in an account',
     })
     .input(CreateAppSchema)
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromWorkspace(context, input.workspaceId)
-      await scope.checkPermissions({ app: ['create'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: input.accountId })
 
       // Validate imageUrl if provided
       if (input.metadata.imageUrl) {
@@ -535,7 +499,7 @@ export const appRouter = {
             message: 'Invalid S3 image URL format',
           })
         } else if (parsedUrl) {
-          if (parsedUrl.type !== 'workspace' || parsedUrl.workspaceId !== input.workspaceId) {
+          if (parsedUrl.type !== 'account' || parsedUrl.accountId !== input.accountId) {
             throw new ORPCError('BAD_REQUEST')
           }
           // Check if file exists in S3 storage
@@ -563,17 +527,17 @@ export const appRouter = {
         metadata: mergeWithoutUndefined<AppMetadata>(defaultModels.app, input.metadata),
       }
 
-      return context.db.transaction(async (tx) => {
-        // Check if workspace has reached the maximum app limit
+      return db.transaction(async (tx) => {
+        // Check if account has reached the maximum app limit
         const appsCount = await tx
           .select({ count: count() })
           .from(App)
-          .where(eq(App.workspaceId, input.workspaceId))
+          .where(eq(App.accountId, input.accountId))
           .then((r) => r[0]!.count)
 
-        if (appsCount >= cfg.perWorkspace.maxApps) {
+        if (appsCount >= cfg.perAccount.maxApps) {
           throw new ORPCError('FORBIDDEN', {
-            message: `Workspace has reached the maximum limit of ${cfg.perWorkspace.maxApps} applications`,
+            message: `Account has reached the maximum limit of ${cfg.perAccount.maxApps} applications`,
           })
         }
 
@@ -611,7 +575,7 @@ export const appRouter = {
   /**
    * Update an existing app.
    * Only updates the draft version.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - The app data following the {@link UpdateAppSchema}
    * @returns The updated app and its draft version
    * @throws {ORPCError} If app update fails
@@ -627,8 +591,7 @@ export const appRouter = {
     .handler(async ({ context, input }) => {
       const { id, ...update } = input
       const app = await getAppById(context, id)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['update'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
       const draft = await getAppVersion(context, id, 'draft')
       // Check if there's any published version
@@ -649,7 +612,7 @@ export const appRouter = {
           })
         } else if (parsedUrl) {
           if (
-            (parsedUrl.type !== 'workspace' || parsedUrl.workspaceId !== app.workspaceId) &&
+            (parsedUrl.type !== 'account' || parsedUrl.accountId !== app.accountId) &&
             (parsedUrl.type !== 'app' || parsedUrl.appId !== app.id)
           ) {
             throw new ORPCError('BAD_REQUEST')
@@ -681,7 +644,7 @@ export const appRouter = {
         metadata: mergeWithoutUndefined<AppMetadata>(draft.metadata, update.metadata),
       }
 
-      const result = await context.db.transaction(async (tx) => {
+      const result = await db.transaction(async (tx) => {
         // Update draft version
         const [updatedDraft] = await tx
           .update(AppVersion)
@@ -729,7 +692,7 @@ export const appRouter = {
 
   /**
    * Delete an app.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * Also deletes all related category and tag associations.
    * Also deletes all related agents and their versions.
    * @param input - The app ID
@@ -749,18 +712,8 @@ export const appRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const scope = await OrganizationScope.fromApp(context, input.id)
-      await scope.checkPermissions({ app: ['delete'] })
-
-      const app = await context.db.query.App.findFirst({
-        where: eq(App.id, input.id),
-        columns: { id: true },
-      })
-      if (!app) {
-        throw new ORPCError('NOT_FOUND', {
-          message: `App not found`,
-        })
-      }
+      const app = await getAppById(context, input.id)
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
       const operator = new AppOperator(context, app.id)
 
@@ -790,11 +743,10 @@ export const appRouter = {
     )
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.id)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['publish'] })
+      await context.auth.requirePermissions({ app: ['publish'] }, { accountId: app.accountId })
       const draftVersion = await getAppVersion(context, input.id, 'draft')
 
-      return context.db.transaction(async (tx) => {
+      return db.transaction(async (tx) => {
         // Create new published version with current timestamp
         const publishedVersion = Math.floor(Date.now() / 1000)
 
@@ -835,9 +787,10 @@ export const appRouter = {
           .select({ count: count() })
           .from(Agent)
           .where(eq(Agent.appId, input.id))
+          .then((r) => r[0]!.count)
 
         // Check if any agent is missing a draft version
-        if (agentsWithDrafts.length !== agentsCount[0]!.count) {
+        if (agentsWithDrafts.length !== agentsCount) {
           throw new ORPCError('INTERNAL_SERVER_ERROR', {
             message: 'Some agents are missing draft versions',
           })
@@ -935,7 +888,7 @@ export const appRouter = {
         )
         .default({ limit: 50, order: 'desc' }),
     )
-    .handler(async ({ context, input }) => {
+    .handler(async ({ input }) => {
       const conditions: SQL<unknown>[] = []
 
       // Add cursor conditions based on pagination direction
@@ -948,7 +901,7 @@ export const appRouter = {
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      const tags = await context.db.query.Tag.findMany({
+      const tags = await db.query.Tag.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(Tag.name) : asc(Tag.name),
         limit: input.limit + 1,
@@ -974,7 +927,7 @@ export const appRouter = {
   /**
    * Update tags for an app.
    * Replaces all existing tags with the new ones.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - Object containing app ID and new tags array
    * @returns The updated tags
    * @throws {ORPCError} If tag update fails
@@ -994,10 +947,9 @@ export const appRouter = {
     )
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.id)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['update'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
-      return context.db.transaction(async (tx) => {
+      return db.transaction(async (tx) => {
         // Delete all existing tags
         await tx.delete(AppsToTags).where(eq(AppsToTags.appId, input.id))
 
@@ -1056,7 +1008,7 @@ export const appRouter = {
         )
         .default({ limit: 50, order: 'desc' }),
     )
-    .handler(async ({ context, input }) => {
+    .handler(async ({ input }) => {
       const conditions: SQL<unknown>[] = []
 
       // Add cursor conditions based on pagination direction
@@ -1069,7 +1021,7 @@ export const appRouter = {
 
       const query = conditions.length > 0 ? and(...conditions) : undefined
 
-      const categories = await context.db.query.Category.findMany({
+      const categories = await db.query.Category.findMany({
         where: query,
         orderBy: input.order === 'desc' ? desc(Category.id) : asc(Category.id),
         limit: input.limit + 1,
@@ -1095,7 +1047,7 @@ export const appRouter = {
   /**
    * Update app categories.
    * Add and/or remove categories for an app.
-   * Only accessible by workspace members.
+   * Only accessible by account members.
    * @param input - Object containing app ID, categories to add and/or remove
    * @returns The updated categories
    * @throws {ORPCError} If category update fails
@@ -1116,8 +1068,7 @@ export const appRouter = {
     )
     .handler(async ({ context, input }) => {
       const app = await getAppById(context, input.id)
-      const scope = await OrganizationScope.fromApp(context, app)
-      await scope.checkPermissions({ app: ['update'] })
+      await context.auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
 
       // Check for same category IDs in both add and remove arrays
       if (input.add?.length && input.remove?.length) {
@@ -1129,7 +1080,7 @@ export const appRouter = {
         }
       }
 
-      return context.db.transaction(async (tx) => {
+      return db.transaction(async (tx) => {
         // Get current categories count
         const currentCategories = await tx
           .select({ categoryId: AppsToCategories.categoryId })

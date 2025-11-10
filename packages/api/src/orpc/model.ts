@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
+import type { StatementsSubset } from '@cared/auth'
 import type {
   BaseModelInfo,
   BaseProviderInfo,
@@ -13,7 +14,8 @@ import type {
   SpeechModelInfo as SpeechModelInfo_,
   TranscriptionModelInfo as TranscriptionModelInfo_,
 } from '@cared/providers'
-import { and, eq, or } from '@cared/db'
+import { and, eq, isNull, or } from '@cared/db'
+import { db } from '@cared/db/client'
 import { ProviderModels as ProviderModelsTable, ProviderSettings } from '@cared/db/schema'
 import {
   getBaseProviderInfos,
@@ -24,16 +26,12 @@ import {
   splitModelFullId,
 } from '@cared/providers'
 
-import type { Context } from '../orpc'
-import { OrganizationScope } from '../auth'
-import {
-  getProviderModelInfos,
-  invalidateProviderModelsCache,
-  ReturnedProviderInfo,
-  sourceSchema,
-} from '../operation'
+import type { ReturnedProviderInfo } from '../operation'
+import type { ProtectedContext } from '../orpc'
+import type { ModelSource } from '../types'
+import { getProviderModelInfos, invalidateProviderModelsCache } from '../operation'
 import { protectedProcedure, publicProcedure } from '../orpc'
-import { updateModelArgsSchema, updateModelsArgsSchema } from '../types'
+import { modelSourceSchema, updateModelArgsSchema, updateModelsArgsSchema } from '../types'
 
 export type ProviderInfo = BaseProviderInfo & {
   enabled: boolean
@@ -105,12 +103,13 @@ export const modelRouter = {
       tags: ['models'],
       summary: 'List all available model providers',
     })
-    .handler(async ({ context }) => {
+    .handler(async () => {
       const providers = getBaseProviderInfos()
 
+      // When accountId is null, it's system-level
       const providerSettings = (
-        await context.db.query.ProviderSettings.findFirst({
-          where: eq(ProviderSettings.isSystem, true),
+        await db.query.ProviderSettings.findFirst({
+          where: isNull(ProviderSettings.accountId),
         })
       )?.settings
 
@@ -127,7 +126,7 @@ export const modelRouter = {
   /**
    * List all providers with their models, grouped by model type.
    * Accessible by authenticated users.
-   * @param input - Object containing optional model type filter and organizationId
+   * @param input - Object containing optional model type filter and accountId
    * @returns Models organized by type, each containing providers with their models
    */
   listProvidersModels: protectedProcedure
@@ -140,15 +139,16 @@ export const modelRouter = {
     .input(
       z
         .object({
-          organizationId: z.string().optional(),
           type: z.enum(modelTypes).optional(),
-          source: sourceSchema.optional(),
+          source: modelSourceSchema.default('effective'),
         })
-        .default({}),
+        .default({
+          source: 'effective',
+        }),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId)
-      const providerInfos = await getProviderModelInfos(input.source, input.organizationId, userId)
+      await context.auth.requirePermissions()
+      const providerInfos = await getProviderModelInfos(input.source, context.auth.accountId)
 
       function format<M extends BaseModelInfo>(provider: ReturnedProviderInfo, models?: M[]) {
         return {
@@ -193,7 +193,7 @@ export const modelRouter = {
   /**
    * List all available models across all providers.
    * Accessible by authenticated users.
-   * @param input - Object containing model type filter and organizationId
+   * @param input - Object containing model type filter and accountId
    * @returns List of models matching the type
    */
   listModels: protectedProcedure
@@ -206,15 +206,16 @@ export const modelRouter = {
     .input(
       z
         .object({
-          organizationId: z.string().optional(),
           type: z.enum(modelTypes).optional(),
-          source: sourceSchema.optional(),
+          source: modelSourceSchema.default('effective'),
         })
-        .default({}),
+        .default({
+          source: 'effective',
+        }),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId)
-      const providerInfos = await getProviderModelInfos(input.source, input.organizationId, userId)
+      await context.auth.requirePermissions()
+      const providerInfos = await getProviderModelInfos(input.source, context.auth.accountId)
 
       function format<M extends { id: string }>(provider: ReturnedProviderInfo, models?: M[]) {
         return (
@@ -253,7 +254,7 @@ export const modelRouter = {
   /**
    * Get detailed information about a specific model.
    * Accessible by authenticated users.
-   * @param input - Object containing model full ID, type, and organizationId
+   * @param input - Object containing model full ID, type, and accountId
    * @returns The model information if found
    */
   getModel: protectedProcedure
@@ -265,28 +266,25 @@ export const modelRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
         id: modelFullIdSchema,
         type: z.enum(modelTypes),
-        source: sourceSchema.optional(),
+        source: modelSourceSchema.default('effective'),
       }),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId)
+      await context.auth.requirePermissions()
 
       const { providerId, modelId } = splitModelFullId(input.id)
 
-      // Get provider models from database (system + user/organization)
-      const providerModels = await context.db
+      // Get provider models from database (system + account)
+      const providerModels = await db
         .select()
         .from(ProviderModelsTable)
         .where(
           and(
             or(
-              eq(ProviderModelsTable.isSystem, true),
-              input.organizationId
-                ? eq(ProviderModelsTable.organizationId, input.organizationId)
-                : eq(ProviderModelsTable.userId, userId!),
+              isNull(ProviderModelsTable.accountId),
+              eq(ProviderModelsTable.accountId, context.auth.accountId),
             ),
             eq(ProviderModelsTable.providerId, providerId),
           ),
@@ -296,19 +294,21 @@ export const modelRouter = {
         return models?.[`${type}Models` as const]?.find((m) => m.id === modelId)
       }
 
-      const systemModel = findModel(providerModels.find((pm) => pm.isSystem)?.models, input.type)
-      const userOrgModel = findModel(providerModels.find((pm) => !pm.isSystem)?.models, input.type)
+      // When accountId is null, it's system-level
+      const systemModel = findModel(providerModels.find((pm) => !pm.accountId)?.models, input.type)
+      const accountModel = findModel(providerModels.find((pm) => pm.accountId)?.models, input.type)
 
-      let model
+      let model: BaseModelInfo | undefined
       switch (input.source) {
         case 'system':
           model = systemModel
           break
         case 'custom':
-          model = userOrgModel
+          model = accountModel
           break
         default:
-          model = systemModel ?? userOrgModel // if both exist, prefer system models
+          // if both exist, prefer system models
+          model = systemModel ?? accountModel
           break
       }
 
@@ -335,9 +335,9 @@ export const modelRouter = {
     }),
 
   /**
-   * Add a new model to a provider for an organization.
-   * Accessible by authenticated users with organization permissions.
-   * @param input - Object containing organizationId, providerId, and model information
+   * Add a new model to a provider for an account.
+   * Accessible by authenticated users with account permissions.
+   * @param input - Object containing accountId, providerId, and model information
    * @returns Success message
    */
   updateModel: protectedProcedure
@@ -350,37 +350,32 @@ export const modelRouter = {
     .input(
       z
         .object({
-          organizationId: z.string().optional(),
           providerId: providerIdSchema,
-          isSystem: z.boolean().optional(),
+          source: modelSourceSchema.exclude(['effective']).default('custom'),
         })
-        .and(updateModelArgsSchema)
-        .refine((data) => !(data.organizationId && data.isSystem), {
-          message: 'organizationId and isSystem cannot both be present',
-        }),
+        .and(updateModelArgsSchema),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId, input.isSystem)
+      await checkPermissionsBySource(context, input.source, {
+        model: ['write'],
+      })
 
-      let providerModels = await context.db.query.ProviderModels.findFirst({
+      // When accountId is null, it's system-level
+      let providerModels = await db.query.ProviderModels.findFirst({
         where: and(
-          input.isSystem
-            ? eq(ProviderModelsTable.isSystem, true)
-            : input.organizationId
-              ? eq(ProviderModelsTable.organizationId, input.organizationId)
-              : eq(ProviderModelsTable.userId, userId!),
+          input.source === 'custom'
+            ? eq(ProviderModelsTable.accountId, context.auth.accountId)
+            : isNull(ProviderModelsTable.accountId),
           eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
 
       if (!providerModels) {
         providerModels = (
-          await context.db
+          await db
             .insert(ProviderModelsTable)
             .values({
-              isSystem: input.isSystem ?? false,
-              userId: !input.isSystem && !input.organizationId ? userId! : undefined,
-              organizationId: !input.isSystem ? input.organizationId : undefined,
+              accountId: input.source === 'custom' ? context.auth.accountId : undefined,
               providerId: input.providerId,
               models: {},
             })
@@ -419,7 +414,7 @@ export const modelRouter = {
       }
 
       // Update the existing record
-      await context.db
+      await db
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
@@ -433,7 +428,7 @@ export const modelRouter = {
         | TranscriptionModelInfo
         | EmbeddingModelInfo = {
         ...model,
-        isSystem: providerModels.isSystem,
+        isSystem: input.source === 'system',
       }
 
       return {
@@ -456,37 +451,32 @@ export const modelRouter = {
     .input(
       z
         .object({
-          organizationId: z.string().optional(),
           providerId: providerIdSchema,
-          isSystem: z.boolean().optional(),
+          source: modelSourceSchema.exclude(['effective']).default('custom'),
         })
-        .and(updateModelsArgsSchema)
-        .refine((data) => !(data.organizationId && data.isSystem), {
-          message: 'organizationId and isSystem cannot both be present',
-        }),
+        .and(updateModelsArgsSchema),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId, input.isSystem)
+      await checkPermissionsBySource(context, input.source, {
+        model: ['write'],
+      })
 
-      let providerModels = await context.db.query.ProviderModels.findFirst({
+      // When accountId is null, it's system-level
+      let providerModels = await db.query.ProviderModels.findFirst({
         where: and(
-          input.isSystem
-            ? eq(ProviderModelsTable.isSystem, true)
-            : input.organizationId
-              ? eq(ProviderModelsTable.organizationId, input.organizationId)
-              : eq(ProviderModelsTable.userId, userId!),
+          input.source === 'custom'
+            ? eq(ProviderModelsTable.accountId, context.auth.accountId)
+            : isNull(ProviderModelsTable.accountId),
           eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
 
       if (!providerModels) {
         providerModels = (
-          await context.db
+          await db
             .insert(ProviderModelsTable)
             .values({
-              isSystem: input.isSystem ?? false,
-              userId: !input.isSystem && !input.organizationId ? userId! : undefined,
-              organizationId: !input.isSystem ? input.organizationId : undefined,
+              accountId: input.source === 'custom' ? context.auth.accountId : undefined,
               providerId: input.providerId,
               models: {},
             })
@@ -532,7 +522,7 @@ export const modelRouter = {
       }
 
       // Update the existing record
-      await context.db
+      await db
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
@@ -548,7 +538,7 @@ export const modelRouter = {
       )[] = validatedModels.map((model) => ({
         ...model,
         id: modelFullId(input.providerId, model.id),
-        isSystem: providerModels.isSystem,
+        isSystem: input.source === 'system',
       }))
 
       return {
@@ -569,28 +559,24 @@ export const modelRouter = {
       summary: 'Sort models for a specific provider and type',
     })
     .input(
-      z
-        .object({
-          organizationId: z.string().optional(),
-          providerId: providerIdSchema,
-          isSystem: z.boolean().optional(),
-          type: z.enum(modelTypes),
-          ids: z.array(modelFullIdSchema),
-        })
-        .refine((data) => !(data.organizationId && data.isSystem), {
-          message: 'organizationId and isSystem cannot both be present',
-        }),
+      z.object({
+        providerId: providerIdSchema,
+        type: z.enum(modelTypes),
+        ids: z.array(modelFullIdSchema),
+        source: modelSourceSchema.exclude(['effective']).default('custom'),
+      }),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId, input.isSystem)
+      await checkPermissionsBySource(context, input.source, {
+        model: ['write'],
+      })
 
-      const providerModels = await context.db.query.ProviderModels.findFirst({
+      // When accountId is null, it's system-level
+      const providerModels = await db.query.ProviderModels.findFirst({
         where: and(
-          input.isSystem
-            ? eq(ProviderModelsTable.isSystem, true)
-            : input.organizationId
-              ? eq(ProviderModelsTable.organizationId, input.organizationId)
-              : eq(ProviderModelsTable.userId, userId!),
+          input.source === 'custom'
+            ? eq(ProviderModelsTable.accountId, context.auth.accountId)
+            : isNull(ProviderModelsTable.accountId),
           eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
@@ -657,7 +643,7 @@ export const modelRouter = {
       providerModels.models[modelsKey] = sortedModels
 
       // Update the database record
-      await context.db
+      await db
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
@@ -673,7 +659,7 @@ export const modelRouter = {
       )[] = sortedModels.map((model) => ({
         ...model,
         id: modelFullId(input.providerId, model.id),
-        isSystem: providerModels.isSystem,
+        isSystem: input.source === 'system',
       }))
 
       return {
@@ -695,24 +681,24 @@ export const modelRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
         id: modelFullIdSchema,
         type: z.enum(modelTypes),
-        isSystem: z.boolean().optional(),
+        source: modelSourceSchema.exclude(['effective']).default('custom'),
       }),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId, input.isSystem)
+      await checkPermissionsBySource(context, input.source, {
+        model: ['write'],
+      })
 
       const { providerId, modelId } = splitModelFullId(input.id)
 
-      const providerModels = await context.db.query.ProviderModels.findFirst({
+      // When accountId is null, it's system-level
+      const providerModels = await db.query.ProviderModels.findFirst({
         where: and(
-          input.isSystem
-            ? eq(ProviderModelsTable.isSystem, true)
-            : input.organizationId
-              ? eq(ProviderModelsTable.organizationId, input.organizationId)
-              : eq(ProviderModelsTable.userId, userId!),
+          input.source === 'custom'
+            ? eq(ProviderModelsTable.accountId, context.auth.accountId)
+            : isNull(ProviderModelsTable.accountId),
           eq(ProviderModelsTable.providerId, providerId),
         ),
       })
@@ -744,7 +730,7 @@ export const modelRouter = {
       providerModels.models[modelsKey] = existingModels.filter((model) => model.id !== modelId)
 
       // Update the database record
-      await context.db
+      await db
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
@@ -759,7 +745,7 @@ export const modelRouter = {
         | EmbeddingModelInfo = {
         ...deletedModel,
         id: input.id,
-        isSystem: providerModels.isSystem,
+        isSystem: input.source === 'system',
       }
 
       return {
@@ -781,15 +767,16 @@ export const modelRouter = {
     })
     .input(
       z.object({
-        organizationId: z.string().optional(),
         providerId: providerIdSchema,
         ids: z.array(modelFullIdSchema),
         type: z.enum(modelTypes),
-        isSystem: z.boolean().optional(),
+        source: modelSourceSchema.exclude(['effective']).default('custom'),
       }),
     )
     .handler(async ({ input, context }) => {
-      const userId = await checkPermissions(context, input.organizationId, input.isSystem)
+      await checkPermissionsBySource(context, input.source, {
+        model: ['write'],
+      })
 
       // Extract modelIds from the full model ids
       const modelIds = input.ids.map((id) => {
@@ -802,13 +789,12 @@ export const modelRouter = {
         return modelId
       })
 
-      const providerModels = await context.db.query.ProviderModels.findFirst({
+      // When accountId is null, it's system-level
+      const providerModels = await db.query.ProviderModels.findFirst({
         where: and(
-          input.isSystem
-            ? eq(ProviderModelsTable.isSystem, true)
-            : input.organizationId
-              ? eq(ProviderModelsTable.organizationId, input.organizationId)
-              : eq(ProviderModelsTable.userId, userId!),
+          input.source === 'custom'
+            ? eq(ProviderModelsTable.accountId, context.auth.accountId)
+            : isNull(ProviderModelsTable.accountId),
           eq(ProviderModelsTable.providerId, input.providerId),
         ),
       })
@@ -842,7 +828,7 @@ export const modelRouter = {
       )
 
       // Update the database record
-      await context.db
+      await db
         .update(ProviderModelsTable)
         .set({ models: providerModels.models })
         .where(eq(ProviderModelsTable.id, providerModels.id))
@@ -858,7 +844,7 @@ export const modelRouter = {
       )[] = deletedModels.map((model) => ({
         ...model,
         id: modelFullId(input.providerId, model.id),
-        isSystem: providerModels.isSystem,
+        isSystem: input.source === 'system',
       }))
 
       return {
@@ -867,67 +853,20 @@ export const modelRouter = {
     }),
 }
 
-async function checkPermissions(context: Context, organizationId?: string, isSystem?: boolean) {
-  const auth = context.auth.auth
-  switch (auth?.type) {
-    case 'user':
-    case 'appUser':
-      if (organizationId) {
-        const scope = OrganizationScope.fromOrganization(
-          { headers: context.headers, db: context.db },
-          organizationId,
-        )
-        await scope.checkPermissions()
-      } else {
-        if (isSystem && auth.type === 'user' && !auth.isAdmin) {
-          throw new ORPCError('FORBIDDEN')
-        }
-        return auth.userId
+export async function checkPermissionsBySource(
+  context: ProtectedContext,
+  source: Omit<ModelSource, 'effective'>,
+  permissions?: StatementsSubset,
+  accountId?: string | null,
+) {
+  switch (source) {
+    case 'system':
+      if (!context.auth.isAdmin) {
+        throw new ORPCError('FORBIDDEN')
       }
       break
-    case 'apiKey':
-      switch (auth.scope) {
-        case 'user':
-          if (organizationId) {
-            const scope = OrganizationScope.fromOrganization(
-              { headers: context.headers, db: context.db },
-              organizationId,
-            )
-            await scope.checkPermissions()
-          } else {
-            if (isSystem && !auth.isAdmin) {
-              throw new ORPCError('FORBIDDEN')
-            }
-            return auth.userId
-          }
-          break
-        default:
-          if (organizationId) {
-            let scope
-            switch (auth.scope) {
-              case 'organization':
-                scope = OrganizationScope.fromOrganization(context, auth.organizationId)
-                break
-              case 'workspace':
-                scope = await OrganizationScope.fromWorkspace(context, auth.workspaceId)
-                break
-              case 'app':
-                scope = await OrganizationScope.fromApp(context, auth.appId)
-                break
-            }
-
-            await scope.checkPermissions()
-
-            if (organizationId !== scope.organizationId) {
-              throw new ORPCError('FORBIDDEN', {
-                message: 'You have no permission to access this organization',
-              })
-            }
-          } else {
-            throw new ORPCError('FORBIDDEN', {
-              message: `API key with '${auth.scope}' scope cannot access models owned by user`,
-            })
-          }
-      }
+    case 'custom':
+      await context.auth.requirePermissions(permissions, { accountId: accountId ?? undefined })
+      break
   }
 }

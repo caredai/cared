@@ -3,6 +3,7 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import { and, asc, desc, eq, gt, inArray, lt } from '@cared/db'
+import { db } from '@cared/db/client'
 import {
   Chat,
   CreateChatSchema,
@@ -24,7 +25,7 @@ import { getAppById } from './app'
  * @throws {ORPCError} If chat not found
  */
 export async function getChatById(ctx: AppUserContext, id: string) {
-  const chat = await ctx.db.query.Chat.findFirst({
+  const chat = await db.query.Chat.findFirst({
     where: eq(Chat.id, id),
   })
 
@@ -92,7 +93,7 @@ export const chatRouter = {
         }
       }
 
-      const chats = await context.db.query.Chat.findMany({
+      const chats = await db.query.Chat.findMany({
         where: and(...conditions),
         orderBy:
           input.orderBy === 'desc'
@@ -157,7 +158,7 @@ export const chatRouter = {
     .handler(async ({ context, input }: { context: AppUserContext; input: any }) => {
       await getAppById(context, context.auth.appId)
 
-      const chats = await context.db.query.Chat.findMany({
+      const chats = await db.query.Chat.findMany({
         where: and(
           eq(Chat.appId, context.auth.appId),
           eq(Chat.userId, context.auth.userId),
@@ -204,7 +205,7 @@ export const chatRouter = {
       }),
     )
     .handler(async ({ context, input }: { context: AppUserContext; input: any }) => {
-      const chat = await context.db.query.Chat.findFirst({
+      const chat = await db.query.Chat.findFirst({
         where: and(
           eq(Chat.id, input.id),
           eq(Chat.appId, context.auth.appId),
@@ -309,7 +310,7 @@ export const chatRouter = {
       if (input.debug) {
         // TODO: check rbac
 
-        const existingDebugChat = await context.db.query.Chat.findFirst({
+        const existingDebugChat = await db.query.Chat.findFirst({
           where: and(
             eq(Chat.appId, context.auth.appId),
             eq(Chat.userId, context.auth.userId),
@@ -324,7 +325,7 @@ export const chatRouter = {
         }
       }
 
-      return await context.db.transaction(async (tx) => {
+      return await db.transaction(async (tx) => {
         // Create chat first
         const [chat] = await tx
           .insert(Chat)
@@ -413,7 +414,7 @@ export const chatRouter = {
           }
         : undefined
 
-      const [updatedChat] = await context.db
+      const [updatedChat] = await db
         .update(Chat)
         .set({
           ...update,
@@ -449,7 +450,7 @@ export const chatRouter = {
     .handler(async ({ context, input }: { context: AppUserContext; input: any }) => {
       await getChatById(context, input.id)
 
-      const [deletedChat] = await context.db.delete(Chat).where(eq(Chat.id, input.id)).returning()
+      const [deletedChat] = await db.delete(Chat).where(eq(Chat.id, input.id)).returning()
 
       if (!deletedChat) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
@@ -478,7 +479,7 @@ export const chatRouter = {
       await getAppById(context, context.auth.appId)
 
       // Delete chats that belong to the user and app
-      const deletedChats = await context.db
+      const deletedChats = await db
         .delete(Chat)
         .where(
           and(
@@ -523,7 +524,7 @@ export const chatRouter = {
       const sourceChat = await getChatById(context, input.id)
 
       // Query messages in the specified order
-      const messages = await context.db.query.Message.findMany({
+      const messages = await db.query.Message.findMany({
         where: and(eq(Message.chatId, input.id), inArray(Message.id, input.messages)),
         orderBy: asc(Message.id),
       })
@@ -553,7 +554,7 @@ export const chatRouter = {
         }
       }
 
-      return await context.db.transaction(async (tx) => {
+      return await db.transaction(async (tx) => {
         // Create new chat with same metadata
         const [newChat] = await tx
           .insert(Chat)
