@@ -25,13 +25,13 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}_/app_{$appIdNoPr
     const { appIdNoPrefix } = params
     const appId = addIdPrefix(appIdNoPrefix, 'app')
 
-    void context.queryClient.prefetchQuery(orpc.account.list.queryOptions())
-    void context.queryClient.prefetchQuery(orpc.app.list.queryOptions())
-    void context.queryClient.prefetchQuery(orpc.model.listProvidersModels.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.account.list.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.app.list.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.model.listProvidersModels.queryOptions())
 
     // Ensure app data is loaded
     await context.queryClient.ensureQueryData(
-      orpc.app.byId.queryOptions({
+      orpc.account.app.byId.queryOptions({
         input: {
           id: appId,
         },

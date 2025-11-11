@@ -18,7 +18,7 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}')({
     const { activeAccountId, activeAccountIdNoPrefix } = await getActiveAccountId(params)
 
     const { accounts } = await context.queryClient.ensureQueryData(
-      orpc.account.list.queryOptions(),
+      orpc.account.account.list.queryOptions(),
     )
 
     const account = accounts.find((a) => a.id === activeAccountId)
@@ -26,7 +26,7 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}')({
       throw redirect({ to: '/' })
     }
 
-    void context.queryClient.prefetchQuery(orpc.app.list.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.app.list.queryOptions())
 
     return {
       activeAccountId,

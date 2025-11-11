@@ -305,11 +305,16 @@ export class AppUserAuth extends ProtectedAuth {
 }
 
 export class UserOrAppUserAuth extends ProtectedAuth {
-  type: 'user' | 'appUser'
+  type: 'user' | 'appUser' | 'apiToken'
   userId: string
   appId?: string
 
-  constructor(public ctx: Extract<AuthContext, { type: 'user' | 'appUser' }>) {
+  constructor(
+    public ctx: Extract<
+      AuthContext,
+      { type: 'user' } | { type: 'appUser' } | { type: 'apiToken'; scope: 'user' }
+    >,
+  ) {
     super(ctx)
     this.type = ctx.type
     this.userId = ctx.userId

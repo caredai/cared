@@ -8,7 +8,7 @@ import { stripIdPrefix } from '@/lib/utils'
 export function useAllApps() {
   const {
     data: { apps },
-  } = useSuspenseQuery(orpc.app.list.queryOptions({
+  } = useSuspenseQuery(orpc.account.app.list.queryOptions({
     input: {
       all: true
     }

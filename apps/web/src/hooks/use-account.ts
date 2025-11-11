@@ -12,7 +12,7 @@ export type Account = ReturnType<typeof useAccounts>[number]
 export function useSetLastAccount() {
   const { session, refetchSession } = useSessionPublic()
 
-  const setActiveMutation = useMutation(orpc.account.setActive.mutationOptions())
+  const setActiveMutation = useMutation(orpc.account.account.setActive.mutationOptions())
 
   const [disabledSetLastAccount, setDisabledSetLastAccount] = useState(false)
 
@@ -43,7 +43,7 @@ export function useSetLastAccount() {
 export function useAccounts() {
   const {
     data: { accounts },
-  } = useSuspenseQuery(orpc.account.list.queryOptions())
+  } = useSuspenseQuery(orpc.account.account.list.queryOptions())
 
   return accounts
 }
@@ -56,10 +56,10 @@ export function useUpdateAccount() {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    orpc.account.update.mutationOptions({
+    orpc.account.account.update.mutationOptions({
       onSuccess: () => {
         // Invalidate account queries to refresh data
-        void queryClient.invalidateQueries(orpc.account.list.queryOptions())
+        void queryClient.invalidateQueries(orpc.account.account.list.queryOptions())
       },
       onError: (error) => {
         console.error('Failed to update account:', error)
@@ -85,10 +85,10 @@ export function useTransferAccountOwnership() {
   const queryClient = useQueryClient()
 
   const transferMutation = useMutation(
-    orpc.account.transferOwnership.mutationOptions({
+    orpc.account.account.transferOwnership.mutationOptions({
       onSuccess: () => {
         // Invalidate account queries to refresh data
-        void queryClient.invalidateQueries(orpc.account.list.queryOptions())
+        void queryClient.invalidateQueries(orpc.account.account.list.queryOptions())
       },
       onError: (error) => {
         console.error('Failed to transfer account ownership:', error)

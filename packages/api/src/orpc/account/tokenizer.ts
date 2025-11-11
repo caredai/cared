@@ -4,7 +4,7 @@ import { z } from 'zod/v4'
 
 import { tokenizerCount, tokenizerDecode, tokenizerEncode } from '@cared/tokenizer'
 
-import { publicProcedure } from '../orpc'
+import { publicProcedure } from '../../orpc'
 
 export const tokenizerRouter = {
   encode: publicProcedure

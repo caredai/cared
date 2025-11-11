@@ -8,7 +8,7 @@ export function useMembers(accountId?: string) {
   const {
     data: { members },
   } = useSuspenseQuery(
-    orpc.account.listMembers.queryOptions({
+    orpc.account.account.listMembers.queryOptions({
       input: accountId
         ? {
             accountId,
@@ -24,7 +24,7 @@ export function useInvitations(accountId?: string) {
   const {
     data: { invitations },
   } = useSuspenseQuery(
-    orpc.account.listInvitations.queryOptions({
+    orpc.account.account.listInvitations.queryOptions({
       input: accountId
         ? {
             accountId,
@@ -41,11 +41,11 @@ export function useAddMember() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.account.addMember.mutationOptions({
+    orpc.account.account.addMember.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate members list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.listMembers.queryOptions({
+          queryKey: orpc.account.account.listMembers.queryOptions({
             input: {
               accountId: variables.accountId,
             },
@@ -69,11 +69,11 @@ export function useRemoveMember() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.account.removeMember.mutationOptions({
+    orpc.account.account.removeMember.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate members list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.listMembers.queryOptions({
+          queryKey: orpc.account.account.listMembers.queryOptions({
             input: {
               accountId: variables.accountId,
             },
@@ -96,11 +96,11 @@ export function useUpdateMemberRole() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.account.updateMemberRole.mutationOptions({
+    orpc.account.account.updateMemberRole.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate members list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.listMembers.queryOptions({
+          queryKey: orpc.account.account.listMembers.queryOptions({
             input: {
               accountId: variables.accountId,
             },
@@ -124,11 +124,11 @@ export function useCreateInvitation() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.account.createInvitation.mutationOptions({
+    orpc.account.account.createInvitation.mutationOptions({
       onSuccess: (_, variables) => {
         // Invalidate invitations list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.listInvitations.queryOptions({
+          queryKey: orpc.account.account.listInvitations.queryOptions({
             input: {
               accountId: variables.accountId,
             },
@@ -151,11 +151,11 @@ export function useCancelInvitation() {
   const queryClient = useQueryClient()
 
   const mutation = useMutation(
-    orpc.account.cancelInvitation.mutationOptions({
+    orpc.account.account.cancelInvitation.mutationOptions({
       onSuccess: (data) => {
         // Invalidate invitations list for the specific account
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.listInvitations.queryOptions({
+          queryKey: orpc.account.account.listInvitations.queryOptions({
             input: {
               accountId: data.invitation.accountId,
             },

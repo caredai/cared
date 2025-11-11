@@ -5,7 +5,7 @@ import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/credits')({
   loader: ({ context }) => {
-    void context.queryClient.prefetchQuery(orpc.credits.getCredits.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.credits.getCredits.queryOptions())
   },
   component: CreditsPage,
 })

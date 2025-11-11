@@ -14,7 +14,7 @@ export function useTraces(input?: {
 }) {
   const { data, isLoading, isFetching, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery(
-      orpc.telemetry.listTraces.infiniteOptions({
+      orpc.account.telemetry.listTraces.infiniteOptions({
         input: (cursor?: number) => ({
           ...input,
           cursor,
@@ -67,7 +67,7 @@ export function useObservations(input?: {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-    orpc.telemetry.listObservations.infiniteOptions({
+      orpc.account.telemetry.listObservations.infiniteOptions({
       input: (cursor?: number) => ({
         ...input,
         cursor,
@@ -102,7 +102,7 @@ export function useObservations(input?: {
 
 export function useDeleteTraces() {
   const deleteMutation = useMutation(
-    orpc.telemetry.deleteTraces.mutationOptions({
+    orpc.account.telemetry.deleteTraces.mutationOptions({
       onSuccess: (_, input) => {
         showSuccessToast({
           title: `${input.traceIds.length > 1 ? 'traces' : 'trace'} deleted`,

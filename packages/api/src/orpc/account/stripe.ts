@@ -1,8 +1,8 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import { getStripe } from '../client/stripe'
-import { protectedProcedure } from '../orpc'
+import { getStripe } from '../../client/stripe'
+import { protectedProcedure } from '../../orpc'
 import { ensureCustomer } from './credits'
 
 export const stripeRouter = {

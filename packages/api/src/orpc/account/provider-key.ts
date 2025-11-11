@@ -7,10 +7,10 @@ import { db } from '@cared/db/client'
 import { ProviderKey, ProviderSettings } from '@cared/db/schema'
 import { providerIdSchema, providerKeySchema } from '@cared/providers'
 
-import type { ModelSource } from '../types'
-import { decryptProviderKey, deleteProviderKeysStateCache, encryptProviderKey } from '../operation'
-import { userPlainProtectedProcedure } from '../orpc'
-import { modelSourceSchema } from '../types'
+import type { ModelSource } from '../../types'
+import { decryptProviderKey, deleteProviderKeysStateCache, encryptProviderKey } from '../../operation'
+import { userPlainProtectedProcedure } from '../../orpc'
+import { modelSourceSchema } from '../../types'
 import { checkPermissionsBySource } from './model'
 
 export const providerKeyRouter = {

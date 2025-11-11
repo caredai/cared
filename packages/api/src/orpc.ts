@@ -143,7 +143,13 @@ export const userOrAppUserProtectedProcedure = o
   .use(timingMiddleware)
   .use<UserOrAppUserContext>(({ context, next }) => {
     const authCtx = context.auth.ctx
-    if (!(authCtx?.type === 'user' || authCtx?.type === 'appUser')) {
+    if (
+      !(
+        authCtx?.type === 'user' ||
+        (authCtx?.type === 'apiToken' && authCtx.scope === 'user') ||
+        authCtx?.type === 'appUser'
+      )
+    ) {
       throw new ORPCError('UNAUTHORIZED')
     }
     return next({

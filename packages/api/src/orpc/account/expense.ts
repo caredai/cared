@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, lt } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Expense, expenseKinds } from '@cared/db/schema'
 
-import { userProtectedProcedure } from '../orpc'
+import { userProtectedProcedure } from '../../orpc'
 
 export const expenseRouter = {
   list: userProtectedProcedure

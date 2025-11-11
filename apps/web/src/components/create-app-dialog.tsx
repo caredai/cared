@@ -71,7 +71,7 @@ export function CreateAppDialog({
   const queryClient = useQueryClient()
 
   // Get models data for selection
-  const { data: modelsData } = useSuspenseQuery(orpc.model.listProvidersModels.queryOptions())
+  const { data: modelsData } = useSuspenseQuery(orpc.account.model.listProvidersModels.queryOptions())
 
   // Process model data with memoization to improve performance
   const { languageModelProviders, embeddingModelProviders, imageModelProviders } = useMemo(() => {
@@ -118,11 +118,11 @@ export function CreateAppDialog({
 
   // Create app mutation
   const createAppMutation = useMutation(
-    orpc.app.create.mutationOptions({
+    orpc.account.app.create.mutationOptions({
       onSuccess: (data) => {
         toast.success(`App "${data.app.name}" created successfully`)
         setOpen(false)
-        void queryClient.invalidateQueries(orpc.app.list.queryOptions())
+        void queryClient.invalidateQueries(orpc.account.app.list.queryOptions())
 
         // Call onSuccess callback if provided, otherwise navigate to the new app page
         if (onSuccess) {

@@ -5,9 +5,9 @@ import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/credits_/usage')({
   loader: ({ context }) => {
-    void context.queryClient.prefetchQuery(orpc.model.listProviders.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.model.listProviders.queryOptions())
     void context.queryClient.prefetchQuery(
-      orpc.model.listModels.queryOptions({
+      orpc.account.model.listModels.queryOptions({
         input: {
           source: 'effective',
         },

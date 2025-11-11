@@ -10,7 +10,7 @@ import type {
   GetTracesRequest,
   TraceWithFullDetails,
 } from '@langfuse/core'
-import { protectedProcedure } from '../orpc'
+import { protectedProcedure } from '../../orpc'
 
 const langfuse = new LangfuseClient()
 

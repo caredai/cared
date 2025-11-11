@@ -57,7 +57,7 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/settings')({
     const { activeAccountId } = await getActiveAccountId(params)
 
     void context.queryClient.prefetchQuery(
-      orpc.account.listMembers.queryOptions({
+      orpc.account.account.listMembers.queryOptions({
         input: {
           accountId: activeAccountId,
         },

@@ -45,9 +45,9 @@ export function CreateAccountDialog({
   }, [open])
 
   const createAccount = useMutation(
-    orpc.account.create.mutationOptions({
+    orpc.account.account.create.mutationOptions({
       onSuccess: async (data) => {
-        await queryClient.invalidateQueries(orpc.account.list.queryOptions())
+        await queryClient.invalidateQueries(orpc.account.account.list.queryOptions())
 
         if (onSuccess) {
           onSuccess()

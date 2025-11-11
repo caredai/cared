@@ -41,7 +41,7 @@ import { orpc } from '@/lib/orpc'
 export const Route = createFileRoute('/admin/apps/categories')({
   loader: ({ context }) => {
     void context.queryClient.prefetchQuery(
-      orpc.app.listCategories.queryOptions({
+      orpc.account.app.listCategories.queryOptions({
         input: {
           limit: 100,
         },
@@ -61,7 +61,7 @@ function Categories() {
 
   // Fetch all categories using suspense
   const { data, refetch } = useSuspenseQuery({
-    ...orpc.app.listCategories.queryOptions({
+    ...orpc.account.app.listCategories.queryOptions({
       input: {
         limit: 100,
       },

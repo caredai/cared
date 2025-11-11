@@ -15,7 +15,7 @@ import {
 } from '@cared/db/schema'
 
 import { adminProcedure } from '../../orpc'
-import { getAppById, getApps } from '../app'
+import { getAppById, getApps } from '../account/app'
 
 export const appRouter = {
   /**

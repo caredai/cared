@@ -6,15 +6,29 @@ import { and, asc, desc, eq, gt, lt } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Artifact, ArtifactSuggestion, Chat } from '@cared/db/schema'
 
-import type { UserContext } from '../orpc'
-import { userProtectedProcedure } from '../orpc'
+import type { UserOrAppUserContext } from '../../../orpc'
+import { userOrAppUserProtectedProcedure } from '../../../orpc'
 
-async function verifyUserChat(ctx: UserContext, chatId: string) {
+/**
+ * Verify that a chat belongs to the user and account.
+ * @param ctx - The context object
+ * @param chatId - The chat ID
+ * @returns The chat if found and belongs to the user
+ * @throws {ORPCError} If chat not found or doesn't belong to the user
+ */
+async function verifyUserChat(ctx: UserOrAppUserContext, chatId: string) {
   const chat = await db.query.Chat.findFirst({
     where: eq(Chat.id, chatId),
   })
 
-  if (chat?.userId !== ctx.auth.userId) {
+  if (!chat) {
+    throw new ORPCError('NOT_FOUND', {
+      message: `Chat with id ${chatId} not found`,
+    })
+  }
+
+  // Check accountId and userId
+  if (chat.accountId !== ctx.auth.accountId || chat.userId !== ctx.auth.userId) {
     throw new ORPCError('NOT_FOUND', {
       message: `Chat with id ${chatId} not found`,
     })
@@ -23,7 +37,14 @@ async function verifyUserChat(ctx: UserContext, chatId: string) {
   return chat
 }
 
-async function verifyUserArtifact(ctx: UserContext, artifactId: string) {
+/**
+ * Verify that an artifact belongs to the user and account.
+ * @param ctx - The context object
+ * @param artifactId - The artifact ID
+ * @returns The artifact if found and belongs to the user
+ * @throws {ORPCError} If artifact not found or doesn't belong to the user
+ */
+async function verifyUserArtifact(ctx: UserOrAppUserContext, artifactId: string) {
   const artifact = await db.query.Artifact.findFirst({
     where: eq(Artifact.id, artifactId),
     with: {
@@ -31,7 +52,14 @@ async function verifyUserArtifact(ctx: UserContext, artifactId: string) {
     },
   })
 
-  if (artifact?.userId !== ctx.auth.userId) {
+  if (!artifact) {
+    throw new ORPCError('NOT_FOUND', {
+      message: `Artifact with id ${artifactId} not found`,
+    })
+  }
+
+  // Check accountId and userId
+  if (artifact.accountId !== ctx.auth.accountId || artifact.userId !== ctx.auth.userId) {
     throw new ORPCError('NOT_FOUND', {
       message: `Artifact with id ${artifactId} not found`,
     })
@@ -42,20 +70,21 @@ async function verifyUserArtifact(ctx: UserContext, artifactId: string) {
 
 export const artifactRouter = {
   /**
-   * List all artifacts (of only latest version) for a chat.
+   * List all artifacts (of only latest version) for a user in an account.
+   * Optionally filter by chatId.
    * Only accessible by authenticated users.
    */
-  listByChat: userProtectedProcedure
+  list: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/artifacts',
       tags: ['artifacts'],
-      summary: 'List all artifacts (of only latest version) for a chat',
+      summary: 'List all artifacts (of only latest version) for a user in an account',
     })
     .input(
       z
         .object({
-          chatId: z.string().min(32),
+          chatId: z.string().min(32).optional(),
           after: z.string().optional(),
           before: z.string().optional(),
           limit: z.number().min(1).max(100).default(50),
@@ -67,9 +96,20 @@ export const artifactRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      await verifyUserChat(context, input.chatId)
+      // Verify chat if chatId is provided
+      if (input.chatId) {
+        await verifyUserChat(context, input.chatId)
+      }
 
-      const conditions: SQL<unknown>[] = [eq(Artifact.chatId, input.chatId)]
+      const conditions: SQL<unknown>[] = [
+        eq(Artifact.accountId, context.auth.accountId),
+        eq(Artifact.userId, context.auth.userId),
+      ]
+
+      // Add chatId condition if provided
+      if (input.chatId) {
+        conditions.push(eq(Artifact.chatId, input.chatId))
+      }
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
@@ -111,7 +151,7 @@ export const artifactRouter = {
    * List all versions of an artifact by ID.
    * Only accessible by authenticated users.
    */
-  listVersionsById: userProtectedProcedure
+  listVersionsById: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/artifacts/{id}/versions',
@@ -135,7 +175,11 @@ export const artifactRouter = {
     .handler(async ({ context, input }) => {
       await verifyUserArtifact(context, input.id)
 
-      const conditions: SQL<unknown>[] = [eq(Artifact.id, input.id)]
+      const conditions: SQL<unknown>[] = [
+        eq(Artifact.id, input.id),
+        eq(Artifact.accountId, context.auth.accountId),
+        eq(Artifact.userId, context.auth.userId),
+      ]
 
       // Add cursor conditions based on pagination direction
       if (input.after) {
@@ -178,7 +222,7 @@ export const artifactRouter = {
    * Delete all versions of an artifact after the specified version.
    * Only accessible by authenticated users.
    */
-  deleteVersionsByIdAfterVersion: userProtectedProcedure
+  deleteVersionsByIdAfterVersion: userOrAppUserProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/v1/artifacts/{id}/versions',
@@ -208,7 +252,14 @@ export const artifactRouter = {
         // Then delete artifact versions
         await tx
           .delete(Artifact)
-          .where(and(eq(Artifact.id, input.id), gt(Artifact.version, input.after)))
+          .where(
+            and(
+              eq(Artifact.id, input.id),
+              eq(Artifact.accountId, context.auth.accountId),
+              eq(Artifact.userId, context.auth.userId),
+              gt(Artifact.version, input.after),
+            ),
+          )
       })
     }),
 
@@ -216,7 +267,7 @@ export const artifactRouter = {
    * List suggestions for an artifact.
    * Only accessible by authenticated users.
    */
-  listSuggestions: userProtectedProcedure
+  listSuggestions: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/artifacts/suggestions',
@@ -279,3 +330,4 @@ export const artifactRouter = {
       }
     }),
 }
+

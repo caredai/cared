@@ -11,7 +11,7 @@ export function useApiTokens(scope: 'account' | 'user' = 'account') {
     data: { tokens },
     refetch: refetchApiTokens,
   } = useSuspenseQuery(
-    orpc.apiToken.list.queryOptions({
+    orpc.account.apiToken.list.queryOptions({
       input: {
         scope,
       },
@@ -36,10 +36,10 @@ export function useCreateApiToken() {
   const queryClient = useQueryClient()
 
   const createMutation = useMutation(
-    orpc.apiToken.create.mutationOptions({
+    orpc.account.apiToken.create.mutationOptions({
       onSuccess: (_, variables) => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.apiToken.list.queryOptions({
+          queryKey: orpc.account.apiToken.list.queryOptions({
             input: {
               scope: variables.scope,
             },
@@ -73,10 +73,10 @@ export function useRotateApiToken() {
   const queryClient = useQueryClient()
 
   const rotateMutation = useMutation(
-    orpc.apiToken.rotate.mutationOptions({
+    orpc.account.apiToken.rotate.mutationOptions({
       onSuccess: (data) => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.apiToken.list.queryOptions({
+          queryKey: orpc.account.apiToken.list.queryOptions({
             input: {
               scope: !data.token.userId ? 'account' : 'user',
             },
@@ -103,10 +103,10 @@ export function useDeleteApiToken() {
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    orpc.apiToken.delete.mutationOptions({
+    orpc.account.apiToken.delete.mutationOptions({
       onSuccess: (data) => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.apiToken.list.queryOptions({
+          queryKey: orpc.account.apiToken.list.queryOptions({
             input: {
               scope: !data.token.userId ? 'account' : 'user',
             },
@@ -131,7 +131,7 @@ export function useDeleteApiToken() {
 
 export function useListPermissionGroups() {
   const { data } = useSuspenseQuery(
-    orpc.apiToken.listPermissionGroups.queryOptions(),
+    orpc.account.apiToken.listPermissionGroups.queryOptions(),
   )
   return { data }
 }

@@ -13,7 +13,7 @@ export function useExpenses({
 }) {
   const { data, isLoading, refetch, isFetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery(
-      orpc.expense.list.infiniteOptions({
+      orpc.account.expense.list.infiniteOptions({
         input: (cursor?: string) => ({
           allMembers,
           appId,

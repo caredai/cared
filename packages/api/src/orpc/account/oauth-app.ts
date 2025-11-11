@@ -6,7 +6,7 @@ import { asc, count, desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { App, OAuthAccessToken, OAuthApplication, OAuthConsent } from '@cared/db/schema'
 
-import { protectedProcedure, publicProcedure } from '../orpc'
+import { protectedProcedure, publicProcedure } from '../../orpc'
 import { getAppById } from './app'
 
 /**

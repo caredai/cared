@@ -49,7 +49,7 @@ export const Route = createFileRoute(
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/configure/oauth-application',
 )({
   loader: ({ context }) => {
-    void context.queryClient.prefetchQuery(orpc.oauthApp.list.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.oauthApp.list.queryOptions())
   },
   component: OAuthAppPage,
 })
@@ -69,7 +69,7 @@ function OAuthApp({ appId }: { appId: string }) {
   const {
     data: { oauthApps },
   } = useSuspenseQuery({
-    ...orpc.oauthApp.list.queryOptions(),
+    ...orpc.account.oauthApp.list.queryOptions(),
   })
   const oauthApp = oauthApps.find((oauthApp) => oauthApp.appId === appId)
 
@@ -172,12 +172,12 @@ function CreateOAuthApp({
 
   // Create OAuth app mutation
   const createMutation = useMutation({
-    ...orpc.oauthApp.create.mutationOptions({
+    ...orpc.account.oauthApp.create.mutationOptions({
       onSuccess: (data) => {
         setShowSecretDialog(true)
         setSecretToShow(data.oauthApp.clientSecret!)
         void queryClient.invalidateQueries({
-          queryKey: orpc.oauthApp.list.queryKey(),
+          queryKey: orpc.account.oauthApp.list.queryKey(),
         })
       },
       onError: (error) => {
@@ -328,10 +328,10 @@ function UpdateOAuthApp({
 
   // Update OAuth app mutation
   const updateMutation = useMutation({
-    ...orpc.oauthApp.update.mutationOptions({
+    ...orpc.account.oauthApp.update.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.oauthApp.list.queryKey(),
+          queryKey: orpc.account.oauthApp.list.queryKey(),
         })
         setNewRedirectUri('')
       },
@@ -342,10 +342,10 @@ function UpdateOAuthApp({
   })
 
   const rotateSecretMutation = useMutation({
-    ...orpc.oauthApp.rotateSecret.mutationOptions({
+    ...orpc.account.oauthApp.rotateSecret.mutationOptions({
       onSuccess: (data) => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.oauthApp.list.queryKey(),
+          queryKey: orpc.account.oauthApp.list.queryKey(),
         })
         setSecretToShow(data.oauthApp.clientSecret!)
         setShowSecretDialog(true)

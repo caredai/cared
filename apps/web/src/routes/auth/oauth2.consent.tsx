@@ -39,7 +39,7 @@ function Page() {
   })
 
   const { data: app } = useQuery(
-    orpc.oauthApp.info.queryOptions({
+    orpc.account.oauthApp.info.queryOptions({
       input: {
         clientId,
       },

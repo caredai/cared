@@ -29,7 +29,7 @@ import { orpc } from '@/lib/orpc'
 export const Route = createFileRoute('/admin/apps/tags')({
   loader: ({ context }) => {
     void context.queryClient.prefetchQuery(
-      orpc.app.listTags.queryOptions({
+      orpc.account.app.listTags.queryOptions({
         input: {
           limit: 100,
         },
@@ -50,7 +50,7 @@ function Tags() {
 
   // Fetch tags using paginated query
   const { data, isPending, refetch } = useQuery({
-    ...orpc.app.listTags.queryOptions({
+    ...orpc.account.app.listTags.queryOptions({
       input: {
         limit: PAGE_SIZE,
         ...cursor,

@@ -13,7 +13,7 @@ export function useProviderKeys({ source }: { source: ModelSource }) {
     data: { providerKeys },
     refetch: refetchProviderKeys,
   } = useSuspenseQuery(
-    orpc.providerKey.list.queryOptions({
+    orpc.account.providerKey.list.queryOptions({
       input: {
         source,
       },
@@ -49,10 +49,10 @@ export function useCreateProviderKey({ source }: { source: ModelSource }) {
   const queryClient = useQueryClient()
 
   const createMutation = useMutation(
-    orpc.providerKey.create.mutationOptions({
+    orpc.account.providerKey.create.mutationOptions({
       onSuccess: (_, variables) => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.providerKey.list.queryOptions({
+          queryKey: orpc.account.providerKey.list.queryOptions({
             input: {
               source: variables.source,
             },
@@ -82,18 +82,18 @@ export function useUpdateProviderKey() {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    orpc.providerKey.update.mutationOptions({
+    orpc.account.providerKey.update.mutationOptions({
       onSuccess: () => {
         // Invalidate both custom and system queries as we don't know which one was updated
         void queryClient.invalidateQueries({
-          queryKey: orpc.providerKey.list.queryOptions({
+          queryKey: orpc.account.providerKey.list.queryOptions({
             input: {
               source: 'custom',
             },
           }).queryKey,
         })
         void queryClient.invalidateQueries({
-          queryKey: orpc.providerKey.list.queryOptions({
+          queryKey: orpc.account.providerKey.list.queryOptions({
             input: {
               source: 'system',
             },
@@ -120,18 +120,18 @@ export function useDeleteProviderKey() {
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    orpc.providerKey.delete.mutationOptions({
+    orpc.account.providerKey.delete.mutationOptions({
       onSuccess: () => {
         // Invalidate both custom and system queries as we don't know which one was deleted
         void queryClient.invalidateQueries({
-          queryKey: orpc.providerKey.list.queryOptions({
+          queryKey: orpc.account.providerKey.list.queryOptions({
             input: {
               source: 'custom',
             },
           }).queryKey,
         })
         void queryClient.invalidateQueries({
-          queryKey: orpc.providerKey.list.queryOptions({
+          queryKey: orpc.account.providerKey.list.queryOptions({
             input: {
               source: 'system',
             },

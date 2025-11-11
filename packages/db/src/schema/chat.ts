@@ -17,7 +17,7 @@ import { z } from 'zod/v4'
 import type { MessageContent } from '@cared/shared'
 import { messageContentSchema, messageRoleEnumValues, uiMessageSchema } from '@cared/shared'
 
-import { User } from '.'
+import { Account, User } from '.'
 import { Agent } from './agent'
 import { App } from './app'
 import {
@@ -66,6 +66,9 @@ export const Chat = pgTable(
     appId: text()
       .notNull()
       .references(() => App.id), // No action on delete
+    accountId: text()
+      .notNull()
+      .references(() => Account.id, { onDelete: 'cascade' }),
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
@@ -78,7 +81,7 @@ export const Chat = pgTable(
   },
   (table) => [
     index().on(table.appId),
-    index().on(table.userId, table.appId, table.debug),
+    index().on(table.accountId, table.userId, table.appId, table.debug),
     ...timestampsIndices(table),
   ],
 )

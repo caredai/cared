@@ -9,7 +9,7 @@ import { orpc } from '@/lib/orpc'
  */
 export function useCustomer() {
   const { data, refetch, isLoading } = useQuery({
-    ...orpc.stripe.getCustomer.queryOptions(),
+    ...orpc.account.stripe.getCustomer.queryOptions(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: Infinity,
   })
@@ -32,7 +32,7 @@ export function useDefaultPaymentMethodId() {
  */
 export function useListPaymentMethods() {
   const { data, refetch, isLoading } = useQuery({
-    ...orpc.stripe.listPaymentMethods.queryOptions(),
+    ...orpc.account.stripe.listPaymentMethods.queryOptions(),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: Infinity,
   })
@@ -51,11 +51,11 @@ export function useAddPaymentMethod() {
   const queryClient = useQueryClient()
 
   const addMutation = useMutation(
-    orpc.stripe.setupAddPaymentMethodIntent.mutationOptions({
+    orpc.account.stripe.setupAddPaymentMethodIntent.mutationOptions({
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: orpc.stripe.listPaymentMethods.queryKey(),
+          queryKey: orpc.account.stripe.listPaymentMethods.queryKey(),
         })
       },
       onError: (_error) => {
@@ -80,11 +80,11 @@ export function useRemovePaymentMethod() {
   const queryClient = useQueryClient()
 
   const removeMutation = useMutation(
-    orpc.stripe.removePaymentMethod.mutationOptions({
+    orpc.account.stripe.removePaymentMethod.mutationOptions({
       onSuccess: () => {
         // Invalidate payment methods list to refresh the data
         void queryClient.invalidateQueries({
-          queryKey: orpc.stripe.listPaymentMethods.queryKey(),
+          queryKey: orpc.account.stripe.listPaymentMethods.queryKey(),
         })
       },
       onError: (error) => {
@@ -111,11 +111,11 @@ export function useUpdateDefaultPaymentMethod() {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    orpc.stripe.updateDefaultPaymentMethod.mutationOptions({
+    orpc.account.stripe.updateDefaultPaymentMethod.mutationOptions({
       onSuccess: () => {
         // Invalidate customer data to refresh the default payment method
         void queryClient.invalidateQueries({
-          queryKey: orpc.stripe.getCustomer.queryKey(),
+          queryKey: orpc.account.stripe.getCustomer.queryKey(),
         })
       },
       onError: (error) => {

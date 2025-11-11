@@ -19,11 +19,11 @@ import { z } from 'zod/v4'
 
 import { log } from '@cared/log'
 
-import type { AppUserContext, BaseContext } from '../orpc'
+import type { AppUserContext, BaseContext } from '../../orpc'
 import type { GetObjectCommandOutput, HeadObjectCommandOutput } from '@aws-sdk/client-s3'
-import { s3Client } from '../client/s3'
-import { env } from '../env'
-import { appUserProtectedProcedure } from '../orpc'
+import { s3Client } from '../../client/s3'
+import { env } from '../../env'
+import { appUserProtectedProcedure } from '../../orpc'
 
 function getKeyPrefixByApp(ctx: AppUserContext) {
   const appId = ctx.auth.appId

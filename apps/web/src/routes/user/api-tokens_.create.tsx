@@ -8,9 +8,9 @@ import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/user/api-tokens_/create')({
   loader: ({ context }) => {
-    void context.queryClient.prefetchQuery(orpc.apiToken.listPermissionGroups.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.apiToken.listPermissionGroups.queryOptions())
     void context.queryClient.prefetchQuery(
-      orpc.apiToken.list.queryOptions({
+      orpc.account.apiToken.list.queryOptions({
         input: { scope: 'user' },
       }),
     )

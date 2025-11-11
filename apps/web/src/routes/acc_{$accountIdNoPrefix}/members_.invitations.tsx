@@ -9,14 +9,14 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/members_/invitat
     const { activeAccountId } = await getActiveAccountId(params)
 
     void context.queryClient.prefetchQuery(
-      orpc.account.listMembers.queryOptions({
+      orpc.account.account.listMembers.queryOptions({
         input: {
           accountId: activeAccountId,
         },
       }),
     )
     void context.queryClient.prefetchQuery(
-      orpc.account.listInvitations.queryOptions({
+      orpc.account.account.listInvitations.queryOptions({
         input: {
           accountId: activeAccountId,
         },

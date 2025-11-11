@@ -5,6 +5,7 @@ import { db } from '@cared/db/client'
 import type { SQL } from '@cared/db'
 import { and, asc, count, desc, eq, gt, gte, inArray, lt } from '@cared/db'
 import {
+  Chat,
   CreateMessageSchema,
   CreateMessageVoteSchema,
   Message,
@@ -12,22 +13,39 @@ import {
   MessageVote,
 } from '@cared/db/schema'
 
-import type { BaseContext } from '../orpc'
-import { appUserProtectedProcedure } from '../orpc'
+import type { UserOrAppUserContext } from '../../../orpc'
+import { userOrAppUserProtectedProcedure } from '../../../orpc'
 import { getChatById } from './chat'
 
-async function findMessageById(ctx: BaseContext, id: string) {
+async function findMessageById(ctx: UserOrAppUserContext, id: string) {
   return await db.query.Message.findFirst({
     where: eq(Message.id, id),
   })
 }
 
-async function getMessageById(ctx: BaseContext, id: string) {
+async function getMessageById(ctx: UserOrAppUserContext, id: string) {
   const message = await db.query.Message.findFirst({
     where: eq(Message.id, id),
   })
 
   if (!message) {
+    throw new ORPCError('NOT_FOUND', {
+      message: `Message with id ${id} not found`,
+    })
+  }
+
+  // Verify the message belongs to a chat that belongs to the user and account
+  const chat = await db.query.Chat.findFirst({
+    where: eq(Chat.id, message.chatId),
+  })
+
+  if (!chat) {
+    throw new ORPCError('NOT_FOUND', {
+      message: `Chat for message ${id} not found`,
+    })
+  }
+
+  if (chat.accountId !== ctx.auth.accountId || chat.userId !== ctx.auth.userId) {
     throw new ORPCError('NOT_FOUND', {
       message: `Message with id ${id} not found`,
     })
@@ -43,7 +61,7 @@ export const messageRouter = {
    * @param input - Object containing chat ID and pagination parameters
    * @returns List of messages with hasMore flag and pagination metadata
    */
-  list: appUserProtectedProcedure
+  list: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/messages',
@@ -106,7 +124,7 @@ export const messageRouter = {
    * @param input - Object containing chat ID and array of message IDs
    * @returns List of messages found by the provided IDs in the specified chat
    */
-  listByIds: appUserProtectedProcedure
+  listByIds: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/messages/list-by-ids',
@@ -129,7 +147,7 @@ export const messageRouter = {
       return { messages }
     }),
 
-  find: appUserProtectedProcedure
+  find: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/messages/{id}',
@@ -149,7 +167,7 @@ export const messageRouter = {
    * @param input - Object containing message ID
    * @returns The message if found
    */
-  get: appUserProtectedProcedure
+  get: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
       path: '/v1/messages/{id}',
@@ -169,7 +187,7 @@ export const messageRouter = {
    * @param input - The message data following the {@link CreateMessageSchema}
    * @returns The created message
    */
-  create: appUserProtectedProcedure
+  create: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/messages',
@@ -233,7 +251,7 @@ export const messageRouter = {
    * @param input - Object containing message ID and new content
    * @returns The updated message
    */
-  update: appUserProtectedProcedure
+  update: userOrAppUserProtectedProcedure
     .route({
       method: 'PATCH', // Using PATCH as we are partially updating the resource
       path: '/v1/messages/{id}',
@@ -275,7 +293,7 @@ export const messageRouter = {
    *   - excludeSelf: Optional flag to exclude the specified message from deletion
    * @returns Object containing array of deleted messages
    */
-  delete: appUserProtectedProcedure
+  delete: userOrAppUserProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/v1/messages/{id}',
@@ -388,7 +406,7 @@ export const messageRouter = {
    * @param input - The vote data following the {@link CreateMessageVoteSchema}
    * @returns The created or updated vote
    */
-  vote: appUserProtectedProcedure
+  vote: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
       path: '/v1/messages/vote',
@@ -417,3 +435,4 @@ export const messageRouter = {
       return { vote }
     }),
 }
+

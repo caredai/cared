@@ -13,9 +13,9 @@ import {
   UpdateAgentSchema,
 } from '@cared/db/schema'
 
-import type { BaseContext } from '../orpc'
-import { cfg } from '../config'
-import { protectedProcedure } from '../orpc'
+import type { BaseContext } from '../../orpc'
+import { cfg } from '../../config'
+import { protectedProcedure } from '../../orpc'
 import { getAppById } from './app'
 
 /**

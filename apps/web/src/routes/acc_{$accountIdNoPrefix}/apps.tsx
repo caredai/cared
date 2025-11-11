@@ -37,9 +37,9 @@ const ALL_CATEGORIES = 'all'
 
 export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/apps')({
   loader: ({ context }) => {
-    void context.queryClient.prefetchQuery(orpc.app.list.queryOptions())
-    void context.queryClient.prefetchQuery(orpc.app.listCategories.queryOptions())
-    void context.queryClient.prefetchQuery(orpc.model.listProvidersModels.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.app.list.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.app.listCategories.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.model.listProvidersModels.queryOptions())
   },
   component: Apps,
 })
@@ -57,7 +57,7 @@ function Apps() {
   })
 
   // Get all categories
-  const { data: categoriesData } = useSuspenseQuery(orpc.app.listCategories.queryOptions())
+  const { data: categoriesData } = useSuspenseQuery(orpc.account.app.listCategories.queryOptions())
 
   // Search and filter functionality
   const filteredApps = apps.filter((appData) => {

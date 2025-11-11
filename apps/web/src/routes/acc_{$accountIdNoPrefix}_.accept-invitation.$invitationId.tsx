@@ -42,7 +42,7 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}_/accept-invitati
   },
   loader: ({ context, params }) => {
     void context.queryClient.prefetchQuery(
-      orpc.account.getInvitation.queryOptions({
+      orpc.account.account.getInvitation.queryOptions({
         input: {
           invitationId: params.invitationId,
         },
@@ -60,7 +60,7 @@ function AcceptInvitation() {
 
   // Get invitation details with proper error handling
   const { data, isLoading, error, isError } = useQuery(
-    orpc.account.getInvitation.queryOptions({
+    orpc.account.account.getInvitation.queryOptions({
       input: {
         invitationId,
       },

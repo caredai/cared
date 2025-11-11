@@ -15,10 +15,10 @@ import {
   User,
 } from '@cared/db/schema'
 
-import { invalidateAccessTokensCache } from '../operation/oauth-app'
-import { publicProcedure, userProtectedProcedure } from '../orpc'
-import { forwardSetCookieHeader } from '../utils'
-import { formatOAuthApp } from './oauth-app'
+import { invalidateAccessTokensCache } from '../../operation/oauth-app'
+import { publicProcedure, userProtectedProcedure } from '../../orpc'
+import { forwardSetCookieHeader } from '../../utils'
+import { formatOAuthApp } from '../account/oauth-app'
 
 export interface Session {
   session: Omit<(typeof auth.$Infer.Session)['session'], 'activeOrganizationId'> & {

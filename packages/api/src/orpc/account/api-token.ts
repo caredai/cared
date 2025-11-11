@@ -9,8 +9,8 @@ import { db } from '@cared/db/client'
 import { ApiToken, apiTokenScope, generateId } from '@cared/db/schema'
 import { tokenPolicySchema } from '@cared/shared'
 
-import { formatApiToken, generateApiToken, getApiTokenHash, getUserAccounts } from '../operation'
-import { userPlainProtectedProcedure } from '../orpc'
+import { formatApiToken, generateApiToken, getApiTokenHash, getUserAccounts } from '../../operation'
+import { userPlainProtectedProcedure } from '../../orpc'
 
 export const apiTokenRouter = {
   listPermissionGroups: userPlainProtectedProcedure

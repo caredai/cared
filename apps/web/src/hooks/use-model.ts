@@ -12,7 +12,7 @@ export function useProviders() {
   const {
     data: { providers },
     refetch: refetchProviders,
-  } = useSuspenseQuery(orpc.model.listProviders.queryOptions())
+  } = useSuspenseQuery(orpc.account.model.listProviders.queryOptions())
 
   return {
     providers,
@@ -24,7 +24,7 @@ export function useProvidersModels(input?: { type?: ModelType; source: 'system' 
   const {
     data: { models },
     refetch: refetchProvidersModels,
-  } = useSuspenseQuery(orpc.model.listProvidersModels.queryOptions({ input }))
+  } = useSuspenseQuery(orpc.account.model.listProvidersModels.queryOptions({ input }))
 
   return {
     models,
@@ -36,7 +36,7 @@ export function useModels(input?: { type?: ModelType; source: 'system' | 'effect
   const {
     data: { models },
     refetch: refetchModels,
-  } = useSuspenseQuery(orpc.model.listModels.queryOptions({ input }))
+  } = useSuspenseQuery(orpc.account.model.listModels.queryOptions({ input }))
 
   return {
     models,
@@ -47,7 +47,7 @@ export function useModels(input?: { type?: ModelType; source: 'system' | 'effect
 function invalidateModelQueries(source: 'system' | 'custom', queryClient: QueryClient) {
   void queryClient.invalidateQueries({
     // Use partial matching key
-    queryKey: orpc.model.listProvidersModels.key({
+    queryKey: orpc.account.model.listProvidersModels.key({
       input: {
         source: source === 'system' ? 'system' : 'effective',
       },
@@ -55,7 +55,7 @@ function invalidateModelQueries(source: 'system' | 'custom', queryClient: QueryC
   })
   void queryClient.invalidateQueries({
     // Use partial matching key
-    queryKey: orpc.model.listModels.key({
+    queryKey: orpc.account.model.listModels.key({
       input: {
         source: source === 'system' ? 'system' : 'effective',
       },
@@ -67,7 +67,7 @@ export function useUpdateModel(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    orpc.model.updateModel.mutationOptions({
+    orpc.account.model.updateModel.mutationOptions({
       onSuccess: () => {
         invalidateModelQueries(source, queryClient)
       },
@@ -98,7 +98,7 @@ export function useUpdateModels(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const updateMutation = useMutation(
-    orpc.model.updateModels.mutationOptions({
+    orpc.account.model.updateModels.mutationOptions({
       onSuccess: () => {
         invalidateModelQueries(source, queryClient)
       },
@@ -129,7 +129,7 @@ export function useDeleteModel(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    orpc.model.deleteModel.mutationOptions({
+    orpc.account.model.deleteModel.mutationOptions({
       onSuccess: () => {
         invalidateModelQueries(source, queryClient)
       },
@@ -156,7 +156,7 @@ export function useDeleteModels(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation(
-    orpc.model.deleteModels.mutationOptions({
+    orpc.account.model.deleteModels.mutationOptions({
       onSuccess: () => {
         invalidateModelQueries(source, queryClient)
       },
@@ -183,7 +183,7 @@ export function useSortModels(source: 'system' | 'custom') {
   const queryClient = useQueryClient()
 
   const sortMutation = useMutation(
-    orpc.model.sortModels.mutationOptions({
+    orpc.account.model.sortModels.mutationOptions({
       onSuccess: () => {
         invalidateModelQueries(source, queryClient)
       },

@@ -13,7 +13,7 @@ import {
 import { createInsertSchema, createUpdateSchema } from 'drizzle-zod'
 import { z } from 'zod/v4'
 
-import { User } from '.'
+import { Account, User } from '.'
 import { Chat } from './chat'
 import { generateId, makeIdValid, timestamps, timestampsIndices, timestampsOmits } from './utils'
 
@@ -33,9 +33,10 @@ export const Artifact = pgTable(
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
-    chatId: text()
+    accountId: text()
       .notNull()
-      .references(() => Chat.id, { onDelete: 'cascade' }),
+      .references(() => Account.id, { onDelete: 'cascade' }),
+    chatId: text().references(() => Chat.id, { onDelete: 'cascade' }),
     // Type of the artifact (e.g., 'image', 'text', 'code')
     kind: artifactKindEnum().notNull(),
     title: text('title').notNull(),
@@ -44,8 +45,8 @@ export const Artifact = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.id, table.version] }),
-    index().on(table.userId, table.id),
-    index().on(table.chatId, table.id),
+    index().on(table.accountId, table.userId),
+    index().on(table.chatId),
     ...timestampsIndices(table),
   ],
 )

@@ -60,11 +60,18 @@ export async function uploadImage(
   return new URL(key, imageUrl()).toString()
 }
 
-export async function deleteImage(url: string) {
+export function extractImageKey(url: string) {
   if (!url.startsWith(env.S3_ENDPOINT) && !url.startsWith(imageUrl())) {
     return
   }
-  const key = decodeURIComponent(new URL(url).pathname.slice(1)) // Remove leading slash
+  return decodeURIComponent(new URL(url).pathname.slice(1)) // Remove leading slash
+}
+
+export async function deleteImage(url: string) {
+  const key = extractImageKey(url)
+  if (!key) {
+    return
+  }
   const command = new DeleteObjectCommand({
     Bucket: env.S3_BUCKET,
     Key: key,

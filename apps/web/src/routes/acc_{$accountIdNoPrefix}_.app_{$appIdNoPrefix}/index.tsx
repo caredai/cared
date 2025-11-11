@@ -22,7 +22,7 @@ function App() {
   const {
     data: { app },
   } = useSuspenseQuery({
-    ...orpc.app.byId.queryOptions({
+    ...orpc.account.app.byId.queryOptions({
       input: {
         id: appId,
       },
@@ -37,10 +37,10 @@ function UpdateAppLogo({ app }: { app: AppType }) {
 
   // App update mutation
   const updateMutation = useMutation({
-    ...orpc.app.update.mutationOptions({
+    ...orpc.account.app.update.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(
-          orpc.app.byId.queryOptions({
+          orpc.account.app.byId.queryOptions({
             input: {
               id: app.id,
             },

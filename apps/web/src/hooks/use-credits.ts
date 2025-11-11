@@ -17,7 +17,7 @@ export function useCredits() {
   const {
     data: { credits },
     refetch: refetchCredits,
-  } = useSuspenseQuery(orpc.credits.getCredits.queryOptions())
+  } = useSuspenseQuery(orpc.account.credits.getCredits.queryOptions())
   return {
     credits,
     refetchCredits,
@@ -28,7 +28,7 @@ const hasAttemptedFetchAtom = atom(false)
 
 export function useListCreditsOrders() {
   const { data, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
-    orpc.credits.listOrders.infiniteOptions({
+    orpc.account.credits.listOrders.infiniteOptions({
       input: (cursor?: string) => ({
         // statuses: ['open', 'complete', 'draft', 'paid'],
         cursor,
@@ -64,7 +64,7 @@ export function useCreateCreditsOnetimeCheckout() {
   const { refetchCreditsOrders } = useListCreditsOrders()
 
   const createMutation = useMutation(
-    orpc.credits.createOnetimeCheckout.mutationOptions({
+    orpc.account.credits.createOnetimeCheckout.mutationOptions({
       onSuccess: () => {
         void refetchCredits()
         void refetchCreditsOrders()
@@ -85,7 +85,7 @@ export function useCreateCreditsOnetimeCheckout() {
 
 export function useListCreditsSubscriptions() {
   const { data, refetch } = useQuery({
-    ...orpc.credits.listSubscriptions.queryOptions(),
+    ...orpc.account.credits.listSubscriptions.queryOptions(),
     staleTime: Infinity,
     gcTime: Infinity,
   })
@@ -100,7 +100,7 @@ export function useUpdateAutoRechargeCreditsSettings() {
   const { refetchCredits } = useCredits()
 
   const updateMutation = useMutation(
-    orpc.credits.updateAutoRechargeSettings.mutationOptions({
+    orpc.account.credits.updateAutoRechargeSettings.mutationOptions({
       onSuccess: () => {
         void refetchCredits()
       },
@@ -131,7 +131,7 @@ export function useCancelCreditsOrder() {
   const { refetchCreditsOrders } = useListCreditsOrders()
 
   const cancelMutation = useMutation(
-    orpc.credits.cancelOrder.mutationOptions({
+    orpc.account.credits.cancelOrder.mutationOptions({
       onSuccess: () => {
         void refetchCredits()
         void refetchCreditsOrders()
