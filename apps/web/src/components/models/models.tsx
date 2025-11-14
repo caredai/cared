@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronUp, CloudCog, KeyRound, Server } from 'lucide-react'
-import { useCopyToClipboard } from 'react-use'
 
 import type { ProviderId } from '@cared/providers'
 import { Badge } from '@cared/ui/components/badge'
@@ -41,8 +40,6 @@ const MODEL_TYPE_CONFIG: Record<ModelType, { title: string }> = {
 }
 
 export function Models({ scope }: { scope: 'system' | 'effective' }) {
-  const [_, copyToClipboard] = useCopyToClipboard()
-
   // Get all provider information
   const { providers } = useProviders()
 
@@ -318,7 +315,6 @@ export function Models({ scope }: { scope: 'system' | 'effective' }) {
                                   isLast={
                                     !modelsByType.slice(index + 1).some((models) => models.length)
                                   }
-                                  copyToClipboard={copyToClipboard}
                                 />
                               )
                             })}
@@ -380,12 +376,10 @@ function ModelsByType({
   modelType,
   models,
   isLast,
-  copyToClipboard,
 }: {
   modelType: ModelType
   models: { id: string; name: string; description?: string }[]
   isLast: boolean
-  copyToClipboard: (value: string) => void
 }) {
   if (!models.length) return null
 
@@ -397,7 +391,7 @@ function ModelsByType({
           return (
             <li key={model.id} className="text-sm p-2 bg-muted rounded-md">
               <div className="font-medium">{model.name}</div>
-              <CopyModelId modelId={model.id} copyToClipboard={copyToClipboard} />
+              <CopyModelId modelId={model.id} />
               {model.description && (
                 <div className="text-xs text-muted-foreground mt-1">{model.description}</div>
               )}

@@ -8,26 +8,26 @@ import { CaredClient } from '../src/client'
 async function main() {
   // Read configuration from environment variables
   const apiUrl = process.env.API_URL || 'http://localhost:3001'
-  const apiKey = process.env.API_KEY
+  const apiToken = process.env.API_TOKEN
 
-  if (!apiUrl || !apiKey) {
+  if (!apiUrl || !apiToken) {
     console.error('❌ Missing required environment variables:')
     console.error('   API_URL - The API endpoint URL')
-    console.error('   API_KEY - The API key for authentication')
+    console.error('   API_TOKEN - The API token for authentication')
     console.error('')
     console.error('Example:')
-    console.error('   API_URL=http://localhost:3000 API_KEY=your-key pnpm test-client')
+    console.error('   API_URL=http://localhost:3001 API_TOKEN=your-token pnpm test-client')
     process.exit(1)
   }
 
   console.log('🚀 Starting SDK client test...')
   console.log(`📍 API URL: ${apiUrl}`)
-  console.log(`🔑 API Key: ${apiKey.substring(0, 8)}...`)
+  console.log(`🔑 API Token: ${apiToken.substring(0, 8)}...`)
 
   // Initialize the CaredClient
   const client = new CaredClient({
     apiUrl,
-    apiKey,
+    apiToken: apiToken,
   })
 
   // Test with a common language model (adjust modelId as needed)

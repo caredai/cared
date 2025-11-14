@@ -11,14 +11,12 @@ interface WalletQrDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedWallet: Wallet | null
-  copyToClipboard: (value: string) => void
 }
 
 export function WalletQrDialog({
   open,
   onOpenChange,
   selectedWallet,
-  copyToClipboard,
 }: WalletQrDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -33,10 +31,7 @@ export function WalletQrDialog({
               <p className="text-sm font-medium mb-2">
                 {selectedWallet.chainType === 'ethereum' ? 'Ethereum' : 'Solana'} Address
               </p>
-              <WalletAddress
-                address={selectedWallet.wallet.address}
-                copyToClipboard={copyToClipboard}
-              />
+              <WalletAddress address={selectedWallet.wallet.address} />
             </div>
             <Alert className="border-yellow-500">
               <AlertCircleIcon />

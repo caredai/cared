@@ -1,7 +1,6 @@
 import type { VirtualizerHandle } from 'virtua'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PlusIcon, ServerIcon } from 'lucide-react'
-import { useCopyToClipboard } from 'react-use'
 import { Virtualizer } from 'virtua'
 
 import type { UpdateModelArgs } from '@cared/api'
@@ -273,8 +272,6 @@ export function ModelSheet({
     [getModelsForCurrentTab, sortModels, providerId, refetchModels, scope],
   )
 
-  const [_, copyToClipboard] = useCopyToClipboard()
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-[800px]">
@@ -443,7 +440,6 @@ export function ModelSheet({
                           onRemove={() => handleRemove(model.id)}
                           onMoveUp={() => handleMoveModel(model.id, 'up')}
                           onMoveDown={() => handleMoveModel(model.id, 'down')}
-                          copyToClipboard={copyToClipboard}
                           canMoveUp={
                             index > 0 && (scope === 'system' || !models[index - 1]?.isSystem)
                           }
@@ -484,7 +480,6 @@ function ModelItem({
   onRemove,
   onMoveUp,
   onMoveDown,
-  copyToClipboard,
   canMoveUp,
   canMoveDown,
   cache,
@@ -501,7 +496,6 @@ function ModelItem({
   onRemove: () => Promise<void>
   onMoveUp: () => Promise<void>
   onMoveDown: () => Promise<void>
-  copyToClipboard: (value: string) => void
   canMoveUp: boolean
   canMoveDown: boolean
   cache?: any
@@ -589,7 +583,6 @@ function ModelItem({
         onMoveDown={handleMoveDown}
         canMoveUp={canMoveUp}
         canMoveDown={canMoveDown}
-        copyToClipboard={copyToClipboard}
       />
     )
   }

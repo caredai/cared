@@ -38,6 +38,7 @@ export function createArtifactHandler<T extends ArtifactKind>(config: {
       await db.insert(Artifact).values({
         id: args.id,
         version: Math.floor(Date.now() / 1000),
+        accountId: args.ctx.accountId,
         userId: args.ctx.userId,
         chatId: args.ctx.chatId,
         kind: config.kind,

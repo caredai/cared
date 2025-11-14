@@ -13,14 +13,16 @@ export type CaredClientOptions = {
   apiUrl?: string
 } & (
   | {
-      apiKey: string
+      apiToken: string
+      accountId?: string // only for user api token
     }
   | {
       accessToken: string | (() => string | Promise<string>) // user access token retrieved from the oauth app auth
     }
   | {
       sessionToken: string | (() => string | Promise<string>) // user session token retrieved from the login flow
-      appId: string
+      appId?: string
+      accountId?: string
     }
   | {
       headers: Headers | (() => Headers | Promise<Headers>)
@@ -34,15 +36,15 @@ export class CaredClient {
       apiUrl: new URL(opts.apiUrl || env.CARED_API_URL || 'https://api.cared.dev').origin,
     }
 
-    const { orpcClient, orpc } = createCaredOrpcClient(this.opts)
+    const { orpcClient, orpcQueryClient } = createCaredOrpcClient(this.opts)
     this.orpcClient = orpcClient
-    this.orpc = orpc
+    this.orpcQueryClient = orpcQueryClient
   }
 
   private readonly opts: CaredClientOptions & Required<Pick<CaredClientOptions, 'apiUrl'>>
 
-  orpcClient: CaredOrpcClient
-  orpc: CaredOrpcQueryClient
+  readonly orpcClient: CaredOrpcClient
+  readonly orpcQueryClient: CaredOrpcQueryClient
 
   createLanguageModel(modelId: string) {
     return createLanguageModel(modelId, this.opts)
@@ -75,30 +77,47 @@ export async function makeHeaders(opts: CaredClientOptions) {
 
   const headers = new Headers()
 
-  const { apiKey } = opts as {
-    apiKey?: string
-  }
-  if (apiKey) {
-    headers.set('X-API-KEY', apiKey)
-    headers.set('Authorization', 'Bearer ' + apiKey)
-    return headers
+  {
+    const { apiToken, accountId } = opts as {
+      apiToken?: string
+      accountId?: string
+    }
+    if (apiToken) {
+      headers.set('X-API-TOKEN', apiToken)
+      headers.set('Authorization', 'Bearer ' + apiToken)
+      if (accountId) {
+        headers.set('X-ACCOUNT-ID', accountId)
+      }
+      return headers
+    }
   }
 
-  const { accessToken } = opts as {
-    accessToken?: string | (() => string | Promise<string>)
+  {
+    const { accessToken } = opts as {
+      accessToken?: string | (() => string | Promise<string>)
+    }
+    if (accessToken) {
+      const token = typeof accessToken === 'string' ? accessToken : await accessToken()
+      headers.set('Authorization', 'Bearer ' + token)
+      return headers
+    }
   }
-  if (accessToken) {
-    const token = typeof accessToken === 'string' ? accessToken : await accessToken()
+
+  {
+    const { sessionToken, appId, accountId } = opts as {
+      sessionToken: string | (() => string | Promise<string>)
+      appId?: string
+      accountId?: string
+    }
+    const token = typeof sessionToken === 'string' ? sessionToken : await sessionToken()
     headers.set('Authorization', 'Bearer ' + token)
-    return headers
+    if (appId) {
+      headers.set('X-APP-ID', appId)
+    }
+    if (accountId) {
+      headers.set('X-ACCOUNT-ID', accountId)
+    }
   }
 
-  const { sessionToken, appId } = opts as {
-    sessionToken: string | (() => string | Promise<string>)
-    appId: string
-  }
-  const token = typeof sessionToken === 'string' ? sessionToken : await sessionToken()
-  headers.set('Authorization', 'Bearer ' + token)
-  headers.set('X-APP-ID', appId)
   return headers
 }

@@ -12,6 +12,7 @@ import { providerKeyRouter } from './provider-key'
 import { storageRouter } from './storage'
 import { stripeRouter } from './stripe'
 import { telemetryRouter } from './telemetry'
+import { toolRouter } from './tool'
 import { userRouter } from './user'
 
 export const accountRouter = {
@@ -30,4 +31,5 @@ export const accountRouter = {
   stripe: stripeRouter,
   telemetry: telemetryRouter,
   file: fileRouter,
+  tool: toolRouter,
 }

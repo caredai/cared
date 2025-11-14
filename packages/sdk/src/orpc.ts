@@ -29,14 +29,14 @@ export type {
 export type CaredOrpcRouterInputs = InferRouterInputs<AppRouter>
 export type CaredOrpcRouterOutputs = InferRouterOutputs<AppRouter>
 
-export type Chat = CaredOrpcRouterOutputs['chat']['byId']['chat']
-export type Message = CaredOrpcRouterOutputs['message']['get']['message']
+export type Chat = CaredOrpcRouterOutputs['account']['user']['chat']['byId']['chat']
+export type Message = CaredOrpcRouterOutputs['account']['user']['message']['get']['message']
 
 export function createCaredOrpcClient(
   opts: CaredClientOptions & Required<Pick<CaredClientOptions, 'apiUrl'>>,
 ): {
   orpcClient: CaredOrpcClient
-  orpc: CaredOrpcQueryClient
+  orpcQueryClient: CaredOrpcQueryClient
 } {
   const link = new RPCLink({
     url: opts.apiUrl + '/rpc',
@@ -60,11 +60,11 @@ export function createCaredOrpcClient(
   })
 
   const orpcClient: CaredOrpcClient = createORPCClient(link)
-  const orpc: CaredOrpcQueryClient = createTanstackQueryUtils(orpcClient)
+  const orpcQueryClient: CaredOrpcQueryClient = createTanstackQueryUtils(orpcClient)
 
   return {
     orpcClient,
-    orpc,
+    orpcQueryClient,
   }
 }
 

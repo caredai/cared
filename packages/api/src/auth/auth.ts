@@ -256,10 +256,12 @@ export async function authenticate(headers: Headers): Promise<Auth> {
 
 export class ProtectedAuth extends Auth {
   accountId: string
+  userId?: string
 
   constructor(public ctx: AuthContext) {
     super(ctx)
     this.accountId = ctx.accountId
+    this.userId = ctx.userId
   }
 
   static async authenticate(headers: Headers) {

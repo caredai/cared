@@ -14,6 +14,7 @@ import {
   TabsList as TabsBarList,
   TabsTrigger as TabsBarTrigger,
 } from '@/components/tabs'
+import { copyTextToClipboard } from '@/lib/clipboard'
 import { IOPreview } from './IOPreview'
 import { ItemBadge } from './ItemBadge'
 import { PrettyJsonView } from './PrettyJsonView'
@@ -23,18 +24,10 @@ export function TracePreview({ trace }: { trace: TraceWithDetails }) {
   const [selectedTab, setSelectedTab] = useState<'preview' | 'scores'>('preview')
   const [currentView, setCurrentView] = useState<'pretty' | 'json'>('pretty')
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy text: ', err)
-    }
-  }
-
-  const copyTraceId = () => {
-    void copyToClipboard(trace.id)
+  const copyTraceId = async () => {
+    await copyTextToClipboard(trace.id)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (

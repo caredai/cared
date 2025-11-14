@@ -41,7 +41,6 @@ import { Textarea } from '@cared/ui/components/textarea'
 import { ModelSelect } from '@/components/models/model-select'
 import { useActive } from '@/hooks/use-active'
 import { orpc } from '@/lib/orpc'
-import { stripIdPrefix } from '@/lib/utils'
 
 // Schema for app form values
 const createAppSchema = z.object({

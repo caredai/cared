@@ -4,23 +4,19 @@ import { CheckIcon, CopyIcon } from 'lucide-react'
 import { splitModelFullId } from '@cared/providers'
 import { Button } from '@cared/ui/components/button'
 
-export function CopyModelId({
-  modelId: modelFullId,
-  copyToClipboard,
-}: {
-  modelId: string
-  copyToClipboard: (value: string) => void
-}) {
+import { copyTextToClipboard } from '@/lib/clipboard'
+
+export function CopyModelId({ modelId: modelFullId }: { modelId: string }) {
   const timeoutHandle = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [copied, setCopied] = useState(false)
-  const copy = useCallback(() => {
-    copyToClipboard(modelFullId)
+  const copy = useCallback(async () => {
+    await copyTextToClipboard(modelFullId)
     clearTimeout(timeoutHandle.current)
     timeoutHandle.current = setTimeout(() => {
       setCopied(false)
     }, 1000)
     setCopied(true)
-  }, [modelFullId, copyToClipboard, setCopied])
+  }, [modelFullId])
 
   const { modelId } = splitModelFullId(modelFullId)
 

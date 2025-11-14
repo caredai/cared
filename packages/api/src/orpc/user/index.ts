@@ -21,17 +21,53 @@ import { forwardSetCookieHeader } from '../../utils'
 import { formatOAuthApp } from '../account/oauth-app'
 
 export interface Session {
-  session: Omit<(typeof auth.$Infer.Session)['session'], 'activeOrganizationId'> & {
+  session: {
+    id: string
+    userId: string
+    expiresAt: Date
+    token: string
+    ipAddress?: string | null
+    userAgent?: string | null
+    geolocation?: {
+      city?: string
+      region?: string
+      country?: string
+    } | null
     activeAccountId?: string | null
+    activeTeamId?: string | null
+    impersonatedBy?: string | null
+    createdAt: Date
+    updatedAt: Date
   }
-  user: (typeof auth.$Infer.Session)['user']
+  user: {
+    id: string
+    name: string
+    email: string
+    emailVerified: boolean
+    image?: string | null
+    twoFactorEnabled?: boolean | null
+    banned?: boolean | null
+    role?: string | null
+    banReason?: string | null
+    banExpires?: Date | null
+    defaultAccountId?: string | null
+    createdAt: Date
+    updatedAt: Date
+  }
 }
 
 function formatSession(session: (typeof auth.$Infer.Session)['session']) {
-  const { activeOrganizationId, ...props } = session
+  const { geolocation, activeOrganizationId, ...props } = session
 
   const sess: Session['session'] = {
     ...props,
+    geolocation: geolocation
+      ? (JSON.parse(geolocation) as {
+          city?: string
+          region?: string
+          country?: string
+        })
+      : undefined,
     activeAccountId: activeOrganizationId,
   }
 
@@ -133,16 +169,7 @@ export const userRouter = {
       })) as (typeof auth.$Infer.Session)['session'][]
 
       return {
-        sessions: sessions.map((session) => ({
-          ...formatSession(session),
-          geolocation: session.geolocation
-            ? (JSON.parse(session.geolocation) as {
-                city?: string
-                region?: string
-                country?: string
-              })
-            : undefined,
-        })),
+        sessions: sessions.map(formatSession),
       }
     }),
 

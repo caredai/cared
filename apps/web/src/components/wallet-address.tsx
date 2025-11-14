@@ -3,31 +3,25 @@ import { CheckIcon, CopyIcon } from '@radix-ui/react-icons'
 
 import { Button } from '@cared/ui/components/button'
 
+import { copyTextToClipboard } from '@/lib/clipboard'
 import { shortenString } from '@/lib/utils'
 
 /**
  * WalletAddress component displays a wallet address with copy functionality
  * @param address - The wallet address to display
- * @param copyToClipboard - Function to copy the address to clipboard
  */
-export function WalletAddress({
-  address,
-  copyToClipboard,
-}: {
-  address: string
-  copyToClipboard: (value: string) => void
-}) {
+export function WalletAddress({ address }: { address: string }) {
   const timeoutHandle = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [copied, setCopied] = useState(false)
 
-  const copy = useCallback(() => {
-    copyToClipboard(address)
+  const copy = useCallback(async () => {
+    await copyTextToClipboard(address)
     clearTimeout(timeoutHandle.current)
     timeoutHandle.current = setTimeout(() => {
       setCopied(false)
     }, 1000)
     setCopied(true)
-  }, [address, copyToClipboard, setCopied])
+  }, [address])
 
   return (
     <Button

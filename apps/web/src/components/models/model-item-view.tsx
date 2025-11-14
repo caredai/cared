@@ -41,7 +41,6 @@ export function ModelItemView({
   onMoveDown,
   canMoveUp,
   canMoveDown,
-  copyToClipboard,
 }: {
   index: number
   providerId: ProviderId
@@ -58,7 +57,6 @@ export function ModelItemView({
   onMoveDown: () => Promise<void>
   canMoveUp: boolean
   canMoveDown: boolean
-  copyToClipboard: (value: string) => void
 }) {
   // Disable all operations when any action is in progress
   const isDisabled = isSaving || isRemoving || isMovingUp || isMovingDown
@@ -159,7 +157,7 @@ export function ModelItemView({
         )}
       </div>
 
-      <CopyModelId modelId={model.model.id} copyToClipboard={copyToClipboard} />
+      <CopyModelId modelId={model.model.id} />
 
       {model.model.description && (
         <blockquote className="my-2 border-l-1 pl-4 text-sm text-muted-foreground">

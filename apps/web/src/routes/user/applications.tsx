@@ -61,9 +61,8 @@ function Applications() {
                 <div className="max-w-1/4 sm:max-w-1/2 lg:max-w-none">
                   <CardTitle className="truncate">{app.name}</CardTitle>
                   <CardDescription className="truncate">
-                    {app.access.updatedAt &&
-                      `Last used at ${new Date(app.access.updatedAt).toLocaleDateString()} • `}
-                    Owned by {app.owner.name}
+                    Last used at {new Date(app.access.updatedAt).toLocaleDateString()} • Owned by{' '}
+                    {app.owner.name}
                   </CardDescription>
                 </div>
                 <Button

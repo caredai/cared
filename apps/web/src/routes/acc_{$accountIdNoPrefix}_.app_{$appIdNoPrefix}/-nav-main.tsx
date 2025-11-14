@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Activity, FerrisWheel, Settings2, WandSparkles } from 'lucide-react'
+import { FerrisWheel, Settings2, WandSparkles } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 

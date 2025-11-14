@@ -5,10 +5,10 @@ import {
   CircleDollarSign,
   Database,
   Key,
+  PocketKnife,
   Puzzle,
   Settings2,
   Users,
-  Wrench,
 } from 'lucide-react'
 
 import type { NavItem } from '@/components/app-sidebar/nav-main'
@@ -36,6 +36,11 @@ const items: NavItem[] = [
     icon: Brain,
   },
   {
+    title: 'Tools',
+    url: '/tools',
+    icon: PocketKnife,
+  },
+  {
     title: 'Tracing',
     url: '/tracing',
     icon: Activity,
@@ -53,11 +58,6 @@ const items: NavItem[] = [
     title: 'Knowledge',
     url: '/datasets',
     icon: Database,
-  },
-  {
-    title: 'Tools',
-    url: '/tools',
-    icon: Wrench,
   },
   {
     title: 'Extensions',

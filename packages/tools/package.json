@@ -34,7 +34,10 @@
   "dependencies": {
     "@cared/db": "workspace:*",
     "@cared/providers": "workspace:*",
+    "@cared/shared": "workspace:*",
     "@cared/vdb": "workspace:*",
+    "@composio/core": "^0.2.4",
+    "@composio/vercel": "^0.2.16",
     "agent-twitter-client": "^0.0.18",
     "ai": "catalog:"
   }

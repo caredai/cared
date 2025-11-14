@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as ChatRouteImport } from './routes/chat'
@@ -32,6 +33,7 @@ import { Route as AuthErrorRouteImport } from './routes/auth/error'
 import { Route as AdminModelsRouteImport } from './routes/admin/models'
 import { Route as AdminMockRouteImport } from './routes/admin/mock'
 import { Route as Acc_Char123accountIdNoPrefixChar125TracingRouteImport } from './routes/acc_{$accountIdNoPrefix}/tracing'
+import { Route as Acc_Char123accountIdNoPrefixChar125ToolsRouteImport } from './routes/acc_{$accountIdNoPrefix}/tools'
 import { Route as Acc_Char123accountIdNoPrefixChar125SettingsRouteImport } from './routes/acc_{$accountIdNoPrefix}/settings'
 import { Route as Acc_Char123accountIdNoPrefixChar125ModelsRouteImport } from './routes/acc_{$accountIdNoPrefix}/models'
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersRouteImport } from './routes/acc_{$accountIdNoPrefix}/members'
@@ -55,6 +57,11 @@ import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixCha
 import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/configure/oauth-application'
 import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/configure/api-tokens'
 
+const ToolsRoute = ToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ModelsRoute = ModelsRouteImport.update({
   id: '/models',
   path: '/models',
@@ -171,6 +178,12 @@ const Acc_Char123accountIdNoPrefixChar125TracingRoute =
   Acc_Char123accountIdNoPrefixChar125TracingRouteImport.update({
     id: '/tracing',
     path: '/tracing',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125ToolsRoute =
+  Acc_Char123accountIdNoPrefixChar125ToolsRouteImport.update({
+    id: '/tools',
+    path: '/tools',
     getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
 const Acc_Char123accountIdNoPrefixChar125SettingsRoute =
@@ -323,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
+  '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
@@ -330,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
   '/admin/models': typeof AdminModelsRoute
@@ -367,12 +382,14 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
+  '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
   '/admin/models': typeof AdminModelsRoute
@@ -414,6 +431,7 @@ export interface FileRoutesById {
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
   '/models': typeof ModelsRoute
+  '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
@@ -421,6 +439,7 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
   '/admin/models': typeof AdminModelsRoute
@@ -463,6 +482,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/docs'
     | '/models'
+    | '/tools'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
@@ -470,6 +490,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
     | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
     | '/admin/models'
@@ -507,12 +528,14 @@ export interface FileRouteTypes {
     | '/chat'
     | '/docs'
     | '/models'
+    | '/tools'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
     | '/acc_{$accountIdNoPrefix}/credits'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
     | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
     | '/admin/models'
@@ -553,6 +576,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/docs'
     | '/models'
+    | '/tools'
     | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
@@ -560,6 +584,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
     | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
     | '/admin/models'
@@ -601,6 +626,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
   DocsRoute: typeof DocsRoute
   ModelsRoute: typeof ModelsRoute
+  ToolsRoute: typeof ToolsRoute
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
   AuthErrorRoute: typeof AuthErrorRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
@@ -614,6 +640,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tools': {
+      id: '/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof ToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/models': {
       id: '/models'
       path: '/models'
@@ -773,6 +806,13 @@ declare module '@tanstack/react-router' {
       path: '/tracing'
       fullPath: '/acc_{$accountIdNoPrefix}/tracing'
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125TracingRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}/tools': {
+      id: '/acc_{$accountIdNoPrefix}/tools'
+      path: '/tools'
+      fullPath: '/acc_{$accountIdNoPrefix}/tools'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ToolsRouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
     '/acc_{$accountIdNoPrefix}/settings': {
@@ -939,6 +979,7 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125MembersRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   Acc_Char123accountIdNoPrefixChar125ModelsRoute: typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   Acc_Char123accountIdNoPrefixChar125SettingsRoute: typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  Acc_Char123accountIdNoPrefixChar125ToolsRoute: typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   Acc_Char123accountIdNoPrefixChar125TracingRoute: typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   Acc_Char123accountIdNoPrefixChar125IndexRoute: typeof Acc_Char123accountIdNoPrefixChar125IndexRoute
   Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
@@ -960,6 +1001,8 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125ModelsRoute,
     Acc_Char123accountIdNoPrefixChar125SettingsRoute:
       Acc_Char123accountIdNoPrefixChar125SettingsRoute,
+    Acc_Char123accountIdNoPrefixChar125ToolsRoute:
+      Acc_Char123accountIdNoPrefixChar125ToolsRoute,
     Acc_Char123accountIdNoPrefixChar125TracingRoute:
       Acc_Char123accountIdNoPrefixChar125TracingRoute,
     Acc_Char123accountIdNoPrefixChar125IndexRoute:
@@ -1070,6 +1113,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   DocsRoute: DocsRoute,
   ModelsRoute: ModelsRoute,
+  ToolsRoute: ToolsRoute,
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute:
     Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren,
   AuthErrorRoute: AuthErrorRoute,

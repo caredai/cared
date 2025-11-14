@@ -22,4 +22,4 @@ export const statements = {
 
   // User
   userApiToken: ['read', 'write'],
-} as const
+}

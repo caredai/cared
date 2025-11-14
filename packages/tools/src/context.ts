@@ -4,6 +4,7 @@ import type { Agent, App, Chat } from '@cared/db/schema'
 import { getModel } from '@cared/providers/providers'
 
 export interface Context {
+  accountId: string
   userId: string
   appId: string
   preview?: boolean

@@ -15,8 +15,9 @@ import { getApiPath, getTrustedOrigins } from '@cared/auth/client'
 import { setDb } from '@cared/db/client'
 
 import type { Hyperdrive } from '@cloudflare/workers-types'
-import { appRouter, createORPCContext, model, tasks, webhooks } from '..'
+import { appRouter, createORPCContext } from '..'
 import { Cache } from '../operation/cache'
+import { model, tasks, toolkits, webhooks } from '../rest'
 import { registerTelemetry } from '../telemetry'
 
 export interface Bindings {
@@ -88,6 +89,8 @@ export function newHonoApp({ cacheMaxSize }: { cacheMaxSize?: number }): HonoApp
   app.post('/v1/webhooks/tasks/:task', tasks.POST)
 
   app.post('/v1/webhooks/credits', webhooks.credits.POST)
+
+  app.post('/v1/toolkits/callback/composio', toolkits.composio.GET)
 
   const rpcHandler = new RPCHandler(appRouter, {
     strictGetMethodPluginEnabled: false, // Replace Strict Get Method Plugin

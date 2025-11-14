@@ -21,6 +21,9 @@ export default [
       ],
     },
   },
+  {
+    ignores: ['worker-configuration.d.ts'],
+  },
   ...baseConfig,
   ...reactConfig,
   ...restrictEnvAccess,

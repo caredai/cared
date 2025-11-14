@@ -6,6 +6,7 @@ export * from './context'
 export * from './memory'
 export * from './knowledge'
 export * from './artifact'
+export * from './composio'
 
 export function buildTools(context: Context, tools: Record<string, ContextAwareTool>) {
   const result: Record<string, Tool> = {}

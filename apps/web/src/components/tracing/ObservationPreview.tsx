@@ -15,6 +15,7 @@ import {
   TabsList as TabsBarList,
   TabsTrigger as TabsBarTrigger,
 } from '@/components/tabs'
+import { copyTextToClipboard } from '@/lib/clipboard'
 import { IOPreview } from './IOPreview'
 import { ItemBadge } from './ItemBadge'
 import { PrettyJsonView } from './PrettyJsonView'
@@ -38,18 +39,10 @@ export function ObservationPreview({
     return observations.find((obs) => obs.id === observationId)
   }, [observations, observationId])
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy text: ', err)
-    }
-  }
-
-  const copyObservationId = () => {
-    void copyToClipboard(observationId)
+  const copyObservationId = async () => {
+    await copyTextToClipboard(observationId)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   if (!observation) {

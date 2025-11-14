@@ -9,6 +9,7 @@ export default defineConfig({
     '@cared/api',
     '@cared/db',
     '@cared/providers',
+    '@cared/tools',
     '@cared/auth',
   ],
   format: ['esm', 'cjs'],

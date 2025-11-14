@@ -25,7 +25,6 @@ export { createORPCContext, appRouter, appRouterContract, authenticate }
 export type { AppRouter, RouterInputs, RouterOutputs }
 
 export * from './types'
-export * from './rest'
 export * from './orpc/router'
 export { registerTelemetry } from './telemetry'
 export type { S3Location } from './operation'

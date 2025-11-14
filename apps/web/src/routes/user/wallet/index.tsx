@@ -23,8 +23,6 @@ import {
   HelpCircleIcon,
   QrCodeIcon,
 } from 'lucide-react'
-import { useCopyToClipboard } from 'react-use'
-
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
 import {
@@ -94,8 +92,6 @@ function WalletPage() {
     setSelectedWallet(wallet)
     setQrDialogOpen(true)
   }
-
-  const [, copyToClipboard] = useCopyToClipboard()
 
   const handleCreateEthereumWallet = useCallback(async () => {
     setIsCreatingWallet(true)
@@ -284,7 +280,6 @@ function WalletPage() {
                   key={wallet.wallet.address}
                   wallet={wallet}
                   onFund={() => handleFundWallet(wallet)}
-                  copyToClipboard={copyToClipboard}
                   onOpenQrDialog={openQrDialog}
                 />
               ))}
@@ -339,7 +334,6 @@ function WalletPage() {
                 <WalletItem
                   key={wallet.wallet.address}
                   wallet={wallet}
-                  copyToClipboard={copyToClipboard}
                   onLink={() => handleLinkWallet(wallet)}
                   onUnlink={() => handleUnlinkWallet(wallet)}
                   onDisconnect={() => handleDisconnectWallet(wallet)}
@@ -359,7 +353,6 @@ function WalletPage() {
         open={qrDialogOpen}
         onOpenChange={setQrDialogOpen}
         selectedWallet={selectedWallet}
-        copyToClipboard={copyToClipboard}
       />
     </>
   )
@@ -367,7 +360,6 @@ function WalletPage() {
 
 function WalletItem({
   wallet,
-  copyToClipboard,
   onLink,
   onUnlink,
   onDisconnect,
@@ -377,7 +369,6 @@ function WalletItem({
   onOpenQrDialog,
 }: {
   wallet: Wallet
-  copyToClipboard: (value: string) => void
   onLink?: () => void
   onUnlink?: () => void
   onDisconnect?: () => void
@@ -397,7 +388,7 @@ function WalletItem({
             {walletType(wallet) === 'ethereum' ? 'Ethereum' : 'Solana'}
           </Badge>
         </div>
-        <WalletAddress address={wallet.wallet.address} copyToClipboard={copyToClipboard} />
+        <WalletAddress address={wallet.wallet.address} />
       </div>
       <div className="flex items-center gap-2">
         {isExternal && (
