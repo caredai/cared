@@ -313,7 +313,7 @@ function UpdateOAuthApp({
   setSecretToShow,
 }: {
   appId: string
-  oauthApp: NonNullable<RouterOutputs['oauthApp']['list']['oauthApps'][number]>
+  oauthApp: NonNullable<RouterOutputs['account']['oauthApp']['list']['oauthApps'][number]>
   showSecretDialog: boolean
   setShowSecretDialog: (show: boolean) => void
   secretToShow?: string

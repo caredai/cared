@@ -23,6 +23,7 @@ export const ToolKitSchema = z.object({
   name: z.string(),
   slug: z.string(),
   meta: ToolKitMetaSchema,
+  authSchemes: z.array(z.string()).optional(),
   noAuth: z.boolean().optional(),
 })
 
@@ -608,4 +609,6 @@ export const ConnectionSchema = z.object({
   statusReason: z.string().optional(),
   toolkit: z.string(),
   state: ConnectionDataSchema.optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })

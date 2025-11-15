@@ -47,6 +47,7 @@ export function MenuBreadcrumb({
             <BreadcrumbItem className="hidden md:block">
               {item.isRoute ? (
                 <BreadcrumbLink asChild>
+                  {/* @ts-ignore */}
                   <Link to={`${baseUrl}/${key}`}>{item.title}</Link>
                 </BreadcrumbLink>
               ) : (

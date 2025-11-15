@@ -46,10 +46,10 @@ export default defineConfig(async ({ command, mode }) => {
       },
     },
     ssr: {
-      noExternal: ['react-use'],
+      noExternal: [],
     },
     optimizeDeps: {
-      include: ['react-use'],
+      include: [],
     },
   }
 })

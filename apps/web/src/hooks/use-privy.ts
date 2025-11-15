@@ -12,7 +12,8 @@ export function usePrivyJwtAuth() {
   const { ready, authenticated } = usePrivy()
 
   useSubscribeToJwtAuthWithFlag({
-    enabled: ready && !authenticated,
+    // enabled: ready && !authenticated,
+    enabled: false,
     isAuthenticated,
     getExternalJwt: useCallback(async () => {
       if (!isAuthenticated) {

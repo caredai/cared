@@ -1,8 +1,7 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { atom, useAtom } from 'jotai'
-import { CheckIcon, CopyIcon } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
 import {
@@ -14,6 +13,8 @@ import {
   DialogTitle,
 } from '@cared/ui/components/dialog'
 import { Input } from '@cared/ui/components/input'
+
+import { CopyButton } from '@/components/copy-button'
 
 // Atom to store the API token dialog state
 export const apiTokenDialogAtom = atom<{
@@ -48,23 +49,6 @@ export function useShowApiTokenDialog() {
       })
     }, [setApiTokenDialogState]),
   }
-}
-
-// Copy button component for copying API key
-function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false)
-
-  const copy = useCallback(async () => {
-    await navigator.clipboard.writeText(value)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [value])
-
-  return (
-    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={copy}>
-      {copied ? <CheckIcon className="h-4 w-4" /> : <CopyIcon className="h-4 w-4" />}
-    </Button>
-  )
 }
 
 // Shared API Token Dialog component

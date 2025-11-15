@@ -1,15 +1,34 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
 import type { VirtualizerHandle } from 'virtua'
+import { useMemo, useRef, useState } from 'react'
+import { useNavigate, useRouter } from '@tanstack/react-router'
+import { Check, ChevronsUpDown, Wrench } from 'lucide-react'
 import { Virtualizer } from 'virtua'
 
+import { Avatar, AvatarFallback, AvatarImage } from '@cared/ui/components/avatar'
+import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@cared/ui/components/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@cared/ui/components/card'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@cared/ui/components/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
 import { cn } from '@cared/ui/lib/utils'
 
 import { SearchInput } from '@/components/search-input'
-import { ToolkitSheet } from './toolkit-sheet'
 import { useCategories, useToolkits } from '@/hooks/use-tools'
 
 interface Category {
@@ -31,6 +50,7 @@ interface Toolkit {
     logo?: string
     toolsCount?: number
   }
+  authSchemes?: string[]
   noAuth?: boolean
 }
 
@@ -44,8 +64,21 @@ export function Toolkits() {
   const toolkits = toolkitsData as Toolkit[]
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedToolkit, setSelectedToolkit] = useState<Toolkit | null>(null)
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
+  const navigate = useNavigate()
+  const router = useRouter()
+
+  // Get accountIdNoPrefix from current route
+  const getAccountIdNoPrefix = () => {
+    try {
+      const match = /\/acc_([^/]+)/.exec(router.state.location.pathname)
+      if (match?.[1]) {
+        return match[1]
+      }
+    } catch {
+      // Fallback: return undefined
+    }
+    return undefined
+  }
 
   // Get standardized categories from API
   const standardCategoriesData = useCategories()
@@ -114,11 +147,12 @@ export function Toolkits() {
         }
       }
 
-      // Filter by search term (name)
+      // Filter by search term (name and description)
       if (searchTerm) {
         const name = toolkit.name.toLowerCase()
+        const description = toolkit.meta?.description?.toLowerCase() ?? ''
         const search = searchTerm.toLowerCase()
-        if (!name.includes(search)) {
+        if (!name.includes(search) && !description.includes(search)) {
           continue
         }
       }
@@ -130,11 +164,8 @@ export function Toolkits() {
 
   return (
     <div className="flex h-full gap-4">
-      {/* Left sidebar: Categories */}
-      <div className="w-64 flex-shrink-0 border-r">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Categories</h2>
-        </div>
+      {/* Left sidebar: Categories - hidden on small screens, visible on md and larger */}
+      <div className="hidden md:block w-48 lg:w-64 flex-shrink-0 h-2/3 border rounded-lg overflow-y-auto">
         <CategoryList
           categories={categories}
           selectedCategory={selectedCategory}
@@ -143,41 +174,29 @@ export function Toolkits() {
       </div>
 
       {/* Right content area: Search and Toolkits */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Search bar */}
-        <div className="p-4 border-b">
-          <SearchInput
-            placeholder="Search toolkits by name..."
-            value={searchTerm}
-            onChange={setSearchTerm}
-          />
-        </div>
-
-        {/* Toolkits grid */}
-        <div className="flex-1 overflow-auto">
-          <ToolkitGrid
-            toolkits={filteredToolkits}
-            onToolkitClick={(toolkit) => {
-              setSelectedToolkit(toolkit)
-              setIsSheetOpen(true)
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Toolkit Sheet */}
-      {selectedToolkit && (
-        <ToolkitSheet
-          toolkit={selectedToolkit}
-          open={isSheetOpen}
-          onOpenChange={(open) => {
-            setIsSheetOpen(open)
-            if (!open) {
-              setSelectedToolkit(null)
+      {/* Toolkits grid with search bar as first item */}
+      <div className="flex-1 overflow-y-auto">
+        <ToolkitGrid
+          toolkits={filteredToolkits}
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          onToolkitClick={(toolkit) => {
+            const accountIdNoPrefix = getAccountIdNoPrefix()
+            if (accountIdNoPrefix) {
+              void navigate({
+                to: '/acc_{$accountIdNoPrefix}/tools/{$toolkit}',
+                params: {
+                  accountIdNoPrefix,
+                  toolkit: toolkit.slug,
+                },
+              })
             }
           }}
         />
-      )}
+      </div>
     </div>
   )
 }
@@ -198,7 +217,6 @@ function CategoryList({
   const categoryListRef = useRef<VirtualizerHandle>(null)
 
   return (
-    <div className="h-full overflow-auto">
       <Virtualizer ref={categoryListRef}>
         {/* "All" option */}
         <CategoryItem
@@ -216,7 +234,6 @@ function CategoryList({
           />
         ))}
       </Virtualizer>
-    </div>
   )
 }
 
@@ -237,7 +254,7 @@ function CategoryItem({
     <Button
       variant={isSelected ? 'secondary' : 'ghost'}
       className={cn(
-        'w-full justify-start rounded-none',
+        'w-full text-left truncate line-clamp-1 rounded-none font-normal',
         isSelected && 'bg-secondary',
       )}
       onClick={onSelect}
@@ -248,14 +265,107 @@ function CategoryItem({
 }
 
 /**
+ * CategoryCombobox component
+ * Category selector using Popover and Command for md and larger screens
+ */
+function CategoryCombobox({
+  categories,
+  selectedCategory,
+  onSelectCategory,
+}: {
+  categories: Category[]
+  selectedCategory: string | null
+  onSelectCategory: (category: string | null) => void
+}) {
+  const [open, setOpen] = useState(false)
+
+  // Get selected category name
+  const selectedCategoryName = selectedCategory
+    ? categories.find((cat) => cat.slug === selectedCategory)?.name ?? 'All'
+    : 'All'
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full md:w-[300px] justify-between"
+        >
+          {selectedCategoryName}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full md:w-[300px] p-0">
+        <Command>
+          <CommandInput placeholder="Search category..." />
+          <CommandList>
+            <CommandEmpty>No category found.</CommandEmpty>
+            <CommandGroup>
+              {/* "All" option */}
+              <CommandItem
+                value="all"
+                onSelect={() => {
+                  onSelectCategory(null)
+                  setOpen(false)
+                }}
+              >
+                <Check
+                  className={cn(
+                    'mr-2 h-4 w-4',
+                    selectedCategory === null ? 'opacity-100' : 'opacity-0',
+                  )}
+                />
+                All
+              </CommandItem>
+              {/* Category items */}
+              {categories.map((category) => (
+                <CommandItem
+                  key={category.slug}
+                  value={category.slug}
+                  onSelect={(currentValue) => {
+                    onSelectCategory(currentValue === selectedCategory ? null : currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      'mr-2 h-4 w-4',
+                      selectedCategory === category.slug ? 'opacity-100' : 'opacity-0',
+                    )}
+                  />
+                  {category.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/**
  * ToolkitGrid component
  * Virtualized grid of toolkit cards with responsive columns
+ * Search bar and category selector are included as the first items in the virtual list
  */
 function ToolkitGrid({
   toolkits,
+  searchTerm,
+  onSearchChange,
+  categories,
+  selectedCategory,
+  onSelectCategory,
   onToolkitClick,
 }: {
   toolkits: Toolkit[]
+  searchTerm: string
+  onSearchChange: (value: string) => void
+  categories: Category[]
+  selectedCategory: string | null
+  onSelectCategory: (category: string | null) => void
   onToolkitClick: (toolkit: Toolkit) => void
 }) {
   const gridRef = useRef<VirtualizerHandle>(null)
@@ -271,24 +381,43 @@ function ToolkitGrid({
     return rows
   }, [toolkits])
 
-  if (toolkits.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full text-muted-foreground">
-        <p>No toolkits found</p>
-      </div>
-    )
-  }
-
   return (
-    <div className="p-4">
-      <Virtualizer ref={gridRef}>
-        {rows.map((row, index) => {
+    <Virtualizer ref={gridRef}>
+      {/* Search bar as first item in virtual list */}
+      <div className="m-[1px]">
+        <SearchInput
+          placeholder="Search toolkits by name or description..."
+          value={searchTerm}
+          onChange={onSearchChange}
+        />
+      </div>
+
+      {/* Category selector - visible only on small screens (< md) */}
+      <div className="flex md:hidden m-[1px] mt-4">
+        <CategoryCombobox
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={onSelectCategory}
+        />
+      </div>
+
+      {/* Empty state */}
+      {toolkits.length === 0 ? (
+        <div className="flex items-center justify-center h-full text-muted-foreground mt-4">
+          <p>No toolkits found</p>
+        </div>
+      ) : (
+        /* Toolkit rows */
+        rows.map((row, index) => {
           // Use first toolkit slug as key, or generate a unique key based on index
           const rowKey = row[0]?.slug ?? `row-${index}`
           return (
             <div
               key={rowKey}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4"
+              className={cn(
+                'grid grid-cols-1 xl:grid-cols-3 gap-4 mt-4',
+                index === rows.length - 1 && 'mb-4',
+              )}
             >
               {row.map((toolkit) => (
                 <ToolkitCard
@@ -299,64 +428,67 @@ function ToolkitGrid({
               ))}
             </div>
           )
-        })}
-      </Virtualizer>
-    </div>
+        })
+      )}
+    </Virtualizer>
   )
 }
 
 /**
  * ToolkitCard component
- * Individual toolkit card displaying logo, name, description, and tools count
+ * Individual toolkit card displaying logo, name, slug, description, auth schemes, and tools count
  */
-function ToolkitCard({
-  toolkit,
-  onClick,
-}: {
-  toolkit: Toolkit
-  onClick: () => void
-}) {
+function ToolkitCard({ toolkit, onClick }: { toolkit: Toolkit; onClick: () => void }) {
+  const hasAuthSchemes = Boolean(toolkit.authSchemes && toolkit.authSchemes.length > 0)
+  const hasToolsCount = toolkit.meta?.toolsCount !== undefined
+  const showFooter = hasAuthSchemes || hasToolsCount
+
   return (
-    <Card
-      className="h-full hover:shadow-md transition-shadow cursor-pointer"
-      onClick={onClick}
-    >
+    <Card className="h-full hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
       <CardHeader>
         <div className="flex items-start gap-3">
           {/* Logo */}
-          {toolkit.meta?.logo ? (
-            <img
-              src={toolkit.meta.logo}
-              alt={toolkit.name}
-              className="w-12 h-12 rounded-lg object-contain flex-shrink-0"
-              onError={(e) => {
-                // Hide image on error
-                e.currentTarget.style.display = 'none'
-              }}
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+          <Avatar className="w-8 h-8 rounded-lg flex-shrink-0">
+            {toolkit.meta?.logo ? (
+              <AvatarImage src={toolkit.meta.logo} alt={toolkit.name} className="object-contain" />
+            ) : null}
+            <AvatarFallback className="rounded-lg bg-muted">
               <span className="text-lg font-semibold text-muted-foreground">
                 {toolkit.name.charAt(0).toUpperCase()}
               </span>
-            </div>
-          )}
+            </AvatarFallback>
+          </Avatar>
           <div className="flex-1 min-w-0">
             <CardTitle className="line-clamp-1">{toolkit.name}</CardTitle>
-            {toolkit.meta?.toolsCount !== undefined && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {toolkit.meta.toolsCount} {toolkit.meta.toolsCount === 1 ? 'tool' : 'tools'}
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground mt-1 font-mono truncate">{toolkit.slug}</p>
           </div>
         </div>
       </CardHeader>
       {toolkit.meta?.description && (
-        <CardContent>
-          <CardDescription className="line-clamp-3">
-            {toolkit.meta.description}
-          </CardDescription>
+        <CardContent className="flex-1">
+          <CardDescription className="line-clamp-3">{toolkit.meta.description}</CardDescription>
         </CardContent>
+      )}
+      {showFooter && (
+        <CardFooter className="justify-between text-xs text-muted-foreground">
+          {/* Auth schemes */}
+          {hasAuthSchemes && toolkit.authSchemes && (
+            <div className="flex items-center gap-1 flex-wrap">
+              {toolkit.authSchemes.map((scheme) => (
+                <Badge key={scheme} variant="outline" className="font-mono">
+                  {scheme}
+                </Badge>
+              ))}
+            </div>
+          )}
+          {/* Tools count */}
+          {hasToolsCount && toolkit.meta?.toolsCount !== undefined && (
+            <div className="flex items-center gap-1">
+              <Wrench className="h-3 w-3" />
+              <span>{toolkit.meta.toolsCount}</span>
+            </div>
+          )}
+        </CardFooter>
       )}
     </Card>
   )

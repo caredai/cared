@@ -43,8 +43,8 @@ export function TracingWithSelector() {
   const canManageTraces = user.role === 'owner' || user.role === 'admin'
 
   // State for scope selection
-  // Options: '' (current user), 'user' (select member), 'account'
-  const [scopeSelection, setScopeSelection] = useState<'' | 'user' | 'account'>('')
+  // Options: 'none' (current user), 'user' (select member), 'account'
+  const [scopeSelection, setScopeSelection] = useState<'none' | 'user' | 'account'>('none')
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined)
 
   useEffect(() => {
@@ -64,12 +64,12 @@ export function TracingWithSelector() {
           <div className="flex items-center gap-2">
             <Select
               value={scopeSelection}
-              onValueChange={(v) => setScopeSelection(v as '' | 'user' | 'account')}
+              onValueChange={(v) => setScopeSelection(v as 'none' | 'user' | 'account')}
             >
               <SelectTrigger className="w-[160px]">
                 <SelectValue>
                   <span className="text-muted-foreground/70">
-                    {scopeSelection === ''
+                    {scopeSelection === 'none'
                       ? '--'
                       : scopeSelection === 'account'
                         ? 'Account'
@@ -78,7 +78,7 @@ export function TracingWithSelector() {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">-- None --</SelectItem>
+                <SelectItem value="none">-- None --</SelectItem>
                 <SelectItem value="account">Account</SelectItem>
                 <SelectItem value="user">Member</SelectItem>
               </SelectContent>

@@ -118,6 +118,7 @@ export const toolRouter = {
           name: item.name,
           slug: item.slug,
           meta: item.meta,
+          authSchemes: item.authSchemes,
           noAuth: item.noAuth,
         })),
       }
@@ -143,7 +144,9 @@ export const toolRouter = {
     .output(
       z.object({
         toolkit: z.object({
-          ...ToolKitSchema.shape,
+          ...ToolKitSchema.omit({
+            authSchemes: true,
+          }).shape,
           authConfigDetails: z.array(ToolkitAuthConfigDetailsSchema).optional(),
         }),
       }),
@@ -307,7 +310,7 @@ export const toolRouter = {
 
   /**
    * Create a connection request for a toolkit through Composio.
-   * This ensures a composio-managed auth config exists before generating the link.
+   * Determines auth config type based on composioManagedAuthSchemes.
    */
   createConnection: protectedProcedure
     .route({
@@ -342,19 +345,36 @@ export const toolRouter = {
 
       const resolvedUserId = resolveUserId(context.auth, input.type)
 
-      const managedAuthConfigName = `${toolkit.name} Auth Config`
+      // Check connection limit for this specific toolkit before creating a new connection
+      const MAX_CONNECTIONS_PER_TOOLKIT = 10
+      const { items: existingConnections } = await composio.getClient().connectedAccounts.list({
+        user_ids: [resolvedUserId],
+        toolkit_slugs: [input.toolkit],
+      })
 
-      const findManagedAuthConfigId = async () => {
+      if (existingConnections.length >= MAX_CONNECTIONS_PER_TOOLKIT) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: `Maximum number of connections (${MAX_CONNECTIONS_PER_TOOLKIT}) reached for toolkit ${input.toolkit}`,
+        })
+      }
+
+      // Determine if this toolkit uses composio-managed auth
+      const isComposioManaged =
+        !!toolkit.composioManagedAuthSchemes && toolkit.composioManagedAuthSchemes.length > 0
+
+      const authConfigName = `${toolkit.name} Auth Config`
+
+      const findAuthConfigId = async (isComposioManaged: boolean) => {
         let cursor: string | undefined
 
         do {
           const response = await composio.authConfigs.list({
             toolkit: input.toolkit,
-            isComposioManaged: true,
+            isComposioManaged,
             cursor,
           })
 
-          const match = response.items.find((item) => item.name === managedAuthConfigName)
+          const match = response.items.find((item) => item.name === authConfigName)
           if (match) {
             return match.id
           }
@@ -365,16 +385,41 @@ export const toolRouter = {
         return undefined
       }
 
-      const existingAuthConfigId = await findManagedAuthConfigId()
+      let authConfigId = await findAuthConfigId(isComposioManaged)
 
-      const authConfigId =
-        existingAuthConfigId ??
-        (
-          await composio.authConfigs.create(input.toolkit, {
+      // If no existing auth config found, create one
+      if (!authConfigId) {
+        if (isComposioManaged) {
+          // Use composio-managed auth
+          const authConfig = await composio.authConfigs.create(input.toolkit, {
             type: 'use_composio_managed_auth',
-            name: managedAuthConfigName,
+            name: authConfigName,
           })
-        ).id
+          authConfigId = authConfig.id
+        } else {
+          // Use custom auth - find an authConfigDetail with no required fields for authConfigCreation
+          const suitableAuthConfig = toolkit.authConfigDetails?.find((detail) => {
+            // Check if authConfigCreation has no required fields
+            return detail.fields.authConfigCreation.required.length === 0
+          })
+
+          if (!suitableAuthConfig) {
+            throw new ORPCError('BAD_REQUEST', {
+              message:
+                'Cannot automatically create auth config: all available auth schemes require parameters. Please contact support to manually create an auth config.',
+            })
+          }
+
+          // Create custom auth config with empty credentials since no required fields
+          const authConfig = await composio.authConfigs.create(input.toolkit, {
+            type: 'use_custom_auth',
+            name: authConfigName,
+            authScheme: suitableAuthConfig.mode as any,
+            credentials: {},
+          })
+          authConfigId = authConfig.id
+        }
+      }
 
       if (!authConfigId) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
@@ -444,6 +489,8 @@ export const toolRouter = {
           statusReason: item.statusReason ?? undefined,
           toolkit: item.toolkit.slug,
           state: item.state,
+          createdAt: new Date(item.createdAt),
+          updatedAt: new Date(item.updatedAt),
         })),
         hasMore: !!response.nextCursor,
         cursor: response.nextCursor ?? undefined,
@@ -490,6 +537,8 @@ export const toolRouter = {
           statusReason: connection.statusReason ?? undefined,
           toolkit: connection.toolkit.slug,
           state: connection.state,
+          createdAt: new Date(connection.createdAt),
+          updatedAt: new Date(connection.updatedAt),
         },
       }
     }),

@@ -50,6 +50,7 @@ import { Route as AuthOauth2ConsentRouteImport } from './routes/auth/oauth2.cons
 import { Route as AdminAppsTagsRouteImport } from './routes/admin/apps/tags'
 import { Route as AdminAppsCategoriesRouteImport } from './routes/admin/apps/categories'
 import { Route as Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport } from './routes/acc_{$accountIdNoPrefix}_.accept-invitation.$invitationId'
+import { Route as Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125RouteImport } from './routes/acc_{$accountIdNoPrefix}/tools_.{$toolkit}'
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport } from './routes/acc_{$accountIdNoPrefix}/members_.invitations'
 import { Route as Acc_Char123accountIdNoPrefixChar125CreditsUsageRouteImport } from './routes/acc_{$accountIdNoPrefix}/credits_.usage'
 import { Route as Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRouteImport } from './routes/acc_{$accountIdNoPrefix}/api-tokens_.create'
@@ -282,6 +283,14 @@ const Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute =
       getParentRoute: () => rootRouteImport,
     } as any,
   )
+const Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route =
+  Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125RouteImport.update(
+    {
+      id: '/tools_/{$toolkit}',
+      path: '/tools/{$toolkit}',
+      getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
 const Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute =
   Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport.update({
     id: '/members_/invitations',
@@ -365,6 +374,7 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/api-tokens/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/credits/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
@@ -410,6 +420,7 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/api-tokens/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/credits/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
@@ -460,6 +471,7 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/api-tokens_/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/credits_/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   '/acc_{$accountIdNoPrefix}/members_/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
@@ -511,6 +523,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens/create'
     | '/acc_{$accountIdNoPrefix}/credits/usage'
     | '/acc_{$accountIdNoPrefix}/members/invitations'
+    | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
@@ -556,6 +569,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens/create'
     | '/acc_{$accountIdNoPrefix}/credits/usage'
     | '/acc_{$accountIdNoPrefix}/members/invitations'
+    | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
@@ -605,6 +619,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens_/create'
     | '/acc_{$accountIdNoPrefix}/credits_/usage'
     | '/acc_{$accountIdNoPrefix}/members_/invitations'
+    | '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
@@ -927,6 +942,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}': {
+      id: '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}'
+      path: '/tools/{$toolkit}'
+      fullPath: '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125RouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
     '/acc_{$accountIdNoPrefix}/members_/invitations': {
       id: '/acc_{$accountIdNoPrefix}/members_/invitations'
       path: '/members/invitations'
@@ -985,6 +1007,7 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route: typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
 }
 
 const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountIdNoPrefixChar125RouteRouteChildren =
@@ -1013,6 +1036,8 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute,
     Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute:
       Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute,
+    Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route:
+      Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route,
   }
 
 const Acc_Char123accountIdNoPrefixChar125RouteRouteWithChildren =

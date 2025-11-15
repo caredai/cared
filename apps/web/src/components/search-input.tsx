@@ -30,7 +30,7 @@ export function SearchInput({
   }
 
   return (
-    <div className={cn('relative flex items-center', className)}>
+    <div className={cn('relative flex items-center px-[1px]', className)}>
       {/* Search icon on the left */}
       <Search className="absolute left-2 h-4 w-4 text-muted-foreground pointer-events-none" />
 
