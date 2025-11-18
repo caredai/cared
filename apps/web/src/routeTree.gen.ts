@@ -37,6 +37,7 @@ import { Route as Acc_Char123accountIdNoPrefixChar125ToolsRouteImport } from './
 import { Route as Acc_Char123accountIdNoPrefixChar125SettingsRouteImport } from './routes/acc_{$accountIdNoPrefix}/settings'
 import { Route as Acc_Char123accountIdNoPrefixChar125ModelsRouteImport } from './routes/acc_{$accountIdNoPrefix}/models'
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersRouteImport } from './routes/acc_{$accountIdNoPrefix}/members'
+import { Route as Acc_Char123accountIdNoPrefixChar125McpRouteImport } from './routes/acc_{$accountIdNoPrefix}/mcp'
 import { Route as Acc_Char123accountIdNoPrefixChar125CreditsRouteImport } from './routes/acc_{$accountIdNoPrefix}/credits'
 import { Route as Acc_Char123accountIdNoPrefixChar125AppsRouteImport } from './routes/acc_{$accountIdNoPrefix}/apps'
 import { Route as Acc_Char123accountIdNoPrefixChar125ApiTokensRouteImport } from './routes/acc_{$accountIdNoPrefix}/api-tokens'
@@ -205,6 +206,12 @@ const Acc_Char123accountIdNoPrefixChar125MembersRoute =
     path: '/members',
     getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
+const Acc_Char123accountIdNoPrefixChar125McpRoute =
+  Acc_Char123accountIdNoPrefixChar125McpRouteImport.update({
+    id: '/mcp',
+    path: '/mcp',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
 const Acc_Char123accountIdNoPrefixChar125CreditsRoute =
   Acc_Char123accountIdNoPrefixChar125CreditsRouteImport.update({
     id: '/credits',
@@ -350,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
@@ -396,6 +404,7 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
@@ -447,6 +456,7 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
@@ -499,6 +509,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
     | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
     | '/acc_{$accountIdNoPrefix}/settings'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
     | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
     | '/acc_{$accountIdNoPrefix}/settings'
@@ -595,6 +607,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
     | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
     | '/acc_{$accountIdNoPrefix}/settings'
@@ -851,6 +864,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
+    '/acc_{$accountIdNoPrefix}/mcp': {
+      id: '/acc_{$accountIdNoPrefix}/mcp'
+      path: '/mcp'
+      fullPath: '/acc_{$accountIdNoPrefix}/mcp'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125McpRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
     '/acc_{$accountIdNoPrefix}/credits': {
       id: '/acc_{$accountIdNoPrefix}/credits'
       path: '/credits'
@@ -998,6 +1018,7 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125ApiTokensRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   Acc_Char123accountIdNoPrefixChar125AppsRoute: typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   Acc_Char123accountIdNoPrefixChar125CreditsRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  Acc_Char123accountIdNoPrefixChar125McpRoute: typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   Acc_Char123accountIdNoPrefixChar125MembersRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   Acc_Char123accountIdNoPrefixChar125ModelsRoute: typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
   Acc_Char123accountIdNoPrefixChar125SettingsRoute: typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
@@ -1018,6 +1039,8 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125AppsRoute,
     Acc_Char123accountIdNoPrefixChar125CreditsRoute:
       Acc_Char123accountIdNoPrefixChar125CreditsRoute,
+    Acc_Char123accountIdNoPrefixChar125McpRoute:
+      Acc_Char123accountIdNoPrefixChar125McpRoute,
     Acc_Char123accountIdNoPrefixChar125MembersRoute:
       Acc_Char123accountIdNoPrefixChar125MembersRoute,
     Acc_Char123accountIdNoPrefixChar125ModelsRoute:

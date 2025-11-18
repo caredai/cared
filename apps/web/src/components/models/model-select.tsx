@@ -293,7 +293,7 @@ function ModelItem({
         <span className="font-mono text-muted-foreground text-xs">{model.id}</span>
 
         {model.description && (
-          <blockquote className="my-2 border-l-1 pl-4 text-muted-foreground text-sm">
+          <blockquote className="my-2 border-l-1 pl-4 text-muted-foreground text-sm break-all">
             {model.description}
           </blockquote>
         )}

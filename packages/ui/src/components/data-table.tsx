@@ -81,6 +81,18 @@ interface DataTableProps<TData, TValue> {
    * @example (row) => row.id - uses the 'id' field as the row identifier
    */
   getRowId?: (row: TData) => string
+  /**
+   * Custom component to render before the search box
+   */
+  beforeSearch?: React.ReactNode
+  /**
+   * Custom component to render after the bulk actions
+   */
+  afterBulkActions?: React.ReactNode
+  /**
+   * Custom component to render before the columns visibility selector
+   */
+  beforeColumnsSelector?: React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
@@ -105,6 +117,9 @@ export function DataTable<TData, TValue>({
   className,
   onRowClick,
   getRowId,
+  beforeSearch,
+  afterBulkActions,
+  beforeColumnsSelector,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>(defaultSorting)
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -256,6 +271,9 @@ export function DataTable<TData, TValue>({
   return (
     <div className="w-full text-table-foreground">
       <div className="flex items-center gap-4 py-4">
+        {/* Custom component before search */}
+        {beforeSearch}
+
         {searchKeys && searchKeys.length > 0 && (
           <Input
             placeholder={searchPlaceholder}
@@ -283,30 +301,38 @@ export function DataTable<TData, TValue>({
           </div>
         )}
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDownIcon className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Custom component after bulk actions */}
+        {afterBulkActions}
+
+        <div className="ml-auto flex items-center gap-4">
+          {/* Custom component before columns selector */}
+          {beforeColumnsSelector}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                Columns <ChevronDownIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className={cn('rounded-md border antialiased', className)}>

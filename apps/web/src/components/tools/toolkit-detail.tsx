@@ -1,10 +1,9 @@
 import type { VirtualizerHandle } from 'virtua'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon, MoreHorizontal, RefreshCwIcon, ServerIcon, Trash2Icon } from 'lucide-react'
 import { Virtualizer } from 'virtua'
 
-import type { ConnectionStatus, RouterOutputs } from '@cared/api'
+import type { ConnectionStatus } from '@cared/api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +34,9 @@ import {
 import { CircleSpinner } from '@cared/ui/components/spinner'
 import { Switch } from '@cared/ui/components/switch'
 
+import type { Connection } from '@/hooks/use-tools'
 import type { ColumnDef } from '@tanstack/react-table'
+import { ConnectionTypeSelector } from '@/components/connection-type-selector'
 import { CopyButton } from '@/components/copy-button'
 import { SearchInput } from '@/components/search-input'
 import { SkeletonCard } from '@/components/skeleton'
@@ -48,11 +49,8 @@ import {
   useTools,
   useUpdateConnection,
 } from '@/hooks/use-tools'
-import { orpc } from '@/lib/orpc'
 import { ConnectionDetailSheet } from './connection-detail-sheet'
 import { ToolDetailSheet } from './tool-detail-sheet'
-
-type Connection = RouterOutputs['account']['tool']['listConnections']['connections'][number]
 
 interface Toolkit {
   name: string
@@ -83,7 +81,7 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
 
   const vListRef = useRef<VirtualizerHandle>(null)
   const pollTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const queryClient = useQueryClient()
+  const { connections, refetchConnections } = useConnections([toolkit.slug], connectionType)
   const createConnection = useCreateConnection()
   const deleteConnection = useDeleteConnection()
   const updateConnection = useUpdateConnection()
@@ -142,14 +140,7 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
                 pollTimerRef.current = null
               }
               // Refetch connections after popup is closed
-              void queryClient.invalidateQueries({
-                queryKey: orpc.account.tool.listConnections.queryOptions({
-                  input: {
-                    toolkits: [toolkit.slug],
-                    type: connectionType,
-                  },
-                }).queryKey,
-              })
+              void refetchConnections()
               setIsConnecting(false)
             }
           }, 500)
@@ -217,14 +208,7 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
                 pollTimerRef.current = null
               }
               // Refetch connections after popup is closed
-              void queryClient.invalidateQueries({
-                queryKey: orpc.account.tool.listConnections.queryOptions({
-                  input: {
-                    toolkits: [toolkit.slug],
-                    type: connectionType,
-                  },
-                }).queryKey,
-              })
+              void refetchConnections()
             }
           }, 500)
         }
@@ -275,26 +259,12 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
   }
 
   // Connections list component that uses hooks
-  function ConnectionsListContent() {
-    const connections = useConnections(toolkit.slug, connectionType)
-
-    // Filter connections by status and search
+  function ConnectionsListContent({ connections }: { connections: Connection[] }) {
+    // Filter connections by status
     const filteredConnections = connections.filter((connection) => {
-      // Status filter
       if (statusFilter !== 'ALL' && connection.status !== statusFilter) {
         return false
       }
-
-      // Search filter
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase()
-        return (
-          connection.id.toLowerCase().includes(query) ||
-          connection.toolkit.toLowerCase().includes(query) ||
-          connection.status.toLowerCase().includes(query)
-        )
-      }
-
       return true
     })
 
@@ -311,23 +281,6 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
                 <code className="text-xs font-mono truncate max-w-[200px]">{connection.id}</code>
                 <CopyButton value={connection.id} />
               </div>
-            )
-          },
-        },
-        {
-          accessorKey: 'createdAt',
-          header: 'Created',
-          cell: ({ row }) => {
-            const connection = row.original
-            const createdAt = connection.createdAt
-            return (
-              <span className="text-sm">
-                {createdAt.toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
             )
           },
         },
@@ -369,6 +322,23 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
                 }}
                 onClick={(e) => e.stopPropagation()}
               />
+            )
+          },
+        },
+        {
+          accessorKey: 'createdAt',
+          header: 'Created',
+          cell: ({ row }) => {
+            const connection = row.original
+            const createdAt = connection.createdAt
+            return (
+              <span className="text-sm">
+                {createdAt.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
             )
           },
         },
@@ -420,20 +390,12 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
       [],
     )
 
-    if (filteredConnections.length === 0) {
+    if (connections.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="text-muted-foreground mb-4">
-            <p className="text-lg font-medium">
-              {searchQuery.trim() || statusFilter !== 'ALL'
-                ? 'No connections found matching your filters'
-                : 'No connections found'}
-            </p>
-            <p className="text-sm">
-              {searchQuery.trim() || statusFilter !== 'ALL'
-                ? 'Try adjusting your search terms or filters'
-                : 'Create a connection to get started'}
-            </p>
+            <p className="text-lg font-medium">No connections found</p>
+            <p className="text-sm">Create a connection to get started</p>
           </div>
         </div>
       )
@@ -446,6 +408,25 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
         defaultPageSize={50}
         getRowId={(row) => row.id}
         onRowClick={(connection) => setSelectedConnectionId(connection.id)}
+        beforeColumnsSelector={
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as ConnectionStatus | 'ALL')}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              <SelectItem value="ACTIVE">Active</SelectItem>
+              <SelectItem value="INACTIVE">Inactive</SelectItem>
+              <SelectItem value="INITIALIZING">Initializing</SelectItem>
+              <SelectItem value="INITIATED">Initiated</SelectItem>
+              <SelectItem value="FAILED">Failed</SelectItem>
+              <SelectItem value="EXPIRED">Expired</SelectItem>
+            </SelectContent>
+          </Select>
+        }
       />
     )
   }
@@ -534,15 +515,14 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
   }
 
   // Connections count component for badge
-  function ConnectionsCount() {
-    const connections = useConnections(toolkit.slug, connectionType)
-    if (connections.length === 0) return null
+  function ConnectionsCount({ count }: { count: number }) {
+    if (count === 0) return null
     return (
       <Badge
         variant="secondary"
         className="ml-2 h-4 min-w-4 rounded-full px-1 font-mono tabular-nums"
       >
-        {connections.length}
+        {count}
       </Badge>
     )
   }
@@ -594,7 +574,7 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
             <TabsTrigger value="connections">
               Connections
               <Suspense fallback={null}>
-                <ConnectionsCount />
+                <ConnectionsCount count={connections.length} />
               </Suspense>
             </TabsTrigger>
           )}
@@ -614,50 +594,16 @@ export function ToolkitDetail({ toolkit, onBack }: { toolkit: Toolkit; onBack?: 
           >
             <div className="my-4 flex flex-col gap-4">
               <div className="flex justify-between items-center gap-2">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={connectionType === 'user' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setConnectionType('user')}
-                  >
-                    User
-                  </Button>
-                  <Button
-                    variant={connectionType === 'account' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setConnectionType('account')}
-                  >
-                    Account
-                  </Button>
-                </div>
+                <ConnectionTypeSelector value={connectionType} onChange={setConnectionType} />
                 <div className="flex items-center gap-2">
                   <Button onClick={handleConnect} disabled={isConnecting} size="sm">
                     {isConnecting ? 'Connecting...' : 'Connect'}
                   </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={statusFilter}
-                  onValueChange={(value) => setStatusFilter(value as ConnectionStatus | 'ALL')}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All Statuses</SelectItem>
-                    <SelectItem value="ACTIVE">Active</SelectItem>
-                    <SelectItem value="INACTIVE">Inactive</SelectItem>
-                    <SelectItem value="INITIALIZING">Initializing</SelectItem>
-                    <SelectItem value="INITIATED">Initiated</SelectItem>
-                    <SelectItem value="FAILED">Failed</SelectItem>
-                    <SelectItem value="EXPIRED">Expired</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             <Suspense fallback={<SkeletonCard />}>
-              <ConnectionsListContent />
+              <ConnectionsListContent connections={connections} />
             </Suspense>
           </TabsContent>
         )}

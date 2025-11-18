@@ -9,6 +9,7 @@ import {
   Puzzle,
   Settings2,
   Users,
+  Cable
 } from 'lucide-react'
 
 import type { NavItem } from '@/components/app-sidebar/nav-main'
@@ -39,6 +40,11 @@ const items: NavItem[] = [
     title: 'Tools',
     url: '/tools',
     icon: PocketKnife,
+  },
+  {
+    title: 'MCP',
+    url: '/mcp',
+    icon: Cable,
   },
   {
     title: 'Tracing',

@@ -4,10 +4,10 @@ import { z } from 'zod/v4'
 import { getComposio } from '@cared/tools'
 
 import type { ProtectedAuth } from '../../auth'
+import type { ConnectionStatus } from '../../types'
 import { protectedProcedure } from '../../orpc'
 import {
   ConnectionSchema,
-  ConnectionStatus,
   ConnectionStatuses,
   ConnectionStatusSchema,
   ToolkitAuthConfigDetailsSchema,
@@ -51,6 +51,44 @@ async function verifyConnectionOwnership(
   if (!connections.length) {
     throw new ORPCError('NOT_FOUND', {
       message: 'Connection not found',
+    })
+  }
+}
+
+/**
+ * Validate toolkit slug to ensure it's not a restricted toolkit.
+ * Blocks 'composio' toolkit as it's not supported.
+ * @param slug - Toolkit slug to validate
+ * @throws ORPCError if toolkit slug is restricted
+ */
+function validateToolkitSlug(slug: string): void {
+  if (slug === 'composio') {
+    throw new ORPCError('NOT_FOUND', {
+      message: 'Toolkit not found',
+    })
+  }
+}
+
+/**
+ * Check if a toolkit slug is restricted.
+ * Used for filtering toolkits in list operations.
+ * @param slug - Toolkit slug to check
+ * @returns true if toolkit is allowed, false if restricted
+ */
+function isToolkitAllowed(slug: string): boolean {
+  return slug !== 'composio'
+}
+
+/**
+ * Validate tool slug to ensure it's not a restricted internal tool.
+ * Blocks COMPOSIO_ prefixed tools except COMPOSIO_SEARCH which is allowed.
+ * @param slug - Tool slug to validate
+ * @throws ORPCError if tool slug is restricted
+ */
+function validateToolSlug(slug: string): void {
+  if (slug.startsWith('COMPOSIO_') && !slug.startsWith('COMPOSIO_SEARCH')) {
+    throw new ORPCError('BAD_REQUEST', {
+      message: 'Tool not found',
     })
   }
 }
@@ -113,14 +151,17 @@ export const toolRouter = {
         sortBy: 'usage',
       })
 
+      // Filter out restricted toolkits
       return {
-        toolkits: toolkits.map((item) => ({
-          name: item.name,
-          slug: item.slug,
-          meta: item.meta,
-          authSchemes: item.authSchemes,
-          noAuth: item.noAuth,
-        })),
+        toolkits: toolkits
+          .filter((item) => isToolkitAllowed(item.slug))
+          .map((item) => ({
+            name: item.name,
+            slug: item.slug,
+            meta: item.meta,
+            authSchemes: item.authSchemes,
+            noAuth: item.noAuth,
+          })),
       }
     }),
 
@@ -152,6 +193,8 @@ export const toolRouter = {
       }),
     )
     .handler(async ({ input }) => {
+      validateToolkitSlug(input.slug)
+
       const composio = getComposio()
       const toolkit = await composio.toolkits.get(input.slug)
 
@@ -219,6 +262,17 @@ export const toolRouter = {
       }),
     )
     .handler(async ({ input }) => {
+      if (input.toolkits) {
+        for (const slug of input.toolkits) {
+          validateToolkitSlug(slug)
+        }
+      }
+      if (input.tools) {
+        for (const slug of input.tools) {
+          validateToolSlug(slug)
+        }
+      }
+
       const composio = getComposio()
       // @ts-ignore
       const tools = await composio.tools.getRawComposioTools(input)
@@ -251,8 +305,14 @@ export const toolRouter = {
       }),
     )
     .handler(async ({ input }) => {
+      validateToolSlug(input.slug)
+
       const composio = getComposio()
       const tool = await composio.tools.getRawComposioToolBySlug(input.slug)
+
+      if (tool.toolkit) {
+        validateToolSlug(tool.toolkit.slug)
+      }
 
       return {
         tool,
@@ -291,6 +351,8 @@ export const toolRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
+      validateToolSlug(input.slug)
+
       const resolvedUserId = resolveUserId(context.auth, input.type)
 
       const composio = getComposio()
@@ -335,6 +397,8 @@ export const toolRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
+      validateToolkitSlug(input.toolkit)
+
       const composio = getComposio()
       const toolkit = await composio.toolkits.get(input.toolkit)
       if (toolkit.authConfigDetails?.at(0)?.mode === 'NO_AUTH') {

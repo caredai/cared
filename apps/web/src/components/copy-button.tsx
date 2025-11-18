@@ -23,7 +23,7 @@ export function CopyButton({ value }: { value: string }) {
 
   return (
     <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={copy}>
-      {copied ? <CheckIcon className="h-3! w-3!" /> : <CopyIcon className="h-3! w-3!" />}
+      {copied ? <CheckIcon className="size-3!" /> : <CopyIcon className="size-3!" />}
     </Button>
   )
 }

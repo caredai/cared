@@ -81,7 +81,7 @@ export default function RootLayout() {
         </Providers>
         <Toaster richColors />
         <TanStackRouterDevtools position="bottom-left" />
-        <ReactQueryDevtools position="bottom" buttonPosition="bottom-right" />
+        <ReactQueryDevtools position="bottom" buttonPosition="bottom-left" />
         <Scripts />
       </body>
     </html>

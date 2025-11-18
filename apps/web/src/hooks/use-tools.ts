@@ -1,8 +1,18 @@
-import { useCallback } from 'react'
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useCallback, useEffect, useMemo } from 'react'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  useSuspenseQuery,
+} from '@tanstack/react-query'
+import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
 
 import { orpc } from '@/lib/orpc'
+import type { RouterOutputs } from '@cared/api'
+
+const DEFAULT_PAGE_SIZE = 1000
 
 /**
  * Hook to fetch all toolkit categories.
@@ -53,23 +63,55 @@ export function useTools(input: {
   return tools
 }
 
+export type Connection = RouterOutputs['account']['tool']['listConnections']['connections'][number]
+
+const hasAttemptedFetchConnectionsAtom = atom(false)
+
 /**
- * Hook to fetch connections for a toolkit.
- * @param toolkit - Toolkit slug
+ * Hook to fetch all connections for toolkits using infinite query.
+ * Automatically fetches all pages to ensure complete data.
+ * @param toolkits - Toolkit slugs to filter
  * @param type - Type of identifier ('user' or 'account')
- * @returns Connections array
+ * @returns Connections array and pagination controls
  */
-export function useConnections(toolkit: string, type: 'user' | 'account' = 'user') {
-  const { data: {connections} } = useSuspenseQuery(
-    orpc.account.tool.listConnections.queryOptions({
-      input: {
-        toolkits: [toolkit],
+export function useConnections(toolkits: string[], type: 'user' | 'account' = 'user') {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } = useInfiniteQuery(
+    orpc.account.tool.listConnections.infiniteOptions({
+      input: (cursor?: string) => ({
+        toolkits,
         type,
+        cursor,
+        limit: DEFAULT_PAGE_SIZE,
+      }),
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage) => {
+        if (!lastPage.hasMore) return undefined
+        return lastPage.cursor
       },
+      placeholderData: keepPreviousData,
     }),
   )
 
-  return connections
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useAtom(hasAttemptedFetchConnectionsAtom)
+
+  // Automatically fetch all pages
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage && !hasAttemptedFetch) {
+      console.log('Fetching connections...')
+      setHasAttemptedFetch(true)
+      void fetchNextPage().finally(() => setHasAttemptedFetch(false))
+    }
+  }, [fetchNextPage, hasAttemptedFetch, hasNextPage, isFetchingNextPage, setHasAttemptedFetch])
+
+  // Flatten all pages into a single array
+  const connections = useMemo(() => {
+    return data?.pages.flatMap((page) => page.connections) ?? []
+  }, [data])
+
+  return {
+    connections,
+    refetchConnections: refetch,
+  }
 }
 
 /**
@@ -121,15 +163,9 @@ export function useCreateConnection() {
 
   const createMutation = useMutation(
     orpc.account.tool.createConnection.mutationOptions({
-      onSuccess: (_, variables) => {
-        // Invalidate connections list to refresh the UI
+      onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.tool.listConnections.queryOptions({
-            input: {
-              toolkits: [variables.toolkit],
-              type: variables.type,
-            },
-          }).queryKey,
+          queryKey: orpc.account.tool.listConnections.key(),
         })
       },
       onError: (error) => {
@@ -158,11 +194,11 @@ export function useDeleteConnection() {
   const deleteMutation = useMutation(
     orpc.account.tool.deleteConnection.mutationOptions({
       onSuccess: () => {
-        // Invalidate all connections queries
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.tool.listConnections.queryOptions({
-            input: { toolkits: [], type: 'user' },
-          }).queryKey.slice(0, -1), // Remove the input part to invalidate all variants
+          queryKey: orpc.account.tool.listConnections.key(),
+        })
+        void queryClient.invalidateQueries({
+          queryKey: orpc.account.tool.getConnection.key(),
         })
         toast.success('Connection deleted successfully')
       },
@@ -192,11 +228,11 @@ export function useUpdateConnection() {
   const updateMutation = useMutation(
     orpc.account.tool.updateConnection.mutationOptions({
       onSuccess: () => {
-        // Invalidate all connections queries
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.tool.listConnections.queryOptions({
-            input: { toolkits: [], type: 'user' },
-          }).queryKey.slice(0, -1), // Remove the input part to invalidate all variants
+          queryKey: orpc.account.tool.listConnections.key(),
+        })
+        void queryClient.invalidateQueries({
+          queryKey: orpc.account.tool.getConnection.key(),
         })
         toast.success('Connection updated successfully')
       },
@@ -226,11 +262,11 @@ export function useRefreshConnection() {
   const refreshMutation = useMutation(
     orpc.account.tool.refreshConnection.mutationOptions({
       onSuccess: () => {
-        // Invalidate all connections queries
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.tool.listConnections.queryOptions({
-            input: { toolkits: [], type: 'user' },
-          }).queryKey.slice(0, -1), // Remove the input part to invalidate all variants
+          queryKey: orpc.account.tool.listConnections.key(),
+        })
+        void queryClient.invalidateQueries({
+          queryKey: orpc.account.tool.getConnection.key(),
         })
       },
       onError: (error) => {

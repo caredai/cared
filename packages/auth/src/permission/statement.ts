@@ -17,6 +17,8 @@ export const statements = {
   credits: ['read', 'write'],
   providerKey: ['read', 'write'],
   model: ['read', 'write', 'invoke'],
+  toolkit: ['read', 'write', 'invoke'],
+  mcp: ['read', 'write', 'invoke'],
   app: ['read', 'write', 'publish'],
   dataset: ['read', 'write'],
 

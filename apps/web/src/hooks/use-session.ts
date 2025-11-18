@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query'
 
-import type { authClient } from '@cared/auth/client'
+import type { Session as Session_ } from '@cared/api'
 
 import { orpc } from '@/lib/orpc'
 
-export type User = (typeof authClient.$Infer.Session)['user']
-export type Session = (typeof authClient.$Infer.Session)['session']
+export type User = Session_['user']
+export type Session = Session_['session']
 
 export function useSessionPublic() {
   const {

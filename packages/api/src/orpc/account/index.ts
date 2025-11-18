@@ -6,6 +6,7 @@ import { creditsRouter } from './credits'
 import { datasetRouter } from './dataset'
 import { expenseRouter } from './expense'
 import { fileRouter } from './file'
+import { mcpRouter } from './mcp'
 import { modelRouter } from './model'
 import { oauthAppRouter } from './oauth-app'
 import { providerKeyRouter } from './provider-key'
@@ -32,4 +33,5 @@ export const accountRouter = {
   telemetry: telemetryRouter,
   file: fileRouter,
   tool: toolRouter,
+  mcp: mcpRouter,
 }

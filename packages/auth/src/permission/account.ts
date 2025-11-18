@@ -17,6 +17,8 @@ const ownerAc = accountAc.newRole({
   credits: ['read', 'write'],
   providerKey: ['read', 'write'],
   model: ['read', 'write', 'invoke'],
+  toolkit: ['read', 'write', 'invoke'],
+  mcp: ['read', 'write', 'invoke'],
   app: ['read', 'write', 'publish'],
   dataset: ['read', 'write'],
 
@@ -32,6 +34,8 @@ const adminAc = accountAc.newRole({
   credits: ['read', 'write'],
   providerKey: ['read', 'write'],
   model: ['read', 'write', 'invoke'],
+  toolkit: ['read', 'write', 'invoke'],
+  mcp: ['read', 'write', 'invoke'],
   app: ['read', 'write', 'publish'],
   dataset: ['read', 'write'],
 
@@ -47,6 +51,8 @@ const memberAc = accountAc.newRole({
   credits: ['read'],
   providerKey: ['read'],
   model: ['read', 'invoke'],
+  toolkit: ['read', 'invoke'],
+  mcp: ['read', 'invoke'],
   app: ['read'],
   dataset: ['read'],
 
