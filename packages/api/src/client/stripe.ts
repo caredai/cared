@@ -3,21 +3,27 @@ import Stripe from 'stripe'
 
 import { env } from '../env'
 
+let stripe: Stripe | undefined
+
 export function getStripe() {
-  if (!env.STRIPE_SECRET_KEY) {
-    throw new ORPCError('INTERNAL_SERVER_ERROR', {
-      message: 'Stripe secret key is not set',
+  if (!stripe) {
+    if (!env.STRIPE_SECRET_KEY) {
+      throw new ORPCError('INTERNAL_SERVER_ERROR', {
+        message: 'Stripe secret key is not set',
+      })
+    }
+    if (!env.VITE_STRIPE_CREDITS_PRICE_ID) {
+      throw new ORPCError('INTERNAL_SERVER_ERROR', {
+        message: 'Stripe credits price ID is not set',
+      })
+    }
+    stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      httpClient: Stripe.createFetchHttpClient(),
+      maxNetworkRetries: 1,
+      timeout: 15000,
+      telemetry: false,
     })
   }
-  if (!env.VITE_STRIPE_CREDITS_PRICE_ID) {
-    throw new ORPCError('INTERNAL_SERVER_ERROR', {
-      message: 'Stripe credits price ID is not set',
-    })
-  }
-  return new Stripe(env.STRIPE_SECRET_KEY, {
-    httpClient: Stripe.createFetchHttpClient(),
-    maxNetworkRetries: 1,
-    timeout: 15000,
-    telemetry: false,
-  })
+
+  return stripe
 }

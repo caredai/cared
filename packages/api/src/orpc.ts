@@ -6,6 +6,7 @@ import {
   AdminAuth,
   AppUserAuth,
   authenticate,
+  NoneAppUserAuth,
   ProtectedAuth,
   UserAuth,
   UserOrAppUserAuth,
@@ -156,6 +157,25 @@ export const userOrAppUserProtectedProcedure = o
       context: {
         ...context,
         auth: new UserOrAppUserAuth(authCtx),
+      },
+    })
+  })
+
+export type NoneAppUserContext = BaseContext & {
+  auth: NoneAppUserAuth
+}
+
+export const noneAppUserProtectedProcedure = o
+  .use(timingMiddleware)
+  .use<NoneAppUserContext>(({ context, next }) => {
+    const authCtx = context.auth.ctx
+    if (!(authCtx?.type === 'user' || authCtx?.type === 'apiToken')) {
+      throw new ORPCError('UNAUTHORIZED')
+    }
+    return next({
+      context: {
+        ...context,
+        auth: new NoneAppUserAuth(authCtx),
       },
     })
   })

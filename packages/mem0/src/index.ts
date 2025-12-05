@@ -24,7 +24,7 @@ export class Mem0Memory extends Memory {
           dbPath: '/tmp/vector_store.db',
         } as any,
       } as any,
-      disableHistory: true,
+      disableHistory: config.disableHistory,
       enableGraph: config.enableGraph,
       ...(config.enableGraph && env.NEO4J_URL && env.NEO4J_USERNAME && env.NEO4J_PASSWORD
         ? {

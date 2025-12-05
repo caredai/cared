@@ -1,0 +1,18 @@
+[
+  {
+    "sql": [
+      "CREATE TABLE `example` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`vector` F32_BLOB(768)\n);\n"
+    ],
+    "bps": true,
+    "folderMillis": 1764210728209,
+    "hash": "9820717cc909e81841d1be56e9287a21e6ec9c56472de00fc873f873084bae89"
+  },
+  {
+    "sql": [
+      "-- Custom SQL migration file, put your code below! --\n\nCREATE INDEX `example_vector_idx` ON `example` (libsql_vector_idx(`vector`));\n"
+    ],
+    "bps": true,
+    "folderMillis": 1764210731387,
+    "hash": "f80023aa3d18f865ff89862d94ce37d86826d78161ecc7c8fae1c3a50de1e529"
+  }
+]

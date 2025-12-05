@@ -1,0 +1,6 @@
+{
+  "extends": "@cared/tsconfig/compiled-package.json",
+  "compilerOptions": {},
+  "include": ["*.ts", "src", "scripts"],
+  "exclude": ["node_modules"]
+}

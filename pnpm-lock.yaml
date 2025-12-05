@@ -67,6 +67,9 @@ patchedDependencies:
   fumadocs-mdx:
     hash: 73bf8a73e20020e89f8d3d114ae5282d1895babc2a9941ef1091d6ca3eb59377
     path: patches/fumadocs-mdx.patch
+  mem0ai:
+    hash: a5f4bdde3f9e0d0ecc35459cd29770b042ef76312c6e7fdf6840d030ea173c60
+    path: patches/mem0ai.patch
   tsup:
     hash: 4600130ecf102e01aa5e01305c0a26b96b516ec8f2e95f6c26dc0d7d0523f0d8
     path: patches/tsup.patch
@@ -542,6 +545,9 @@ importers:
       '@cared/log':
         specifier: workspace:*
         version: link:../log
+      '@cared/mem0':
+        specifier: workspace:*
+        version: link:../mem0
       '@cared/providers':
         specifier: workspace:*
         version: link:../providers
@@ -566,6 +572,9 @@ importers:
       '@hono/otel':
         specifier: ^0.6.0
         version: 0.6.0(hono@4.9.9)
+      '@langfuse/api':
+        specifier: link:../../../langfuse/api
+        version: link:../../../langfuse/api
       '@langfuse/client':
         specifier: ^4.0.0
         version: 4.1.0(@opentelemetry/api@1.9.0)
@@ -798,7 +807,7 @@ importers:
         version: 0.1.11(bufferutil@4.0.9)(encoding@0.1.13)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@privy-io/react-auth':
         specifier: ^3.0.1
-        version: 3.0.1(a02c4b90c54f61f7acc602674e62c50f)
+        version: 3.0.1(c8e80c26219ae309b0602a62999394ac)
       '@privy-io/server-auth':
         specifier: ^1.32.5
         version: 1.32.5(bufferutil@4.0.9)(encoding@0.1.13)(ethers@6.13.5(bufferutil@4.0.9)(utf-8-validate@5.0.10))(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
@@ -825,7 +834,7 @@ importers:
         version: 2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       wagmi:
         specifier: ^2.16.1
-        version: 2.17.0(@tanstack/query-core@5.90.7)(@tanstack/react-query@5.90.7(react@19.2.0))(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76)
+        version: 2.17.0(@tanstack/query-core@5.90.7)(@tanstack/react-query@5.90.7(react@19.2.0))(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76)
     devDependencies:
       '@cared/eslint-config':
         specifier: workspace:*
@@ -859,10 +868,10 @@ importers:
         version: 1.0.2
       drizzle-orm:
         specifier: ^0.44.7
-        version: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
+        version: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
       drizzle-zod:
         specifier: ^0.8.3
-        version: 0.8.3(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(zod@4.1.12)
+        version: 0.8.3(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(zod@4.1.12)
       nanoid:
         specifier: ^5.0.9
         version: 5.1.5
@@ -900,6 +909,27 @@ importers:
       drizzle-kit:
         specifier: ^0.30.6
         version: 0.30.6
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.1(jiti@2.5.1)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.2
+
+  packages/dograph:
+    devDependencies:
+      '@cared/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@cared/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@cared/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
       eslint:
         specifier: 'catalog:'
         version: 9.39.1(jiti@2.5.1)
@@ -957,7 +987,7 @@ importers:
     dependencies:
       '@langchain/community':
         specifier: ^0.3.56
-        version: 0.3.56(f2e0ea269112c96a51f858b39611015f)
+        version: 0.3.56(fcc37d23d74d439d8c6e6eb81f9cca98)
       '@langchain/core':
         specifier: ^0.3.77
         version: 0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12))
@@ -1128,8 +1158,8 @@ importers:
         specifier: workspace:*
         version: link:../vdb
       mem0ai:
-        specifier: ^2.1.16
-        version: 2.1.38(@anthropic-ai/sdk@0.68.0(zod@3.25.76))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+        specifier: ^2.1.38
+        version: 2.1.38(patch_hash=a5f4bdde3f9e0d0ecc35459cd29770b042ef76312c6e7fdf6840d030ea173c60)(@anthropic-ai/sdk@0.68.0(zod@3.25.76))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
     devDependencies:
       '@cared/eslint-config':
         specifier: workspace:*
@@ -1347,7 +1377,7 @@ importers:
         version: 6.0.3
       drizzle-orm:
         specifier: '>=0.44.7'
-        version: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
+        version: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
       react:
         specifier: '>=19.0.0'
         version: 19.2.0
@@ -1492,6 +1522,34 @@ importers:
       ai:
         specifier: 'catalog:'
         version: 5.0.38(zod@4.1.12)
+    devDependencies:
+      '@cared/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@cared/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@cared/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.1(jiti@2.5.1)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.6.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.2
+
+  packages/turso:
+    dependencies:
+      '@cared/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@libsql/client':
+        specifier: ^0.15.15
+        version: 0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     devDependencies:
       '@cared/eslint-config':
         specifier: workspace:*
@@ -1735,6 +1793,9 @@ importers:
       '@qdrant/js-client-rest':
         specifier: ^1.13.0
         version: 1.15.1(typescript@5.9.2)
+      '@turbopuffer/turbopuffer':
+        specifier: ^1.7.0
+        version: 1.7.0
       async-mutex:
         specifier: ^0.5.0
         version: 0.5.0
@@ -5416,6 +5477,67 @@ packages:
   '@levischuck/tiny-cbor@0.2.11':
     resolution: {integrity: sha512-llBRm4dT4Z89aRsm6u2oEZ8tfwL/2l6BwpZ7JcyieouniDECM5AqNgr/y08zalEIvW3RSK4upYyybDcmjXqAow==}
 
+  '@libsql/client@0.15.15':
+    resolution: {integrity: sha512-twC0hQxPNHPKfeOv3sNT6u2pturQjLcI+CnpTM0SjRpocEGgfiZ7DWKXLNnsothjyJmDqEsBQJ5ztq9Wlu470w==}
+
+  '@libsql/core@0.15.15':
+    resolution: {integrity: sha512-C88Z6UKl+OyuKKPwz224riz02ih/zHYI3Ho/LAcVOgjsunIRZoBw7fjRfaH9oPMmSNeQfhGklSG2il1URoOIsA==}
+
+  '@libsql/darwin-arm64@0.5.22':
+    resolution: {integrity: sha512-4B8ZlX3nIDPndfct7GNe0nI3Yw6ibocEicWdC4fvQbSs/jdq/RC2oCsoJxJ4NzXkvktX70C1J4FcmmoBy069UA==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@libsql/darwin-x64@0.5.22':
+    resolution: {integrity: sha512-ny2HYWt6lFSIdNFzUFIJ04uiW6finXfMNJ7wypkAD8Pqdm6nAByO+Fdqu8t7sD0sqJGeUCiOg480icjyQ2/8VA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@libsql/hrana-client@0.7.0':
+    resolution: {integrity: sha512-OF8fFQSkbL7vJY9rfuegK1R7sPgQ6kFMkDamiEccNUvieQ+3urzfDFI616oPl8V7T9zRmnTkSjMOImYCAVRVuw==}
+
+  '@libsql/isomorphic-fetch@0.3.1':
+    resolution: {integrity: sha512-6kK3SUK5Uu56zPq/Las620n5aS9xJq+jMBcNSOmjhNf/MUvdyji4vrMTqD7ptY7/4/CAVEAYDeotUz60LNQHtw==}
+    engines: {node: '>=18.0.0'}
+
+  '@libsql/isomorphic-ws@0.1.5':
+    resolution: {integrity: sha512-DtLWIH29onUYR00i0GlQ3UdcTRC6EP4u9w/h9LxpUZJWRMARk6dQwZ6Jkd+QdwVpuAOrdxt18v0K2uIYR3fwFg==}
+
+  '@libsql/linux-arm-gnueabihf@0.5.22':
+    resolution: {integrity: sha512-3Uo3SoDPJe/zBnyZKosziRGtszXaEtv57raWrZIahtQDsjxBVjuzYQinCm9LRCJCUT5t2r5Z5nLDPJi2CwZVoA==}
+    cpu: [arm]
+    os: [linux]
+
+  '@libsql/linux-arm-musleabihf@0.5.22':
+    resolution: {integrity: sha512-LCsXh07jvSojTNJptT9CowOzwITznD+YFGGW+1XxUr7fS+7/ydUrpDfsMX7UqTqjm7xG17eq86VkWJgHJfvpNg==}
+    cpu: [arm]
+    os: [linux]
+
+  '@libsql/linux-arm64-gnu@0.5.22':
+    resolution: {integrity: sha512-KSdnOMy88c9mpOFKUEzPskSaF3VLflfSUCBwas/pn1/sV3pEhtMF6H8VUCd2rsedwoukeeCSEONqX7LLnQwRMA==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@libsql/linux-arm64-musl@0.5.22':
+    resolution: {integrity: sha512-mCHSMAsDTLK5YH//lcV3eFEgiR23Ym0U9oEvgZA0667gqRZg/2px+7LshDvErEKv2XZ8ixzw3p1IrBzLQHGSsw==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@libsql/linux-x64-gnu@0.5.22':
+    resolution: {integrity: sha512-kNBHaIkSg78Y4BqAdgjcR2mBilZXs4HYkAmi58J+4GRwDQZh5fIUWbnQvB9f95DkWUIGVeenqLRFY2pcTmlsew==}
+    cpu: [x64]
+    os: [linux]
+
+  '@libsql/linux-x64-musl@0.5.22':
+    resolution: {integrity: sha512-UZ4Xdxm4pu3pQXjvfJiyCzZop/9j/eA2JjmhMaAhe3EVLH2g11Fy4fwyUp9sT1QJYR1kpc2JLuybPM0kuXv/Tg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@libsql/win32-x64-msvc@0.5.22':
+    resolution: {integrity: sha512-Fj0j8RnBpo43tVZUVoNK6BV/9AtDUM5S7DF3LB4qTYg1LMSZqi3yeCneUTLJD6XomQJlZzbI4mst89yspVSAnA==}
+    cpu: [x64]
+    os: [win32]
+
   '@lit-labs/ssr-dom-shim@1.4.0':
     resolution: {integrity: sha512-ficsEARKnmmW5njugNYKipTm4SFnbik7CXtoencDZzmzo/dQ+2Q0bgkzJuoJP20Aj0F+izzJjOqsnkd6F/o1bw==}
 
@@ -5579,6 +5701,9 @@ packages:
 
   '@napi-rs/wasm-runtime@1.0.5':
     resolution: {integrity: sha512-TBr9Cf9onSAS2LQ2+QHx6XcC6h9+RIzJgbqG3++9TUZSH204AwEy5jg3BTQ0VATsyoGj4ee49tN/y6rvaOOtcg==}
+
+  '@neon-rs/load@0.0.4':
+    resolution: {integrity: sha512-kTPhdZyTQxB+2wpiRcFWrDcejc4JI6tkPuS7UZCG4l6Zvc5kU/gGQ/ozvHTh1XR5tS+UlfAfGuPajjzQjCiHCw==}
 
   '@neondatabase/serverless@0.9.5':
     resolution: {integrity: sha512-siFas6gItqv6wD/pZnvdu34wEqgG3nSE6zWZdq5j2DEsa+VvX8i/5HXJOo06qrw5axPXn+lGCxeR+NLaSPIXug==}
@@ -7918,6 +8043,7 @@ packages:
   '@smithy/core@3.18.4':
     resolution: {integrity: sha512-o5tMqPZILBvvROfC8vC+dSVnWJl9a0u9ax1i1+Bq8515eYjUJqqk5XjjEsDLoeL5dSqGSh6WGdVx1eJ1E/Nwhw==}
     engines: {node: '>=18.0.0'}
+    deprecated: Please upgrade your lockfile to use the latest 3.x version of @smithy/core for various fixes, see https://github.com/smithy-lang/smithy-typescript/blob/main/packages/core/CHANGELOG.md
 
   '@smithy/credential-provider-imds@4.1.2':
     resolution: {integrity: sha512-JlYNq8TShnqCLg0h+afqe2wLAwZpuoSgOyzhYvTgbiKBWRov+uUve+vrZEQO6lkdLOWPh7gK5dtb9dS+KGendg==}
@@ -9352,6 +9478,9 @@ packages:
     resolution: {integrity: sha512-TmY25GmxzgX+395Fwl/F0te6S4RHdJtYl1QjZr+wlxVvKJ0IBOACpnpAvnLM3dpTgXuQukGtSWcRz7Zi9mZqcQ==}
     hasBin: true
 
+  '@turbopuffer/turbopuffer@1.7.0':
+    resolution: {integrity: sha512-pjfxGXOwNZOCfFJHNnQiESKShNt4odDU/PM/yZHnBPg7eTfCwU/NkfAryXwQUrhjZgZOWTpVwtZ0ovpymjoBvA==}
+
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
@@ -9511,9 +9640,6 @@ packages:
 
   '@types/node@16.18.11':
     resolution: {integrity: sha512-3oJbGBUWuS6ahSnEq1eN2XrCyf4YsWI8OyCvo7c64zQJNplk3mO84t53o8lfTk+2ji59g5ycfc6qQ3fdHliHuA==}
-
-  '@types/node@18.19.127':
-    resolution: {integrity: sha512-gSjxjrnKXML/yo0BO099uPixMqfpJU0TKYjpfLU7TrtA2WWDki412Np/RSTPRil1saKBhvVVKzVx/p/6p94nVA==}
 
   '@types/node@18.19.130':
     resolution: {integrity: sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg==}
@@ -11510,6 +11636,10 @@ packages:
 
   detect-indent@6.1.0:
     resolution: {integrity: sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA==}
+    engines: {node: '>=8'}
+
+  detect-libc@2.0.2:
+    resolution: {integrity: sha512-UX6sGumvvqSaXgdKGUsgZWqcUyIXZ/vZTrlRT/iobiKhGL0zL4d3osHj3uqllWJK+i+sixDS/3COVEOFbupFyw==}
     engines: {node: '>=8'}
 
   detect-libc@2.1.0:
@@ -14026,6 +14156,11 @@ packages:
   libphonenumber-js@1.12.17:
     resolution: {integrity: sha512-bsxi8FoceAYR/bjHcLYc2ShJ/aVAzo5jaxAYiMHF0BD+NTp47405CGuPNKYpw+lHadN9k/ClFGc9X5vaZswIrA==}
 
+  libsql@0.5.22:
+    resolution: {integrity: sha512-NscWthMQt7fpU8lqd7LXMvT9pi+KhhmTHAJWUB/Lj6MWa0MKFv0F2V4C6WKKpjCVZl0VwcDz4nOI3CyaT1DDiA==}
+    cpu: [x64, arm64, wasm32, arm]
+    os: [darwin, linux, win32]
+
   lie@3.3.0:
     resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
 
@@ -15818,6 +15953,9 @@ packages:
     peerDependenciesMeta:
       bluebird:
         optional: true
+
+  promise-limit@2.7.0:
+    resolution: {integrity: sha512-7nJ6v5lnJsXwGprnGXga4wx6d1POjvi5Qmf1ivTRxTjH4Z/9Czja/UCMLVmB9N93GeWOU93XaFaEt6jbuoagNw==}
 
   promise-retry@2.0.1:
     resolution: {integrity: sha512-y+WKFlBR8BGXnsNlIHFGPZmyDf3DFMoLhaflAnyZgV6rG6xu+JwesTo2Q9R6XwYmtmwAFCkAk3e35jEdoeh/3g==}
@@ -22814,7 +22952,7 @@ snapshots:
       '@jsonjoy.com/codegen': 1.0.0(tslib@2.8.1)
       tslib: 2.8.1
 
-  '@langchain/community@0.3.56(f2e0ea269112c96a51f858b39611015f)':
+  '@langchain/community@0.3.56(fcc37d23d74d439d8c6e6eb81f9cca98)':
     dependencies:
       '@browserbasehq/stagehand': 1.14.0(@playwright/test@1.55.0)(bufferutil@4.0.9)(deepmerge@4.3.1)(dotenv@17.2.2)(encoding@0.1.13)(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12))(utf-8-validate@5.0.10)(zod@4.1.12)
       '@ibm-cloud/watsonx-ai': 1.6.13
@@ -22860,7 +22998,7 @@ snapshots:
       jsonwebtoken: 9.0.2
       lodash: 4.17.21
       mammoth: 1.10.0
-      mem0ai: 2.1.38(@anthropic-ai/sdk@0.68.0(zod@4.1.12))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
+      mem0ai: 2.1.38(patch_hash=a5f4bdde3f9e0d0ecc35459cd29770b042ef76312c6e7fdf6840d030ea173c60)(@anthropic-ai/sdk@0.68.0(zod@4.1.12))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))
       neo4j-driver: 5.28.2
       officeparser: 5.2.0
       pdf-parse: 1.1.1
@@ -22979,6 +23117,68 @@ snapshots:
       '@opentelemetry/api': 1.9.0
 
   '@levischuck/tiny-cbor@0.2.11': {}
+
+  '@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@libsql/core': 0.15.15
+      '@libsql/hrana-client': 0.7.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      js-base64: 3.7.7
+      libsql: 0.5.22
+      promise-limit: 2.7.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@libsql/core@0.15.15':
+    dependencies:
+      js-base64: 3.7.7
+
+  '@libsql/darwin-arm64@0.5.22':
+    optional: true
+
+  '@libsql/darwin-x64@0.5.22':
+    optional: true
+
+  '@libsql/hrana-client@0.7.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@libsql/isomorphic-fetch': 0.3.1
+      '@libsql/isomorphic-ws': 0.1.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      js-base64: 3.7.7
+      node-fetch: 3.3.2
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@libsql/isomorphic-fetch@0.3.1': {}
+
+  '@libsql/isomorphic-ws@0.1.5(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+    dependencies:
+      '@types/ws': 8.18.1
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@libsql/linux-arm-gnueabihf@0.5.22':
+    optional: true
+
+  '@libsql/linux-arm-musleabihf@0.5.22':
+    optional: true
+
+  '@libsql/linux-arm64-gnu@0.5.22':
+    optional: true
+
+  '@libsql/linux-arm64-musl@0.5.22':
+    optional: true
+
+  '@libsql/linux-x64-gnu@0.5.22':
+    optional: true
+
+  '@libsql/linux-x64-musl@0.5.22':
+    optional: true
+
+  '@libsql/win32-x64-msvc@0.5.22':
+    optional: true
 
   '@lit-labs/ssr-dom-shim@1.4.0': {}
 
@@ -23346,6 +23546,8 @@ snapshots:
       '@emnapi/runtime': 1.5.0
       '@tybys/wasm-util': 0.10.1
     optional: true
+
+  '@neon-rs/load@0.0.4': {}
 
   '@neondatabase/serverless@0.9.5':
     dependencies:
@@ -24283,7 +24485,7 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@privy-io/react-auth@3.0.1(a02c4b90c54f61f7acc602674e62c50f)':
+  '@privy-io/react-auth@3.0.1(c8e80c26219ae309b0602a62999394ac)':
     dependencies:
       '@base-org/account': 1.1.1(@types/react@19.2.3)(bufferutil@4.0.9)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@5.0.10)(zod@3.25.76)
       '@coinbase/wallet-sdk': 4.3.2
@@ -24301,7 +24503,7 @@ snapshots:
       '@simplewebauthn/browser': 9.0.1
       '@tanstack/react-virtual': 3.13.12(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@wallet-standard/app': 1.1.0
-      '@walletconnect/ethereum-provider': 2.21.7(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/ethereum-provider': 2.21.7(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       base64-js: 1.5.1
       dotenv: 16.6.1
       encoding: 0.1.13
@@ -26110,11 +26312,11 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-controllers@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@reown/appkit-controllers@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@reown/appkit-common': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@reown/appkit-wallet': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      '@walletconnect/universal-provider': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/universal-provider': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       valtio: 1.13.2(@types/react@19.2.3)(react@19.2.0)
       viem: 2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
@@ -26145,12 +26347,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-pay@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@reown/appkit-pay@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@reown/appkit-common': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-utils': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
+      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-utils': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
       lit: 3.3.0
       valtio: 1.13.2(@types/react@19.2.3)(react@19.2.0)
     transitivePeerDependencies:
@@ -26185,12 +26387,12 @@ snapshots:
     dependencies:
       buffer: 6.0.3
 
-  '@reown/appkit-scaffold-ui@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)':
+  '@reown/appkit-scaffold-ui@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)':
     dependencies:
       '@reown/appkit-common': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-utils': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
+      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-utils': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
       '@reown/appkit-wallet': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       lit: 3.3.0
     transitivePeerDependencies:
@@ -26222,10 +26424,10 @@ snapshots:
       - valtio
       - zod
 
-  '@reown/appkit-ui@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@reown/appkit-ui@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@reown/appkit-common': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@reown/appkit-wallet': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       lit: 3.3.0
       qrcode: 1.5.3
@@ -26257,14 +26459,14 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@reown/appkit-utils@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)':
+  '@reown/appkit-utils@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)':
     dependencies:
       '@reown/appkit-common': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@reown/appkit-polyfills': 1.7.8
       '@reown/appkit-wallet': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
       '@walletconnect/logger': 2.1.2
-      '@walletconnect/universal-provider': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/universal-provider': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       valtio: 1.13.2(@types/react@19.2.3)(react@19.2.0)
       viem: 2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
@@ -26306,18 +26508,18 @@ snapshots:
       - typescript
       - utf-8-validate
 
-  '@reown/appkit@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@reown/appkit@1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@reown/appkit-common': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-pay': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-controllers': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-pay': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@reown/appkit-polyfills': 1.7.8
-      '@reown/appkit-scaffold-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
-      '@reown/appkit-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@reown/appkit-utils': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
+      '@reown/appkit-scaffold-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
+      '@reown/appkit-ui': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit-utils': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(valtio@1.13.2(@types/react@19.2.3)(react@19.2.0))(zod@3.25.76)
       '@reown/appkit-wallet': 1.7.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)
-      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/universal-provider': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/universal-provider': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       bs58: 6.0.0
       valtio: 1.13.2(@types/react@19.2.3)(react@19.2.0)
       viem: 2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
@@ -28867,6 +29069,11 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
+  '@turbopuffer/turbopuffer@1.7.0':
+    dependencies:
+      pako: 2.1.0
+      undici: 7.16.0
+
   '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
@@ -29047,10 +29254,6 @@ snapshots:
   '@types/node@12.20.55': {}
 
   '@types/node@16.18.11': {}
-
-  '@types/node@18.19.127':
-    dependencies:
-      undici-types: 5.26.5
 
   '@types/node@18.19.130':
     dependencies:
@@ -29597,7 +29800,7 @@ snapshots:
       loupe: 3.2.1
       tinyrainbow: 2.0.0
 
-  '@wagmi/connectors@5.10.0(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(@wagmi/core@2.21.0(@tanstack/query-core@5.90.7)(@types/react@19.2.3)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@5.0.10)(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76)':
+  '@wagmi/connectors@5.10.0(8d62108c6db4b3f1166f85e754e8b04c)':
     dependencies:
       '@base-org/account': 1.1.1(@types/react@19.2.3)(bufferutil@4.0.9)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@5.0.10)(zod@3.25.76)
       '@coinbase/wallet-sdk': 4.3.6(@types/react@19.2.3)(bufferutil@4.0.9)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@5.0.10)(zod@3.25.76)
@@ -29606,7 +29809,7 @@ snapshots:
       '@safe-global/safe-apps-provider': 0.18.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@safe-global/safe-apps-sdk': 9.1.0(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@wagmi/core': 2.21.0(@tanstack/query-core@5.90.7)(@types/react@19.2.3)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
-      '@walletconnect/ethereum-provider': 2.21.1(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/ethereum-provider': 2.21.1(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       cbw-sdk: '@coinbase/wallet-sdk@3.9.3'
       viem: 2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
     optionalDependencies:
@@ -29662,21 +29865,21 @@ snapshots:
 
   '@wallet-standard/base@1.1.0': {}
 
-  '@walletconnect/core@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/core@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/jsonrpc-ws-connection': 1.0.16(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
       '@walletconnect/relay-api': 1.0.11
       '@walletconnect/relay-auth': 1.1.0
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/window-getters': 1.0.1
       es-toolkit: 1.33.0
       events: 3.3.0
@@ -29706,21 +29909,21 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/core@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/core@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/jsonrpc-ws-connection': 1.0.16(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
       '@walletconnect/relay-api': 1.0.11
       '@walletconnect/relay-auth': 1.1.0
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/window-getters': 1.0.1
       es-toolkit: 1.33.0
       events: 3.3.0
@@ -29750,21 +29953,21 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/core@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/core@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/jsonrpc-ws-connection': 1.0.16(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
       '@walletconnect/relay-api': 1.0.11
       '@walletconnect/relay-auth': 1.1.0
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/window-getters': 1.0.1
       es-toolkit: 1.39.3
       events: 3.3.0
@@ -29798,18 +30001,18 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/ethereum-provider@2.21.1(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/ethereum-provider@2.21.1(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@reown/appkit': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/jsonrpc-http-connection': 1.0.8(encoding@0.1.13)
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/sign-client': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/universal-provider': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/sign-client': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/universal-provider': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -29839,18 +30042,18 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/ethereum-provider@2.21.7(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/ethereum-provider@2.21.7(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@reown/appkit': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@reown/appkit': 1.7.8(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/jsonrpc-http-connection': 1.0.8(encoding@0.1.13)
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/sign-client': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/universal-provider': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/sign-client': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/universal-provider': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -29927,11 +30130,11 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@walletconnect/keyvaluestorage@1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
+  '@walletconnect/keyvaluestorage@1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
     dependencies:
       '@walletconnect/safe-json': 1.0.2
       idb-keyval: 6.2.2
-      unstorage: 1.17.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(idb-keyval@6.2.2)(ioredis@5.7.0)
+      unstorage: 1.17.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(idb-keyval@6.2.2)(ioredis@5.7.0)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -29973,16 +30176,16 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/sign-client@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/sign-client@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@walletconnect/core': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/core': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 2.1.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -30009,16 +30212,16 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/sign-client@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/sign-client@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@walletconnect/core': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/core': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 2.1.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -30045,16 +30248,16 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/sign-client@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/sign-client@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@walletconnect/core': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/core': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 2.1.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -30085,12 +30288,12 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/types@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
+  '@walletconnect/types@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-types': 1.0.4
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
       events: 3.3.0
     transitivePeerDependencies:
@@ -30114,12 +30317,12 @@ snapshots:
       - ioredis
       - uploadthing
 
-  '@walletconnect/types@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
+  '@walletconnect/types@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-types': 1.0.4
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
       events: 3.3.0
     transitivePeerDependencies:
@@ -30143,12 +30346,12 @@ snapshots:
       - ioredis
       - uploadthing
 
-  '@walletconnect/types@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
+  '@walletconnect/types@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-types': 1.0.4
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
       events: 3.3.0
     transitivePeerDependencies:
@@ -30172,18 +30375,18 @@ snapshots:
       - ioredis
       - uploadthing
 
-  '@walletconnect/universal-provider@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/universal-provider@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/jsonrpc-http-connection': 1.0.8(encoding@0.1.13)
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
-      '@walletconnect/sign-client': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/sign-client': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       es-toolkit: 1.33.0
       events: 3.3.0
     transitivePeerDependencies:
@@ -30212,18 +30415,18 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/universal-provider@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/universal-provider@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/jsonrpc-http-connection': 1.0.8(encoding@0.1.13)
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
-      '@walletconnect/sign-client': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/sign-client': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       es-toolkit: 1.33.0
       events: 3.3.0
     transitivePeerDependencies:
@@ -30252,18 +30455,18 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/universal-provider@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/universal-provider@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/jsonrpc-http-connection': 1.0.8(encoding@0.1.13)
       '@walletconnect/jsonrpc-provider': 1.0.14
       '@walletconnect/jsonrpc-types': 1.0.4
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/logger': 2.1.2
-      '@walletconnect/sign-client': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
-      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
-      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/sign-client': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/utils': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       es-toolkit: 1.39.3
       events: 3.3.0
     transitivePeerDependencies:
@@ -30292,18 +30495,18 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/utils@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/utils@2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@noble/ciphers': 1.2.1
       '@noble/curves': 1.8.1
       '@noble/hashes': 1.7.1
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/relay-api': 1.0.11
       '@walletconnect/relay-auth': 1.1.0
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/types': 2.21.0(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/window-getters': 1.0.1
       '@walletconnect/window-metadata': 1.0.1
       bs58: 6.0.0
@@ -30336,18 +30539,18 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/utils@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/utils@2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@noble/ciphers': 1.2.1
       '@noble/curves': 1.8.1
       '@noble/hashes': 1.7.1
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/relay-api': 1.0.11
       '@walletconnect/relay-auth': 1.1.0
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/types': 2.21.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/window-getters': 1.0.1
       '@walletconnect/window-metadata': 1.0.1
       bs58: 6.0.0
@@ -30380,7 +30583,7 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@walletconnect/utils@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@walletconnect/utils@2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
       '@msgpack/msgpack': 3.1.2
       '@noble/ciphers': 1.3.0
@@ -30388,12 +30591,12 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
       '@walletconnect/jsonrpc-utils': 1.0.8
-      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/keyvaluestorage': 1.1.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/relay-api': 1.0.11
       '@walletconnect/relay-auth': 1.1.0
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
+      '@walletconnect/types': 2.21.7(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(ioredis@5.7.0)
       '@walletconnect/window-getters': 1.0.1
       '@walletconnect/window-metadata': 1.0.1
       blakejs: 1.2.1
@@ -31945,9 +32148,10 @@ snapshots:
 
   dayjs@1.11.13: {}
 
-  db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7):
+  db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7):
     optionalDependencies:
-      drizzle-orm: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
+      '@libsql/client': 0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      drizzle-orm: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
       sqlite3: 5.1.7
     optional: true
 
@@ -32072,6 +32276,8 @@ snapshots:
 
   detect-indent@6.1.0: {}
 
+  detect-libc@2.0.2: {}
+
   detect-libc@2.1.0: {}
 
   detect-libc@2.1.2: {}
@@ -32193,9 +32399,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7):
+  drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20250918.0
+      '@libsql/client': 0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@neondatabase/serverless': 1.0.2
       '@opentelemetry/api': 1.9.0
       '@types/pg': 8.15.5
@@ -32207,9 +32414,9 @@ snapshots:
       postgres: 3.4.7
       sqlite3: 5.1.7
 
-  drizzle-zod@0.8.3(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(zod@4.1.12):
+  drizzle-zod@0.8.3(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(zod@4.1.12):
     dependencies:
-      drizzle-orm: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
+      drizzle-orm: 0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7)
       zod: 4.1.12
 
   duck@0.1.12:
@@ -35168,6 +35375,21 @@ snapshots:
 
   libphonenumber-js@1.12.17: {}
 
+  libsql@0.5.22:
+    dependencies:
+      '@neon-rs/load': 0.0.4
+      detect-libc: 2.0.2
+    optionalDependencies:
+      '@libsql/darwin-arm64': 0.5.22
+      '@libsql/darwin-x64': 0.5.22
+      '@libsql/linux-arm-gnueabihf': 0.5.22
+      '@libsql/linux-arm-musleabihf': 0.5.22
+      '@libsql/linux-arm64-gnu': 0.5.22
+      '@libsql/linux-arm64-musl': 0.5.22
+      '@libsql/linux-x64-gnu': 0.5.22
+      '@libsql/linux-x64-musl': 0.5.22
+      '@libsql/win32-x64-msvc': 0.5.22
+
   lie@3.3.0:
     dependencies:
       immediate: 3.0.6
@@ -35638,7 +35860,7 @@ snapshots:
 
   media-typer@1.1.0: {}
 
-  mem0ai@2.1.38(@anthropic-ai/sdk@0.68.0(zod@3.25.76))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)):
+  mem0ai@2.1.38(patch_hash=a5f4bdde3f9e0d0ecc35459cd29770b042ef76312c6e7fdf6840d030ea173c60)(@anthropic-ai/sdk@0.68.0(zod@3.25.76))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)):
     dependencies:
       '@anthropic-ai/sdk': 0.68.0(zod@3.25.76)
       '@cloudflare/workers-types': 4.20250918.0
@@ -35666,7 +35888,7 @@ snapshots:
       - encoding
       - ws
 
-  mem0ai@2.1.38(@anthropic-ai/sdk@0.68.0(zod@4.1.12))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)):
+  mem0ai@2.1.38(patch_hash=a5f4bdde3f9e0d0ecc35459cd29770b042ef76312c6e7fdf6840d030ea173c60)(@anthropic-ai/sdk@0.68.0(zod@4.1.12))(@cloudflare/workers-types@4.20250918.0)(@google/genai@1.20.0(@modelcontextprotocol/sdk@1.22.0(@cfworker/json-schema@4.1.1))(bufferutil@4.0.9)(encoding@0.1.13)(utf-8-validate@5.0.10))(@langchain/core@0.3.77(@opentelemetry/api@1.9.0)(@opentelemetry/exporter-trace-otlp-proto@0.205.0(@opentelemetry/api@1.9.0))(@opentelemetry/sdk-trace-base@2.1.0(@opentelemetry/api@1.9.0))(openai@5.21.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12)))(@mistralai/mistralai@1.10.0)(@qdrant/js-client-rest@1.15.1(typescript@5.9.2))(@supabase/supabase-js@2.57.4(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/jest@29.5.14)(@types/pg@8.15.5)(@types/sqlite3@3.1.11)(cloudflare@4.5.0(encoding@0.1.13))(encoding@0.1.13)(groq-sdk@0.3.0(encoding@0.1.13))(neo4j-driver@5.28.2)(ollama@0.5.18)(pg@8.16.3)(redis@4.7.1)(sqlite3@5.1.7)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)):
     dependencies:
       '@anthropic-ai/sdk': 0.68.0(zod@4.1.12)
       '@cloudflare/workers-types': 4.20250918.0
@@ -36554,7 +36776,7 @@ snapshots:
 
   openai@4.104.0(encoding@0.1.13)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@3.25.76):
     dependencies:
-      '@types/node': 18.19.127
+      '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
       abort-controller: 3.0.0
       agentkeepalive: 4.6.0
@@ -36569,7 +36791,7 @@ snapshots:
 
   openai@4.104.0(encoding@0.1.13)(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10))(zod@4.1.12):
     dependencies:
-      '@types/node': 18.19.127
+      '@types/node': 18.19.130
       '@types/node-fetch': 2.6.13
       abort-controller: 3.0.0
       agentkeepalive: 4.6.0
@@ -37322,6 +37544,8 @@ snapshots:
 
   promise-inflight@1.0.1:
     optional: true
+
+  promise-limit@2.7.0: {}
 
   promise-retry@2.0.1:
     dependencies:
@@ -39672,7 +39896,7 @@ snapshots:
       picomatch: 4.0.3
       webpack-virtual-modules: 0.6.2
 
-  unstorage@1.17.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(idb-keyval@6.2.2)(ioredis@5.7.0):
+  unstorage@1.17.1(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(idb-keyval@6.2.2)(ioredis@5.7.0):
     dependencies:
       anymatch: 3.1.3
       chokidar: 4.0.3
@@ -39687,7 +39911,7 @@ snapshots:
       '@vercel/blob': 1.0.2
       '@vercel/functions': 3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0)
       aws4fetch: 1.0.20
-      db0: 0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7)
+      db0: 0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7)
       idb-keyval: 6.2.2
       ioredis: 5.7.0
 
@@ -40139,10 +40363,10 @@ snapshots:
     dependencies:
       xml-name-validator: 5.0.0
 
-  wagmi@2.17.0(@tanstack/query-core@5.90.7)(@tanstack/react-query@5.90.7(react@19.2.0))(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76):
+  wagmi@2.17.0(@tanstack/query-core@5.90.7)(@tanstack/react-query@5.90.7(react@19.2.0))(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@libsql/client@0.15.15(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76):
     dependencies:
       '@tanstack/react-query': 5.90.7(react@19.2.0)
-      '@wagmi/connectors': 5.10.0(@types/react@19.2.3)(@upstash/redis@1.35.3)(@vercel/blob@1.0.2)(@vercel/functions@3.1.0(@aws-sdk/credential-provider-web-identity@3.901.0))(@wagmi/core@2.21.0(@tanstack/query-core@5.90.7)(@types/react@19.2.3)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)))(aws4fetch@1.0.20)(bufferutil@4.0.9)(db0@0.3.2(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20250918.0)(@neondatabase/serverless@1.0.2)(@opentelemetry/api@1.9.0)(@types/pg@8.15.5)(@upstash/redis@1.35.3)(@vercel/postgres@0.10.0(utf-8-validate@5.0.10))(gel@2.1.1)(kysely@0.28.8)(pg@8.16.3)(postgres@3.4.7)(sqlite3@5.1.7))(sqlite3@5.1.7))(encoding@0.1.13)(ioredis@5.7.0)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(utf-8-validate@5.0.10)(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(zod@3.25.76)
+      '@wagmi/connectors': 5.10.0(8d62108c6db4b3f1166f85e754e8b04c)
       '@wagmi/core': 2.21.0(@tanstack/query-core@5.90.7)(@types/react@19.2.3)(react@19.2.0)(typescript@5.9.2)(use-sync-external-store@1.4.0(react@19.2.0))(viem@2.37.6(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
       react: 19.2.0
       use-sync-external-store: 1.4.0(react@19.2.0)

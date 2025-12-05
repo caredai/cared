@@ -326,6 +326,15 @@ export class UserOrAppUserAuth extends ProtectedAuth {
   }
 }
 
+export class NoneAppUserAuth extends ProtectedAuth {
+  type: 'user' | 'apiToken'
+
+  constructor(public ctx: Extract<AuthContext, { type: 'user' } | { type: 'apiToken' }>) {
+    super(ctx)
+    this.type = ctx.type
+  }
+}
+
 export class AdminAuth extends UserAuth {
   constructor(
     public ctx: Extract<AuthContext, { type: 'user' } | { type: 'apiToken'; scope: 'user' }>,

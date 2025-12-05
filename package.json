@@ -63,7 +63,8 @@
       "fumadocs-mdx": "patches/fumadocs-mdx.patch",
       "tsup": "patches/tsup.patch",
       "uuid": "patches/uuid.patch",
-      "better-auth": "patches/better-auth.patch"
+      "better-auth": "patches/better-auth.patch",
+      "mem0ai": "patches/mem0ai.patch"
     }
   }
 }

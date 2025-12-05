@@ -1,0 +1,42 @@
+{
+  "id": "bd253411-e3a1-487e-91e2-2f8cb86cfd24",
+  "prevId": "2ca34d8b-b3ab-428c-8ee3-3eae7f8f6aed",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "example": {
+      "name": "example",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "vector": {
+          "name": "vector",
+          "type": "F32_BLOB(768)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}

@@ -27,6 +27,7 @@ export const env = createEnv({
     UPSTASH_WORKFLOW_URL: z.string().min(1).optional(),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+    TURBOPUFFER_API_KEY: z.string().min(1).optional(),
     WHITELIST_CARED_APPS: z
       .string()
       .transform((s) =>
@@ -36,6 +37,8 @@ export const env = createEnv({
           .filter(Boolean),
       )
       .optional(),
+    LANGFUSE_BASEURL: z.string().min(1).optional(),
+    LANGFUSE_ADMIN_API_KEY: z.string().min(1).optional(),
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
 

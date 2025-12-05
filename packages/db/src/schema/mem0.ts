@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm'
-import { index, integer, pgTable, text } from 'drizzle-orm/pg-core'
+import { index, pgTable, smallint, text } from 'drizzle-orm/pg-core'
 
 import { generateId, timestamps } from './utils'
 
@@ -15,7 +15,7 @@ export const Mem0History = pgTable(
     newValue: text(),
     action: text().notNull(),
     ...timestamps,
-    isDeleted: integer().default(0),
+    isDeleted: smallint().default(0),
   },
   (table) => [
     index().on(table.memoryId),

@@ -15,6 +15,7 @@ import { stripeRouter } from './stripe'
 import { telemetryRouter } from './telemetry'
 import { toolRouter } from './tool'
 import { userRouter } from './user'
+import { vectorRouter } from './vector'
 
 export const accountRouter = {
   account: accountRouter_,
@@ -34,4 +35,5 @@ export const accountRouter = {
   file: fileRouter,
   tool: toolRouter,
   mcp: mcpRouter,
+  vector: vectorRouter,
 }

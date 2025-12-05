@@ -31,6 +31,6 @@
     "@cared/db": "workspace:*",
     "@cared/providers": "workspace:*",
     "@cared/vdb": "workspace:*",
-    "mem0ai": "^2.1.16"
+    "mem0ai": "^2.1.38"
   }
 }

@@ -1,18 +1,19 @@
 {
-  "name": "@cared/vdb",
-  "version": "0.1.0",
+  "name": "@cared/redgw",
   "private": true,
+  "version": "0.1.0",
   "type": "module",
+  "license": "MIT",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
+      "types": "./dist/exports.d.ts",
+      "default": "./src/exports.ts"
     }
   },
-  "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
@@ -22,14 +23,18 @@
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
     "@cared/tsconfig": "workspace:*",
+    "@types/node": "^22.13.10",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "^5.9.2"
   },
   "prettier": "@cared/prettier-config",
   "dependencies": {
-    "@qdrant/js-client-rest": "^1.13.0",
-    "@turbopuffer/turbopuffer": "^1.7.0",
-    "async-mutex": "^0.5.0"
+    "@hono/node-server": "^1.19.6",
+    "@js-temporal/polyfill": "^0.5.1",
+    "@orpc/server": "^1.10.4",
+    "falkordb": "github:caredai/falkordb-ts#main",
+    "hono": "^4.9.8",
+    "zod": "4.1.12"
   }
 }
