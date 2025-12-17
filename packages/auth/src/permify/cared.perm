@@ -1,0 +1,41 @@
+entity user {
+}
+
+entity account {
+    relation owner @user
+    relation admin @user
+    relation member @user
+
+    permission own = owner
+    permission write = owner or admin
+    permission read = owner or admin or member
+}
+
+entity api_token {
+    relation parent @account @user
+
+    attribute enabled boolean
+    attribute expires_at integer
+    attribute not_before integer
+
+    rule check_validity() {
+        this.enabled && (this.expires_at > context.data.current) && (this.not_before <= context.data.current)
+    }
+}
+
+// ID: <accountId>:<resourceName> or <userId>:<resourceName>
+entity resource {
+    relation reader @api_token
+    relation writer @api_token
+
+    permission write = writer.check_validity()
+    permission read = reader.check_validity() or write
+}
+
+entity credits {
+    relation parent @account
+    relation resource @resource
+
+    permssion write = parent.write or resource.write
+    permssion read = parent.read or resource.read
+}

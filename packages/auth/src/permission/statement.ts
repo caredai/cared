@@ -15,6 +15,8 @@ export const statements = {
   invitation: ['read', 'write'],
   apiToken: ['read', 'write'],
   credits: ['read', 'write'],
+  subscription: ['read', 'write'],
+  invoice: ['read', 'write'],
   providerKey: ['read', 'write'],
   model: ['read', 'write', 'invoke'],
   toolkit: ['read', 'write', 'invoke'],

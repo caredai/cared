@@ -29,7 +29,7 @@
     "react-dom": "catalog:react19",
     "tailwindcss": "^4.0.6",
     "vite-tsconfig-paths": "^5.1.4",
-    "zod": "^4.1.11"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
@@ -42,7 +42,7 @@
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^5.0.4",
     "jsdom": "^27.0.0",
-    "typescript": "^5.7.2",
+    "typescript": "catalog:",
     "vite": "^7.1.7",
     "vitest": "^3.0.5",
     "web-vitals": "^5.1.0",

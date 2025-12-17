@@ -37,6 +37,10 @@ export const env = createEnv({
           .filter(Boolean),
       )
       .optional(),
+    LAGO_API_KEY: z.string().min(1).optional(),
+    LAGO_API_URL: z.string().min(1).optional(),
+    LAGO_BILLING_ENTITY_CODE: z.string().min(1).optional(),
+    LAGO_STRIPE_CONNECTION_CODE: z.string().min(1).optional(),
     LANGFUSE_BASEURL: z.string().min(1).optional(),
     LANGFUSE_ADMIN_API_KEY: z.string().min(1).optional(),
     NODE_ENV: z.enum(['development', 'production']).optional(),

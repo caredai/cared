@@ -1,7 +1,6 @@
-export type Mode = 'managed' | 'uncontrolled'
+import type { Filter } from './filter'
 
-export type Filter = {
-}
+export type Mode = 'managed' | 'uncontrolled'
 
 export class MemoryService {
   async listMemories() {

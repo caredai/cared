@@ -6,12 +6,14 @@ import { creditsRouter } from './credits'
 import { datasetRouter } from './dataset'
 import { expenseRouter } from './expense'
 import { fileRouter } from './file'
+import { invoiceRouter } from './invoices'
 import { mcpRouter } from './mcp'
 import { modelRouter } from './model'
 import { oauthAppRouter } from './oauth-app'
 import { providerKeyRouter } from './provider-key'
 import { storageRouter } from './storage'
 import { stripeRouter } from './stripe'
+import { subscriptionRouter } from './subscriptions'
 import { telemetryRouter } from './telemetry'
 import { toolRouter } from './tool'
 import { userRouter } from './user'
@@ -31,6 +33,8 @@ export const accountRouter = {
   credits: creditsRouter,
   expense: expenseRouter,
   stripe: stripeRouter,
+  subscriptions: subscriptionRouter,
+  invoices: invoiceRouter,
   telemetry: telemetryRouter,
   file: fileRouter,
   tool: toolRouter,

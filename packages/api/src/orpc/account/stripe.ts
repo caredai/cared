@@ -3,7 +3,7 @@ import { z } from 'zod/v4'
 
 import { getStripe } from '../../client/stripe'
 import { protectedProcedure } from '../../orpc'
-import { ensureCustomer } from './credits'
+import { ensureCustomer } from './credits-deprecated'
 
 export const stripeRouter = {
   /**

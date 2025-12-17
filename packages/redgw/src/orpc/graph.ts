@@ -119,6 +119,7 @@ function parseMetadata(metadata: string[]): QueryStats {
   return stats as QueryStats
 }
 
+// TODO: cache graph clients
 export const graphRouter = {
   query: procedure
     .input(

@@ -73,11 +73,49 @@ export const PERMISSION_GROUPS: (PermissionGroup & {
       credits: ['write'],
     },
   },
+  // subscription
+  {
+    id: generateId('subscription', 'read'),
+    name: 'Subscription Read',
+    description: 'Grants access to read subscriptions',
+    scopes: ['dev.cared.api.account'],
+    statements: {
+      subscription: ['read'],
+    },
+  },
+  {
+    id: generateId('subscription', 'write'),
+    name: 'Subscription Write',
+    description: 'Grants access to write subscriptions',
+    scopes: ['dev.cared.api.account'],
+    statements: {
+      subscription: ['write'],
+    },
+  },
+  // invoice
+  {
+    id: generateId('invoice', 'read'),
+    name: 'Invoice Read',
+    description: 'Grants access to read invoices',
+    scopes: ['dev.cared.api.account'],
+    statements: {
+      invoice: ['read'],
+    },
+  },
+  {
+    id: generateId('invoice', 'write'),
+    name: 'Invoice Write',
+    description: 'Grants access to write invoices',
+    scopes: ['dev.cared.api.account'],
+    statements: {
+      invoice: ['write'],
+    },
+  },
   // providerKey
   {
     id: generateId('providerKey', 'read'),
     name: 'Provider Key Read',
-    description: 'Grants access to read providerKey',
+    description: 'Grants access to read providerKeys',
     scopes: ['dev.cared.api.account'],
     statements: {
       providerKey: ['read'],
@@ -86,7 +124,7 @@ export const PERMISSION_GROUPS: (PermissionGroup & {
   {
     id: generateId('providerKey', 'write'),
     name: 'Provider Key Write',
-    description: 'Grants access to write providerKey',
+    description: 'Grants access to write providerKeys',
     scopes: ['dev.cared.api.account'],
     statements: {
       providerKey: ['write'],
@@ -151,7 +189,7 @@ export const PERMISSION_GROUPS: (PermissionGroup & {
   {
     id: generateId('app', 'read'),
     name: 'App Read',
-    description: 'Grants access to read app',
+    description: 'Grants access to read apps',
     scopes: ['dev.cared.api.account'],
     statements: {
       app: ['read'],
@@ -160,7 +198,7 @@ export const PERMISSION_GROUPS: (PermissionGroup & {
   {
     id: generateId('app', 'write'),
     name: 'App Write',
-    description: 'Grants access to write app',
+    description: 'Grants access to write apps',
     scopes: ['dev.cared.api.account'],
     statements: {
       app: ['write'],
@@ -169,7 +207,7 @@ export const PERMISSION_GROUPS: (PermissionGroup & {
   {
     id: generateId('app', 'publish'),
     name: 'App Publish',
-    description: 'Grants access to publish app',
+    description: 'Grants access to publish apps',
     scopes: ['dev.cared.api.account'],
     statements: {
       app: ['publish'],
@@ -179,7 +217,7 @@ export const PERMISSION_GROUPS: (PermissionGroup & {
   {
     id: generateId('dataset', 'read'),
     name: 'Dataset Read',
-    description: 'Grants access to read dataset',
+    description: 'Grants access to read datasets',
     scopes: ['dev.cared.api.account'],
     statements: {
       dataset: ['read'],
@@ -188,7 +226,7 @@ export const PERMISSION_GROUPS: (PermissionGroup & {
   {
     id: generateId('dataset', 'write'),
     name: 'Dataset Write',
-    description: 'Grants access to write dataset',
+    description: 'Grants access to write datasets',
     scopes: ['dev.cared.api.account'],
     statements: {
       dataset: ['write'],
