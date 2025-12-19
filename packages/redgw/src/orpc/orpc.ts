@@ -1,13 +1,13 @@
-import fs from 'node:fs'
 import { os } from '@orpc/server'
 
 import type { ResponseHeadersPluginContext } from '@orpc/server/plugins'
+import { env } from '../env.js'
 
 export interface Context extends ResponseHeadersPluginContext {
   headers: Headers
 }
 
-const apiKey = fs.readFileSync('/etc/api-key', 'utf8')
+const apiKey = env.API_KEY
 
 export const createORPCContext = ({ headers }: { headers: Headers }) => {
   const bearerToken = headers.get('Authorization')?.replace('Bearer ', '') ?? ''

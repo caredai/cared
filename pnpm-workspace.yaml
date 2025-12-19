@@ -15,6 +15,7 @@ catalog:
   # Otherwise, you may get the following error:
   #   Type instantiation is excessively deep and possibly infinite
   zod: 4.1.12
+  hono: ^4.11.1
 
 catalogs:
   react19:

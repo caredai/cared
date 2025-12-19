@@ -12,8 +12,12 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts --server",
+    "dev:server": "tsx watch src/index.ts --server",
+    "dev:offloader": "tsx watch src/index.ts --offloader",
+    "start": "node dist/index.js --server",
+    "start:server": "node dist/index.js --server",
+    "start:offloader": "node dist/index.js --offloader",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
@@ -30,11 +34,15 @@
   },
   "prettier": "@cared/prettier-config",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.901.0",
     "@hono/node-server": "^1.19.6",
     "@js-temporal/polyfill": "^0.5.1",
     "@orpc/server": "^1.10.4",
+    "@t3-oss/env-core": "^0.13.8",
     "falkordb": "github:caredai/falkordb-ts#main",
-    "hono": "^4.9.8",
+    "hono": "^4.11.1",
+    "redis": "^5.10.0",
+    "sanitize-filename": "^1.6.3",
     "zod": "4.1.12"
   }
 }

@@ -13,7 +13,7 @@
     "@cared/api": "workspace:*",
     "@cared/auth": "workspace:*",
     "@xmldom/xmldom": "^0.8.11",
-    "hono": "^4.9.8"
+    "hono": "catalog:"
   },
   "devDependencies": {
     "@cared/eslint-config": "workspace:*",

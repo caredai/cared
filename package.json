@@ -54,7 +54,11 @@
       "@aws-sdk/s3-request-presigner": "3.901.0",
       "@aws-sdk/signature-v4-multi-region": "3.901.0",
       "@aws-sdk/xml-builder": "3.901.0",
-      "@microsoft/api-extractor>typescript": "$typescript"
+      "@microsoft/api-extractor>typescript": "$typescript",
+      "redis": "5.10.0",
+      "@redis/client": "5.10.0",
+      "falkordb>redis": "4.7.1",
+      "falkordb>@redis/client": "1.6.1"
     },
     "patchedDependencies": {
       "@cloudflare/vite-plugin": "patches/@cloudflare__vite-plugin.patch",
@@ -63,8 +67,7 @@
       "fumadocs-mdx": "patches/fumadocs-mdx.patch",
       "tsup": "patches/tsup.patch",
       "uuid": "patches/uuid.patch",
-      "better-auth": "patches/better-auth.patch",
-      "mem0ai": "patches/mem0ai.patch"
+      "better-auth": "patches/better-auth.patch"
     }
   }
 }
