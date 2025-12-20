@@ -43,6 +43,8 @@ export const env = createEnv({
     LAGO_STRIPE_CONNECTION_CODE: z.string().min(1).optional(),
     LANGFUSE_BASEURL: z.string().min(1).optional(),
     LANGFUSE_ADMIN_API_KEY: z.string().min(1).optional(),
+    REDGW_API_URL: z.string().min(1).optional(),
+    REDGW_API_KEY: z.string().min(1).optional(),
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
 

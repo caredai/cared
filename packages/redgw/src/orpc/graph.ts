@@ -172,10 +172,7 @@ function parseMemoryUsage(result: unknown): MemoryUsage {
       .replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())
 
     // Handle nested arrays for attributes by label/type
-    if (
-      normalizedKey === 'amortizedNodeAttributesByLabelSzMb' &&
-      Array.isArray(value)
-    ) {
+    if (normalizedKey === 'amortizedNodeAttributesByLabelSzMb' && Array.isArray(value)) {
       // Format: ["User", 0, "Post", 0, ...]
       const nodeAttrs = memory.amortizedNodeAttributesByLabelSzMb
       if (nodeAttrs) {
@@ -187,10 +184,7 @@ function parseMemoryUsage(result: unknown): MemoryUsage {
           }
         }
       }
-    } else if (
-      normalizedKey === 'amortizedEdgeAttributesByTypeSzMb' &&
-      Array.isArray(value)
-    ) {
+    } else if (normalizedKey === 'amortizedEdgeAttributesByTypeSzMb' && Array.isArray(value)) {
       // Format: ["FRIENDS_WITH", 0, "CREATED", 0, ...]
       const edgeAttrs = memory.amortizedEdgeAttributesByTypeSzMb
       if (edgeAttrs) {
@@ -250,9 +244,7 @@ function parseMemoryUsage(result: unknown): MemoryUsage {
     throw new Error('Missing required field: amortized_node_block_sz_mb')
   }
   if (memory.amortizedUnlabeledNodesAttributesSzMb === undefined) {
-    throw new Error(
-      'Missing required field: amortized_unlabeled_nodes_attributes_sz_mb',
-    )
+    throw new Error('Missing required field: amortized_unlabeled_nodes_attributes_sz_mb')
   }
   if (memory.amortizedEdgeBlockSzMb === undefined) {
     throw new Error('Missing required field: amortized_edge_block_sz_mb')
@@ -330,9 +322,6 @@ export const graphRouter = {
     )
     .handler(async ({ input }) => {
       await offloader.delete(input.graph)
-      return {
-        success: true,
-      }
     }),
 
   copy: procedure
@@ -357,10 +346,6 @@ export const graphRouter = {
           await offloader.delete(input.targetGraph)
           throw error
         }
-
-        return {
-          success: true,
-        }
       }),
     ),
 
@@ -375,9 +360,9 @@ export const graphRouter = {
       withGraphAccess(async ({ input }) => {
         const client = await getFalkor()
         const graph = client.selectGraph(input.graph)
-        const result = (await graph.explain(input.query)) as unknown
+        const explain = (await graph.explain(input.query)) as string[]
         return {
-          result,
+          explain,
         }
       }),
     ),
@@ -393,9 +378,9 @@ export const graphRouter = {
       withGraphAccess(async ({ input }) => {
         const client = await getFalkor()
         const graph = client.selectGraph(input.graph)
-        const result = (await graph.profile(input.query)) as unknown
+        const profile = (await graph.profile(input.query)) as string[]
         return {
-          result,
+          profile,
         }
       }),
     ),
@@ -404,6 +389,7 @@ export const graphRouter = {
     .input(
       z.object({
         graph: z.string(),
+        reset: z.boolean().optional(),
       }),
     )
     .handler(
@@ -547,7 +533,8 @@ export const graphRouter = {
           options,
         )
         return {
-          result,
+          rows: result.data as Record<string, GraphValue>[] | undefined,
+          stats: parseMetadata(result.metadata),
         }
       }),
     ),
@@ -573,7 +560,8 @@ export const graphRouter = {
           input.property,
         )
         return {
-          result,
+          rows: result.data as Record<string, GraphValue>[] | undefined,
+          stats: parseMetadata(result.metadata),
         }
       }),
     ),

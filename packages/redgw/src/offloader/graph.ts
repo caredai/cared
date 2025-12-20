@@ -405,7 +405,9 @@ export class GraphOffloader {
           // Graph is offloaded, restore it from S3
           await this.restore(graph)
         } else if (!status) {
-          // Graph doesn't exist yet, initialize access time and status
+          // Graph doesn't exist yet, initialize access time and status.
+          // Defensively delete the key before initialization to handle zombie data.
+          await this.client.del(graph)
           await this.client.zAdd(this.getAccessTimeKey(), {
             score: this.getHoursSinceEpoch(),
             value: graph,
