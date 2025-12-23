@@ -5,7 +5,7 @@ import { ORPCError } from '@orpc/server'
 import { nanoid } from 'nanoid'
 
 import type { AppRouter } from '@cared/redgw'
-import { and, asc, eq } from '@cared/db'
+import { and, asc, eq, gt } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Graph } from '@cared/db/schema'
 
@@ -133,13 +133,27 @@ export class GraphService {
   /**
    * List all graphs for an account.
    * @param accountId - The account ID
+   * @param opts
    * @returns Array of graphs
    */
-  async listGraphs(accountId: string): Promise<Graph[]> {
-    return await db.query.Graph.findMany({
-      where: eq(Graph.accountId, accountId),
+  async listGraphs(
+    accountId: string,
+    { limit = 20, cursor }: { limit?: number; cursor?: string },
+  ): Promise<{ graphs: Graph[]; hasMore: boolean; cursor?: string }> {
+    const graphs = await db.query.Graph.findMany({
+      where: and(eq(Graph.accountId, accountId), cursor ? gt(Graph.id, cursor) : undefined),
       orderBy: asc(Graph.id),
+      limit: limit + 1,
     })
+    const hasMore = graphs.length > limit
+    if (hasMore) {
+      graphs.pop()
+    }
+    return {
+      graphs,
+      hasMore,
+      cursor: graphs.at(-1)?.id,
+    }
   }
 
   /**

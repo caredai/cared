@@ -28,11 +28,22 @@ export const graphRouter = {
    * List all graphs for an account.
    * @returns Array of graphs
    */
-  list: noneAppUserProtectedProcedure.handler(async ({ context }) => {
-    const accountId = context.auth.accountId
-    const graphs = await graphService.listGraphs(accountId)
-    return { graphs }
-  }),
+  list: noneAppUserProtectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.string().optional(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      const accountId = context.auth.accountId
+      const { limit, cursor } = input
+
+      return await graphService.listGraphs(accountId, {
+        limit,
+        cursor,
+      })
+    }),
 
   /**
    * Delete a graph.
