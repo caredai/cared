@@ -12,7 +12,7 @@ export const subscriptionRouter = {
   getPlans: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/subscriptions/plans',
+      path: '/subscriptions/plans',
       tags: ['subscriptions'],
       summary: 'Get all available subscription plans',
     })
@@ -31,7 +31,7 @@ export const subscriptionRouter = {
   createSubscription: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/subscriptions',
+      path: '/subscriptions',
       tags: ['subscriptions'],
       summary: 'Create a subscription for the account',
     })
@@ -57,7 +57,7 @@ export const subscriptionRouter = {
   cancelSubscription: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/subscriptions/{planCode}',
+      path: '/subscriptions/{planCode}',
       tags: ['subscriptions'],
       summary: 'Cancel a subscription for the account',
     })
@@ -83,7 +83,7 @@ export const subscriptionRouter = {
   getSubscriptions: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/subscriptions',
+      path: '/subscriptions',
       tags: ['subscriptions'],
       summary: 'Get all subscriptions for the account',
     })
@@ -104,7 +104,7 @@ export const subscriptionRouter = {
   getSubscriptionLifetimeUsage: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/subscriptions/{planCode}/lifetime-usage',
+      path: '/subscriptions/{planCode}/lifetime-usage',
       tags: ['subscriptions'],
       summary: 'Get lifetime usage for a subscription',
     })
@@ -130,7 +130,7 @@ export const subscriptionRouter = {
   getSubscriptionCurrentUsage: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/subscriptions/{planCode}/current-usage',
+      path: '/subscriptions/{planCode}/current-usage',
       tags: ['subscriptions'],
       summary: 'Get current usage for a subscription',
     })
@@ -156,7 +156,7 @@ export const subscriptionRouter = {
   getSubscriptionProjectedUsage: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/subscriptions/{planCode}/projected-usage',
+      path: '/subscriptions/{planCode}/projected-usage',
       tags: ['subscriptions'],
       summary: 'Get projected usage for a subscription',
     })
@@ -182,7 +182,7 @@ export const subscriptionRouter = {
   getSubscriptionPastUsage: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/subscriptions/{planCode}/past-usage',
+      path: '/subscriptions/{planCode}/past-usage',
       tags: ['subscriptions'],
       summary: 'Get past usage for a subscription',
     })
@@ -223,7 +223,7 @@ export const subscriptionRouter = {
   getUsageEvents: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/subscriptions/{planCode}/usage-events',
+      path: '/subscriptions/{planCode}/usage-events',
       tags: ['subscriptions'],
       summary: 'Get usage events for a subscription',
     })

@@ -27,7 +27,7 @@ export const appRouter = {
   list: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/apps',
+      path: '/admin/apps',
       tags: ['admin'],
       summary: 'List all apps across all accounts',
     })
@@ -69,7 +69,7 @@ export const appRouter = {
   listByCategory: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/apps/category/{categoryId}',
+      path: '/admin/apps/category/{categoryId}',
       tags: ['admin'],
       summary: 'List all apps in a specific category across all accounts',
     })
@@ -113,7 +113,7 @@ export const appRouter = {
   listByTags: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/apps/tags',
+      path: '/admin/apps/tags',
       tags: ['admin'],
       summary: 'List all apps with any of the specified tags across all accounts',
     })
@@ -158,7 +158,7 @@ export const appRouter = {
   listVersions: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/apps/{id}/versions',
+      path: '/admin/apps/{id}/versions',
       tags: ['admin'],
       summary: 'List all versions of an app across all accounts',
     })
@@ -224,7 +224,7 @@ export const appRouter = {
   byId: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/apps/{id}',
+      path: '/admin/apps/{id}',
       tags: ['admin'],
       summary: 'Get a single app by ID across all accounts',
     })
@@ -247,7 +247,7 @@ export const appRouter = {
   createCategory: adminProcedure
     .route({
       method: 'POST',
-      path: '/v1/admin/categories',
+      path: '/admin/categories',
       tags: ['admin'],
       summary: 'Create a new category for apps',
     })
@@ -269,7 +269,7 @@ export const appRouter = {
   updateCategory: adminProcedure
     .route({
       method: 'PUT',
-      path: '/v1/admin/categories/{id}',
+      path: '/admin/categories/{id}',
       tags: ['admin'],
       summary: 'Update an existing category',
     })
@@ -310,7 +310,7 @@ export const appRouter = {
   deleteCategory: adminProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/admin/categories/{id}',
+      path: '/admin/categories/{id}',
       tags: ['admin'],
       summary: 'Delete a category by ID',
     })
@@ -353,7 +353,7 @@ export const appRouter = {
   deleteTags: adminProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/admin/tags',
+      path: '/admin/tags',
       tags: ['admin'],
       summary: 'Delete one or more tags and remove all associations with apps',
     })

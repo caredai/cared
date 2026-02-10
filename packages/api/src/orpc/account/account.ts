@@ -35,7 +35,7 @@ export const accountRouter = {
   create: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/accounts',
+      path: '/accounts',
       tags: ['account'],
       summary: 'Create a new account',
     })
@@ -73,7 +73,7 @@ export const accountRouter = {
   list: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/accounts',
+      path: '/accounts',
       tags: ['account'],
       summary: 'List all accounts for current user',
     })
@@ -99,7 +99,7 @@ export const accountRouter = {
   setActive: userPlainProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/accounts/{id}/set-active',
+      path: '/accounts/{id}/set-active',
       tags: ['account'],
       summary: 'Set active account for current user',
     })
@@ -129,7 +129,7 @@ export const accountRouter = {
   get: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/accounts/{id}',
+      path: '/accounts/{id}',
       tags: ['account'],
       summary: 'Get account details by ID',
     })
@@ -162,7 +162,7 @@ export const accountRouter = {
   update: userProtectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/accounts/{id}',
+      path: '/accounts/{id}',
       tags: ['account'],
       summary: 'Update account details',
     })
@@ -207,7 +207,7 @@ export const accountRouter = {
   delete: userProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/accounts/{id}',
+      path: '/accounts/{id}',
       tags: ['account'],
       summary: 'Delete account',
     })
@@ -240,7 +240,7 @@ export const accountRouter = {
   createInvitation: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/accounts/{accountId}/invitations',
+      path: '/accounts/{accountId}/invitations',
       tags: ['account'],
       summary: 'Create invitation for account',
     })
@@ -272,7 +272,7 @@ export const accountRouter = {
   acceptInvitation: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/invitations/{invitationId}/accept',
+      path: '/invitations/{invitationId}/accept',
       tags: ['account'],
       summary: 'Accept invitation',
     })
@@ -298,7 +298,7 @@ export const accountRouter = {
   cancelInvitation: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/invitations/{invitationId}/cancel',
+      path: '/invitations/{invitationId}/cancel',
       tags: ['account'],
       summary: 'Cancel invitation',
     })
@@ -321,7 +321,7 @@ export const accountRouter = {
   rejectInvitation: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/invitations/{invitationId}/reject',
+      path: '/invitations/{invitationId}/reject',
       tags: ['account'],
       summary: 'Reject invitation',
     })
@@ -344,7 +344,7 @@ export const accountRouter = {
   getInvitation: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/invitations/{invitationId}',
+      path: '/invitations/{invitationId}',
       tags: ['account'],
       summary: 'Get invitation details',
     })
@@ -386,7 +386,7 @@ export const accountRouter = {
   listInvitations: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/accounts/{accountId}/invitations',
+      path: '/accounts/{accountId}/invitations',
       tags: ['account'],
       summary: 'List account invitations',
     })
@@ -404,7 +404,7 @@ export const accountRouter = {
   listUserInvitations: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/me/invitations',
+      path: '/me/invitations',
       tags: ['account'],
       summary: 'List user invitations',
     })
@@ -421,7 +421,7 @@ export const accountRouter = {
   listMembers: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/accounts/{accountId}/members',
+      path: '/accounts/{accountId}/members',
       tags: ['account'],
       summary: 'List account members',
     })
@@ -455,7 +455,7 @@ export const accountRouter = {
   addMember: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/accounts/{accountId}/members',
+      path: '/accounts/{accountId}/members',
       tags: ['account'],
       summary: 'Add member to account',
     })
@@ -502,7 +502,7 @@ export const accountRouter = {
   removeMember: userProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/accounts/{accountId}/members/{memberId}',
+      path: '/accounts/{accountId}/members/{memberId}',
       tags: ['account'],
       summary: 'Remove member from account',
     })
@@ -536,7 +536,7 @@ export const accountRouter = {
   updateMemberRole: userProtectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/accounts/{accountId}/members/{memberId}',
+      path: '/accounts/{accountId}/members/{memberId}',
       tags: ['account'],
       summary: 'Update member role',
     })
@@ -563,7 +563,7 @@ export const accountRouter = {
   transferOwnership: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/accounts/{accountId}/transfer-ownership',
+      path: '/accounts/{accountId}/transfer-ownership',
       tags: ['account'],
       summary: 'Transfer account ownership',
     })
@@ -618,7 +618,7 @@ export const accountRouter = {
   leaveAccount: userProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/accounts/{accountId}/members/leave',
+      path: '/accounts/{accountId}/members/leave',
       tags: ['account'],
       summary: 'Leave account',
     })

@@ -177,7 +177,7 @@ function CreateOAuthApp({
         setShowSecretDialog(true)
         setSecretToShow(data.oauthApp.clientSecret!)
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.oauthApp.list.queryKey(),
+          queryKey: orpc.account.oauthApp.list.key(),
         })
       },
       onError: (error) => {
@@ -331,7 +331,7 @@ function UpdateOAuthApp({
     ...orpc.account.oauthApp.update.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.oauthApp.list.queryKey(),
+          queryKey: orpc.account.oauthApp.list.key(),
         })
         setNewRedirectUri('')
       },
@@ -345,7 +345,7 @@ function UpdateOAuthApp({
     ...orpc.account.oauthApp.rotateSecret.mutationOptions({
       onSuccess: (data) => {
         void queryClient.invalidateQueries({
-          queryKey: orpc.account.oauthApp.list.queryKey(),
+          queryKey: orpc.account.oauthApp.list.key(),
         })
         setSecretToShow(data.oauthApp.clientSecret!)
         setShowSecretDialog(true)

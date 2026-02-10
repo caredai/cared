@@ -102,7 +102,7 @@ export const toolRouter = {
   listCategories: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/toolkits/categories',
+      path: '/toolkits/categories',
       tags: ['tool'],
       summary: 'List all toolkit categories',
     })
@@ -136,7 +136,7 @@ export const toolRouter = {
   listToolkits: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/toolkits',
+      path: '/toolkits',
       tags: ['tool'],
       summary: 'List all toolkits',
     })
@@ -173,7 +173,7 @@ export const toolRouter = {
   getToolkit: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/toolkits/{slug}',
+      path: '/toolkits/{slug}',
       tags: ['tool'],
       summary: 'Get toolkit by slug',
     })
@@ -223,7 +223,7 @@ export const toolRouter = {
   listTools: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/tools',
+      path: '/tools',
       tags: ['tool'],
       summary: 'List all tools',
     })
@@ -290,7 +290,7 @@ export const toolRouter = {
   getTool: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/tools/{slug}',
+      path: '/tools/{slug}',
       tags: ['tool'],
       summary: 'Get tool by slug',
     })
@@ -327,7 +327,7 @@ export const toolRouter = {
   executeTool: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/tools/execute',
+      path: '/tools/execute',
       tags: ['tool'],
       summary: 'Execute a tool',
     })
@@ -377,7 +377,7 @@ export const toolRouter = {
   createConnection: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/tools/connections',
+      path: '/tools/connections',
       tags: ['tool'],
       summary: 'Create connection request for toolkit',
     })
@@ -512,7 +512,7 @@ export const toolRouter = {
   listConnections: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/tools/connections',
+      path: '/tools/connections',
       tags: ['tool'],
       summary: 'List connected accounts',
     })
@@ -569,7 +569,7 @@ export const toolRouter = {
   getConnection: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/tools/connections/{id}',
+      path: '/tools/connections/{id}',
       tags: ['tool'],
       summary: 'Get connected account by ID',
     })
@@ -614,7 +614,7 @@ export const toolRouter = {
   deleteConnection: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/tools/connections/{id}',
+      path: '/tools/connections/{id}',
       tags: ['tool'],
       summary: 'Delete connected account',
     })
@@ -648,7 +648,7 @@ export const toolRouter = {
   refreshConnection: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/tools/connections/{id}/refresh',
+      path: '/tools/connections/{id}/refresh',
       tags: ['tool'],
       summary: 'Refresh connected account credentials',
     })
@@ -694,7 +694,7 @@ export const toolRouter = {
   updateConnection: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/tools/connections/{id}',
+      path: '/tools/connections/{id}',
       tags: ['tool'],
       summary: 'Update connected account status',
     })

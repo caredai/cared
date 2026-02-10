@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as ModelsRouteImport } from './routes/models'
+import { Route as HelioCheckoutRouteImport } from './routes/helio-checkout'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as UserRouteRouteImport } from './routes/user/route'
@@ -50,6 +51,7 @@ import { Route as UserApiTokensCreateRouteImport } from './routes/user/api-token
 import { Route as AuthOauth2ConsentRouteImport } from './routes/auth/oauth2.consent'
 import { Route as AdminAppsTagsRouteImport } from './routes/admin/apps/tags'
 import { Route as AdminAppsCategoriesRouteImport } from './routes/admin/apps/categories'
+import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/flows'
 import { Route as Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport } from './routes/acc_{$accountIdNoPrefix}_.accept-invitation.$invitationId'
 import { Route as Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125RouteImport } from './routes/acc_{$accountIdNoPrefix}/tools_.{$toolkit}'
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport } from './routes/acc_{$accountIdNoPrefix}/members_.invitations'
@@ -67,6 +69,11 @@ const ToolsRoute = ToolsRouteImport.update({
 const ModelsRoute = ModelsRouteImport.update({
   id: '/models',
   path: '/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelioCheckoutRoute = HelioCheckoutRouteImport.update({
+  id: '/helio-checkout',
+  path: '/helio-checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsRoute = DocsRouteImport.update({
@@ -282,6 +289,15 @@ const AdminAppsCategoriesRoute = AdminAppsCategoriesRouteImport.update({
   path: '/apps/categories',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute =
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRouteImport.update(
+    {
+      id: '/flows',
+      path: '/flows',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
 const Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute =
   Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport.update(
     {
@@ -351,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/user': typeof UserRouteRouteWithChildren
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
+  '/helio-checkout': typeof HelioCheckoutRoute
   '/models': typeof ModelsRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
@@ -384,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
   '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
@@ -399,6 +417,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
+  '/helio-checkout': typeof HelioCheckoutRoute
   '/models': typeof ModelsRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
@@ -431,6 +450,7 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
   '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
+  '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
@@ -450,6 +470,7 @@ export interface FileRoutesById {
   '/user': typeof UserRouteRouteWithChildren
   '/chat': typeof ChatRoute
   '/docs': typeof DocsRoute
+  '/helio-checkout': typeof HelioCheckoutRoute
   '/models': typeof ModelsRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
@@ -483,6 +504,7 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/members_/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
   '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
+  '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
@@ -503,6 +525,7 @@ export interface FileRouteTypes {
     | '/user'
     | '/chat'
     | '/docs'
+    | '/helio-checkout'
     | '/models'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
@@ -536,6 +559,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/members/invitations'
     | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
     | '/auth/oauth2/consent'
@@ -551,6 +575,7 @@ export interface FileRouteTypes {
     | '/'
     | '/chat'
     | '/docs'
+    | '/helio-checkout'
     | '/models'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
@@ -583,6 +608,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/members/invitations'
     | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
+    | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
     | '/auth/oauth2/consent'
@@ -601,6 +627,7 @@ export interface FileRouteTypes {
     | '/user'
     | '/chat'
     | '/docs'
+    | '/helio-checkout'
     | '/models'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}'
@@ -634,6 +661,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/members_/invitations'
     | '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId'
+    | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
     | '/auth/oauth2/consent'
@@ -653,6 +681,7 @@ export interface RootRouteChildren {
   UserRouteRoute: typeof UserRouteRouteWithChildren
   ChatRoute: typeof ChatRoute
   DocsRoute: typeof DocsRoute
+  HelioCheckoutRoute: typeof HelioCheckoutRoute
   ModelsRoute: typeof ModelsRoute
   ToolsRoute: typeof ToolsRoute
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
@@ -680,6 +709,13 @@ declare module '@tanstack/react-router' {
       path: '/models'
       fullPath: '/models'
       preLoaderRoute: typeof ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/helio-checkout': {
+      id: '/helio-checkout'
+      path: '/helio-checkout'
+      fullPath: '/helio-checkout'
+      preLoaderRoute: typeof HelioCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs': {
@@ -955,6 +991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAppsCategoriesRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows': {
+      id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows'
+      path: '/flows'
+      fullPath: '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute
+    }
     '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId': {
       id: '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId'
       path: '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
@@ -1136,6 +1179,7 @@ const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125Configur
 
 interface Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren
+  Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
 }
 
@@ -1143,6 +1187,8 @@ const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRou
   {
     Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRoute:
       Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren,
+    Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute:
+      Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute,
     Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute:
       Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute,
   }
@@ -1160,6 +1206,7 @@ const rootRouteChildren: RootRouteChildren = {
   UserRouteRoute: UserRouteRouteWithChildren,
   ChatRoute: ChatRoute,
   DocsRoute: DocsRoute,
+  HelioCheckoutRoute: HelioCheckoutRoute,
   ModelsRoute: ModelsRoute,
   ToolsRoute: ToolsRoute,
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute:

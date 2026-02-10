@@ -10,7 +10,7 @@ export const tokenizerRouter = {
   encode: publicProcedure
     .route({
       method: 'POST',
-      path: '/v1/tokenizer/encode',
+      path: '/tokenizer/encode',
       tags: ['tokenizer'],
       summary: 'Encode text to tokens using specified model',
     })
@@ -27,7 +27,7 @@ export const tokenizerRouter = {
   decode: publicProcedure
     .route({
       method: 'POST',
-      path: '/v1/tokenizer/decode',
+      path: '/tokenizer/decode',
       tags: ['tokenizer'],
       summary: 'Decode tokens to text using specified model',
     })
@@ -44,7 +44,7 @@ export const tokenizerRouter = {
   count: publicProcedure
     .route({
       method: 'POST',
-      path: '/v1/tokenizer/count',
+      path: '/tokenizer/count',
       tags: ['tokenizer'],
       summary: 'Count tokens in messages using specified model',
     })

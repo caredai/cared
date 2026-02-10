@@ -11,7 +11,7 @@ export const expenseRouter = {
   list: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/expenses',
+      path: '/expenses',
       tags: ['expenses'],
       summary: 'List expenses for current user',
     })

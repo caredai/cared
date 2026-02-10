@@ -28,8 +28,8 @@
   },
   "prettier": "@cared/prettier-config",
   "dependencies": {
-    "@heliofi/checkout-react": "^3.1.0",
-    "@heliofi/sdk": "^2.2.5",
+    "@heliofi/checkout-react": "^4.0.2",
+    "@heliofi/sdk": "^2.2.12",
     "@hpke/core": "^1.7.2",
     "@phala/dstack-sdk": "^0.1.11",
     "@privy-io/react-auth": "^3.0.1",

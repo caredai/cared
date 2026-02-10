@@ -234,7 +234,7 @@ export const appRouter = {
   list: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/apps',
+      path: '/apps',
       tags: ['apps'],
       summary: "List all apps in an account or in any of the user's accounts",
     })
@@ -291,7 +291,7 @@ export const appRouter = {
   listByCategory: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/apps/by-category/{categoryId}',
+      path: '/apps/by-category/{categoryId}',
       tags: ['apps'],
       summary: 'List all apps in a specific category within an account',
     })
@@ -328,7 +328,7 @@ export const appRouter = {
   listByTags: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/apps/by-tags',
+      path: '/apps/by-tags',
       tags: ['apps'],
       summary: 'List all apps with any of the specified tags in an account',
     })
@@ -362,7 +362,7 @@ export const appRouter = {
   listVersions: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/apps/{id}/versions',
+      path: '/apps/{id}/versions',
       tags: ['apps'],
       summary: 'List all versions of an app',
     })
@@ -421,7 +421,7 @@ export const appRouter = {
   byId: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/apps/{id}',
+      path: '/apps/{id}',
       tags: ['apps'],
       summary: 'Get a single app by ID',
     })
@@ -446,7 +446,7 @@ export const appRouter = {
   getVersion: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/apps/{id}/versions/{version}',
+      path: '/apps/{id}/versions/{version}',
       tags: ['apps'],
       summary: 'Get a specific version of an app',
     })
@@ -483,7 +483,7 @@ export const appRouter = {
   create: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/apps',
+      path: '/apps',
       tags: ['apps'],
       summary: 'Create a new app in an account',
     })
@@ -583,7 +583,7 @@ export const appRouter = {
   update: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/apps/{id}',
+      path: '/apps/{id}',
       tags: ['apps'],
       summary: 'Update an existing app',
     })
@@ -702,7 +702,7 @@ export const appRouter = {
   delete: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/apps/{id}',
+      path: '/apps/{id}',
       tags: ['apps'],
       summary: 'Delete an app',
     })
@@ -732,7 +732,7 @@ export const appRouter = {
   publish: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/apps/{id}/publish',
+      path: '/apps/{id}/publish',
       tags: ['apps'],
       summary: 'Publish an app version',
     })
@@ -870,7 +870,7 @@ export const appRouter = {
   listTags: publicProcedure
     .route({
       method: 'GET',
-      path: '/v1/tags',
+      path: '/tags',
       tags: ['tags'],
       summary: 'List all tags',
     })
@@ -935,7 +935,7 @@ export const appRouter = {
   updateTags: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/apps/{id}/tags',
+      path: '/apps/{id}/tags',
       tags: ['apps'],
       summary: 'Update tags for an app',
     })
@@ -990,7 +990,7 @@ export const appRouter = {
   listCategories: publicProcedure
     .route({
       method: 'GET',
-      path: '/v1/categories',
+      path: '/categories',
       tags: ['categories'],
       summary: 'List all categories',
     })
@@ -1055,7 +1055,7 @@ export const appRouter = {
   updateCategories: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/apps/{id}/categories',
+      path: '/apps/{id}/categories',
       tags: ['apps'],
       summary: 'Update app categories',
     })

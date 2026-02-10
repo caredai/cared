@@ -4,6 +4,9 @@ import { db } from '@cared/db/client'
 import { MemoryHistory, MemorySpace, MemoryStore } from '@cared/db/schema'
 
 import type { Entity, FilterInput, Metadata } from './types'
+import { VectorService, VectorType } from '../vector'
+import { stripIdPrefix } from '../../utils'
+import { ORPCError } from '@orpc/server'
 
 export type Mode = 'managed' | 'uncontrolled'
 
@@ -11,9 +14,9 @@ export class MemoryService {
   /**
    * Create a new memory store.
    * @param name - Store name
-   * @param mode - Memory mode ('uncontrolled' requires accountId, 'managed' requires userId)
-   * @param accountId - Account ID (required for 'uncontrolled' mode)
-   * @param userId - User ID (required for 'managed' mode)
+   * @param mode - Memory mode
+   * @param accountId - Account ID (required)
+   * @param userId - User ID (required only for 'managed' mode)
    * @returns The created memory store
    */
   async createStore({
@@ -24,12 +27,9 @@ export class MemoryService {
   }: {
     name: string
     mode: MemoryMode
-    accountId?: string
+    accountId: string
     userId?: string
   }): Promise<MemoryStore> {
-    if (mode === 'uncontrolled' && !accountId) {
-      throw new Error('accountId is required for uncontrolled mode')
-    }
     if (mode === 'managed' && !userId) {
       throw new Error('userId is required for managed mode')
     }
@@ -39,7 +39,7 @@ export class MemoryService {
       .values({
         name,
         mode,
-        accountId: mode === 'uncontrolled' ? accountId : undefined,
+        accountId,
         userId: mode === 'managed' ? userId : undefined,
       })
       .returning()
@@ -81,10 +81,26 @@ export class MemoryService {
   }
 
   /**
+   * Get a memory store by ID.
+   * @param id - Store ID
+   * @returns The memory store
+   * @throws Error if store not found
+   */
+  async getStore(id: string): Promise<MemoryStore> {
+    const [store] = await db.select().from(MemoryStore).where(eq(MemoryStore.id, id)).limit(1)
+
+    if (!store) {
+      throw new Error('Memory store not found')
+    }
+
+    return store
+  }
+
+  /**
    * Get memory stores by mode and corresponding ID with pagination.
    * @param mode - Memory mode
-   * @param accountId - Account ID (required for 'uncontrolled' mode)
-   * @param userId - User ID (required for 'managed' mode)
+   * @param accountId - Account ID (required)
+   * @param userId - User ID (required only for 'managed' mode)
    * @param limit
    * @param cursor
    * @returns Paginated list of memory stores
@@ -97,26 +113,24 @@ export class MemoryService {
     cursor,
   }: {
     mode: MemoryMode
-    accountId?: string
+    accountId: string
     userId?: string
     limit?: number
     cursor?: string
   }): Promise<{ stores: MemoryStore[]; hasMore: boolean; cursor?: string }> {
-    if (mode === 'uncontrolled' && !accountId) {
-      throw new Error('accountId is required for uncontrolled mode')
-    }
     if (mode === 'managed' && !userId) {
       throw new Error('userId is required for managed mode')
     }
 
+    const conditions = [
+      eq(MemoryStore.mode, mode),
+      eq(MemoryStore.accountId, accountId),
+      mode === 'managed' && userId ? eq(MemoryStore.userId, userId) : undefined,
+      cursor ? gt(MemoryStore.id, cursor) : undefined,
+    ].filter((condition): condition is NonNullable<typeof condition> => condition !== undefined)
+
     const stores = await db.query.MemoryStore.findMany({
-      where: and(
-        eq(MemoryStore.mode, 'uncontrolled'),
-        mode === 'uncontrolled'
-          ? eq(MemoryStore.accountId, accountId!)
-          : eq(MemoryStore.userId, userId!),
-        cursor ? gt(MemoryStore.id, cursor) : undefined,
-      ),
+      where: and(...conditions),
       orderBy: asc(MemoryStore.id),
       limit: limit + 1,
     })
@@ -147,6 +161,8 @@ export class MemoryService {
     primary: MemoryPrimaryEntity
     entityId: string
   }): Promise<MemorySpace> {
+    const store = await this.getStore(storeId)
+
     const [space] = await db
       .insert(MemorySpace)
       .values({
@@ -212,6 +228,25 @@ export class MemoryService {
       hasMore,
       cursor: spaces.at(-1)?.id,
     }
+  }
+
+  private getVectorService(store: MemoryStore) {
+    return new VectorService(
+      store.accountId,
+      store.mode === 'uncontrolled'
+        ? VectorType.INTERNAL_UNCONTROLLED
+        : VectorType.INTERNAL_MANAGED,
+    )
+  }
+
+  private vectorNamespaceForSpace(spaceId: string) {
+    const namespace = stripIdPrefix(spaceId)
+    if (namespace.length !== 32) {
+      throw new ORPCError('INTERNAL_SERVER_ERROR', {
+        message: 'Invalid memory space ID',
+      })
+    }
+    return namespace
   }
 
   async addMemory({

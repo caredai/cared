@@ -23,7 +23,7 @@ export const providerKeyRouter = {
   list: userPlainProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/provider-keys',
+      path: '/provider-keys',
       tags: ['provider-key'],
       summary: 'List provider keys',
     })
@@ -78,7 +78,7 @@ export const providerKeyRouter = {
   create: userPlainProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/provider-keys',
+      path: '/provider-keys',
       tags: ['provider-key'],
       summary: 'Create provider key',
     })
@@ -140,7 +140,7 @@ export const providerKeyRouter = {
   update: userPlainProtectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/provider-keys/{id}',
+      path: '/provider-keys/{id}',
       tags: ['provider-key'],
       summary: 'Update provider key',
     })
@@ -217,7 +217,7 @@ export const providerKeyRouter = {
   delete: userPlainProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/provider-keys/{id}',
+      path: '/provider-keys/{id}',
       tags: ['provider-key'],
       summary: 'Delete provider key',
     })

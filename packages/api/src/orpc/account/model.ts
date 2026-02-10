@@ -99,7 +99,7 @@ export const modelRouter = {
   listProviders: publicProcedure
     .route({
       method: 'GET',
-      path: '/v1/providers',
+      path: '/providers',
       tags: ['models'],
       summary: 'List all available model providers',
     })
@@ -132,7 +132,7 @@ export const modelRouter = {
   listProvidersModels: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/providers-models',
+      path: '/providers-models',
       tags: ['models'],
       summary: 'List all providers with their models, grouped by model type',
     })
@@ -199,7 +199,7 @@ export const modelRouter = {
   listModels: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/models',
+      path: '/models',
       tags: ['models'],
       summary: 'List all available models across all providers',
     })
@@ -260,7 +260,7 @@ export const modelRouter = {
   getModel: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/models/{id}',
+      path: '/models/{id}',
       tags: ['models'],
       summary: 'Get detailed information about a specific model',
     })
@@ -343,7 +343,7 @@ export const modelRouter = {
   updateModel: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/models',
+      path: '/models',
       tags: ['models'],
       summary: 'Add or update a model to a provider',
     })
@@ -444,7 +444,7 @@ export const modelRouter = {
   updateModels: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/models/batch',
+      path: '/models/batch',
       tags: ['models'],
       summary: 'Add or update multiple models to a provider',
     })
@@ -554,7 +554,7 @@ export const modelRouter = {
   sortModels: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/models/sort',
+      path: '/models/sort',
       tags: ['models'],
       summary: 'Sort models for a specific provider and type',
     })
@@ -675,7 +675,7 @@ export const modelRouter = {
   deleteModel: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/models',
+      path: '/models',
       tags: ['models'],
       summary: 'Delete a model from a provider',
     })
@@ -761,7 +761,7 @@ export const modelRouter = {
   deleteModels: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/models/batch',
+      path: '/models/batch',
       tags: ['models'],
       summary: 'Delete multiple models from a provider',
     })

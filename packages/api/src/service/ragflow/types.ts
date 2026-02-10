@@ -52,6 +52,9 @@ export interface ParserConfig {
   autoQuestions?: number
   chunkTokenNum?: number
   delimiter?: string
+  enableChildren?: boolean
+  tocExtraction?: boolean
+  enableMetadata?: boolean
   html4excel?: boolean
   layoutRecognize?: string
   tagKbIds?: string[]

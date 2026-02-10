@@ -77,7 +77,7 @@ export const artifactRouter = {
   list: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/artifacts',
+      path: '/artifacts',
       tags: ['artifacts'],
       summary: 'List all artifacts (of only latest version) for a user in an account',
     })
@@ -154,7 +154,7 @@ export const artifactRouter = {
   listVersionsById: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/artifacts/{id}/versions',
+      path: '/artifacts/{id}/versions',
       tags: ['artifacts'],
       summary: 'List all versions of an artifact by ID',
     })
@@ -225,7 +225,7 @@ export const artifactRouter = {
   deleteVersionsByIdAfterVersion: userOrAppUserProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/artifacts/{id}/versions',
+      path: '/artifacts/{id}/versions',
       tags: ['artifacts'],
       summary: 'Delete all versions of an artifact after the specified version',
     })
@@ -270,7 +270,7 @@ export const artifactRouter = {
   listSuggestions: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/artifacts/suggestions',
+      path: '/artifacts/suggestions',
       tags: ['artifacts'],
       summary: 'List suggestions for an artifact',
     })

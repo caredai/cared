@@ -31,7 +31,12 @@ export const datasetRouter = {
     .input(CreateDatasetOptionsSchema)
     .handler(async ({ context, input }) => {
       const accountId = context.auth.accountId
-      return ragflowService.createDataset(accountId, input)
+      const { embeddingModelId, ...options } = input
+      // TODO: check model id
+      return ragflowService.createDataset(accountId, {
+        ...options,
+        embeddingModel: embeddingModelId ? `${embeddingModelId}@Cared` : undefined, // <model id>@<factory name>
+      })
     }),
 
   list: protectedProcedure

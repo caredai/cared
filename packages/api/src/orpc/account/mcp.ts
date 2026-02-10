@@ -87,7 +87,7 @@ export const mcpRouter = {
   list: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/mcp-servers',
+      path: '/mcp-servers',
       tags: ['mcp'],
       summary: 'List MCP servers',
     })
@@ -113,7 +113,7 @@ export const mcpRouter = {
   get: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/mcp-servers/{id}',
+      path: '/mcp-servers/{id}',
       tags: ['mcp'],
       summary: 'Get MCP server by ID',
     })
@@ -151,7 +151,7 @@ export const mcpRouter = {
   create: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/mcp-servers',
+      path: '/mcp-servers',
       tags: ['mcp'],
       summary: 'Create MCP server',
     })
@@ -190,7 +190,7 @@ export const mcpRouter = {
   update: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/mcp-servers/{id}',
+      path: '/mcp-servers/{id}',
       tags: ['mcp'],
       summary: 'Update MCP server',
     })
@@ -254,7 +254,7 @@ export const mcpRouter = {
   delete: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/mcp-servers/{id}',
+      path: '/mcp-servers/{id}',
       tags: ['mcp'],
       summary: 'Delete MCP server',
     })

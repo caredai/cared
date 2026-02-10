@@ -18,6 +18,12 @@ export default defineConfig(async ({ command, mode }) => {
     server: {
       port: 3000,
       https: !!env.VITE_HTTPS as unknown as HttpsServerOptions,
+      proxy: {
+        '^/flow/': {
+          target: 'http://127.0.0.1:7859',
+          changeOrigin: true,
+        },
+      }
     },
     plugins: [
       ...(command === 'build'

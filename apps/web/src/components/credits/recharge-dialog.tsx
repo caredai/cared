@@ -26,15 +26,15 @@ export function RechargeDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const [rechargeAmount, setRechargeAmount] = useState(10)
+  const [rechargeAmount, setRechargeAmount] = useState(15)
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentGateway>('stripe')
   const [showCheckout, setShowCheckout] = useState(false)
 
-  const fee = Math.max(rechargeAmount * 0.05, 0.8)
+  const fee = Math.max(rechargeAmount * 0, 0)
   const totalAmount = rechargeAmount + fee
 
   useEffect(() => {
-    setRechargeAmount(10)
+    setRechargeAmount(15)
     setSelectedPaymentMethod('stripe')
     setShowCheckout(false)
   }, [open])
@@ -59,8 +59,8 @@ export function RechargeDialog({
         <DialogHeader className="px-6">
           <DialogTitle>Buy More Credits</DialogTitle>
           <DialogDescription>
-            Purchase credits as a one time top-up to use for your Cared usage. Cared charges a 5%
-            ($0.80 minimum) fee.
+            Purchase credits as a one time top-up to use for your Cared usage. Cared does not charge
+            any processing fee.
           </DialogDescription>
         </DialogHeader>
 
@@ -72,14 +72,14 @@ export function RechargeDialog({
                   <Label htmlFor="amount">
                     Amount{' '}
                     <span className="text-muted-foreground text-xs">
-                      (Minimum of $5 and maximum of $2500)
+                      (Minimum of $15 and maximum of $2500)
                     </span>
                   </Label>
                   <NumberInput
                     id="amount"
                     value={rechargeAmount}
                     onChange={setRechargeAmount}
-                    min={5}
+                    min={15}
                     max={2500}
                     step={1}
                     placeholder="Enter amount"

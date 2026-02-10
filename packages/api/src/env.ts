@@ -37,19 +37,61 @@ export const env = createEnv({
           .filter(Boolean),
       )
       .optional(),
+
     LAGO_API_KEY: z.string().min(1).optional(),
     LAGO_API_URL: z.string().min(1).optional(),
     LAGO_BILLING_ENTITY_CODE: z.string().min(1).optional(),
     LAGO_STRIPE_CONNECTION_CODE: z.string().min(1).optional(),
+
     LANGFUSE_BASEURL: z.string().min(1).optional(),
     LANGFUSE_ADMIN_API_KEY: z.string().min(1).optional(),
+
     REDGW_API_URL: z.string().min(1).optional(),
     REDGW_API_KEY: z.string().min(1).optional(),
+
     RAGFLOW_ADMIN_USERNAME: z.string().min(1).default('admin@ragflow.io'),
     RAGFLOW_ADMIN_PASSWORD: z.string().min(1).default('admin'),
     RAGFLOW_ADMIN_API_URL: z.string().min(1).optional(),
     RAGFLOW_API_URL: z.string().min(1).optional(),
     RAGFLOW_API_TOKEN: z.string().min(1).optional(),
+
+    LANGFLOW_API_URL: z.string().min(1).optional(),
+    LANGFLOW_ADMIN_API_KEY: z.string().min(1).optional(),
+    LANGFLOW_USER_API_KEY: z.string().min(1).optional(),
+
+    NEON_PERSONAL_API_KEY: z.string().min(1).optional(),
+    NEON_FREE_ORG_ID: z.string().min(1).optional(),
+    NEON_PAID_ORG_ID: z.string().min(1).optional(),
+    NEON_FREE_ORG_API_KEY: z.string().min(1).optional(),
+    NEON_PAID_ORG_API_KEY: z.string().min(1).optional(),
+
+    // <region>:<url>,<region>:<url>,...
+    SUPABASE_STORAGE_API_URLS: z
+      .string()
+      .transform((s) =>
+        s
+          .split(',')
+          .map((s) =>
+            s
+              .trim()
+              .split(':')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          )
+          .filter((pair) => pair.length === 2),
+      )
+      .optional(),
+    SUPABASE_STORAGE_ADMIN_API_KEY: z.string().min(1).optional(),
+
+    DAYTONA_API_URL: z.string().min(1).optional(),
+    DAYTONA_ADMIN_API_KEY: z.string().min(1).optional(),
+    DAYTONA_ORGANIZATION_API_KEY: z.string().min(1).optional(),
+
+    CACHE_MAX_SIZE: z
+      .int()
+      .positive()
+      .default(50 * 1024 * 1024), // default 50MB
+
     NODE_ENV: z.enum(['development', 'production']).optional(),
   },
 

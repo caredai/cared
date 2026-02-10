@@ -12,11 +12,6 @@ export function getStripe() {
         message: 'Stripe secret key is not set',
       })
     }
-    if (!env.VITE_STRIPE_CREDITS_PRICE_ID) {
-      throw new ORPCError('INTERNAL_SERVER_ERROR', {
-        message: 'Stripe credits price ID is not set',
-      })
-    }
     stripe = new Stripe(env.STRIPE_SECRET_KEY, {
       httpClient: Stripe.createFetchHttpClient(),
       maxNetworkRetries: 1,

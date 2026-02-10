@@ -16,7 +16,7 @@ export const apiTokenRouter = {
   listPermissionGroups: userPlainProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/api-tokens/permission-groups',
+      path: '/api-tokens/permission-groups',
       tags: ['tokens'],
       summary: 'List all permission groups',
     })
@@ -29,7 +29,7 @@ export const apiTokenRouter = {
   list: userPlainProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/api-tokens',
+      path: '/api-tokens',
       tags: ['tokens'],
       summary: 'List all API tokens for an account',
     })
@@ -64,7 +64,7 @@ export const apiTokenRouter = {
   get: userPlainProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/api-tokens/{id}',
+      path: '/api-tokens/{id}',
       tags: ['tokens'],
       summary: 'Get an API token',
     })
@@ -95,7 +95,7 @@ export const apiTokenRouter = {
   create: userPlainProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/api-tokens',
+      path: '/api-tokens',
       tags: ['tokens'],
       summary: 'Create a new API token',
     })
@@ -186,7 +186,7 @@ export const apiTokenRouter = {
   rotate: userPlainProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/api-tokens/{id}/rotate',
+      path: '/api-tokens/{id}/rotate',
       tags: ['tokens'],
       summary: 'Rotate an API token',
     })
@@ -234,7 +234,7 @@ export const apiTokenRouter = {
   verify: userPlainProtectedProcedure // Consider making this a public procedure
     .route({
       method: 'POST',
-      path: '/v1/api-tokens/verify',
+      path: '/api-tokens/verify',
       tags: ['tokens'],
       summary: 'Verify an API token',
     })
@@ -274,7 +274,7 @@ export const apiTokenRouter = {
   delete: userPlainProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/api-tokens/{id}',
+      path: '/api-tokens/{id}',
       tags: ['tokens'],
       summary: 'Delete an API token',
     })

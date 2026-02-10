@@ -137,7 +137,7 @@ export const storageRouter = {
   list: appUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/storage/list',
+      path: '/storage/list',
       tags: ['storage'],
       summary: 'List objects in storage bucket',
     })
@@ -189,7 +189,7 @@ export const storageRouter = {
   head: appUserProtectedProcedure
     .route({
       method: 'HEAD',
-      path: '/v1/storage/head',
+      path: '/storage/head',
       tags: ['storage'],
       summary: 'Get object metadata without fetching content',
     })
@@ -238,7 +238,7 @@ export const storageRouter = {
   get: appUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/storage/get',
+      path: '/storage/get',
       tags: ['storage'],
       summary: 'Get object content and metadata',
     })
@@ -282,7 +282,7 @@ export const storageRouter = {
   createPresignedDownloadUrl: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/storage/presigned-download-url',
+      path: '/storage/presigned-download-url',
       tags: ['storage'],
       summary: 'Create presigned URL for downloading an object',
     })
@@ -308,7 +308,7 @@ export const storageRouter = {
   put: appUserProtectedProcedure
     .route({
       method: 'PUT',
-      path: '/v1/storage/put',
+      path: '/storage/put',
       tags: ['storage'],
       summary: 'Upload an object directly to storage',
     })
@@ -343,7 +343,7 @@ export const storageRouter = {
   createPresignedUploadUrl: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/storage/presigned-upload-url',
+      path: '/storage/presigned-upload-url',
       tags: ['storage'],
       summary: 'Create presigned URL for uploading an object',
     })
@@ -369,7 +369,7 @@ export const storageRouter = {
   delete: appUserProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/storage/delete',
+      path: '/storage/delete',
       tags: ['storage'],
       summary: 'Delete one or more objects from the bucket',
     })
@@ -428,7 +428,7 @@ export const storageRouter = {
   listMultipartUploads: appUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/storage/multipart-uploads',
+      path: '/storage/multipart-uploads',
       tags: ['storage'],
       summary: 'List ongoing multipart uploads for the application',
     })
@@ -482,7 +482,7 @@ export const storageRouter = {
   createMultipartUpload: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/storage/multipart-upload',
+      path: '/storage/multipart-upload',
       tags: ['storage'],
       summary: 'Initiate a multipart upload',
     })
@@ -515,7 +515,7 @@ export const storageRouter = {
   uploadPart: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/storage/multipart-upload/part',
+      path: '/storage/multipart-upload/part',
       tags: ['storage'],
       summary: 'Upload a part of a multipart upload',
     })
@@ -552,7 +552,7 @@ export const storageRouter = {
   createPresignedUploadPartUrl: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/storage/multipart-upload/presigned-part-url',
+      path: '/storage/multipart-upload/presigned-part-url',
       tags: ['storage'],
       summary: 'Create presigned URL for uploading a part of a multipart upload',
     })
@@ -582,7 +582,7 @@ export const storageRouter = {
   completeMultipartUpload: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/storage/multipart-upload/complete',
+      path: '/storage/multipart-upload/complete',
       tags: ['storage'],
       summary: 'Complete a multipart upload after all parts have been uploaded',
     })
@@ -626,7 +626,7 @@ export const storageRouter = {
   abortMultipartUpload: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/storage/multipart-upload/abort',
+      path: '/storage/multipart-upload/abort',
       tags: ['storage'],
       summary: 'Abort an ongoing multipart upload, deleting any uploaded parts',
     })

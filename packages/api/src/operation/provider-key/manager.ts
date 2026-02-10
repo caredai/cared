@@ -4,7 +4,7 @@ import type { ModelFullId, ProviderId, ProviderKey as ProviderKeyContent } from 
 import { and, desc, eq, isNull } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ProviderKey } from '@cared/db/schema'
-import { getKV, sha1 } from '@cared/kv'
+import { getKV, sha1, getRedisClient } from '@cared/kv'
 import { splitModelFullId } from '@cared/providers'
 
 import type { AuthContext } from '../../auth'
@@ -30,7 +30,7 @@ void Object.entries(scripts).forEach(([name, script]) => {
   })
 })
 
-const kv = getKV('providerKey', 'upstash')
+const kv = getKV('providerKey')
 
 export class ProviderKeyManager {
   constructor(
@@ -55,10 +55,12 @@ export class ProviderKeyManager {
   }) {
     const { providerId } = splitModelFullId(modelFullId)
 
+    const redis = await getRedisClient()
+
     const [systemKeysStateStr, accountKeysStateStr] = await Promise.all([
       // eslint-disable-next-line @typescript-eslint/await-thenable
-      !onlyByok ? kv.redis.json.get(kv.key(systemKeysStateKey(modelFullId))) : null,
-      kv.redis.json.get(kv.key(accountKeysStateKey(auth, modelFullId))),
+      !onlyByok ? redis.json.get(kv.key(systemKeysStateKey(modelFullId))) : null,
+      redis.json.get(kv.key(accountKeysStateKey(auth, modelFullId))),
     ])
 
     let systemKeysState: ProviderKeyState[] | null =
@@ -374,13 +376,13 @@ export class ProviderKeyManager {
 
 export async function deleteProviderKeysStateCache(providerId: ProviderId, accountId?: string) {
   return JSON.parse(
-    await kv.eval(
+    (await kv.eval(
       scripts.deleteKeysByPrefix,
       [],
       [
         kv.key(providerKeyStateKeyPattern(providerId, accountId)),
       ],
-    ),
+    )) as string,
   ) as DeleteKeysByPrefixResult
 }
 

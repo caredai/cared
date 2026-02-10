@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { FerrisWheel, Settings2, WandSparkles } from 'lucide-react'
+import { FerrisWheel, Settings2, WandSparkles, Workflow } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 
@@ -8,6 +8,11 @@ const items = [
     title: 'Design',
     url: '/',
     icon: WandSparkles,
+  },
+  {
+    title: 'Flows',
+    url: '/flows',
+    icon: Workflow,
   },
   {
     title: 'Logs',

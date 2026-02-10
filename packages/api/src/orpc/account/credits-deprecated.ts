@@ -146,7 +146,7 @@ export const creditsRouter = {
   getCredits: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/credits',
+      path: '/credits',
       tags: ['credits'],
       summary: 'Get credits information for the account',
     })
@@ -170,7 +170,7 @@ export const creditsRouter = {
   listOrders: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/credits/orders',
+      path: '/credits/orders',
       tags: ['credits'],
       summary: 'List credits orders for the account',
     })
@@ -253,7 +253,7 @@ export const creditsRouter = {
   cancelOrder: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/credits/orders/{orderId}',
+      path: '/credits/orders/{orderId}',
       tags: ['credits'],
       summary: 'Cancel a credits order',
     })
@@ -277,7 +277,7 @@ export const creditsRouter = {
   createOnetimeCheckout: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/credits/checkout',
+      path: '/credits/checkout',
       tags: ['credits'],
       summary: 'Create a one-time checkout session for credits purchase',
     })
@@ -388,7 +388,7 @@ export const creditsRouter = {
   listSubscriptions: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/credits/subscriptions',
+      path: '/credits/subscriptions',
       tags: ['credits'],
       summary: 'List Stripe subscriptions for the account',
     })
@@ -418,7 +418,7 @@ export const creditsRouter = {
   createAutoRechargeInvoice: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/credits/auto-recharge/invoice',
+      path: '/credits/auto-recharge/invoice',
       tags: ['credits'],
       summary: 'Create an auto-recharge invoice for credits',
     })
@@ -436,7 +436,7 @@ export const creditsRouter = {
   createAutoRechargePayment: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/credits/auto-recharge/payment',
+      path: '/credits/auto-recharge/payment',
       tags: ['credits'],
       summary: 'Create an auto-recharge payment intent for credits',
     })
@@ -464,7 +464,7 @@ export const creditsRouter = {
   updateAutoRechargeSettings: protectedProcedure
     .route({
       method: 'PUT',
-      path: '/v1/credits/auto-recharge/settings',
+      path: '/credits/auto-recharge/settings',
       tags: ['credits'],
       summary: 'Update auto-recharge settings for credits',
     })

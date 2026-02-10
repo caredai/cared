@@ -12,23 +12,22 @@ import { logger } from 'hono/logger'
 
 import { auth } from '@cared/auth'
 import { getApiPath, getTrustedOrigins } from '@cared/auth/client'
-import { setDb } from '@cared/db/client'
+import { setupIntegrationGithubRoutes } from '@cared/integration'
 
-import type { Hyperdrive } from '@cloudflare/workers-types'
+import type { HttpBindings } from '@hono/node-server'
 import { appRouter, createORPCContext } from '..'
+import { env } from '../env'
 import { Cache } from '../operation/cache'
-import { model, tasks, toolkits, mcp, webhooks } from '../rest'
+import { mcp, model, tasks, toolkits, webhooks } from '../rest'
+import { langflow } from '../rest/flow'
 import { registerTelemetry } from '../telemetry'
 
-export interface Bindings {
-  CLOUDFLARE?: boolean
-  HYPERDRIVE?: Hyperdrive
-}
+export type Bindings = HttpBindings & {}
 
 export type HonoApp = Hono<{ Bindings?: Bindings }>
 
-export function newHonoApp({ cacheMaxSize }: { cacheMaxSize?: number }): HonoApp {
-  Cache.setup(cacheMaxSize)
+export function newHonoApp(): HonoApp {
+  Cache.setup(env.CACHE_MAX_SIZE)
 
   registerTelemetry()
 
@@ -56,14 +55,6 @@ export function newHonoApp({ cacheMaxSize }: { cacheMaxSize?: number }): HonoApp
       credentials: true,
     }),
   )
-
-  app.use(async (c, next) => {
-    if (c.env?.HYPERDRIVE) {
-      setDb(c.env.HYPERDRIVE)
-    }
-
-    await next()
-  })
 
   app.on(['POST', 'GET'], '/auth/*', (c) => auth.handler(c.req.raw))
 
@@ -93,6 +84,11 @@ export function newHonoApp({ cacheMaxSize }: { cacheMaxSize?: number }): HonoApp
   app.post('/v1/toolkits/callback/composio', toolkits.composio.GET)
 
   app.all('/v1/mcp/:serverId', mcp.HANDLER)
+
+  app.route('/v1/flow', langflow)
+  app.route('/v2/flow', langflow)
+
+  setupIntegrationGithubRoutes(app)
 
   const rpcHandler = new RPCHandler(appRouter, {
     strictGetMethodPluginEnabled: false, // Replace Strict Get Method Plugin
@@ -153,8 +149,10 @@ export function newHonoApp({ cacheMaxSize }: { cacheMaxSize?: number }): HonoApp
       return c.newResponse(rpcResult.response.body, rpcResult.response)
     }
 
+    // Note: We must make sure that REST APIs added via oRPC do not have path conflicts with
+    // the REST APIs defined above.
     const apiResult = await openApiHandler.handle(c.req.raw, {
-      prefix: `${getApiPath()}/openapi`,
+      prefix: `${getApiPath()}/v1`,
       context: context,
     })
 

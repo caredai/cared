@@ -28,7 +28,8 @@
   },
   "prettier": "@cared/prettier-config",
   "dependencies": {
-    "@upstash/ratelimit": "^2.0.6",
-    "@upstash/redis": "^1.34.7"
+    "@upstash/redis": "^1.34.7",
+    "rate-limiter-flexible": "^9.1.1",
+    "redis": "^5.10.0"
   }
 }

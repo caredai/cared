@@ -62,7 +62,7 @@ export const chatRouter = {
   list: appUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/chats',
+      path: '/chats',
       tags: ['chats'],
       summary: 'List all chats',
     })
@@ -162,7 +162,7 @@ export const chatRouter = {
   listByIds: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/chats/list-by-ids',
+      path: '/chats/list-by-ids',
       tags: ['chats'],
       summary: 'Get multiple chats by their IDs',
     })
@@ -209,7 +209,7 @@ export const chatRouter = {
   byId: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/chats/{id}',
+      path: '/chats/{id}',
       tags: ['chats'],
       summary: 'Get a single chat by ID',
     })
@@ -263,7 +263,7 @@ export const chatRouter = {
   create: appUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/chats',
+      path: '/chats',
       tags: ['chats'],
       summary: 'Create a new chat',
     })
@@ -418,7 +418,7 @@ export const chatRouter = {
   update: userOrAppUserProtectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/chats/{id}',
+      path: '/chats/{id}',
       tags: ['chats'],
       summary: 'Update an existing chat',
     })
@@ -462,7 +462,7 @@ export const chatRouter = {
   delete: userOrAppUserProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/chats/{id}',
+      path: '/chats/{id}',
       tags: ['chats'],
       summary: 'Delete an existing chat',
     })
@@ -490,7 +490,7 @@ export const chatRouter = {
   batchDelete: userOrAppUserProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/chats/batch-delete',
+      path: '/chats/batch-delete',
       tags: ['chats'],
       summary: 'Delete multiple chats by their IDs',
     })
@@ -526,7 +526,7 @@ export const chatRouter = {
   clone: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/chats/{id}/clone',
+      path: '/chats/{id}/clone',
       tags: ['chats'],
       summary: 'Clone a chat with specific messages',
     })

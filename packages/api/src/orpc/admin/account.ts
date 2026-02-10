@@ -18,7 +18,7 @@ export const accountRouter = {
   listAccounts: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/accounts',
+      path: '/admin/accounts',
       tags: ['admin'],
       summary: 'List all accounts across the platform',
     })
@@ -81,7 +81,7 @@ export const accountRouter = {
   getAccount: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/accounts/{id}',
+      path: '/admin/accounts/{id}',
       tags: ['admin'],
       summary: 'Get a single account by ID',
     })
@@ -111,7 +111,7 @@ export const accountRouter = {
   listMembers: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/accounts/{accountId}/members',
+      path: '/admin/accounts/{accountId}/members',
       tags: ['admin'],
       summary: 'List all members of a specific account',
     })

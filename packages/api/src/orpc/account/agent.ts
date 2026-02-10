@@ -96,7 +96,7 @@ export const agentRouter = {
   listByApp: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/agents',
+      path: '/agents',
       tags: ['agents'],
       summary: 'List all agents for an app',
     })
@@ -163,7 +163,7 @@ export const agentRouter = {
   listByAppVersion: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/agents/by-app-version',
+      path: '/agents/by-app-version',
       tags: ['agents'],
       summary: 'List all agent versions for a specific app version',
     })
@@ -206,7 +206,7 @@ export const agentRouter = {
   listVersions: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/agents/{agentId}/versions',
+      path: '/agents/{agentId}/versions',
       tags: ['agents'],
       summary: 'List all versions of an agent',
     })
@@ -274,7 +274,7 @@ export const agentRouter = {
   byId: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/agents/{id}',
+      path: '/agents/{id}',
       tags: ['agents'],
       summary: 'Get a single agent by ID',
     })
@@ -300,7 +300,7 @@ export const agentRouter = {
   create: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/agents',
+      path: '/agents',
       tags: ['agents'],
       summary: 'Create a new agent for an app',
     })
@@ -367,7 +367,7 @@ export const agentRouter = {
   update: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/agents/{id}',
+      path: '/agents/{id}',
       tags: ['agents'],
       summary: 'Update an existing agent',
     })

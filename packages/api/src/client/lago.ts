@@ -18,7 +18,8 @@ export function getLago() {
         message: 'Lago api url is not set',
       })
     }
-    lago = Client(env.LAGO_API_KEY, { baseUrl: env.LAGO_API_URL })
+    const baseUrl = new URL('/api/v1', env.LAGO_API_URL).toString()
+    lago = Client(env.LAGO_API_KEY, { baseUrl })
   }
 
   return lago

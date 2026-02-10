@@ -40,7 +40,11 @@ export const createORPCContext = async ({ headers }: { headers: Headers }): Prom
   }
 }
 
-const o = os.$context<Context>()
+const o = os
+  .$config({
+    // initialOutputValidationIndex: Number.NaN,
+  })
+  .$context<Context>()
 
 const timingMiddleware = o.middleware(async ({ next, path }) => {
   const [execMs, result] = await measure(async () => {

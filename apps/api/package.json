@@ -1,23 +1,22 @@
 {
-  "name": "@cared/api-cloudflare",
+  "name": "cared-api",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "env NODE_ENV=development pnpm with-env wrangler dev --port 3001 --env-file ../../.env",
-    "dev:https": "pnpm dev --local-protocol https --https-key-path ~/.vite-plugin-mkcert/dev.pem --https-cert-path ~/.vite-plugin-mkcert/cert.pem",
-    "deploy": "env NODE_ENV=production wrangler deploy --env production --minify --keep-vars",
-    "cf-typegen": "wrangler types --env production --env-interface CloudflareEnv",
+    "build": "tsdown",
+    "dev": "env NODE_ENV=development pnpm with-env tsx watch src/index.ts",
+    "dev:https": "pnpm dev --https-key-path ~/.vite-plugin-mkcert/dev.pem --https-cert-path ~/.vite-plugin-mkcert/cert.pem",
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
     "@cared/api": "workspace:*",
     "@cared/auth": "workspace:*",
+    "@hono/node-server": "^1.19.6",
     "@xmldom/xmldom": "^0.8.11",
     "hono": "catalog:"
   },
   "devDependencies": {
     "@cared/eslint-config": "workspace:*",
-    "@cloudflare/workers-types": "^4.20250918.0",
-    "wrangler": "^4.38.0"
+    "@cared/tsconfig": "workspace:*"
   }
 }

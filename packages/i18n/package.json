@@ -26,6 +26,7 @@
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
     "@cared/tsconfig": "workspace:*",
+    "@types/js-cookie": "^3.0.6",
     "@types/negotiator": "^0.6.3",
     "eslint": "catalog:",
     "prettier": "catalog:",
@@ -36,6 +37,7 @@
     "@formatjs/intl-localematcher": "^0.5.10",
     "i18next": "^24.2.2",
     "i18next-resources-to-backend": "^1.2.1",
+    "js-cookie": "^3.0.5",
     "negotiator": "^1.0.0",
     "react-i18next": "^15.4.0"
   }

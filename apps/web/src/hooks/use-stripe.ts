@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import { orpc } from '@/lib/orpc'
@@ -8,11 +8,7 @@ import { orpc } from '@/lib/orpc'
  * Hook to get customer information
  */
 export function useCustomer() {
-  const { data, refetch, isLoading } = useQuery({
-    ...orpc.account.stripe.getCustomer.queryOptions(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: Infinity,
-  })
+  const { data, refetch, isLoading } = useQuery(orpc.account.stripe.getCustomer.queryOptions())
 
   return {
     customer: data?.customer,
@@ -31,11 +27,9 @@ export function useDefaultPaymentMethodId() {
  * Hook to list payment methods for a customer
  */
 export function useListPaymentMethods() {
-  const { data, refetch, isLoading } = useQuery({
-    ...orpc.account.stripe.listPaymentMethods.queryOptions(),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: Infinity,
-  })
+  const { data, refetch, isLoading } = useQuery(
+    orpc.account.stripe.listPaymentMethods.queryOptions(),
+  )
 
   return {
     paymentMethods: data?.paymentMethods,
@@ -48,15 +42,14 @@ export function useListPaymentMethods() {
  * Hook to add a new payment method using SetupIntent
  */
 export function useAddPaymentMethod() {
-  const queryClient = useQueryClient()
+  const { refetchCustomer } = useCustomer()
+  const { refetchPaymentMethods } = useListPaymentMethods()
 
   const addMutation = useMutation(
     orpc.account.stripe.setupAddPaymentMethodIntent.mutationOptions({
       onSuccess: () => {
-        // Invalidate payment methods list to refresh the data
-        void queryClient.invalidateQueries({
-          queryKey: orpc.account.stripe.listPaymentMethods.queryKey(),
-        })
+        void refetchCustomer()
+        void refetchPaymentMethods()
       },
       onError: (_error) => {
         // toast.error(`Failed to setup payment method: ${error.message}`)
@@ -77,15 +70,14 @@ export function useAddPaymentMethod() {
  * Hook to remove a payment method
  */
 export function useRemovePaymentMethod() {
-  const queryClient = useQueryClient()
+  const { refetchCustomer } = useCustomer()
+  const { refetchPaymentMethods } = useListPaymentMethods()
 
   const removeMutation = useMutation(
     orpc.account.stripe.removePaymentMethod.mutationOptions({
       onSuccess: () => {
-        // Invalidate payment methods list to refresh the data
-        void queryClient.invalidateQueries({
-          queryKey: orpc.account.stripe.listPaymentMethods.queryKey(),
-        })
+        void refetchCustomer()
+        void refetchPaymentMethods()
       },
       onError: (error) => {
         toast.error(`Failed to remove payment method: ${error.message}`)
@@ -108,15 +100,14 @@ export function useRemovePaymentMethod() {
  * Hook to update customer's default payment method
  */
 export function useUpdateDefaultPaymentMethod() {
-  const queryClient = useQueryClient()
+  const { refetchCustomer } = useCustomer()
+  const { refetchPaymentMethods } = useListPaymentMethods()
 
   const updateMutation = useMutation(
     orpc.account.stripe.updateDefaultPaymentMethod.mutationOptions({
       onSuccess: () => {
-        // Invalidate customer data to refresh the default payment method
-        void queryClient.invalidateQueries({
-          queryKey: orpc.account.stripe.getCustomer.queryKey(),
-        })
+        void refetchCustomer()
+        void refetchPaymentMethods()
       },
       onError: (error) => {
         toast.error(`Failed to update default payment method: ${error.message}`)

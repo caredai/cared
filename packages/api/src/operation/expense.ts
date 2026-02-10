@@ -1,12 +1,11 @@
 import assert from 'assert'
-import { Ratelimit } from '@upstash/ratelimit'
 import { Decimal } from 'decimal.js'
 
 import type { GenerationDetails, ModelCallOptions, TypedModelInfo } from '@cared/providers'
 import { eq, sql } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Credits, Expense } from '@cared/db/schema'
-import { getKV } from '@cared/kv'
+import { RateLimiter } from '@cared/kv'
 import { computeGenerationCost, estimateGenerationCost } from '@cared/providers'
 
 import type { AuthContext } from '../auth'
@@ -14,16 +13,19 @@ import type { WaitUntil } from '../utils'
 import { cfg } from '../config'
 import { getCredits, triggerAutoRechargePaymentIntent, updateCreditsCache } from './credits'
 
-const kv = getKV('expense', 'upstash')
-const cache = new Map()
-const freeQuotaRateLimit = new Ratelimit({
-  redis: kv.redis,
-  limiter: Ratelimit.fixedWindow(cfg.perUser.perDay.freeQuotaModelCalls, '1 d'),
-  prefix: 'freeQuota',
-  ephemeralCache: cache,
-  timeout: 2000, // 2s
-  analytics: false,
-})
+let rateLimiter: Promise<RateLimiter> | undefined
+async function getRateLimiter(): Promise<RateLimiter> {
+  rateLimiter ??= RateLimiter.new({
+    keyPrefix: 'aiFreeQuota',
+    points: cfg.perUser.perDay.freeQuotaModelCalls, // Number of points
+    duration: 60 * 60 * 24, // Per day
+    insuranceLimiter: {
+      points: cfg.perUser.perDay.freeQuotaModelCalls / 24,
+      duration: 60 * 60,
+    },
+  })
+  return rateLimiter
+}
 
 export class ExpenseManager {
   static from({ auth, waitUntil }: { auth: AuthContext; waitUntil: WaitUntil }) {
@@ -69,8 +71,12 @@ export class ExpenseManager {
   async hasFreeQuota(): Promise<boolean> {
     // Check only once per request
     if (this.hasFreeQuota_ === undefined) {
-      const { success } = await freeQuotaRateLimit.limit(this.accountId)
-      this.hasFreeQuota_ = success
+      try {
+        await (await getRateLimiter()).consume(this.accountId, 1)
+        this.hasFreeQuota_ = true
+      } catch {
+        this.hasFreeQuota_ = false
+      }
     }
     return this.hasFreeQuota_
   }

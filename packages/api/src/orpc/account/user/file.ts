@@ -69,7 +69,7 @@ export const fileRouter = {
   create: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/files',
+      path: '/files',
       tags: ['files'],
       summary: 'Upload a file directly to S3 and save to database',
     })
@@ -146,7 +146,7 @@ export const fileRouter = {
   list: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/files',
+      path: '/files',
       tags: ['files'],
       summary: 'List files for the current user in the account',
     })
@@ -207,7 +207,7 @@ export const fileRouter = {
   get: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/files/{id}',
+      path: '/files/{id}',
       tags: ['files'],
       summary: 'Get file metadata from database and S3',
     })
@@ -246,7 +246,7 @@ export const fileRouter = {
   retrieve: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/files/{id}/download',
+      path: '/files/{id}/download',
       tags: ['files'],
       summary: 'Download a file',
     })
@@ -306,7 +306,7 @@ export const fileRouter = {
   delete: userOrAppUserProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/files/{id}',
+      path: '/files/{id}',
       tags: ['files'],
       summary: 'Delete a file',
     })

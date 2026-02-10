@@ -2,15 +2,13 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
 import { protectedProcedure } from '../../orpc'
-import { LagoService } from '../../service/lago/lago'
-
-const lagoService = new LagoService()
+import { lagoService } from '../../service/lago/lago'
 
 export const creditsRouter = {
   getCredits: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/credits',
+      path: '/credits',
       tags: ['credits'],
       summary: 'Get credits information for the account',
     })
@@ -28,7 +26,7 @@ export const creditsRouter = {
   updateAutoTopUpSettings: protectedProcedure
     .route({
       method: 'PUT',
-      path: '/v1/credits/auto-top-up/settings',
+      path: '/credits/auto-top-up/settings',
       tags: ['credits'],
       summary: 'Update auto top-up credits settings',
     })
@@ -92,6 +90,16 @@ export const creditsRouter = {
                 return
               }
             }
+
+            // TODO
+            if (val.trigger !== 'threshold' || val.method !== 'fixed') {
+              ctx.addIssue({
+                code: 'custom',
+                message: 'Now only threshold trigger and fixed method are supported',
+                input: val,
+              })
+              return
+            }
           })
           .nullable(),
       }),
@@ -110,13 +118,13 @@ export const creditsRouter = {
   topUpCredits: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/credits/top-up',
+      path: '/credits/top-up',
       tags: ['credits'],
       summary: 'Create a top-up credits transaction',
     })
     .input(
       z.object({
-        credits: z.coerce.number().int().min(5).max(1000),
+        credits: z.coerce.number().int().min(15).max(2500),
       }),
     )
     .handler(async ({ context, input }) => {
@@ -136,7 +144,7 @@ export const creditsRouter = {
   generateTopUpUrl: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/credits/top-up/payment-url',
+      path: '/credits/top-up/payment-url',
       tags: ['credits'],
       summary: 'Generate a payment URL for the top-up transaction',
     })
@@ -163,7 +171,7 @@ export const creditsRouter = {
   getTransactions: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/credits/transactions',
+      path: '/credits/transactions',
       tags: ['credits'],
       summary: 'List credits transactions',
     })
@@ -186,6 +194,29 @@ export const creditsRouter = {
         transactions,
         hasMore,
         cursor,
+      }
+    }),
+
+  getTransaction: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/credits/transactions/{transactionId}',
+      tags: ['credits'],
+      summary: 'Get credits transaction by ID',
+    })
+    .input(
+      z.object({
+        transactionId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      await context.auth.requirePermissions({ credits: ['read'] })
+      const accountId = context.auth.accountId
+
+      const transaction = await lagoService.getCreditsTransaction(accountId, input.transactionId)
+
+      return {
+        transaction,
       }
     }),
 }

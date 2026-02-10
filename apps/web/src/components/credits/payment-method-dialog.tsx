@@ -33,7 +33,7 @@ const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY ?? '')
 interface PaymentMethodDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess?: () => void
+  onSuccess?: (id?: string) => void
 }
 
 export function PaymentMethodDialog({ open, onOpenChange, onSuccess }: PaymentMethodDialogProps) {
@@ -66,7 +66,7 @@ function PaymentMethodForm({
   onSuccess,
   onCancel,
 }: {
-  onSuccess?: () => void
+  onSuccess?: (id?: string) => void
   onCancel?: () => void
 }) {
   const { activeAccountId } = useActiveAccountId()
@@ -117,7 +117,11 @@ function PaymentMethodForm({
         toast.error(`Payment method setup failed: ${error.message ?? 'Unknown error'}`)
       } else if (setupIntent.status === 'succeeded') {
         toast.success('Success! Your payment method has been saved.')
-        onSuccess?.()
+        onSuccess?.(
+          typeof setupIntent.payment_method === 'object'
+            ? setupIntent.payment_method?.id
+            : setupIntent.payment_method,
+        )
       }
     } catch (error) {
       console.error('Failed to add payment method:', error)

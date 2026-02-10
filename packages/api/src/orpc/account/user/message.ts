@@ -64,7 +64,7 @@ export const messageRouter = {
   list: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/messages',
+      path: '/messages',
       tags: ['chats'],
       summary: 'List all messages in a chat',
     })
@@ -127,7 +127,7 @@ export const messageRouter = {
   listByIds: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/messages/list-by-ids',
+      path: '/messages/list-by-ids',
       tags: ['chats'],
       summary: 'List messages by their IDs within a specific chat',
     })
@@ -150,7 +150,7 @@ export const messageRouter = {
   find: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/messages/{id}',
+      path: '/messages/{id}',
       tags: ['chats'],
       summary: 'Get a single message by ID',
     })
@@ -170,7 +170,7 @@ export const messageRouter = {
   get: userOrAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/messages/{id}',
+      path: '/messages/{id}',
       tags: ['chats'],
       summary: 'Get a single message by ID',
     })
@@ -190,7 +190,7 @@ export const messageRouter = {
   create: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/messages',
+      path: '/messages',
       tags: ['chats'],
       summary: 'Create a new message in a chat',
     })
@@ -254,7 +254,7 @@ export const messageRouter = {
   update: userOrAppUserProtectedProcedure
     .route({
       method: 'PATCH', // Using PATCH as we are partially updating the resource
-      path: '/v1/messages/{id}',
+      path: '/messages/{id}',
       tags: ['chats'],
       summary: 'Update a message content',
     })
@@ -296,7 +296,7 @@ export const messageRouter = {
   delete: userOrAppUserProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/messages/{id}',
+      path: '/messages/{id}',
       tags: ['chats'],
       summary: 'Delete messages in a chat based on the specified message ID',
     })
@@ -409,7 +409,7 @@ export const messageRouter = {
   vote: userOrAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/messages/vote',
+      path: '/messages/vote',
       tags: ['chats'],
       summary: 'Vote on a message',
     })

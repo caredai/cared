@@ -11,7 +11,7 @@ export const fileRouter = {
   s3PresignedUrl: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/files/s3-presigned-url',
+      path: '/files/s3-presigned-url',
       tags: ['files'],
       summary: 'Create a S3 presigned upload URL',
     })

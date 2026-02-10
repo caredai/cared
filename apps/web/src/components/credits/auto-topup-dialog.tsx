@@ -40,25 +40,31 @@ export function AutoTopupDialog({
 }) {
   const { credits } = useCredits()
   const defaultPaymentMethodId = useDefaultPaymentMethodId()
-  const { paymentMethods } = useListPaymentMethods()
+  const { paymentMethods, refetchPaymentMethods } = useListPaymentMethods()
   const updateAutoRechargeSettings = useUpdateAutoRechargeCreditsSettings()
   const updateDefaultPaymentMethod = useUpdateDefaultPaymentMethod()
 
   const [isAutoTopupEnabled, setIsAutoTopupEnabled] = useState(true)
   const [autoRechargeThreshold, setAutoRechargeThreshold] = useState(10)
   const [autoRechargeAmount, setAutoRechargeAmount] = useState(50)
-  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>('')
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>()
   const [showPaymentMethodDialog, setShowPaymentMethodDialog] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     const firstPaymentMethodId = paymentMethods?.[0]?.id
-    if (!selectedPaymentMethodId && (defaultPaymentMethodId ?? firstPaymentMethodId)) {
-      setSelectedPaymentMethodId(defaultPaymentMethodId ?? firstPaymentMethodId!)
+    const paymentMethodId = defaultPaymentMethodId ?? firstPaymentMethodId
+
+    // Set payment method if not set, or reset if current selection is invalid
+    if (
+      !selectedPaymentMethodId ||
+      !paymentMethods?.some((pm) => pm.id === selectedPaymentMethodId)
+    ) {
+      setSelectedPaymentMethodId(paymentMethodId)
     }
   }, [defaultPaymentMethodId, paymentMethods, selectedPaymentMethodId])
 
-  const fee = Math.max(autoRechargeAmount * 0.05, 0.8)
+  const fee = Math.max(autoRechargeAmount * 0, 0)
   const totalAmount = autoRechargeAmount + fee
 
   useEffect(() => {
@@ -67,16 +73,27 @@ export function AutoTopupDialog({
   }, [open])
 
   useEffect(() => {
-    setIsAutoTopupEnabled(!!credits.metadata.autoRechargeEnabled)
-    setAutoRechargeThreshold(credits.metadata.autoRechargeThreshold ?? 10)
-    setAutoRechargeAmount(credits.metadata.autoRechargeAmount ?? 50)
+    setIsAutoTopupEnabled(!!credits.autoTopUp)
+    setAutoRechargeThreshold(
+      credits.autoTopUp?.thresholdCredits ? Number(credits.autoTopUp.thresholdCredits) : 10,
+    )
+    setAutoRechargeAmount(
+      credits.autoTopUp?.topUpCredits ? Number(credits.autoTopUp.topUpCredits) : 50,
+    )
   }, [open, credits])
 
+  const currentThreshold = credits.autoTopUp?.thresholdCredits
+    ? Number(credits.autoTopUp.thresholdCredits)
+    : undefined
+  const currentAmount = credits.autoTopUp?.topUpCredits
+    ? Number(credits.autoTopUp.topUpCredits)
+    : undefined
+
   const isDirty =
-    isAutoTopupEnabled !== !!credits.metadata.autoRechargeEnabled ||
+    isAutoTopupEnabled !== !!credits.autoTopUp ||
     (isAutoTopupEnabled &&
-      (autoRechargeThreshold !== credits.metadata.autoRechargeThreshold ||
-        autoRechargeAmount !== credits.metadata.autoRechargeAmount ||
+      (autoRechargeThreshold !== currentThreshold ||
+        autoRechargeAmount !== currentAmount ||
         selectedPaymentMethodId !== defaultPaymentMethodId))
 
   const handleUpdateSettings = async () => {
@@ -90,7 +107,9 @@ export function AutoTopupDialog({
             autoRechargeAmount > 0 &&
             updateAutoRechargeSettings(true, autoRechargeThreshold, autoRechargeAmount),
           // eslint-disable-next-line @typescript-eslint/await-thenable
-          selectedPaymentMethodId && updateDefaultPaymentMethod(selectedPaymentMethodId),
+          selectedPaymentMethodId &&
+            selectedPaymentMethodId !== defaultPaymentMethodId &&
+            updateDefaultPaymentMethod(selectedPaymentMethodId),
         ])
       } else {
         // Disable auto-recharge when disabled
@@ -102,8 +121,13 @@ export function AutoTopupDialog({
     }
   }
 
-  const handlePaymentMethodAdded = () => {
+  const handlePaymentMethodAdded = (id?: string) => {
     setShowPaymentMethodDialog(false)
+    void refetchPaymentMethods().then(() => {
+      if (id) {
+        setSelectedPaymentMethodId(id)
+      }
+    })
   }
 
   const formatPaymentMethod = (pm: Stripe.PaymentMethod) => {
@@ -129,7 +153,7 @@ export function AutoTopupDialog({
           <DialogTitle>Auto Top-Up</DialogTitle>
           <DialogDescription>
             Automatically top-up your credits when your balance falls below the threshold. Cared
-            charges a 5% ($0.80 minimum) fee per recharge.
+            does not charge any processing fee.
           </DialogDescription>
         </DialogHeader>
 
@@ -175,14 +199,14 @@ export function AutoTopupDialog({
                 <Label htmlFor="amount">
                   Top-Up Amount{' '}
                   <span className="text-muted-foreground text-xs">
-                    (Minimum of $5 and maximum of $2500)
+                    (Minimum of $15 and maximum of $2500)
                   </span>
                 </Label>
                 <NumberInput
                   id="amount"
                   value={autoRechargeAmount}
                   onChange={setAutoRechargeAmount}
-                  min={5}
+                  min={15}
                   max={2500}
                   step={1}
                   placeholder="Enter recharge amount"
@@ -227,9 +251,16 @@ export function AutoTopupDialog({
                   <Select
                     value={selectedPaymentMethodId}
                     onValueChange={setSelectedPaymentMethodId}
+                    disabled={!paymentMethods || paymentMethods.length === 0}
                   >
                     <SelectTrigger className="flex-1">
-                      <SelectValue placeholder="Select a payment method" />
+                      <SelectValue
+                        placeholder={
+                          !paymentMethods || paymentMethods.length === 0
+                            ? 'No payment methods'
+                            : 'Select a payment method'
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {paymentMethods?.map((pm) => (
@@ -255,7 +286,10 @@ export function AutoTopupDialog({
             <Button variant="outline" onClick={handleCloseAutoTopupDialog}>
               Cancel
             </Button>
-            <Button onClick={handleUpdateSettings} disabled={!isDirty || isUpdating}>
+            <Button
+              onClick={handleUpdateSettings}
+              disabled={!isDirty || isUpdating || (isAutoTopupEnabled && !selectedPaymentMethodId)}
+            >
               {isUpdating ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>

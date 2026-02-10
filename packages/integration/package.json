@@ -1,26 +1,26 @@
 {
-  "name": "@cared/mem0",
+  "name": "@cared/integration",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.0",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./src/index.ts"
-    }
+    ".": "./src/index.ts"
   },
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "dev": "tsc",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsc",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
   "devDependencies": {
+    "@cared/auth": "workspace:*",
     "@cared/eslint-config": "workspace:*",
+    "@cared/kv": "workspace:*",
     "@cared/prettier-config": "workspace:*",
+    "@cared/shared": "workspace:*",
     "@cared/tsconfig": "workspace:*",
     "eslint": "catalog:",
     "prettier": "catalog:",
@@ -29,8 +29,7 @@
   "prettier": "@cared/prettier-config",
   "dependencies": {
     "@cared/db": "workspace:*",
-    "@cared/providers": "workspace:*",
-    "@cared/vdb": "workspace:*",
-    "mem0ai": "^2.1.38"
+    "cloudflare": "^5.2.0",
+    "octokit": "^5.0.4"
   }
 }

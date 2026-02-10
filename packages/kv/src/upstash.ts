@@ -73,11 +73,11 @@ export class UpstashKV extends KV {
    * If the EVALSHA fails, loads the script to redis and runs again with the
    * hash returned from Redis.
    */
-  async eval<TArgs extends unknown[], TData = unknown>(
+  async eval(
     script: { script: string; hash: string },
     keys: string[],
-    args: TArgs,
-  ): Promise<TData> {
+    args: string[],
+  ): Promise<unknown> {
     keys = keys.map((k) => this.key(k))
 
     try {
@@ -92,12 +92,4 @@ export class UpstashKV extends KV {
   }
 }
 
-export async function sha1(str: string) {
-  const buffer = new TextEncoder().encode(str)
-  const digest = await crypto.subtle.digest('SHA-1', buffer)
 
-  // Convert digest to hex string
-  return Array.from(new Uint8Array(digest))
-    .map((x) => x.toString(16).padStart(2, '0'))
-    .join('')
-}

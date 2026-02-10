@@ -32,12 +32,9 @@ export const CreateDatasetOptionsSchema = z.object({
   name: z.string(),
   avatar: z.string().optional(),
   description: z.string().optional(),
-  embeddingModel: z.string().optional(),
-  permission: z.enum(['me', 'team']).optional(),
+  embeddingModelId: z.string().optional(),
   chunkMethod: ChunkMethodEnum.optional(),
   parserConfig: ParserConfigSchema.optional(),
-  parseType: z.number().optional(),
-  pipelineId: z.string().optional(),
 })
 
 export const UpdateDatasetOptionsSchema = CreateDatasetOptionsSchema.omit({ name: true })

@@ -1,5 +1,4 @@
-import { useEffect } from 'react'
-import { HelioCheckout } from '@heliofi/checkout-react'
+import { useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
 
 import { env } from '@/env'
@@ -16,56 +15,67 @@ export function HelioCheckoutForm({
 }) {
   const { resolvedTheme } = useTheme()
   const { user } = useSession()
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  // Handle messages from iframe
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // Verify origin for security
+      if (event.origin !== window.location.origin) {
+        return
+      }
+
+      if (!event.data || typeof event.data !== 'object' || !('type' in event.data)) {
+        return
+      }
+
+      const messageData = event.data as { type: string }
+
+      switch (messageData.type) {
+        case 'HELIO_CHECKOUT_REQUEST_CONFIG':
+          // Send config to iframe
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(
+              {
+                type: 'HELIO_CHECKOUT_CONFIG',
+                config: {
+                  paylinkId: env.VITE_HELIO_CREDITS_PAYLINK_ID,
+                  amount: credits.toFixed(2),
+                  customerId: user.id,
+                  theme: resolvedTheme === 'light' ? 'light' : 'dark',
+                },
+              },
+              window.location.origin,
+            )
+          }
+          break
+        case 'HELIO_CHECKOUT_SUCCESS':
+          onSuccess?.()
+          break
+        case 'HELIO_CHECKOUT_ERROR':
+        case 'HELIO_CHECKOUT_CANCEL':
+          onCancel?.()
+          break
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+    return () => {
+      window.removeEventListener('message', handleMessage)
+    }
+  }, [credits, user.id, resolvedTheme, onSuccess, onCancel])
 
   return (
-    <RemoveCssWrapper>
-      <HelioCheckout
-        config={{
-          paylinkId: env.VITE_HELIO_CREDITS_PAYLINK_ID,
-          amount: credits.toFixed(2),
-          additionalJSON: {
-            customerId: user.id,
-          },
-          primaryPaymentMethod: 'crypto',
-          theme: {
-            themeMode: resolvedTheme === 'light' ? 'light' : 'dark',
-          },
-          display: 'inline',
-          showPayWithCard: true,
-          onSuccess: () => onSuccess?.(),
-          onError: () => onCancel?.(),
-          onCancel: () => onCancel?.(),
-          // debug: true,
-        }}
-      />
-    </RemoveCssWrapper>
+    <iframe
+      ref={iframeRef}
+      src="/helio-checkout"
+      className="w-full border-0"
+      style={{
+        minHeight: '490px',
+        width: '100%',
+      }}
+      title="Helio Checkout"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+    />
   )
-}
-
-const RemoveCssWrapper = ({ children }: { children: React.ReactNode }) => {
-  useEffect(() => {
-    const targetCssUrl = 'https://embed.hel.io/assets/index-v1.css'
-
-    const observer = new MutationObserver((mutationsList) => {
-      for (const mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach((n) => {
-            const node = n as HTMLLinkElement
-            if (node.tagName === 'LINK' && node.href === targetCssUrl) {
-              console.log('Found and removed unwanted stylesheet:', node.href)
-              node.remove()
-
-              // observer.disconnect();
-            }
-          })
-        }
-      }
-    })
-
-    observer.observe(document, { childList: true, subtree: true })
-
-    return () => observer.disconnect()
-  }, [])
-
-  return <>{children}</>
 }

@@ -43,13 +43,13 @@ export class VectorService {
    * Make Turbopuffer namespace from account ID and optional namespace
    */
   makeTpufNamespace(namespace?: string): string {
-    const prefix = stripIdPrefix(this.accountId)
-    if (prefix.length !== 32) {
+    const accId = stripIdPrefix(this.accountId)
+    if (accId.length !== 32) {
       throw new ORPCError('INTERNAL_SERVER_ERROR', {
         message: 'Invalid account ID',
       })
     }
-    return `${prefix}${this.type}_${namespace ?? ''}`
+    return `${accId}${this.type}_${namespace ?? ''}`
   }
 
   /**

@@ -1,4 +1,4 @@
-import type { UpstashKV } from '@cared/kv'
+import type { RedisKV } from '@cared/kv'
 import { getKV } from '@cared/kv'
 import { LRUCache, lruCacheSizeCalculation } from '@cared/shared'
 
@@ -44,7 +44,7 @@ export class Cache<
     return Cache.#cache! as unknown as LRUCache<string, VALUE, CONTEXT>
   }
 
-  private kv: UpstashKV
+  private kv: RedisKV
 
   constructor(
     private namespace: string,
@@ -92,7 +92,7 @@ export class Cache<
       },
     )
 
-    this.kv = getKV(namespace, 'upstash')
+    this.kv = getKV(namespace)
   }
 
   async get(key: string, forceFetch = false) {

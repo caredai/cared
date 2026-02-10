@@ -263,9 +263,7 @@ async function processWithPolling({
       }
       // SSE format
       const chunk = `data: ${JSON.stringify(data)}\n\n`
-      // Chunk must be encoded into bytes in Cloudflare Workers
-      // https://community.cloudflare.com/t/server-sent-events-readablestream-not-working/645073
-      await writer.write(c.env.CLOUDFLARE ? encoder.encode(chunk) : chunk)
+      await writer.write(chunk)
     }
   }
 

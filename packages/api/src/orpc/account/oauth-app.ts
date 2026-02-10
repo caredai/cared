@@ -42,7 +42,7 @@ export const oauthAppRouter = {
   list: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/oauth-apps',
+      path: '/oauth-apps',
       tags: ['oauth-apps'],
       summary: 'List OAuth apps for a specific app or all apps in account',
     })
@@ -71,7 +71,7 @@ export const oauthAppRouter = {
   has: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/oauth-apps/{appId}/exists',
+      path: '/oauth-apps/{appId}/exists',
       tags: ['oauth-apps'],
       summary: 'Check if the application has OAuth app',
     })
@@ -94,7 +94,7 @@ export const oauthAppRouter = {
   get: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/oauth-apps/{appId}',
+      path: '/oauth-apps/{appId}',
       tags: ['oauth-apps'],
       summary: 'Get OAuth application',
     })
@@ -124,7 +124,7 @@ export const oauthAppRouter = {
   info: publicProcedure
     .route({
       method: 'GET',
-      path: '/v1/oauth-apps/client/{clientId}',
+      path: '/oauth-apps/client/{clientId}',
       tags: ['oauth-apps'],
       summary: 'Get OAuth application info by client ID',
     })
@@ -168,7 +168,7 @@ export const oauthAppRouter = {
   create: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/oauth-apps',
+      path: '/oauth-apps',
       tags: ['oauth-apps'],
       summary: 'Create new OAuth app',
     })
@@ -240,7 +240,7 @@ export const oauthAppRouter = {
   update: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/oauth-apps/{appId}',
+      path: '/oauth-apps/{appId}',
       tags: ['oauth-apps'],
       summary: 'Update OAuth application',
     })
@@ -305,7 +305,7 @@ export const oauthAppRouter = {
   delete: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/oauth-apps/{appId}',
+      path: '/oauth-apps/{appId}',
       tags: ['oauth-apps'],
       summary: 'Delete OAuth application',
     })
@@ -352,7 +352,7 @@ export const oauthAppRouter = {
   rotateSecret: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/oauth-apps/{appId}/rotate-secret',
+      path: '/oauth-apps/{appId}/rotate-secret',
       tags: ['oauth-apps'],
       summary: 'Rotate client secret for OAuth application',
     })

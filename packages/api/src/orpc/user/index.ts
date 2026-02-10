@@ -43,7 +43,7 @@ export const userRouter = {
   session: publicProcedure
     .route({
       method: 'GET',
-      path: '/v1/user/session',
+      path: '/user/session',
       tags: ['me'],
       summary: 'Get current session of current user',
     })
@@ -97,7 +97,7 @@ export const userRouter = {
   authAccounts: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/user/auth-accounts',
+      path: '/user/auth-accounts',
       tags: ['me'],
       summary: 'Get linked authentication accounts of current user',
     })
@@ -118,7 +118,7 @@ export const userRouter = {
   sessions: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/user/sessions',
+      path: '/user/sessions',
       tags: ['me'],
       summary: 'Get sessions of current user',
     })
@@ -141,7 +141,7 @@ export const userRouter = {
   oauthApps: userProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/user/oauth-apps',
+      path: '/user/oauth-apps',
       tags: ['me'],
       summary: 'Get authorized OAuth apps for current user',
     })
@@ -215,7 +215,7 @@ export const userRouter = {
   revokeOauthApp: userProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/user/oauth-apps/{clientId}',
+      path: '/user/oauth-apps/{clientId}',
       tags: ['me'],
       summary: 'Revoke access token for a specific OAuth app',
     })

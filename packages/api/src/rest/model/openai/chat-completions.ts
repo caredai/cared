@@ -262,7 +262,7 @@ export async function POST(c: Context): Promise<Response> {
         }
         // SSE format
         const chunk = `data: ${!notJson ? JSON.stringify(data) : data}\n\n`
-        await writer.write(c.env.CLOUDFLARE ? encoder.encode(chunk) : chunk)
+        await writer.write(chunk)
       }
     }
 

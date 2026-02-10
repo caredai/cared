@@ -32,7 +32,7 @@ export const telemetryRouter = {
   listTraces: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/telemetry/traces',
+      path: '/telemetry/traces',
       tags: ['telemetry'],
       summary: 'List traces from Langfuse',
     })
@@ -149,7 +149,7 @@ export const telemetryRouter = {
   listObservations: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/telemetry/observations',
+      path: '/telemetry/observations',
       tags: ['telemetry'],
       summary: 'List observations from Langfuse',
     })
@@ -266,7 +266,7 @@ export const telemetryRouter = {
   deleteTraces: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/telemetry/traces',
+      path: '/telemetry/traces',
       tags: ['telemetry'],
       summary: 'Delete multiple traces from Langfuse',
     })

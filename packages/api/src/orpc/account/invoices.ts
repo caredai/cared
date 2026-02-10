@@ -12,7 +12,7 @@ export const invoiceRouter = {
   getInvoices: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/invoices',
+      path: '/invoices',
       tags: ['invoices'],
       summary: 'Get all invoices for the account',
     })
@@ -41,7 +41,7 @@ export const invoiceRouter = {
   generateInvoicePaymentUrl: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/invoices/{invoiceId}/payment-url',
+      path: '/invoices/{invoiceId}/payment-url',
       tags: ['invoices'],
       summary: 'Generate a payment URL for an invoice',
     })
@@ -65,7 +65,7 @@ export const invoiceRouter = {
   downloadInvoice: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/invoices/{invoiceId}/download',
+      path: '/invoices/{invoiceId}/download',
       tags: ['invoices'],
       summary: 'Get download URL for an invoice PDF',
     })

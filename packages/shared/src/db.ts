@@ -7,6 +7,15 @@ export function generateId(prefix: string, sep = '_') {
   return `${prefix}${sep}${uuid.replaceAll('-', '')}`
 }
 
+export function stripIdPrefix(id: string) {
+  return id.split('_', 2)[1] ?? ''
+}
+
+export function getUuid(id: string) {
+  id = stripIdPrefix(id)
+  return `${id.slice(0, 8)}-${id.slice(8, 12)}-${id.slice(12, 16)}-${id.slice(16, 20)}-${id.slice(20, 32)}`
+}
+
 const idRe = /^[0-9a-f]{8}[0-9a-f]{4}7[0-9a-f]{3}[89ab][0-9a-f]{3}[0-9a-f]{12}$/i
 
 // Reference: https://gist.github.com/robinpokorny/3e1ef5eebce096824d3c2054202e4217

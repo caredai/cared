@@ -3,7 +3,7 @@ import { z } from 'zod/v4'
 
 import { getStripe } from '../../client/stripe'
 import { protectedProcedure } from '../../orpc'
-import { ensureCustomer } from './credits-deprecated'
+import { lagoService } from '../../service/lago/lago'
 
 export const stripeRouter = {
   /**
@@ -13,7 +13,7 @@ export const stripeRouter = {
   getCustomer: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/stripe/customer',
+      path: '/stripe/customer',
       tags: ['stripe'],
       summary: 'Get customer information from Stripe',
     })
@@ -21,8 +21,16 @@ export const stripeRouter = {
       await context.auth.requirePermissions()
       const accountId = context.auth.accountId
 
+      const {
+        paymentProvider: { customerId },
+      } = await lagoService.ensureCustomer(accountId)
+      if (!customerId) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Customer not found',
+        })
+      }
+
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const customer = await stripe.customers.retrieve(customerId)
       if (customer.deleted) {
@@ -43,7 +51,7 @@ export const stripeRouter = {
   listPaymentMethods: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/stripe/payment-methods',
+      path: '/stripe/payment-methods',
       tags: ['stripe'],
       summary: 'List payment methods for the account',
     })
@@ -51,8 +59,16 @@ export const stripeRouter = {
       await context.auth.requirePermissions()
       const accountId = context.auth.accountId
 
+      const {
+        paymentProvider: { customerId },
+      } = await lagoService.ensureCustomer(accountId)
+      if (!customerId) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Customer not found',
+        })
+      }
+
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const paymentMethods = await stripe.paymentMethods.list({
         customer: customerId,
@@ -72,7 +88,7 @@ export const stripeRouter = {
   setupAddPaymentMethodIntent: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/stripe/payment-methods',
+      path: '/stripe/payment-methods',
       tags: ['stripe'],
       summary: 'Add a new payment method using SetupIntent',
     })
@@ -80,8 +96,16 @@ export const stripeRouter = {
       await context.auth.requirePermissions({ credits: ['write'] })
       const accountId = context.auth.accountId
 
+      const {
+        paymentProvider: { customerId },
+      } = await lagoService.ensureCustomer(accountId)
+      if (!customerId) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Customer not found',
+        })
+      }
+
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const setupIntent = await stripe.setupIntents.create({
         customer: customerId,
@@ -109,7 +133,7 @@ export const stripeRouter = {
   removePaymentMethod: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/stripe/payment-methods/{paymentMethodId}',
+      path: '/stripe/payment-methods/{paymentMethodId}',
       tags: ['stripe'],
       summary: 'Remove a payment method',
     })
@@ -122,8 +146,16 @@ export const stripeRouter = {
       await context.auth.requirePermissions({ credits: ['write'] })
       const accountId = context.auth.accountId
 
+      const {
+        paymentProvider: { customerId },
+      } = await lagoService.ensureCustomer(accountId)
+      if (!customerId) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Customer not found',
+        })
+      }
+
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       // Verify the payment method belongs to the customer
       const paymentMethod = await stripe.paymentMethods.retrieve(input.paymentMethodId)
@@ -144,7 +176,7 @@ export const stripeRouter = {
   updateDefaultPaymentMethod: protectedProcedure
     .route({
       method: 'PUT',
-      path: '/v1/stripe/payment-methods/{paymentMethodId}/default',
+      path: '/stripe/payment-methods/{paymentMethodId}/default',
       tags: ['stripe'],
       summary: 'Update customer default payment method',
     })
@@ -157,8 +189,16 @@ export const stripeRouter = {
       await context.auth.requirePermissions({ credits: ['write'] })
       const accountId = context.auth.accountId
 
+      const {
+        paymentProvider: { customerId },
+      } = await lagoService.ensureCustomer(accountId)
+      if (!customerId) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Customer not found',
+        })
+      }
+
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       // Verify the payment method belongs to the customer
       const paymentMethod = await stripe.paymentMethods.retrieve(input.paymentMethodId)
@@ -183,7 +223,7 @@ export const stripeRouter = {
   createCustomerSession: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/stripe/customer-session',
+      path: '/stripe/customer-session',
       tags: ['stripe'],
       summary: 'Create customer session for pricing table',
     })
@@ -191,8 +231,16 @@ export const stripeRouter = {
       await context.auth.requirePermissions({ credits: ['write'] })
       const accountId = context.auth.accountId
 
+      const {
+        paymentProvider: { customerId },
+      } = await lagoService.ensureCustomer(accountId)
+      if (!customerId) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Customer not found',
+        })
+      }
+
       const stripe = getStripe()
-      const { customerId } = await ensureCustomer(context, stripe, accountId)
 
       const customerSession = await stripe.customerSessions.create({
         customer: customerId,

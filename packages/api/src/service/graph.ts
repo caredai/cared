@@ -117,6 +117,7 @@ export class GraphService {
       .values({
         name,
         key,
+        mode: 'public', // TODO
         accountId,
       })
       .returning()

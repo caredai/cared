@@ -54,7 +54,7 @@ import { customPlugin } from './plugin'
 export const maxAccounts = 2
 export const maxMembers = 100
 
-const kv = getKV('auth', 'upstash')
+const kv = getKV('auth')
 
 const serverIdName = 'x-server-call-mark'
 const serverId = sha256(new TextEncoder().encode(env.BETTER_AUTH_SECRET), 'hex')

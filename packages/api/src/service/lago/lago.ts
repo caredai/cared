@@ -81,10 +81,7 @@ export class LagoService {
             provider_payment_methods: [
               'card',
               'link',
-              'sepa_debit',
               'us_bank_account',
-              'bacs_debit',
-              'boleto',
               'crypto',
             ],
           },
@@ -109,16 +106,24 @@ export class LagoService {
     return (await this.client.customers.getCustomerPortalUrl(accountId)).data.customer.portal_url
   }
 
-  // TODO: distributed lock
-  async ensureCredits(accountId: string) {
+  private async findCredits(accountId: string) {
     const credits = (
       await this.client.wallets.findAllWallets({
         external_customer_id: accountId,
       })
-    ).data.wallets.find((w) => w.status === 'active')
-
+    ).data.wallets.find((w) => w.name === 'Credits' && w.status === 'active')
     if (credits) {
       return formatCredits(credits)
+    }
+  }
+
+  // TODO: distributed lock
+  async ensureCredits(accountId: string) {
+    await this.ensureCustomer(accountId)
+
+    const credits = await this.findCredits(accountId)
+    if (credits) {
+      return credits
     }
 
     return formatCredits(
@@ -131,8 +136,8 @@ export class LagoService {
             paid_credits: '0',
             granted_credits: '0',
             external_customer_id: accountId,
-            paid_top_up_min_amount_cents: 500, // $5
-            paid_top_up_max_amount_cents: 100000, // $1000
+            paid_top_up_min_amount_cents: 1500, // $15
+            paid_top_up_max_amount_cents: 250000, // $2500
           },
         })
       ).data.wallet,
@@ -146,22 +151,36 @@ export class LagoService {
     },
   ) {
     const credits = await this.ensureCredits(accountId)
-    const updatedWallet = (
-      await this.client.wallets.updateWallet(credits.id, {
-        wallet: {
-          recurring_transaction_rules: updates.autoTopUp
-            ? [
-                {
-                  lago_id: credits.autoTopUp?.id,
-                  transaction_name: 'Auto Top-Up Credits',
-                  ...updates.autoTopUp,
-                },
-              ]
-            : [],
-        },
-      })
-    ).data.wallet
-    return formatCredits(updatedWallet)
+    try {
+      const updatedWallet = (
+        await this.client.wallets.updateWallet(credits.id, {
+          wallet: {
+            recurring_transaction_rules: updates.autoTopUp
+              ? [
+                  {
+                    lago_id: credits.autoTopUp?.id,
+                    trigger: updates.autoTopUp.trigger,
+                    method: updates.autoTopUp.method,
+                    threshold_credits: updates.autoTopUp.thresholdCredits,
+                    interval: updates.autoTopUp.interval,
+                    started_at: updates.autoTopUp.startedAt?.toISOString(),
+                    paid_credits: updates.autoTopUp.topUpCredits,
+                    target_ongoing_balance: updates.autoTopUp.targetOngoingBalance,
+                    transaction_name: 'Auto Top-Up Credits',
+                  },
+                ]
+              : [],
+          },
+        })
+      ).data.wallet
+      return formatCredits(updatedWallet)
+    } catch (error) {
+      const lagoError = await getLagoError<typeof this.client.wallets.updateWallet>(error)
+      if (lagoError.status === 422) {
+        console.error(lagoError, updates.autoTopUp)
+      }
+      throw error
+    }
   }
 
   async topUpCredits(accountId: string, credits: number) {
@@ -228,6 +247,45 @@ export class LagoService {
       hasMore: meta.total_pages > meta.current_page,
       cursor: meta.next_page ?? undefined,
     }
+  }
+
+  async getCreditsTransaction(
+    accountId: string,
+    transactionId: string,
+  ): Promise<CreditsTransaction> {
+    const credits = await this.ensureCredits(accountId)
+
+    let transaction: WalletTransactionObject
+    try {
+      transaction = // TODO: lago findWalletTransaction return value bug
+        (
+          (await this.client.walletTransactions.findWalletTransaction(transactionId))
+            .data as unknown as {
+            wallet_transaction: WalletTransactionObject
+          }
+        ).wallet_transaction
+    } catch (error) {
+      const lagoError =
+        await getLagoError<typeof this.client.walletTransactions.findWalletTransaction>(error)
+      if (lagoError.status === 404) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'Transaction not found',
+        })
+      } else {
+        console.error(error)
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Get transaction failed',
+        })
+      }
+    }
+
+    if (transaction.lago_wallet_id !== credits.id) {
+      throw new ORPCError('NOT_FOUND', {
+        message: 'Transaction not found',
+      })
+    }
+
+    return formatCreditsTransaction(transaction)
   }
 
   async getPlans() {
@@ -417,9 +475,8 @@ export class LagoService {
   }
 
   async generateInvoicePaymentUrl(invoiceId: string): Promise<string> {
-    const { invoice_payment_details } = (
-      await this.client.invoices.invoicePaymentUrl(invoiceId)
-    ).data
+    const { invoice_payment_details } = (await this.client.invoices.invoicePaymentUrl(invoiceId))
+      .data
     if (!invoice_payment_details?.payment_url) {
       throw new ORPCError('INTERNAL_SERVER_ERROR', {
         message: 'Failed to generate invoice payment URL',
@@ -439,6 +496,8 @@ export class LagoService {
   }
 }
 
+export const lagoService = new LagoService()
+
 function formatSubscriptionExternalId(accountId: string, planCode: string) {
   return `${accountId}-${planCode}`
 }
@@ -452,7 +511,7 @@ export interface Customer {
   timezone?: string
   billingAddress?: Address
   shippingAddress?: Address
-  paymentProvider?: {
+  paymentProvider: {
     provider?: string
     code?: string
     customerId?: string
@@ -541,7 +600,7 @@ export interface Credits {
 function formatCredits(w: WalletObject): Credits {
   const r = w.recurring_transaction_rules?.at(0)
   return {
-    id: w.external_customer_id,
+    id: w.lago_id,
     status: w.status,
     balance: w.credits_balance,
     ongoingBalance: w.credits_ongoing_balance,
@@ -915,9 +974,9 @@ function formatInvoice(invoice: InvoiceObject): Invoice {
       .div(100)
       .toString(),
     prepaidCreditAmount: new Decimal(invoice.prepaid_credit_amount_cents).div(100).toString(),
-    progressiveBillingAmount: new Decimal(
-      invoice.progressive_billing_credit_amount_cents,
-    ).div(100).toString(),
+    progressiveBillingAmount: new Decimal(invoice.progressive_billing_credit_amount_cents)
+      .div(100)
+      .toString(),
     totalAmount: new Decimal(invoice.total_amount_cents).div(100).toString(),
     fileUrl: invoice.file_url ?? undefined,
     createdAt: new Date(invoice.created_at),

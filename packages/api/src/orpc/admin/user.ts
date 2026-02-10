@@ -19,7 +19,7 @@ export const userRouter = {
   listUsers: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/users',
+      path: '/admin/users',
       tags: ['admin'],
       summary: 'List all users with optional search functionality',
     })
@@ -92,7 +92,7 @@ export const userRouter = {
   getUser: adminProcedure
     .route({
       method: 'GET',
-      path: '/v1/admin/users/{id}',
+      path: '/admin/users/{id}',
       tags: ['admin'],
       summary: 'Get a single user by ID',
     })
@@ -122,7 +122,7 @@ export const userRouter = {
   deleteUser: adminProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/admin/users/{id}',
+      path: '/admin/users/{id}',
       tags: ['admin'],
       summary: 'Delete a user and their associated data',
     })

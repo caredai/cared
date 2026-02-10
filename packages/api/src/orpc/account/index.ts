@@ -3,14 +3,18 @@ import { agentRouter } from './agent'
 import { apiTokenRouter } from './api-token'
 import { appRouter } from './app'
 import { creditsRouter } from './credits'
+import { databaseRouter } from './database'
 import { datasetRouter } from './dataset'
 import { expenseRouter } from './expense'
 import { fileRouter } from './file'
+import { flowRouter } from './flow'
+import { integrationRouter } from './integration'
 import { invoiceRouter } from './invoices'
 import { mcpRouter } from './mcp'
 import { modelRouter } from './model'
 import { oauthAppRouter } from './oauth-app'
 import { providerKeyRouter } from './provider-key'
+import { sandboxRouter } from './sandbox'
 import { storageRouter } from './storage'
 import { stripeRouter } from './stripe'
 import { subscriptionRouter } from './subscriptions'
@@ -40,4 +44,8 @@ export const accountRouter = {
   tool: toolRouter,
   mcp: mcpRouter,
   vector: vectorRouter,
+  flow: flowRouter,
+  integration: integrationRouter,
+  database: databaseRouter,
+  sandbox: sandboxRouter,
 }

@@ -22,7 +22,7 @@ export const vectorRouter = {
   listNamespaces: noneAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/vector/namespaces',
+      path: '/vector/namespaces',
       tags: ['vector'],
       summary: 'List all vector namespaces',
     })
@@ -71,7 +71,7 @@ export const vectorRouter = {
   getNamespace: noneAppUserProtectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/vector/namespaces/{namespace}',
+      path: '/vector/namespaces/{namespace}',
       tags: ['vector'],
       summary: 'Get namespace metadata',
     })
@@ -98,7 +98,7 @@ export const vectorRouter = {
   deleteNamespace: noneAppUserProtectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/vector/namespaces/{namespace}',
+      path: '/vector/namespaces/{namespace}',
       tags: ['vector'],
       summary: 'Delete a vector namespace',
     })
@@ -121,7 +121,7 @@ export const vectorRouter = {
   query: noneAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/vector/namespaces/{namespace}/query',
+      path: '/vector/namespaces/{namespace}/query',
       tags: ['vector'],
       summary: 'Query documents within a namespace',
     })
@@ -141,7 +141,7 @@ export const vectorRouter = {
   multiQuery: noneAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/vector/namespaces/{namespace}/multi-query',
+      path: '/vector/namespaces/{namespace}/multi-query',
       tags: ['vector'],
       summary: 'Run multiple queries within a namespace',
     })
@@ -161,7 +161,7 @@ export const vectorRouter = {
   write: noneAppUserProtectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/vector/namespaces/{namespace}',
+      path: '/vector/namespaces/{namespace}',
       tags: ['vector'],
       summary: 'Creates, updates, or deletes documents within a namespace',
     })

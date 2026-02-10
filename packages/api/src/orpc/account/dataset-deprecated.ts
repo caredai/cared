@@ -59,7 +59,7 @@ export const datasetRouter = {
   list: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/datasets',
+      path: '/datasets',
       tags: ['datasets'],
       summary: 'List all datasets in an account',
     })
@@ -121,7 +121,7 @@ export const datasetRouter = {
   byId: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/datasets/{id}',
+      path: '/datasets/{id}',
       tags: ['datasets'],
       summary: 'Get a single dataset by ID',
     })
@@ -144,7 +144,7 @@ export const datasetRouter = {
   create: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/datasets',
+      path: '/datasets',
       tags: ['datasets'],
       summary: 'Create a new dataset in an account',
     })
@@ -184,7 +184,7 @@ export const datasetRouter = {
   update: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/datasets/{id}',
+      path: '/datasets/{id}',
       tags: ['datasets'],
       summary: 'Update an existing dataset',
     })
@@ -226,7 +226,7 @@ export const datasetRouter = {
   delete: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/datasets/{id}',
+      path: '/datasets/{id}',
       tags: ['datasets'],
       summary: 'Delete a dataset',
     })
@@ -306,7 +306,7 @@ export const datasetRouter = {
   createDocument: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/documents',
+      path: '/documents',
       tags: ['datasets'],
       summary: 'Create a new document in a dataset',
     })
@@ -386,7 +386,7 @@ export const datasetRouter = {
   updateDocument: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/documents/{id}',
+      path: '/documents/{id}',
       tags: ['datasets'],
       summary: 'Update an existing document',
     })
@@ -430,7 +430,7 @@ export const datasetRouter = {
   deleteDocument: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/documents/{id}',
+      path: '/documents/{id}',
       tags: ['datasets'],
       summary: 'Delete a document and all its segments and chunks',
       description:
@@ -545,7 +545,7 @@ export const datasetRouter = {
   listDocuments: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/documents',
+      path: '/documents',
       tags: ['datasets'],
       summary: 'List all documents in a dataset',
     })
@@ -609,7 +609,7 @@ export const datasetRouter = {
   getDocument: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/documents/{id}',
+      path: '/documents/{id}',
       tags: ['datasets'],
       summary: 'Get a single document by ID',
     })
@@ -641,7 +641,7 @@ export const datasetRouter = {
   createSegment: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/segments',
+      path: '/segments',
       tags: ['datasets'],
       summary: 'Create a new document segment',
     })
@@ -692,7 +692,7 @@ export const datasetRouter = {
   updateSegment: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/segments/{id}',
+      path: '/segments/{id}',
       tags: ['datasets'],
       summary: 'Update an existing document segment',
     })
@@ -736,7 +736,7 @@ export const datasetRouter = {
   deleteSegment: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/segments/{id}',
+      path: '/segments/{id}',
       tags: ['datasets'],
       summary: 'Delete a document segment and all its chunks',
     })
@@ -778,7 +778,7 @@ export const datasetRouter = {
   listSegments: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/segments',
+      path: '/segments',
       tags: ['datasets'],
       summary: 'List all segments in a document',
     })
@@ -851,7 +851,7 @@ export const datasetRouter = {
   createChunk: protectedProcedure
     .route({
       method: 'POST',
-      path: '/v1/chunks',
+      path: '/chunks',
       tags: ['datasets'],
       summary: 'Create a new document chunk',
     })
@@ -902,7 +902,7 @@ export const datasetRouter = {
   updateChunk: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/v1/chunks/{id}',
+      path: '/chunks/{id}',
       tags: ['datasets'],
       summary: 'Update an existing document chunk',
     })
@@ -950,7 +950,7 @@ export const datasetRouter = {
   deleteChunk: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/v1/chunks/{id}',
+      path: '/chunks/{id}',
       tags: ['datasets'],
       summary: 'Delete a document chunk',
     })
@@ -986,7 +986,7 @@ export const datasetRouter = {
   listChunks: protectedProcedure
     .route({
       method: 'GET',
-      path: '/v1/chunks',
+      path: '/chunks',
       tags: ['datasets'],
       summary: 'List all chunks in a document segment',
     })
