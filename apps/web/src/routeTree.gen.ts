@@ -36,6 +36,7 @@ import { Route as AdminMockRouteImport } from './routes/admin/mock'
 import { Route as Acc_Char123accountIdNoPrefixChar125TracingRouteImport } from './routes/acc_{$accountIdNoPrefix}/tracing'
 import { Route as Acc_Char123accountIdNoPrefixChar125ToolsRouteImport } from './routes/acc_{$accountIdNoPrefix}/tools'
 import { Route as Acc_Char123accountIdNoPrefixChar125SettingsRouteImport } from './routes/acc_{$accountIdNoPrefix}/settings'
+import { Route as Acc_Char123accountIdNoPrefixChar125SandboxesRouteImport } from './routes/acc_{$accountIdNoPrefix}/sandboxes'
 import { Route as Acc_Char123accountIdNoPrefixChar125ModelsRouteImport } from './routes/acc_{$accountIdNoPrefix}/models'
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersRouteImport } from './routes/acc_{$accountIdNoPrefix}/members'
 import { Route as Acc_Char123accountIdNoPrefixChar125McpRouteImport } from './routes/acc_{$accountIdNoPrefix}/mcp'
@@ -54,6 +55,9 @@ import { Route as AdminAppsCategoriesRouteImport } from './routes/admin/apps/cat
 import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/flows'
 import { Route as Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport } from './routes/acc_{$accountIdNoPrefix}_.accept-invitation.$invitationId'
 import { Route as Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125RouteImport } from './routes/acc_{$accountIdNoPrefix}/tools_.{$toolkit}'
+import { Route as Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRouteImport } from './routes/acc_{$accountIdNoPrefix}/sandboxes_.volumes'
+import { Route as Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRouteImport } from './routes/acc_{$accountIdNoPrefix}/sandboxes_.snapshots'
+import { Route as Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRouteImport } from './routes/acc_{$accountIdNoPrefix}/sandboxes_.sandboxes'
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport } from './routes/acc_{$accountIdNoPrefix}/members_.invitations'
 import { Route as Acc_Char123accountIdNoPrefixChar125CreditsUsageRouteImport } from './routes/acc_{$accountIdNoPrefix}/credits_.usage'
 import { Route as Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRouteImport } from './routes/acc_{$accountIdNoPrefix}/api-tokens_.create'
@@ -201,6 +205,12 @@ const Acc_Char123accountIdNoPrefixChar125SettingsRoute =
     path: '/settings',
     getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
+const Acc_Char123accountIdNoPrefixChar125SandboxesRoute =
+  Acc_Char123accountIdNoPrefixChar125SandboxesRouteImport.update({
+    id: '/sandboxes',
+    path: '/sandboxes',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
 const Acc_Char123accountIdNoPrefixChar125ModelsRoute =
   Acc_Char123accountIdNoPrefixChar125ModelsRouteImport.update({
     id: '/models',
@@ -314,6 +324,24 @@ const Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route =
       getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
     } as any,
   )
+const Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute =
+  Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRouteImport.update({
+    id: '/sandboxes_/volumes',
+    path: '/sandboxes/volumes',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute =
+  Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRouteImport.update({
+    id: '/sandboxes_/snapshots',
+    path: '/sandboxes/snapshots',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute =
+  Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRouteImport.update({
+    id: '/sandboxes_/sandboxes',
+    path: '/sandboxes/sandboxes',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
 const Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute =
   Acc_Char123accountIdNoPrefixChar125MembersInvitationsRouteImport.update({
     id: '/members_/invitations',
@@ -377,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
   '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
@@ -393,12 +422,15 @@ export interface FileRoutesByFullPath {
   '/user/profile': typeof UserProfileRoute
   '/acc_{$accountIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125IndexRoute
   '/admin/': typeof AdminIndexRoute
-  '/landing': typeof LandingIndexRoute
+  '/landing/': typeof LandingIndexRoute
   '/user/': typeof UserIndexRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureRouteRouteWithChildren
   '/acc_{$accountIdNoPrefix}/api-tokens/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/credits/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes/snapshots': typeof Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes/volumes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute
   '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
@@ -407,9 +439,9 @@ export interface FileRoutesByFullPath {
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
   '/user/api-tokens/create': typeof UserApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
-  '/admin/apps': typeof AdminAppsIndexRoute
-  '/user/security': typeof UserSecurityIndexRoute
-  '/user/wallet': typeof UserWalletIndexRoute
+  '/admin/apps/': typeof AdminAppsIndexRoute
+  '/user/security/': typeof UserSecurityIndexRoute
+  '/user/wallet/': typeof UserWalletIndexRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureApiTokensRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/oauth-application': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125ConfigureOauthApplicationRoute
 }
@@ -426,6 +458,7 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
   '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
@@ -448,6 +481,9 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/api-tokens/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/credits/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   '/acc_{$accountIdNoPrefix}/members/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes/snapshots': typeof Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes/volumes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute
   '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
@@ -480,6 +516,7 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
   '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
@@ -502,6 +539,9 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/api-tokens_/create': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/credits_/usage': typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   '/acc_{$accountIdNoPrefix}/members_/invitations': typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes_/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes_/snapshots': typeof Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute
+  '/acc_{$accountIdNoPrefix}/sandboxes_/volumes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute
   '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
@@ -535,6 +575,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
+    | '/acc_{$accountIdNoPrefix}/sandboxes'
     | '/acc_{$accountIdNoPrefix}/settings'
     | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
@@ -551,12 +592,15 @@ export interface FileRouteTypes {
     | '/user/profile'
     | '/acc_{$accountIdNoPrefix}/'
     | '/admin/'
-    | '/landing'
+    | '/landing/'
     | '/user/'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure'
     | '/acc_{$accountIdNoPrefix}/api-tokens/create'
     | '/acc_{$accountIdNoPrefix}/credits/usage'
     | '/acc_{$accountIdNoPrefix}/members/invitations'
+    | '/acc_{$accountIdNoPrefix}/sandboxes/sandboxes'
+    | '/acc_{$accountIdNoPrefix}/sandboxes/snapshots'
+    | '/acc_{$accountIdNoPrefix}/sandboxes/volumes'
     | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows'
@@ -565,9 +609,9 @@ export interface FileRouteTypes {
     | '/auth/oauth2/consent'
     | '/user/api-tokens/create'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/'
-    | '/admin/apps'
-    | '/user/security'
-    | '/user/wallet'
+    | '/admin/apps/'
+    | '/user/security/'
+    | '/user/wallet/'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/api-tokens'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/configure/oauth-application'
   fileRoutesByTo: FileRoutesByTo
@@ -584,6 +628,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
+    | '/acc_{$accountIdNoPrefix}/sandboxes'
     | '/acc_{$accountIdNoPrefix}/settings'
     | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
@@ -606,6 +651,9 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens/create'
     | '/acc_{$accountIdNoPrefix}/credits/usage'
     | '/acc_{$accountIdNoPrefix}/members/invitations'
+    | '/acc_{$accountIdNoPrefix}/sandboxes/sandboxes'
+    | '/acc_{$accountIdNoPrefix}/sandboxes/snapshots'
+    | '/acc_{$accountIdNoPrefix}/sandboxes/volumes'
     | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows'
@@ -637,6 +685,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
+    | '/acc_{$accountIdNoPrefix}/sandboxes'
     | '/acc_{$accountIdNoPrefix}/settings'
     | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
@@ -659,6 +708,9 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens_/create'
     | '/acc_{$accountIdNoPrefix}/credits_/usage'
     | '/acc_{$accountIdNoPrefix}/members_/invitations'
+    | '/acc_{$accountIdNoPrefix}/sandboxes_/sandboxes'
+    | '/acc_{$accountIdNoPrefix}/sandboxes_/snapshots'
+    | '/acc_{$accountIdNoPrefix}/sandboxes_/volumes'
     | '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId'
     | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows'
@@ -770,7 +822,7 @@ declare module '@tanstack/react-router' {
     '/landing/': {
       id: '/landing/'
       path: '/landing'
-      fullPath: '/landing'
+      fullPath: '/landing/'
       preLoaderRoute: typeof LandingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -886,6 +938,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125SettingsRouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
+    '/acc_{$accountIdNoPrefix}/sandboxes': {
+      id: '/acc_{$accountIdNoPrefix}/sandboxes'
+      path: '/sandboxes'
+      fullPath: '/acc_{$accountIdNoPrefix}/sandboxes'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
     '/acc_{$accountIdNoPrefix}/models': {
       id: '/acc_{$accountIdNoPrefix}/models'
       path: '/models'
@@ -938,21 +997,21 @@ declare module '@tanstack/react-router' {
     '/user/wallet/': {
       id: '/user/wallet/'
       path: '/wallet'
-      fullPath: '/user/wallet'
+      fullPath: '/user/wallet/'
       preLoaderRoute: typeof UserWalletIndexRouteImport
       parentRoute: typeof UserRouteRoute
     }
     '/user/security/': {
       id: '/user/security/'
       path: '/security'
-      fullPath: '/user/security'
+      fullPath: '/user/security/'
       preLoaderRoute: typeof UserSecurityIndexRouteImport
       parentRoute: typeof UserRouteRoute
     }
     '/admin/apps/': {
       id: '/admin/apps/'
       path: '/apps'
-      fullPath: '/admin/apps'
+      fullPath: '/admin/apps/'
       preLoaderRoute: typeof AdminAppsIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
@@ -1012,6 +1071,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125RouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
+    '/acc_{$accountIdNoPrefix}/sandboxes_/volumes': {
+      id: '/acc_{$accountIdNoPrefix}/sandboxes_/volumes'
+      path: '/sandboxes/volumes'
+      fullPath: '/acc_{$accountIdNoPrefix}/sandboxes/volumes'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}/sandboxes_/snapshots': {
+      id: '/acc_{$accountIdNoPrefix}/sandboxes_/snapshots'
+      path: '/sandboxes/snapshots'
+      fullPath: '/acc_{$accountIdNoPrefix}/sandboxes/snapshots'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}/sandboxes_/sandboxes': {
+      id: '/acc_{$accountIdNoPrefix}/sandboxes_/sandboxes'
+      path: '/sandboxes/sandboxes'
+      fullPath: '/acc_{$accountIdNoPrefix}/sandboxes/sandboxes'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
     '/acc_{$accountIdNoPrefix}/members_/invitations': {
       id: '/acc_{$accountIdNoPrefix}/members_/invitations'
       path: '/members/invitations'
@@ -1064,6 +1144,7 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125McpRoute: typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   Acc_Char123accountIdNoPrefixChar125MembersRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   Acc_Char123accountIdNoPrefixChar125ModelsRoute: typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
+  Acc_Char123accountIdNoPrefixChar125SandboxesRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   Acc_Char123accountIdNoPrefixChar125SettingsRoute: typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
   Acc_Char123accountIdNoPrefixChar125ToolsRoute: typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   Acc_Char123accountIdNoPrefixChar125TracingRoute: typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
@@ -1071,6 +1152,9 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensCreateRoute
   Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute
   Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute
+  Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute
+  Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute
+  Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute
   Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route: typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
 }
 
@@ -1088,6 +1172,8 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125MembersRoute,
     Acc_Char123accountIdNoPrefixChar125ModelsRoute:
       Acc_Char123accountIdNoPrefixChar125ModelsRoute,
+    Acc_Char123accountIdNoPrefixChar125SandboxesRoute:
+      Acc_Char123accountIdNoPrefixChar125SandboxesRoute,
     Acc_Char123accountIdNoPrefixChar125SettingsRoute:
       Acc_Char123accountIdNoPrefixChar125SettingsRoute,
     Acc_Char123accountIdNoPrefixChar125ToolsRoute:
@@ -1102,6 +1188,12 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125CreditsUsageRoute,
     Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute:
       Acc_Char123accountIdNoPrefixChar125MembersInvitationsRoute,
+    Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute:
+      Acc_Char123accountIdNoPrefixChar125SandboxesSandboxesRoute,
+    Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute:
+      Acc_Char123accountIdNoPrefixChar125SandboxesSnapshotsRoute,
+    Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute:
+      Acc_Char123accountIdNoPrefixChar125SandboxesVolumesRoute,
     Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route:
       Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route,
   }

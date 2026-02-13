@@ -108,6 +108,7 @@ const snapshotStateSchema = z.enum([
 
 const snapshotSchema = z.object({
   id: z.string(),
+  general: z.boolean(),
   name: z.string(),
   imageName: z.string().optional(),
   entrypoint: z.array(z.string()).optional(),
@@ -123,7 +124,6 @@ const snapshotSchema = z.object({
   updatedAt: z.date(),
   lastUsedAt: z.date().optional(),
   regionIds: z.array(z.string()).optional(),
-  ref: z.string().optional(),
 })
 
 const containerRegistrySchema = z.object({
@@ -131,7 +131,7 @@ const containerRegistrySchema = z.object({
   name: z.string(),
   url: z.string(),
   username: z.string(),
-  project: z.string().optional(),
+  project: z.string(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })
@@ -153,11 +153,10 @@ export const sandboxRouter = {
       tags: ['sandboxes'],
       summary: 'Enable sandbox API for the account',
     })
-    .input(z.object({}))
-    .output(z.object({}))
+    .input(z.undefined())
+    .output(z.undefined())
     .handler(async ({ context }) => {
       await daytonaService.ensure(context.auth.userId, context.auth.accountId)
-      return {}
     }),
 
   listRegions: userOrAppUserProtectedProcedure
@@ -852,8 +851,16 @@ export const sandboxRouter = {
     .input(
       z
         .object({
-          page: z.number().optional().meta({ description: 'Page number' }),
-          limit: z.number().optional().meta({ description: 'Results per page' }),
+          cursor: z
+            .string()
+            .optional()
+            .meta({ description: 'Pagination cursor from previous response' }),
+          limit: z
+            .int()
+            .positive()
+            .max(100)
+            .default(20)
+            .meta({ description: 'Number of results per page' }),
           name: z.string().optional().meta({ description: 'Filter by partial name match' }),
           sort: z
             .enum(['name', 'state', 'lastUsedAt', 'createdAt'])
@@ -865,13 +872,14 @@ export const sandboxRouter = {
     )
     .output(
       z.object({
-        snapshots: z.array(snapshotSchema).optional(),
-        page: z.number().optional(),
+        snapshots: z.array(snapshotSchema),
+        hasMore: z.boolean(),
+        cursor: z.string().optional(),
       }),
     )
     .handler(async ({ context, input }) => {
       return await daytonaService.getSnapshots(context.auth.accountId, {
-        page: input?.page,
+        cursor: input?.cursor,
         limit: input?.limit,
         name: input?.name,
         sort: input?.sort,
@@ -1105,7 +1113,7 @@ export const sandboxRouter = {
             name: z.string().meta({ description: 'Registry name' }),
             url: z.string().meta({ description: 'Registry URL' }),
             username: z.string().meta({ description: 'Registry username' }),
-            project: z.string().optional().meta({ description: 'Registry project' }),
+            project: z.string().meta({ description: 'Registry project' }),
             createdAt: z.date().meta({ description: 'Creation timestamp' }),
             updatedAt: z.date().meta({ description: 'Last update timestamp' }),
           }),
@@ -1142,7 +1150,7 @@ export const sandboxRouter = {
           name: z.string().meta({ description: 'Registry name' }),
           url: z.string().meta({ description: 'Registry URL' }),
           username: z.string().meta({ description: 'Registry username' }),
-          project: z.string().optional().meta({ description: 'Registry project' }),
+          project: z.string().meta({ description: 'Registry project' }),
           createdAt: z.date().meta({ description: 'Creation timestamp' }),
           updatedAt: z.date().meta({ description: 'Last update timestamp' }),
         }),

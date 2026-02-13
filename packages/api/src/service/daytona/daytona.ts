@@ -10,7 +10,7 @@ import {
   UsersApi,
   VolumesApi,
 } from '@daytonaio/api-client'
-import { Daytona, DaytonaNotFoundError } from '@daytonaio/sdk'
+import { Daytona, DaytonaError, DaytonaNotFoundError } from '@daytonaio/sdk'
 
 import { getUuid, LRUCache, lruCacheSizeCalculation, stripIdPrefix } from '@cared/shared'
 
@@ -22,16 +22,22 @@ import type {
   CreateSandbox,
   CreateSnapshot,
   CreateVolume,
+  DockerRegistry,
   GetAllSnapshotsOrderEnum,
   GetAllSnapshotsSortEnum,
   ListSandboxesPaginatedOrderEnum,
   ListSandboxesPaginatedSortEnum,
   ListSandboxesPaginatedStatesEnum,
   ObjectStorageApi,
+  Region,
+  RegistryPushAccessDto,
   Sandbox,
   SandboxLabels,
+  SnapshotDto,
+  SshAccessDto,
   UpdateDockerRegistry,
   UpdateSandboxStateDto,
+  VolumeDto,
 } from '@daytonaio/api-client'
 import type { SnapshotService, VolumeService } from '@daytonaio/sdk'
 import { env } from '../../env'
@@ -158,30 +164,45 @@ export class DaytonaService {
     const orgsApi = new OrganizationsApi(intf.clientConfig, '', intf.axios)
     try {
       await orgsApi.getOrganization(this.#organizationId(accountId))
+      return
     } catch (err) {
-      if (!(err instanceof DaytonaNotFoundError)) {
+      if (
+        !(
+          err instanceof DaytonaNotFoundError ||
+          (err instanceof DaytonaError && err.statusCode === 403)
+        )
+      ) {
         throw err
       }
     }
     await orgsApi.createOrganization({
       name: accountId,
-      defaultRegionId: '',
+      defaultRegionId: 'hil', // TODO
       id: this.#organizationId(accountId),
       userId: this.#userId(userId),
     } as CreateOrganization)
   }
 
-  async #ensureApiKey(userId: string, accountId: string) {
+  async #checkApiKey(userId: string, accountId: string) {
     const intf = this.#adminIntf()
     const apiKeysApi = new ApiKeysApi(intf.clientConfig, '', intf.axios)
     try {
       await apiKeysApi.getApiKey('Cared', this.#organizationId(accountId), this.#userId(userId))
-      return
+      return true
     } catch (err) {
       if (!(err instanceof DaytonaNotFoundError)) {
         throw err
       }
+      return false
     }
+  }
+
+  async #ensureApiKey(userId: string, accountId: string) {
+    if (await this.#checkApiKey(userId, accountId)) {
+      return
+    }
+    const intf = this.#adminIntf()
+    const apiKeysApi = new ApiKeysApi(intf.clientConfig, '', intf.axios)
     await apiKeysApi.createApiKey({
       name: 'Cared',
       permissions: [
@@ -208,32 +229,16 @@ export class DaytonaService {
   }
 
   async ensure(userId: string, accountId: string) {
+    console.log('ensure', userId, accountId)
+    if (await this.#checkApiKey(userId, accountId)) {
+      return
+    }
     await this.#ensureUser(userId)
     await this.#ensureOrganization(userId, accountId)
     await this.#ensureApiKey(userId, accountId)
   }
 
   /** User-facing APIs */
-
-  async listRegions(accountId: string) {
-    const intf = this.#userIntf(accountId)
-    const api = new RegionsApi(intf.clientConfig, '', intf.axios)
-    const { data } = await api.listSharedRegions()
-    return (
-      data
-        // TODO: support dedicated?
-        .filter((r) => ['shared', 'custom'].includes(r.regionType))
-        .map((r) => {
-          const { organizationId: _omit, regionType, ...rest } = r
-          return {
-            ...rest,
-            regionType: regionType as 'shared' | 'custom',
-            createdAt: toDate(r.createdAt),
-            updatedAt: toDate(r.updatedAt),
-          }
-        })
-    )
-  }
 
   #makeSandbox(s: Sandbox) {
     return {
@@ -245,27 +250,108 @@ export class DaytonaService {
       labels: s.labels,
       public: s.public,
       networkBlockAll: s.networkBlockAll,
-      networkAllowList: s.networkAllowList,
+      networkAllowList: s.networkAllowList ?? undefined,
       regionId: s.target,
       cpu: s.cpu,
       memory: s.memory,
       disk: s.disk,
       gpu: s.gpu,
-      state: s.state,
-      desiredState: s.desiredState,
-      errorReason: s.errorReason,
-      recoverable: s.recoverable,
-      backupState: s.backupState,
+      state: s.state ?? undefined,
+      desiredState: s.desiredState ?? undefined,
+      errorReason: s.errorReason ?? undefined,
+      recoverable: s.recoverable ?? undefined,
+      backupState: s.backupState ?? undefined,
       backupCreatedAt: toDate(s.backupCreatedAt),
-      autoStopInterval: s.autoStopInterval,
-      autoArchiveInterval: s.autoArchiveInterval,
-      autoDeleteInterval: s.autoDeleteInterval,
-      volumes: s.volumes,
-      buildInfo: s.buildInfo,
+      autoStopInterval: s.autoStopInterval ?? undefined,
+      autoArchiveInterval: s.autoArchiveInterval ?? undefined,
+      autoDeleteInterval: s.autoDeleteInterval ?? undefined,
+      volumes: s.volumes ?? undefined,
+      buildInfo: s.buildInfo ?? undefined,
       createdAt: toDate(s.createdAt),
       updatedAt: toDate(s.updatedAt),
-      daemonVersion: s.daemonVersion,
+      daemonVersion: s.daemonVersion ?? undefined,
     }
+  }
+
+  #makeSnapshot(item: SnapshotDto) {
+    return {
+      id: item.id,
+      general: item.general,
+      name: item.name,
+      imageName: item.imageName ?? undefined,
+      entrypoint: item.entrypoint ?? undefined,
+      buildInfo: item.buildInfo,
+      state: item.state,
+      cpu: item.cpu,
+      mem: item.mem,
+      disk: item.disk,
+      gpu: item.gpu,
+      size: item.size != null ? Math.ceil(item.size) : undefined,
+      errorReason: item.errorReason ?? undefined,
+      createdAt: toDate(item.createdAt),
+      updatedAt: toDate(item.updatedAt),
+      lastUsedAt: toDate(item.lastUsedAt),
+      regionIds: item.regionIds,
+    }
+  }
+
+  #makeRegion(r: Region) {
+    const { organizationId: _omit, regionType, ...rest } = r
+    return {
+      ...rest,
+      regionType: regionType as 'shared' | 'custom',
+      createdAt: toDate(r.createdAt),
+      updatedAt: toDate(r.updatedAt),
+    }
+  }
+
+  #makeSshAccess(data: SshAccessDto) {
+    return {
+      id: data.id,
+      sandboxId: data.sandboxId,
+      sshCommand: data.sshCommand,
+      token: data.token,
+      expiresAt: toDate(data.expiresAt),
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+    }
+  }
+
+  #makeVolume(v: VolumeDto) {
+    const { organizationId: _omit, ...rest } = v
+    return {
+      ...rest,
+      errorReason: rest.errorReason ?? undefined,
+      createdAt: toDate(v.createdAt),
+      updatedAt: toDate(v.updatedAt),
+      lastUsedAt: toDate(v.lastUsedAt),
+    }
+  }
+
+  #makeRegistry(r: DockerRegistry) {
+    const { registryType: _omit, ...rest } = r
+    return {
+      ...rest,
+      project: rest.project,
+      createdAt: toDate(r.createdAt),
+      updatedAt: toDate(r.updatedAt),
+    }
+  }
+
+  #makeRegistryTransientPushAccess(data: RegistryPushAccessDto) {
+    return { ...data, expiresAt: toDate(data.expiresAt) }
+  }
+
+  async listRegions(accountId: string) {
+    const intf = this.#userIntf(accountId)
+    const api = new RegionsApi(intf.clientConfig, '', intf.axios)
+    const { data } = await api.listSharedRegions()
+    return (
+      data
+        // TODO: support dedicated?
+        .filter((r) => ['shared', 'custom'].includes(r.regionType))
+        .map((r) => this.#makeRegion(r))
+    )
   }
 
   async listSandboxes(
@@ -292,13 +378,12 @@ export class DaytonaService {
       order?: ListSandboxesPaginatedOrderEnum
     },
   ) {
-    const page = parseInt(opts?.cursor ?? '0', 10)
-    const pageNum = Number.isNaN(page) || page < 0 ? 0 : page
+    const page = opts?.cursor ? parseInt(opts.cursor, 10) : undefined
     const intf = this.#userIntf(accountId)
     const api = new SandboxApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.listSandboxesPaginated(
       undefined,
-      pageNum,
+      page, // starts from 1
       opts?.limit,
       opts?.id,
       opts?.name,
@@ -318,7 +403,7 @@ export class DaytonaService {
       opts?.sort,
       opts?.order,
     )
-    const hasMore = data.page + 1 < data.totalPages
+    const hasMore = data.page < data.totalPages
     return {
       sandboxes: data.items.map((s) => this.#makeSandbox(s)),
       hasMore,
@@ -440,15 +525,7 @@ export class DaytonaService {
       undefined,
       expiresInMinutes,
     )
-    return {
-      id: data.id,
-      sandboxId: data.sandboxId,
-      sshCommand: data.sshCommand,
-      token: data.token,
-      expiresAt: toDate(data.expiresAt),
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-    }
+    return this.#makeSshAccess(data)
   }
 
   async revokeSshAccess(accountId: string, sandboxIdOrName: string, token?: string) {
@@ -513,34 +590,29 @@ export class DaytonaService {
   async getSnapshots(
     accountId: string,
     opts?: {
-      page?: number
+      cursor?: string
       limit?: number
       name?: string
       sort?: GetAllSnapshotsSortEnum
       order?: GetAllSnapshotsOrderEnum
     },
   ) {
+    const page = opts?.cursor ? parseInt(opts.cursor, 10) : undefined
     const intf = this.#userIntf(accountId)
     const api = new SnapshotsApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.getAllSnapshots(
       undefined,
-      opts?.page,
+      page, // starts from 1
       opts?.limit,
       opts?.name,
       opts?.sort,
       opts?.order,
     )
+    const hasMore = data.page < data.totalPages
     return {
-      snapshots: data.items.map((item) => ({
-        ...item,
-        size: item.size ?? undefined,
-        entrypoint: item.entrypoint ?? undefined,
-        errorReason: item.errorReason ?? undefined,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-        lastUsedAt: item.lastUsedAt ?? undefined,
-      })),
-      page: data.page,
+      snapshots: data.items.map((item) => this.#makeSnapshot(item)),
+      hasMore,
+      cursor: hasMore ? String(data.page + 1) : undefined,
     }
   }
 
@@ -548,32 +620,14 @@ export class DaytonaService {
     const intf = this.#userIntf(accountId)
     const api = new SnapshotsApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.getSnapshot(id)
-    return {
-      ...data,
-      size: data.size ?? undefined,
-      entrypoint: data.entrypoint ?? undefined,
-      errorReason: data.errorReason ?? undefined,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-      lastUsedAt: data.lastUsedAt ?? undefined,
-    }
+    return this.#makeSnapshot(data)
   }
 
   async createSnapshot(accountId: string, createSnapshot: Omit<CreateSnapshot, 'general'>) {
     const intf = this.#userIntf(accountId)
     const api = new SnapshotsApi(intf.clientConfig, '', intf.axios)
-    const {
-      data: { organizationId: _omit, general: _omit2, initialRunnerId: _omit3, ...data },
-    } = await api.createSnapshot({ ...createSnapshot, general: false })
-    return {
-      ...data,
-      size: data.size ?? undefined,
-      entrypoint: data.entrypoint ?? undefined,
-      errorReason: data.errorReason ?? undefined,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-      lastUsedAt: data.lastUsedAt ?? undefined,
-    }
+    const { data } = await api.createSnapshot({ ...createSnapshot, general: false })
+    return this.#makeSnapshot(data)
   }
 
   async removeSnapshot(accountId: string, id: string) {
@@ -586,15 +640,7 @@ export class DaytonaService {
     const intf = this.#userIntf(accountId)
     const api = new SnapshotsApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.activateSnapshot(id)
-    return {
-      ...data,
-      size: data.size ?? undefined,
-      entrypoint: data.entrypoint ?? undefined,
-      errorReason: data.errorReason ?? undefined,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-      lastUsedAt: data.lastUsedAt ?? undefined,
-    }
+    return this.#makeSnapshot(data)
   }
 
   async deactivateSnapshot(accountId: string, id: string) {
@@ -613,59 +659,29 @@ export class DaytonaService {
   async listVolumes(accountId: string, includeDeleted?: boolean) {
     const intf = this.#userIntf(accountId)
     const api = new VolumesApi(intf.clientConfig, '', intf.axios)
-    const { data } = await api.listVolumes(undefined, includeDeleted)
-    return data.map((v) => {
-      const { organizationId: _omit, ...rest } = v
-      return {
-        ...rest,
-        errorReason: rest.errorReason ?? undefined,
-        createdAt: toDate(v.createdAt),
-        updatedAt: toDate(v.updatedAt),
-        lastUsedAt: toDate(v.lastUsedAt),
-      }
-    })
+    const { data } = await api.listVolumes(undefined, includeDeleted ? true : undefined)
+    return data.map((v) => this.#makeVolume(v))
   }
 
   async getVolume(accountId: string, volumeId: string) {
     const intf = this.#userIntf(accountId)
     const api = new VolumesApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.getVolume(volumeId)
-    const { organizationId: _omit, ...rest } = data
-    return {
-      ...rest,
-      errorReason: rest.errorReason ?? undefined,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-      lastUsedAt: toDate(data.lastUsedAt),
-    }
+    return this.#makeVolume(data)
   }
 
   async getVolumeByName(accountId: string, name: string) {
     const intf = this.#userIntf(accountId)
     const api = new VolumesApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.getVolumeByName(name)
-    const { organizationId: _omit, ...rest } = data
-    return {
-      ...rest,
-      errorReason: rest.errorReason ?? undefined,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-      lastUsedAt: toDate(data.lastUsedAt),
-    }
+    return this.#makeVolume(data)
   }
 
   async createVolume(accountId: string, createVolume: CreateVolume) {
     const intf = this.#userIntf(accountId)
     const api = new VolumesApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.createVolume(createVolume)
-    const { organizationId: _omit, ...rest } = data
-    return {
-      ...rest,
-      errorReason: rest.errorReason ?? undefined,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-      lastUsedAt: toDate(data.lastUsedAt),
-    }
+    return this.#makeVolume(data)
   }
 
   async deleteVolume(accountId: string, volumeId: string) {
@@ -691,31 +707,14 @@ export class DaytonaService {
     const intf = this.#userIntf(accountId)
     const api = new DockerRegistryApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.listRegistries()
-    return data.map(
-      ({
-        registryType: _omit, // always `organization`
-        ...r
-      }) => ({
-        ...r,
-        project: r.project || undefined,
-        createdAt: toDate(r.createdAt),
-        updatedAt: toDate(r.updatedAt),
-      }),
-    )
+    return data.map((r) => this.#makeRegistry(r))
   }
 
   async getRegistry(accountId: string, id: string) {
     const intf = this.#userIntf(accountId)
     const api = new DockerRegistryApi(intf.clientConfig, '', intf.axios)
-    const {
-      data: { registryType: _omit, ...data },
-    } = await api.getRegistry(id)
-    return {
-      ...data,
-      project: data.project || undefined,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-    }
+    const { data } = await api.getRegistry(id)
+    return this.#makeRegistry(data)
   }
 
   async createRegistry(
@@ -724,31 +723,19 @@ export class DaytonaService {
   ) {
     const intf = this.#userIntf(accountId)
     const api = new DockerRegistryApi(intf.clientConfig, '', intf.axios)
-    const {
-      data: { registryType: _omit, ...data },
-    } = await api.createRegistry({
+    const { data } = await api.createRegistry({
       ...createDockerRegistry,
       registryType: 'organization',
       isDefault: false,
     })
-    return {
-      ...data,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-    }
+    return this.#makeRegistry(data)
   }
 
   async updateRegistry(accountId: string, id: string, updateDockerRegistry: UpdateDockerRegistry) {
     const intf = this.#userIntf(accountId)
     const api = new DockerRegistryApi(intf.clientConfig, '', intf.axios)
-    const {
-      data: { registryType: _omit, ...data },
-    } = await api.updateRegistry(id, updateDockerRegistry)
-    return {
-      ...data,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-    }
+    const { data } = await api.updateRegistry(id, updateDockerRegistry)
+    return this.#makeRegistry(data)
   }
 
   async deleteRegistry(accountId: string, id: string) {
@@ -761,7 +748,7 @@ export class DaytonaService {
     const intf = this.#userIntf(accountId)
     const api = new DockerRegistryApi(intf.clientConfig, '', intf.axios)
     const { data } = await api.getTransientPushAccess(undefined, regionId)
-    return { ...data, expiresAt: toDate(data.expiresAt) }
+    return this.#makeRegistryTransientPushAccess(data)
   }
 }
 

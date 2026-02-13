@@ -36,10 +36,9 @@
     "@cared/providers": "workspace:*",
     "@cared/shared": "workspace:*",
     "@cared/vdb": "workspace:*",
-    "@composio/core": "^0.2.4",
-    "@composio/json-schema-to-zod": "^0.1.18",
-    "@composio/vercel": "^0.2.16",
-    "agent-twitter-client": "^0.0.18",
+    "@composio/core": "^0.6.3",
+    "@composio/json-schema-to-zod": "^0.1.20",
+    "@composio/vercel": "^0.6.3",
     "ai": "catalog:"
   }
 }

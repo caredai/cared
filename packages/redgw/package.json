@@ -37,7 +37,7 @@
     "@aws-sdk/client-s3": "^3.901.0",
     "@hono/node-server": "^1.19.6",
     "@js-temporal/polyfill": "^0.5.1",
-    "@orpc/server": "^1.10.4",
+    "@orpc/server": "^1.13.5",
     "@t3-oss/env-core": "^0.13.8",
     "falkordb": "github:caredai/falkordb-ts#main",
     "hono": "^4.11.1",

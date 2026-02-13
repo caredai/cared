@@ -1,0 +1,12 @@
+diff --git a/package.json b/package.json
+index 7e84ef71d6094162cf911888d5fa6254b8022789..525ada31c368de3ecfb897b10a83b897cf3e5508 100644
+--- a/package.json
++++ b/package.json
+@@ -4,6 +4,7 @@
+   "version": "13.15.15",
+   "sideEffects": false,
+   "homepage": "https://github.com/validatorjs/validator.js",
++  "type": "module",
+   "files": [
+     "index.js",
+     "es",

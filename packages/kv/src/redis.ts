@@ -35,7 +35,7 @@ export async function getRedisClient(): Promise<RedisClient> {
         3,
         TypeMapping
       >({
-        rootNodes: env.REDIS_CLUSTER_NODES.map((node) => ({
+        rootNodes: env.REDIS_CLUSTER_NODES!.map((node) => ({
           url: `redis://${node}`,
         })),
         defaults: {
@@ -58,7 +58,7 @@ export async function getRedisClient(): Promise<RedisClient> {
         TypeMapping
       >({
         name: env.REDIS_SENTINEL_MASTER_NAME,
-        sentinelRootNodes: env.REDIS_SENTINEL_NODES.map(([host, port]) => ({
+        sentinelRootNodes: env.REDIS_SENTINEL_NODES!.map(([host, port]) => ({
           host: host!,
           port: Number(port!),
         })),

@@ -1,6 +1,7 @@
 import {
   Activity,
   Bot,
+  Box,
   Brain,
   CircleDollarSign,
   Database,
@@ -54,6 +55,25 @@ const items: NavItem[] = [
 
   {
     type: 'separator',
+  },
+  {
+    title: 'Sandboxes',
+    url: '/sandboxes',
+    icon: Box,
+    items: [
+      {
+        title: 'Sandboxes',
+        url: '/sandboxes',
+      },
+      {
+        title: 'Snapshots',
+        url: '/snapshots',
+      },
+      {
+        title: 'Volumes',
+        url: '/volumes',
+      },
+    ],
   },
   {
     title: 'Apps',

@@ -39,4 +39,4 @@ RUN adduser --system --uid 1001 cared
 USER cared
 COPY --from=builder /app .
 
-CMD node apps/api/dist/index.mjs
+ENTRYPOINT ["node", "apps/api/dist/index.mjs"]
