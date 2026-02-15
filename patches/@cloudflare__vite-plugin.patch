@@ -1,13 +1,13 @@
-diff --git a/dist/index.js b/dist/index.js
-index 4baa1eec66fe28f7578309243a9e552428c5406a..b093aa7bf52055dc6d4fa449b30a8f291662e5e3 100644
---- a/dist/index.js
-+++ b/dist/index.js
-@@ -17411,7 +17411,7 @@ function resolvePluginConfig(pluginConfig, userConfig, viteEnv) {
-     experimental: pluginConfig.experimental ?? {}
-   };
-   const root = userConfig.root ? path13.resolve(userConfig.root) : process.cwd();
--  const prefixedEnv = vite5.loadEnv(viteEnv.mode, root, [
-+  const prefixedEnv = vite5.loadEnv(viteEnv.mode, userConfig.envDir ? path13.resolve(root, userConfig.envDir) : root, [
-     "CLOUDFLARE_",
-     // TODO: Remove deprecated WRANGLER prefix support in next major version
-     "WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_"
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 8536368f30c5d01bf7e82ae5692dbba287a6a59a..29b26ef353f08a7c4c537ab3479a1c9f8243ba43 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -14543,7 +14543,7 @@ function resolvePluginConfig(pluginConfig, userConfig, viteEnv) {
+ 		experimental: { headersAndRedirectsDevModeSupport: pluginConfig.experimental?.headersAndRedirectsDevModeSupport }
+ 	};
+ 	const root = userConfig.root ? nodePath.resolve(userConfig.root) : process.cwd();
+-	const prefixedEnv = vite.loadEnv(viteEnv.mode, root, ["CLOUDFLARE_", "WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_"]);
++	const prefixedEnv = vite.loadEnv(viteEnv.mode, userConfig.envDir ? nodePath.resolve(root, userConfig.envDir) : root, ["CLOUDFLARE_", "WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_"]);
+ 	Object.assign(process.env, prefixedEnv);
+ 	if (viteEnv.isPreview) return {
+ 		...shared,

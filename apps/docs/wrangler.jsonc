@@ -1,12 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cared-docs",
-  "compatibility_date": "2025-09-19",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "global_fetch_strictly_public",
-    "nodejs_compat_populate_process_env"
-  ],
+  "compatibility_date": "2026-02-12",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "main": "@tanstack/react-start/server-entry",
   "observability": {
     "enabled": true
@@ -14,12 +10,10 @@
   "keep_names": false,
   "keep_vars": true,
   "send_metrics": false,
-  "vars": {
-  },
+  "vars": {},
   "env": {
     "production": {
-      "vars": {
-      }
+      "vars": {}
     }
   }
 }

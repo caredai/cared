@@ -1,9 +1,9 @@
 import { TanStackDevtools } from '@tanstack/react-devtools'
-import { createRootRoute, HeadContent, Scripts } from '@tanstack/react-router'
+import { createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { RootProvider } from 'fumadocs-ui/provider/tanstack'
 
-import appCss from '../styles.css?url'
+import appCss from '@/styles/app.css?url'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -16,7 +16,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Fumadocs on TanStack Start',
       },
     ],
     links: [
@@ -34,13 +34,21 @@ export const Route = createRootRoute({
       },
       {
         rel: 'manifest',
-        href: '/docs/manifest.json'
-      }
+        href: '/docs/manifest.json',
+      },
     ],
   }),
 
-  shellComponent: RootDocument,
+  component: RootComponent,
 })
+
+function RootComponent() {
+  return (
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -48,8 +56,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="flex flex-col min-h-screen">
         <RootProvider>{children}</RootProvider>
+        <Scripts />
         <TanStackDevtools
           config={{
             position: 'bottom-right',
@@ -61,7 +70,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             },
           ]}
         />
-        <Scripts />
       </body>
     </html>
   )

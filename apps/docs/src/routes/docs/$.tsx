@@ -1,27 +1,27 @@
-import type * as PageTree from 'fumadocs-core/page-tree'
-import { useMemo } from 'react'
+import { Suspense } from 'react'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
-import { createClientLoader } from 'fumadocs-mdx/runtime/vite'
+import { useFumadocsLoader } from 'fumadocs-core/source/client'
+import browserCollections from 'fumadocs-mdx:collections/browser'
 import { DocsLayout } from 'fumadocs-ui/layouts/docs'
+import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/layouts/docs/page'
 import defaultMdxComponents from 'fumadocs-ui/mdx'
-import { DocsBody, DocsDescription, DocsPage, DocsTitle } from 'fumadocs-ui/page'
 
+import { LLMCopyButton, ViewOptions } from '@/components/ai/page-actions'
 import { baseOptions } from '@/lib/layout.shared'
 import { source } from '@/lib/source'
-import { docs } from '../../../source.generated.ts'
 
 export const Route = createFileRoute('/docs/$')({
   component: Page,
   loader: async ({ params }) => {
     const slugs = params._splat?.split('/') ?? []
-    const data = await loader({ data: slugs })
+    const data = await serverLoader({ data: slugs })
     await clientLoader.preload(data.path)
     return data
   },
 })
 
-const loader = createServerFn({
+const serverLoader = createServerFn({
   method: 'GET',
 })
   .inputValidator((slugs: string[]) => slugs)
@@ -30,18 +30,31 @@ const loader = createServerFn({
     if (!page) throw notFound()
 
     return {
-      tree: source.pageTree as object,
+      url: page.url,
       path: page.path,
+      pageTree: await source.serializePageTree(source.getPageTree()),
     }
   })
 
-const clientLoader = createClientLoader(docs.doc, {
-  id: 'docs',
-  component({ toc, frontmatter, default: MDX }) {
+const clientLoader = browserCollections.docs.createClientLoader({
+  component(
+    { toc, frontmatter, default: MDX },
+    // you can define props for the component
+    {
+      url,
+    }: {
+      url: string
+      path: string
+    },
+  ) {
     return (
       <DocsPage toc={toc}>
         <DocsTitle>{frontmatter.title}</DocsTitle>
         <DocsDescription>{frontmatter.description}</DocsDescription>
+        <div className="flex flex-row gap-2 items-center border-b -mt-4 pb-6">
+          <LLMCopyButton markdownUrl={`${url}.mdx`} />
+          <ViewOptions markdownUrl={`${url}.mdx`} />
+        </div>
         <DocsBody>
           <MDX
             components={{
@@ -55,39 +68,11 @@ const clientLoader = createClientLoader(docs.doc, {
 })
 
 function Page() {
-  const data = Route.useLoaderData()
-  const Content = clientLoader.getComponent(data.path)
-  const tree = useMemo(() => transformPageTree(data.tree as PageTree.Folder), [data.tree])
+  const data = useFumadocsLoader(Route.useLoaderData())
 
   return (
-    <DocsLayout {...baseOptions()} tree={tree}>
-      <Content />
+    <DocsLayout {...baseOptions()} tree={data.pageTree}>
+      <Suspense>{clientLoader.useContent(data.path, data)}</Suspense>
     </DocsLayout>
   )
-}
-
-function transformPageTree(tree: PageTree.Folder): PageTree.Folder {
-  function transform<T extends PageTree.Item | PageTree.Separator>(item: T) {
-    if (typeof item.icon !== 'string') return item
-
-    return {
-      ...item,
-      icon: (
-        <span
-          dangerouslySetInnerHTML={{
-            __html: item.icon,
-          }}
-        />
-      ),
-    }
-  }
-
-  return {
-    ...tree,
-    index: tree.index ? transform(tree.index) : undefined,
-    children: tree.children.map((item) => {
-      if (item.type === 'folder') return transformPageTree(item)
-      return transform(item)
-    }),
-  }
 }

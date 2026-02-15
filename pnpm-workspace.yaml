@@ -8,7 +8,8 @@ catalog:
   ai: 5.0.38
   eslint: ^9.39.1
   prettier: ^3.6.2
-  tailwindcss: ^4.0.10
+  tailwindcss: ^4.1.18
+  '@tailwindcss/vite': ^4.1.18
   typescript: ^5.9.3
   # The version of `zod` should be the same across all packages and dependencies.
   # Otherwise, you may get the following error:

@@ -3,17 +3,18 @@
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",
+    "esModuleInterop": true,
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": false,
     "noEmit": true,
-
-    /* Linting */
     "skipLibCheck": true,
     "strict": true,
     "noUnusedLocals": true,
@@ -23,6 +24,7 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "fumadocs-mdx:collections/*": [".source/*"]
     }
   }
 }

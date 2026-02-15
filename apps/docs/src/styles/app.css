@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@theme {
+  --color-fd-background: hsl(0, 0%, 100%);
+  --color-fd-card: hsl(0, 0%, 98.7%);
+}

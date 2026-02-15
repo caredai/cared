@@ -67,7 +67,7 @@
     "undici": "^7.5.0",
     "unique-username-generator": "^1.5.1",
     "virtua": "^0.40.3",
-    "vite": "^7.1.7",
+    "vite": "^7.3.1",
     "zod": "catalog:",
     "zuji": "^1.0.8"
   },
@@ -75,17 +75,17 @@
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
     "@cared/tsconfig": "workspace:*",
-    "@cloudflare/vite-plugin": "^1.13.10",
+    "@cloudflare/vite-plugin": "^1.25.0",
     "@cloudflare/workers-types": "^4.20250918.0",
-    "@tailwindcss/vite": "^4.1.13",
-    "@tanstack/eslint-plugin-router": "^1.133.19",
+    "@tailwindcss/vite": "catalog:",
+    "@tanstack/eslint-plugin-router": "^1.155.0",
     "@tanstack/react-query-devtools": "^5.90.2",
-    "@tanstack/react-router-devtools": "^1.135.2",
+    "@tanstack/react-router-devtools": "^1.159.14",
     "@types/node": "^22.13.10",
     "@types/picomatch": "^4.0.2",
     "@types/react": "catalog:react19",
     "@types/react-dom": "catalog:react19",
-    "@vitejs/plugin-react": "^5.0.4",
+    "@vitejs/plugin-react": "^5.1.4",
     "dotenv-cli": "^8.0.0",
     "eslint": "catalog:",
     "postcss": "^8.5.3",
@@ -96,6 +96,6 @@
     "vite-plugin-mkcert": "^1.17.8",
     "vite-plugin-svgr": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "wrangler": "^4.38.0"
+    "wrangler": "^4.65.0"
   }
 }
