@@ -13,8 +13,8 @@
       "default": "./src/types/index.ts"
     },
     "./hono": {
-      "types": "./dist/hono/app.d.ts",
-      "default": "./src/hono/app.ts"
+      "types": "./dist/hono.d.ts",
+      "default": "./src/hono.ts"
     },
     "./telemetry": {
       "types": "./dist/telemetry/index.d.ts",

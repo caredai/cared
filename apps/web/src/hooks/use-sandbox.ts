@@ -59,6 +59,8 @@ export function useListSandboxes(input?: ListSandboxesInput) {
       getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.cursor : undefined),
       placeholderData: keepPreviousData,
     }),
+    // Refetch every 5 seconds to keep sandbox states up to date
+    refetchInterval: 5000,
   })
   const sandboxes = query.data?.pages.flatMap((p) => p.sandboxes) ?? []
   return {

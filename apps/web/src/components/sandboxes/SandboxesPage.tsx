@@ -166,24 +166,36 @@ export function SandboxesPage() {
     setShowDeleteDialog(true)
   }
 
-  const handleCreateSshAccess = useCallback((id: string) => {
+  const openCreateSshDialog = useCallback((id: string) => {
     setSshSandboxId(id)
     setSshAccess(null)
+    setSshExpiryMinutes(60)
     setShowCreateSshDialog(true)
   }, [])
 
   const handleCreateSshSubmit = useCallback(async () => {
     if (!sshSandboxId) return
+    setActionLoading((prev) => ({ ...prev, [sshSandboxId]: true }))
     try {
       const result = await createSshMutation.mutateAsync({
         idOrName: sshSandboxId,
         expiresInMinutes: sshExpiryMinutes,
       })
-      setSshAccess({ sshCommand: result.sshAccess.sshCommand })
-      toast.success('SSH access created')
+      // Ensure we have the sshCommand before updating state
+      const sshCommand = result.sshAccess.sshCommand
+      if (sshCommand) {
+        // Use a new object to ensure React detects the state change
+        setSshAccess({ sshCommand })
+        toast.success('SSH access created successfully')
+      } else {
+        console.error('Invalid SSH access response:', result)
+        toast.error('Failed to create SSH access: Invalid response')
+      }
     } catch (e) {
       toast.error('Failed to create SSH access')
-      console.error(e)
+      console.error('SSH access creation error:', e)
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [sshSandboxId]: false }))
     }
   }, [sshSandboxId, sshExpiryMinutes, createSshMutation])
 
@@ -411,7 +423,7 @@ export function SandboxesPage() {
             key: 'create-ssh',
             label: 'Create SSH Access',
             disabled: loading,
-            onClick: () => handleCreateSshAccess(id),
+            onClick: () => openCreateSshDialog(id),
           })
           menuItems.push({
             key: 'revoke-ssh',
@@ -501,9 +513,9 @@ export function SandboxesPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  {menuItems.map((item, idx) => {
-                    if ('type' in item && item.type === 'separator') {
-                      return <DropdownMenuSeparator key={`sep-${idx}`} />
+                  {menuItems.map((item) => {
+                    if ('type' in item) {
+                      return <DropdownMenuSeparator key="separator" />
                     }
                     const action = item as {
                       key: string
@@ -543,7 +555,7 @@ export function SandboxesPage() {
       stopMutation,
       archiveMutation,
       recoverMutation,
-      handleCreateSshAccess,
+      openCreateSshDialog,
     ],
   )
 
@@ -678,6 +690,10 @@ export function SandboxesPage() {
       <AlertDialog
         open={showCreateSshDialog}
         onOpenChange={(open) => {
+          // Don't close dialog if SSH access was just created and is being displayed
+          if (!open && sshAccess?.sshCommand) {
+            return
+          }
           setShowCreateSshDialog(open)
           if (!open) {
             setSshAccess(null)
@@ -686,58 +702,66 @@ export function SandboxesPage() {
           }
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Create SSH Access</AlertDialogTitle>
             <AlertDialogDescription>
-              {sshAccess
-                ? 'SSH access created. Use the command below to connect:'
-                : 'Set expiration time (minutes) for SSH access:'}
+              {sshAccess?.sshCommand
+                ? 'SSH access has been created successfully. Use the token below to connect:'
+                : 'Set the expiration time for SSH access:'}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {!sshAccess ? (
-            <div className="space-y-2">
-              <Label>Expiry (minutes)</Label>
-              <Input
-                type="number"
-                min={1}
-                max={1440}
-                value={sshExpiryMinutes}
-                onChange={(e) => setSshExpiryMinutes(Number(e.target.value))}
-                className="h-10"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
-              <code className="flex-1 truncate text-sm">{sshAccess.sshCommand}</code>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={() => {
-                  void copyTextToClipboard(sshAccess.sshCommand).then(() => {
-                    setCopiedSsh(true)
-                    setTimeout(() => setCopiedSsh(false), 2000)
-                  })
-                }}
-              >
-                {copiedSsh ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          )}
+          <div className="space-y-4">
+            {!sshAccess?.sshCommand ? (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Expiry (minutes):</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={sshExpiryMinutes}
+                  onChange={(e) => setSshExpiryMinutes(Number(e.target.value))}
+                  className="h-10"
+                />
+              </div>
+            ) : (
+              <div className="p-3 flex justify-between items-center rounded-md bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400">
+                <span className="overflow-x-auto pr-2 cursor-text select-all">{sshAccess.sshCommand}</span>
+                {copiedSsh ? (
+                  <Check className="w-4 h-4 shrink-0" />
+                ) : (
+                  <Copy
+                    className="w-4 h-4 cursor-pointer shrink-0"
+                    onClick={() => {
+                      void copyTextToClipboard(sshAccess.sshCommand).then(() => {
+                        setCopiedSsh(true)
+                        setTimeout(() => setCopiedSsh(false), 2000)
+                      })
+                    }}
+                  />
+                )}
+              </div>
+            )}
+          </div>
           <AlertDialogFooter>
-            {!sshAccess ? (
+            {!sshAccess?.sshCommand ? (
               <>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
+                <Button
                   onClick={() => void handleCreateSshSubmit()}
                   disabled={!sshSandboxId || createSshMutation.isPending}
+                  className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 >
                   {createSshMutation.isPending ? 'Creating...' : 'Create'}
-                </AlertDialogAction>
+                </Button>
               </>
             ) : (
-              <AlertDialogAction onClick={() => setShowCreateSshDialog(false)}>Close</AlertDialogAction>
+              <AlertDialogAction
+                onClick={() => setShowCreateSshDialog(false)}
+                className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              >
+                Close
+              </AlertDialogAction>
             )}
           </AlertDialogFooter>
         </AlertDialogContent>

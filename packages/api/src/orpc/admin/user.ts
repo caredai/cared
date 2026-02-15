@@ -85,7 +85,7 @@ export const userRouter = {
   /**
    * Get a single user by ID.
    * Only accessible by admin users.
-   * @param input - The user ID
+   * @param input - Object containing the user ID
    * @returns The user if found
    * @throws {ORPCError} If user not found
    */
@@ -96,10 +96,14 @@ export const userRouter = {
       tags: ['admin'],
       summary: 'Get a single user by ID',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ input }) => {
       const user = await db.query.User.findFirst({
-        where: eq(User.id, input),
+        where: eq(User.id, input.id),
       })
       if (!user) {
         throw new ORPCError('NOT_FOUND', {
@@ -116,7 +120,7 @@ export const userRouter = {
    * Delete a user and their associated data.
    * Only accessible by admin users.
    * Deletes user from both database and auth system.
-   * @param input - The user ID
+   * @param input - Object containing the user ID
    * @throws {ORPCError} If user not found or deletion fails
    */
   deleteUser: adminProcedure
@@ -126,13 +130,17 @@ export const userRouter = {
       tags: ['admin'],
       summary: 'Delete a user and their associated data',
     })
-    .input(z.string())
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
     .handler(async ({ context, input }) => {
       // Delete user from auth system
       await auth.api.removeUser({
         headers: authHeaders(context.headers),
         body: {
-          userId: input,
+          userId: input.id,
         },
       })
     }),

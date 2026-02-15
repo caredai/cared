@@ -74,7 +74,7 @@ export const accountRouter = {
   /**
    * Get a single account by ID.
    * Only accessible by admin users.
-   * @param input - The account ID
+   * @param input - Object containing the account ID
    * @returns The account if found
    * @throws {ORPCError} If account not found
    */
@@ -85,10 +85,14 @@ export const accountRouter = {
       tags: ['admin'],
       summary: 'Get a single account by ID',
     })
-    .input(z.string().min(32))
+    .input(
+      z.object({
+        id: z.string().min(32),
+      }),
+    )
     .handler(async ({ input }) => {
       const account = await db.query.Account.findFirst({
-        where: eq(Account.id, input),
+        where: eq(Account.id, input.id),
       })
 
       if (!account) {

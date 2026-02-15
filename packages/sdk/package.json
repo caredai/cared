@@ -31,6 +31,7 @@
     "typecheck": "tsc --noEmit --emitDeclarationOnly false",
     "prepublishOnly": "tsx ./scripts/prepare-publish.ts",
     "postpublish": "mv package.json.bak package.json",
+    "openapi-ts": "openapi-ts",
     "test-client": "env NODE_TLS_REJECT_UNAUTHORIZED=0 tsx ./scripts/test-client.ts"
   },
   "devDependencies": {
@@ -43,6 +44,7 @@
     "@cared/shared": "workspace:*",
     "@cared/tools": "workspace:*",
     "@cared/tsconfig": "workspace:*",
+    "@hey-api/openapi-ts": "0.92.4",
     "eslint": "catalog:",
     "prettier": "catalog:",
     "typescript": "catalog:"

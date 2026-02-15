@@ -15,12 +15,13 @@ import { getApiPath, getTrustedOrigins } from '@cared/auth/client'
 import { setupIntegrationGithubRoutes } from '@cared/integration'
 
 import type { HttpBindings } from '@hono/node-server'
-import { appRouter, createORPCContext } from '..'
-import { env } from '../env'
-import { Cache } from '../operation/cache'
-import { mcp, model, tasks, toolkits, webhooks } from '../rest'
-import { langflow } from '../rest/flow'
-import { registerTelemetry } from '../telemetry'
+import { env } from './env'
+import { Cache } from './operation/cache'
+import { createORPCContext } from './orpc'
+import { appRouter } from './orpc/router'
+import { mcp, model, tasks, toolkits, webhooks } from './rest'
+import { langflow } from './rest/flow'
+import { registerTelemetry } from './telemetry'
 
 export type Bindings = HttpBindings & {}
 
@@ -117,7 +118,14 @@ export function newHonoApp(): HonoApp {
         ],
       }),
       new OpenAPIReferencePlugin({
+        docsProvider: 'scalar',
         schemaConverters: [new ZodToJsonSchemaConverter()],
+        specGenerateOptions: {
+          info: {
+            title: 'Cared API Reference',
+            version: '1.0.0',
+          },
+        },
       }),
       new BatchHandlerPlugin(),
       new ResponseHeadersPlugin(),
