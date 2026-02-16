@@ -36,7 +36,7 @@ const MODEL_TYPES: { value: ModelType; label: string }[] = [
   { value: 'textEmbedding', label: 'Text Embedding Models' },
 ]
 
-export function ModelSheet({
+export function ModelsSheet({
   scope,
   provider,
   open,
@@ -431,7 +431,7 @@ export function ModelSheet({
                         <ModelItem
                           key={model.id}
                           index={index}
-                          providerId={providerId}
+                          provider={provider}
                           model={model}
                           isSearching={!!searchQuery.trim()}
                           onEdit={() => handleEdit(model.id)}
@@ -469,9 +469,9 @@ export function ModelSheet({
   )
 }
 
-function ModelItem({
+export function ModelItem({
   index,
-  providerId,
+  provider,
   model,
   isSearching,
   onEdit,
@@ -487,7 +487,7 @@ function ModelItem({
   scope,
 }: {
   index: number
-  providerId: ProviderId
+  provider: BaseProviderInfo
   model: EditableModel
   isSearching: boolean
   onEdit: () => void
@@ -552,7 +552,7 @@ function ModelItem({
     return (
       <ModelItemEdit
         index={index}
-        providerId={providerId}
+        providerId={provider.id}
         model={model}
         isSystem={scope === 'system'}
         isSaving={isSaving}
@@ -569,7 +569,7 @@ function ModelItem({
     return (
       <ModelItemView
         index={index}
-        providerId={providerId}
+        provider={provider}
         model={model}
         isSystem={scope === 'system'}
         isSearching={isSearching}

@@ -129,7 +129,7 @@ export const modelRouter = {
    * @param input - Object containing optional model type filter and accountId
    * @returns Models organized by type, each containing providers with their models
    */
-  listProvidersModels: protectedProcedure
+  listProvidersModels: publicProcedure
     .route({
       method: 'GET',
       path: '/providers-models',
@@ -147,8 +147,10 @@ export const modelRouter = {
         }),
     )
     .handler(async ({ input, context }) => {
-      await context.auth.requirePermissions()
-      const providerInfos = await getProviderModelInfos(input.source, context.auth.accountId)
+      if (context.auth.isAuthenticated) {
+        await context.auth.requirePermissions()
+      }
+      const providerInfos = await getProviderModelInfos(input.source, context.auth.ctx?.accountId)
 
       function format<M extends BaseModelInfo>(provider: ReturnedProviderInfo, models?: M[]) {
         return {
@@ -196,7 +198,7 @@ export const modelRouter = {
    * @param input - Object containing model type filter and accountId
    * @returns List of models matching the type
    */
-  listModels: protectedProcedure
+  listModels: publicProcedure
     .route({
       method: 'GET',
       path: '/models',
@@ -214,8 +216,10 @@ export const modelRouter = {
         }),
     )
     .handler(async ({ input, context }) => {
-      await context.auth.requirePermissions()
-      const providerInfos = await getProviderModelInfos(input.source, context.auth.accountId)
+      if (context.auth.isAuthenticated) {
+        await context.auth.requirePermissions()
+      }
+      const providerInfos = await getProviderModelInfos(input.source, context.auth.ctx?.accountId)
 
       function format<M extends { id: string }>(provider: ReturnedProviderInfo, models?: M[]) {
         return (
@@ -257,7 +261,7 @@ export const modelRouter = {
    * @param input - Object containing model full ID, type, and accountId
    * @returns The model information if found
    */
-  getModel: protectedProcedure
+  getModel: publicProcedure
     .route({
       method: 'GET',
       path: '/models/{id}',
@@ -272,7 +276,9 @@ export const modelRouter = {
       }),
     )
     .handler(async ({ input, context }) => {
-      await context.auth.requirePermissions()
+      if (context.auth.isAuthenticated) {
+        await context.auth.requirePermissions()
+      }
 
       const { providerId, modelId } = splitModelFullId(input.id)
 
@@ -282,10 +288,12 @@ export const modelRouter = {
         .from(ProviderModelsTable)
         .where(
           and(
-            or(
-              isNull(ProviderModelsTable.accountId),
-              eq(ProviderModelsTable.accountId, context.auth.accountId),
-            ),
+            context.auth.ctx?.accountId
+              ? or(
+                  isNull(ProviderModelsTable.accountId),
+                  eq(ProviderModelsTable.accountId, context.auth.ctx.accountId),
+                )
+              : isNull(ProviderModelsTable.accountId),
             eq(ProviderModelsTable.providerId, providerId),
           ),
         )

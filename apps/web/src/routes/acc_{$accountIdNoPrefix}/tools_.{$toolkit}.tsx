@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
-import { ToolkitDetail } from '@/components/tools/toolkit-detail'
+import { ToolkitDetail } from '@/components/tools'
 import { useToolkits } from '@/hooks/use-tools'
 
 export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/tools_/{$toolkit}')({

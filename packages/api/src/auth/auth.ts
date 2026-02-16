@@ -37,7 +37,7 @@ export type AuthContext =
 export class Auth {
   constructor(public ctx?: AuthContext) {}
 
-  isAuthenticated(): boolean {
+  get isAuthenticated(): boolean {
     return !!this.ctx
   }
 

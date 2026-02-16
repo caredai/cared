@@ -5,7 +5,7 @@ import { getComposio } from '@cared/tools'
 
 import type { ProtectedAuth } from '../../auth'
 import type { ConnectionStatus } from '../../types'
-import { protectedProcedure } from '../../orpc'
+import { protectedProcedure, publicProcedure } from '../../orpc'
 import {
   ConnectionSchema,
   ConnectionStatuses,
@@ -99,7 +99,7 @@ export const toolRouter = {
    * Only accessible by authenticated users.
    * @returns List of categories
    */
-  listCategories: protectedProcedure
+  listCategories: publicProcedure
     .route({
       method: 'GET',
       path: '/toolkits/categories',
@@ -133,7 +133,7 @@ export const toolRouter = {
    * Only accessible by authenticated users.
    * @returns List of toolkits
    */
-  listToolkits: protectedProcedure
+  listToolkits: publicProcedure
     .route({
       method: 'GET',
       path: '/toolkits',
@@ -170,7 +170,7 @@ export const toolRouter = {
    * Only accessible by authenticated users.
    * @returns Toolkit details
    */
-  getToolkit: protectedProcedure
+  getToolkit: publicProcedure
     .route({
       method: 'GET',
       path: '/toolkits/{slug}',
@@ -220,7 +220,7 @@ export const toolRouter = {
    * Only accessible by authenticated users.
    * @returns List of tools
    */
-  listTools: protectedProcedure
+  listTools: publicProcedure
     .route({
       method: 'GET',
       path: '/tools',
@@ -287,7 +287,7 @@ export const toolRouter = {
    * Only accessible by authenticated users.
    * @returns Tool details
    */
-  getTool: protectedProcedure
+  getTool: publicProcedure
     .route({
       method: 'GET',
       path: '/tools/{slug}',

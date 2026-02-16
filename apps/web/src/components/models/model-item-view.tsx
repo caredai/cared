@@ -1,4 +1,4 @@
-import { ChevronDownIcon, ChevronUpIcon, EditIcon, Trash2Icon } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon, EditIcon, Server, Trash2Icon } from 'lucide-react'
 import { zuji } from 'zuji'
 
 import type {
@@ -8,7 +8,7 @@ import type {
   SpeechModelInfo,
   TranscriptionModelInfo,
 } from '@cared/api'
-import type { ProviderId } from '@cared/providers'
+import type { BaseProviderInfo } from '@cared/providers'
 import { Button } from '@cared/ui/components/button'
 import { CircleSpinner } from '@cared/ui/components/spinner'
 import {
@@ -22,12 +22,13 @@ import {
 import { cn } from '@cared/ui/lib/utils'
 
 import type { EditableModel } from './model-item-edit'
+import { LocalImage } from '@/components/image'
 import { TextTooltip } from '@/components/tooltip'
 import { CopyModelId } from './copy-model-id'
 
 export function ModelItemView({
   index,
-  providerId: _,
+  provider,
   model,
   isSystem,
   isSearching,
@@ -41,9 +42,10 @@ export function ModelItemView({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  readOnly = false,
 }: {
   index: number
-  providerId: ProviderId
+  provider?: BaseProviderInfo
   model: EditableModel
   isSystem?: boolean
   isSearching: boolean
@@ -57,6 +59,7 @@ export function ModelItemView({
   onMoveDown: () => Promise<void>
   canMoveUp: boolean
   canMoveDown: boolean
+  readOnly?: boolean
 }) {
   // Disable all operations when any action is in progress
   const isDisabled = isSaving || isRemoving || isMovingUp || isMovingDown
@@ -65,6 +68,25 @@ export function ModelItemView({
     <div className="border rounded-lg p-4 my-2 flex flex-col gap-2">
       <div className="flex justify-between items-center gap-4">
         <div className="flex items-center gap-2">
+          {readOnly && provider && (
+            <div className="relative h-4 w-4 overflow-hidden rounded-sm flex items-center shrink-0">
+              <LocalImage
+                src={`/images/providers/${provider.icon}`}
+                alt={`${provider.name} logo`}
+                unoptimized={true}
+                width={16}
+                height={16}
+                className="object-cover"
+                onError={(e) => {
+                  // Fallback to Server icon if image fails to load
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.nextElementSibling?.classList.remove('opacity-0')
+                  e.currentTarget.nextElementSibling?.classList.add('opacity-100')
+                }}
+              />
+              <Server className="h-4 w-4 absolute top-0 left-0 opacity-0" />
+            </div>
+          )}
           <span className="font-medium">{model.model.name || `Model #${index + 1}`}</span>
           {model.isNew && (
             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">New</span>
@@ -94,7 +116,7 @@ export function ModelItemView({
           )}
         </div>
 
-        {Boolean(model.isSystem) === Boolean(isSystem) && (
+        {!readOnly && Boolean(model.isSystem) === Boolean(isSystem) && (
           <div className="flex items-center gap-2">
             {/* Sort buttons - positioned at the leftmost side */}
             {!isSearching && (

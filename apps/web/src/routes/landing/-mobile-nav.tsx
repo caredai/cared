@@ -100,9 +100,9 @@ function MobileLink({ href, onOpenChange, className, children, ...props }: Mobil
   const router = useRouter()
   return (
     <Link
-      to={href}
+      href={href}
       onClick={() => {
-        void router.navigate({ to: href.toString() })
+        void router.navigate({ to: href?.toString() })
         onOpenChange?.(false)
       }}
       className={cn('text-base', className)}

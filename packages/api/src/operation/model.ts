@@ -50,7 +50,7 @@ export async function invalidateProviderModelsCache(key: string | ProviderModels
   await cache.invalidate(key)
 }
 
-export async function getProviderModelInfos(source: ModelSource, accountId: string) {
+export async function getProviderModelInfos(source: ModelSource, accountId?: string) {
   const baseProviderInfos = getBaseProviderInfos()
 
   // Get provider models from database (system + account)
@@ -58,12 +58,12 @@ export async function getProviderModelInfos(source: ModelSource, accountId: stri
     source === 'system'
       ? await cache.getOrDefault('system', []) // system
       : source === 'custom'
-        ? await cache.getOrDefault(accountId, []) // account
+        ? await cache.getOrDefault(accountId!, []) // account
         : (
             await Promise.all([
               // system + account
               cache.getOrDefault('system', []),
-              cache.getOrDefault(accountId, []),
+              cache.getOrDefault(accountId!, []),
             ])
           ).flat()
 
@@ -139,11 +139,11 @@ export async function getProviderModelInfos(source: ModelSource, accountId: stri
     if (source === 'system') {
       await invalidateProviderModelsCache('system')
     } else if (source === 'custom') {
-      await invalidateProviderModelsCache(accountId)
+      await invalidateProviderModelsCache(accountId!)
     } else {
       await Promise.all([
         invalidateProviderModelsCache('system'),
-        invalidateProviderModelsCache(accountId),
+        invalidateProviderModelsCache(accountId!),
       ])
     }
   }

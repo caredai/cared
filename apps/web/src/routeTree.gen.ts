@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ToolsRouteImport } from './routes/tools'
+import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as ModelsRouteImport } from './routes/models'
 import { Route as HelioCheckoutRouteImport } from './routes/helio-checkout'
 import { Route as DocsRouteImport } from './routes/docs'
@@ -68,6 +70,16 @@ import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixCha
 const ToolsRoute = ToolsRouteImport.update({
   id: '/tools',
   path: '/tools',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
+  id: '/terms-of-service',
+  path: '/terms-of-service',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ModelsRoute = ModelsRouteImport.update({
@@ -397,6 +409,8 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRoute
   '/helio-checkout': typeof HelioCheckoutRoute
   '/models': typeof ModelsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
@@ -451,6 +465,8 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/helio-checkout': typeof HelioCheckoutRoute
   '/models': typeof ModelsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
@@ -508,6 +524,8 @@ export interface FileRoutesById {
   '/docs': typeof DocsRoute
   '/helio-checkout': typeof HelioCheckoutRoute
   '/models': typeof ModelsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
@@ -567,6 +585,8 @@ export interface FileRouteTypes {
     | '/docs'
     | '/helio-checkout'
     | '/models'
+    | '/privacy-policy'
+    | '/terms-of-service'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
@@ -621,6 +641,8 @@ export interface FileRouteTypes {
     | '/docs'
     | '/helio-checkout'
     | '/models'
+    | '/privacy-policy'
+    | '/terms-of-service'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
@@ -677,6 +699,8 @@ export interface FileRouteTypes {
     | '/docs'
     | '/helio-checkout'
     | '/models'
+    | '/privacy-policy'
+    | '/terms-of-service'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
@@ -735,6 +759,8 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRoute
   HelioCheckoutRoute: typeof HelioCheckoutRoute
   ModelsRoute: typeof ModelsRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  TermsOfServiceRoute: typeof TermsOfServiceRoute
   ToolsRoute: typeof ToolsRoute
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
   AuthErrorRoute: typeof AuthErrorRoute
@@ -754,6 +780,20 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof ToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-of-service': {
+      id: '/terms-of-service'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service'
+      preLoaderRoute: typeof TermsOfServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/models': {
@@ -1300,6 +1340,8 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRoute,
   HelioCheckoutRoute: HelioCheckoutRoute,
   ModelsRoute: ModelsRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  TermsOfServiceRoute: TermsOfServiceRoute,
   ToolsRoute: ToolsRoute,
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute:
     Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren,
