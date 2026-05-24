@@ -1,14 +1,16 @@
-import { createApiClient } from '@neondatabase/api-client'
+import { createApiClient, EndpointType } from '@neondatabase/api-client'
 import { ORPCError } from '@orpc/server'
 
 import { and, asc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Neon } from '@cared/db/schema'
 
-import type { DatabaseEndpointStatsGrouping } from '../../types'
+import type { DatabaseEndpointStatsGrouping, DatabaseEndpointType } from '../../types'
 import type {
   Api,
   DefaultEndpointSettings,
+  EndpointCreateRequest,
+  EndpointUpdateRequest,
   ProjectListItem,
   ProjectQuota,
   ProjectSettingsData,
@@ -95,6 +97,24 @@ export class NeonService {
     const { client } = this.getClient(tier)
     const projectResponse = await client.getProject(namespace.projectId)
     return projectResponse.data.project
+  }
+
+  private async getNamespaceClient(accountId: string, namespaceId: string) {
+    const [namespace] = await db
+      .select()
+      .from(Neon)
+      .where(and(eq(Neon.id, namespaceId), eq(Neon.accountId, accountId)))
+      .limit(1)
+
+    if (!namespace) {
+      throw new ORPCError('NOT_FOUND', {
+        message: 'Database namespace not found',
+      })
+    }
+
+    const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
+    const { client } = this.getClient(tier)
+    return { namespace, client }
   }
 
   /**
@@ -282,6 +302,118 @@ export class NeonService {
 
     return {
       endpoints: response.data.endpoints.map(formatEndpoint),
+    }
+  }
+
+  /**
+   * Create a compute endpoint for a branch.
+   */
+  async createEndpoint(
+    accountId: string,
+    namespaceId: string,
+    params: {
+      branchId: string
+      type: DatabaseEndpointType
+      name?: string
+      autoscalingLimitMinCu?: number
+      autoscalingLimitMaxCu?: number
+      suspendTimeoutSeconds?: number
+      disabled?: boolean
+    },
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+
+    const endpoint: EndpointCreateRequest['endpoint'] = {
+      branch_id: params.branchId,
+      type: params.type === 'read_write' ? EndpointType.ReadWrite : EndpointType.ReadOnly,
+      region_id: namespace.regionId,
+      name: params.name,
+      autoscaling_limit_min_cu: params.autoscalingLimitMinCu,
+      autoscaling_limit_max_cu: params.autoscalingLimitMaxCu,
+      suspend_timeout_seconds: params.suspendTimeoutSeconds,
+      disabled: params.disabled,
+    }
+
+    const response = await client.createProjectEndpoint(namespace.projectId, { endpoint })
+
+    return {
+      endpoint: formatEndpoint(response.data.endpoint),
+      operations: response.data.operations.map(formatOperation),
+    }
+  }
+
+  /**
+   * Update compute endpoint settings.
+   */
+  async updateEndpoint(
+    accountId: string,
+    namespaceId: string,
+    endpointId: string,
+    params: {
+      name?: string
+      autoscalingLimitMinCu?: number
+      autoscalingLimitMaxCu?: number
+      suspendTimeoutSeconds?: number
+      disabled?: boolean
+    },
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+
+    const endpoint: EndpointUpdateRequest['endpoint'] = {
+      name: params.name,
+      autoscaling_limit_min_cu: params.autoscalingLimitMinCu,
+      autoscaling_limit_max_cu: params.autoscalingLimitMaxCu,
+      suspend_timeout_seconds: params.suspendTimeoutSeconds,
+      disabled: params.disabled,
+    }
+
+    const response = await client.updateProjectEndpoint(namespace.projectId, endpointId, {
+      endpoint,
+    })
+
+    return {
+      endpoint: formatEndpoint(response.data.endpoint),
+      operations: response.data.operations.map(formatOperation),
+    }
+  }
+
+  async deleteEndpoint(accountId: string, namespaceId: string, endpointId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.deleteProjectEndpoint(namespace.projectId, endpointId)
+
+    return {
+      endpoint: formatEndpoint(response.data.endpoint),
+      operations: response.data.operations.map(formatOperation),
+    }
+  }
+
+  async startEndpoint(accountId: string, namespaceId: string, endpointId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.startProjectEndpoint(namespace.projectId, endpointId)
+
+    return {
+      endpoint: formatEndpoint(response.data.endpoint),
+      operations: response.data.operations.map(formatOperation),
+    }
+  }
+
+  async suspendEndpoint(accountId: string, namespaceId: string, endpointId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.suspendProjectEndpoint(namespace.projectId, endpointId)
+
+    return {
+      endpoint: formatEndpoint(response.data.endpoint),
+      operations: response.data.operations.map(formatOperation),
+    }
+  }
+
+  async restartEndpoint(accountId: string, namespaceId: string, endpointId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.restartProjectEndpoint(namespace.projectId, endpointId)
+
+    return {
+      endpoint: formatEndpoint(response.data.endpoint),
+      operations: response.data.operations.map(formatOperation),
     }
   }
 

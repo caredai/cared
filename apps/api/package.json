@@ -6,7 +6,7 @@
     "build": "tsdown",
     "dev": "env NODE_ENV=development pnpm with-env tsx watch src/index.ts",
     "dev:https": "pnpm dev --https-key-path ~/.vite-plugin-mkcert/dev.pem --https-cert-path ~/.vite-plugin-mkcert/cert.pem",
-    "with-env": "dotenv -e ../../.env --"
+    "with-env": "dotenv -e ../../.env -o --"
   },
   "dependencies": {
     "@cared/api": "workspace:*",

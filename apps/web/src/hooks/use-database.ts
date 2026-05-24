@@ -65,6 +65,25 @@ function invalidateNamespaceQueries(
   })
 }
 
+function invalidateEndpointQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  namespaceId: string,
+  branchId?: string,
+) {
+  invalidateNamespaceQueries(queryClient, namespaceId)
+  if (branchId) {
+    void queryClient.invalidateQueries({
+      queryKey: orpc.account.database.listBranchEndpoints.queryOptions({
+        input: { namespaceId, branchId },
+      }).queryKey,
+    })
+  } else {
+    void queryClient.invalidateQueries({
+      queryKey: orpc.account.database.listBranchEndpoints.key(),
+    })
+  }
+}
+
 export type ListBranchesInput = RouterInputs['account']['database']['listBranches']
 
 /**
@@ -201,6 +220,21 @@ export function useDatabaseBranchDatabases(namespaceId: string, branchId: string
   )
 
   return databases
+}
+
+/**
+ * List connection URIs for databases on a branch.
+ */
+export function useDatabaseBranchConnectionUris(namespaceId: string, branchId: string) {
+  const {
+    data: { connectionUris },
+  } = useSuspenseQuery(
+    orpc.account.database.listConnectionUris.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+  )
+
+  return connectionUris
 }
 
 /**
@@ -421,5 +455,266 @@ export function useDeleteDatabaseBranch(namespaceId: string) {
   return {
     deleteDatabaseBranch,
     isDeleting: deleteMutation.isPending,
+  }
+}
+
+export function useCreateDatabaseBranchRole(namespaceId: string, branchId: string) {
+  const queryClient = useQueryClient()
+
+  const createMutation = useMutation(
+    orpc.account.database.createRole.mutationOptions({
+      onSuccess: () => {
+        invalidateBranchQueries(queryClient, namespaceId, branchId)
+        toast.success('Role created')
+      },
+      onError: (error) => {
+        console.error('Failed to create role:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to create role')
+      },
+    }),
+  )
+
+  return {
+    createDatabaseBranchRole: (
+      input: Omit<RouterInputs['account']['database']['createRole'], 'namespaceId' | 'branchId'>,
+    ) => createMutation.mutateAsync({ namespaceId, branchId, ...input }),
+    isCreating: createMutation.isPending,
+  }
+}
+
+export function useDatabaseBranchRoleAction(namespaceId: string, branchId: string) {
+  const queryClient = useQueryClient()
+
+  const resetMutation = useMutation(
+    orpc.account.database.resetRolePassword.mutationOptions({
+      onSuccess: () => {
+        invalidateBranchQueries(queryClient, namespaceId, branchId)
+        toast.success('Role password reset')
+      },
+      onError: (error) => {
+        console.error('Failed to reset role password:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to reset role password')
+      },
+    }),
+  )
+
+  const passwordMutation = useMutation(orpc.account.database.getRolePassword.mutationOptions())
+
+  const deleteMutation = useMutation(
+    orpc.account.database.deleteRole.mutationOptions({
+      onSuccess: () => {
+        invalidateBranchQueries(queryClient, namespaceId, branchId)
+        toast.success('Role deleted')
+      },
+      onError: (error) => {
+        console.error('Failed to delete role:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to delete role')
+      },
+    }),
+  )
+
+  return {
+    getRolePassword: (roleName: string) =>
+      passwordMutation.mutateAsync({ namespaceId, branchId, roleName }),
+    resetRolePassword: (roleName: string) =>
+      resetMutation.mutateAsync({ namespaceId, branchId, roleName }),
+    deleteRole: (roleName: string) =>
+      deleteMutation.mutateAsync({ namespaceId, branchId, roleName }),
+    isPending: resetMutation.isPending || passwordMutation.isPending || deleteMutation.isPending,
+  }
+}
+
+export function useCreateDatabaseBranchDatabase(namespaceId: string, branchId: string) {
+  const queryClient = useQueryClient()
+
+  const createMutation = useMutation(
+    orpc.account.database.createDatabase.mutationOptions({
+      onSuccess: () => {
+        invalidateBranchQueries(queryClient, namespaceId, branchId)
+        toast.success('Database created')
+      },
+      onError: (error) => {
+        console.error('Failed to create database:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to create database')
+      },
+    }),
+  )
+
+  return {
+    createDatabaseBranchDatabase: (
+      input: Omit<
+        RouterInputs['account']['database']['createDatabase'],
+        'namespaceId' | 'branchId'
+      >,
+    ) => createMutation.mutateAsync({ namespaceId, branchId, ...input }),
+    isCreating: createMutation.isPending,
+  }
+}
+
+export function useDeleteDatabaseBranchDatabase(namespaceId: string, branchId: string) {
+  const queryClient = useQueryClient()
+
+  const deleteMutation = useMutation(
+    orpc.account.database.deleteDatabase.mutationOptions({
+      onSuccess: () => {
+        invalidateBranchQueries(queryClient, namespaceId, branchId)
+        toast.success('Database deleted')
+      },
+      onError: (error) => {
+        console.error('Failed to delete database:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to delete database')
+      },
+    }),
+  )
+
+  return {
+    deleteDatabaseBranchDatabase: (databaseName: string) =>
+      deleteMutation.mutateAsync({ namespaceId, branchId, databaseName }),
+    isDeleting: deleteMutation.isPending,
+  }
+}
+
+/**
+ * Create a compute endpoint in a database namespace.
+ */
+export function useCreateDatabaseEndpoint(namespaceId: string) {
+  const queryClient = useQueryClient()
+
+  const createMutation = useMutation(
+    orpc.account.database.createEndpoint.mutationOptions({
+      onSuccess: (data) => {
+        invalidateEndpointQueries(queryClient, namespaceId, data.endpoint.branchId)
+        toast.success('Compute endpoint created')
+      },
+      onError: (error) => {
+        console.error('Failed to create compute endpoint:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to create compute endpoint')
+      },
+    }),
+  )
+
+  const createDatabaseEndpoint = useCallback(
+    async (input: RouterInputs['account']['database']['createEndpoint']) => {
+      return await createMutation.mutateAsync(input)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [namespaceId],
+  )
+
+  return {
+    createDatabaseEndpoint,
+    isCreating: createMutation.isPending,
+  }
+}
+
+/**
+ * Update compute endpoint settings.
+ */
+export function useUpdateDatabaseEndpoint(namespaceId: string) {
+  const queryClient = useQueryClient()
+
+  const updateMutation = useMutation(
+    orpc.account.database.updateEndpoint.mutationOptions({
+      onSuccess: (data) => {
+        invalidateEndpointQueries(queryClient, namespaceId, data.endpoint.branchId)
+        toast.success('Compute endpoint updated')
+      },
+      onError: (error) => {
+        console.error('Failed to update compute endpoint:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to update compute endpoint')
+      },
+    }),
+  )
+
+  const updateDatabaseEndpoint = useCallback(
+    async (input: RouterInputs['account']['database']['updateEndpoint']) => {
+      return await updateMutation.mutateAsync(input)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [namespaceId],
+  )
+
+  return {
+    updateDatabaseEndpoint,
+    isUpdating: updateMutation.isPending,
+  }
+}
+
+/**
+ * Run a lifecycle action on a compute endpoint.
+ */
+export function useDatabaseEndpointAction(namespaceId: string) {
+  const queryClient = useQueryClient()
+
+  const invalidateFromResult = (data: { endpoint: DatabaseEndpoint }) => {
+    invalidateEndpointQueries(queryClient, namespaceId, data.endpoint.branchId)
+  }
+
+  const startMutation = useMutation(
+    orpc.account.database.startEndpoint.mutationOptions({
+      onSuccess: (data) => {
+        invalidateFromResult(data)
+        toast.success('Compute endpoint started')
+      },
+      onError: (error) => {
+        console.error('Failed to start compute endpoint:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to start compute endpoint')
+      },
+    }),
+  )
+
+  const suspendMutation = useMutation(
+    orpc.account.database.suspendEndpoint.mutationOptions({
+      onSuccess: (data) => {
+        invalidateFromResult(data)
+        toast.success('Compute endpoint suspended')
+      },
+      onError: (error) => {
+        console.error('Failed to suspend compute endpoint:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to suspend compute endpoint')
+      },
+    }),
+  )
+
+  const restartMutation = useMutation(
+    orpc.account.database.restartEndpoint.mutationOptions({
+      onSuccess: (data) => {
+        invalidateFromResult(data)
+        toast.success('Compute endpoint restarted')
+      },
+      onError: (error) => {
+        console.error('Failed to restart compute endpoint:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to restart compute endpoint')
+      },
+    }),
+  )
+
+  const deleteMutation = useMutation(
+    orpc.account.database.deleteEndpoint.mutationOptions({
+      onSuccess: (data) => {
+        invalidateFromResult(data)
+        toast.success('Compute endpoint deleted')
+      },
+      onError: (error) => {
+        console.error('Failed to delete compute endpoint:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to delete compute endpoint')
+      },
+    }),
+  )
+
+  return {
+    startDatabaseEndpoint: (endpointId: string) =>
+      startMutation.mutateAsync({ namespaceId, endpointId }),
+    suspendDatabaseEndpoint: (endpointId: string) =>
+      suspendMutation.mutateAsync({ namespaceId, endpointId }),
+    restartDatabaseEndpoint: (endpointId: string) =>
+      restartMutation.mutateAsync({ namespaceId, endpointId }),
+    deleteDatabaseEndpoint: (endpointId: string) =>
+      deleteMutation.mutateAsync({ namespaceId, endpointId }),
+    isPending:
+      startMutation.isPending ||
+      suspendMutation.isPending ||
+      restartMutation.isPending ||
+      deleteMutation.isPending,
   }
 }

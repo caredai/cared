@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3, GitBranch, RefreshCw } from 'lucide-react'
 
-import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
 import { Label } from '@cared/ui/components/label'
 import {
@@ -119,7 +118,7 @@ export function NamespaceMonitoringPanel({
           </Select>
         </div>
 
-        <div className="space-y-1.5 min-w-[140px]">
+        <div className="space-y-1.5 min-w-[160px]">
           <Label className="text-xs text-muted-foreground">Compute</Label>
           <Select
             value={endpointId}
@@ -127,29 +126,45 @@ export function NamespaceMonitoringPanel({
             disabled={branchEndpoints.length === 0}
           >
             <SelectTrigger className="h-8">
-              <SelectValue placeholder="Compute" />
+              <SelectValue placeholder="Compute">
+                {selectedEndpoint && (
+                  <span className="flex items-center gap-1.5">
+                    {selectedEndpoint.name?.trim() || 'Primary'}
+                    <span
+                      className={cn(
+                        'inline-block h-1.5 w-1.5 rounded-full shrink-0',
+                        selectedEndpoint.currentState === 'active'
+                          ? 'bg-green-500'
+                          : 'bg-muted-foreground',
+                      )}
+                    />
+                    <span className="text-muted-foreground">
+                      {endpointStateLabel(selectedEndpoint.currentState)}
+                    </span>
+                  </span>
+                )}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {branchEndpoints.map((ep) => (
                 <SelectItem key={ep.id} value={ep.id}>
-                  {ep.name?.trim() || 'Primary'}
+                  <span className="flex items-center gap-1.5">
+                    {ep.name?.trim() || 'Primary'}
+                    <span
+                      className={cn(
+                        'inline-block h-1.5 w-1.5 rounded-full shrink-0',
+                        ep.currentState === 'active' ? 'bg-green-500' : 'bg-muted-foreground',
+                      )}
+                    />
+                    <span className="text-muted-foreground text-xs">
+                      {endpointStateLabel(ep.currentState)}
+                    </span>
+                  </span>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-
-        {selectedEndpoint && (
-          <Badge variant="outline" className="mb-0.5 font-normal h-8 px-2.5">
-            <span
-              className={cn(
-                'mr-1.5 inline-block h-1.5 w-1.5 rounded-full',
-                selectedEndpoint.currentState === 'active' ? 'bg-green-500' : 'bg-muted-foreground',
-              )}
-            />
-            {endpointStateLabel(selectedEndpoint.currentState)}
-          </Badge>
-        )}
 
         <Button
           variant="outline"
@@ -171,7 +186,7 @@ export function NamespaceMonitoringPanel({
         <div
           className={cn(
             'flex flex-col items-center justify-center rounded-lg border border-dashed',
-            'py-16 text-center text-muted-foreground',
+            'py-10 text-center text-muted-foreground',
           )}
         >
           <BarChart3 className="h-10 w-10 mb-3 opacity-40" />

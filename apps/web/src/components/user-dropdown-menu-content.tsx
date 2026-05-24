@@ -18,13 +18,19 @@ import { useIsMobile } from '@cared/ui/hooks/use-mobile'
 
 import type { User } from '@/hooks/use-session'
 import { ThemeSwitcher } from '@/components/theme'
+import { useAccounts } from '@/hooks/use-account'
+import { useSessionPublic } from '@/hooks/use-session'
 import { useSignOut } from '@/hooks/use-signout'
+import { stripIdPrefix } from '@/lib/utils'
 import { UserInfo } from './user-info'
 
 export function UserDropdownMenuContent({ user }: { user: User }) {
   const isMobile = useIsMobile()
 
   const { signOut } = useSignOut()
+  const accounts = useAccounts()
+  const { session } = useSessionPublic()
+  const accountIdNoPrefix = stripIdPrefix(session?.activeAccountId ?? accounts[0]?.id ?? '')
 
   return (
     <DropdownMenuContent
@@ -41,22 +47,28 @@ export function UserDropdownMenuContent({ user }: { user: User }) {
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
+        {accountIdNoPrefix && (
+          <DropdownMenuItem asChild>
+            <Link
+              to="/acc_{$accountIdNoPrefix}/credits"
+              params={{ accountIdNoPrefix }}
+              className="cursor-pointer"
+            >
+              <CircleDollarSignIcon />
+              Billing
+            </Link>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
-          <Link to="/account/credits" className="cursor-pointer">
-            <CircleDollarSignIcon />
-            Billing
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/account/wallet" className="cursor-pointer">
+          <Link to="/user/wallet" className="cursor-pointer">
             <WalletIcon />
             Wallet
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/account/profile" className="cursor-pointer">
+          <Link to="/user/profile" className="cursor-pointer">
             <UserRoundIcon />
-            Account
+            Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>

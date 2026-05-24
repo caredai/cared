@@ -15,7 +15,7 @@
     "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "with-env": "dotenv -e ../../.env --"
+    "with-env": "dotenv -e ../../.env -o --"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.8",

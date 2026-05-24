@@ -135,6 +135,151 @@ export const databaseRouter = {
     }),
 
   /**
+   * Create a compute endpoint for a branch.
+   * @returns Created endpoint and Neon operations
+   */
+  createEndpoint: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/endpoints',
+      tags: ['database'],
+      summary: 'Create compute endpoint',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+        type: z.enum(['read_write', 'read_only']),
+        name: z.string().min(1).max(64).optional(),
+        autoscalingLimitMinCu: z.number().min(0.25).optional(),
+        autoscalingLimitMaxCu: z.number().min(0.25).optional(),
+        suspendTimeoutSeconds: z.union([z.literal(-1), z.int().min(60).max(604800)]).optional(),
+        disabled: z.boolean().optional(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.createEndpoint(context.auth.accountId, input.namespaceId, {
+        branchId: input.branchId,
+        type: input.type,
+        name: input.name,
+        autoscalingLimitMinCu: input.autoscalingLimitMinCu,
+        autoscalingLimitMaxCu: input.autoscalingLimitMaxCu,
+        suspendTimeoutSeconds: input.suspendTimeoutSeconds,
+        disabled: input.disabled,
+      })
+    }),
+
+  /**
+   * Update a compute endpoint.
+   * @returns Updated endpoint and Neon operations
+   */
+  updateEndpoint: protectedProcedure
+    .route({
+      method: 'PATCH',
+      path: '/database-namespaces/{namespaceId}/endpoints/{endpointId}',
+      tags: ['database'],
+      summary: 'Update compute endpoint',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        endpointId: z.string(),
+        name: z.string().min(1).max(64).optional(),
+        autoscalingLimitMinCu: z.number().min(0.25).optional(),
+        autoscalingLimitMaxCu: z.number().min(0.25).optional(),
+        suspendTimeoutSeconds: z.union([z.literal(-1), z.int().min(60).max(604800)]).optional(),
+        disabled: z.boolean().optional(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.updateEndpoint(
+        context.auth.accountId,
+        input.namespaceId,
+        input.endpointId,
+        {
+          name: input.name,
+          autoscalingLimitMinCu: input.autoscalingLimitMinCu,
+          autoscalingLimitMaxCu: input.autoscalingLimitMaxCu,
+          suspendTimeoutSeconds: input.suspendTimeoutSeconds,
+          disabled: input.disabled,
+        },
+      )
+    }),
+
+  /**
+   * Delete a compute endpoint.
+   * @returns Deleted endpoint and Neon operations
+   */
+  deleteEndpoint: protectedProcedure
+    .route({
+      method: 'DELETE',
+      path: '/database-namespaces/{namespaceId}/endpoints/{endpointId}',
+      tags: ['database'],
+      summary: 'Delete compute endpoint',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        endpointId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.deleteEndpoint(
+        context.auth.accountId,
+        input.namespaceId,
+        input.endpointId,
+      )
+    }),
+
+  startEndpoint: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/endpoints/{endpointId}/start',
+      tags: ['database'],
+      summary: 'Start compute endpoint',
+    })
+    .input(z.object({ namespaceId: z.string(), endpointId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.startEndpoint(
+        context.auth.accountId,
+        input.namespaceId,
+        input.endpointId,
+      )
+    }),
+
+  suspendEndpoint: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/endpoints/{endpointId}/suspend',
+      tags: ['database'],
+      summary: 'Suspend compute endpoint',
+    })
+    .input(z.object({ namespaceId: z.string(), endpointId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.suspendEndpoint(
+        context.auth.accountId,
+        input.namespaceId,
+        input.endpointId,
+      )
+    }),
+
+  restartEndpoint: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/endpoints/{endpointId}/restart',
+      tags: ['database'],
+      summary: 'Restart compute endpoint',
+    })
+    .input(z.object({ namespaceId: z.string(), endpointId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.restartEndpoint(
+        context.auth.accountId,
+        input.namespaceId,
+        input.endpointId,
+      )
+    }),
+
+  /**
    * Create a new database namespace (Neon project).
    * @returns Created database namespace
    */

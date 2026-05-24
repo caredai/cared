@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
 import {
   Archive,
@@ -7,15 +7,37 @@ import {
   GitBranch,
   MoreVertical,
   Pencil,
+  Plus,
+  Power,
+  RotateCcw,
   Search,
   Shield,
   Sparkles,
+  Trash2,
 } from 'lucide-react'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@cared/ui/components/alert-dialog'
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
 import { Card, CardContent } from '@cared/ui/components/card'
 import { DataTable } from '@cared/ui/components/data-table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@cared/ui/components/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,23 +45,35 @@ import {
   DropdownMenuTrigger,
 } from '@cared/ui/components/dropdown-menu'
 import { Input } from '@cared/ui/components/input'
+import { Label } from '@cared/ui/components/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cared/ui/components/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@cared/ui/components/tabs'
+import { cn } from '@cared/ui/lib/utils'
 
 import type { Database, DatabaseBranch, DatabaseEndpoint, DatabaseRole } from '@/hooks/use-database'
 import type { ColumnDef } from '@tanstack/react-table'
 import { CopyButton } from '@/components/copy-button'
 import { SectionTitle } from '@/components/section'
 import {
+  useCreateDatabaseEndpoint,
   useDatabaseBranch,
   useDatabaseBranchCount,
   useDatabaseBranchDatabases,
   useDatabaseBranchEndpoints,
   useDatabaseBranches,
   useDatabaseBranchRoles,
+  useDatabaseEndpointAction,
   useDatabaseEndpoints,
   useDatabaseNamespace,
   useNamespaceUsageLimits,
   useUpdateDatabaseBranch,
+  useUpdateDatabaseEndpoint,
 } from '@/hooks/use-database'
 import { CreateBranchDialog } from './create-branch-dialog'
 import {
@@ -51,6 +85,42 @@ import {
   formatStorageBytes,
   RelativeTime,
 } from './database-format'
+
+const COMPUTE_SIZE_OPTIONS = [
+  { value: '0.25:1', label: '.25 ↔ 1 CU', min: 0.25, max: 1 },
+  { value: '0.25:2', label: '.25 ↔ 2 CU', min: 0.25, max: 2 },
+  { value: '1:4', label: '1 ↔ 4 CU', min: 1, max: 4 },
+  { value: '2:8', label: '2 ↔ 8 CU', min: 2, max: 8 },
+  { value: '4:16', label: '4 ↔ 16 CU', min: 4, max: 16 },
+] as const
+
+const SUSPEND_TIMEOUT_OPTIONS = [
+  { value: '60', label: '1 minute', seconds: 60 },
+  { value: '300', label: '5 minutes', seconds: 300 },
+  { value: '900', label: '15 minutes', seconds: 900 },
+  { value: '3600', label: '1 hour', seconds: 3600 },
+  { value: '-1', label: 'Never suspend', seconds: -1 },
+] as const
+
+function computeSizeValue(minCu: number, maxCu: number): string {
+  return COMPUTE_SIZE_OPTIONS.find((o) => o.min === minCu && o.max === maxCu)?.value ?? '0.25:2'
+}
+
+function suspendTimeoutValue(seconds: number): string {
+  return SUSPEND_TIMEOUT_OPTIONS.find((o) => o.seconds === seconds)?.value ?? '300'
+}
+
+function parseComputeSize(value: string) {
+  const option = COMPUTE_SIZE_OPTIONS.find((o) => o.value === value) ?? COMPUTE_SIZE_OPTIONS[1]
+  return {
+    autoscalingLimitMinCu: option.min,
+    autoscalingLimitMaxCu: option.max,
+  }
+}
+
+function parseSuspendTimeout(value: string): number {
+  return SUSPEND_TIMEOUT_OPTIONS.find((o) => o.value === value)?.seconds ?? 300
+}
 
 interface BranchOverviewProps {
   namespaceId: string
@@ -100,6 +170,200 @@ function MetadataItem({ label, children }: { label: string; children: ReactNode 
   )
 }
 
+function AddReadReplicaDialog({
+  namespaceId,
+  branchId,
+  open,
+  onOpenChange,
+}: {
+  namespaceId: string
+  branchId: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const [name, setName] = useState('')
+  const [size, setSize] = useState('0.25:2')
+  const [suspendTimeout, setSuspendTimeout] = useState('300')
+  const { createDatabaseEndpoint, isCreating } = useCreateDatabaseEndpoint(namespaceId)
+
+  const handleCreate = async () => {
+    await createDatabaseEndpoint({
+      namespaceId,
+      branchId,
+      type: 'read_only',
+      name: name.trim() || undefined,
+      ...parseComputeSize(size),
+      suspendTimeoutSeconds: parseSuspendTimeout(suspendTimeout),
+    })
+    setName('')
+    setSize('0.25:2')
+    setSuspendTimeout('300')
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add read replica</DialogTitle>
+          <DialogDescription>
+            Create a read-only compute for this branch to serve read traffic separately.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="read-replica-name">Name</Label>
+            <Input
+              id="read-replica-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Analytics replica"
+              maxLength={64}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Compute size</Label>
+            <Select value={size} onValueChange={setSize}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPUTE_SIZE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Scale to zero</Label>
+            <Select value={suspendTimeout} onValueChange={setSuspendTimeout}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUSPEND_TIMEOUT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleCreate()} disabled={isCreating}>
+            {isCreating ? 'Creating…' : 'Create read replica'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function EditEndpointDialog({
+  namespaceId,
+  endpoint,
+  open,
+  onOpenChange,
+}: {
+  namespaceId: string
+  endpoint: DatabaseEndpoint | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const [name, setName] = useState('')
+  const [size, setSize] = useState('0.25:2')
+  const [suspendTimeout, setSuspendTimeout] = useState('300')
+  const { updateDatabaseEndpoint, isUpdating } = useUpdateDatabaseEndpoint(namespaceId)
+
+  useEffect(() => {
+    if (!endpoint) return
+    setName(endpoint.name ?? '')
+    setSize(computeSizeValue(endpoint.autoscalingLimitMinCu, endpoint.autoscalingLimitMaxCu))
+    setSuspendTimeout(suspendTimeoutValue(endpoint.suspendTimeoutSeconds))
+  }, [endpoint])
+
+  const handleSave = async () => {
+    if (!endpoint) return
+    await updateDatabaseEndpoint({
+      namespaceId,
+      endpointId: endpoint.id,
+      name: name.trim() || endpointDisplayName(endpoint),
+      ...parseComputeSize(size),
+      suspendTimeoutSeconds: parseSuspendTimeout(suspendTimeout),
+    })
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit compute</DialogTitle>
+          <DialogDescription>
+            Adjust the compute name, autoscaling range, and scale-to-zero behavior.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="compute-name">Name</Label>
+            <Input
+              id="compute-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={endpoint ? endpointDisplayName(endpoint) : 'Primary'}
+              maxLength={64}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Compute size</Label>
+            <Select value={size} onValueChange={setSize}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPUTE_SIZE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Scale to zero</Label>
+            <Select value={suspendTimeout} onValueChange={setSuspendTimeout}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUSPEND_TIMEOUT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleSave()} disabled={isUpdating || !endpoint}>
+            {isUpdating ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function BranchOverview({
   namespaceId,
   accountIdNoPrefix,
@@ -108,6 +372,9 @@ export function BranchOverview({
 }: BranchOverviewProps) {
   const [childSearch, setChildSearch] = useState('')
   const [activeTab, setActiveTab] = useState('computes')
+  const [readReplicaOpen, setReadReplicaOpen] = useState(false)
+  const [endpointToEdit, setEndpointToEdit] = useState<DatabaseEndpoint | null>(null)
+  const [endpointToDelete, setEndpointToDelete] = useState<DatabaseEndpoint | null>(null)
 
   const namespace = useDatabaseNamespace(namespaceId)
   const branch = useDatabaseBranch(namespaceId, branchId)
@@ -119,6 +386,13 @@ export function BranchOverview({
   const branchCount = useDatabaseBranchCount(namespaceId)
   const usageLimits = useNamespaceUsageLimits(namespace)
   const { updateDatabaseBranch, isUpdating } = useUpdateDatabaseBranch(namespaceId)
+  const {
+    startDatabaseEndpoint,
+    suspendDatabaseEndpoint,
+    restartDatabaseEndpoint,
+    deleteDatabaseEndpoint,
+    isPending: isEndpointActionPending,
+  } = useDatabaseEndpointAction(namespaceId)
 
   const isChild = Boolean(branch.parentId)
   const parentBranch = useMemo(
@@ -146,6 +420,12 @@ export function BranchOverview({
       branchId,
       protected: true,
     })
+  }
+
+  const handleDeleteEndpoint = async () => {
+    if (!endpointToDelete) return
+    await deleteDatabaseEndpoint(endpointToDelete.id)
+    setEndpointToDelete(null)
   }
 
   const overviewPath = '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/overview' as const
@@ -409,7 +689,13 @@ export function BranchOverview({
                       <div className="space-y-2 min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">{endpointDisplayName(ep)}</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" disabled>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            aria-label="Edit compute"
+                            onClick={() => setEndpointToEdit(ep)}
+                          >
                             <Pencil className="h-3.5 w-3.5" />
                           </Button>
                           <Badge
@@ -447,12 +733,56 @@ export function BranchOverview({
                         <Button size="sm" disabled>
                           Connect
                         </Button>
-                        <Button size="sm" variant="outline" disabled>
+                        <Button size="sm" variant="outline" onClick={() => setEndpointToEdit(ep)}>
                           Edit
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              aria-label="Compute actions"
+                              disabled={isEndpointActionPending}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {ep.currentState === 'idle' ? (
+                              <DropdownMenuItem
+                                onClick={() => void startDatabaseEndpoint(ep.id)}
+                                disabled={isEndpointActionPending}
+                              >
+                                <Power className="h-4 w-4 mr-2" />
+                                Start
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => void suspendDatabaseEndpoint(ep.id)}
+                                disabled={isEndpointActionPending}
+                              >
+                                <Power className="h-4 w-4 mr-2" />
+                                Suspend
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={() => void restartDatabaseEndpoint(ep.id)}
+                              disabled={isEndpointActionPending}
+                            >
+                              <RotateCcw className="h-4 w-4 mr-2" />
+                              Restart
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setEndpointToDelete(ep)}
+                              disabled={ep.type === 'read_write' || isEndpointActionPending}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </CardContent>
                   </Card>
@@ -467,7 +797,8 @@ export function BranchOverview({
                 Read Replicas: Scale your application by offloading your read workload to a
                 read-only instance of your database.
               </p>
-              <Button variant="outline" size="sm" disabled>
+              <Button variant="outline" size="sm" onClick={() => setReadReplicaOpen(true)}>
+                <Plus className="h-4 w-4 mr-1.5" />
                 Add Read Replica
               </Button>
             </CardContent>
@@ -586,6 +917,44 @@ export function BranchOverview({
           )}
         </TabsContent>
       </Tabs>
+
+      <AddReadReplicaDialog
+        namespaceId={namespaceId}
+        branchId={branchId}
+        open={readReplicaOpen}
+        onOpenChange={setReadReplicaOpen}
+      />
+      <EditEndpointDialog
+        namespaceId={namespaceId}
+        endpoint={endpointToEdit}
+        open={endpointToEdit != null}
+        onOpenChange={(open) => !open && setEndpointToEdit(null)}
+      />
+      <AlertDialog
+        open={endpointToDelete != null}
+        onOpenChange={(open) => !open && setEndpointToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete compute endpoint</AlertDialogTitle>
+            <AlertDialogDescription>
+              Delete compute endpoint &quot;
+              {endpointToDelete ? endpointDisplayName(endpointToDelete) : 'Compute'}&quot;. Existing
+              connections to this compute will be dropped.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={cn('bg-destructive text-destructive-foreground hover:bg-destructive/90')}
+              disabled={isEndpointActionPending}
+              onClick={() => void handleDeleteEndpoint()}
+            >
+              {isEndpointActionPending ? 'Deleting…' : 'Delete compute'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

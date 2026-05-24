@@ -124,7 +124,7 @@ export const TraceTree = forwardRef<
           <div className="flex min-w-0 flex-1 flex-col">
             {/* Main content row */}
             <div className="flex min-w-0 items-center gap-2 overflow-hidden">
-              <span className="flex-shrink truncate text-xs" title={node.name}>
+              <span className="flex-shrink truncate text-xs" title={node.name ?? ''}>
                 {node.name}
               </span>
 

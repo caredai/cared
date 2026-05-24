@@ -51,7 +51,7 @@ function BaseHeader({ ...props }: HeaderProps & { level: 'h3' | 'h4' | 'h5' }) {
             {props.help ? (
               <DocPopup
                 description={props.help.description}
-                to={props.help.href}
+                href={props.help.href}
                 className={props.help.className}
               />
             ) : null}

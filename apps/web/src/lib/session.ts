@@ -1,11 +1,9 @@
 import { redirect } from '@tanstack/react-router'
 
-import type { authClient } from '@cared/auth/client'
+import type { Session } from '@cared/api'
 
 import type { QueryClient } from '@tanstack/react-query'
 import { orpc } from '@/lib/orpc'
-
-export type Session = typeof authClient.$Infer.Session
 
 export async function prefetchAndCheckSession(
   queryClient: QueryClient,

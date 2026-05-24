@@ -244,7 +244,7 @@ export const TraceTimeline = forwardRef<TraceTimelineRef, TraceTimelineProps>(
                     isSmall
                     className="!size-3"
                   />
-                  <span className="text-xs truncate" title={node.name}>
+                  <span className="text-xs truncate" title={node.name ?? ''}>
                     {node.name}
                   </span>
                 </div>
@@ -271,7 +271,7 @@ export const TraceTimeline = forwardRef<TraceTimelineRef, TraceTimelineProps>(
                 {/* Cost */}
                 {shouldRenderCost && (
                   <span className="font-mono text-xs text-muted-foreground">
-                    {formatCost(node.costDetails.total)}
+                    {formatCost(node.costDetails.total ?? 0)}
                   </span>
                 )}
               </div>

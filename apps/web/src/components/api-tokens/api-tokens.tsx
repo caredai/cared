@@ -56,7 +56,7 @@ import { useSession } from '@/hooks/use-session'
 import { stripIdPrefix } from '@/lib/utils'
 import { ApiTokenDialog, useShowApiTokenDialog } from './show-api-token-dialog'
 
-type ApiToken = RouterOutputs['apiToken']['list']['tokens'][number]
+type ApiToken = RouterOutputs['account']['apiToken']['list']['tokens'][number]
 
 function scopeDisplayName(scope: 'account' | 'user'): string {
   return scope === 'account' ? 'Account' : 'User'

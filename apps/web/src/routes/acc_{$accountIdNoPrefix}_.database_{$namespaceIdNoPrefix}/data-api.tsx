@@ -1,13 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { PlaceholderPage } from '@/components/databases'
+import { BranchDataApi, PlaceholderPage } from '@/components/databases'
 import { branchSearchSchema } from '@/components/databases/branch-search'
 
 export const Route = createFileRoute(
   '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-api',
 )({
   validateSearch: branchSearchSchema,
-  component: () => (
-    <PlaceholderPage title="Data API" description="REST and GraphQL access for the branch" />
-  ),
+  component: DatabaseDataApiPage,
 })
+
+function DatabaseDataApiPage() {
+  const { namespaceId } = Route.useRouteContext()
+  const { branch: branchId } = Route.useSearch()
+
+  if (!branchId) {
+    return (
+      <PlaceholderPage title="Data API" description="Select a branch to view connection URIs." />
+    )
+  }
+
+  return <BranchDataApi namespaceId={namespaceId} branchId={branchId} />
+}

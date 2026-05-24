@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ChevronRight, GitBranch } from 'lucide-react'
@@ -13,7 +13,6 @@ import {
   CardTitle,
 } from '@cared/ui/components/card'
 import { DataTable } from '@cared/ui/components/data-table'
-import { cn } from '@cared/ui/lib/utils'
 
 import type { DatabaseBranch, DatabaseEndpoint } from '@/hooks/use-database'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -30,7 +29,9 @@ import {
   endpointStateVariant,
   formatComputeRange,
   formatHistoryRetention,
+  RelativeTime,
 } from './database-format'
+import { ConnectDialog } from './connect-dialog'
 import { NamespaceMonitoringPanel } from './namespace-monitoring-panel'
 import { NamespaceUsageCard } from './namespace-usage-card'
 import { formatDatabaseRegion } from './region-label'
@@ -62,6 +63,8 @@ export function NamespaceDashboard({
   const branchCount = useDatabaseBranchCount(namespaceId)
   const endpoints = useDatabaseEndpoints(namespaceId)
   const usageLimits = useNamespaceUsageLimits(namespace)
+
+  const [connectOpen, setConnectOpen] = useState(false)
 
   const {
     data: { branches },
@@ -116,9 +119,12 @@ export function NamespaceDashboard({
         },
       },
       {
-        id: 'created_by',
-        header: 'Created by',
-        cell: () => <span className="text-sm text-muted-foreground">—</span>,
+        id: 'last_active',
+        header: 'Compute last active',
+        cell: ({ row }) => {
+          const ep = getPrimaryEndpoint(endpoints, row.original.id)
+          return <RelativeTime value={ep?.lastActive ?? ep?.suspendedAt} />
+        },
       },
     ],
     [endpoints],
@@ -127,16 +133,10 @@ export function NamespaceDashboard({
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <SectionTitle title="Project dashboard" />
+        <SectionTitle title="Database dashboard" />
         <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-          <Button variant="default" size="sm" disabled>
+          <Button variant="default" size="sm" onClick={() => setConnectOpen(true)}>
             Connect
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            Import data
-          </Button>
-          <Button variant="outline" size="sm" disabled>
-            Share
           </Button>
         </div>
       </div>
@@ -161,7 +161,7 @@ export function NamespaceDashboard({
               </Link>
             </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4">
             <NamespaceMonitoringPanel
               namespaceId={namespaceId}
               branches={branches}
@@ -187,30 +187,14 @@ export function NamespaceDashboard({
                 </Link>
               </Button>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <DataTable columns={branchColumns} data={branches} />
-              <div
-                className={cn(
-                  'rounded-lg border bg-violet-50/50 dark:bg-violet-950/20',
-                  'px-4 py-3 text-sm',
-                )}
-              >
-                <p className="font-medium text-violet-900 dark:text-violet-200">
-                  Use preview branches to test changes safely
-                </p>
-                <p className="mt-1 text-muted-foreground">
-                  Create a branch from production to develop and test schema changes before merging.
-                </p>
-                <Button variant="outline" size="sm" className="mt-3" disabled>
-                  Install an integration
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-base font-semibold">Project settings</CardTitle>
+              <CardTitle className="text-base font-semibold">Namespace settings</CardTitle>
               <Button variant="link" className="h-auto p-0 text-sm" asChild>
                 <Link
                   to="/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/settings"
@@ -238,6 +222,14 @@ export function NamespaceDashboard({
           </Card>
         </div>
       </div>
+
+      <ConnectDialog
+        namespaceId={namespaceId}
+        branches={branches}
+        endpoints={endpoints}
+        open={connectOpen}
+        onOpenChange={setConnectOpen}
+      />
     </div>
   )
 }

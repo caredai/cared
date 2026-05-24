@@ -43,7 +43,7 @@ export type TreeNode =
 export const calculateDuration = (node: TreeNode) => {
   const isTraceRoot = 'isTraceRoot' in node
   if (isTraceRoot) {
-    return node.latency * 1000
+    return (node.latency ?? 0) * 1000
   } else if (node.endTime) {
     return new Date(node.endTime).getTime() - new Date(node.startTime).getTime()
   } else {
@@ -209,7 +209,7 @@ export const getNodeEndTime = (node: TreeNode): Date => {
   if (isTraceRoot) {
     // For trace root, calculate end time from start time + latency
     const startTime = getNodeStartTime(node)
-    return new Date(startTime.getTime() + node.latency * 1000)
+    return new Date(startTime.getTime() + (node.latency ?? 0) * 1000)
   } else if (node.endTime) {
     return new Date(node.endTime)
   } else {

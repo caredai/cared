@@ -4,7 +4,11 @@ import { Info } from 'lucide-react'
 import type { RouterOutputs } from '@cared/api'
 import type { DatabaseNamespaceUsageLimits } from '@cared/api/types'
 import { Card, CardContent } from '@cared/ui/components/card'
-import { Progress } from '@cared/ui/components/progress'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@cared/ui/components/tooltip'
 
 import { formatCuHours, formatStorageBytes } from './database-format'
 
@@ -19,28 +23,25 @@ interface NamespaceUsageCardProps {
   usageLimits: DatabaseNamespaceUsageLimits
 }
 
-function UsageMetric({
-  label,
-  value,
-  limit,
-  formatValue,
-}: {
+interface UsageMetricProps {
   label: string
-  value: number
-  limit: number
-  formatValue: (v: number, max: number) => string
-}) {
-  const percent = limit > 0 ? Math.min((value / limit) * 100, 100) : 0
+  value: string
+  tooltip: string
+}
 
+function UsageMetric({ label, value, tooltip }: UsageMetricProps) {
   return (
-    <div className="flex flex-1 flex-col gap-2 min-w-0 px-4 first:pl-0 last:pr-0">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="text-sm font-medium tabular-nums whitespace-nowrap">
-          {formatValue(value, limit)}
-        </span>
+    <div className="flex flex-1 flex-col gap-1 min-w-0 px-5 first:pl-0 last:pr-0">
+      <div className="flex items-center gap-1 text-sm text-muted-foreground whitespace-nowrap">
+        <span>{label}</span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-3.5 w-3.5 cursor-default opacity-60" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-56 text-center">{tooltip}</TooltipContent>
+        </Tooltip>
       </div>
-      <Progress value={percent} className="h-1.5" />
+      <span className="text-sm font-semibold tabular-nums">{value}</span>
     </div>
   )
 }
@@ -58,38 +59,37 @@ export function NamespaceUsageCard({
   return (
     <Card className="py-4">
       <CardContent className="px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
           <UsageMetric
             label="Branches"
-            value={branchCount}
-            limit={usageLimits.maxBranches}
-            formatValue={(v, max) => `${v} / ${max}`}
+            value={`${branchCount} / ${usageLimits.maxBranches}`}
+            tooltip="Number of branches in this namespace"
           />
-          <div className="hidden lg:block w-px h-10 bg-border shrink-0" />
+          <div className="hidden lg:block w-px self-stretch bg-border shrink-0" />
           <UsageMetric
             label="Compute"
-            value={computeUsed}
-            limit={usageLimits.maxComputeCuHours * 3600}
-            formatValue={(v) => `${formatCuHours(v)} / ${usageLimits.maxComputeCuHours} CU-hrs`}
+            value={`${formatCuHours(computeUsed)} / ${usageLimits.maxComputeCuHours} CU-hrs`}
+            tooltip="Total compute time usage for this namespace"
           />
-          <div className="hidden lg:block w-px h-10 bg-border shrink-0" />
+          <div className="hidden lg:block w-px self-stretch bg-border shrink-0" />
           <UsageMetric
             label="Storage"
-            value={storageUsed}
-            limit={usageLimits.maxStorageBytes}
-            formatValue={(v, max) => `${formatStorageBytes(v)} / ${formatStorageBytes(max)}`}
+            value={`${formatStorageBytes(storageUsed)} / ${formatStorageBytes(usageLimits.maxStorageBytes)}`}
+            tooltip="Total storage usage for this namespace"
           />
-          <div className="hidden lg:block w-px h-10 bg-border shrink-0" />
+          <div className="hidden lg:block w-px self-stretch bg-border shrink-0" />
           <UsageMetric
             label="Network transfer"
-            value={networkUsed}
-            limit={usageLimits.maxDataTransferBytes}
-            formatValue={(v, max) => `${formatStorageBytes(v)} / ${formatStorageBytes(max)}`}
+            value={`${formatStorageBytes(networkUsed)} / ${formatStorageBytes(usageLimits.maxDataTransferBytes)}`}
+            tooltip="Total network data transfer for this namespace"
           />
         </div>
         <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-          <span>Usage since {periodStart}. Metrics may be delayed by up to an hour.</span>
+          <span>
+            Usage since {periodStart}. Metrics may be delayed by an hour and are not updated for
+            inactive namespace.
+          </span>
         </div>
       </CardContent>
     </Card>

@@ -125,7 +125,7 @@ export function ObservationPreview({
 
             {observation.type === 'GENERATION' && (
               <>
-                {observation.costDetails.total && (
+                {typeof observation.costDetails.total === 'number' && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <span>Cost: ${observation.costDetails.total.toFixed(6)}</span>
                   </Badge>
@@ -148,7 +148,7 @@ export function ObservationPreview({
             {observation.model && <Badge>{observation.model}</Badge>}
 
             {/* Model parameters */}
-            {observation.modelParameters && typeof observation.modelParameters === 'object' && (
+            {typeof observation.modelParameters === 'object' && observation.modelParameters && (
               <>
                 {Object.entries(observation.modelParameters)
                   .filter(([_, value]) => value != null)
