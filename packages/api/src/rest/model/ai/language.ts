@@ -254,8 +254,6 @@ async function processWithPolling({
       await writer.close()
     }
 
-    const encoder = new TextEncoder()
-
     // Helper function to write data to the stream
     writeChunk = async (data: any) => {
       if (closed) {

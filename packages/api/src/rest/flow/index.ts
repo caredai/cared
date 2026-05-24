@@ -15,24 +15,28 @@ langflow.on('GET', ['/health_check', '/health'], () =>
   }),
 )
 
-langflow.on(['GET', 'POST', 'PARCH', 'DELETE'], [
-  '/task/*',
-  '/upload/*',
-  '/store/*',
-  '/users/*',
-  '/api_key/*',
-  '/login',
-  '/auto_login',
-  '/refresh',
-  '/logout',
-  '/folders',
-  '/mcp',
-  '/mcp/sse',
-  '/mcp/streamable',
-  '/registration',
-  '/logs',
-  '/logs-stream',
-], () => new Response('Invalid request', { status: 400 }))
+langflow.on(
+  ['GET', 'POST', 'PARCH', 'DELETE'],
+  [
+    '/task/*',
+    '/upload/*',
+    '/store/*',
+    '/users/*',
+    '/api_key/*',
+    '/login',
+    '/auto_login',
+    '/refresh',
+    '/logout',
+    '/folders',
+    '/mcp',
+    '/mcp/sse',
+    '/mcp/streamable',
+    '/registration',
+    '/logs',
+    '/logs-stream',
+  ],
+  () => new Response('Invalid request', { status: 400 }),
+)
 
 async function handler(c: Context<BlankEnv, string, BlankInput>) {
   const auth = await ProtectedAuth.authenticate(c.req.raw.headers)

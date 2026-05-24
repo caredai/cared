@@ -111,9 +111,7 @@ export async function POST(c: Context): Promise<Response> {
                     await updateCreditsCache(updatedCredits)
                   } else {
                     if (!credits) {
-                      log.error(
-                        `Credits not found for account with id ${order.accountId}`,
-                      )
+                      log.error(`Credits not found for account with id ${order.accountId}`)
                     } else {
                       log.error(
                         `onetimeRechargeSessionId mismatched for account with id ${order.accountId}`,
@@ -167,9 +165,7 @@ export async function POST(c: Context): Promise<Response> {
                     await updateCreditsCache(updatedCredits)
                   } else {
                     if (!credits) {
-                      log.error(
-                        `Credits not found for account with id ${order.accountId}`,
-                      )
+                      log.error(`Credits not found for account with id ${order.accountId}`)
                     } else {
                       log.error(
                         `autoRechargeSessionId mismatched for account with id ${order.accountId}`,
@@ -267,9 +263,7 @@ export async function POST(c: Context): Promise<Response> {
                   await updateCreditsCache(updatedCredits)
                 } else {
                   if (!credits) {
-                    log.error(
-                      `Credits not found for account with id ${order.accountId}`,
-                    )
+                    log.error(`Credits not found for account with id ${order.accountId}`)
                   } else {
                     log.error(
                       `autoRechargePaymentIntentId mismatched for account with id ${order.accountId}`,
@@ -362,9 +356,7 @@ export async function POST(c: Context): Promise<Response> {
                     await updateCreditsCache(updatedCredits)
                   } else {
                     if (!credits) {
-                      log.error(
-                        `Credits not found for account with id ${order.accountId}`,
-                      )
+                      log.error(`Credits not found for account with id ${order.accountId}`)
                     } else {
                       log.error(
                         `autoRechargeInvoiceId mismatched for account with id ${order.accountId}`,

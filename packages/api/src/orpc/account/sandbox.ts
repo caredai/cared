@@ -54,7 +54,7 @@ const sandboxStateSchema = z.enum([
   'pulling_snapshot',
   'archived',
   'archiving',
-  // 'resizing',
+  'resizing',
 ])
 
 const sandboxSchema = z.object({

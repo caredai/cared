@@ -5,12 +5,12 @@ import { generateId, timestamps, timestampsIndices } from '@cared/shared'
 
 import { Account } from './auth-alias'
 
-export const integrationTypeEnum = pgEnum('integrationType', [
+export const integrationTypes = [
   'github',
   'cloudflare',
-  'neon',
-  'supabase',
-])
+] as const
+export type IntegrationType = (typeof integrationTypes)[number]
+export const integrationTypeEnum = pgEnum('integrationType', integrationTypes)
 
 export type IntegrationMetadata =
   | {

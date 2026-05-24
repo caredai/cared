@@ -589,7 +589,7 @@ export function getImgProps(
       } catch {
         /* empty */
       }
-      if (urlStr === src || (url && url.pathname === src && !url.search)) {
+      if (urlStr === src || (url?.pathname === src && !url.search)) {
         warnOnce(
           `Image with src "${src}" has a "loader" property that does not implement width. Please implement it or use the "unoptimized" property instead.` +
             `\nRead more: https://nextjs.org/docs/messages/next-image-missing-loader-width`,
@@ -627,8 +627,7 @@ export function getImgProps(
           const imgSrc = entry?.element?.src || ''
           const lcpImage = allImgs.get(imgSrc)
           if (
-            lcpImage &&
-            lcpImage.loading === 'lazy' &&
+            lcpImage?.loading === 'lazy' &&
             lcpImage.placeholder === 'empty' &&
             !lcpImage.src.startsWith('data:') &&
             !lcpImage.src.startsWith('blob:')

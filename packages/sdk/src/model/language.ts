@@ -53,7 +53,7 @@ export function createLanguageModel(modelId: string, opts: CaredClientOptions): 
     supportedUrls: (async () => {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!(supportedUrls as PromiseLike<any>).then) {
-        return supportedUrls as Record<string, RegExp[]>
+        return supportedUrls
       }
 
       const getUrl = new URL(url)

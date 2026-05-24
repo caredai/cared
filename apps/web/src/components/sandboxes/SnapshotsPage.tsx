@@ -1,7 +1,7 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { SectionTitle } from '@/components/section'
-import { SnapshotsTab } from './SnapshotsTab'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { RegistriesTab } from './RegistriesTab'
+import { SnapshotsTab } from './SnapshotsTab'
 
 /**
  * Snapshots route page: Snapshots and Registries in tabs (per requirement).
@@ -9,10 +9,7 @@ import { RegistriesTab } from './RegistriesTab'
 export function SnapshotsPage() {
   return (
     <>
-      <SectionTitle
-        title="Snapshots"
-        description="Manage snapshots"
-      />
+      <SectionTitle title="Snapshots" description="Manage snapshots" />
       <Tabs defaultValue="snapshots" className="w-full">
         <TabsList>
           <TabsTrigger value="snapshots">Snapshots</TabsTrigger>

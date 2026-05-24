@@ -38,11 +38,7 @@ export abstract class KV {
 
   abstract batchDelete(...keys: string[]): Promise<void>
 
-  abstract eval(
-    script: ScriptInfo,
-    keys: string[],
-    args: string[],
-  ): Promise<unknown>
+  abstract eval(script: ScriptInfo, keys: string[], args: string[]): Promise<unknown>
 }
 
 export interface ScriptInfo {

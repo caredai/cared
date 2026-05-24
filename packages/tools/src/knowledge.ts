@@ -66,10 +66,7 @@ async function updateMetadataBindings(
   } else {
     if (!ctx.preview) {
       // In non-preview mode, update both main record and latest published version
-      await db
-        .update(Agent)
-        .set({ metadata: metadata as AgentMetadata })
-        .where(eq(Agent.id, ctx.agentId))
+      await db.update(Agent).set({ metadata: metadata }).where(eq(Agent.id, ctx.agentId))
 
       const latestVersion = await db.query.AgentVersion.findFirst({
         where: and(
@@ -81,7 +78,7 @@ async function updateMetadataBindings(
       assert(latestVersion, 'No published version found for agent')
       await db
         .update(AgentVersion)
-        .set({ metadata: metadata as AgentMetadata })
+        .set({ metadata: metadata })
         .where(
           and(
             eq(AgentVersion.agentId, ctx.agentId),
@@ -92,7 +89,7 @@ async function updateMetadataBindings(
       // In preview mode, update draft version
       await db
         .update(AgentVersion)
-        .set({ metadata: metadata as AgentMetadata })
+        .set({ metadata: metadata })
         .where(and(eq(AgentVersion.agentId, ctx.agentId), eq(AgentVersion.version, DRAFT_VERSION)))
 
       // If no published version exists, also update main record
@@ -103,10 +100,7 @@ async function updateMetadataBindings(
         ),
       })
       if (!hasPublishedVersion) {
-        await db
-          .update(Agent)
-          .set({ metadata: metadata as AgentMetadata })
-          .where(eq(Agent.id, ctx.agentId))
+        await db.update(Agent).set({ metadata: metadata }).where(eq(Agent.id, ctx.agentId))
       }
     }
   }
@@ -173,7 +167,7 @@ function listKnowledgeBases(ctx: Context) {
           ...metadata,
           datasetBindings: updatedBindings,
         }
-        await updateMetadataBindings(scope, ctx, updatedMetadata as AppMetadata | AgentMetadata)
+        await updateMetadataBindings(scope, ctx, updatedMetadata)
       }
 
       return datasets.map((dataset) => ({

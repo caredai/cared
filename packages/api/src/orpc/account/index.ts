@@ -8,6 +8,8 @@ import { datasetRouter } from './dataset'
 import { expenseRouter } from './expense'
 import { fileRouter } from './file'
 import { flowRouter } from './flow'
+import { functionRouter } from './function'
+// import { graphRouter } from './graph'
 import { integrationRouter } from './integration'
 import { invoiceRouter } from './invoices'
 import { mcpRouter } from './mcp'
@@ -15,6 +17,7 @@ import { modelRouter } from './model'
 import { oauthAppRouter } from './oauth-app'
 import { providerKeyRouter } from './provider-key'
 import { sandboxRouter } from './sandbox'
+import { siteRouter } from './site'
 import { storageRouter } from './storage'
 import { stripeRouter } from './stripe'
 import { subscriptionRouter } from './subscriptions'
@@ -48,4 +51,7 @@ export const accountRouter = {
   integration: integrationRouter,
   database: databaseRouter,
   sandbox: sandboxRouter,
+  function: functionRouter,
+  site: siteRouter,
+  // graph: graphRouter,
 }

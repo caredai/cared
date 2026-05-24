@@ -253,8 +253,6 @@ export async function POST(c: Context): Promise<Response> {
         await writer.close()
       }
 
-      const encoder = new TextEncoder()
-
       // Helper function to write data to the stream
       writeChunk = async (data: any, notJson?: boolean) => {
         if (closed) {

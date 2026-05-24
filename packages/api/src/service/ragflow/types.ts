@@ -1060,9 +1060,7 @@ export interface SnakeCaseAllParentFolders {
   }[]
 }
 
-export function fromSnakeCaseAllParentFolders(
-  snake: SnakeCaseAllParentFolders,
-): AllParentFolders {
+export function fromSnakeCaseAllParentFolders(snake: SnakeCaseAllParentFolders): AllParentFolders {
   return {
     parentFolders: snake.parent_folders,
   }

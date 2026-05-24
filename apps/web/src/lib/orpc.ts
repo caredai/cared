@@ -11,12 +11,6 @@ import { getApiPath, getApiUrl } from '@cared/auth/client'
 
 import type { RouterClient } from '@orpc/server'
 
-let apiWorker: Fetcher | undefined = undefined
-
-export function setApiWorker(aw: Fetcher) {
-  apiWorker ??= aw
-}
-
 const isomorphicHeaders = createIsomorphicFn()
   .server(() => {
     const headers = new Headers(getRequestHeaders())
@@ -31,17 +25,7 @@ const isomorphicHeaders = createIsomorphicFn()
 
 const isomorphicFetch = createIsomorphicFn()
   .server(async (...args: Parameters<typeof globalThis.fetch>) => {
-    if (apiWorker) {
-      const response = await apiWorker.fetch(...args)
-      // console.log(
-      //   'cf placement',
-      //   response.headers.get('cf-placement'),
-      //   response.headers.get('cf-ray'),
-      // )
-      return response
-    } else {
-      return globalThis.fetch(...args)
-    }
+    return globalThis.fetch(...args)
   })
   .client((...args: Parameters<typeof globalThis.fetch>) => {
     return globalThis.fetch(...args)

@@ -1,0 +1,33 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: cared
+
+configMapGenerator:
+  - name: drizzgw-config
+    envs:
+      - config.env
+
+secretGenerator:
+  - name: drizzgw-secrets
+    envs:
+      - secrets.env
+
+resources:
+  - serviceaccount.yaml
+  - role.yaml
+  - rolebinding.yaml
+  - server-deployment.yaml
+  - server-service.yaml
+  - offloader-deployment.yaml
+
+images:
+  - name: caredai/drizzgw
+    newName: caredai/drizzgw
+    newTag: '0.1'
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: drizzgw
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false

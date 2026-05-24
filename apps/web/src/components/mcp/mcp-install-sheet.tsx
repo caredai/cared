@@ -1,5 +1,3 @@
-'use client'
-
 import type { VirtualizerHandle } from 'virtua'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {

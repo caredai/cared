@@ -193,9 +193,12 @@ export const datasetRouter = {
       const { id, ...updates } = input
 
       const dataset = await getDatasetById(context, id)
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: dataset.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: dataset.accountId },
+      )
 
       // Merge new metadata with existing metadata
       const update = {
@@ -238,9 +241,12 @@ export const datasetRouter = {
     .handler(async ({ context, input }) => {
       const dataset = await getDatasetById(context, input.id)
 
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: dataset.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: dataset.accountId },
+      )
 
       const documentUrls = await db
         .select({
@@ -313,9 +319,12 @@ export const datasetRouter = {
     .input(CreateDocumentSchema)
     .handler(async ({ context, input }) => {
       const dataset = await getDatasetById(context, input.datasetId)
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: dataset.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: dataset.accountId },
+      )
 
       // If document has S3 URL, get file size and update dataset metadata
       let fileSize: number | undefined
@@ -403,9 +412,12 @@ export const datasetRouter = {
         })
       }
 
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: document.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: document.accountId },
+      )
 
       const [updatedDocument] = await db
         .update(Document)
@@ -452,9 +464,12 @@ export const datasetRouter = {
         })
       }
 
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: document.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: document.accountId },
+      )
 
       const dataset = await db.query.Dataset.findFirst({
         where: eq(Dataset.id, document.datasetId),
@@ -648,9 +663,12 @@ export const datasetRouter = {
     .input(CreateDocumentSegmentSchema)
     .handler(async ({ context, input }) => {
       const dataset = await getDatasetById(context, input.datasetId)
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: dataset.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: dataset.accountId },
+      )
 
       const document = await db.query.Document.findFirst({
         where: eq(Document.id, input.documentId),
@@ -710,9 +728,12 @@ export const datasetRouter = {
         })
       }
 
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: segment.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: segment.accountId },
+      )
 
       const [updatedSegment] = await db
         .update(DocumentSegment)
@@ -756,9 +777,12 @@ export const datasetRouter = {
         })
       }
 
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: segment.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: segment.accountId },
+      )
 
       return await db.transaction(async (tx) => {
         // Delete all chunks
@@ -858,9 +882,12 @@ export const datasetRouter = {
     .input(CreateDocumentChunkSchema)
     .handler(async ({ context, input }) => {
       const dataset = await getDatasetById(context, input.datasetId)
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: dataset.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: dataset.accountId },
+      )
 
       const segment = await db.query.DocumentSegment.findFirst({
         where: eq(DocumentSegment.id, input.segmentId),
@@ -908,11 +935,7 @@ export const datasetRouter = {
     })
     .input(UpdateDocumentChunkSchema)
     .handler(async ({ context, input }) => {
-      const { id, ...updateData } = input as {
-        id: string
-        content?: string
-        metadata?: Record<string, unknown>
-      }
+      const { id, ...updateData } = input
 
       const chunk = await db.query.DocumentChunk.findFirst({
         where: eq(DocumentChunk.id, id),
@@ -924,9 +947,12 @@ export const datasetRouter = {
         })
       }
 
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: chunk.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: chunk.accountId },
+      )
 
       const [updatedChunk] = await db
         .update(DocumentChunk)
@@ -970,9 +996,12 @@ export const datasetRouter = {
         })
       }
 
-      await context.auth.requirePermissions({
-        dataset: ['write'],
-      }, { accountId: chunk.accountId })
+      await context.auth.requirePermissions(
+        {
+          dataset: ['write'],
+        },
+        { accountId: chunk.accountId },
+      )
 
       await db.delete(DocumentChunk).where(eq(DocumentChunk.id, input.id))
 

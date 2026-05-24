@@ -42,8 +42,7 @@ export const multiSelectVariants = cva('m-1', {
  * Props for MultiSelect component
  */
 export interface MultiSelectProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof multiSelectVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof multiSelectVariants> {
   /**
    * Whether the multi-select component is disabled.
    */

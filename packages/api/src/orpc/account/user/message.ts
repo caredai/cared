@@ -1,9 +1,9 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import { db } from '@cared/db/client'
 import type { SQL } from '@cared/db'
 import { and, asc, count, desc, eq, gt, gte, inArray, lt } from '@cared/db'
+import { db } from '@cared/db/client'
 import {
   Chat,
   CreateMessageSchema,
@@ -435,4 +435,3 @@ export const messageRouter = {
       return { vote }
     }),
 }
-

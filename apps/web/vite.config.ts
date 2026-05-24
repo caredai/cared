@@ -23,7 +23,7 @@ export default defineConfig(async ({ command, mode }) => {
           target: 'http://127.0.0.1:7859',
           changeOrigin: true,
         },
-      }
+      },
     },
     plugins: [
       ...(command === 'build'

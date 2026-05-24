@@ -1,7 +1,7 @@
 import type { InferSelectModel } from 'drizzle-orm'
 
-import type { Account } from './auth'
-import {
+import type {
+  Account,
   authAccount,
   invitation,
   jwks,
@@ -35,30 +35,34 @@ export {
   verification,
 } from './auth'
 
-export const User = user
-export type User = InferSelectModel<typeof User>
-export const AuthAccount = authAccount
-export type AuthAccount = InferSelectModel<typeof AuthAccount>
-export const Verification = verification
-export type Verification = InferSelectModel<typeof Verification>
-export const Jwks = jwks
-export type Jwks = InferSelectModel<typeof Jwks>
-export const Passkey = passkey
-export type Passkey = InferSelectModel<typeof Passkey>
-export const TwoFactor = twoFactor
-export type TwoFactor = InferSelectModel<typeof TwoFactor>
+// PascalCase aliases via re-export only (no runtime reads) to avoid TDZ on circular imports.
+export {
+  user as User,
+  authAccount as AuthAccount,
+  verification as Verification,
+  jwks as Jwks,
+  passkey as Passkey,
+  twoFactor as TwoFactor,
+  member as Member,
+  invitation as Invitation,
+  team as Team,
+  teamMember as TeamMember,
+  oauthApplication as OAuthApplication,
+  oauthAccessToken as OAuthAccessToken,
+  oauthConsent as OAuthConsent,
+} from './auth'
+
+export type User = InferSelectModel<typeof user>
+export type AuthAccount = InferSelectModel<typeof authAccount>
+export type Verification = InferSelectModel<typeof verification>
+export type Jwks = InferSelectModel<typeof jwks>
+export type Passkey = InferSelectModel<typeof passkey>
+export type TwoFactor = InferSelectModel<typeof twoFactor>
 export type Account = InferSelectModel<typeof Account>
-export const Member = member
-export type Member = InferSelectModel<typeof Member>
-export const Invitation = invitation
-export type Invitation = InferSelectModel<typeof Invitation>
-export const Team = team
-export type Team = InferSelectModel<typeof Team>
-export const TeamMember = teamMember
-export type TeamMember = InferSelectModel<typeof TeamMember>
-export const OAuthApplication = oauthApplication
-export type OAuthApplication = InferSelectModel<typeof OAuthApplication>
-export const OAuthAccessToken = oauthAccessToken
-export type OAuthAccessToken = InferSelectModel<typeof OAuthAccessToken>
-export const OAuthConsent = oauthConsent
-export type OAuthConsent = InferSelectModel<typeof OAuthConsent>
+export type Member = InferSelectModel<typeof member>
+export type Invitation = InferSelectModel<typeof invitation>
+export type Team = InferSelectModel<typeof team>
+export type TeamMember = InferSelectModel<typeof teamMember>
+export type OAuthApplication = InferSelectModel<typeof oauthApplication>
+export type OAuthAccessToken = InferSelectModel<typeof oauthAccessToken>
+export type OAuthConsent = InferSelectModel<typeof oauthConsent>

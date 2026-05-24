@@ -258,7 +258,7 @@ export function LanguageModelItemView({ model }: { model: LanguageModelInfo }) {
       )}
       {Boolean(
         model.cachedInputTokenPrice ||
-          (model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice === 'string'),
+        (model.cacheInputTokenPrice && typeof model.cacheInputTokenPrice === 'string'),
       ) && (
         <div className="flex flex-wrap gap-x-4">
           {model.cachedInputTokenPrice && (

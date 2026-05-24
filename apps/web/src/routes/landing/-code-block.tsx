@@ -1,5 +1,3 @@
-'use client'
-
 import { motion } from 'motion/react'
 
 const LINES = [
@@ -27,8 +25,7 @@ export function LandingCodeBlock() {
             One key. One integration.
           </h2>
           <p className="mx-auto mt-3 max-w-lg font-sans text-muted-foreground">
-            No per-service keys. Use the same credential for models, tools,
-            sandboxes, and storage.
+            No per-service keys. Use the same credential for models, tools, sandboxes, and storage.
           </p>
         </motion.div>
 

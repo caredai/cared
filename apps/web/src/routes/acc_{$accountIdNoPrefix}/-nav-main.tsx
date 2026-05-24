@@ -3,14 +3,16 @@ import {
   Bot,
   Box,
   Brain,
+  Cable,
   CircleDollarSign,
+  Component,
+  Cylinder,
   Database,
   Key,
   PocketKnife,
   Puzzle,
   Settings2,
   Users,
-  Cable
 } from 'lucide-react'
 
 import type { NavItem } from '@/components/app-sidebar/nav-main'
@@ -76,6 +78,11 @@ const items: NavItem[] = [
     ],
   },
   {
+    title: 'Databases',
+    url: '/databases',
+    icon: Cylinder,
+  },
+  {
     title: 'Apps',
     url: '/apps',
     icon: Bot,
@@ -89,6 +96,11 @@ const items: NavItem[] = [
     title: 'Extensions',
     url: '/extensions',
     icon: Puzzle,
+  },
+  {
+    title: 'Integrations',
+    url: '/integrations',
+    icon: Component,
   },
 
   {

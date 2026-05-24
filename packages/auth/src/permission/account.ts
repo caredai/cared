@@ -79,7 +79,7 @@ export function checkPermissionsByRole(
 ) {
   const orgPlugin = auth.options.plugins.find(
     (plugin) => plugin.id === 'organization',
-  ) as ReturnType<typeof organization>
+  ) as unknown as ReturnType<typeof organization>
 
   return clientSideHasPermission({
     role,

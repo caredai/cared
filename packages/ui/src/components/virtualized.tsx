@@ -40,8 +40,10 @@ const Virtualized = React.forwardRef<
 })
 Virtualized.displayName = 'Virtualized'
 
-export interface VirtualizedListProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof VList>, 'horizontal'> {
+export interface VirtualizedListProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof VList>,
+  'horizontal'
+> {
   orientation?: 'vertical' | 'horizontal'
 }
 

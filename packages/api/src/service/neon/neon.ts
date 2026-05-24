@@ -5,12 +5,41 @@ import { and, asc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Neon } from '@cared/db/schema'
 
-import type { Api } from '@neondatabase/api-client'
+import type { DatabaseEndpointStatsGrouping } from '../../types'
+import type {
+  Api,
+  DefaultEndpointSettings,
+  ProjectListItem,
+  ProjectQuota,
+  ProjectSettingsData,
+  ProjectUpdateRequest,
+} from '@neondatabase/api-client'
 import { env } from '../../env'
+import {
+  DatabaseTier,
+  formatBranch,
+  formatBranchDatabase,
+  formatConnectionDetails,
+  formatEndpoint,
+  formatNamespace,
+  formatNamespaceListItem,
+  formatOperation,
+  formatRole,
+} from '../../types'
+import { countProjectsBranches, formatEndpointStatsChart, getEndpointStats } from './api'
 
-export enum DatabaseTier {
-  LOW_COST = 'low-cost',
-  NORMAL = 'normal',
+export interface NeonSettings {
+  activeTimeSeconds?: number
+  logicalSizeBytes?: number
+  dataTransferBytes?: number
+  autoscalingLimitMinCu?: number
+  autoscalingLimitMaxCu?: number
+  /** `-1` means never suspend (Neon `suspend_timeout_seconds`). */
+  suspendTimeoutSeconds?: number
+  /** Maps to `project.settings.enable_logical_replication` (cannot be disabled once enabled). */
+  enableLogicalReplication?: boolean
+  /** Maps to `project.history_retention_seconds` (shared PITR retention for all branches). */
+  historyRetentionSeconds?: number
 }
 
 export class NeonService {
@@ -61,12 +90,11 @@ export class NeonService {
     }
   }
 
-  /**
-   * Format namespace by removing internal IDs
-   */
-  formatNamespace(namespace: Neon): Omit<Neon, 'accountId' | 'orgId' | 'projectId'> {
-    const { accountId: _accountId, orgId: _orgId, projectId: _projectId, ...rest } = namespace
-    return rest
+  private async getProject(namespace: Neon) {
+    const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
+    const { client } = this.getClient(tier)
+    const projectResponse = await client.getProject(namespace.projectId)
+    return projectResponse.data.project
   }
 
   /**
@@ -79,8 +107,80 @@ export class NeonService {
       .where(eq(Neon.accountId, accountId))
       .orderBy(asc(Neon.id))
 
+    if (namespaces.length === 0) {
+      return { namespaces: [] }
+    }
+
+    // Load Neon project summaries via list API (paginated), not per-project get.
+    const projectById = new Map<string, ProjectListItem>()
+    const ingestTierProjects = async (tier: DatabaseTier) => {
+      const { orgId, client } = this.getClient(tier)
+      let cursor: string | undefined
+      for (;;) {
+        const res = await client.listProjects({
+          org_id: orgId,
+          search: accountId,
+          limit: 400,
+          cursor,
+        })
+        if (!res.data.projects.length) {
+          break
+        }
+        for (const p of res.data.projects) {
+          projectById.set(p.id, p)
+        }
+        cursor = res.data.pagination?.cursor
+        if (!cursor) {
+          break
+        }
+      }
+    }
+
+    await Promise.all([
+      namespaces.some((n) => n.isLowCost)
+        ? ingestTierProjects(DatabaseTier.LOW_COST)
+        : Promise.resolve(),
+      namespaces.some((n) => !n.isLowCost)
+        ? ingestTierProjects(DatabaseTier.NORMAL)
+        : Promise.resolve(),
+    ])
+
+    const loadBranchCounts = async (tier: DatabaseTier, projectIds: string[]) => {
+      if (projectIds.length === 0) {
+        return {} as Record<string, number>
+      }
+      const { client } = this.getClient(tier)
+      return countProjectsBranches(client, projectIds)
+    }
+
+    const [lowCostBranchCounts, normalBranchCounts] = await Promise.all([
+      loadBranchCounts(
+        DatabaseTier.LOW_COST,
+        namespaces.filter((n) => n.isLowCost).map((n) => n.projectId),
+      ),
+      loadBranchCounts(
+        DatabaseTier.NORMAL,
+        namespaces.filter((n) => !n.isLowCost).map((n) => n.projectId),
+      ),
+    ])
+
+    const branchCountByProjectId = new Map<string, number>([
+      ...Object.entries(lowCostBranchCounts),
+      ...Object.entries(normalBranchCounts),
+    ])
+
+    const namespacesWithProjects = namespaces.map((ns) => {
+      const listed = projectById.get(ns.projectId)
+      if (!listed) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: `Neon project not found for database namespace ${ns.id} (projectId: ${ns.projectId})`,
+        })
+      }
+      return formatNamespaceListItem(ns, listed, branchCountByProjectId.get(ns.projectId) ?? 0)
+    })
+
     return {
-      namespaces: namespaces.map((ns) => this.formatNamespace(ns)),
+      namespaces: namespacesWithProjects,
     }
   }
 
@@ -100,8 +200,134 @@ export class NeonService {
       })
     }
 
+    const project = await this.getProject(namespace)
+
     return {
-      namespace: this.formatNamespace(namespace),
+      namespace: formatNamespace(namespace, project),
+    }
+  }
+
+  /**
+   * Count branches for a database namespace.
+   */
+  async countBranches(accountId: string, namespaceId: string) {
+    const [namespace] = await db
+      .select()
+      .from(Neon)
+      .where(and(eq(Neon.id, namespaceId), eq(Neon.accountId, accountId)))
+      .limit(1)
+
+    if (!namespace) {
+      throw new ORPCError('NOT_FOUND', {
+        message: 'Database namespace not found',
+      })
+    }
+
+    const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
+    const { client } = this.getClient(tier)
+
+    const response = await client.countProjectBranches({ projectId: namespace.projectId })
+
+    return {
+      count: response.data.count,
+    }
+  }
+
+  /**
+   * List compute endpoints for a database namespace.
+   */
+  async listEndpoints(accountId: string, namespaceId: string) {
+    const [namespace] = await db
+      .select()
+      .from(Neon)
+      .where(and(eq(Neon.id, namespaceId), eq(Neon.accountId, accountId)))
+      .limit(1)
+
+    if (!namespace) {
+      throw new ORPCError('NOT_FOUND', {
+        message: 'Database namespace not found',
+      })
+    }
+
+    const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
+    const { client } = this.getClient(tier)
+
+    const response = await client.listProjectEndpoints(namespace.projectId)
+
+    return {
+      endpoints: response.data.endpoints.map(formatEndpoint),
+    }
+  }
+
+  /**
+   * List compute endpoints for a single branch.
+   */
+  async listBranchEndpoints(accountId: string, namespaceId: string, branchId: string) {
+    const [namespace] = await db
+      .select()
+      .from(Neon)
+      .where(and(eq(Neon.id, namespaceId), eq(Neon.accountId, accountId)))
+      .limit(1)
+
+    if (!namespace) {
+      throw new ORPCError('NOT_FOUND', {
+        message: 'Database namespace not found',
+      })
+    }
+
+    const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
+    const { client } = this.getClient(tier)
+
+    const response = await client.listProjectBranchEndpoints(namespace.projectId, branchId)
+
+    return {
+      endpoints: response.data.endpoints.map(formatEndpoint),
+    }
+  }
+
+  /**
+   * Time-series monitoring stats for a compute endpoint (allocated CU and RAM usage).
+   */
+  async getEndpointStats(
+    accountId: string,
+    namespaceId: string,
+    params: {
+      endpointId: string
+      from?: string
+      to?: string
+      grouping?: DatabaseEndpointStatsGrouping
+    },
+  ) {
+    const [namespace] = await db
+      .select()
+      .from(Neon)
+      .where(and(eq(Neon.id, namespaceId), eq(Neon.accountId, accountId)))
+      .limit(1)
+
+    if (!namespace) {
+      throw new ORPCError('NOT_FOUND', {
+        message: 'Database namespace not found',
+      })
+    }
+
+    const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
+    const { client } = this.getClient(tier)
+
+    const to = params.to ?? new Date().toISOString()
+    const from = params.from ?? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+    const response = await getEndpointStats(client, namespace.projectId, params.endpointId, {
+      from,
+      to,
+      grouping: params.grouping ?? '10min',
+      metrics: ['cpu_provisioned_cores', 'ram_consumed_bytes'],
+    })
+
+    return {
+      points: formatEndpointStatsChart(response),
+      from: new Date(from),
+      to: new Date(to),
+      grouping: params.grouping ?? '10min',
     }
   }
 
@@ -115,54 +341,61 @@ export class NeonService {
       tier: DatabaseTier
       regionId: string
       pgVersion: number
-      settings?: {
-        activeTimeSeconds?: number
-        logicalSizeBytes?: number
-        dataTransferBytes?: number
-        autoscalingLimitMinCu?: number
-        autoscalingLimitMaxCu?: number
-        suspendTimeoutSeconds?: number | -1
-      }
+      settings?: NeonSettings
     },
   ) {
     const { orgId, client } = this.getClient(params.tier)
+    const s = params.settings
+
+    const quota: ProjectQuota =
+      params.tier === DatabaseTier.LOW_COST
+        ? {
+            active_time_seconds: 360000,
+            logical_size_bytes: 536870912,
+            data_transfer_bytes: 5368709120,
+          }
+        : {
+            active_time_seconds: s?.activeTimeSeconds ?? 2700000,
+            logical_size_bytes: s?.logicalSizeBytes ?? 10737418240,
+            data_transfer_bytes: s?.dataTransferBytes ?? 53687091200,
+          }
+
+    const projectSettings: ProjectSettingsData = { quota }
+    if (s?.enableLogicalReplication !== undefined) {
+      projectSettings.enable_logical_replication = s.enableLogicalReplication
+    }
+
+    const defaultEndpointSettings: DefaultEndpointSettings =
+      params.tier === DatabaseTier.LOW_COST
+        ? {
+            autoscaling_limit_min_cu: 0.25,
+            autoscaling_limit_max_cu: 2,
+            suspend_timeout_seconds: 0, // 0 means use the default value 300
+          }
+        : {
+            autoscaling_limit_min_cu: s?.autoscalingLimitMinCu ?? 0.25,
+            autoscaling_limit_max_cu: s?.autoscalingLimitMaxCu ?? 16,
+            suspend_timeout_seconds: s?.suspendTimeoutSeconds ?? 0, // 0 means use the default value 300
+          }
 
     // Create project in Neon
     const projectResponse = await client.createProject({
       project: {
-        name: params.name,
+        // Neon project name is the Cared account id so org-level list/search can target this account.
+        name: accountId,
         org_id: orgId,
         region_id: params.regionId,
         pg_version: params.pgVersion,
+        ...(s?.historyRetentionSeconds !== undefined && {
+          history_retention_seconds: s.historyRetentionSeconds,
+        }),
         branch: {
+          name: 'production',
           database_name: 'cared',
+          role_name: 'cared',
         },
-        settings: {
-          quota:
-            params.tier === DatabaseTier.LOW_COST
-              ? {
-                  active_time_seconds: 360000,
-                  logical_size_bytes: 536870912,
-                  data_transfer_bytes: 5368709120,
-                }
-              : {
-                  active_time_seconds: params.settings?.activeTimeSeconds ?? 2700000,
-                  logical_size_bytes: params.settings?.logicalSizeBytes ?? 10737418240,
-                  data_transfer_bytes: params.settings?.dataTransferBytes ?? 53687091200,
-                },
-        },
-        default_endpoint_settings:
-          params.tier === DatabaseTier.LOW_COST
-            ? {
-                autoscaling_limit_min_cu: 0.25,
-                autoscaling_limit_max_cu: 2,
-                suspend_timeout_seconds: 300,
-              }
-            : {
-                autoscaling_limit_min_cu: params.settings?.autoscalingLimitMinCu ?? 0.25,
-                autoscaling_limit_max_cu: params.settings?.autoscalingLimitMaxCu ?? 16,
-                suspend_timeout_seconds: params.settings?.suspendTimeoutSeconds ?? 300,
-              },
+        settings: projectSettings,
+        default_endpoint_settings: defaultEndpointSettings,
       },
     })
 
@@ -188,15 +421,18 @@ export class NeonService {
     }
 
     return {
-      namespace: this.formatNamespace(namespace),
-      project,
+      namespace: formatNamespace(namespace, project),
     }
   }
 
   /**
    * Update a database namespace
    */
-  async updateNamespace(accountId: string, id: string, params: { name?: string }) {
+  async updateNamespace(
+    accountId: string,
+    id: string,
+    params: { name?: string; settings?: Partial<NeonSettings> },
+  ) {
     // Get namespace from database
     const [namespace] = await db
       .select()
@@ -214,16 +450,57 @@ export class NeonService {
     const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
     const { client } = this.getClient(tier)
 
-    // Update project in Neon if name is provided
-    if (params.name) {
+    const neonUpdate: NonNullable<ProjectUpdateRequest['project']> = {}
+    const s = params.settings
+    if (s) {
+      if (s.historyRetentionSeconds !== undefined) {
+        neonUpdate.history_retention_seconds = s.historyRetentionSeconds
+      }
+
+      const quotaPatch: ProjectQuota = {}
+      if (s.activeTimeSeconds !== undefined) {
+        quotaPatch.active_time_seconds = s.activeTimeSeconds
+      }
+      if (s.logicalSizeBytes !== undefined) {
+        quotaPatch.logical_size_bytes = s.logicalSizeBytes
+      }
+      if (s.dataTransferBytes !== undefined) {
+        quotaPatch.data_transfer_bytes = s.dataTransferBytes
+      }
+
+      const settingsPayload: ProjectSettingsData = {}
+      if (Object.keys(quotaPatch).length > 0) {
+        settingsPayload.quota = quotaPatch
+      }
+      if (s.enableLogicalReplication !== undefined) {
+        settingsPayload.enable_logical_replication = s.enableLogicalReplication
+      }
+      if (Object.keys(settingsPayload).length > 0) {
+        neonUpdate.settings = settingsPayload
+      }
+
+      const endpointPatch: DefaultEndpointSettings = {}
+      if (s.autoscalingLimitMinCu !== undefined) {
+        endpointPatch.autoscaling_limit_min_cu = s.autoscalingLimitMinCu
+      }
+      if (s.autoscalingLimitMaxCu !== undefined) {
+        endpointPatch.autoscaling_limit_max_cu = s.autoscalingLimitMaxCu
+      }
+      if (s.suspendTimeoutSeconds !== undefined) {
+        endpointPatch.suspend_timeout_seconds = s.suspendTimeoutSeconds
+      }
+      if (Object.keys(endpointPatch).length > 0) {
+        neonUpdate.default_endpoint_settings = endpointPatch
+      }
+    }
+
+    if (Object.keys(neonUpdate).length > 0) {
       await client.updateProject(namespace.projectId, {
-        project: {
-          name: params.name,
-        },
+        project: neonUpdate,
       })
     }
 
-    // Update metadata in database
+    // Display name is Cared-only; Neon project name stays `accountId`.
     const [updatedNamespace] = await db
       .update(Neon)
       .set({
@@ -238,8 +515,10 @@ export class NeonService {
       })
     }
 
+    const project = await this.getProject(updatedNamespace)
+
     return {
-      namespace: this.formatNamespace(updatedNamespace),
+      namespace: formatNamespace(updatedNamespace, project),
     }
   }
 
@@ -310,9 +589,12 @@ export class NeonService {
       sort_order: 'asc',
     })
 
+    const nextCursor = branchesResponse.data.pagination?.next
+
     return {
-      branches: branchesResponse.data.branches,
-      pagination: branchesResponse.data.pagination,
+      branches: branchesResponse.data.branches.map(formatBranch),
+      hasMore: Boolean(nextCursor),
+      cursor: nextCursor,
     }
   }
 
@@ -341,7 +623,7 @@ export class NeonService {
     const branchResponse = await client.getProjectBranch(namespace.projectId, branchId)
 
     return {
-      branch: branchResponse.data.branch,
+      branch: formatBranch(branchResponse.data.branch),
     }
   }
 
@@ -388,8 +670,12 @@ export class NeonService {
     })
 
     return {
-      branch: branchResponse.data.branch,
-      endpoints: branchResponse.data.endpoints,
+      branch: formatBranch(branchResponse.data.branch),
+      endpoints: branchResponse.data.endpoints.map(formatEndpoint),
+      operations: branchResponse.data.operations.map(formatOperation),
+      roles: branchResponse.data.roles.map(formatRole),
+      databases: branchResponse.data.databases.map(formatBranchDatabase),
+      connectionUris: branchResponse.data.connection_uris?.map(formatConnectionDetails),
     }
   }
 
@@ -431,7 +717,7 @@ export class NeonService {
     })
 
     return {
-      branch: branchResponse.data.branch,
+      branch: formatBranch(branchResponse.data.branch),
     }
   }
 
@@ -460,7 +746,7 @@ export class NeonService {
     const branchResponse = await client.deleteProjectBranch(namespace.projectId, branchId)
 
     return {
-      branch: branchResponse.data.branch,
+      branch: formatBranch(branchResponse.data.branch),
     }
   }
 
@@ -489,7 +775,7 @@ export class NeonService {
     const databasesResponse = await client.listProjectBranchDatabases(namespace.projectId, branchId)
 
     return {
-      databases: databasesResponse.data.databases,
+      databases: databasesResponse.data.databases.map(formatBranchDatabase),
     }
   }
 
@@ -527,7 +813,7 @@ export class NeonService {
     )
 
     return {
-      database: databaseResponse.data.database,
+      database: formatBranchDatabase(databaseResponse.data.database),
     }
   }
 
@@ -560,21 +846,20 @@ export class NeonService {
     const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
     const { client } = this.getClient(tier)
 
-    // Create database in Neon
-    // owner_name is required by API, use provided value or default role name
+    // Neon requires owner_name; default to the database name when omitted.
     const databaseResponse = await client.createProjectBranchDatabase(
       namespace.projectId,
       branchId,
       {
         database: {
           name: params.name,
-          owner_name: params.ownerName ?? `${params.name}_owner`,
+          owner_name: params.ownerName ?? params.name,
         },
       },
     )
 
     return {
-      database: databaseResponse.data.database,
+      database: formatBranchDatabase(databaseResponse.data.database),
     }
   }
 
@@ -622,7 +907,7 @@ export class NeonService {
     )
 
     return {
-      database: databaseResponse.data.database,
+      database: formatBranchDatabase(databaseResponse.data.database),
     }
   }
 
@@ -660,7 +945,7 @@ export class NeonService {
     )
 
     return {
-      database: databaseResponse.data.database,
+      database: formatBranchDatabase(databaseResponse.data.database),
     }
   }
 
@@ -689,7 +974,7 @@ export class NeonService {
     const rolesResponse = await client.listProjectBranchRoles(namespace.projectId, branchId)
 
     return {
-      roles: rolesResponse.data.roles,
+      roles: rolesResponse.data.roles.map(formatRole),
     }
   }
 
@@ -718,7 +1003,7 @@ export class NeonService {
     const roleResponse = await client.getProjectBranchRole(namespace.projectId, branchId, roleName)
 
     return {
-      role: roleResponse.data.role,
+      role: formatRole(roleResponse.data.role),
     }
   }
 
@@ -798,7 +1083,7 @@ export class NeonService {
     })
 
     return {
-      role: roleResponse.data.role,
+      role: formatRole(roleResponse.data.role),
     }
   }
 
@@ -836,7 +1121,7 @@ export class NeonService {
     )
 
     return {
-      role: roleResponse.data.role,
+      role: formatRole(roleResponse.data.role),
     }
   }
 
@@ -869,8 +1154,48 @@ export class NeonService {
     )
 
     return {
-      role: roleResponse.data.role,
+      role: formatRole(roleResponse.data.role),
     }
+  }
+
+  /**
+   * List Postgres connection URIs for every database on a branch.
+   */
+  async listConnectionUris(accountId: string, namespaceId: string, branchId: string) {
+    const [namespace] = await db
+      .select()
+      .from(Neon)
+      .where(and(eq(Neon.id, namespaceId), eq(Neon.accountId, accountId)))
+      .limit(1)
+
+    if (!namespace) {
+      throw new ORPCError('NOT_FOUND', {
+        message: 'Database namespace not found',
+      })
+    }
+
+    const tier = namespace.isLowCost ? DatabaseTier.LOW_COST : DatabaseTier.NORMAL
+    const { client } = this.getClient(tier)
+
+    const databasesResponse = await client.listProjectBranchDatabases(namespace.projectId, branchId)
+
+    const connectionUris = await Promise.all(
+      databasesResponse.data.databases.map(async (database) => {
+        const uriResponse = await client.getConnectionUri({
+          projectId: namespace.projectId,
+          branch_id: branchId,
+          database_name: database.name,
+          role_name: database.owner_name,
+        })
+
+        return {
+          name: database.name,
+          url: uriResponse.data.uri,
+        }
+      }),
+    )
+
+    return { connectionUris }
   }
 }
 

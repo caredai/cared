@@ -23,3 +23,55 @@ catalogs:
     '@types/react-dom': ^19.2.0
     react: ^19.2.0
     react-dom: ^19.2.0
+
+overrides:
+  uuid: 13.0.0
+  minimatch: 10.0.3
+  pdfjs-dist: 4.7.76
+  pdfjs-dist>canvas: npm:non-existent-package@0.0.0
+  '@vercel/node>ts-node': $ts-node
+  '@vercel/node>typescript': $typescript
+  '@aws-sdk/client-s3': 3.901.0
+  '@aws-sdk/s3-request-presigner': 3.901.0
+  '@aws-sdk/signature-v4-multi-region': 3.901.0
+  '@aws-sdk/xml-builder': 3.901.0
+  '@daytonaio/api-client>axios': 1.16.1
+  '@microsoft/api-extractor>typescript': $typescript
+  mem0ai: npm:@cared/mem0ai@2.2.2
+  redis: 5.10.0
+  '@redis/client': 5.10.0
+  falkordb>redis: 4.7.1
+  falkordb>@redis/client: 1.6.1
+
+patchedDependencies:
+  vite-plugin-svgr: patches/vite-plugin-svgr.patch
+  tsup: patches/tsup.patch
+  uuid: patches/uuid.patch
+  '@appwrite.io/console': patches/@appwrite.io__console.patch
+  '@daytonaio/api-client': patches/@daytonaio__api-client.patch
+  '@daytonaio/toolbox-api-client': patches/@daytonaio__toolbox-api-client.patch
+  '@daytonaio/sdk': patches/@daytonaio__sdk.patch
+  better-auth: patches/better-auth.patch
+  '@cloudflare/vite-plugin': patches/@cloudflare__vite-plugin.patch
+
+nodeLinker: hoisted
+linkWorkspacePackages: true
+autoInstallPeers: true
+
+allowBuilds:
+  '@google/genai': false
+  '@prisma/client': false
+  '@reown/appkit': false
+  '@upstash/qstash-cli': false
+  bigint-buffer: false
+  bufferutil: false
+  core-js: false
+  es5-ext: false
+  esbuild: false
+  keccak: false
+  protobufjs: false
+  sharp: false
+  sqlite3: false
+  unrs-resolver: false
+  utf-8-validate: false
+  workerd: false

@@ -1,8 +1,7 @@
-import type { BetterAuthPlugin, InferSession, Prettify } from 'better-auth'
-import { createAuthMiddleware, sessionMiddleware } from 'better-auth/api'
+import type { BetterAuthPlugin, Prettify, Session } from 'better-auth'
+import { createAuthEndpoint, createAuthMiddleware, sessionMiddleware } from 'better-auth/api'
 import { parseSetCookieHeader } from 'better-auth/cookies'
 import { parseSessionOutput } from 'better-auth/db'
-import { createAuthEndpoint } from 'better-auth/plugins'
 
 import { getApiPath } from './client'
 
@@ -88,7 +87,7 @@ export const customPlugin = () => {
                     ...s.session,
                     expiresAt: new Date(s.session.expiresAt),
                   })
-                  sessions.push(parsedSession as any)
+                  sessions.push(parsedSession)
                 }
               }),
             )
@@ -97,7 +96,12 @@ export const customPlugin = () => {
               return session.expiresAt > new Date()
             })
             return ctx.json(
-              activeSessions as unknown as Prettify<InferSession<typeof ctx.context.options>>[],
+              activeSessions as Prettify<
+                Session<
+                  (typeof ctx.context.options)['session'],
+                  (typeof ctx.context.options)['plugins']
+                >
+              >[],
             )
           } catch (e: any) {
             ctx.context.logger.error(e)

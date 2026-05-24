@@ -175,7 +175,7 @@ export const TraceTimeline = forwardRef<TraceTimelineRef, TraceTimelineProps>(
 
       // Check if we should render cost
       const shouldRenderCost =
-        showMetrics && !isTraceRoot && 'costDetails' in node && Boolean(node.costDetails?.total)
+        showMetrics && !isTraceRoot && 'costDetails' in node && Boolean(node.costDetails.total)
 
       if (!timelinePosition) {
         return null
@@ -271,7 +271,7 @@ export const TraceTimeline = forwardRef<TraceTimelineRef, TraceTimelineProps>(
                 {/* Cost */}
                 {shouldRenderCost && (
                   <span className="font-mono text-xs text-muted-foreground">
-                    {formatCost(node.costDetails?.total ?? 0)}
+                    {formatCost(node.costDetails.total)}
                   </span>
                 )}
               </div>

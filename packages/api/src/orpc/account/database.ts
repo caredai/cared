@@ -1,23 +1,8 @@
 import { z } from 'zod/v4'
 
 import { protectedProcedure } from '../../orpc'
-import { DatabaseTier, neonService } from '../../service/neon/neon'
-
-/**
- * Allowed Neon regions for database namespaces
- */
-export const ALLOWED_DATABASE_REGIONS = [
-  'aws-us-east-1', // 🇺🇸 AWS US East (N. Virginia)
-  'aws-us-east-2', // 🇺🇸 AWS US East (Ohio)
-  'aws-us-west-2', // 🇺🇸 AWS US West (Oregon)
-  'aws-eu-central-1', // 🇩🇪 AWS Europe (Frankfurt)
-  'aws-eu-west-2', // 🇬🇧 AWS Europe (London)
-  'aws-ap-southeast-1', // 🇸🇬 AWS Asia Pacific (Singapore)
-  'aws-ap-southeast-2', // 🇦🇺 AWS Asia Pacific (Sydney)
-  'aws-sa-east-1', // 🇧🇷 AWS South America (São Paulo)
-] as const satisfies readonly string[]
-
-export type AllowedDatabaseRegion = (typeof ALLOWED_DATABASE_REGIONS)[number]
+import { neonService } from '../../service/neon/neon'
+import { ALLOWED_DATABASE_REGIONS, DatabaseTier } from '../../types'
 
 export const databaseRouter = {
   /**
@@ -56,6 +41,100 @@ export const databaseRouter = {
     }),
 
   /**
+   * Count branches for a database namespace.
+   * @returns Branch count
+   */
+  countBranches: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/count',
+      tags: ['database'],
+      summary: 'Count branches',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.countBranches(context.auth.accountId, input.namespaceId)
+    }),
+
+  /**
+   * List compute endpoints for a database namespace.
+   * @returns List of endpoints
+   */
+  listEndpoints: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/endpoints',
+      tags: ['database'],
+      summary: 'List compute endpoints',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.listEndpoints(context.auth.accountId, input.namespaceId)
+    }),
+
+  /**
+   * List compute endpoints for a branch.
+   * @returns Endpoints on the branch
+   */
+  listBranchEndpoints: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/endpoints',
+      tags: ['database'],
+      summary: 'List branch endpoints',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.listBranchEndpoints(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  /**
+   * Get time-series monitoring stats for a compute endpoint.
+   * @returns Allocated CU and RAM usage over time
+   */
+  getEndpointStats: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/endpoints/{endpointId}/stats',
+      tags: ['database'],
+      summary: 'Get endpoint monitoring stats',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        endpointId: z.string(),
+        from: z.iso.datetime().optional(),
+        to: z.iso.datetime().optional(),
+        grouping: z.enum(['1min', '5min', '10min', '1hour', '1day']).default('10min'),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.getEndpointStats(context.auth.accountId, input.namespaceId, {
+        endpointId: input.endpointId,
+        from: input.from,
+        to: input.to,
+        grouping: input.grouping,
+      })
+    }),
+
+  /**
    * Create a new database namespace (Neon project).
    * @returns Created database namespace
    */
@@ -69,7 +148,7 @@ export const databaseRouter = {
     .input(
       z.object({
         name: z.string().min(1),
-        tier: z.nativeEnum(DatabaseTier),
+        tier: z.enum(DatabaseTier),
         regionId: z.enum(ALLOWED_DATABASE_REGIONS),
         pgVersion: z.int().min(17).max(18).default(17),
         settings: z
@@ -85,6 +164,10 @@ export const databaseRouter = {
             suspendTimeoutSeconds: z
               .union([z.literal(-1), z.int().min(60).max(604800)])
               .default(300),
+            // Neon `project.settings.enable_logical_replication` (irreversible once enabled).
+            enableLogicalReplication: z.boolean().optional(),
+            // Neon `project.history_retention_seconds` (PITR window for all branches).
+            historyRetentionSeconds: z.number().int().min(0).max(2592000).optional(),
           })
           .optional(),
       }),
@@ -113,12 +196,26 @@ export const databaseRouter = {
     .input(
       z.object({
         id: z.string(),
+        // Display name is stored in Cared only; Neon project name remains the account id.
         name: z.string().min(1).optional(),
+        settings: z
+          .object({
+            activeTimeSeconds: z.int().optional(),
+            logicalSizeBytes: z.int().optional(),
+            dataTransferBytes: z.int().optional(),
+            autoscalingLimitMinCu: z.number().min(0.25).optional(),
+            autoscalingLimitMaxCu: z.number().max(16).optional(),
+            suspendTimeoutSeconds: z.union([z.literal(-1), z.int().min(60).max(604800)]).optional(),
+            enableLogicalReplication: z.boolean().optional(),
+            historyRetentionSeconds: z.number().int().min(0).max(2592000).optional(),
+          })
+          .optional(),
       }),
     )
     .handler(async ({ context, input }) => {
       return await neonService.updateNamespace(context.auth.accountId, input.id, {
         name: input.name,
+        settings: input.settings,
       })
     }),
 
@@ -271,6 +368,31 @@ export const databaseRouter = {
     )
     .handler(async ({ context, input }) => {
       return await neonService.deleteBranch(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  /**
+   * List Postgres connection URIs for all databases on a branch.
+   * @returns Database names and connection URLs
+   */
+  listConnectionUris: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/connection-uris',
+      tags: ['database'],
+      summary: 'List connection URIs for all databases on a branch',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.listConnectionUris(
         context.auth.accountId,
         input.namespaceId,
         input.branchId,

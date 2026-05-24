@@ -5,15 +5,13 @@ import { User } from '@cared/db/schema'
 import { Cache } from './cache'
 
 const cache = new Cache<string[]>('adminUsers', async () => ({
-  value: await db
-    .query.User.findMany({
-      columns: {
-        id: true,
-      },
-      where: eq(User.role, 'admin'),
-      orderBy: asc(User.id),
-    })
-    .then((ids) => ids.map(({ id }) => id)),
+  value: await db.query.User.findMany({
+    columns: {
+      id: true,
+    },
+    where: eq(User.role, 'admin'),
+    orderBy: asc(User.id),
+  }).then((ids) => ids.map(({ id }) => id)),
 }))
 
 const ADMIN_USERS_KEY = 'all'

@@ -20,11 +20,7 @@ export const env = createEnv({
     S3_REGION: z.string().min(1),
     S3_ACCESS_KEY_ID: z.string().min(1),
     S3_SECRET_ACCESS_KEY: z.string().min(1),
-    QSTASH_TOKEN: z.string().min(1),
-    QSTASH_CURRENT_SIGNING_KEY: z.string().min(1).optional(),
-    QSTASH_NEXT_SIGNING_KEY: z.string().min(1).optional(),
-    QSTASH_URL: z.string().min(1).optional(),
-    UPSTASH_WORKFLOW_URL: z.string().min(1).optional(),
+    UPSTASH_WORKFLOW_URL: z.string().min(1).optional(), // TODO: remove
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     TURBOPUFFER_API_KEY: z.string().min(1).optional(),
@@ -86,6 +82,28 @@ export const env = createEnv({
     DAYTONA_API_URL: z.string().min(1).optional(),
     DAYTONA_ADMIN_API_KEY: z.string().min(1).optional(),
     DAYTONA_ORGANIZATION_API_KEY: z.string().min(1).optional(),
+
+    APPWRITE_API_DOMAIN: z.string().min(1).optional(),
+    APPWRITE_COMPUTE_DOMAIN: z.string().min(1).optional(),
+    APPWRITE_EDGE_DOMAIN: z.string().min(1).optional(),
+    // <id>:<name>,<id>:<name>,...
+    APPWRITE_REGIONS: z
+      .string()
+      .transform((s) =>
+        s
+          .split(',')
+          .map((s) =>
+            s
+              .trim()
+              .split(':')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          )
+          .filter((pair) => pair.length === 2),
+      )
+      .optional(),
+    APPWRITE_USER_PASSWORD: z.string().min(1).optional(),
+    APPWRITE_PROJECT_KEY: z.string().length(256).optional(),
 
     CACHE_MAX_SIZE: z
       .int()

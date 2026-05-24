@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: drizzgw-server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: drizzgw
+    app.kubernetes.io/component: server
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

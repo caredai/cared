@@ -1,0 +1,45 @@
+{
+  "name": "@cared/drizzgw",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "dev": "tsx watch src/index.ts --server",
+    "dev:server": "tsx watch src/index.ts --server",
+    "dev:offloader": "tsx watch src/index.ts --offloader",
+    "start": "node dist/index.js --server",
+    "start:server": "node dist/index.js --server",
+    "start:offloader": "node dist/index.js --offloader",
+    "format": "prettier --check . --ignore-path ../../.gitignore --ignore-path ./.prettierignore",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+  },
+  "devDependencies": {
+    "@cared/eslint-config": "workspace:*",
+    "@cared/prettier-config": "workspace:*",
+    "@cared/sdk": "0.1.15",
+    "@cared/tsconfig": "workspace:*",
+    "@types/node": "^22.13.10",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "^5.9.3"
+  },
+  "prettier": "@cared/prettier-config",
+  "dependencies": {
+    "@hono/node-server": "^1.19.6",
+    "@kubernetes/client-node": "^1.4.0",
+    "@orpc/client": "^1.13.5",
+    "@orpc/server": "^1.13.5",
+    "@t3-oss/env-core": "^0.13.8",
+    "hono": "^4.11.1",
+    "redis": "^5.10.0",
+    "uuid": "13.0.0",
+    "zod": "4.1.12"
+  }
+}

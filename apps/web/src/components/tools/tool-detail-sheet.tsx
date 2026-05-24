@@ -202,7 +202,7 @@ export function ToolDetailSheet({
             <SheetTitle>{tool.name}</SheetTitle>
           </div>
         </SheetHeader>
-        <Separator/>
+        <Separator />
         <div className="h-full overflow-y-auto p-4">
           <Suspense fallback={<SkeletonCard />}>
             <ToolDetailContent toolSlug={tool.slug} />

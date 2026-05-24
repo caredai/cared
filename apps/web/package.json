@@ -75,8 +75,8 @@
     "@cared/eslint-config": "workspace:*",
     "@cared/prettier-config": "workspace:*",
     "@cared/tsconfig": "workspace:*",
-    "@cloudflare/vite-plugin": "^1.25.0",
-    "@cloudflare/workers-types": "^4.20250918.0",
+    "@cloudflare/vite-plugin": "1.37.2",
+    "@cloudflare/workers-types": "^4.20260521.1",
     "@tailwindcss/vite": "catalog:",
     "@tanstack/eslint-plugin-router": "^1.155.0",
     "@tanstack/react-query-devtools": "^5.90.2",
@@ -96,6 +96,6 @@
     "vite-plugin-mkcert": "^1.17.8",
     "vite-plugin-svgr": "^4.5.0",
     "vite-tsconfig-paths": "^5.1.4",
-    "wrangler": "^4.65.0"
+    "wrangler": "^4.93.0"
   }
 }

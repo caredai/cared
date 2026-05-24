@@ -229,7 +229,7 @@ export function PrettyJsonView(props: {
       ) {
         // early abort check for smart expansion
         if (parsedJson.constructor === Object) {
-          const topLevelKeys = Object.keys(parsedJson as Record<string, unknown>)
+          const topLevelKeys = Object.keys(parsedJson)
           if (topLevelKeys.length > DEFAULT_MAX_ROWS) {
             // return empty array to skip expansion directly
             return []

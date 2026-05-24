@@ -1,7 +1,5 @@
-'use client'
-
+import { Box, Cpu, KeyRound } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Cpu, Box, KeyRound } from 'lucide-react'
 
 export function LandingBento() {
   return (
@@ -21,8 +19,7 @@ export function LandingBento() {
             Built for production
           </h2>
           <p className="mx-auto mt-3 max-w-xl font-sans text-muted-foreground">
-            From AI gateway to sandboxes and databases—one platform, one
-            integration.
+            From AI gateway to sandboxes and databases—one platform, one integration.
           </p>
         </motion.div>
 
@@ -42,14 +39,11 @@ export function LandingBento() {
               AI Gateway
             </h3>
             <p className="mt-3 max-w-md font-sans text-sm leading-relaxed text-muted-foreground">
-              Unified routing for multiple providers. Bring your own keys or use
-              ours. Usage tracking, fallbacks, and a single API surface for chat,
-              embeddings, and tools.
+              Unified routing for multiple providers. Bring your own keys or use ours. Usage
+              tracking, fallbacks, and a single API surface for chat, embeddings, and tools.
             </p>
             <p className="mt-4 font-mono text-xs text-muted-foreground">
-              <code className="rounded bg-muted px-1.5 py-0.5">
-                /v1/chat/completions
-              </code>
+              <code className="rounded bg-muted px-1.5 py-0.5">/v1/chat/completions</code>
               {' · '}
               <code className="rounded bg-muted px-1.5 py-0.5">embeddings</code>
             </p>
@@ -70,8 +64,8 @@ export function LandingBento() {
               Sandboxes
             </h3>
             <p className="mt-2 font-sans text-sm leading-relaxed text-muted-foreground">
-              Ephemeral dev environments for agents. Code, run, and tear down
-              with one API. Volumes and snapshots supported.
+              Ephemeral dev environments for agents. Code, run, and tear down with one API. Volumes
+              and snapshots supported.
             </p>
           </motion.div>
 
@@ -90,8 +84,8 @@ export function LandingBento() {
               One binding
             </h3>
             <p className="mt-2 font-sans text-sm leading-relaxed text-muted-foreground">
-              One API key unlocks gateway, tools, MCP, vector store, database,
-              object storage, and app deployment. No fragmented dashboards.
+              One API key unlocks gateway, tools, MCP, vector store, database, object storage, and
+              app deployment. No fragmented dashboards.
             </p>
           </motion.div>
         </div>

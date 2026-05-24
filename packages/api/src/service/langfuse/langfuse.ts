@@ -1,7 +1,8 @@
-import { createLangfuseTrpcClient, LangfuseLangfuseOrganizationsClient } from '@cared/langfuse-api'
 import { LangfuseClient } from '@langfuse/client'
 
 import type { LangfuseTrpcClient } from '@cared/langfuse-api'
+import { createLangfuseTrpcClient, LangfuseLangfuseOrganizationsClient } from '@cared/langfuse-api'
+
 import { env } from '../../env'
 
 export class LangfuseProxyService {

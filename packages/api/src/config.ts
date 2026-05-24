@@ -1,4 +1,4 @@
-import { maxMembers, maxAccounts } from '@cared/auth'
+import { maxAccounts, maxMembers } from '@cared/auth'
 
 export const cfg = {
   /**

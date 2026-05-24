@@ -1,6 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { Check, Copy, Loader2, MoreVertical, Pause, Play, Plus, Terminal, Wrench } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  Loader2,
+  MoreVertical,
+  Pause,
+  Play,
+  Plus,
+  Terminal,
+  Wrench,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -61,7 +71,6 @@ import {
 } from '@/hooks/use-sandbox'
 import { copyTextToClipboard } from '@/lib/clipboard'
 import { orpc } from '@/lib/orpc'
-
 import { SandboxDetailsSheet } from './SandboxDetailsSheet'
 
 function stateLabel(state: string | undefined) {
@@ -121,28 +130,27 @@ export function SandboxesPage() {
   const createSshMutation = useCreateSandboxSshAccess()
   const revokeSshMutation = useRevokeSandboxSshAccess()
 
-  const regions = useMemo(
-    () => regionsData?.regions ?? [],
-    [regionsData?.regions],
-  )
+  const regions = useMemo(() => regionsData?.regions ?? [], [regionsData?.regions])
 
   const getRegionName = useCallback(
     (regionId: string) => regions.find((r) => r.id === regionId)?.name,
     [regions],
   )
 
-  const getPortPreviewUrl = useCallback(async (sandboxId: string, port: number): Promise<string | null> => {
-    try {
-      const result = await orpc.account.sandbox.getSandboxSignedPortPreviewUrl.call({
-        idOrName: sandboxId,
-        port,
-      })
-      return result.url
-    } catch {
-      return null
-    }
-  }, [])
-
+  const getPortPreviewUrl = useCallback(
+    async (sandboxId: string, port: number): Promise<string | null> => {
+      try {
+        const result = await orpc.account.sandbox.getSandboxSignedPortPreviewUrl.call({
+          idOrName: sandboxId,
+          port,
+        })
+        return result.url
+      } catch {
+        return null
+      }
+    },
+    [],
+  )
 
   const runAction = useCallback(
     async (id: string, name: string, fn: () => Promise<unknown>) => {
@@ -331,9 +339,7 @@ export function SandboxesPage() {
           const updatedAt = row.original.updatedAt
           return (
             <span className="text-muted-foreground text-sm">
-              {updatedAt
-                ? formatDistanceToNow(new Date(updatedAt), { addSuffix: true })
-                : '—'}
+              {updatedAt ? formatDistanceToNow(new Date(updatedAt), { addSuffix: true }) : '—'}
             </span>
           )
         },
@@ -392,14 +398,16 @@ export function SandboxesPage() {
               key: 'stop',
               label: 'Stop',
               disabled: loading,
-              onClick: () => void runAction(id, 'Stop', () => stopMutation.mutateAsync({ idOrName: id })),
+              onClick: () =>
+                void runAction(id, 'Stop', () => stopMutation.mutateAsync({ idOrName: id })),
             })
           } else if (state === 'stopped' || state === 'archived') {
             menuItems.push({
               key: 'start',
               label: 'Start',
               disabled: loading,
-              onClick: () => void runAction(id, 'Start', () => startMutation.mutateAsync({ idOrName: id })),
+              onClick: () =>
+                void runAction(id, 'Start', () => startMutation.mutateAsync({ idOrName: id })),
             })
           } else if ((state === 'error' || state === 'build_failed') && s.recoverable) {
             menuItems.push({
@@ -517,13 +525,7 @@ export function SandboxesPage() {
                     if ('type' in item) {
                       return <DropdownMenuSeparator key="separator" />
                     }
-                    const action = item as {
-                      key: string
-                      label: string
-                      onClick: () => void
-                      disabled?: boolean
-                      className?: string
-                    }
+                    const action = item
                     return (
                       <DropdownMenuItem
                         key={action.key}
@@ -726,7 +728,9 @@ export function SandboxesPage() {
               </div>
             ) : (
               <div className="p-3 flex justify-between items-center rounded-md bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400">
-                <span className="overflow-x-auto pr-2 cursor-text select-all">{sshAccess.sshCommand}</span>
+                <span className="overflow-x-auto pr-2 cursor-text select-all">
+                  {sshAccess.sshCommand}
+                </span>
                 {copiedSsh ? (
                   <Check className="w-4 h-4 shrink-0" />
                 ) : (

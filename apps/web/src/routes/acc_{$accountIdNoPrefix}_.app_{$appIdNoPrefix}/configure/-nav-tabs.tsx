@@ -1,5 +1,3 @@
-'use client'
-
 import { useRouterState } from '@tanstack/react-router'
 
 import { Tabs } from '@/components/tabs'

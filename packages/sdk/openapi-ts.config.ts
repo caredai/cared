@@ -10,6 +10,6 @@ export default defineConfig({
       name: '@hey-api/sdk',
       validator: true,
     },
-    '@tanstack/react-query',
-  ]
+    // '@tanstack/react-query',
+  ],
 })

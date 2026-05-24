@@ -9,8 +9,9 @@ import {
 import { atom, useAtom } from 'jotai'
 import { toast } from 'sonner'
 
-import { orpc } from '@/lib/orpc'
 import type { RouterOutputs } from '@cared/api'
+
+import { orpc } from '@/lib/orpc'
 
 const DEFAULT_PAGE_SIZE = 1000
 

@@ -1,5 +1,3 @@
-'use client'
-
 import { Link, useRouterState } from '@tanstack/react-router'
 
 import { cn } from '@cared/ui/lib/utils'

@@ -170,7 +170,7 @@ export const storageRouter = {
           size: o.Size!,
           uploadedAt: o.LastModified!,
           etag: o.ETag!,
-          storageClass: o.StorageClass! as string,
+          storageClass: o.StorageClass!,
         })),
         prefix: response.Prefix,
         delimiter: response.Delimiter,
@@ -213,7 +213,7 @@ export const storageRouter = {
           size: response.ContentLength!,
           uploadedAt: response.LastModified!,
           etag: response.ETag!,
-          storageClass: response.StorageClass! as string,
+          storageClass: response.StorageClass!,
           checksums: {
             sha1: response.ChecksumSHA1,
             sha256: response.ChecksumSHA256,
@@ -262,7 +262,7 @@ export const storageRouter = {
         size: response.ContentLength!,
         uploadedAt: response.LastModified!,
         etag: response.ETag!,
-        storageClass: response.StorageClass! as string,
+        storageClass: response.StorageClass!,
         checksums: {
           sha1: response.ChecksumSHA1,
           sha256: response.ChecksumSHA256,

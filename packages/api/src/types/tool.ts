@@ -188,6 +188,7 @@ export const AuthSchemeTypes = {
   SERVICE_ACCOUNT: 'SERVICE_ACCOUNT',
   SAML: 'SAML',
   DCR_OAUTH: 'DCR_OAUTH',
+  S2S_OAUTH2: 'S2S_OAUTH2',
 } as const
 export type AuthSchemeType = (typeof AuthSchemeTypes)[keyof typeof AuthSchemeTypes]
 
@@ -688,6 +689,44 @@ const DcrOauthConnectionDataSchema = z.discriminatedUnion('status', [
   }).catchall(z.unknown()),
 ])
 
+// S2S_OAUTH2
+const S2SOauth2BaseSchema = BaseSchemeRaw.extend({
+  status: z.literal(ConnectionStatuses.INITIALIZING),
+}).catchall(z.unknown())
+const S2SOauth2ConnectionDataSchema = z.discriminatedUnion('status', [
+  S2SOauth2BaseSchema,
+  S2SOauth2BaseSchema.extend({
+    status: z.literal(ConnectionStatuses.INITIATED),
+  }).catchall(z.unknown()),
+  S2SOauth2BaseSchema.extend({
+    status: z.literal(ConnectionStatuses.ACTIVE),
+    access_token: z.string().optional(),
+    id_token: z.string().optional(),
+    token_type: z.string().optional(),
+    refresh_token: z.string().nullish(),
+    expires_in: z.union([z.string(), z.number(), z.null()]).optional(),
+    scope: z.union([z.string(), z.array(z.string()), z.null()]).optional(),
+  }).catchall(z.unknown()),
+  S2SOauth2BaseSchema.extend({
+    status: z.literal(ConnectionStatuses.INACTIVE),
+    access_token: z.string().optional(),
+    id_token: z.string().optional(),
+    token_type: z.string().optional(),
+    refresh_token: z.string().nullish(),
+    expires_in: z.union([z.string(), z.number(), z.null()]).optional(),
+    scope: z.union([z.string(), z.array(z.string()), z.null()]).optional(),
+  }).catchall(z.unknown()),
+  S2SOauth2BaseSchema.extend({
+    status: z.literal(ConnectionStatuses.FAILED),
+    error: z.string().optional(),
+    error_description: z.string().optional(),
+  }).catchall(z.unknown()),
+  S2SOauth2BaseSchema.extend({
+    status: z.literal(ConnectionStatuses.EXPIRED),
+    expired_at: z.string().optional(),
+  }).catchall(z.unknown()),
+])
+
 export const ConnectionDataSchema = z.discriminatedUnion('authScheme', [
   z.object({
     authScheme: z.literal(AuthSchemeTypes.OAUTH1),
@@ -786,6 +825,13 @@ export const ConnectionDataSchema = z.discriminatedUnion('authScheme', [
      * the main connection data discriminated by auth scheme
      */
     val: DcrOauthConnectionDataSchema,
+  }),
+  z.object({
+    authScheme: z.literal(AuthSchemeTypes.S2S_OAUTH2),
+    /**
+     * the main connection data discriminated by auth scheme
+     */
+    val: S2SOauth2ConnectionDataSchema,
   }),
 ])
 

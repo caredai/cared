@@ -1,12 +1,13 @@
+import { ORPCError } from '@orpc/server'
+
 import type { MemoryAction, MemoryInput, MemoryMode, MemoryPrimaryEntity } from '@cared/db/schema'
 import { and, asc, eq, gt } from '@cared/db'
 import { db } from '@cared/db/client'
 import { MemoryHistory, MemorySpace, MemoryStore } from '@cared/db/schema'
 
 import type { Entity, FilterInput, Metadata } from './types'
-import { VectorService, VectorType } from '../vector'
 import { stripIdPrefix } from '../../utils'
-import { ORPCError } from '@orpc/server'
+import { VectorService, VectorType } from '../vector'
 
 export type Mode = 'managed' | 'uncontrolled'
 
@@ -161,7 +162,7 @@ export class MemoryService {
     primary: MemoryPrimaryEntity
     entityId: string
   }): Promise<MemorySpace> {
-    const store = await this.getStore(storeId)
+    await this.getStore(storeId)
 
     const [space] = await db
       .insert(MemorySpace)
@@ -249,7 +250,7 @@ export class MemoryService {
     return namespace
   }
 
-  async addMemory({
+  addMemory({
     messages,
     metadata,
     infer,
@@ -262,10 +263,14 @@ export class MemoryService {
     metadata: Metadata
     infer?: boolean
   }) {
-    // TODO
+    void messages
+    void metadata
+    void infer
+    void attributes
+    return Promise.reject(new Error('Not implemented'))
   }
 
-  async updateMemory({
+  updateMemory({
     id,
     memory,
     metadata,
@@ -273,25 +278,46 @@ export class MemoryService {
     id: string
     memory?: string
     metadata?: Partial<Metadata>
-  }) {}
+  }) {
+    void id
+    void memory
+    void metadata
+    return Promise.reject(new Error('Not implemented'))
+  }
 
-  async updateMemories(
+  updateMemories(
     updates: {
       id: string
       memory?: string
       metadata?: Partial<Metadata>
     }[],
-  ) {}
+  ) {
+    void updates
+    return Promise.reject(new Error('Not implemented'))
+  }
 
-  async deleteMemory(id: string) {}
+  deleteMemory(id: string) {
+    void id
+    return Promise.reject(new Error('Not implemented'))
+  }
 
-  async deleteMemories(ids: string[]) {}
+  deleteMemories(ids: string[]) {
+    void ids
+    return Promise.reject(new Error('Not implemented'))
+  }
 
-  async deleteMemoriesByFilter(filter: FilterInput) {}
+  deleteMemoriesByFilter(filter: FilterInput) {
+    void filter
+    return Promise.reject(new Error('Not implemented'))
+  }
 
-  async getMemories() {}
+  getMemories() {
+    return Promise.reject(new Error('Not implemented'))
+  }
 
-  async searchMemories() {}
+  searchMemories() {
+    return Promise.reject(new Error('Not implemented'))
+  }
 
   async getMemoryHistory(id: string): Promise<MemoryHistory[]> {
     return await db.select().from(MemoryHistory).where(eq(MemoryHistory.memoryId, id))

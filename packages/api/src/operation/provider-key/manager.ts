@@ -4,7 +4,7 @@ import type { ModelFullId, ProviderId, ProviderKey as ProviderKeyContent } from 
 import { and, desc, eq, isNull } from '@cared/db'
 import { db } from '@cared/db/client'
 import { ProviderKey } from '@cared/db/schema'
-import { getKV, sha1, getRedisClient } from '@cared/kv'
+import { getKV, getRedisClient, sha1 } from '@cared/kv'
 import { splitModelFullId } from '@cared/providers'
 
 import type { AuthContext } from '../../auth'
@@ -58,7 +58,6 @@ export class ProviderKeyManager {
     const redis = await getRedisClient()
 
     const [systemKeysStateStr, accountKeysStateStr] = await Promise.all([
-      // eslint-disable-next-line @typescript-eslint/await-thenable
       !onlyByok ? redis.json.get(kv.key(systemKeysStateKey(modelFullId))) : null,
       redis.json.get(kv.key(accountKeysStateKey(auth, modelFullId))),
     ])
@@ -340,7 +339,6 @@ export class ProviderKeyManager {
 
       try {
         this.savingPromise = Promise.all([
-          // eslint-disable-next-line @typescript-eslint/await-thenable
           systemKeysChanges.length > 0 &&
             kv.eval(
               scripts.providerKeysStates,
@@ -352,7 +350,7 @@ export class ProviderKeyManager {
                 }),
               ],
             ),
-          // eslint-disable-next-line @typescript-eslint/await-thenable
+
           accountKeysChanges.length > 0 &&
             kv.eval(
               scripts.providerKeysStates,

@@ -1,19 +1,61 @@
-import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import { and, desc, eq } from '@cared/db'
-import { db } from '@cared/db/client'
-import { Integration } from '@cared/db/schema'
+import { CloudflareIntegration, GithubIntegration } from '@cared/integration'
 
-import { protectedProcedure } from '../../orpc'
+import { userProtectedProcedure } from '../../orpc'
+import { integrationService } from '../../service/integration/integration'
 
 export const integrationRouter = {
   /**
-   * List all integrations for the current account.
-   * Only accessible by authenticated users.
-   * @returns List of integrations
+   * Get GitHub App installation URL for OAuth flow. Redirect user to returned url.
    */
-  list: protectedProcedure
+  getGithubInstallationUrl: userProtectedProcedure
+    .route({
+      method: 'GET',
+      path: '/integrations/github/installation-url',
+      tags: ['integration'],
+      summary: 'Get GitHub installation URL',
+    })
+    .input(
+      z
+        .object({
+          redirectUrl: z.string().url().optional(),
+        })
+        .optional(),
+    )
+    .handler(async ({ context, input }) => {
+      const { url } = await GithubIntegration.instance().generateInstallationUrl(
+        context.auth.accountId,
+        input?.redirectUrl,
+      )
+      return { url }
+    }),
+
+  /**
+   * Add a Cloudflare integration by API token. Validates token and stores encrypted.
+   */
+  addCloudflare: userProtectedProcedure
+    .route({
+      method: 'POST',
+      path: '/integrations/cloudflare',
+      tags: ['integration'],
+      summary: 'Add Cloudflare integration',
+    })
+    .input(
+      z.object({
+        apiToken: z.string().min(1, 'API token is required'),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      await CloudflareIntegration.create(context.auth.accountId, {
+        apiToken: input.apiToken,
+      })
+    }),
+
+  /**
+   * List all integrations for the current account.
+   */
+  list: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/integrations',
@@ -23,34 +65,18 @@ export const integrationRouter = {
     .input(
       z
         .object({
-          type: z.enum(['github', 'cloudflare', 'neon', 'supabase']).optional(),
+          type: z.enum(['github', 'cloudflare']).optional(),
         })
         .optional(),
     )
     .handler(async ({ context, input }) => {
-      // Build where conditions
-      const conditions = [eq(Integration.accountId, context.auth.accountId)]
-      if (input?.type) {
-        conditions.push(eq(Integration.type, input.type))
-      }
-
-      const integrations = await db
-        .select()
-        .from(Integration)
-        .where(and(...conditions))
-        .orderBy(desc(Integration.createdAt))
-
-      return {
-        integrations,
-      }
+      return integrationService.list(context.auth.accountId, { type: input?.type })
     }),
 
   /**
    * Get a single integration by ID.
-   * Only accessible by authenticated users.
-   * @returns Integration details
    */
-  get: protectedProcedure
+  get: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/integrations/{id}',
@@ -63,20 +89,29 @@ export const integrationRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const [integration] = await db
-        .select()
-        .from(Integration)
-        .where(and(eq(Integration.id, input.id), eq(Integration.accountId, context.auth.accountId)))
-        .limit(1)
-
-      if (!integration) {
-        throw new ORPCError('NOT_FOUND', {
-          message: 'Integration not found',
-        })
-      }
+      const integration = await integrationService.get(context.auth.accountId, input.id)
 
       return {
         integration,
       }
+    }),
+
+  /**
+   * Delete an integration by ID.
+   */
+  delete: userProtectedProcedure
+    .route({
+      method: 'DELETE',
+      path: '/integrations/{id}',
+      tags: ['integration'],
+      summary: 'Delete integration by ID',
+    })
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      await integrationService.delete(context.auth.accountId, input.id)
     }),
 }

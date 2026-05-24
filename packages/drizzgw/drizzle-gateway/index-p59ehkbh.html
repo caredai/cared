@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drizzle Studio Gateway</title>
+    <script type="module" crossorigin src="/index.js"></script>
+    <script>
+(function () {
+  'use strict';
+
+  var THEME_STORAGE_KEY = 'drizzle-gateway-theme';
+  var MESSAGE_TYPE = 'CARED_DRIZZGW';
+
+  function isAllowedParentOrigin(origin) {
+    if (!origin) {
+      return false;
+    }
+    try {
+      var url = new URL(origin);
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return false;
+      }
+      var host = url.hostname;
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return true;
+      }
+      return host === 'cared.dev' || host.endsWith('.cared.dev');
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function applyThemeFromParent(theme) {
+    if (theme === 'dark') {
+      if (localStorage.getItem(THEME_STORAGE_KEY) === 'dark') {
+        return;
+      }
+      localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+      window.location.reload();
+      return;
+    }
+    if (theme === 'light') {
+      if (!localStorage.getItem(THEME_STORAGE_KEY)) {
+        return;
+      }
+      localStorage.removeItem(THEME_STORAGE_KEY);
+      window.location.reload();
+    }
+  }
+
+  window.addEventListener('message', function (event) {
+    if (!isAllowedParentOrigin(event.origin)) {
+      return;
+    }
+    var data = event.data;
+    if (!data || typeof data !== 'object' || data.type !== MESSAGE_TYPE) {
+      return;
+    }
+    if (data.command === 'setTheme') {
+      applyThemeFromParent(data.theme);
+    }
+  });
+
+  function requestThemeFromParent() {
+    if (window.parent === window) {
+      return;
+    }
+    window.parent.postMessage(
+      { type: MESSAGE_TYPE, command: 'requestTheme' },
+      '*',
+    );
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', requestThemeFromParent, { once: true });
+  } else {
+    requestThemeFromParent();
+  }
+
+  var SELECTOR =
+    '#root > div > div > div.overflow-hidden.mt-3 > div > div > div > div > div > div.relative.overflow-hidden.px-8 > div > div > div.space-y-1 > div.group';
+
+  var INTERVAL_BEFORE_FIRST_SUCCESS_MS = 1000;
+  var INTERVAL_AFTER_FIRST_SUCCESS_MS = 5000;
+
+  var firstSuccess = false;
+  var timerId = null;
+
+  function scheduleNextTick() {
+    var delay = firstSuccess
+      ? INTERVAL_AFTER_FIRST_SUCCESS_MS
+      : INTERVAL_BEFORE_FIRST_SUCCESS_MS;
+    timerId = window.setTimeout(tick, delay);
+  }
+
+  function tick() {
+    var target = document.querySelector(SELECTOR);
+    if (target) {
+      target.click();
+      firstSuccess = true;
+    }
+    scheduleNextTick();
+  }
+
+  function start() {
+    if (timerId !== null) {
+      return;
+    }
+    tick();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
+})();
+    </script>
+    <link rel="stylesheet" crossorigin href="/index.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

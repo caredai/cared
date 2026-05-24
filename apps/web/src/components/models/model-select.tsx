@@ -300,15 +300,11 @@ function ModelItem({
       </div>
 
       {/* Render model-specific details */}
-      {modelType === 'language' && <LanguageModelItemView model={model as LanguageModelInfo} />}
-      {modelType === 'image' && <ImageModelItemView model={model as ImageModelInfo} />}
-      {modelType === 'speech' && <SpeechModelItemView model={model as SpeechModelInfo} />}
-      {modelType === 'transcription' && (
-        <TranscriptionModelItemView model={model as TranscriptionModelInfo} />
-      )}
-      {modelType === 'textEmbedding' && (
-        <EmbeddingModelItemView model={model as EmbeddingModelInfo} />
-      )}
+      {modelType === 'language' && <LanguageModelItemView model={model} />}
+      {modelType === 'image' && <ImageModelItemView model={model} />}
+      {modelType === 'speech' && <SpeechModelItemView model={model} />}
+      {modelType === 'transcription' && <TranscriptionModelItemView model={model} />}
+      {modelType === 'textEmbedding' && <EmbeddingModelItemView model={model} />}
     </div>
   )
 

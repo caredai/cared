@@ -130,8 +130,6 @@ export function useDeleteApiToken() {
 }
 
 export function useListPermissionGroups() {
-  const { data } = useSuspenseQuery(
-    orpc.account.apiToken.listPermissionGroups.queryOptions(),
-  )
+  const { data } = useSuspenseQuery(orpc.account.apiToken.listPermissionGroups.queryOptions())
   return { data }
 }

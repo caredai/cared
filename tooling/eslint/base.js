@@ -52,6 +52,7 @@ export default tseslint.config(
       ...tseslint.configs.stylisticTypeChecked,
     ],
     rules: {
+      // @ts-ignore
       ...turboPlugin.configs.recommended.rules,
       '@typescript-eslint/no-unused-vars': [
         'error',

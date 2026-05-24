@@ -1,5 +1,3 @@
-'use client'
-
 import { useCallback, useEffect, useState } from 'react'
 import * as React from 'react'
 import {
@@ -23,6 +21,7 @@ import {
   HelpCircleIcon,
   QrCodeIcon,
 } from 'lucide-react'
+
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
 import {

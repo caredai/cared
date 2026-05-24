@@ -1,10 +1,4 @@
-import {
-  Bot,
-  ShieldCheck,
-  UserRound,
-  Wallet,
-  Key,
-} from 'lucide-react'
+import { Bot, Key, ShieldCheck, UserRound, Wallet } from 'lucide-react'
 
 import type { NavItem } from '@/components/app-sidebar/nav-main'
 import { NavMain } from '@/components/app-sidebar/nav-main'

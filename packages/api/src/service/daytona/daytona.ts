@@ -16,9 +16,7 @@ import { getUuid, LRUCache, lruCacheSizeCalculation, stripIdPrefix } from '@care
 
 import type {
   Configuration,
-  CreateApiKey,
   CreateDockerRegistry,
-  CreateOrganization,
   CreateSandbox,
   CreateSnapshot,
   CreateVolume,
@@ -180,7 +178,7 @@ export class DaytonaService {
       defaultRegionId: 'hil', // TODO
       id: this.#organizationId(accountId),
       userId: this.#userId(userId),
-    } as CreateOrganization)
+    })
   }
 
   async #checkApiKey(userId: string, accountId: string) {
@@ -225,11 +223,10 @@ export class DaytonaService {
       apiKey: this.#organizationApiKey(accountId),
       organizationId: this.#organizationId(accountId),
       userId: this.#userId(userId),
-    } as CreateApiKey)
+    })
   }
 
   async ensure(userId: string, accountId: string) {
-    console.log('ensure', userId, accountId)
     if (await this.#checkApiKey(userId, accountId)) {
       return
     }

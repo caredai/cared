@@ -98,9 +98,12 @@ export const telemetryRouter = {
         }
 
         if (!isSelfAccess) {
-          await context.auth.requirePermissions({ pseudo: [] }, {
-            roles: ['owner', 'admin'],
-          })
+          await context.auth.requirePermissions(
+            { pseudo: [] },
+            {
+              roles: ['owner', 'admin'],
+            },
+          )
         }
 
         // Add optional filters
@@ -219,9 +222,12 @@ export const telemetryRouter = {
         }
 
         if (!isSelfAccess) {
-          await context.auth.requirePermissions({ pseudo: [] }, {
-            roles: ['owner', 'admin'],
-          })
+          await context.auth.requirePermissions(
+            { pseudo: [] },
+            {
+              roles: ['owner', 'admin'],
+            },
+          )
         }
 
         // Add optional filters
@@ -308,9 +314,12 @@ export const telemetryRouter = {
 
         // Check permissions if accessing other user's data
         if (!isSelfAccess) {
-          await context.auth.requirePermissions({ pseudo: [] }, {
-            roles: ['owner', 'admin'],
-          })
+          await context.auth.requirePermissions(
+            { pseudo: [] },
+            {
+              roles: ['owner', 'admin'],
+            },
+          )
         }
 
         // First, fetch all traces to check permissions

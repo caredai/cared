@@ -24,11 +24,7 @@ import {
 } from '@cared/ui/components/dialog'
 import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@cared/ui/components/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@cared/ui/components/tooltip'
 
 import type { RegistryItem } from '@/hooks/use-sandbox'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -74,7 +70,7 @@ export function RegistriesTab() {
       url: r.url,
       username: r.username,
       password: '',
-      project: r.project ?? '',
+      project: r.project,
     })
     setShowDialog(true)
   }
@@ -158,7 +154,7 @@ export function RegistriesTab() {
       {
         accessorKey: 'project',
         header: 'Project',
-        cell: ({ row }) => row.original.project ?? '—',
+        cell: ({ row }) => row.original.project,
       },
       {
         id: 'actions',

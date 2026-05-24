@@ -1,5 +1,3 @@
-'use client'
-
 import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createFileRoute } from '@tanstack/react-router'
@@ -45,9 +43,9 @@ import {
 import { CircleSpinner } from '@cared/ui/components/spinner'
 
 import { SectionTitle } from '@/components/section'
+import { useTransferAccountOwnership, useUpdateAccount } from '@/hooks/use-account'
 import { useActiveAccount } from '@/hooks/use-active'
 import { useMembers } from '@/hooks/use-members'
-import { useTransferAccountOwnership, useUpdateAccount } from '@/hooks/use-account'
 import { useSession } from '@/hooks/use-session'
 import { getActiveAccountId } from '@/lib/active'
 import { orpc } from '@/lib/orpc'
@@ -178,7 +176,9 @@ function Settings() {
                 />
                 <Button
                   type="submit"
-                  disabled={!isOwner || isUpdating || form.watch('name').trim() === activeAccount?.name}
+                  disabled={
+                    !isOwner || isUpdating || form.watch('name').trim() === activeAccount?.name
+                  }
                 >
                   {isUpdating ? (
                     <>
@@ -204,7 +204,8 @@ function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">Transfer Ownership</CardTitle>
             <CardDescription>
-              Transfer ownership of this account to another member. You will become a regular member.
+              Transfer ownership of this account to another member. You will become a regular
+              member.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex items-center justify-between">

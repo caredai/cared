@@ -15,8 +15,7 @@ import { orpc } from '@/lib/orpc'
 // ---------------------------------------------------------------------------
 
 export type SandboxItem = RouterOutputs['account']['sandbox']['listSandboxes']['sandboxes'][number]
-export type SnapshotItem =
-  RouterOutputs['account']['sandbox']['listSnapshots']['snapshots'][number]
+export type SnapshotItem = RouterOutputs['account']['sandbox']['listSnapshots']['snapshots'][number]
 export type RegistryItem =
   RouterOutputs['account']['sandbox']['listRegistries']['registries'][number]
 export type VolumeItem = RouterOutputs['account']['sandbox']['listVolumes']['volumes'][number]

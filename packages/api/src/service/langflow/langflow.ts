@@ -1,5 +1,6 @@
 import { LangflowClient } from '@datastax/langflow-client'
 import { LangflowError } from '@datastax/langflow-client/errors'
+import { Headers } from 'undici'
 
 import { getUuid, stripIdPrefix } from '@cared/shared'
 

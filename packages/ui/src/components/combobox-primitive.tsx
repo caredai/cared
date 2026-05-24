@@ -56,7 +56,8 @@ export const useComboboxContext = () => React.useContext(ComboboxContext)
 export type ComboboxType = 'single' | 'multiple'
 
 export interface ComboboxBaseProps
-  extends React.ComponentProps<typeof PopoverPrimitive.Root>,
+  extends
+    React.ComponentProps<typeof PopoverPrimitive.Root>,
     Omit<
       React.ComponentProps<typeof CommandPrimitive>,
       'value' | 'defaultValue' | 'onValueChange'
@@ -98,7 +99,7 @@ export type ComboboxProps = ComboboxBaseProps & (ComboboxSingleProps | ComboboxM
 export const Combobox = React.forwardRef(
   <T extends ComboboxType = 'single'>(
     {
-      type = 'single' as T,
+      type = 'single',
       open: openProp,
       onOpenChange,
       defaultOpen,
@@ -203,8 +204,9 @@ export const ComboboxTagGroup = React.forwardRef<
 })
 ComboboxTagGroup.displayName = 'ComboboxTagGroup'
 
-export interface ComboboxTagGroupItemProps
-  extends React.ComponentPropsWithoutRef<typeof RovingFocusGroupPrimitive.Item> {
+export interface ComboboxTagGroupItemProps extends React.ComponentPropsWithoutRef<
+  typeof RovingFocusGroupPrimitive.Item
+> {
   value: string
   disabled?: boolean
 }
@@ -413,8 +415,10 @@ export const ComboboxEmpty = CommandPrimitive.Empty
 
 export const ComboboxLoading = CommandPrimitive.Loading
 
-export interface ComboboxItemProps
-  extends Omit<React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>, 'value'> {
+export interface ComboboxItemProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>,
+  'value'
+> {
   value: string
 }
 
@@ -496,8 +500,9 @@ export const ComboboxItemIndicator = React.forwardRef<
 })
 ComboboxItemIndicator.displayName = 'ComboboxItemIndicator'
 
-export interface ComboboxItemTextProps
-  extends React.ComponentPropsWithoutRef<typeof React.Fragment> {
+export interface ComboboxItemTextProps extends React.ComponentPropsWithoutRef<
+  typeof React.Fragment
+> {
   children: string
 }
 

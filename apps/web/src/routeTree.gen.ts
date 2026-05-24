@@ -42,18 +42,32 @@ import { Route as Acc_Char123accountIdNoPrefixChar125SandboxesRouteImport } from
 import { Route as Acc_Char123accountIdNoPrefixChar125ModelsRouteImport } from './routes/acc_{$accountIdNoPrefix}/models'
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersRouteImport } from './routes/acc_{$accountIdNoPrefix}/members'
 import { Route as Acc_Char123accountIdNoPrefixChar125McpRouteImport } from './routes/acc_{$accountIdNoPrefix}/mcp'
+import { Route as Acc_Char123accountIdNoPrefixChar125IntegrationsRouteImport } from './routes/acc_{$accountIdNoPrefix}/integrations'
+import { Route as Acc_Char123accountIdNoPrefixChar125DatabasesRouteImport } from './routes/acc_{$accountIdNoPrefix}/databases'
 import { Route as Acc_Char123accountIdNoPrefixChar125CreditsRouteImport } from './routes/acc_{$accountIdNoPrefix}/credits'
 import { Route as Acc_Char123accountIdNoPrefixChar125AppsRouteImport } from './routes/acc_{$accountIdNoPrefix}/apps'
 import { Route as Acc_Char123accountIdNoPrefixChar125ApiTokensRouteImport } from './routes/acc_{$accountIdNoPrefix}/api-tokens'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/route'
 import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/route'
 import { Route as UserWalletIndexRouteImport } from './routes/user/wallet/index'
 import { Route as UserSecurityIndexRouteImport } from './routes/user/security/index'
 import { Route as AdminAppsIndexRouteImport } from './routes/admin/apps/index'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/index'
 import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/index'
 import { Route as UserApiTokensCreateRouteImport } from './routes/user/api-tokens_.create'
 import { Route as AuthOauth2ConsentRouteImport } from './routes/auth/oauth2.consent'
 import { Route as AdminAppsTagsRouteImport } from './routes/admin/apps/tags'
 import { Route as AdminAppsCategoriesRouteImport } from './routes/admin/apps/categories'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/settings'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/overview'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/monitoring'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/data-masking'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/data-editor'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/data-api'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/dashboard'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/branches'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/backup-restore'
+import { Route as Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRouteImport } from './routes/acc_{$accountIdNoPrefix}_.database_{$namespaceIdNoPrefix}/auth'
 import { Route as Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRouteImport } from './routes/acc_{$accountIdNoPrefix}_.app_{$appIdNoPrefix}/flows'
 import { Route as Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRouteImport } from './routes/acc_{$accountIdNoPrefix}_.accept-invitation.$invitationId'
 import { Route as Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125RouteImport } from './routes/acc_{$accountIdNoPrefix}/tools_.{$toolkit}'
@@ -241,6 +255,18 @@ const Acc_Char123accountIdNoPrefixChar125McpRoute =
     path: '/mcp',
     getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
+const Acc_Char123accountIdNoPrefixChar125IntegrationsRoute =
+  Acc_Char123accountIdNoPrefixChar125IntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125DatabasesRoute =
+  Acc_Char123accountIdNoPrefixChar125DatabasesRouteImport.update({
+    id: '/databases',
+    path: '/databases',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
 const Acc_Char123accountIdNoPrefixChar125CreditsRoute =
   Acc_Char123accountIdNoPrefixChar125CreditsRouteImport.update({
     id: '/credits',
@@ -259,6 +285,14 @@ const Acc_Char123accountIdNoPrefixChar125ApiTokensRoute =
     path: '/api-tokens',
     getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteImport.update(
+    {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}',
+      path: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}',
+      getParentRoute: () => rootRouteImport,
+    } as any,
+  )
 const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute =
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteImport.update(
     {
@@ -282,6 +316,15 @@ const AdminAppsIndexRoute = AdminAppsIndexRouteImport.update({
   path: '/apps/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRouteImport.update(
+    {
+      id: '/',
+      path: '/',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
 const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute =
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRouteImport.update(
     {
@@ -311,6 +354,96 @@ const AdminAppsCategoriesRoute = AdminAppsCategoriesRouteImport.update({
   path: '/apps/categories',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRouteImport.update(
+    {
+      id: '/settings',
+      path: '/settings',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRouteImport.update(
+    {
+      id: '/overview',
+      path: '/overview',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRouteImport.update(
+    {
+      id: '/monitoring',
+      path: '/monitoring',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRouteImport.update(
+    {
+      id: '/data-masking',
+      path: '/data-masking',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRouteImport.update(
+    {
+      id: '/data-editor',
+      path: '/data-editor',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRouteImport.update(
+    {
+      id: '/data-api',
+      path: '/data-api',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRouteImport.update(
+    {
+      id: '/dashboard',
+      path: '/dashboard',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRouteImport.update(
+    {
+      id: '/branches',
+      path: '/branches',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRouteImport.update(
+    {
+      id: '/backup-restore',
+      path: '/backup-restore',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRouteImport.update(
+    {
+      id: '/auth',
+      path: '/auth',
+      getParentRoute: () =>
+        Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute,
+    } as any,
+  )
 const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute =
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRouteImport.update(
     {
@@ -413,9 +546,12 @@ export interface FileRoutesByFullPath {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteWithChildren
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/databases': typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  '/acc_{$accountIdNoPrefix}/integrations': typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
@@ -448,11 +584,22 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/auth': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/backup-restore': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/branches': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/dashboard': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-api': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-editor': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-masking': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/monitoring': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/overview': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
   '/user/api-tokens/create': typeof UserApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute
   '/admin/apps/': typeof AdminAppsIndexRoute
   '/user/security/': typeof UserSecurityIndexRoute
   '/user/wallet/': typeof UserWalletIndexRoute
@@ -471,6 +618,8 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/databases': typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  '/acc_{$accountIdNoPrefix}/integrations': typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
@@ -503,11 +652,22 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/tools/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/auth': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/backup-restore': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/branches': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/dashboard': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-api': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-editor': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-masking': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/monitoring': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/overview': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
   '/user/api-tokens/create': typeof UserApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
+  '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute
   '/admin/apps': typeof AdminAppsIndexRoute
   '/user/security': typeof UserSecurityIndexRoute
   '/user/wallet': typeof UserWalletIndexRoute
@@ -528,9 +688,12 @@ export interface FileRoutesById {
   '/terms-of-service': typeof TermsOfServiceRoute
   '/tools': typeof ToolsRoute
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteWithChildren
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/apps': typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  '/acc_{$accountIdNoPrefix}/databases': typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  '/acc_{$accountIdNoPrefix}/integrations': typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   '/acc_{$accountIdNoPrefix}/models': typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
@@ -563,11 +726,22 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}': typeof Acc_Char123accountIdNoPrefixChar125ToolsChar123toolkitChar125Route
   '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId': typeof Acc_Char123accountIdNoPrefixChar125AcceptInvitationInvitationIdRoute
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125FlowsRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/auth': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/backup-restore': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/branches': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/dashboard': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-api': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-editor': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-masking': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/monitoring': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/overview': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute
   '/admin/apps/categories': typeof AdminAppsCategoriesRoute
   '/admin/apps/tags': typeof AdminAppsTagsRoute
   '/auth/oauth2/consent': typeof AuthOauth2ConsentRoute
   '/user/api-tokens_/create': typeof UserApiTokensCreateRoute
   '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125IndexRoute
+  '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/': typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute
   '/admin/apps/': typeof AdminAppsIndexRoute
   '/user/security/': typeof UserSecurityIndexRoute
   '/user/wallet/': typeof UserWalletIndexRoute
@@ -589,9 +763,12 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
     | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/databases'
+    | '/acc_{$accountIdNoPrefix}/integrations'
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
@@ -624,11 +801,22 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/auth'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/backup-restore'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/branches'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/dashboard'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-api'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-editor'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-masking'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/monitoring'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/overview'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/settings'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
     | '/auth/oauth2/consent'
     | '/user/api-tokens/create'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/'
     | '/admin/apps/'
     | '/user/security/'
     | '/user/wallet/'
@@ -647,6 +835,8 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
     | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/databases'
+    | '/acc_{$accountIdNoPrefix}/integrations'
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
@@ -679,11 +869,22 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/tools/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}/accept-invitation/$invitationId'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}/flows'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/auth'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/backup-restore'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/branches'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/dashboard'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-api'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-editor'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-masking'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/monitoring'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/overview'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/settings'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
     | '/auth/oauth2/consent'
     | '/user/api-tokens/create'
     | '/acc_{$accountIdNoPrefix}/app_{$appIdNoPrefix}'
+    | '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}'
     | '/admin/apps'
     | '/user/security'
     | '/user/wallet'
@@ -703,9 +904,12 @@ export interface FileRouteTypes {
     | '/terms-of-service'
     | '/tools'
     | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}'
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/apps'
     | '/acc_{$accountIdNoPrefix}/credits'
+    | '/acc_{$accountIdNoPrefix}/databases'
+    | '/acc_{$accountIdNoPrefix}/integrations'
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
     | '/acc_{$accountIdNoPrefix}/models'
@@ -738,11 +942,22 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/tools_/{$toolkit}'
     | '/acc_{$accountIdNoPrefix}_/accept-invitation/$invitationId'
     | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/auth'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/backup-restore'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/branches'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/dashboard'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-api'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-editor'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-masking'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/monitoring'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/overview'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/settings'
     | '/admin/apps/categories'
     | '/admin/apps/tags'
     | '/auth/oauth2/consent'
     | '/user/api-tokens_/create'
     | '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/'
+    | '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/'
     | '/admin/apps/'
     | '/user/security/'
     | '/user/wallet/'
@@ -763,6 +978,7 @@ export interface RootRouteChildren {
   TermsOfServiceRoute: typeof TermsOfServiceRoute
   ToolsRoute: typeof ToolsRoute
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute: typeof Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteWithChildren
   AuthErrorRoute: typeof AuthErrorRoute
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
@@ -1006,6 +1222,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125McpRouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
+    '/acc_{$accountIdNoPrefix}/integrations': {
+      id: '/acc_{$accountIdNoPrefix}/integrations'
+      path: '/integrations'
+      fullPath: '/acc_{$accountIdNoPrefix}/integrations'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}/databases': {
+      id: '/acc_{$accountIdNoPrefix}/databases'
+      path: '/databases'
+      fullPath: '/acc_{$accountIdNoPrefix}/databases'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125DatabasesRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
     '/acc_{$accountIdNoPrefix}/credits': {
       id: '/acc_{$accountIdNoPrefix}/credits'
       path: '/credits'
@@ -1026,6 +1256,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/acc_{$accountIdNoPrefix}/api-tokens'
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}'
+      path: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}': {
       id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}'
@@ -1054,6 +1291,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/apps/'
       preLoaderRoute: typeof AdminAppsIndexRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/'
+      path: '/'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
     }
     '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/': {
       id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/'
@@ -1089,6 +1333,76 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/apps/categories'
       preLoaderRoute: typeof AdminAppsCategoriesRouteImport
       parentRoute: typeof AdminRouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/settings': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/settings'
+      path: '/settings'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/settings'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/overview': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/overview'
+      path: '/overview'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/overview'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/monitoring': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/monitoring'
+      path: '/monitoring'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/monitoring'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-masking': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-masking'
+      path: '/data-masking'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-masking'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-editor': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-editor'
+      path: '/data-editor'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-editor'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-api': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/data-api'
+      path: '/data-api'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-api'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/dashboard': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/dashboard'
+      path: '/dashboard'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/dashboard'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/branches': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/branches'
+      path: '/branches'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/branches'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/backup-restore': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/backup-restore'
+      path: '/backup-restore'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/backup-restore'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/auth': {
+      id: '/acc_{$accountIdNoPrefix}_/database_{$namespaceIdNoPrefix}/auth'
+      path: '/auth'
+      fullPath: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/auth'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute
     }
     '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows': {
       id: '/acc_{$accountIdNoPrefix}_/app_{$appIdNoPrefix}/flows'
@@ -1181,6 +1495,8 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125ApiTokensRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   Acc_Char123accountIdNoPrefixChar125AppsRoute: typeof Acc_Char123accountIdNoPrefixChar125AppsRoute
   Acc_Char123accountIdNoPrefixChar125CreditsRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
+  Acc_Char123accountIdNoPrefixChar125DatabasesRoute: typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  Acc_Char123accountIdNoPrefixChar125IntegrationsRoute: typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   Acc_Char123accountIdNoPrefixChar125McpRoute: typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   Acc_Char123accountIdNoPrefixChar125MembersRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
   Acc_Char123accountIdNoPrefixChar125ModelsRoute: typeof Acc_Char123accountIdNoPrefixChar125ModelsRoute
@@ -1206,6 +1522,10 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125AppsRoute,
     Acc_Char123accountIdNoPrefixChar125CreditsRoute:
       Acc_Char123accountIdNoPrefixChar125CreditsRoute,
+    Acc_Char123accountIdNoPrefixChar125DatabasesRoute:
+      Acc_Char123accountIdNoPrefixChar125DatabasesRoute,
+    Acc_Char123accountIdNoPrefixChar125IntegrationsRoute:
+      Acc_Char123accountIdNoPrefixChar125IntegrationsRoute,
     Acc_Char123accountIdNoPrefixChar125McpRoute:
       Acc_Char123accountIdNoPrefixChar125McpRoute,
     Acc_Char123accountIdNoPrefixChar125MembersRoute:
@@ -1330,6 +1650,51 @@ const Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRou
     Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteChildren,
   )
 
+interface Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteChildren {
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute: typeof Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute
+}
+
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteChildren =
+  {
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125AuthRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BackupRestoreRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125BranchesRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DashboardRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataApiRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataEditorRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125DataMaskingRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125MonitoringRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125OverviewRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125SettingsRoute,
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute:
+      Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125IndexRoute,
+  }
+
+const Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteWithChildren =
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute._addFileChildren(
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   Acc_Char123accountIdNoPrefixChar125RouteRoute:
@@ -1345,6 +1710,8 @@ const rootRouteChildren: RootRouteChildren = {
   ToolsRoute: ToolsRoute,
   Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRoute:
     Acc_Char123accountIdNoPrefixChar125App_Char123appIdNoPrefixChar125RouteRouteWithChildren,
+  Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRoute:
+    Acc_Char123accountIdNoPrefixChar125Database_Char123namespaceIdNoPrefixChar125RouteRouteWithChildren,
   AuthErrorRoute: AuthErrorRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,

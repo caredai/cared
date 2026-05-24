@@ -499,6 +499,7 @@ export const toolRouter = {
           id: requestData.id,
           redirectUrl: requestData.redirectUrl ?? undefined,
           status:
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
             (requestData.status as ConnectionStatus | undefined) ?? ConnectionStatuses.INITIALIZING,
         },
       }

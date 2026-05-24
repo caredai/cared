@@ -13,11 +13,7 @@ interface WalletQrDialogProps {
   selectedWallet: Wallet | null
 }
 
-export function WalletQrDialog({
-  open,
-  onOpenChange,
-  selectedWallet,
-}: WalletQrDialogProps) {
+export function WalletQrDialog({ open, onOpenChange, selectedWallet }: WalletQrDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">

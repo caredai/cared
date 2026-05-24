@@ -21,34 +21,40 @@ export const env = createEnv({
     // Redis Cluster
     REDIS_CLUSTER_ENABLED: z.stringbool().optional(),
     // redis-node1:6379,redis-node2:6379,redis-node3:6379,redis-node4:6379,redis-node5:6379,redis-node6:6379
-    REDIS_CLUSTER_NODES: z.string().transform((s) =>
-      s
-        .split(',')
-        .map((s) =>
-          s
-            .trim()
-            .split(':')
-            .map((s) => s.trim())
-            .filter(Boolean),
-        )
-        .filter((pair) => pair.length === 2)
-        .map((pair) => pair.join(':')),
-    ).optional(),
+    REDIS_CLUSTER_NODES: z
+      .string()
+      .transform((s) =>
+        s
+          .split(',')
+          .map((s) =>
+            s
+              .trim()
+              .split(':')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          )
+          .filter((pair) => pair.length === 2)
+          .map((pair) => pair.join(':')),
+      )
+      .optional(),
     // Redis Sentinel
     REDIS_SENTINEL_ENABLED: z.stringbool().optional(),
     // sentinel1:26379,sentinel2:26379,sentinel3:26379
-    REDIS_SENTINEL_NODES: z.string().transform((s) =>
-      s
-        .split(',')
-        .map((s) =>
-          s
-            .trim()
-            .split(':')
-            .map((s) => s.trim())
-            .filter(Boolean),
-        )
-        .filter((pair) => pair.length === 2),
-    ).optional(),
+    REDIS_SENTINEL_NODES: z
+      .string()
+      .transform((s) =>
+        s
+          .split(',')
+          .map((s) =>
+            s
+              .trim()
+              .split(':')
+              .map((s) => s.trim())
+              .filter(Boolean),
+          )
+          .filter((pair) => pair.length === 2),
+      )
+      .optional(),
     REDIS_SENTINEL_MASTER_NAME: z.string().default('mymaster'),
 
     NODE_ENV: z.enum(['development', 'production']).optional(),

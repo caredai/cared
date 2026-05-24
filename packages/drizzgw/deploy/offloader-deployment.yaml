@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drizzgw-offloader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: drizzgw
+      app.kubernetes.io/component: offloader
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: drizzgw
+        app.kubernetes.io/component: offloader
+    spec:
+      serviceAccountName: drizzgw
+      containers:
+        - name: drizzgw
+          image: caredai/drizzgw:latest
+          args: ['--offloader']
+          envFrom:
+            - configMapRef:
+                name: drizzgw-config
+            - secretRef:
+                name: drizzgw-secrets
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

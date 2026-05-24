@@ -1,7 +1,6 @@
 import { z } from 'zod'
 
 import { noneAppUserProtectedProcedure } from '../../orpc'
-import { VectorService } from '../../service/vector'
 import {
   MAX_NAMESPACE_NAME_LENGTH,
   multiQueryInputSchema,
@@ -9,6 +8,7 @@ import {
   namespaceMetadataSchema,
   queryInputSchema,
   queryOutputSchema,
+  VectorService,
   writeInputSchema,
   writeOutputSchema,
 } from '../../service/vector'

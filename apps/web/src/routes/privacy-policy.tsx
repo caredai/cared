@@ -1,9 +1,8 @@
-'use client'
-
 import { useEffect, useRef, useState } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
-import { SiteHeader } from './landing/-site-header'
+
 import { LandingFooter } from './landing/-footer'
+import { SiteHeader } from './landing/-site-header'
 
 export const Route = createFileRoute('/privacy-policy')({
   component: PrivacyPolicy,
@@ -108,7 +107,12 @@ function PrivacyPolicy() {
                 Privacy Policy
               </h1>
               <p className="mt-4 font-sans text-sm text-muted-foreground">
-                Last Updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                Last Updated:{' '}
+                {new Date().toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
               </p>
 
               <div className="mt-12 space-y-12">
@@ -119,14 +123,18 @@ function PrivacyPolicy() {
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
                     <p>
-                      CaredMore Inc. (&quot;we&quot;, &quot;our&quot;, or &quot;Cared&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and protect your personal information when you visit and use{' '}
+                      CaredMore Inc. (&quot;we&quot;, &quot;our&quot;, or &quot;Cared&quot;) is
+                      committed to protecting your privacy. This Privacy Policy explains how we
+                      collect, use, disclose, and protect your personal information when you visit
+                      and use{' '}
                       <a href="https://cared.dev" className="text-foreground underline">
                         https://cared.dev
-                      </a>
-                      {' '}(the &quot;Service&quot;).
+                      </a>{' '}
+                      (the &quot;Service&quot;).
                     </p>
                     <p>
-                      By using our Service, you agree to the terms of this Privacy Policy. If you do not agree with any part of this policy, please do not use our Service.
+                      By using our Service, you agree to the terms of this Privacy Policy. If you do
+                      not agree with any part of this policy, please do not use our Service.
                     </p>
                   </div>
                 </section>
@@ -140,22 +148,39 @@ function PrivacyPolicy() {
                     <p>We collect the following types of information:</p>
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-semibold text-foreground">2.1 Information You Provide</h3>
+                        <h3 className="font-semibold text-foreground">
+                          2.1 Information You Provide
+                        </h3>
                         <ul className="ml-6 mt-2 list-disc space-y-2">
                           <li>Account registration information (name, email address, password)</li>
                           <li>Profile information (avatar, bio, etc.)</li>
-                          <li>Payment information (through secure third-party payment processors)</li>
-                          <li>Content you create while using the Service (AI agents, conversation records, configurations, etc.)</li>
-                          <li>Any information you provide through customer service or feedback channels</li>
+                          <li>
+                            Payment information (through secure third-party payment processors)
+                          </li>
+                          <li>
+                            Content you create while using the Service (AI agents, conversation
+                            records, configurations, etc.)
+                          </li>
+                          <li>
+                            Any information you provide through customer service or feedback
+                            channels
+                          </li>
                         </ul>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">2.2 Automatically Collected Information</h3>
+                        <h3 className="font-semibold text-foreground">
+                          2.2 Automatically Collected Information
+                        </h3>
                         <ul className="ml-6 mt-2 list-disc space-y-2">
-                          <li>Device information (device type, operating system, browser type and version)</li>
+                          <li>
+                            Device information (device type, operating system, browser type and
+                            version)
+                          </li>
                           <li>IP address and geolocation information</li>
                           <li>Usage data (access times, page views, clickstream data)</li>
-                          <li>Cookies and similar tracking technologies (see Section 7 for details)</li>
+                          <li>
+                            Cookies and similar tracking technologies (see Section 7 for details)
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -172,12 +197,20 @@ function PrivacyPolicy() {
                     <ul className="ml-6 list-disc space-y-2">
                       <li>To provide, maintain, and improve our Service</li>
                       <li>To process your transactions and manage your account</li>
-                      <li>To communicate with you (including service updates, security notices, and customer support)</li>
+                      <li>
+                        To communicate with you (including service updates, security notices, and
+                        customer support)
+                      </li>
                       <li>To personalize your experience and recommend relevant content</li>
                       <li>To detect, prevent, and address technical issues, fraud, or abuse</li>
                       <li>To comply with legal obligations and enforce our Terms of Service</li>
-                      <li>To conduct data analysis to improve service quality and user experience</li>
-                      <li>To send marketing communications (with your consent, which you can opt out of at any time)</li>
+                      <li>
+                        To conduct data analysis to improve service quality and user experience
+                      </li>
+                      <li>
+                        To send marketing communications (with your consent, which you can opt out
+                        of at any time)
+                      </li>
                     </ul>
                   </div>
                 </section>
@@ -188,29 +221,42 @@ function PrivacyPolicy() {
                     4. Information Sharing
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
-                    <p>We do not sell your personal information. We may share your information in the following circumstances:</p>
+                    <p>
+                      We do not sell your personal information. We may share your information in the
+                      following circumstances:
+                    </p>
                     <div className="space-y-3">
                       <div>
                         <h3 className="font-semibold text-foreground">4.1 Service Providers</h3>
                         <p>
-                          We may share information with third-party service providers who help us operate the Service, including cloud storage, payment processing, analytics, customer support, etc. These service providers are only authorized to use your information for the purposes necessary to provide the service.
+                          We may share information with third-party service providers who help us
+                          operate the Service, including cloud storage, payment processing,
+                          analytics, customer support, etc. These service providers are only
+                          authorized to use your information for the purposes necessary to provide
+                          the service.
                         </p>
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">4.2 Legal Requirements</h3>
                         <p>
-                          We may disclose your information if required by law or to protect our rights, property, or safety, or to protect the rights, property, or safety of users or the public.
+                          We may disclose your information if required by law or to protect our
+                          rights, property, or safety, or to protect the rights, property, or safety
+                          of users or the public.
                         </p>
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">4.3 Business Transfers</h3>
                         <p>
-                          If a merger, acquisition, asset sale, or other business transfer occurs, your information may be transferred to the new owner.
+                          If a merger, acquisition, asset sale, or other business transfer occurs,
+                          your information may be transferred to the new owner.
                         </p>
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">4.4 With Your Consent</h3>
-                        <p>We may share your information with other parties with your explicit consent.</p>
+                        <p>
+                          We may share your information with other parties with your explicit
+                          consent.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -223,10 +269,14 @@ function PrivacyPolicy() {
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
                     <p>
-                      We employ industry-standard security measures to protect your personal information, including encryption, access controls, security audits, etc. However, no data transmission or storage system is 100% secure. While we strive to protect your information, we cannot guarantee absolute security.
+                      We employ industry-standard security measures to protect your personal
+                      information, including encryption, access controls, security audits, etc.
+                      However, no data transmission or storage system is 100% secure. While we
+                      strive to protect your information, we cannot guarantee absolute security.
                     </p>
                     <p>
-                      We recommend that you use strong passwords, do not share your account credentials with others, and remain vigilant when using public networks.
+                      We recommend that you use strong passwords, do not share your account
+                      credentials with others, and remain vigilant when using public networks.
                     </p>
                   </div>
                 </section>
@@ -240,32 +290,40 @@ function PrivacyPolicy() {
                     <p>Under applicable data protection laws, you may have the following rights:</p>
                     <ul className="ml-6 list-disc space-y-2">
                       <li>
-                        <strong>Right of Access:</strong> You may request access to personal information we hold about you
+                        <strong>Right of Access:</strong> You may request access to personal
+                        information we hold about you
                       </li>
                       <li>
-                        <strong>Right of Rectification:</strong> You may request correction of inaccurate or incomplete personal information
+                        <strong>Right of Rectification:</strong> You may request correction of
+                        inaccurate or incomplete personal information
                       </li>
                       <li>
-                        <strong>Right of Erasure:</strong> Under certain circumstances, you may request deletion of your personal information
+                        <strong>Right of Erasure:</strong> Under certain circumstances, you may
+                        request deletion of your personal information
                       </li>
                       <li>
-                        <strong>Right to Restrict Processing:</strong> You may request restriction of our processing of your personal information
+                        <strong>Right to Restrict Processing:</strong> You may request restriction
+                        of our processing of your personal information
                       </li>
                       <li>
-                        <strong>Right to Data Portability:</strong> You may request to receive your data in a structured, commonly used, and machine-readable format
+                        <strong>Right to Data Portability:</strong> You may request to receive your
+                        data in a structured, commonly used, and machine-readable format
                       </li>
                       <li>
-                        <strong>Right to Object:</strong> You may object to our processing of your personal information for certain purposes
+                        <strong>Right to Object:</strong> You may object to our processing of your
+                        personal information for certain purposes
                       </li>
                       <li>
-                        <strong>Right to Withdraw Consent:</strong> If processing is based on your consent, you may withdraw consent at any time
+                        <strong>Right to Withdraw Consent:</strong> If processing is based on your
+                        consent, you may withdraw consent at any time
                       </li>
                     </ul>
                     <p>
                       To exercise these rights, please contact us at{' '}
                       <a href="mailto:privacy@cared.dev" className="text-foreground underline">
                         privacy@cared.dev
-                      </a>.
+                      </a>
+                      .
                     </p>
                   </div>
                 </section>
@@ -277,25 +335,31 @@ function PrivacyPolicy() {
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
                     <p>
-                      We use cookies and similar technologies to collect information and improve your experience. Cookies are small text files stored on your device.
+                      We use cookies and similar technologies to collect information and improve
+                      your experience. Cookies are small text files stored on your device.
                     </p>
                     <p>We use the following types of cookies:</p>
                     <ul className="ml-6 list-disc space-y-2">
                       <li>
-                        <strong>Essential Cookies:</strong> These cookies are necessary for basic website functionality and cannot be disabled
+                        <strong>Essential Cookies:</strong> These cookies are necessary for basic
+                        website functionality and cannot be disabled
                       </li>
                       <li>
-                        <strong>Functional Cookies:</strong> These cookies allow the website to remember your choices and provide enhanced features
+                        <strong>Functional Cookies:</strong> These cookies allow the website to
+                        remember your choices and provide enhanced features
                       </li>
                       <li>
-                        <strong>Analytics Cookies:</strong> These cookies help us understand how visitors use the website
+                        <strong>Analytics Cookies:</strong> These cookies help us understand how
+                        visitors use the website
                       </li>
                       <li>
-                        <strong>Marketing Cookies:</strong> These cookies are used to track visitors to deliver relevant advertising
+                        <strong>Marketing Cookies:</strong> These cookies are used to track visitors
+                        to deliver relevant advertising
                       </li>
                     </ul>
                     <p>
-                      You can manage cookie preferences through your browser settings. Please note that disabling certain cookies may affect the functionality of the Service.
+                      You can manage cookie preferences through your browser settings. Please note
+                      that disabling certain cookies may affect the functionality of the Service.
                     </p>
                   </div>
                 </section>
@@ -307,10 +371,16 @@ function PrivacyPolicy() {
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
                     <p>
-                      Our Service may contain links to third-party websites, services, or applications. We are not responsible for the privacy practices of these third parties. We recommend that you carefully read the privacy policies of these third parties.
+                      Our Service may contain links to third-party websites, services, or
+                      applications. We are not responsible for the privacy practices of these third
+                      parties. We recommend that you carefully read the privacy policies of these
+                      third parties.
                     </p>
                     <p>
-                      Third-party services we integrate include, but are not limited to: cloud service providers, payment processors, analytics services, AI model providers, etc. These services may have their own privacy policies, and we recommend that you review the relevant terms.
+                      Third-party services we integrate include, but are not limited to: cloud
+                      service providers, payment processors, analytics services, AI model providers,
+                      etc. These services may have their own privacy policies, and we recommend that
+                      you review the relevant terms.
                     </p>
                   </div>
                 </section>
@@ -322,7 +392,11 @@ function PrivacyPolicy() {
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
                     <p>
-                      Our Service is not directed to children under the age of 13. We do not knowingly collect personal information from children under 13. If we discover that we have collected such information, we will delete it immediately. If you are a parent or guardian and discover that your child has provided us with personal information, please contact us.
+                      Our Service is not directed to children under the age of 13. We do not
+                      knowingly collect personal information from children under 13. If we discover
+                      that we have collected such information, we will delete it immediately. If you
+                      are a parent or guardian and discover that your child has provided us with
+                      personal information, please contact us.
                     </p>
                   </div>
                 </section>
@@ -334,7 +408,11 @@ function PrivacyPolicy() {
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
                     <p>
-                      Your information may be transferred to and processed in locations outside your country or region. By using our Service, you consent to the transfer of your information to these locations. We will take appropriate measures to ensure your information is adequately protected and complies with applicable data protection laws.
+                      Your information may be transferred to and processed in locations outside your
+                      country or region. By using our Service, you consent to the transfer of your
+                      information to these locations. We will take appropriate measures to ensure
+                      your information is adequately protected and complies with applicable data
+                      protection laws.
                     </p>
                   </div>
                 </section>
@@ -346,10 +424,14 @@ function PrivacyPolicy() {
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
                     <p>
-                      We may update this Privacy Policy from time to time. Material changes will be notified to you via email or by posting a notice on the website. We recommend that you review this policy periodically to stay informed.
+                      We may update this Privacy Policy from time to time. Material changes will be
+                      notified to you via email or by posting a notice on the website. We recommend
+                      that you review this policy periodically to stay informed.
                     </p>
                     <p>
-                      The &quot;Last Updated&quot; date at the top of this policy indicates when it was last revised. Continued use of the Service indicates your acceptance of the revised policy.
+                      The &quot;Last Updated&quot; date at the top of this policy indicates when it
+                      was last revised. Continued use of the Service indicates your acceptance of
+                      the revised policy.
                     </p>
                   </div>
                 </section>
@@ -360,7 +442,10 @@ function PrivacyPolicy() {
                     12. Contact Us
                   </h2>
                   <div className="mt-4 space-y-4 font-sans text-sm leading-relaxed text-muted-foreground">
-                    <p>If you have any questions, comments, or concerns about this Privacy Policy, please contact us:</p>
+                    <p>
+                      If you have any questions, comments, or concerns about this Privacy Policy,
+                      please contact us:
+                    </p>
                     <div className="space-y-2">
                       <p>
                         <strong>Company Name:</strong> CaredMore Inc.

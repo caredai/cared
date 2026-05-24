@@ -45,10 +45,7 @@ export default function InvitationEmail({
     <Html>
       <Head>
         <title>You've Been Invited to Join [{accountName}]</title>
-        <meta
-          name="description"
-          content={`${inviter} has invited you to join ${accountName}`}
-        />
+        <meta name="description" content={`${inviter} has invited you to join ${accountName}`} />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
       <Preview>{`${inviter} has invited you to join ${accountName}`}</Preview>

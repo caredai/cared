@@ -1,5 +1,3 @@
-'use client'
-
 import type { VirtualizerHandle } from 'virtua'
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate, useRouter } from '@tanstack/react-router'
@@ -217,23 +215,23 @@ function CategoryList({
   const categoryListRef = useRef<VirtualizerHandle>(null)
 
   return (
-      <Virtualizer ref={categoryListRef}>
-        {/* "All" option */}
+    <Virtualizer ref={categoryListRef}>
+      {/* "All" option */}
+      <CategoryItem
+        category={{ slug: 'all', name: 'All' }}
+        isSelected={selectedCategory === null}
+        onSelect={() => onSelectCategory(null)}
+      />
+      {/* Category items */}
+      {categories.map((category) => (
         <CategoryItem
-          category={{ slug: 'all', name: 'All' }}
-          isSelected={selectedCategory === null}
-          onSelect={() => onSelectCategory(null)}
+          key={category.slug}
+          category={category}
+          isSelected={selectedCategory === category.slug}
+          onSelect={() => onSelectCategory(category.slug)}
         />
-        {/* Category items */}
-        {categories.map((category) => (
-          <CategoryItem
-            key={category.slug}
-            category={category}
-            isSelected={selectedCategory === category.slug}
-            onSelect={() => onSelectCategory(category.slug)}
-          />
-        ))}
-      </Virtualizer>
+      ))}
+    </Virtualizer>
   )
 }
 
@@ -281,7 +279,7 @@ function CategoryCombobox({
 
   // Get selected category name
   const selectedCategoryName = selectedCategory
-    ? categories.find((cat) => cat.slug === selectedCategory)?.name ?? 'All'
+    ? (categories.find((cat) => cat.slug === selectedCategory)?.name ?? 'All')
     : 'All'
 
   return (

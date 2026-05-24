@@ -38,7 +38,7 @@ export function createEmbeddingModel(
     maxEmbeddingsPerCall: (async () => {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!(maxEmbeddingsPerCall as PromiseLike<any>).then) {
-        return maxEmbeddingsPerCall as number | undefined
+        return maxEmbeddingsPerCall
       }
 
       getModelConfigPromise ??= getModelConfig()
@@ -48,7 +48,7 @@ export function createEmbeddingModel(
     supportsParallelCalls: (async () => {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (!(supportsParallelCalls as PromiseLike<any>).then) {
-        return supportsParallelCalls as boolean
+        return supportsParallelCalls
       }
 
       getModelConfigPromise ??= getModelConfig()

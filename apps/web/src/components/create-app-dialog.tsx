@@ -70,7 +70,9 @@ export function CreateAppDialog({
   const queryClient = useQueryClient()
 
   // Get models data for selection
-  const { data: modelsData } = useSuspenseQuery(orpc.account.model.listProvidersModels.queryOptions())
+  const { data: modelsData } = useSuspenseQuery(
+    orpc.account.model.listProvidersModels.queryOptions(),
+  )
 
   // Process model data with memoization to improve performance
   const { languageModelProviders, embeddingModelProviders, imageModelProviders } = useMemo(() => {

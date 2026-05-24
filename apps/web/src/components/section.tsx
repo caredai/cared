@@ -14,7 +14,7 @@ export function Section({ children }: { children: ReactNode }) {
   )
 }
 
-export function SectionTitle({ title, description }: { title: string; description?: string }) {
+export function SectionTitle({ title, description }: { title: string; description?: ReactNode }) {
   return (
     <div className="flex flex-col md:grid md:grid-cols-[min-content_min-content_1fr] md:items-center gap-x-4 md:-ml-11">
       <SidebarTrigger className="hidden md:flex" />
@@ -24,7 +24,7 @@ export function SectionTitle({ title, description }: { title: string; descriptio
       <h1 className="text-2xl font-bold">{title}</h1>
 
       {description && (
-        <p className="col-start-3 text-muted-foreground line-clamp-3">{description}</p>
+        <div className="col-start-3 text-muted-foreground line-clamp-3">{description}</div>
       )}
     </div>
   )

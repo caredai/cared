@@ -1,7 +1,5 @@
-'use client'
-
+import { CreditCard, Layers, Lock, Zap } from 'lucide-react'
 import { motion } from 'motion/react'
-import { Zap, Lock, Layers, CreditCard } from 'lucide-react'
 
 const METRICS = [
   {
@@ -46,9 +44,7 @@ export function LandingMetrics() {
               <span className="mt-3 font-mono text-sm font-semibold tracking-tight text-foreground">
                 {item.value}
               </span>
-              <span className="mt-1 font-sans text-xs text-muted-foreground">
-                {item.label}
-              </span>
+              <span className="mt-1 font-sans text-xs text-muted-foreground">{item.label}</span>
             </motion.li>
           ))}
         </ul>

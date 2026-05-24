@@ -1,2 +1,1 @@
-export const memoryRouter = {
-}
+export const memoryRouter = {}

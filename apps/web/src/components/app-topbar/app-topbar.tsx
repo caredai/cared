@@ -7,9 +7,9 @@ import { useSidebar } from '@cared/ui/components/sidebar'
 import { Logo } from '@/components/logo'
 import { Slash } from '@/components/slash'
 import { useCheckSession } from '@/hooks/use-session'
+import { AccountSwitcher } from './account-switcher'
 import { AdminEnterButton } from './admin-enter-button'
 import { AppSwitcher, useHasAppSwitcher } from './app-switcher'
-import { AccountSwitcher } from './account-switcher'
 import { TopBarActions } from './top-bar-actions'
 
 export function AppTopBar() {

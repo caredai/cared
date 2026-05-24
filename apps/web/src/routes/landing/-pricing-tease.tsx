@@ -1,7 +1,5 @@
-'use client'
-
-import { motion } from 'motion/react'
 import { Check } from 'lucide-react'
+import { motion } from 'motion/react'
 
 const PLANS = [
   {
@@ -36,8 +34,7 @@ export function LandingPricingTease() {
             Pricing that scales with you
           </h2>
           <p className="mx-auto mt-3 max-w-xl font-sans text-muted-foreground">
-            Start with pay-as-you-go. Move to subscription when it fits. No
-            lock-in.
+            Start with pay-as-you-go. Move to subscription when it fits. No lock-in.
           </p>
         </motion.div>
 
@@ -54,9 +51,7 @@ export function LandingPricingTease() {
               <h3 className="font-mono text-lg font-semibold tracking-tight text-foreground">
                 {plan.name}
               </h3>
-              <p className="mt-2 font-sans text-sm text-muted-foreground">
-                {plan.description}
-              </p>
+              <p className="mt-2 font-sans text-sm text-muted-foreground">{plan.description}</p>
               <ul className="mt-6 space-y-3">
                 {plan.points.map((point) => (
                   <li

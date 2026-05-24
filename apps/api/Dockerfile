@@ -2,7 +2,8 @@ ARG NODE_VERSION=24.13.0
 FROM node:${NODE_VERSION}-alpine AS base
 
 ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
+ENV PATH="$PNPM_HOME/bin:$PATH"
+
 RUN corepack enable
 
 RUN apk add --no-cache git

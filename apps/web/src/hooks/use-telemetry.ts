@@ -67,7 +67,7 @@ export function useObservations(input?: {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery(
-      orpc.account.telemetry.listObservations.infiniteOptions({
+    orpc.account.telemetry.listObservations.infiniteOptions({
       input: (cursor?: number) => ({
         ...input,
         cursor,

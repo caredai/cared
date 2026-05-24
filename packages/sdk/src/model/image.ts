@@ -30,7 +30,7 @@ export function createImageModel(modelFullId: string, opts: CaredClientOptions):
         })
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!(gotMaxImagesPerCall as PromiseLike<any>).then) {
-          return gotMaxImagesPerCall as number | undefined
+          return gotMaxImagesPerCall
         }
       }
 

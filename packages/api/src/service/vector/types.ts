@@ -42,7 +42,13 @@ export const languageSchema = z.enum([
 /**
  * Tokenizer for full-text search
  */
-export const tokenizerSchema = z.enum(['pre_tokenized_array', 'word_v0', 'word_v1', 'word_v2'])
+export const tokenizerSchema = z.enum([
+  'pre_tokenized_array',
+  'word_v0',
+  'word_v1',
+  'word_v2',
+  'word_v3',
+])
 
 /**
  * Full-text search configuration

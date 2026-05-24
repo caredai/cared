@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
 import { HelioCheckout } from '@heliofi/checkout-react'
+import { createFileRoute } from '@tanstack/react-router'
 
 import { env } from '@/env'
 
@@ -88,25 +88,24 @@ function HelioCheckoutPage() {
   }
 
   return (
-      <HelioCheckout
-        config={{
-          paylinkId: config.paylinkId ?? env.VITE_HELIO_CREDITS_PAYLINK_ID ?? '',
-          amount: config.amount,
-          additionalJSON: {
-            customerId: config.customerId,
-          },
-          primaryPaymentMethod: 'crypto',
-          stretchFullWidth: true,
-          theme: {
-            themeMode: config.theme,
-          },
-          display: 'inline',
-          showPayWithCard: true,
-          onSuccess: handleSuccess,
-          onError: handleError,
-          onCancel: handleCancel,
-        }}
-      />
+    <HelioCheckout
+      config={{
+        paylinkId: config.paylinkId ?? env.VITE_HELIO_CREDITS_PAYLINK_ID ?? '',
+        amount: config.amount,
+        additionalJSON: {
+          customerId: config.customerId,
+        },
+        primaryPaymentMethod: 'crypto',
+        stretchFullWidth: true,
+        theme: {
+          themeMode: config.theme,
+        },
+        display: 'inline',
+        showPayWithCard: true,
+        onSuccess: handleSuccess,
+        onError: handleError,
+        onCancel: handleCancel,
+      }}
+    />
   )
 }
-

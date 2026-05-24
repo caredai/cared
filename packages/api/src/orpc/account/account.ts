@@ -2,7 +2,6 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
 import type { AccountRole } from '@cared/auth'
-import type { Invitation } from '@cared/db/schema'
 import { authHeaders, getAuth } from '@cared/auth'
 import { desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
@@ -10,25 +9,8 @@ import { Account, Member, User } from '@cared/db/schema'
 
 import { formatAccount, invalidateUserAccounts } from '../../operation'
 import { userPlainProtectedProcedure, userProtectedProcedure } from '../../orpc'
+import { formatInvitation } from '../../types'
 import { forwardSetCookieHeader } from '../../utils'
-
-type InvitationStatus = 'pending' | 'accepted' | 'rejected' | 'canceled'
-
-function formatInvitation(
-  invitation: Omit<Invitation, 'accountId' | 'status' | 'role' | 'teamId'> & {
-    organizationId: string
-    status: InvitationStatus
-    role: AccountRole
-    teamId?: string | null
-  },
-) {
-  const { organizationId, teamId, ...inv } = invitation
-  return {
-    ...inv,
-    accountId: organizationId,
-    teamId: teamId ?? undefined,
-  }
-}
 
 export const accountRouter = {
   // ---- Account ----
@@ -57,11 +39,6 @@ export const accountRouter = {
           keepCurrentActiveOrganization: false,
         },
       })
-      if (!account) {
-        throw new ORPCError('INTERNAL_SERVER_ERROR', {
-          message: 'Failed to create account',
-        })
-      }
 
       await invalidateUserAccounts(
         ...account.members.map((m) => m?.userId).filter((id): id is string => Boolean(id)),
@@ -260,13 +237,12 @@ export const accountRouter = {
         body: {
           organizationId: input.accountId,
           email: input.email,
-          // @ts-ignore
           role: 'member',
           resend: input.resend,
           teamId: input.teamId,
         },
       })
-      return { invitation: formatInvitation(inv as any) }
+      return { invitation: formatInvitation(inv) }
     }),
 
   acceptInvitation: userProtectedProcedure
@@ -284,11 +260,6 @@ export const accountRouter = {
         headers: authHeaders(context.headers),
         body: { invitationId: input.invitationId },
       })
-      if (!res) {
-        throw new ORPCError('INTERNAL_SERVER_ERROR', {
-          message: 'Failed to accept invitation',
-        })
-      }
 
       await invalidateUserAccounts(res.member.userId)
 
@@ -375,10 +346,6 @@ export const accountRouter = {
           accountName: organizationName,
           inviterEmail,
           inviterName: inviter.name,
-        } as ReturnType<typeof formatInvitation> & {
-          accountName: string
-          inviterEmail: string
-          inviterName: string
         },
       }
     }),
@@ -483,16 +450,10 @@ export const accountRouter = {
         body: {
           organizationId: input.accountId,
           userId: input.userId,
-          // @ts-ignore
           role: input.role,
           teamId: input.teamId,
         },
       })
-      if (!member) {
-        throw new ORPCError('INTERNAL_SERVER_ERROR', {
-          message: 'Failed to add member to account',
-        })
-      }
 
       await invalidateUserAccounts(member.userId)
 
@@ -522,11 +483,6 @@ export const accountRouter = {
           memberIdOrEmail: input.memberId,
         },
       })
-      if (!res) {
-        throw new ORPCError('INTERNAL_SERVER_ERROR', {
-          message: 'Failed to remove member from account',
-        })
-      }
 
       await invalidateUserAccounts(res.member.userId)
 

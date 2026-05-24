@@ -12,7 +12,6 @@ import {
   InvalidToolInputError,
   JSONParseError,
   LoadAPIKeyError,
-  MCPClientError,
   MessageConversionError,
   // LoadSettingError,
   NoContentGeneratedError,
@@ -217,27 +216,6 @@ class InvalidToolInputErrorSerializer extends AISDKErrorSerializer {
       message: error.message,
       toolInput: json.toolInput,
       toolName: json.toolName,
-      cause: error.cause,
-    })
-  }
-}
-
-class MCPClientErrorSerializer extends AISDKErrorSerializer {
-  toJSON(error: MCPClientError) {
-    const json = super.toJSON(error)
-
-    return {
-      ...json,
-      name: error.name,
-      className: 'MCPClientError',
-    }
-  }
-
-  static fromJSON(json: ErrorJSON): MCPClientError {
-    const error = AISDKErrorSerializer.fromJSON(json)
-    return new MCPClientError({
-      name: json.name,
-      message: error.message,
       cause: error.cause,
     })
   }
@@ -633,7 +611,6 @@ export const errorSerializerRegistry: Record<string, typeof SerializableError> =
   InvalidArgumentError: InvalidArgumentErrorSerializer,
   InvalidStreamPartError: InvalidStreamPartErrorSerializer,
   InvalidToolInputError: InvalidToolInputErrorSerializer,
-  MCPClientError: MCPClientErrorSerializer,
   NoImageGeneratedError: NoImageGeneratedErrorSerializer,
   NoObjectGeneratedError: NoObjectGeneratedErrorSerializer,
   NoOutputSpecifiedError: NoOutputSpecifiedErrorSerializer,

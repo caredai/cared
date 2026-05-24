@@ -195,11 +195,7 @@ function AiApiKeys({
       header: 'API Key',
       cell: ({ row }) => {
         const apiToken = row.original
-        return (
-          <code className="font-mono">
-            {`${apiToken.start}...${apiToken.end}`}
-          </code>
-        )
+        return <code className="font-mono">{`${apiToken.start}...${apiToken.end}`}</code>
       },
     },
     {
@@ -537,11 +533,7 @@ export function ApiTokens({
       header: 'API Token',
       cell: ({ row }) => {
         const apiToken = row.original
-        return (
-          <code className="font-mono">
-            {`${apiToken.start}...${apiToken.end}`}
-          </code>
-        )
+        return <code className="font-mono">{`${apiToken.start}...${apiToken.end}`}</code>
       },
     },
     {

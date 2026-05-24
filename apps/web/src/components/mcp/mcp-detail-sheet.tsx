@@ -1,5 +1,3 @@
-'use client'
-
 import type { VirtualizerHandle } from 'virtua'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Loader2, Plus, Search, X } from 'lucide-react'
@@ -57,7 +55,11 @@ export function McpDetailSheet({ mcpId, open, onOpenChange, onCreated }: McpDeta
         </SheetHeader>
         <div className="min-h-0 flex-1 flex flex-col gap-4 px-4">
           <Suspense fallback={<SkeletonCard />}>
-            <McpDetailSheetContent mcpId={mcpId} onOpenChange={onOpenChange} onCreated={onCreated} />
+            <McpDetailSheetContent
+              mcpId={mcpId}
+              onOpenChange={onOpenChange}
+              onCreated={onCreated}
+            />
           </Suspense>
         </div>
       </SheetContent>

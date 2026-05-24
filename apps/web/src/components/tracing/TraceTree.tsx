@@ -106,8 +106,8 @@ export const TraceTree = forwardRef<
         showMetrics &&
         Boolean(
           duration ||
-            (!isTraceRoot && node.costDetails?.total) ||
-            (!isTraceRoot && (node.usageDetails?.input ?? node.usageDetails?.output)),
+          (!isTraceRoot && node.costDetails.total) ||
+          (!isTraceRoot && (node.usageDetails.input || node.usageDetails.output)),
         )
 
       return (
@@ -169,7 +169,7 @@ export const TraceTree = forwardRef<
 
                 {!isTraceRoot &&
                   'usageDetails' in node &&
-                  typeof node.usageDetails?.total === 'number' && (
+                  typeof node.usageDetails.total === 'number' && (
                     <span className="text-xs text-muted-foreground">
                       {formatTokenUsage(
                         node.usageDetails.input,
@@ -179,7 +179,7 @@ export const TraceTree = forwardRef<
                     </span>
                   )}
 
-                {!isTraceRoot && 'costDetails' in node && node.costDetails?.total && (
+                {!isTraceRoot && 'costDetails' in node && node.costDetails.total && (
                   <span className="text-xs text-muted-foreground">
                     {formatCost(node.costDetails.total)}
                   </span>

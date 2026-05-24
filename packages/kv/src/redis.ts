@@ -68,18 +68,14 @@ export async function getRedisClient(): Promise<RedisClient> {
         .on('error', (err) => console.error('Redis Sentinel Error', err))
         .connect()
     } else {
-      redisClient = createClient<
-        RedisDefaultModules,
-        RedisFunctions,
-        RedisScripts,
-        3,
-        TypeMapping
-      >({
-        url: `redis://${env.REDIS_USERNAME}:${env.REDIS_PASSWORD}@${env.REDIS_HOST}:${env.REDIS_PORT}/0`,
-        RESP: 3,
-        clientSideCache: cache,
-        disableOfflineQueue: true,
-      })
+      redisClient = createClient<RedisDefaultModules, RedisFunctions, RedisScripts, 3, TypeMapping>(
+        {
+          url: `redis://${env.REDIS_USERNAME}:${env.REDIS_PASSWORD}@${env.REDIS_HOST}:${env.REDIS_PORT}/0`,
+          RESP: 3,
+          clientSideCache: cache,
+          disableOfflineQueue: true,
+        },
+      )
         .on('error', (err) => console.log('Redis Client Error', err))
         .connect()
     }

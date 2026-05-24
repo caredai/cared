@@ -6,8 +6,14 @@ export default defineConfig({
     resolver: 'tsc',
     sourcemap: true,
   },
-  noExternal: [/^@cared\//],
-  inlineOnly: false,
   shims: true,
-  unbundle: true,
+  // unbundle: true,
+  deps: {
+    alwaysBundle: [/^@cared\//],
+    neverBundle: [
+      '#tanstack-router-entry',
+      '#tanstack-start-entry',
+      '#tanstack-start-plugin-adapters',
+    ],
+  },
 })

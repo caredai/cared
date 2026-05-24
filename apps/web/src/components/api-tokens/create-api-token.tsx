@@ -1,5 +1,3 @@
-'use client'
-
 import type { DateRange } from 'react-day-picker'
 import { useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,21 +19,15 @@ import { Input } from '@cared/ui/components/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
 import { CircleSpinner } from '@cared/ui/components/spinner'
 import { Switch } from '@cared/ui/components/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableRow,
-} from '@cared/ui/components/table'
+import { Table, TableBody, TableCell, TableRow } from '@cared/ui/components/table'
 import { ToggleGroup, ToggleGroupItem } from '@cared/ui/components/toggle-group'
 import { cn } from '@cared/ui/lib/utils'
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
 import { useAccounts } from '@/hooks/use-account'
 import { useActiveAccountId } from '@/hooks/use-active'
 import { useCreateApiToken, useListPermissionGroups } from '@/hooks/use-api-token'
 import { useSessionPublic } from '@/hooks/use-session'
-
 import { useShowApiTokenDialog } from './show-api-token-dialog'
 
 // Permission action: 'none' | 'read' | 'write' | 'invoke' | 'publish'
@@ -46,8 +38,12 @@ const createApiTokenSchema = z.object({
   name: z.string().min(1, 'Name is required').max(64, 'Name cannot exceed 64 characters'),
   // Permissions organized by scope and resource name
   // Each resource stores the selected action (or 'none' if not selected)
-  accountPermissions: z.record(z.string(), z.enum(['none', 'read', 'write', 'invoke', 'publish'])).optional(),
-  userPermissions: z.record(z.string(), z.enum(['none', 'read', 'write', 'invoke', 'publish'])).optional(),
+  accountPermissions: z
+    .record(z.string(), z.enum(['none', 'read', 'write', 'invoke', 'publish']))
+    .optional(),
+  userPermissions: z
+    .record(z.string(), z.enum(['none', 'read', 'write', 'invoke', 'publish']))
+    .optional(),
   // Account selection for user scope
   accountScope: z.enum(['all', 'specific']).optional(),
   accountIds: z.array(z.string()).optional(),
@@ -275,7 +271,8 @@ export function CreateApiToken({ scope }: { scope: 'account' | 'user' }) {
 
   // Render permissions list for a given scope
   const renderPermissions = (permScope: 'account' | 'user') => {
-    const permissions = permScope === 'account' ? organizedPermissions.accountPerms : organizedPermissions.userPerms
+    const permissions =
+      permScope === 'account' ? organizedPermissions.accountPerms : organizedPermissions.userPerms
     const formFieldName = permScope === 'account' ? 'accountPermissions' : 'userPermissions'
 
     return (
@@ -289,14 +286,16 @@ export function CreateApiToken({ scope }: { scope: 'account' | 'user' }) {
               return (
                 <TableRow key={resourceName} className="hover:bg-transparent">
                   <TableCell className="py-2">
-                    <FieldLabel className="text-sm font-medium capitalize">{resourceName}</FieldLabel>
+                    <FieldLabel className="text-sm font-medium capitalize">
+                      {resourceName}
+                    </FieldLabel>
                   </TableCell>
                   <TableCell className="py-2 flex justify-end">
                     <Controller
                       name={`${formFieldName}.${resourceName}`}
                       control={form.control}
                       render={({ field, fieldState }) => {
-                        const currentAction = field.value as PermissionAction | undefined
+                        const currentAction = field.value
                         const selectedAction = currentAction ?? 'none'
 
                         return (
@@ -306,7 +305,7 @@ export function CreateApiToken({ scope }: { scope: 'account' | 'user' }) {
                                 type="single"
                                 value={selectedAction}
                                 onValueChange={(value) => {
-                                  field.onChange((value || 'none') as PermissionAction)
+                                  field.onChange(value || 'none')
                                 }}
                                 variant="outline"
                                 aria-invalid={fieldState.invalid}
@@ -410,15 +409,23 @@ export function CreateApiToken({ scope }: { scope: 'account' | 'user' }) {
                             type="single"
                             value={field.value}
                             onValueChange={(value) => {
-                              field.onChange((value || 'all') as 'all' | 'specific')
+                              field.onChange(value || 'all')
                             }}
                             variant="outline"
                             aria-invalid={fieldState.invalid}
                           >
-                            <ToggleGroupItem value="all" aria-label="All Accounts" className="flex-none">
+                            <ToggleGroupItem
+                              value="all"
+                              aria-label="All Accounts"
+                              className="flex-none"
+                            >
                               All Accounts
                             </ToggleGroupItem>
-                            <ToggleGroupItem value="specific" aria-label="Specific Accounts" className="flex-none">
+                            <ToggleGroupItem
+                              value="specific"
+                              aria-label="Specific Accounts"
+                              className="flex-none"
+                            >
                               Specific Accounts
                             </ToggleGroupItem>
                           </ToggleGroup>
@@ -481,14 +488,16 @@ export function CreateApiToken({ scope }: { scope: 'account' | 'user' }) {
             name="enabled"
             control={form.control}
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid} orientation="horizontal" className="items-center justify-between">
+              <Field
+                data-invalid={fieldState.invalid}
+                orientation="horizontal"
+                className="items-center justify-between"
+              >
                 <FieldContent>
                   <FieldLabel htmlFor={`${field.name}-switch`} className="text-base">
                     Enabled
                   </FieldLabel>
-                  <FieldDescription>
-                    Enable or disable this API token
-                  </FieldDescription>
+                  <FieldDescription>Enable or disable this API token</FieldDescription>
                   {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
                 </FieldContent>
                 <Switch

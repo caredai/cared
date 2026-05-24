@@ -3,9 +3,11 @@ import type {
   BetterAuthOptions,
   User as BetterAuthUser,
   LiteralUnion,
-  Models,
+  ModelNames,
 } from 'better-auth'
 import type { SecondaryStorage } from 'better-auth/db'
+import { apiKey } from '@better-auth/api-key'
+import { passkey } from '@better-auth/passkey'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
 import { betterAuth } from 'better-auth'
 import { emailHarmony } from 'better-auth-harmony'
@@ -14,7 +16,6 @@ import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { setSessionCookie } from 'better-auth/cookies'
 import {
   admin,
-  apiKey,
   bearer,
   customSession,
   genericOAuth,
@@ -24,8 +25,7 @@ import {
   organization,
   twoFactor,
 } from 'better-auth/plugins'
-import { passkey } from 'better-auth/plugins/passkey'
-import { reactStartCookies } from 'better-auth/react-start'
+import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { sha256 } from 'viem'
 
 import type { Transaction } from '@cared/db/client'
@@ -252,7 +252,7 @@ function getOptions(
         },
       }),
       database: {
-        generateId: ({ model }: { model: LiteralUnion<Models, string> }) =>
+        generateId: ({ model }: { model: LiteralUnion<ModelNames, string> }) =>
           generateId(modelPrefix(model)),
       },
       ipAddress: {
@@ -286,7 +286,7 @@ function getOptions(
       admin(),
       organization({
         ac: !opts?.useOriginalAccessControl ? accountAc : undefined,
-        roles: !opts?.useOriginalAccessControl ? accountRoles : undefined,
+        ...(!opts?.useOriginalAccessControl && { roles: accountRoles }),
         organizationLimit: maxAccounts,
         membershipLimit: maxMembers,
         teams: {
@@ -320,13 +320,10 @@ function getOptions(
             ),
           })
         },
-        organizationDeletion: {
-          disabled: true, // TODO
-        },
-        organizationCreation: {
-          disabled: false,
+        disableOrganizationDeletion: true, // TODO
+        organizationHooks: {
           // eslint-disable-next-line @typescript-eslint/require-await
-          beforeCreate: async ({ organization, user: _ }, _request) => {
+          beforeCreateOrganization: async ({ organization, user: _ }) => {
             const id = generateId('acc')
             return {
               data: {
@@ -336,7 +333,7 @@ function getOptions(
               },
             }
           },
-          afterCreate: async ({ organization }) => {
+          afterCreateOrganization: async ({ organization }) => {
             await (tx ?? db)
               .update(Account)
               .set({
@@ -345,7 +342,6 @@ function getOptions(
               .where(eq(Account.id, organization.id))
           },
         },
-        autoCreateOrganizationOnSignUp: false,
         schema: {
           organization: {
             modelName: 'Account',
@@ -417,8 +413,8 @@ function getOptions(
       emailHarmony(),
       customPlugin(),
       // Make sure this is the last plugin in the array
-      // https://www.better-auth.com/docs/integrations/tanstack#usage-tips
-      reactStartCookies(),
+      // https://better-auth.com/docs/integrations/tanstack#usage-tips
+      tanstackStartCookies(),
     ],
     onAPIError: {
       errorURL: getWebUrl() + '/auth/error',
@@ -623,7 +619,7 @@ export async function createDefaultAccountIfAbsent(user: BetterAuthUser, tx?: Tr
   }
 }
 
-function modelPrefix(model: LiteralUnion<Models, string>) {
+function modelPrefix(model: LiteralUnion<ModelNames, string>) {
   switch (model) {
     case 'user':
       return 'user'

@@ -39,10 +39,19 @@ export type NavItem =
 
 export function NavMain({
   items,
+  secondaryItems,
+  secondaryLinkSearch,
+  midSection,
   baseUrl,
   children,
 }: {
   items: NavItem[]
+  /** Optional second nav group rendered after midSection (e.g. branch-scoped pages). */
+  secondaryItems?: NavItem[]
+  /** Search params appended to secondary nav links (e.g. active branch id). */
+  secondaryLinkSearch?: { branch?: string }
+  /** Custom block between the primary and secondary nav groups (e.g. branch selector). */
+  midSection?: ReactNode
   baseUrl: string
   children?: ReactNode
 }) {
@@ -68,67 +77,109 @@ export function NavMain({
           </>
         )}
 
-        {items.map((item, index) => {
-          if (item.type === 'separator') {
-            return <SidebarSeparator key={index} className="my-2" />
-          }
-
-          const active = isItemActive(item.url)
-          const Icon = item.icon
-          return (
-            <Collapsible key={item.title} asChild defaultOpen={active} className="my-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  tooltip={item.title}
-                  isActive={active}
-                  onClick={() => {
-                    setOpenMobile(false)
-                  }}
-                >
-                  <Link to={`${baseUrl}${item.url}`}>
-                    <Icon />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-                {item.items?.length ? (
-                  <>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuAction className="data-[state=open]:rotate-90">
-                        <ChevronRight />
-                        <span className="sr-only">Toggle</span>
-                      </SidebarMenuAction>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub className="mt-1">
-                        {item.items.map((subItem) => {
-                          const url = `${item.url}${subItem.url}`
-                          const subActive = pathname.endsWith(url)
-                          return (
-                            <SidebarMenuSubItem key={subItem.title}>
-                              <SidebarMenuSubButton
-                                asChild
-                                isActive={subActive}
-                                onClick={() => {
-                                  setOpenMobile(false)
-                                }}
-                              >
-                                <Link to={`${baseUrl}${url}`}>
-                                  <span>{subItem.title}</span>
-                                </Link>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          )
-                        })}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </>
-                ) : null}
-              </SidebarMenuItem>
-            </Collapsible>
-          )
-        })}
+        {[items, ...(secondaryItems ? [secondaryItems] : [])].map((group, groupIndex) => (
+          <NavMainItemGroup
+            key={groupIndex}
+            items={group}
+            baseUrl={baseUrl}
+            pathname={pathname}
+            isItemActive={isItemActive}
+            setOpenMobile={setOpenMobile}
+            linkSearch={groupIndex === 1 ? secondaryLinkSearch : undefined}
+            leadingMidSection={groupIndex === 1 && midSection ? midSection : undefined}
+          />
+        ))}
       </SidebarMenu>
     </SidebarGroup>
+  )
+}
+
+function NavMainItemGroup({
+  items,
+  baseUrl,
+  pathname,
+  isItemActive,
+  setOpenMobile,
+  linkSearch,
+  leadingMidSection,
+}: {
+  items: NavItem[]
+  baseUrl: string
+  pathname: string
+  isItemActive: (url: string) => boolean
+  setOpenMobile: (open: boolean) => void
+  linkSearch?: { branch?: string }
+  leadingMidSection?: ReactNode
+}) {
+  return (
+    <>
+      {leadingMidSection ? (
+        <>
+          <SidebarSeparator className="my-2" />
+          <SidebarMenuItem className="mb-2">{leadingMidSection}</SidebarMenuItem>
+        </>
+      ) : null}
+
+      {items.map((item, index) => {
+        if (item.type === 'separator') {
+          return <SidebarSeparator key={index} className="my-2" />
+        }
+
+        const active = isItemActive(item.url)
+        const Icon = item.icon
+        return (
+          <Collapsible key={item.title} asChild defaultOpen={active} className="my-1">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={active}
+                onClick={() => {
+                  setOpenMobile(false)
+                }}
+              >
+                <Link to={`${baseUrl}${item.url}`} search={linkSearch}>
+                  <Icon />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+              {item.items?.length ? (
+                <>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuAction className="data-[state=open]:rotate-90">
+                      <ChevronRight />
+                      <span className="sr-only">Toggle</span>
+                    </SidebarMenuAction>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub className="mt-1">
+                      {item.items.map((subItem) => {
+                        const url = `${item.url}${subItem.url}`
+                        const subActive = pathname.endsWith(url)
+                        return (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={subActive}
+                              onClick={() => {
+                                setOpenMobile(false)
+                              }}
+                            >
+                              <Link to={`${baseUrl}${url}`} search={linkSearch}>
+                                <span>{subItem.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        )
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </>
+              ) : null}
+            </SidebarMenuItem>
+          </Collapsible>
+        )
+      })}
+    </>
   )
 }

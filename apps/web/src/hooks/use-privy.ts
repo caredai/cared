@@ -9,7 +9,7 @@ export function usePrivyJwtAuth() {
   const { user } = useSessionPublic()
   const isAuthenticated = !!user
 
-  const { ready, authenticated } = usePrivy()
+  const { ready: _ready, authenticated: _authenticated } = usePrivy()
 
   useSubscribeToJwtAuthWithFlag({
     // enabled: ready && !authenticated,

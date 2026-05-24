@@ -1,8 +1,6 @@
-'use client'
-
 import { Link } from '@tanstack/react-router'
+import { ArrowRight, Code, Link2, Rocket, UserPlus } from 'lucide-react'
 import { motion } from 'motion/react'
-import { UserPlus, Link2, Code, Rocket, ArrowRight } from 'lucide-react'
 
 import { Button } from '@cared/ui/components/button'
 
@@ -71,9 +69,7 @@ export function LandingHowItWorks() {
               <h3 className="mt-1 font-mono text-lg font-semibold tracking-tight text-foreground">
                 {item.title}
               </h3>
-              <p className="mt-2 font-sans text-sm text-muted-foreground">
-                {item.description}
-              </p>
+              <p className="mt-2 font-sans text-sm text-muted-foreground">{item.description}</p>
             </motion.div>
           ))}
         </div>

@@ -74,9 +74,9 @@ export function getReasoningOptions(
         }
       }
       return effort
-        ? ({
+        ? {
             reasoningEffort: effort,
-          } as Record<string, JSONValue>)
+          }
         : undefined
     }
     case 'anthropic': {

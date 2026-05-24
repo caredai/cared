@@ -2,8 +2,9 @@ import { useCallback } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
-import { orpc } from '@/lib/orpc'
 import type { RouterOutputs } from '@cared/api'
+
+import { orpc } from '@/lib/orpc'
 
 export type McpServer = RouterOutputs['account']['mcp']['list']['mcpServers'][number]
 
@@ -143,4 +144,3 @@ export function useDeleteMcpServer() {
     [],
   )
 }
-

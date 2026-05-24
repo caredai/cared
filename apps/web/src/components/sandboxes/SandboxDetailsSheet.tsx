@@ -3,16 +3,10 @@ import { Archive, Play, Trash2, Wrench, X } from 'lucide-react'
 
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@cared/ui/components/sheet'
-
-import { CopyButton } from '@/components/copy-button'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@cared/ui/components/sheet'
 
 import type { SandboxItem } from '@/hooks/use-sandbox'
+import { CopyButton } from '@/components/copy-button'
 
 function stateLabel(state: string | undefined) {
   if (!state) return 'unknown'
@@ -92,33 +86,18 @@ export function SandboxDetailsSheet({
           <SheetTitle className="text-2xl font-medium">Sandbox Details</SheetTitle>
           <div className="flex gap-2 items-center">
             {state === 'started' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onStop(id)}
-                disabled={loading}
-              >
+              <Button variant="outline" size="sm" onClick={() => onStop(id)} disabled={loading}>
                 Stop
               </Button>
             )}
             {(state === 'stopped' || state === 'archived') && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onStart(id)}
-                disabled={loading}
-              >
+              <Button variant="outline" size="sm" onClick={() => onStart(id)} disabled={loading}>
                 <Play className="w-4 h-4 mr-1" />
                 Start
               </Button>
             )}
             {(state === 'error' || state === 'build_failed') && sandbox.recoverable && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onRecover(id)}
-                disabled={loading}
-              >
+              <Button variant="outline" size="sm" onClick={() => onRecover(id)} disabled={loading}>
                 <Wrench className="w-4 h-4 mr-1" />
                 Recover
               </Button>
@@ -212,9 +191,7 @@ export function SandboxDetailsSheet({
             <div>
               <h3 className="text-sm text-muted-foreground">Created at</h3>
               <p className="mt-1 text-sm font-medium">
-                {sandbox.createdAt
-                  ? format(new Date(sandbox.createdAt), 'PPp')
-                  : '—'}
+                {sandbox.createdAt ? format(new Date(sandbox.createdAt), 'PPp') : '—'}
               </p>
             </div>
           </div>

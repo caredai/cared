@@ -9,9 +9,9 @@ import type {
   CustomerUsageObject,
   EventObject,
   InvoiceObject,
-  PaginationMeta,
   PlanObject,
   SubscriptionObject,
+  SubscriptionsPaginated,
   WalletObject,
   WalletTransactionObject,
 } from 'lago-javascript-client'
@@ -93,7 +93,7 @@ export class LagoService {
 
   async generateCustomerCheckoutUrl(accountId: string) {
     const checkoutUrl = (await this.client.customers.generateCustomerCheckoutUrl(accountId)).data
-      .customer?.checkout_url
+      .customer.checkout_url
     if (!checkoutUrl) {
       throw new ORPCError('INTERNAL_SERVER_ERROR', {
         message: `Generate custom checkout url failed`,
@@ -320,16 +320,13 @@ export class LagoService {
     const result: SubscriptionObject[] = []
     let page: number | undefined = 1
     while (true) {
-      const { subscriptions, meta } = (
+      const { subscriptions, meta }: SubscriptionsPaginated = (
         await this.client.subscriptions.findAllSubscriptions({
           external_customer_id: accountId,
           'status[]': ['active', 'pending'],
           page,
         })
-      ).data as {
-        subscriptions: SubscriptionObject[]
-        meta: PaginationMeta
-      }
+      ).data
       result.push(...subscriptions)
       page = meta.next_page ?? undefined
       if (!page) {

@@ -125,12 +125,12 @@ export function ObservationPreview({
 
             {observation.type === 'GENERATION' && (
               <>
-                {observation.costDetails?.total && (
+                {observation.costDetails.total && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <span>Cost: ${observation.costDetails.total.toFixed(6)}</span>
                   </Badge>
                 )}
-                {typeof observation.usageDetails?.total === 'number' && (
+                {typeof observation.usageDetails.total === 'number' && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <span>
                       {formatTokenUsage(

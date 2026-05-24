@@ -1,5 +1,3 @@
-'use client'
-
 import { SiDiscord, SiGithub, SiX } from '@icons-pack/react-simple-icons'
 import { Link } from '@tanstack/react-router'
 
@@ -86,9 +84,7 @@ export function LandingFooter() {
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           <div className="sm:col-span-2 lg:col-span-1">
-            <p className="font-mono text-sm font-semibold tracking-tight text-foreground">
-              Cared
-            </p>
+            <p className="font-mono text-sm font-semibold tracking-tight text-foreground">Cared</p>
             <p className="mt-2 font-sans text-xs text-muted-foreground">
               Use, build, deploy, and run agents with one platform.
             </p>

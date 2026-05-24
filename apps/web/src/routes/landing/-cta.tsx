@@ -1,8 +1,6 @@
-'use client'
-
 import { Link } from '@tanstack/react-router'
-import { motion } from 'motion/react'
 import { ArrowRight } from 'lucide-react'
+import { motion } from 'motion/react'
 
 import { Button } from '@cared/ui/components/button'
 
@@ -26,8 +24,7 @@ export function LandingCta() {
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.4, delay: 0.05 }}
         >
-          Pay-as-you-go and subscription. No lock-in. One account for the full
-          stack.
+          Pay-as-you-go and subscription. No lock-in. One account for the full stack.
         </motion.p>
         <motion.div
           className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row"

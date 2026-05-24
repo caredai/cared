@@ -1,5 +1,3 @@
-'use client'
-
 import { useMemo, useState } from 'react'
 import { Download, MoreHorizontal, Pencil, Plus, Trash2Icon } from 'lucide-react'
 

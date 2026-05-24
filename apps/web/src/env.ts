@@ -28,6 +28,8 @@ export const env = createEnv({
     VITE_STRIPE_PRICING_TABLE_ID: z.string().min(1).optional(),
     VITE_STRIPE_CREDITS_PRICE_ID: z.string().min(1).optional(),
     VITE_HELIO_CREDITS_PAYLINK_ID: z.string().min(1).optional(),
+    /** Host suffix for drizzgw iframes, e.g. drizzgw.cared.dev */
+    VITE_DRIZZGW_DOMAIN_SUFFIX: z.string().min(1).optional(),
   },
 
   runtimeEnv: runtimeEnv(),

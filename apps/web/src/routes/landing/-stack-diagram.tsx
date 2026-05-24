@@ -1,5 +1,3 @@
-'use client'
-
 import { motion } from 'motion/react'
 
 /**
@@ -131,17 +129,7 @@ function StackDiagramSvg() {
   )
 }
 
-function Line({
-  x1,
-  y1,
-  x2,
-  y2,
-}: {
-  x1: number
-  y1: number
-  x2: number
-  y2: number
-}) {
+function Line({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
   return (
     <line
       x1={x1}
@@ -156,17 +144,7 @@ function Line({
   )
 }
 
-function Node({
-  x,
-  y,
-  label,
-  small,
-}: {
-  x: number
-  y: number
-  label: string
-  small?: boolean
-}) {
+function Node({ x, y, label, small }: { x: number; y: number; label: string; small?: boolean }) {
   const w = small ? 52 : 64
   const h = small ? 22 : 28
   const rx = 6

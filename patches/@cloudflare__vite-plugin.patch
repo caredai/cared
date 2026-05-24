@@ -1,8 +1,8 @@
 diff --git a/dist/index.mjs b/dist/index.mjs
-index 8536368f30c5d01bf7e82ae5692dbba287a6a59a..29b26ef353f08a7c4c537ab3479a1c9f8243ba43 100644
+index c4c3182bf11a6ed6d19e18dba935258ba4cc7402..ca04586bd12cafe83cf096e01fac7769b24a41a6 100644
 --- a/dist/index.mjs
 +++ b/dist/index.mjs
-@@ -14543,7 +14543,7 @@ function resolvePluginConfig(pluginConfig, userConfig, viteEnv) {
+@@ -41524,7 +41524,7 @@ function resolvePluginConfig(pluginConfig, userConfig, viteEnv) {
  		experimental: { headersAndRedirectsDevModeSupport: pluginConfig.experimental?.headersAndRedirectsDevModeSupport }
  	};
  	const root = userConfig.root ? nodePath.resolve(userConfig.root) : process.cwd();

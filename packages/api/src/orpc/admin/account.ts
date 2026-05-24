@@ -3,8 +3,8 @@ import { z } from 'zod/v4'
 
 import type { SQL } from '@cared/db'
 import { and, asc, desc, eq, gt, lt } from '@cared/db'
-import { Account, Member, User } from '@cared/db/schema'
 import { db } from '@cared/db/client'
+import { Account, Member, User } from '@cared/db/schema'
 
 import { adminProcedure } from '../../orpc'
 
@@ -188,4 +188,3 @@ export const accountRouter = {
       }
     }),
 }
-
