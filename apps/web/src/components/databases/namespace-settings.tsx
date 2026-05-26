@@ -23,8 +23,23 @@ import {
   CardHeader,
   CardTitle,
 } from '@cared/ui/components/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@cared/ui/components/dialog'
 import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@cared/ui/components/select'
 import { Slider } from '@cared/ui/components/slider'
 import { cn } from '@cared/ui/lib/utils'
 
@@ -60,6 +75,22 @@ const HISTORY_RETENTION_PRESETS = [
   { label: '6h', seconds: 21_600 },
 ] as const
 
+const COMPUTE_SIZE_OPTIONS = [
+  { value: '0.25:1', label: '.25 ↔ 1 CU', min: 0.25, max: 1 },
+  { value: '0.25:2', label: '.25 ↔ 2 CU', min: 0.25, max: 2 },
+  { value: '1:4', label: '1 ↔ 4 CU', min: 1, max: 4 },
+  { value: '2:8', label: '2 ↔ 8 CU', min: 2, max: 8 },
+  { value: '4:16', label: '4 ↔ 16 CU', min: 4, max: 16 },
+] as const
+
+const SUSPEND_TIMEOUT_OPTIONS = [
+  { value: '60', label: '1 minute', seconds: 60 },
+  { value: '300', label: '5 minutes', seconds: 300 },
+  { value: '900', label: '15 minutes', seconds: 900 },
+  { value: '3600', label: '1 hour', seconds: 3600 },
+  { value: '-1', label: 'Never suspend', seconds: -1 },
+] as const
+
 function historyPresetIndex(seconds: number): number {
   let best = 0
   let bestDiff = Math.abs(seconds - HISTORY_RETENTION_PRESETS[0].seconds)
@@ -71,6 +102,27 @@ function historyPresetIndex(seconds: number): number {
     }
   }
   return best
+}
+
+function computeSizeValue(minCu: number, maxCu: number): string {
+  return COMPUTE_SIZE_OPTIONS.find((o) => o.min === minCu && o.max === maxCu)?.value ?? '0.25:2'
+}
+
+function suspendTimeoutValue(seconds: number | undefined): string {
+  const normalized = seconds === 0 || seconds === undefined ? 300 : seconds
+  return SUSPEND_TIMEOUT_OPTIONS.find((o) => o.seconds === normalized)?.value ?? '300'
+}
+
+function parseComputeSize(value: string) {
+  const option = COMPUTE_SIZE_OPTIONS.find((o) => o.value === value) ?? COMPUTE_SIZE_OPTIONS[1]
+  return {
+    autoscalingLimitMinCu: option.min,
+    autoscalingLimitMaxCu: option.max,
+  }
+}
+
+function parseSuspendTimeout(value: string): number {
+  return SUSPEND_TIMEOUT_OPTIONS.find((o) => o.value === value)?.seconds ?? 300
 }
 
 interface NamespaceSettingsProps {
@@ -132,6 +184,102 @@ function SettingsSection({
   )
 }
 
+function ComputeDefaultsDialog({
+  open,
+  onOpenChange,
+  minCu,
+  maxCu,
+  suspendSeconds,
+  isUpdating,
+  onSave,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  minCu: number
+  maxCu: number
+  suspendSeconds: number | undefined
+  isUpdating: boolean
+  onSave: (settings: {
+    autoscalingLimitMinCu: number
+    autoscalingLimitMaxCu: number
+    suspendTimeoutSeconds: number
+  }) => Promise<void>
+}) {
+  const [size, setSize] = useState(() => computeSizeValue(minCu, maxCu))
+  const [suspendTimeout, setSuspendTimeout] = useState(() => suspendTimeoutValue(suspendSeconds))
+
+  useEffect(() => {
+    if (!open) return
+    setSize(computeSizeValue(minCu, maxCu))
+    setSuspendTimeout(suspendTimeoutValue(suspendSeconds))
+  }, [maxCu, minCu, open, suspendSeconds])
+
+  const originalSize = computeSizeValue(minCu, maxCu)
+  const originalSuspendTimeout = suspendTimeoutValue(suspendSeconds)
+  const changed = size !== originalSize || suspendTimeout !== originalSuspendTimeout
+
+  const handleSave = async () => {
+    await onSave({
+      ...parseComputeSize(size),
+      suspendTimeoutSeconds: parseSuspendTimeout(suspendTimeout),
+    })
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Modify compute defaults</DialogTitle>
+          <DialogDescription>
+            New computes start with these autoscaling and scale-to-zero settings.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Compute size</Label>
+            <Select value={size} onValueChange={setSize}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMPUTE_SIZE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Scale to zero</Label>
+            <Select value={suspendTimeout} onValueChange={setSuspendTimeout}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SUSPEND_TIMEOUT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleSave()} disabled={!changed || isUpdating}>
+            {isUpdating ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceSettingsProps) {
   const router = useRouter()
   const namespace = useDatabaseNamespace(namespaceId)
@@ -145,6 +293,7 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
   )
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [replicationOpen, setReplicationOpen] = useState(false)
+  const [computeOpen, setComputeOpen] = useState(false)
 
   const defaultEndpoint = namespace.defaultEndpointSettings
   const minCu = defaultEndpoint?.autoscalingLimitMinCu ?? 0.25
@@ -179,6 +328,14 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
       settings: { enableLogicalReplication: true },
     })
     setReplicationOpen(false)
+  }
+
+  const handleSaveComputeDefaults = async (settings: {
+    autoscalingLimitMinCu: number
+    autoscalingLimitMaxCu: number
+    suspendTimeoutSeconds: number
+  }) => {
+    await updateDatabaseNamespace({ settings })
   }
 
   const handleDeleteNamespace = async () => {
@@ -254,7 +411,12 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
                   Upgrade to control compute size and scale-to-zero settings.
                 </p>
               )}
-              <Button variant="outline" size="sm" disabled>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={namespace.isLowCost}
+                onClick={() => setComputeOpen(true)}
+              >
                 Modify defaults
               </Button>
             </div>
@@ -445,6 +607,16 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ComputeDefaultsDialog
+        open={computeOpen}
+        onOpenChange={setComputeOpen}
+        minCu={minCu}
+        maxCu={maxCu}
+        suspendSeconds={suspendSeconds}
+        isUpdating={isUpdating}
+        onSave={handleSaveComputeDefaults}
+      />
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>

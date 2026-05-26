@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 
 import type { RouterInputs, RouterOutputs } from '@cared/api'
@@ -237,6 +237,117 @@ export function useDatabaseBranchConnectionUris(namespaceId: string, branchId: s
   return connectionUris
 }
 
+export function useDatabaseBranchDataApis(namespaceId: string, branchId: string) {
+  const {
+    data: { dataApis },
+  } = useSuspenseQuery(
+    orpc.account.database.listBranchDataApis.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+  )
+
+  return dataApis
+}
+
+export function useDatabaseBranchDataApi(
+  namespaceId: string,
+  branchId: string,
+  databaseName: string,
+) {
+  const { data } = useSuspenseQuery(
+    orpc.account.database.getBranchDataApi.queryOptions({
+      input: { namespaceId, branchId, databaseName },
+    }),
+  )
+
+  return data.dataApi
+}
+
+export function useDatabaseBranchNeonAuth(namespaceId: string, branchId: string) {
+  const { data } = useSuspenseQuery(
+    orpc.account.database.getBranchNeonAuth.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+  )
+
+  return data.neonAuth
+}
+
+export function useDatabaseBranchTablesWithoutRls(
+  namespaceId: string,
+  branchId: string,
+  databaseName: string,
+  enabled: boolean,
+) {
+  const { data } = useQuery({
+    ...orpc.account.database.executeBranchSql.queryOptions({
+      input: {
+        namespaceId,
+        branchId,
+        databaseName,
+        query: `
+          SELECT n.nspname AS schema_name, c.relname AS table_name
+          FROM pg_class c
+          JOIN pg_namespace n ON n.oid = c.relnamespace
+          WHERE c.relkind = 'r'
+            AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+            AND NOT c.relrowsecurity
+          ORDER BY 1, 2
+        `,
+      },
+    }),
+    enabled: enabled && Boolean(databaseName),
+  })
+
+  return data?.rows ?? []
+}
+
+export function useDatabaseJwks(namespaceId: string, branchId?: string) {
+  const {
+    data: { jwks },
+  } = useSuspenseQuery(
+    orpc.account.database.listJwks.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+  )
+
+  return jwks
+}
+
+/**
+ * Connection dialog data for a branch. Uses non-suspense queries so the dialog can
+ * render while branch, database, and role selectors are still settling.
+ */
+export function useDatabaseBranchConnectData(namespaceId: string, branchId: string) {
+  const { data: dbsData } = useQuery({
+    ...orpc.account.database.listDatabases.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+    enabled: Boolean(branchId),
+  })
+
+  const { data: rolesData } = useQuery({
+    ...orpc.account.database.listRoles.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+    enabled: Boolean(branchId),
+  })
+
+  const { data: uriData, isLoading: isLoadingConnectionUris } = useQuery({
+    ...orpc.account.database.listConnectionUris.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+    enabled: Boolean(branchId),
+  })
+
+  return {
+    databases: useMemo(() => dbsData?.databases ?? [], [dbsData?.databases]),
+    roles: useMemo(() => rolesData?.roles ?? [], [rolesData?.roles]),
+    connectionUris: useMemo(() => uriData?.connectionUris ?? [], [uriData?.connectionUris]),
+    isLoadingConnectionUris,
+  }
+}
+
 /**
  * Update a branch (name, protected flag).
  */
@@ -267,6 +378,42 @@ export function useUpdateDatabaseBranch(namespaceId: string) {
   return {
     updateDatabaseBranch,
     isUpdating: updateMutation.isPending,
+  }
+}
+
+/**
+ * Set a branch as the namespace default branch.
+ */
+export function useSetDefaultDatabaseBranch(namespaceId: string) {
+  const queryClient = useQueryClient()
+
+  const setDefaultMutation = useMutation(
+    orpc.account.database.setDefaultBranch.mutationOptions({
+      onSuccess: (_data, variables) => {
+        invalidateBranchQueries(queryClient, namespaceId, variables.branchId)
+        void queryClient.invalidateQueries({
+          queryKey: orpc.account.database.listBranches.key(),
+        })
+        toast.success('Default branch updated')
+      },
+      onError: (error) => {
+        console.error('Failed to set default branch:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to set default branch')
+      },
+    }),
+  )
+
+  const setDefaultDatabaseBranch = useCallback(
+    async (branchId: string) => {
+      return await setDefaultMutation.mutateAsync({ namespaceId, branchId })
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [namespaceId],
+  )
+
+  return {
+    setDefaultDatabaseBranch,
+    isSettingDefault: setDefaultMutation.isPending,
   }
 }
 
@@ -571,6 +718,201 @@ export function useDeleteDatabaseBranchDatabase(namespaceId: string, branchId: s
     deleteDatabaseBranchDatabase: (databaseName: string) =>
       deleteMutation.mutateAsync({ namespaceId, branchId, databaseName }),
     isDeleting: deleteMutation.isPending,
+  }
+}
+
+export function useDatabaseBranchMaskingRules(namespaceId: string, branchId: string) {
+  return useQuery({
+    ...orpc.account.database.getMaskingRules.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+    retry: false,
+  })
+}
+
+export function useDatabaseBranchAnonymizedStatus(namespaceId: string, branchId: string) {
+  return useQuery({
+    ...orpc.account.database.getAnonymizedBranchStatus.queryOptions({
+      input: { namespaceId, branchId },
+    }),
+    retry: false,
+  })
+}
+
+export function useDatabaseBranchMaskingActions(namespaceId: string, branchId: string) {
+  const queryClient = useQueryClient()
+
+  const invalidateMaskingQueries = () => {
+    void queryClient.invalidateQueries({
+      queryKey: orpc.account.database.getMaskingRules.queryOptions({
+        input: { namespaceId, branchId },
+      }).queryKey,
+    })
+    void queryClient.invalidateQueries({
+      queryKey: orpc.account.database.getAnonymizedBranchStatus.queryOptions({
+        input: { namespaceId, branchId },
+      }).queryKey,
+    })
+  }
+
+  const updateMutation = useMutation(
+    orpc.account.database.updateMaskingRules.mutationOptions({
+      onSuccess: () => {
+        invalidateMaskingQueries()
+        toast.success('Masking rules saved')
+      },
+      onError: (error) => {
+        console.error('Failed to save masking rules:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to save masking rules')
+      },
+    }),
+  )
+
+  const startMutation = useMutation(
+    orpc.account.database.startAnonymization.mutationOptions({
+      onSuccess: () => {
+        invalidateMaskingQueries()
+        toast.success('Anonymization started')
+      },
+      onError: (error) => {
+        console.error('Failed to start anonymization:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to start anonymization')
+      },
+    }),
+  )
+
+  return {
+    updateMaskingRules: (
+      maskingRules: RouterInputs['account']['database']['updateMaskingRules']['maskingRules'],
+    ) => updateMutation.mutateAsync({ namespaceId, branchId, maskingRules }),
+    startAnonymization: () => startMutation.mutateAsync({ namespaceId, branchId }),
+    isPending: updateMutation.isPending || startMutation.isPending,
+  }
+}
+
+export function useDatabaseBranchDataApiActions(namespaceId: string, branchId: string) {
+  const queryClient = useQueryClient()
+
+  const invalidateDataApis = (databaseName?: string) => {
+    void queryClient.invalidateQueries({
+      queryKey: orpc.account.database.listBranchDataApis.queryOptions({
+        input: { namespaceId, branchId },
+      }).queryKey,
+    })
+
+    if (databaseName) {
+      void queryClient.invalidateQueries({
+        queryKey: orpc.account.database.getBranchDataApi.queryOptions({
+          input: { namespaceId, branchId, databaseName },
+        }).queryKey,
+      })
+      void queryClient.invalidateQueries({
+        queryKey: orpc.account.database.executeBranchSql.key(),
+      })
+    }
+  }
+
+  const createMutation = useMutation(
+    orpc.account.database.createBranchDataApi.mutationOptions({
+      onSuccess: (_data, variables) => {
+        invalidateDataApis(variables.databaseName)
+        toast.success('Data API enabled')
+      },
+      onError: (error) => {
+        console.error('Failed to enable Data API:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to enable Data API')
+      },
+    }),
+  )
+
+  const updateMutation = useMutation(
+    orpc.account.database.updateBranchDataApi.mutationOptions({
+      onSuccess: (_data, variables) => {
+        invalidateDataApis(variables.databaseName)
+        toast.success('Data API settings saved')
+      },
+      onError: (error) => {
+        console.error('Failed to update Data API:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to update Data API')
+      },
+    }),
+  )
+
+  const deleteMutation = useMutation(
+    orpc.account.database.deleteBranchDataApi.mutationOptions({
+      onSuccess: (_data, variables) => {
+        invalidateDataApis(variables.databaseName)
+        toast.success('Data API disabled')
+      },
+      onError: (error) => {
+        console.error('Failed to disable Data API:', error)
+        toast.error(error instanceof Error ? error.message : 'Failed to disable Data API')
+      },
+    }),
+  )
+
+  return {
+    createDataApi: (databaseName: string) =>
+      createMutation.mutateAsync({ namespaceId, branchId, databaseName }),
+    updateDataApi: (
+      databaseName: string,
+      settings: RouterInputs['account']['database']['updateBranchDataApi']['settings'],
+    ) => updateMutation.mutateAsync({ namespaceId, branchId, databaseName, settings }),
+    refreshSchemaCache: (
+      databaseName: string,
+      settings: RouterInputs['account']['database']['updateBranchDataApi']['settings'],
+    ) => updateMutation.mutateAsync({ namespaceId, branchId, databaseName, settings }),
+    deleteDataApi: (databaseName: string) =>
+      deleteMutation.mutateAsync({ namespaceId, branchId, databaseName }),
+    isPending:
+      createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+  }
+}
+
+export function useDatabaseJwksActions(namespaceId: string) {
+  const queryClient = useQueryClient()
+
+  const invalidateJwks = () => {
+    void queryClient.invalidateQueries({
+      queryKey: orpc.account.database.listJwks.key(),
+    })
+  }
+
+  const addMutation = useMutation(
+    orpc.account.database.addJwks.mutationOptions({
+      onSuccess: () => {
+        invalidateJwks()
+        toast.success('Authentication provider added')
+      },
+      onError: (error) => {
+        console.error('Failed to add authentication provider:', error)
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to add authentication provider',
+        )
+      },
+    }),
+  )
+
+  const deleteMutation = useMutation(
+    orpc.account.database.deleteJwks.mutationOptions({
+      onSuccess: () => {
+        invalidateJwks()
+        toast.success('Authentication provider deleted')
+      },
+      onError: (error) => {
+        console.error('Failed to delete authentication provider:', error)
+        toast.error(
+          error instanceof Error ? error.message : 'Failed to delete authentication provider',
+        )
+      },
+    }),
+  )
+
+  return {
+    addJwks: (input: Omit<RouterInputs['account']['database']['addJwks'], 'namespaceId'>) =>
+      addMutation.mutateAsync({ namespaceId, ...input }),
+    deleteJwks: (jwksId: string) => deleteMutation.mutateAsync({ namespaceId, jwksId }),
+    isPending: addMutation.isPending || deleteMutation.isPending,
   }
 }
 

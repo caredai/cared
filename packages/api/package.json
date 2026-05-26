@@ -67,6 +67,7 @@
     "@modelcontextprotocol/sdk": "^1.22.0",
     "@neo4j/cypher-builder": "^2.11.0",
     "@neondatabase/api-client": "^2.7.1",
+    "@neondatabase/serverless": "^1.0.2",
     "@opentelemetry/sdk-node": "^0.205.0",
     "@orpc/client": "^1.13.5",
     "@orpc/contract": "^1.13.5",

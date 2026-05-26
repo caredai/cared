@@ -12,13 +12,21 @@ export const Route = createFileRoute(
 
 function DatabaseDataApiPage() {
   const { namespaceId } = Route.useRouteContext()
+  const { accountIdNoPrefix, namespaceIdNoPrefix } = Route.useParams()
   const { branch: branchId } = Route.useSearch()
 
   if (!branchId) {
     return (
-      <PlaceholderPage title="Data API" description="Select a branch to view connection URIs." />
+      <PlaceholderPage title="Data API" description="Select a branch to manage the Data API." />
     )
   }
 
-  return <BranchDataApi namespaceId={namespaceId} branchId={branchId} />
+  return (
+    <BranchDataApi
+      namespaceId={namespaceId}
+      branchId={branchId}
+      accountIdNoPrefix={accountIdNoPrefix}
+      namespaceIdNoPrefix={namespaceIdNoPrefix}
+    />
+  )
 }

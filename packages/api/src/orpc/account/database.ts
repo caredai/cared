@@ -495,6 +495,31 @@ export const databaseRouter = {
     }),
 
   /**
+   * Set a branch as the default branch.
+   * @returns Updated branch and Neon operations
+   */
+  setDefaultBranch: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/set-default',
+      tags: ['database'],
+      summary: 'Set branch as default',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.setDefaultBranch(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  /**
    * Delete a branch.
    * @returns Deletion result
    */
@@ -845,5 +870,306 @@ export const databaseRouter = {
         input.branchId,
         input.roleName,
       )
+    }),
+
+  getMaskingRules: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/masking-rules',
+      tags: ['database'],
+      summary: 'Get branch masking rules',
+    })
+    .input(z.object({ namespaceId: z.string(), branchId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.getMaskingRules(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  updateMaskingRules: protectedProcedure
+    .route({
+      method: 'PUT',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/masking-rules',
+      tags: ['database'],
+      summary: 'Update branch masking rules',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+        maskingRules: z.array(
+          z
+            .object({
+              databaseName: z.string().min(1),
+              schemaName: z.string().min(1),
+              tableName: z.string().min(1),
+              columnName: z.string().min(1),
+              maskingFunction: z.string().min(1).optional(),
+              maskingValue: z.string().min(1).optional(),
+            })
+            .refine((rule) => rule.maskingFunction || rule.maskingValue, {
+              message: 'Provide either a masking function or masking value',
+            }),
+        ),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.updateMaskingRules(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+        input.maskingRules,
+      )
+    }),
+
+  getAnonymizedBranchStatus: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/anonymized-status',
+      tags: ['database'],
+      summary: 'Get anonymized branch status',
+    })
+    .input(z.object({ namespaceId: z.string(), branchId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.getAnonymizedBranchStatus(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  startAnonymization: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/anonymize',
+      tags: ['database'],
+      summary: 'Start branch anonymization',
+    })
+    .input(z.object({ namespaceId: z.string(), branchId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.startAnonymization(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  listBranchDataApis: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/data-apis',
+      tags: ['database'],
+      summary: 'List branch Data APIs',
+    })
+    .input(z.object({ namespaceId: z.string(), branchId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.listBranchDataApis(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  getBranchDataApi: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/data-apis/{databaseName}',
+      tags: ['database'],
+      summary: 'Get branch Data API',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+        databaseName: z.string().min(1),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.getBranchDataApi(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+        input.databaseName,
+      )
+    }),
+
+  updateBranchDataApi: protectedProcedure
+    .route({
+      method: 'PATCH',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/data-apis/{databaseName}',
+      tags: ['database'],
+      summary: 'Update branch Data API settings',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+        databaseName: z.string().min(1),
+        settings: z.object({
+          dbSchemas: z.array(z.string().min(1)).optional(),
+          dbAnonRole: z.string().min(1).optional(),
+          dbMaxRows: z.number().int().positive().optional(),
+          serverCorsAllowedOrigins: z.string().optional(),
+          openapiMode: z.string().optional(),
+          serverTimingEnabled: z.boolean().optional(),
+        }),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.updateBranchDataApi(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+        input.databaseName,
+        input.settings,
+      )
+    }),
+
+  getBranchNeonAuth: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/neon-auth',
+      tags: ['database'],
+      summary: 'Get Neon Auth status for a branch',
+    })
+    .input(z.object({ namespaceId: z.string(), branchId: z.string() }))
+    .handler(async ({ context, input }) => {
+      return await neonService.getBranchNeonAuth(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+      )
+    }),
+
+  executeBranchSql: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/sql',
+      tags: ['database'],
+      summary: 'Execute read-only SQL on a branch database',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+        databaseName: z.string().min(1),
+        query: z.string().min(1).max(10_000),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.executeBranchSql(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+        input.databaseName,
+        input.query,
+      )
+    }),
+
+  createBranchDataApi: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/data-apis/{databaseName}',
+      tags: ['database'],
+      summary: 'Create branch Data API',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+        databaseName: z.string().min(1),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.createBranchDataApi(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+        input.databaseName,
+      )
+    }),
+
+  deleteBranchDataApi: protectedProcedure
+    .route({
+      method: 'DELETE',
+      path: '/database-namespaces/{namespaceId}/branches/{branchId}/data-apis/{databaseName}',
+      tags: ['database'],
+      summary: 'Delete branch Data API',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string(),
+        databaseName: z.string().min(1),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.deleteBranchDataApi(
+        context.auth.accountId,
+        input.namespaceId,
+        input.branchId,
+        input.databaseName,
+      )
+    }),
+
+  listJwks: protectedProcedure
+    .route({
+      method: 'GET',
+      path: '/database-namespaces/{namespaceId}/jwks',
+      tags: ['database'],
+      summary: 'List JWT authentication providers',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        branchId: z.string().optional(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.listJwks(context.auth.accountId, input.namespaceId, input.branchId)
+    }),
+
+  addJwks: protectedProcedure
+    .route({
+      method: 'POST',
+      path: '/database-namespaces/{namespaceId}/jwks',
+      tags: ['database'],
+      summary: 'Add JWT authentication provider',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        providerName: z.string().min(1),
+        jwksUrl: z.url(),
+        branchId: z.string().optional(),
+        jwtAudience: z.string().min(1).optional(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.addJwks(context.auth.accountId, input.namespaceId, {
+        providerName: input.providerName,
+        jwksUrl: input.jwksUrl,
+        branchId: input.branchId,
+        jwtAudience: input.jwtAudience,
+      })
+    }),
+
+  deleteJwks: protectedProcedure
+    .route({
+      method: 'DELETE',
+      path: '/database-namespaces/{namespaceId}/jwks/{jwksId}',
+      tags: ['database'],
+      summary: 'Delete JWT authentication provider',
+    })
+    .input(
+      z.object({
+        namespaceId: z.string(),
+        jwksId: z.string(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      return await neonService.deleteJwks(context.auth.accountId, input.namespaceId, input.jwksId)
     }),
 }

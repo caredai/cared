@@ -1,31 +1,35 @@
 import { useState } from 'react'
-import { KeyRound, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@cared/ui/components/alert-dialog'
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
 import { Card, CardContent } from '@cared/ui/components/card'
-import { Checkbox } from '@cared/ui/components/checkbox'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@cared/ui/components/dialog'
 import { Input } from '@cared/ui/components/input'
 import { Label } from '@cared/ui/components/label'
+import { cn } from '@cared/ui/lib/utils'
 
 import { CopyButton } from '@/components/copy-button'
 import { SectionTitle } from '@/components/section'
-import {
-  useCreateDatabaseBranchDatabase,
-  useCreateDatabaseBranchRole,
-  useDatabaseBranchDatabases,
-  useDatabaseBranchRoleAction,
-  useDatabaseBranchRoles,
-  useDeleteDatabaseBranchDatabase,
-} from '@/hooks/use-database'
+import { useDatabaseJwks, useDatabaseJwksActions } from '@/hooks/use-database'
 import { RelativeTime } from './database-format'
 
 interface BranchAuthProps {
@@ -34,235 +38,170 @@ interface BranchAuthProps {
 }
 
 export function BranchAuth({ namespaceId, branchId }: BranchAuthProps) {
-  const roles = useDatabaseBranchRoles(namespaceId, branchId)
-  const databases = useDatabaseBranchDatabases(namespaceId, branchId)
-  const { createDatabaseBranchRole, isCreating: isCreatingRole } = useCreateDatabaseBranchRole(
-    namespaceId,
-    branchId,
-  )
-  const {
-    getRolePassword,
-    resetRolePassword,
-    deleteRole,
-    isPending: isRoleActionPending,
-  } = useDatabaseBranchRoleAction(namespaceId, branchId)
-  const { createDatabaseBranchDatabase, isCreating: isCreatingDatabase } =
-    useCreateDatabaseBranchDatabase(namespaceId, branchId)
-  const { deleteDatabaseBranchDatabase, isDeleting: isDeletingDatabase } =
-    useDeleteDatabaseBranchDatabase(namespaceId, branchId)
+  const jwks = useDatabaseJwks(namespaceId, branchId)
+  const { addJwks, deleteJwks, isPending } = useDatabaseJwksActions(namespaceId)
 
-  const [roleOpen, setRoleOpen] = useState(false)
-  const [databaseOpen, setDatabaseOpen] = useState(false)
-  const [roleName, setRoleName] = useState('')
-  const [noLogin, setNoLogin] = useState(false)
-  const [databaseName, setDatabaseName] = useState('')
-  const [databaseOwner, setDatabaseOwner] = useState('')
-  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, string>>({})
+  const [open, setOpen] = useState(false)
+  const [providerName, setProviderName] = useState('')
+  const [jwksUrl, setJwksUrl] = useState('')
+  const [jwtAudience, setJwtAudience] = useState('')
+  const [jwksToDelete, setJwksToDelete] = useState<string | null>(null)
 
-  const handleCreateRole = async () => {
-    const name = roleName.trim()
-    if (!name) {
-      toast.error('Role name is required')
+  const handleAdd = async () => {
+    const provider = providerName.trim()
+    const url = jwksUrl.trim()
+    if (!provider) {
+      toast.error('Provider name is required')
       return
     }
-    await createDatabaseBranchRole({ name, noLogin })
-    setRoleName('')
-    setNoLogin(false)
-    setRoleOpen(false)
-  }
-
-  const handleCreateDatabase = async () => {
-    const name = databaseName.trim()
-    if (!name) {
-      toast.error('Database name is required')
+    if (!url) {
+      toast.error('JWKS URL is required')
       return
     }
-    await createDatabaseBranchDatabase({
-      name,
-      ownerName: databaseOwner.trim() || undefined,
+
+    await addJwks({
+      providerName: provider,
+      jwksUrl: url,
+      branchId,
+      jwtAudience: jwtAudience.trim() || undefined,
     })
-    setDatabaseName('')
-    setDatabaseOwner('')
-    setDatabaseOpen(false)
+    setProviderName('')
+    setJwksUrl('')
+    setJwtAudience('')
+    setOpen(false)
   }
 
-  const revealPassword = async (roleName: string) => {
-    const result = await getRolePassword(roleName)
-    setVisiblePasswords((current) => ({ ...current, [roleName]: result.password }))
-  }
-
-  const resetPassword = async (roleName: string) => {
-    const result = await resetRolePassword(roleName)
-    if (result.role.password) {
-      setVisiblePasswords((current) => ({ ...current, [roleName]: result.role.password! }))
-    }
+  const handleDelete = async () => {
+    if (!jwksToDelete) return
+    await deleteJwks(jwksToDelete)
+    setJwksToDelete(null)
   }
 
   return (
-    <div className="space-y-8">
-      <SectionTitle
-        title="Auth"
-        description="Manage Postgres roles and databases for this branch."
-      />
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <SectionTitle
+          title="Auth"
+          description="Configure JWT authentication providers for Neon Data API and protected database access."
+        />
+        <Button onClick={() => setOpen(true)}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Add provider
+        </Button>
+      </div>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="text-base font-semibold">Roles</h3>
-          <Button size="sm" onClick={() => setRoleOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            Add role
-          </Button>
-        </div>
-
-        <div className="space-y-2">
-          {roles.map((role) => (
-            <Card key={role.name}>
-              <CardContent className="flex flex-wrap items-center gap-4 p-4 text-sm">
-                <KeyRound className="h-4 w-4 text-muted-foreground" />
-                <div className="min-w-[120px] font-medium">{role.name}</div>
-                <Badge variant="outline">{role.authenticationMethod ?? 'password'}</Badge>
-                {role.protected && <Badge variant="secondary">Protected</Badge>}
-                <RelativeTime value={role.updatedAt} muted={false} />
-                {visiblePasswords[role.name] && (
-                  <div className="flex min-w-0 flex-1 items-center gap-1 rounded-md bg-muted px-2 py-1">
-                    <code className="truncate text-xs">{visiblePasswords[role.name]}</code>
-                    <CopyButton value={visiblePasswords[role.name] ?? ''} />
-                  </div>
-                )}
-                <div className="ml-auto flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isRoleActionPending || role.authenticationMethod === 'no_login'}
-                    onClick={() => void revealPassword(role.name)}
-                  >
-                    Show password
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    disabled={isRoleActionPending || role.authenticationMethod === 'no_login'}
-                    aria-label="Reset password"
-                    onClick={() => void resetPassword(role.name)}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    disabled={isRoleActionPending || role.protected}
-                    aria-label="Delete role"
-                    onClick={() => void deleteRole(role.name)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+      <div className="space-y-3">
+        {jwks.map((item) => (
+          <Card key={item.id}>
+            <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">{item.providerName}</span>
+                  <Badge variant="secondary">JWKS</Badge>
+                  {item.jwtAudience && <Badge variant="outline">{item.jwtAudience}</Badge>}
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+                <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
+                  <code className="min-w-0 flex-1 truncate text-xs">{item.jwksUrl}</code>
+                  <CopyButton value={item.jwksUrl} />
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <span>ID {item.id}</span>
+                  <span>
+                    Updated <RelativeTime value={item.updatedAt} className="inline" />
+                  </span>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={isPending}
+                aria-label="Delete provider"
+                onClick={() => setJwksToDelete(item.id)}
+              >
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="text-base font-semibold">Databases</h3>
-          <Button size="sm" onClick={() => setDatabaseOpen(true)}>
-            <Plus className="h-4 w-4 mr-1.5" />
-            Add database
-          </Button>
-        </div>
+        {jwks.length === 0 && (
+          <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+            No authentication providers configured for this branch.
+          </div>
+        )}
+      </div>
 
-        <div className="space-y-2">
-          {databases.map((database) => (
-            <Card key={database.name}>
-              <CardContent className="flex flex-wrap items-center gap-4 p-4 text-sm">
-                <div className="min-w-[120px] font-medium">{database.name}</div>
-                <span className="text-muted-foreground">Owner</span>
-                <span>{database.ownerName}</span>
-                <RelativeTime value={database.updatedAt} muted={false} />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="ml-auto"
-                  disabled={isDeletingDatabase}
-                  aria-label="Delete database"
-                  onClick={() => void deleteDatabaseBranchDatabase(database.name)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <Dialog open={roleOpen} onOpenChange={setRoleOpen}>
+      <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create role</DialogTitle>
+            <DialogTitle>Add authentication provider</DialogTitle>
+            <DialogDescription>
+              Add a JWKS URL that Neon can use to verify JWTs for this branch.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label htmlFor="role-name">Role name</Label>
+              <Label htmlFor="jwks-provider-name">Provider name</Label>
               <Input
-                id="role-name"
-                value={roleName}
-                onChange={(e) => setRoleName(e.target.value)}
+                id="jwks-provider-name"
+                value={providerName}
+                onChange={(e) => setProviderName(e.target.value)}
+                placeholder="Clerk"
               />
             </div>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={noLogin}
-                onCheckedChange={(checked) => setNoLogin(checked === true)}
+            <div className="space-y-2">
+              <Label htmlFor="jwks-url">JWKS URL</Label>
+              <Input
+                id="jwks-url"
+                value={jwksUrl}
+                onChange={(e) => setJwksUrl(e.target.value)}
+                placeholder="https://example.com/.well-known/jwks.json"
               />
-              No login
-            </label>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="jwt-audience">JWT audience</Label>
+              <Input
+                id="jwt-audience"
+                value={jwtAudience}
+                onChange={(e) => setJwtAudience(e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRoleOpen(false)}>
+            <Button variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={isCreatingRole} onClick={() => void handleCreateRole()}>
-              {isCreatingRole ? 'Creating…' : 'Create role'}
+            <Button disabled={isPending} onClick={() => void handleAdd()}>
+              {isPending ? 'Adding…' : 'Add provider'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={databaseOpen} onOpenChange={setDatabaseOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create database</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="database-name">Database name</Label>
-              <Input
-                id="database-name"
-                value={databaseName}
-                onChange={(e) => setDatabaseName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="database-owner">Owner role</Label>
-              <Input
-                id="database-owner"
-                value={databaseOwner}
-                onChange={(e) => setDatabaseOwner(e.target.value)}
-                placeholder="Defaults to database name"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDatabaseOpen(false)}>
-              Cancel
-            </Button>
-            <Button disabled={isCreatingDatabase} onClick={() => void handleCreateDatabase()}>
-              {isCreatingDatabase ? 'Creating…' : 'Create database'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AlertDialog
+        open={jwksToDelete != null}
+        onOpenChange={(open) => !open && setJwksToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete authentication provider?</AlertDialogTitle>
+            <AlertDialogDescription>
+              JWTs signed by this provider will no longer be accepted by Neon for this branch.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={cn('bg-destructive text-destructive-foreground hover:bg-destructive/90')}
+              disabled={isPending}
+              onClick={() => void handleDelete()}
+            >
+              {isPending ? 'Deleting…' : 'Delete provider'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

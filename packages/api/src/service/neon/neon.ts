@@ -1,11 +1,16 @@
 import { createApiClient, EndpointType } from '@neondatabase/api-client'
+import { neon } from '@neondatabase/serverless'
 import { ORPCError } from '@orpc/server'
 
 import { and, asc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Neon } from '@cared/db/schema'
 
-import type { DatabaseEndpointStatsGrouping, DatabaseEndpointType } from '../../types'
+import type {
+  DatabaseEndpointStatsGrouping,
+  DatabaseEndpointType,
+  DatabaseMaskingRule,
+} from '../../types'
 import type {
   Api,
   DefaultEndpointSettings,
@@ -19,15 +24,22 @@ import type {
 import { env } from '../../env'
 import {
   DatabaseTier,
+  formatAnonymizedBranchStatus,
   formatBranch,
   formatBranchDatabase,
   formatConnectionDetails,
+  formatDataApi,
   formatEndpoint,
+  formatJwks,
+  formatMaskingRule,
   formatNamespace,
   formatNamespaceListItem,
   formatOperation,
   formatRole,
+  toNeonDataApiSettings,
+  toNeonMaskingRule,
 } from '../../types'
+import type { DatabaseDataApiSettings } from '../../types'
 import { countProjectsBranches, formatEndpointStatsChart, getEndpointStats } from './api'
 
 export interface NeonSettings {
@@ -854,6 +866,20 @@ export class NeonService {
   }
 
   /**
+   * Set a branch as the namespace default branch.
+   */
+  async setDefaultBranch(accountId: string, namespaceId: string, branchId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+
+    const branchResponse = await client.setDefaultProjectBranch(namespace.projectId, branchId)
+
+    return {
+      branch: formatBranch(branchResponse.data.branch),
+      operations: branchResponse.data.operations.map(formatOperation),
+    }
+  }
+
+  /**
    * Delete a branch
    */
   async deleteBranch(accountId: string, namespaceId: string, branchId: string) {
@@ -1290,6 +1316,259 @@ export class NeonService {
     }
   }
 
+  async getMaskingRules(accountId: string, namespaceId: string, branchId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.getMaskingRules(namespace.projectId, branchId)
+
+    return {
+      maskingRules: response.data.masking_rules.map(formatMaskingRule),
+    }
+  }
+
+  async updateMaskingRules(
+    accountId: string,
+    namespaceId: string,
+    branchId: string,
+    maskingRules: DatabaseMaskingRule[],
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.updateMaskingRules(namespace.projectId, branchId, {
+      masking_rules: maskingRules.map(toNeonMaskingRule),
+    })
+
+    return {
+      maskingRules: response.data.masking_rules.map(formatMaskingRule),
+    }
+  }
+
+  async getAnonymizedBranchStatus(accountId: string, namespaceId: string, branchId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.getAnonymizedBranchStatus(namespace.projectId, branchId)
+
+    return {
+      status: formatAnonymizedBranchStatus(response.data),
+    }
+  }
+
+  async startAnonymization(accountId: string, namespaceId: string, branchId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.startAnonymization(namespace.projectId, branchId)
+
+    return {
+      status: formatAnonymizedBranchStatus(response.data),
+    }
+  }
+
+  async listBranchDataApis(accountId: string, namespaceId: string, branchId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const databasesResponse = await client.listProjectBranchDatabases(namespace.projectId, branchId)
+
+    const dataApis = await Promise.all(
+      databasesResponse.data.databases.map(async (database) => {
+        try {
+          const response = await client.getProjectBranchDataApi(
+            namespace.projectId,
+            branchId,
+            database.name,
+          )
+          return formatDataApi(database.name, response.data)
+        } catch {
+          return {
+            databaseName: database.name,
+            enabled: false,
+          }
+        }
+      }),
+    )
+
+    return { dataApis }
+  }
+
+  async getBranchDataApi(
+    accountId: string,
+    namespaceId: string,
+    branchId: string,
+    databaseName: string,
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+
+    try {
+      const response = await client.getProjectBranchDataApi(
+        namespace.projectId,
+        branchId,
+        databaseName,
+      )
+      return { dataApi: formatDataApi(databaseName, response.data) }
+    } catch {
+      return {
+        dataApi: {
+          databaseName,
+          enabled: false,
+        },
+      }
+    }
+  }
+
+  async updateBranchDataApi(
+    accountId: string,
+    namespaceId: string,
+    branchId: string,
+    databaseName: string,
+    settings: DatabaseDataApiSettings,
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    await client.updateProjectBranchDataApi(namespace.projectId, branchId, databaseName, {
+      settings: toNeonDataApiSettings(settings),
+    })
+
+    const response = await client.getProjectBranchDataApi(
+      namespace.projectId,
+      branchId,
+      databaseName,
+    )
+
+    return { dataApi: formatDataApi(databaseName, response.data) }
+  }
+
+  async getBranchNeonAuth(accountId: string, namespaceId: string, branchId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+
+    try {
+      const response = await client.getNeonAuth(namespace.projectId, branchId)
+      return {
+        neonAuth: {
+          ready: true,
+          authProvider: response.data.auth_provider,
+          baseUrl: response.data.base_url,
+          dbName: response.data.db_name,
+        },
+      }
+    } catch {
+      return {
+        neonAuth: {
+          ready: false,
+        },
+      }
+    }
+  }
+
+  /**
+   * Run a read-only SQL query against a branch database via the serverless driver.
+   */
+  async executeBranchSql(
+    accountId: string,
+    namespaceId: string,
+    branchId: string,
+    databaseName: string,
+    query: string,
+  ) {
+    assertReadOnlySql(query)
+
+    const connectionUri = await this.getBranchDatabaseConnectionUri(
+      accountId,
+      namespaceId,
+      branchId,
+      databaseName,
+    )
+    const sql = neon(connectionUri)
+    const rows = await sql.query(query, [])
+
+    return { rows: rows as Record<string, unknown>[] }
+  }
+
+  async createBranchDataApi(
+    accountId: string,
+    namespaceId: string,
+    branchId: string,
+    databaseName: string,
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    await client.createProjectBranchDataApi(
+      namespace.projectId,
+      branchId,
+      databaseName,
+      {
+        auth_provider: 'external',
+        settings: {
+          db_schemas: ['public'],
+          db_anon_role: 'anonymous',
+          openapi_mode: 'disabled',
+        },
+      },
+    )
+
+    const dataApiResponse = await client.getProjectBranchDataApi(
+      namespace.projectId,
+      branchId,
+      databaseName,
+    )
+
+    return {
+      dataApi: formatDataApi(databaseName, dataApiResponse.data),
+    }
+  }
+
+  async deleteBranchDataApi(
+    accountId: string,
+    namespaceId: string,
+    branchId: string,
+    databaseName: string,
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    await client.deleteProjectBranchDataApi(namespace.projectId, branchId, databaseName)
+
+    return {
+      dataApi: {
+        databaseName,
+        enabled: false,
+      },
+    }
+  }
+
+  async listJwks(accountId: string, namespaceId: string, branchId?: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.getProjectJwks(namespace.projectId)
+
+    return {
+      jwks: response.data.jwks
+        .filter((jwks) => !branchId || !jwks.branch_id || jwks.branch_id === branchId)
+        .map(formatJwks),
+    }
+  }
+
+  async addJwks(
+    accountId: string,
+    namespaceId: string,
+    params: {
+      providerName: string
+      jwksUrl: string
+      branchId?: string
+      jwtAudience?: string
+    },
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.addProjectJwks(namespace.projectId, {
+      provider_name: params.providerName,
+      jwks_url: params.jwksUrl,
+      branch_id: params.branchId,
+      jwt_audience: params.jwtAudience,
+    })
+
+    return {
+      jwks: formatJwks(response.data.jwks),
+      operations: response.data.operations.map(formatOperation),
+    }
+  }
+
+  async deleteJwks(accountId: string, namespaceId: string, jwksId: string) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const response = await client.deleteProjectJwks(namespace.projectId, jwksId)
+
+    return {
+      jwks: formatJwks(response.data),
+    }
+  }
+
   /**
    * List Postgres connection URIs for every database on a branch.
    */
@@ -1328,6 +1607,48 @@ export class NeonService {
     )
 
     return { connectionUris }
+  }
+
+  private async getBranchDatabaseConnectionUri(
+    accountId: string,
+    namespaceId: string,
+    branchId: string,
+    databaseName: string,
+  ) {
+    const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
+    const databasesResponse = await client.listProjectBranchDatabases(namespace.projectId, branchId)
+    const database = databasesResponse.data.databases.find((entry) => entry.name === databaseName)
+
+    if (!database) {
+      throw new ORPCError('NOT_FOUND', {
+        message: `Database "${databaseName}" not found on this branch`,
+      })
+    }
+
+    const uriResponse = await client.getConnectionUri({
+      projectId: namespace.projectId,
+      branch_id: branchId,
+      database_name: databaseName,
+      role_name: database.owner_name,
+    })
+
+    return uriResponse.data.uri
+  }
+}
+
+function assertReadOnlySql(query: string) {
+  const normalized = query.trim().replace(/\s+/g, ' ')
+
+  if (!/^select\b/i.test(normalized)) {
+    throw new ORPCError('BAD_REQUEST', {
+      message: 'Only SELECT queries are allowed',
+    })
+  }
+
+  if (normalized.includes(';')) {
+    throw new ORPCError('BAD_REQUEST', {
+      message: 'Multiple SQL statements are not allowed',
+    })
   }
 }
 

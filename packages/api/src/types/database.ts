@@ -2,14 +2,20 @@ import type { Neon } from '@cared/db/schema'
 
 import type {
   AllowedIps,
+  AnonymizedBranchStatusResponse,
   Branch,
   BranchRestrictedAction,
   ConnectionDetails,
   ConnectionParameters,
+  DataAPIReponse,
+  DataAPISettings,
+  DataAPIUpdateRequest,
   DefaultEndpointSettings,
   Endpoint,
   EndpointSettingsData,
+  JWKS,
   MaintenanceWindow,
+  MaskingRule,
   Database as NeonDatabase,
   Operation,
   PreloadLibraries,
@@ -125,6 +131,71 @@ export interface DatabaseOperation {
   createdAt: Date
   updatedAt: Date
   totalDurationMs: number
+}
+
+export interface DatabaseMaskingRule {
+  databaseName: string
+  schemaName: string
+  tableName: string
+  columnName: string
+  maskingFunction?: string
+  maskingValue?: string
+}
+
+export interface DatabaseAnonymizationRunMetadata {
+  startedAt?: Date
+  completedAt?: Date
+  triggeredBy?: string
+  triggeredByUsername?: string
+  maskedColumns?: number
+}
+
+export interface DatabaseAnonymizedBranchStatus {
+  projectId: string
+  branchId: string
+  state: string
+  statusMessage?: string
+  createdAt: Date
+  updatedAt: Date
+  failedAt?: Date
+  lastRun?: DatabaseAnonymizationRunMetadata
+}
+
+export interface DatabaseDataApiSettings {
+  dbSchemas?: string[]
+  dbAnonRole?: string
+  dbMaxRows?: number
+  serverCorsAllowedOrigins?: string
+  openapiMode?: string
+  serverTimingEnabled?: boolean
+}
+
+export interface DatabaseDataApi {
+  databaseName: string
+  url?: string
+  status?: string
+  availableSchemas?: string[]
+  enabled: boolean
+  settings?: DatabaseDataApiSettings
+}
+
+export interface DatabaseNeonAuth {
+  ready: boolean
+  authProvider?: string
+  baseUrl?: string
+  dbName?: string
+}
+
+export interface DatabaseJwks {
+  id: string
+  projectId: string
+  branchId?: string
+  jwksUrl: string
+  providerName: string
+  createdAt: Date
+  updatedAt: Date
+  jwtAudience?: string
+  roleNames?: string[]
 }
 
 /** Connection parameters returned when a branch is created. */
@@ -652,6 +723,106 @@ export function formatOperation(operation: Operation): DatabaseOperation {
     createdAt: parseTimestamp(operation.created_at),
     updatedAt: parseTimestamp(operation.updated_at),
     totalDurationMs: operation.total_duration_ms,
+  }
+}
+
+export function formatMaskingRule(rule: MaskingRule): DatabaseMaskingRule {
+  return {
+    databaseName: rule.database_name,
+    schemaName: rule.schema_name,
+    tableName: rule.table_name,
+    columnName: rule.column_name,
+    maskingFunction: rule.masking_function,
+    maskingValue: rule.masking_value,
+  }
+}
+
+export function toNeonMaskingRule(rule: DatabaseMaskingRule): MaskingRule {
+  return {
+    database_name: rule.databaseName,
+    schema_name: rule.schemaName,
+    table_name: rule.tableName,
+    column_name: rule.columnName,
+    masking_function: rule.maskingFunction,
+    masking_value: rule.maskingValue,
+  }
+}
+
+export function formatAnonymizedBranchStatus(
+  status: AnonymizedBranchStatusResponse,
+): DatabaseAnonymizedBranchStatus {
+  return {
+    projectId: status.project_id,
+    branchId: status.branch_id,
+    state: status.state,
+    statusMessage: status.status_message,
+    createdAt: parseTimestamp(status.created_at),
+    updatedAt: parseTimestamp(status.updated_at),
+    failedAt: parseOptionalTimestamp(status.failed_at),
+    lastRun: status.last_run
+      ? {
+          startedAt: parseOptionalTimestamp(status.last_run.started_at),
+          completedAt: parseOptionalTimestamp(status.last_run.completed_at),
+          triggeredBy: status.last_run.triggered_by,
+          triggeredByUsername: status.last_run.triggered_by_username,
+          maskedColumns: status.last_run.masked_columns,
+        }
+      : undefined,
+  }
+}
+
+export function formatDataApiSettings(
+  settings: DataAPISettings | null | undefined,
+): DatabaseDataApiSettings | undefined {
+  if (!settings) {
+    return undefined
+  }
+
+  return {
+    dbSchemas: settings.db_schemas,
+    dbAnonRole: settings.db_anon_role,
+    dbMaxRows: settings.db_max_rows,
+    serverCorsAllowedOrigins: settings.server_cors_allowed_origins,
+    openapiMode: settings.openapi_mode,
+    serverTimingEnabled: settings.server_timing_enabled,
+  }
+}
+
+export function toNeonDataApiSettings(
+  settings: DatabaseDataApiSettings,
+): DataAPIUpdateRequest['settings'] {
+  return {
+    db_schemas: settings.dbSchemas,
+    db_anon_role: settings.dbAnonRole,
+    db_max_rows: settings.dbMaxRows,
+    server_cors_allowed_origins: settings.serverCorsAllowedOrigins,
+    openapi_mode: settings.openapiMode,
+    server_timing_enabled: settings.serverTimingEnabled,
+  }
+}
+
+export function formatDataApi(databaseName: string, dataApi: DataAPIReponse): DatabaseDataApi {
+  return {
+    databaseName,
+    url: dataApi.url,
+    status: dataApi.status,
+    availableSchemas: dataApi.available_schemas ?? undefined,
+    enabled: true,
+    settings: formatDataApiSettings(dataApi.settings),
+  }
+}
+
+export function formatJwks(jwks: JWKS): DatabaseJwks {
+  return {
+    id: jwks.id,
+    projectId: jwks.project_id,
+    branchId: jwks.branch_id,
+    jwksUrl: jwks.jwks_url,
+    providerName: jwks.provider_name,
+    createdAt: parseTimestamp(jwks.created_at),
+    updatedAt: parseTimestamp(jwks.updated_at),
+    jwtAudience: jwks.jwt_audience,
+    roleNames: jwks.role_names,
   }
 }
 

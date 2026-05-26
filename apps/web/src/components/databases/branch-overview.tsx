@@ -4,6 +4,8 @@ import { Link } from '@tanstack/react-router'
 import {
   Archive,
   ChevronRight,
+  Eye,
+  EyeOff,
   GitBranch,
   MoreVertical,
   Pencil,
@@ -15,6 +17,7 @@ import {
   Sparkles,
   Trash2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 import {
   AlertDialog,
@@ -29,6 +32,7 @@ import {
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
 import { Card, CardContent } from '@cared/ui/components/card'
+import { Checkbox } from '@cared/ui/components/checkbox'
 import { DataTable } from '@cared/ui/components/data-table'
 import {
   Dialog,
@@ -61,20 +65,26 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CopyButton } from '@/components/copy-button'
 import { SectionTitle } from '@/components/section'
 import {
+  useCreateDatabaseBranchDatabase,
+  useCreateDatabaseBranchRole,
   useCreateDatabaseEndpoint,
   useDatabaseBranch,
   useDatabaseBranchCount,
   useDatabaseBranchDatabases,
   useDatabaseBranchEndpoints,
   useDatabaseBranches,
+  useDatabaseBranchRoleAction,
   useDatabaseBranchRoles,
   useDatabaseEndpointAction,
   useDatabaseEndpoints,
   useDatabaseNamespace,
+  useDeleteDatabaseBranchDatabase,
   useNamespaceUsageLimits,
+  useSetDefaultDatabaseBranch,
   useUpdateDatabaseBranch,
   useUpdateDatabaseEndpoint,
 } from '@/hooks/use-database'
+import { ConnectDialog } from './connect-dialog'
 import { CreateBranchDialog } from './create-branch-dialog'
 import {
   endpointStateLabel,
@@ -364,6 +374,190 @@ function EditEndpointDialog({
   )
 }
 
+function RenameBranchDialog({
+  namespaceId,
+  branch,
+  open,
+  onOpenChange,
+}: {
+  namespaceId: string
+  branch: DatabaseBranch
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const [name, setName] = useState(branch.name)
+  const { updateDatabaseBranch, isUpdating } = useUpdateDatabaseBranch(namespaceId)
+
+  useEffect(() => {
+    setName(branch.name)
+  }, [branch.name])
+
+  const trimmed = name.trim()
+  const changed = trimmed !== branch.name
+
+  const handleSave = async () => {
+    if (!trimmed || !changed) return
+    await updateDatabaseBranch({
+      namespaceId,
+      branchId: branch.id,
+      name: trimmed,
+    })
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename branch</DialogTitle>
+          <DialogDescription>Update the display name for this branch.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <Label htmlFor="branch-name">Branch name</Label>
+          <Input
+            id="branch-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            maxLength={256}
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => void handleSave()} disabled={!trimmed || !changed || isUpdating}>
+            {isUpdating ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CreateRoleDialog({
+  open,
+  onOpenChange,
+  onCreate,
+  isCreating,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCreate: (input: { name: string; noLogin?: boolean }) => Promise<unknown>
+  isCreating: boolean
+}) {
+  const [name, setName] = useState('')
+  const [noLogin, setNoLogin] = useState(false)
+
+  const handleCreate = async () => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      toast.error('Role name is required')
+      return
+    }
+    await onCreate({ name: trimmed, noLogin })
+    setName('')
+    setNoLogin(false)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create role</DialogTitle>
+          <DialogDescription>Create a Postgres role on this branch.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="overview-role-name">Role name</Label>
+            <Input id="overview-role-name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={noLogin}
+              onCheckedChange={(checked) => setNoLogin(checked === true)}
+            />
+            No login
+          </label>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button disabled={isCreating} onClick={() => void handleCreate()}>
+            {isCreating ? 'Creating…' : 'Create role'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CreateDatabaseDialog({
+  open,
+  onOpenChange,
+  onCreate,
+  isCreating,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCreate: (input: { name: string; ownerName?: string }) => Promise<unknown>
+  isCreating: boolean
+}) {
+  const [name, setName] = useState('')
+  const [ownerName, setOwnerName] = useState('')
+
+  const handleCreate = async () => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      toast.error('Database name is required')
+      return
+    }
+    await onCreate({ name: trimmed, ownerName: ownerName.trim() || undefined })
+    setName('')
+    setOwnerName('')
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Create database</DialogTitle>
+          <DialogDescription>Create a Postgres database on this branch.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="overview-database-name">Database name</Label>
+            <Input
+              id="overview-database-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="overview-database-owner">Owner role</Label>
+            <Input
+              id="overview-database-owner"
+              value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)}
+              placeholder="Defaults to database name"
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button disabled={isCreating} onClick={() => void handleCreate()}>
+            {isCreating ? 'Creating…' : 'Create database'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function BranchOverview({
   namespaceId,
   accountIdNoPrefix,
@@ -373,8 +567,14 @@ export function BranchOverview({
   const [childSearch, setChildSearch] = useState('')
   const [activeTab, setActiveTab] = useState('computes')
   const [readReplicaOpen, setReadReplicaOpen] = useState(false)
+  const [connectOpen, setConnectOpen] = useState(false)
+  const [renameOpen, setRenameOpen] = useState(false)
+  const [roleOpen, setRoleOpen] = useState(false)
+  const [databaseOpen, setDatabaseOpen] = useState(false)
+  const [setDefaultOpen, setSetDefaultOpen] = useState(false)
   const [endpointToEdit, setEndpointToEdit] = useState<DatabaseEndpoint | null>(null)
   const [endpointToDelete, setEndpointToDelete] = useState<DatabaseEndpoint | null>(null)
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, string>>({})
 
   const namespace = useDatabaseNamespace(namespaceId)
   const branch = useDatabaseBranch(namespaceId, branchId)
@@ -386,6 +586,21 @@ export function BranchOverview({
   const branchCount = useDatabaseBranchCount(namespaceId)
   const usageLimits = useNamespaceUsageLimits(namespace)
   const { updateDatabaseBranch, isUpdating } = useUpdateDatabaseBranch(namespaceId)
+  const { setDefaultDatabaseBranch, isSettingDefault } = useSetDefaultDatabaseBranch(namespaceId)
+  const { createDatabaseBranchRole, isCreating: isCreatingRole } = useCreateDatabaseBranchRole(
+    namespaceId,
+    branchId,
+  )
+  const {
+    getRolePassword,
+    resetRolePassword,
+    deleteRole,
+    isPending: isRoleActionPending,
+  } = useDatabaseBranchRoleAction(namespaceId, branchId)
+  const { createDatabaseBranchDatabase, isCreating: isCreatingDatabase } =
+    useCreateDatabaseBranchDatabase(namespaceId, branchId)
+  const { deleteDatabaseBranchDatabase, isDeleting: isDeletingDatabase } =
+    useDeleteDatabaseBranchDatabase(namespaceId, branchId)
   const {
     startDatabaseEndpoint,
     suspendDatabaseEndpoint,
@@ -426,6 +641,23 @@ export function BranchOverview({
     if (!endpointToDelete) return
     await deleteDatabaseEndpoint(endpointToDelete.id)
     setEndpointToDelete(null)
+  }
+
+  const handleSetDefaultBranch = async () => {
+    await setDefaultDatabaseBranch(branchId)
+    setSetDefaultOpen(false)
+  }
+
+  const revealPassword = async (roleName: string) => {
+    const result = await getRolePassword(roleName)
+    setVisiblePasswords((current) => ({ ...current, [roleName]: result.password }))
+  }
+
+  const resetPassword = async (roleName: string) => {
+    const result = await resetRolePassword(roleName)
+    if (result.role.password) {
+      setVisiblePasswords((current) => ({ ...current, [roleName]: result.role.password! }))
+    }
   }
 
   const overviewPath = '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/overview' as const
@@ -567,8 +799,10 @@ export function BranchOverview({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem disabled>Rename branch</DropdownMenuItem>
-              <DropdownMenuItem disabled>Set as default</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRenameOpen(true)}>Rename branch</DropdownMenuItem>
+              <DropdownMenuItem disabled={branch.default} onClick={() => setSetDefaultOpen(true)}>
+                Set as default
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -730,7 +964,7 @@ export function BranchOverview({
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <Button size="sm" disabled>
+                        <Button size="sm" onClick={() => setConnectOpen(true)}>
                           Connect
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setEndpointToEdit(ep)}>
@@ -814,7 +1048,7 @@ export function BranchOverview({
                   Manage the Postgres roles on this branch. Changes apply to this branch only.
                 </p>
               </div>
-              <Button size="sm" variant="outline" disabled>
+              <Button size="sm" variant="outline" onClick={() => setRoleOpen(true)}>
                 Add role
               </Button>
             </div>
@@ -838,9 +1072,45 @@ export function BranchOverview({
                         <span className="text-xs block">Last updated</span>
                         <RelativeTime value={role.updatedAt} muted={false} />
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto" disabled>
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      {visiblePasswords[role.name] && (
+                        <div className="flex min-w-0 flex-1 items-center gap-1 rounded-md bg-muted px-2 py-1">
+                          <code className="truncate text-xs">{visiblePasswords[role.name]}</code>
+                          <CopyButton value={visiblePasswords[role.name] ?? ''} />
+                        </div>
+                      )}
+                      <div className="ml-auto flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isRoleActionPending || role.authenticationMethod === 'no_login'}
+                          onClick={() => void revealPassword(role.name)}
+                        >
+                          {visiblePasswords[role.name] ? (
+                            <EyeOff className="h-4 w-4 mr-1.5" />
+                          ) : (
+                            <Eye className="h-4 w-4 mr-1.5" />
+                          )}
+                          {visiblePasswords[role.name] ? 'Hide' : 'Password'}
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={isRoleActionPending || role.authenticationMethod === 'no_login'}
+                          aria-label="Reset password"
+                          onClick={() => void resetPassword(role.name)}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={isRoleActionPending || role.protected}
+                          aria-label="Delete role"
+                          onClick={() => void deleteRole(role.name)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))
@@ -856,7 +1126,7 @@ export function BranchOverview({
                   Manage the Postgres databases on this branch. Changes apply to this branch only.
                 </p>
               </div>
-              <Button size="sm" variant="outline" disabled>
+              <Button size="sm" variant="outline" onClick={() => setDatabaseOpen(true)}>
                 Add database
               </Button>
             </div>
@@ -881,11 +1151,24 @@ export function BranchOverview({
                         <RelativeTime value={db.updatedAt} muted={false} />
                       </div>
                       <div className="flex items-center gap-1 ml-auto">
-                        <Button size="sm" variant="outline" disabled>
-                          Edit data
+                        <Button size="sm" variant="outline" asChild>
+                          <Link
+                            to="/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/data-editor"
+                            params={{ accountIdNoPrefix, namespaceIdNoPrefix }}
+                            search={{ branch: branchId }}
+                          >
+                            Edit data
+                          </Link>
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled>
-                          <MoreVertical className="h-4 w-4" />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          disabled={isDeletingDatabase}
+                          aria-label="Delete database"
+                          onClick={() => void deleteDatabaseBranchDatabase(db.name)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
                     </CardContent>
@@ -918,6 +1201,51 @@ export function BranchOverview({
         </TabsContent>
       </Tabs>
 
+      <ConnectDialog
+        namespaceId={namespaceId}
+        branches={allBranches}
+        endpoints={projectEndpoints}
+        initialBranchId={branchId}
+        open={connectOpen}
+        onOpenChange={setConnectOpen}
+      />
+      <RenameBranchDialog
+        namespaceId={namespaceId}
+        branch={branch}
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+      />
+      <CreateRoleDialog
+        open={roleOpen}
+        onOpenChange={setRoleOpen}
+        onCreate={createDatabaseBranchRole}
+        isCreating={isCreatingRole}
+      />
+      <CreateDatabaseDialog
+        open={databaseOpen}
+        onOpenChange={setDatabaseOpen}
+        onCreate={createDatabaseBranchDatabase}
+        isCreating={isCreatingDatabase}
+      />
+      <AlertDialog open={setDefaultOpen} onOpenChange={setSetDefaultOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Set default branch?</AlertDialogTitle>
+            <AlertDialogDescription>
+              New branches without a selected parent will be created from &quot;{branch.name}&quot;.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isSettingDefault}
+              onClick={() => void handleSetDefaultBranch()}
+            >
+              {isSettingDefault ? 'Saving…' : 'Set default'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AddReadReplicaDialog
         namespaceId={namespaceId}
         branchId={branchId}
