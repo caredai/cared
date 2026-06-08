@@ -90,7 +90,7 @@ export function Namespaces({ accountIdNoPrefix }: NamespacesProps) {
     () => [
       {
         accessorKey: 'name',
-        header: 'Namespace',
+        header: 'Database namespace',
         cell: ({ row }) => (
           <span className="font-medium truncate block max-w-[200px]">{row.original.name}</span>
         ),
@@ -163,7 +163,7 @@ export function Namespaces({ accountIdNoPrefix }: NamespacesProps) {
         columns={columns}
         data={namespaces}
         searchKeys={['name', 'id']}
-        searchPlaceholder="Search namespaces..."
+        searchPlaceholder="Search database namespaces..."
         getRowId={(row) => row.id}
         onRowClick={(namespace) => navigateToNamespace(namespace, 'dashboard')}
       />

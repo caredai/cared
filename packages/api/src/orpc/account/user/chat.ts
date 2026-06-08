@@ -13,9 +13,9 @@ import {
   UpdateChatSchema,
 } from '@cared/db/schema'
 
-import type { AppUserContext, UserOrAppUserContext } from '../../../orpc'
-import { appUserProtectedProcedure, userOrAppUserProtectedProcedure } from '../../../orpc'
-import { getAppById } from '../app'
+import type { AppUserContext, UserContext } from '../../../orpc'
+import { getOAuthAppById } from '../../../operation'
+import { appUserProtectedProcedure, userProtectedProcedure } from '../../../orpc'
 
 /**
  * Get a chat by ID.
@@ -24,7 +24,7 @@ import { getAppById } from '../app'
  * @returns The chat if found
  * @throws {ORPCError} If chat not found
  */
-export async function getChatById(ctx: UserOrAppUserContext, id: string) {
+export async function getChatById(ctx: UserContext, id: string) {
   const chat = await db.query.Chat.findFirst({
     where: eq(Chat.id, id),
   })
@@ -43,7 +43,7 @@ export async function getChatById(ctx: UserOrAppUserContext, id: string) {
   }
 
   // If appId is present in context, verify it matches
-  if (ctx.auth.appId && chat.appId !== ctx.auth.appId) {
+  if (ctx.auth.appId && chat.oauthAppId !== ctx.auth.appId) {
     throw new ORPCError('NOT_FOUND', {
       message: `Chat with id ${id} not found`,
     })
@@ -84,12 +84,12 @@ export const chatRouter = {
     .handler(async ({ context, input }: { context: AppUserContext; input: any }) => {
       const appId = context.auth.appId
 
-      await getAppById(context, appId)
+      await getOAuthAppById(appId)
 
       const conditions: SQL<unknown>[] = [
         eq(Chat.accountId, context.auth.accountId),
         eq(Chat.userId, context.auth.userId),
-        eq(Chat.appId, appId),
+        eq(Chat.oauthAppId, appId),
       ]
 
       const orderOnUpdatedAt = input.orderOn === 'updatedAt'
@@ -159,7 +159,7 @@ export const chatRouter = {
    * @param input - Object containing array of chat IDs and includeLastMessage flag
    * @returns Array of chats that belong to the user and account
    */
-  listByIds: userOrAppUserProtectedProcedure
+  listByIds: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/chats/list-by-ids',
@@ -172,7 +172,7 @@ export const chatRouter = {
         includeLastMessage: z.boolean().default(false),
       }),
     )
-    .handler(async ({ context, input }: { context: UserOrAppUserContext; input: any }) => {
+    .handler(async ({ context, input }: { context: UserContext; input: any }) => {
       const chats = await db.query.Chat.findMany({
         where: and(
           eq(Chat.accountId, context.auth.accountId),
@@ -206,7 +206,7 @@ export const chatRouter = {
    * @param input - The chat ID
    * @returns The chat if found
    */
-  byId: userOrAppUserProtectedProcedure
+  byId: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/chats/{id}',
@@ -219,7 +219,7 @@ export const chatRouter = {
         includeLastMessage: z.boolean().default(false),
       }),
     )
-    .handler(async ({ context, input }: { context: UserOrAppUserContext; input: any }) => {
+    .handler(async ({ context, input }: { context: UserContext; input: any }) => {
       const chat = await db.query.Chat.findFirst({
         where: and(
           eq(Chat.id, input.id),
@@ -269,7 +269,7 @@ export const chatRouter = {
     })
     .input(
       CreateChatSchema.omit({
-        appId: true,
+        oauthAppId: true,
         accountId: true,
         userId: true,
       }).extend({
@@ -279,7 +279,6 @@ export const chatRouter = {
               CreateMessageSchema.pick({
                 id: true,
                 role: true,
-                agentId: true,
                 content: true,
               }),
             ),
@@ -323,7 +322,7 @@ export const chatRouter = {
     .handler(async ({ context, input }) => {
       const appId = context.auth.appId
 
-      await getAppById(context, appId)
+      await getOAuthAppById(appId)
 
       if (input.debug) {
         // TODO: check rbac
@@ -331,7 +330,7 @@ export const chatRouter = {
         const existingDebugChat = await db.query.Chat.findFirst({
           where: and(
             eq(Chat.accountId, context.auth.accountId),
-            eq(Chat.appId, appId),
+            eq(Chat.oauthAppId, appId),
             eq(Chat.userId, context.auth.userId),
             eq(Chat.debug, true),
           ),
@@ -350,7 +349,7 @@ export const chatRouter = {
           .insert(Chat)
           .values({
             ...input,
-            appId,
+            oauthAppId: appId,
             accountId: context.auth.accountId,
             userId: context.auth.userId,
           })
@@ -415,7 +414,7 @@ export const chatRouter = {
    * @param input - The chat data following the {@link UpdateChatSchema}
    * @returns The updated chat
    */
-  update: userOrAppUserProtectedProcedure
+  update: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/chats/{id}',
@@ -423,7 +422,7 @@ export const chatRouter = {
       summary: 'Update an existing chat',
     })
     .input(UpdateChatSchema)
-    .handler(async ({ context, input }: { context: UserOrAppUserContext; input: any }) => {
+    .handler(async ({ context, input }: { context: UserContext; input: any }) => {
       const { id, metadata, ...update } = input
       const chat = await getChatById(context, id)
 
@@ -459,7 +458,7 @@ export const chatRouter = {
    * @param input - Object containing the chat ID to delete
    * @returns The deleted chat
    */
-  delete: userOrAppUserProtectedProcedure
+  delete: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/chats/{id}',
@@ -467,7 +466,7 @@ export const chatRouter = {
       summary: 'Delete an existing chat',
     })
     .input(z.object({ id: z.string().min(32) }))
-    .handler(async ({ context, input }: { context: UserOrAppUserContext; input: any }) => {
+    .handler(async ({ context, input }: { context: UserContext; input: any }) => {
       await getChatById(context, input.id)
 
       const [deletedChat] = await db.delete(Chat).where(eq(Chat.id, input.id)).returning()
@@ -487,7 +486,7 @@ export const chatRouter = {
    * @param input - Object containing array of chat IDs to delete
    * @returns Array of deleted chats
    */
-  batchDelete: userOrAppUserProtectedProcedure
+  batchDelete: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/chats/batch-delete',
@@ -495,7 +494,7 @@ export const chatRouter = {
       summary: 'Delete multiple chats by their IDs',
     })
     .input(z.object({ ids: z.array(z.string().min(32)).min(1).max(100) }))
-    .handler(async ({ context, input }: { context: UserOrAppUserContext; input: any }) => {
+    .handler(async ({ context, input }: { context: UserContext; input: any }) => {
       // Delete chats that belong to the user and account
       const deletedChats = await db
         .delete(Chat)
@@ -523,7 +522,7 @@ export const chatRouter = {
    * @param input - Object containing the source chat ID and array of message IDs to clone
    * @returns The cloned chat with messages
    */
-  clone: userOrAppUserProtectedProcedure
+  clone: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/chats/{id}/clone',
@@ -537,7 +536,7 @@ export const chatRouter = {
         includeLastMessage: z.boolean().default(false),
       }),
     )
-    .handler(async ({ context, input }: { context: UserOrAppUserContext; input: any }) => {
+    .handler(async ({ context, input }: { context: UserContext; input: any }) => {
       // Get the source chat to verify access and get metadata
       const sourceChat = await getChatById(context, input.id)
 
@@ -577,7 +576,7 @@ export const chatRouter = {
         const [newChat] = await tx
           .insert(Chat)
           .values({
-            appId: sourceChat.appId,
+            oauthAppId: sourceChat.oauthAppId,
             accountId: context.auth.accountId,
             userId: context.auth.userId,
             debug: sourceChat.debug,
@@ -602,7 +601,6 @@ export const chatRouter = {
             parentId: msg.parentId ? messageIdMapping.get(msg.parentId) : undefined,
             chatId: newChat.id,
             role: msg.role,
-            agentId: msg.agentId,
             content: msg.content,
           }
         })

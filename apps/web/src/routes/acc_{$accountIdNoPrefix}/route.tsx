@@ -26,7 +26,7 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}')({
       throw redirect({ to: '/' })
     }
 
-    void context.queryClient.prefetchQuery(orpc.account.app.list.queryOptions())
+    void context.queryClient.prefetchQuery(orpc.account.oauthApp.list.queryOptions())
 
     return {
       activeAccountId,

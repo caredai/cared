@@ -1,17 +1,10 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import {
-  AlertTriangle,
-  Check,
-  Circle,
-  ExternalLink,
-  GitBranch,
-  Plus,
-  RefreshCw,
-  X,
-} from 'lucide-react'
+import { AlertTriangle, Check, Circle, ExternalLink, Plus, RefreshCw, X } from 'lucide-react'
 
 import type { RouterInputs } from '@cared/api'
+import { Alert, AlertDescription } from '@cared/ui/components/alert'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@cared/ui/components/alert-dialog'
-import { Alert, AlertDescription } from '@cared/ui/components/alert'
 import { Badge } from '@cared/ui/components/badge'
 import { Button } from '@cared/ui/components/button'
 import { Card, CardContent } from '@cared/ui/components/card'
@@ -44,18 +36,15 @@ import { CopyButton } from '@/components/copy-button'
 import { DataApiEnableDiagram } from '@/components/databases/data-api-enable-diagram'
 import { SectionTitle } from '@/components/section'
 import {
-  useDatabaseBranch,
   useDatabaseBranchDataApi,
   useDatabaseBranchDataApiActions,
-  useDatabaseBranchDataApis,
   useDatabaseBranchDatabases,
   useDatabaseBranchNeonAuth,
   useDatabaseBranchTablesWithoutRls,
   useDatabaseJwks,
 } from '@/hooks/use-database'
 
-type DataApiSettingsInput =
-  RouterInputs['account']['database']['updateBranchDataApi']['settings']
+type DataApiSettingsInput = RouterInputs['account']['database']['updateBranchDataApi']['settings']
 
 interface BranchDataApiProps {
   namespaceId: string
@@ -210,11 +199,15 @@ function BranchDataApiContent({
 
   const unprotectedTables = useMemo(
     () =>
-      tablesWithoutRls.map((row: Record<string, unknown>) => {
-        const schema = String(row.schema_name ?? '')
-        const table = String(row.table_name ?? '')
-        return schema && table ? `${schema}.${table}` : ''
-      }).filter(Boolean),
+      tablesWithoutRls
+        .map((row: Record<string, unknown>) => {
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          const schema = String(row.schema_name ?? '')
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
+          const table = String(row.table_name ?? '')
+          return schema && table ? `${schema}.${table}` : ''
+        })
+        .filter(Boolean),
     [tablesWithoutRls],
   )
 
@@ -327,8 +320,8 @@ function BranchDataApiContent({
                   Refresh schema cache
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  If you have made changes to the database schema, refresh the schema cache to
-                  apply them immediately.
+                  If you have made changes to the database schema, refresh the schema cache to apply
+                  them immediately.
                 </p>
               </div>
             </div>
@@ -613,9 +606,7 @@ export function BranchDataApi({
   accountIdNoPrefix,
   namespaceIdNoPrefix,
 }: BranchDataApiProps) {
-  const branch = useDatabaseBranch(namespaceId, branchId)
   const databases = useDatabaseBranchDatabases(namespaceId, branchId)
-  const dataApis = useDatabaseBranchDataApis(namespaceId, branchId)
   const [databaseName, setDatabaseName] = useState('')
 
   useEffect(() => {
@@ -624,26 +615,10 @@ export function BranchDataApi({
     }
   }, [databaseName, databases])
 
-  const selectedDataApi = dataApis.find((entry) => entry.databaseName === databaseName)
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-2">
-          <SectionTitle
-            title="Data API"
-            description="Expose this branch through Neon Data API REST endpoints."
-          />
-          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground md:pl-0">
-            <GitBranch className="h-4 w-4" />
-            <span>{branch.name}</span>
-            {databaseName && (
-              <Badge variant={selectedDataApi?.enabled ? 'default' : 'secondary'}>
-                {selectedDataApi?.enabled ? selectedDataApi.status ?? 'active' : 'disabled'}
-              </Badge>
-            )}
-          </div>
-        </div>
+        <SectionTitle title="Data API" />
 
         {databases.length > 1 && (
           <div className="w-full sm:w-56">

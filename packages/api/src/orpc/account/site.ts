@@ -10,7 +10,7 @@ import {
 } from '@appwrite.io/console'
 import { z } from 'zod/v4'
 
-import { userOrAppUserProtectedProcedure } from '../../orpc'
+import { userProtectedProcedure } from '../../orpc'
 import { appwriteSitesService } from '../../service/appwrite'
 
 // Base input: every procedure requires regionId for Appwrite region-scoped API
@@ -264,7 +264,7 @@ const metricOutputSchema = z.object({
 
 export const siteRouter = {
   /** Enable Sites API for the account in the given region (ensure project/user/key). */
-  enableSites: userOrAppUserProtectedProcedure
+  enableSites: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sites/enable',
@@ -278,7 +278,7 @@ export const siteRouter = {
     }),
 
   /** List all available Appwrite regions. */
-  listRegions: userOrAppUserProtectedProcedure
+  listRegions: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/regions',
@@ -304,7 +304,7 @@ export const siteRouter = {
   /**
    * Get a list of all the project's sites. Cursor-based pagination with Query.limit, Query.orderDesc($createdAt), Query.cursorBefore.
    */
-  listSites: userOrAppUserProtectedProcedure
+  listSites: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites',
@@ -345,7 +345,7 @@ export const siteRouter = {
   /**
    * Create a new site.
    */
-  createSite: userOrAppUserProtectedProcedure
+  createSite: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sites',
@@ -406,7 +406,7 @@ export const siteRouter = {
     }),
 
   /** Get a list of all frameworks that are currently available on the server instance. */
-  listFrameworks: userOrAppUserProtectedProcedure
+  listFrameworks: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/frameworks',
@@ -458,7 +458,7 @@ export const siteRouter = {
     }),
 
   /** List allowed site specifications for this instance. */
-  listSpecifications: userOrAppUserProtectedProcedure
+  listSpecifications: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/specifications',
@@ -488,7 +488,7 @@ export const siteRouter = {
     }),
 
   /** List available site templates. Cursor-based pagination (cursor is offset as string for templates API). */
-  listTemplates: userOrAppUserProtectedProcedure
+  listTemplates: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/templates',
@@ -531,7 +531,7 @@ export const siteRouter = {
     }),
 
   /** Get a site template using ID. */
-  getTemplate: userOrAppUserProtectedProcedure
+  getTemplate: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/templates/{templateId}',
@@ -555,7 +555,7 @@ export const siteRouter = {
    * Get usage metrics and statistics for all sites in the project. Not a list endpoint.
    * Use optional range: 24h, 30d, or 90d. Defaults to 30 days.
    */
-  getAllSitesUsage: userOrAppUserProtectedProcedure
+  getAllSitesUsage: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/usage',
@@ -646,7 +646,7 @@ export const siteRouter = {
     }),
 
   /** Get a site by its unique ID. */
-  getSite: userOrAppUserProtectedProcedure
+  getSite: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}',
@@ -663,7 +663,7 @@ export const siteRouter = {
     }),
 
   /** Update site by its unique ID. */
-  updateSite: userOrAppUserProtectedProcedure
+  updateSite: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/sites/{siteId}',
@@ -711,7 +711,7 @@ export const siteRouter = {
     }),
 
   /** Delete a site by its unique ID. */
-  deleteSite: userOrAppUserProtectedProcedure
+  deleteSite: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sites/{siteId}',
@@ -727,7 +727,7 @@ export const siteRouter = {
     }),
 
   /** Update the site active deployment. Use this endpoint to switch the code deployment used when the site is opened. */
-  updateDeployment: userOrAppUserProtectedProcedure
+  updateDeployment: userProtectedProcedure
     .route({
       method: 'PUT',
       path: '/sites/{siteId}/deployment',
@@ -754,7 +754,7 @@ export const siteRouter = {
     }),
 
   /** Get a list of all the site's code deployments. Cursor-based pagination. */
-  listDeployments: userOrAppUserProtectedProcedure
+  listDeployments: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}/deployments',
@@ -795,7 +795,7 @@ export const siteRouter = {
     }),
 
   /** Create a new build for an existing site deployment. Rebuilds with updated site configuration. */
-  createDuplicateDeployment: userOrAppUserProtectedProcedure
+  createDuplicateDeployment: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sites/{siteId}/deployments/{deploymentId}/duplicate',
@@ -822,7 +822,7 @@ export const siteRouter = {
     }),
 
   /** Create a deployment based on a template. Use with listTemplates to find template details. */
-  createTemplateDeployment: userOrAppUserProtectedProcedure
+  createTemplateDeployment: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sites/{siteId}/deployments/template',
@@ -859,7 +859,7 @@ export const siteRouter = {
     }),
 
   /** Create a deployment when a site is connected to VCS. Create from branch, commit, or tag. */
-  createVcsDeployment: userOrAppUserProtectedProcedure
+  createVcsDeployment: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sites/{siteId}/deployments/vcs',
@@ -891,7 +891,7 @@ export const siteRouter = {
     }),
 
   /** Get a site deployment by its unique ID. */
-  getDeployment: userOrAppUserProtectedProcedure
+  getDeployment: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}/deployments/{deploymentId}',
@@ -918,7 +918,7 @@ export const siteRouter = {
     }),
 
   /** Delete a site deployment by its unique ID. */
-  deleteDeployment: userOrAppUserProtectedProcedure
+  deleteDeployment: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sites/{siteId}/deployments/{deploymentId}',
@@ -940,7 +940,7 @@ export const siteRouter = {
     }),
 
   /** Cancel an ongoing site deployment build. */
-  updateDeploymentStatus: userOrAppUserProtectedProcedure
+  updateDeploymentStatus: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/sites/{siteId}/deployments/{deploymentId}/status',
@@ -967,7 +967,7 @@ export const siteRouter = {
     }),
 
   /** Get a list of all site logs. Cursor-based pagination. */
-  listLogs: userOrAppUserProtectedProcedure
+  listLogs: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}/logs',
@@ -1008,7 +1008,7 @@ export const siteRouter = {
     }),
 
   /** Get a site request log by its unique ID. */
-  getLog: userOrAppUserProtectedProcedure
+  getLog: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}/logs/{logId}',
@@ -1031,7 +1031,7 @@ export const siteRouter = {
     }),
 
   /** Delete a site log by its unique ID. */
-  deleteLog: userOrAppUserProtectedProcedure
+  deleteLog: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sites/{siteId}/logs/{logId}',
@@ -1053,7 +1053,7 @@ export const siteRouter = {
     }),
 
   /** Get usage metrics and statistics for a specific site. Use range: 24h, 30d, or 90d. Default 30 days. */
-  getUsage: userOrAppUserProtectedProcedure
+  getUsage: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}/usage',
@@ -1174,7 +1174,7 @@ export const siteRouter = {
     }),
 
   /** Get a list of all variables of a specific site. */
-  listVariables: userOrAppUserProtectedProcedure
+  listVariables: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}/variables',
@@ -1197,7 +1197,7 @@ export const siteRouter = {
     }),
 
   /** Create a new site environment variable. Accessible during build and runtime (SSR) as environment variables. */
-  createVariable: userOrAppUserProtectedProcedure
+  createVariable: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sites/{siteId}/variables',
@@ -1228,7 +1228,7 @@ export const siteRouter = {
     }),
 
   /** Get a variable by its unique ID. */
-  getVariable: userOrAppUserProtectedProcedure
+  getVariable: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sites/{siteId}/variables/{variableId}',
@@ -1255,7 +1255,7 @@ export const siteRouter = {
     }),
 
   /** Update variable by its unique ID. */
-  updateVariable: userOrAppUserProtectedProcedure
+  updateVariable: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/sites/{siteId}/variables/{variableId}',
@@ -1285,7 +1285,7 @@ export const siteRouter = {
     }),
 
   /** Delete a variable by its unique ID. */
-  deleteVariable: userOrAppUserProtectedProcedure
+  deleteVariable: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sites/{siteId}/variables/{variableId}',

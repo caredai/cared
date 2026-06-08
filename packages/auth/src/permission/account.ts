@@ -1,82 +1,22 @@
 import type { organization } from 'better-auth/plugins'
 import { clientSideHasPermission } from 'better-auth/client/plugins'
-import { createAccessControl } from 'better-auth/plugins/access'
 
+import type { AccountRole } from './roles'
 import type { StatementsSubset } from './statement'
 import { auth } from '../server'
-import { statements } from './statement'
+import { accountRoles } from './roles'
 
-export const accountAc = createAccessControl(statements)
-
-const ownerAc = accountAc.newRole({
-  pseudo: [],
-  account: ['read', 'write'],
-  member: ['read', 'write'],
-  invitation: ['read', 'write'],
-  apiToken: ['read', 'write'],
-  credits: ['read', 'write'],
-  subscription: ['read', 'write'],
-  invoice: ['read', 'write'],
-  providerKey: ['read', 'write'],
-  model: ['read', 'write', 'invoke'],
-  toolkit: ['read', 'write', 'invoke'],
-  mcp: ['read', 'write', 'invoke'],
-  app: ['read', 'write', 'publish'],
-  dataset: ['read', 'write'],
-
-  userApiToken: ['read', 'write'],
-})
-
-const adminAc = accountAc.newRole({
-  pseudo: [],
-  account: ['read', 'write'],
-  member: ['read', 'write'],
-  invitation: ['read', 'write'],
-  apiToken: ['read', 'write'],
-  credits: ['read', 'write'],
-  subscription: ['read', 'write'],
-  invoice: ['read', 'write'],
-  providerKey: ['read', 'write'],
-  model: ['read', 'write', 'invoke'],
-  toolkit: ['read', 'write', 'invoke'],
-  mcp: ['read', 'write', 'invoke'],
-  app: ['read', 'write', 'publish'],
-  dataset: ['read', 'write'],
-
-  userApiToken: ['read', 'write'],
-})
-
-const memberAc = accountAc.newRole({
-  pseudo: [],
-  account: ['read'],
-  member: ['read'],
-  invitation: ['read'],
-  apiToken: ['read'],
-  credits: ['read'],
-  subscription: ['read'],
-  invoice: ['read'],
-  providerKey: ['read'],
-  model: ['read', 'invoke'],
-  toolkit: ['read', 'invoke'],
-  mcp: ['read', 'invoke'],
-  app: ['read'],
-  dataset: ['read'],
-
-  userApiToken: ['read'],
-})
-
-export const accountRoles = {
-  owner: ownerAc,
-  admin: adminAc,
-  member: memberAc,
-}
-
-export type AccountRole = 'owner' | 'admin' | 'member'
+export { accountAc, accountRoles, type AccountRole } from './roles'
 
 export function checkPermissionsByRole(
   role: AccountRole,
   permissions: StatementsSubset = { pseudo: [] },
 ) {
+  // eslint-disable-next-line no-restricted-properties,turbo/no-undeclared-env-vars
+  if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') {
+    return _checkPermissionsByRole(role, permissions)
+  }
+
   const orgPlugin = auth.options.plugins.find(
     (plugin) => plugin.id === 'organization',
   ) as unknown as ReturnType<typeof organization>
@@ -86,4 +26,30 @@ export function checkPermissionsByRole(
     options: orgPlugin.options,
     permissions,
   })
+}
+
+function _checkPermissionsByRole(
+  role: AccountRole,
+  permissions: StatementsSubset = { pseudo: [] },
+): boolean {
+  const roleStatements = accountRoles[role].statements
+
+  for (const [name, actions] of Object.entries(permissions)) {
+    if (name === 'pseudo') {
+      continue
+    }
+    const allowed = roleStatements[name as keyof typeof roleStatements] as
+      | readonly string[]
+      | undefined
+    if (!allowed) {
+      return false
+    }
+    for (const action of actions) {
+      if (!allowed.includes(action)) {
+        return false
+      }
+    }
+  }
+
+  return true
 }

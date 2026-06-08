@@ -9,7 +9,6 @@ export type StatementsSubset = ExtractStatementsSubset<typeof statements>
 export const statements = {
   pseudo: [],
 
-  // Account
   account: ['read', 'write'],
   member: ['read', 'write'],
   invitation: ['read', 'write'],
@@ -21,9 +20,6 @@ export const statements = {
   model: ['read', 'write', 'invoke'],
   toolkit: ['read', 'write', 'invoke'],
   mcp: ['read', 'write', 'invoke'],
-  app: ['read', 'write', 'publish'],
+  oauthApp: ['read', 'write'],
   dataset: ['read', 'write'],
-
-  // User
-  userApiToken: ['read', 'write'],
 }

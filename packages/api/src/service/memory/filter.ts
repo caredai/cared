@@ -6,10 +6,6 @@ type EntityFieldCondition =
   | { user_id: { '=': string } }
   | { user_id: { '!=': string } }
   | { user_id: { in: string[] } }
-  | { agent_id: string | '*' }
-  | { agent_id: { '=': string } }
-  | { agent_id: { '!=': string } }
-  | { agent_id: { in: string[] } }
   | { app_id: string | '*' }
   | { app_id: { '=': string } }
   | { app_id: { '!=': string } }
@@ -84,11 +80,6 @@ const entityFieldSchema = z.union([
   z.object({ user_id: z.object({ '=': z.string() }) }),
   z.object({ user_id: z.object({ '!=': z.string() }) }),
   z.object({ user_id: z.object({ in: z.array(z.string()) }) }),
-  // agent_id
-  z.object({ agent_id: z.union([z.literal('*'), z.string()]) }),
-  z.object({ agent_id: z.object({ '=': z.string() }) }),
-  z.object({ agent_id: z.object({ '!=': z.string() }) }),
-  z.object({ agent_id: z.object({ in: z.array(z.string()) }) }),
   // app_id
   z.object({ app_id: z.union([z.literal('*'), z.string()]) }),
   z.object({ app_id: z.object({ '=': z.string() }) }),

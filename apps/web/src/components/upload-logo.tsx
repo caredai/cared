@@ -5,6 +5,7 @@ import { usePresignedUpload } from 'next-s3-upload'
 import { toast } from 'sonner'
 
 import type { S3Location } from '@cared/api'
+import { getApiPath, getApiUrl } from '@cared/auth/client'
 import { Button } from '@cared/ui/components/button'
 import {
   DropdownMenu,
@@ -83,7 +84,7 @@ export function UploadLogo({
           await uploadToS3(file, {
             endpoint: {
               request: {
-                url: '/api/openapi/v1/files/s3-presigned-url',
+                url: `${getApiUrl()}${getApiPath()}/v1/files/s3-presigned-url`,
                 body: location,
               },
             },

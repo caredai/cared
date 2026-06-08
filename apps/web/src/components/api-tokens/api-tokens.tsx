@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { formatDistance } from 'date-fns'
-import { MoreHorizontal, PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod/v4'
+import { MoreHorizontal, PencilIcon, PlusIcon, RefreshCwIcon, Trash2Icon } from 'lucide-react'
 
 import type { RouterOutputs } from '@cared/api'
 import { Button } from '@cared/ui/components/button'
@@ -30,389 +27,69 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@cared/ui/components/dropdown-menu'
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@cared/ui/components/form'
-import { Input } from '@cared/ui/components/input'
 import { CircleSpinner } from '@cared/ui/components/spinner'
 
 import type { ColumnDef } from '@tanstack/react-table'
+import { MemberIdentity } from '@/components/member-select'
+import { PopoverTooltip } from '@/components/tooltip'
 import { useAccounts } from '@/hooks/use-account'
-import { useActiveAccount } from '@/hooks/use-active'
 import {
   useApiTokens,
-  useCreateApiToken,
   useDeleteApiToken,
-  useListPermissionGroups,
   useRotateApiToken,
 } from '@/hooks/use-api-token'
-import { useMembers } from '@/hooks/use-members'
-import { useSession } from '@/hooks/use-session'
+import type { Member } from '@/hooks/use-members'
+import { useMemberByUserIdLookup, useMembers } from '@/hooks/use-members'
 import { stripIdPrefix } from '@/lib/utils'
+import { formatMaskedApiToken } from './format-masked-api-token'
 import { ApiTokenDialog, useShowApiTokenDialog } from './show-api-token-dialog'
 
 type ApiToken = RouterOutputs['account']['apiToken']['list']['tokens'][number]
 
-function scopeDisplayName(scope: 'account' | 'user'): string {
-  return scope === 'account' ? 'Account' : 'User'
-}
-
-// Helper function to check if a token is AI API Key (only has dev.cared.api.ai resources)
-function isAiApiKey(token: ApiToken): boolean {
-  // Check all policies
-  for (const policy of token.policies) {
-    const resources = Object.keys(policy.resources)
-    for (const resource of resources) {
-      // If any resource is dev.cared.api.user or dev.cared.api.account, it's not an AI API Key
-      if (
-        resource.startsWith('dev.cared.api.user') ||
-        resource.startsWith('dev.cared.api.account')
-      ) {
-        return false
-      }
-    }
-  }
-  // If we only have dev.cared.api.ai resources (or no resources), it's an AI API Key
-  return true
-}
-
-// Schema for creating AI API Key
-const createAiApiKeySchema = z.object({
-  name: z.string().min(1, 'Name is required').max(64, 'Name cannot exceed 64 characters').trim(),
-})
-
-type CreateAiApiKeyFormValues = z.infer<typeof createAiApiKeySchema>
-
-// Component for AI API Keys management
-function AiApiKeys({
-  aiApiKeys,
-  refetchApiTokens,
-  showApiTokenDialog,
-  openRotateDialog,
-  openDeleteDialog,
-}: {
-  aiApiKeys: ApiToken[]
-  refetchApiTokens: () => void
-  showApiTokenDialog: (token: string, tokenType: 'ai-api-key' | 'api-token') => void
-  openRotateDialog: (apiToken: ApiToken) => void
-  openDeleteDialog: (apiToken: ApiToken) => void
-}) {
-  const [showCreateAiKeyDialog, setShowCreateAiKeyDialog] = useState(false)
-  const createApiToken = useCreateApiToken()
-  const activeAccount = useActiveAccount()
-  const { session } = useSession()
-  const {
-    data: { permissionGroups },
-  } = useListPermissionGroups()
-
-  // Get members for account scope to display creator names
-  const members = useMembers(activeAccount?.id)
-
-  // Create a map of userId to member name for quick lookup
-  const userIdToMemberNameMap = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const member of members) {
-      if (member.user.id && member.user.name) {
-        map.set(member.user.id, member.user.name)
-      }
-    }
-    return map
-  }, [members])
-
-  // Helper function to get creator name from userId
-  const getCreatorName = (userId: string | null | undefined): string => {
-    if (!userId) return ''
-    return userIdToMemberNameMap.get(userId) ?? ''
-  }
-
-  // Handle creating AI API Key
-  const handleCreateAiApiKey = async (name: string) => {
-    // Get all permission groups that include dev.cared.api.ai scope
-    const aiPermissionGroups = permissionGroups.filter((group) =>
-      group.scopes.includes('dev.cared.api.ai'),
-    )
-
-    if (aiPermissionGroups.length === 0) {
-      throw new Error('No permission groups found for dev.cared.api.ai scope')
-    }
-
-    // Create policies for the active account only
-    if (!activeAccount) {
-      throw new Error('No active account found')
-    }
-
-    // Build policies with dev.cared.api.ai resources for the active account
-    const policies: {
-      effect: 'allow' | 'deny'
-      resources: Record<string, '*'>
-      permissionGroups: { id: string }[]
-    }[] = [
-      {
-        effect: 'allow',
-        resources: {
-          [`dev.cared.api.ai.${activeAccount.id}.${session.userId}`]: '*',
-        },
-        permissionGroups: aiPermissionGroups.map(({ id }) => ({ id })),
-      },
-    ]
-
-    const result = await createApiToken({
-      name,
-      scope: 'account',
-      policies,
-      enabled: true,
-    })
-
-    showApiTokenDialog(result.token.token, 'ai-api-key')
-    setShowCreateAiKeyDialog(false)
-    void refetchApiTokens()
-  }
-
-  // Define table columns for AI API Keys (with Created by column)
-  const aiApiKeyColumns: ColumnDef<ApiToken>[] = [
-    {
-      accessorKey: 'name',
-      header: 'Name',
-      cell: ({ row }) => {
-        const apiToken = row.original
-        return (
-          <div className="flex flex-col max-w-50">
-            <span className="font-medium truncate">{apiToken.name}</span>
-            <span className="text-sm text-muted-foreground">
-              Created {formatDistance(apiToken.createdAt, new Date(), { addSuffix: true })}
-            </span>
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: 'token',
-      header: 'API Key',
-      cell: ({ row }) => {
-        const apiToken = row.original
-        return <code className="font-mono">{`${apiToken.start}...${apiToken.end}`}</code>
-      },
-    },
-    {
-      accessorKey: 'createdBy',
-      header: 'Created by',
-      cell: ({ row }) => {
-        const apiToken = row.original
-        const creatorName = getCreatorName(apiToken.userId)
-        return <span>{creatorName}</span>
-      },
-    },
-    {
-      id: 'actions',
-      header: 'Actions',
-      cell: ({ row }) => {
-        const apiToken = row.original
-        return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
-                <span className="sr-only">Open menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => openRotateDialog(apiToken)}
-                className="cursor-pointer"
-              >
-                <RefreshCwIcon className="h-4 w-4" />
-                Regenerate
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => openDeleteDialog(apiToken)}
-                className="text-destructive focus:text-destructive cursor-pointer"
-              >
-                <Trash2Icon className="h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
-      },
-    },
-  ]
-
-  return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>AI API Keys</CardTitle>
-              <CardDescription>Dedicated API Keys for accessing AI models.</CardDescription>
-            </div>
-            <Button onClick={() => setShowCreateAiKeyDialog(true)}>
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Create AI API Key
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {aiApiKeys.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 border rounded-md">
-              <p className="text-sm text-muted-foreground">No AI API Keys found</p>
-            </div>
-          ) : (
-            <DataTable
-              columns={aiApiKeyColumns}
-              data={aiApiKeys}
-              searchKeys={['name']}
-              searchPlaceholder="Search AI API Keys..."
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Create AI API Key Dialog */}
-      <CreateAiApiKeyDialog
-        open={showCreateAiKeyDialog}
-        onOpenChange={setShowCreateAiKeyDialog}
-        onCreate={handleCreateAiApiKey}
-      />
-    </>
-  )
-}
-
-// Simple dialog for creating AI API Key
-function CreateAiApiKeyDialog({
-  open,
-  onOpenChange,
-  onCreate,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onCreate: (name: string) => Promise<void>
-}) {
-  const [isCreating, setIsCreating] = useState(false)
-  const form = useForm<CreateAiApiKeyFormValues>({
-    resolver: zodResolver(createAiApiKeySchema),
-    defaultValues: {
-      name: '',
-    },
-  })
-
-  useEffect(() => {
-    form.reset()
-  }, [form, open])
-
-  const onSubmit = async (data: CreateAiApiKeyFormValues) => {
-    try {
-      setIsCreating(true)
-      await onCreate(data.name)
-      onOpenChange(false)
-    } catch (err) {
-      // Set form error for display
-      form.setError('root', {
-        type: 'manual',
-        message: err instanceof Error ? err.message : 'Failed to create AI API Key',
-      })
-    } finally {
-      setIsCreating(false)
-    }
-  }
-
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!isCreating) {
-      onOpenChange(newOpen)
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create AI API Key</DialogTitle>
-          <DialogDescription>
-            Create a new AI API Key with dedicated permissions for accessing AI models.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Enter API key name"
-                      disabled={isCreating}
-                      maxLength={64}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {form.formState.errors.root && (
-              <div className="text-sm text-destructive">{form.formState.errors.root.message}</div>
-            )}
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => handleOpenChange(false)}
-                disabled={isCreating}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isCreating}>
-                {isCreating ? (
-                  <>
-                    <CircleSpinner />
-                    Creating...
-                  </>
-                ) : (
-                  'Create'
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  )
+function credentialTypeDisplayName(credentialType: 'account' | 'user'): string {
+  return credentialType === 'account' ? 'Account' : 'User'
 }
 
 export function ApiTokens({
-  scope,
+  credentialType,
   showTitle,
 }: {
-  scope: 'account' | 'user'
+  credentialType: 'account' | 'user'
   showTitle?: boolean
 }) {
-  const { apiTokens, refetchApiTokens } = useApiTokens(scope)
+  if (credentialType === 'account') {
+    return <AccountApiTokens showTitle={showTitle} />
+  }
+
+  return <ApiTokensContent credentialType="user" showTitle={showTitle} />
+}
+
+function AccountApiTokens({ showTitle }: { showTitle?: boolean }) {
+  const { members } = useMembers()
+  const getMemberByUserId = useMemberByUserIdLookup(members)
+
+  return (
+    <ApiTokensContent
+      credentialType="account"
+      showTitle={showTitle}
+      getMemberByUserId={getMemberByUserId}
+    />
+  )
+}
+
+function ApiTokensContent({
+  credentialType,
+  showTitle,
+  getMemberByUserId,
+}: {
+  credentialType: 'account' | 'user'
+  showTitle?: boolean
+  getMemberByUserId?: (userId: string | null | undefined) => Member | undefined
+}) {
+  const { apiTokens, refetchApiTokens } = useApiTokens(credentialType)
   const router = useRouter()
+  const accounts = useAccounts()
 
-  // Separate tokens into two categories
-  const { aiApiKeys, apiTokens: regularApiTokens } = useMemo(() => {
-    const aiKeys: ApiToken[] = []
-    const regularTokens: ApiToken[] = []
-
-    for (const token of apiTokens) {
-      if (isAiApiKey(token)) {
-        aiKeys.push(token)
-      } else {
-        regularTokens.push(token)
-      }
-    }
-
-    return { aiApiKeys: aiKeys, apiTokens: regularTokens }
-  }, [apiTokens])
-
-  // Shared dialog states for all cards
   const { showApiTokenDialog, closeApiTokenDialog } = useShowApiTokenDialog()
   const [showRotateDialog, setShowRotateDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -422,24 +99,20 @@ export function ApiTokens({
 
   const rotateApiToken = useRotateApiToken()
   const deleteApiToken = useDeleteApiToken()
-  const accounts = useAccounts()
 
-  // Close API token dialog when component unmounts
   useEffect(() => {
     return () => {
       closeApiTokenDialog()
     }
   }, [closeApiTokenDialog])
 
-  // Shared handlers for all cards
   const handleRotate = async () => {
     if (!selectedApiToken) return
 
     try {
       setIsRotating(true)
       const result = await rotateApiToken(selectedApiToken.id)
-      const tokenType = isAiApiKey(selectedApiToken) ? 'ai-api-key' : 'api-token'
-      showApiTokenDialog(result.token.token, tokenType)
+      showApiTokenDialog(result.token.token)
       setShowRotateDialog(false)
       void refetchApiTokens()
     } finally {
@@ -470,17 +143,14 @@ export function ApiTokens({
     setShowDeleteDialog(true)
   }
 
-  // Get accountId from route params for navigation
-  const getAccountIdNoPrefix = () => {
-    if (scope === 'account') {
-      // Try to get from route context
+  const getAccountIdNoPrefix = useCallback(() => {
+    if (credentialType === 'account') {
       try {
         const match = /\/acc_([^/]+)/.exec(router.state.location.pathname)
         if (match?.[1]) {
           return match[1]
         }
       } catch {
-        // Fallback: use first account
         if (accounts.length > 0) {
           const firstAccount = accounts[0]
           if (firstAccount) {
@@ -490,11 +160,10 @@ export function ApiTokens({
       }
     }
     return undefined
-  }
+  }, [accounts, credentialType, router.state.location.pathname])
 
-  // Navigate to create API token page
   const handleNavigateToCreateApiToken = () => {
-    if (scope === 'account') {
+    if (credentialType === 'account') {
       const accountIdNoPrefix = getAccountIdNoPrefix()
       if (accountIdNoPrefix) {
         void router.navigate({
@@ -511,7 +180,32 @@ export function ApiTokens({
     }
   }
 
-  // Define table columns for regular API Tokens (without Created by column)
+  const navigateToApiToken = useCallback(
+    (apiToken: ApiToken) => {
+      if (credentialType === 'account') {
+        const accountIdNoPrefix = getAccountIdNoPrefix()
+        if (!accountIdNoPrefix) return
+
+        void router.navigate({
+          to: '/acc_{$accountIdNoPrefix}/api-tokens/at_{$apiTokenIdNoPrefix}',
+          params: {
+            accountIdNoPrefix,
+            apiTokenIdNoPrefix: stripIdPrefix(apiToken.id),
+          },
+        })
+        return
+      }
+
+      void router.navigate({
+        to: '/user/api-tokens/at_{$apiTokenIdNoPrefix}',
+        params: {
+          apiTokenIdNoPrefix: stripIdPrefix(apiToken.id),
+        },
+      })
+    },
+    [credentialType, getAccountIdNoPrefix, router],
+  )
+
   const apiTokenColumns: ColumnDef<ApiToken>[] = [
     {
       accessorKey: 'name',
@@ -533,9 +227,37 @@ export function ApiTokens({
       header: 'API Token',
       cell: ({ row }) => {
         const apiToken = row.original
-        return <code className="font-mono">{`${apiToken.start}...${apiToken.end}`}</code>
+        return (
+          <code className="font-mono">{formatMaskedApiToken(apiToken.start, apiToken.end)}</code>
+        )
       },
     },
+    ...(credentialType === 'account'
+      ? [
+          {
+            accessorKey: 'member',
+            header: () => (
+              <div className="flex items-center gap-1">
+                Member
+                <PopoverTooltip
+                  className="inline-block align-bottom"
+                  content="The member this token is scoped to. Empty for account-wide tokens."
+                />
+              </div>
+            ),
+            cell: ({ row }: { row: { original: ApiToken } }) => {
+              const apiToken = row.original
+              const member = getMemberByUserId?.(apiToken.userId)
+
+              if (!member) {
+                return null
+              }
+
+              return <MemberIdentity member={member} className="max-w-50" />
+            },
+          } satisfies ColumnDef<ApiToken>,
+        ]
+      : []),
     {
       id: 'actions',
       header: 'Actions',
@@ -551,14 +273,30 @@ export function ApiTokens({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                onClick={() => openRotateDialog(apiToken)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  navigateToApiToken(apiToken)
+                }}
+                className="cursor-pointer"
+              >
+                <PencilIcon className="h-4 w-4" />
+                View details
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openRotateDialog(apiToken)
+                }}
                 className="cursor-pointer"
               >
                 <RefreshCwIcon className="h-4 w-4" />
                 Regenerate
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => openDeleteDialog(apiToken)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  openDeleteDialog(apiToken)
+                }}
                 className="text-destructive focus:text-destructive cursor-pointer"
               >
                 <Trash2Icon className="h-4 w-4" />
@@ -575,7 +313,9 @@ export function ApiTokens({
     <div className="space-y-6">
       {showTitle && (
         <div className="w-full">
-          <h3 className="text-lg font-semibold">{scopeDisplayName(scope)} API Tokens</h3>
+          <h3 className="text-lg font-semibold">
+            {credentialTypeDisplayName(credentialType)} API Tokens
+          </h3>
           <p className="text-sm text-muted-foreground">
             Configure API tokens to securely control access to your accounts, models and apps. Keep
             these tokens secure and never share them publicly.
@@ -583,18 +323,6 @@ export function ApiTokens({
         </div>
       )}
 
-      {/* AI API Keys Card - Only show for account scope */}
-      {scope === 'account' && (
-        <AiApiKeys
-          aiApiKeys={aiApiKeys}
-          refetchApiTokens={refetchApiTokens}
-          showApiTokenDialog={showApiTokenDialog}
-          openRotateDialog={openRotateDialog}
-          openDeleteDialog={openDeleteDialog}
-        />
-      )}
-
-      {/* API Tokens Card */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -611,25 +339,25 @@ export function ApiTokens({
           </div>
         </CardHeader>
         <CardContent>
-          {regularApiTokens.length === 0 ? (
+          {apiTokens.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 border rounded-md">
               <p className="text-sm text-muted-foreground">No API Tokens found</p>
             </div>
           ) : (
             <DataTable
               columns={apiTokenColumns}
-              data={regularApiTokens}
+              data={apiTokens}
               searchKeys={['name']}
               searchPlaceholder="Search API Tokens..."
+              getRowId={(row) => row.id}
+              onRowClick={navigateToApiToken}
             />
           )}
         </CardContent>
       </Card>
 
-      {/* Shared Show Token Dialog for all cards */}
       <ApiTokenDialog />
 
-      {/* Shared Rotate Token Dialog for all cards */}
       <Dialog
         open={showRotateDialog}
         onOpenChange={(open) => {
@@ -668,7 +396,6 @@ export function ApiTokens({
         </DialogContent>
       </Dialog>
 
-      {/* Shared Delete Token Dialog for all cards */}
       <Dialog
         open={showDeleteDialog}
         onOpenChange={(open) => {

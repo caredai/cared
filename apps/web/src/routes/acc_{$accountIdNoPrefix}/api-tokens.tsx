@@ -13,9 +13,10 @@ export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/api-tokens')({
     )
     void context.queryClient.prefetchQuery(
       orpc.account.apiToken.list.queryOptions({
-        input: { scope: 'account' },
+        input: { credentialType: 'account' },
       }),
     )
+    void context.queryClient.prefetchQuery(orpc.account.account.listMembers.queryOptions())
   },
   component: ApiKeysPage,
 })
@@ -29,7 +30,7 @@ function ApiKeysPage() {
       />
 
       <Suspense fallback={<SkeletonCard />}>
-        <ApiTokens scope="account" />
+        <ApiTokens credentialType="account" />
       </Suspense>
     </>
   )

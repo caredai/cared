@@ -1,28 +1,32 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import { auth, authHeaders } from '@cared/auth'
-import { and, desc, eq, inArray } from '@cared/db'
+import { auth, authHeaders, getAuth } from '@cared/auth'
+import { and, desc, eq, inArray, or } from '@cared/db'
 import { db } from '@cared/db/client'
 import {
   Account,
-  App,
   AuthAccount,
   Member,
   OAuthAccessToken,
-  OAuthApplication,
+  OAuthApp,
   OAuthConsent,
+  OAuthRefreshToken,
   User,
 } from '@cared/db/schema'
 
 import type { Session } from '../../types'
-import { invalidateAccessTokensCache } from '../../operation/oauth-app'
+import {
+  getOAuthAppByClientId,
+  invalidateAccessTokensCache,
+  invalidateUserAccounts,
+} from '../../operation'
 import { publicProcedure, userProtectedProcedure } from '../../orpc'
+import { formatInvitation, formatOAuthApp } from '../../types'
 import { forwardSetCookieHeader } from '../../utils'
-import { formatOAuthApp } from '../account/oauth-app'
 
 function formatSession(session: (typeof auth.$Infer.Session)['session']) {
-  const { geolocation, activeOrganizationId, ...props } = session
+  const { geolocation, ...props } = session
 
   const sess: Session['session'] = {
     ...props,
@@ -33,7 +37,6 @@ function formatSession(session: (typeof auth.$Infer.Session)['session']) {
           country?: string
         })
       : undefined,
-    activeAccountId: activeOrganizationId,
   }
 
   return sess
@@ -44,7 +47,7 @@ export const userRouter = {
     .route({
       method: 'GET',
       path: '/user/session',
-      tags: ['me'],
+      tags: ['user'],
       summary: 'Get current session of current user',
     })
     .input(
@@ -98,7 +101,7 @@ export const userRouter = {
     .route({
       method: 'GET',
       path: '/user/auth-accounts',
-      tags: ['me'],
+      tags: ['user'],
       summary: 'Get linked authentication accounts of current user',
     })
     .handler(async ({ context }) => {
@@ -119,7 +122,7 @@ export const userRouter = {
     .route({
       method: 'GET',
       path: '/user/sessions',
-      tags: ['me'],
+      tags: ['user'],
       summary: 'Get sessions of current user',
     })
     .handler(async ({ context }) => {
@@ -138,75 +141,197 @@ export const userRouter = {
       }
     }),
 
+  setActiveAccount: userProtectedProcedure
+    .route({
+      method: 'POST',
+      path: '/user/active-account',
+      tags: ['user'],
+      summary: 'Set active account for current user',
+    })
+    .input(
+      z.object({
+        id: z.string().min(32).nullable(),
+      }),
+    )
+    .handler(async ({ context, input }) => {
+      const { headers: resHeaders, response: account } = await getAuth({
+        useOriginalAccessControl: true,
+      }).api.setActiveOrganization({
+        returnHeaders: true,
+        headers: authHeaders(context.headers),
+        body: {
+          organizationId: input.id,
+        },
+      })
+      if (!account && input.id) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to set active account',
+        })
+      }
+      forwardSetCookieHeader(context.resHeaders, resHeaders)
+    }),
+
+  accountInvitations: userProtectedProcedure
+    .route({
+      method: 'GET',
+      path: '/user/account-invitations',
+      tags: ['user'],
+      summary: 'List pending account invitations for current user',
+    })
+    .handler(async ({ context }) => {
+      const invitations = await getAuth({
+        useOriginalAccessControl: true,
+      }).api.listUserInvitations({
+        headers: authHeaders(context.headers),
+      })
+      return { invitations: invitations.map(formatInvitation) }
+    }),
+
+  acceptAccountInvitation: userProtectedProcedure
+    .route({
+      method: 'POST',
+      path: '/user/account-invitations/{invitationId}/accept',
+      tags: ['user'],
+      summary: 'Accept account invitation',
+    })
+    .input(z.object({ invitationId: z.string().min(1) }))
+    .handler(async ({ context, input }) => {
+      const res = await getAuth({
+        useOriginalAccessControl: true,
+      }).api.acceptInvitation({
+        headers: authHeaders(context.headers),
+        body: { invitationId: input.invitationId },
+      })
+
+      await invalidateUserAccounts(res.member.userId)
+
+      return { invitation: formatInvitation(res.invitation) }
+    }),
+
+  rejectAccountInvitation: userProtectedProcedure
+    .route({
+      method: 'POST',
+      path: '/user/account-invitations/{invitationId}/reject',
+      tags: ['user'],
+      summary: 'Reject account invitation',
+    })
+    .input(z.object({ invitationId: z.string().min(1) }))
+    .handler(async ({ context, input }) => {
+      const res = await getAuth({
+        useOriginalAccessControl: true,
+      }).api.rejectInvitation({
+        headers: authHeaders(context.headers),
+        body: { invitationId: input.invitationId },
+      })
+      if (!res.invitation) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', {
+          message: 'Failed to reject invitation',
+        })
+      }
+      return { invitation: formatInvitation(res.invitation) }
+    }),
+
+  leaveAccount: userProtectedProcedure
+    .route({
+      method: 'POST',
+      path: '/user/leave-account',
+      tags: ['user'],
+      summary: 'Leave the current account',
+    })
+    .handler(async ({ context }) => {
+      const { headers: resHeaders, response: member } = await getAuth({
+        useOriginalAccessControl: true,
+      }).api.leaveOrganization({
+        returnHeaders: true,
+        headers: authHeaders(context.headers),
+        body: { organizationId: context.auth.accountId },
+      })
+
+      forwardSetCookieHeader(context.resHeaders, resHeaders)
+
+      await invalidateUserAccounts(member.userId)
+
+      return { member }
+    }),
+
   oauthApps: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/user/oauth-apps',
-      tags: ['me'],
+      tags: ['user'],
       summary: 'Get authorized OAuth apps for current user',
     })
     .handler(async ({ context }) => {
-      const sqlClientIds = db
-        .selectDistinct({
-          clientId: OAuthAccessToken.clientId,
-          createdAt: OAuthAccessToken.createdAt,
-          updatedAt: OAuthAccessToken.updatedAt,
+      const authorizedRows = await db
+        .select({
+          oauthApp: OAuthApp,
+          accessCreatedAt: OAuthAccessToken.createdAt,
         })
         .from(OAuthAccessToken)
-        .where(eq(OAuthAccessToken.userId, context.auth.userId))
-        .orderBy(desc(OAuthAccessToken.updatedAt), desc(OAuthAccessToken.createdAt))
-        .as('sqlClientIds')
-
-      const oauthApps = (
-        await db
-          .select({
-            oauthApp: OAuthApplication,
-            createdAt: sqlClientIds.createdAt,
-            updatedAt: sqlClientIds.updatedAt,
-          })
-          .from(sqlClientIds)
-          .innerJoin(OAuthApplication, eq(OAuthApplication.clientId, sqlClientIds.clientId))
-      ).map((a) => formatOAuthApp(a.oauthApp))
-
-      const apps = await db
-        .select({
-          app: App,
-          account: Account,
-          owner: User,
-        })
-        .from(App)
-        .innerJoin(Account, eq(Account.id, App.accountId))
-        .innerJoin(Member, and(eq(Member.accountId, Account.id), eq(Member.role, 'owner')))
-        .innerJoin(User, eq(User.id, Member.userId))
-        .where(
-          inArray(
-            App.id,
-            oauthApps.map((a) => a.appId),
+        .innerJoin(
+          OAuthApp,
+          or(
+            eq(OAuthAccessToken.clientId, OAuthApp.clientId),
+            eq(OAuthAccessToken.clientId, OAuthApp.publicClientId),
           ),
         )
+        .where(eq(OAuthAccessToken.userId, context.auth.userId))
+        .orderBy(desc(OAuthAccessToken.createdAt))
 
-      const oauthAppsMap = new Map(oauthApps.map((a) => [a.appId, a]))
+      const latestByOAuthAppId = new Map<
+        string,
+        { oauthApp: typeof OAuthApp.$inferSelect; accessCreatedAt: Date }
+      >()
+      for (const row of authorizedRows) {
+        if (!latestByOAuthAppId.has(row.oauthApp.id)) {
+          latestByOAuthAppId.set(row.oauthApp.id, row)
+        }
+      }
+      const authorizedApps = [...latestByOAuthAppId.values()]
+
+      const uniqueAccountIds = [
+        ...new Set(authorizedApps.map(({ oauthApp }) => oauthApp.accountId)),
+      ]
+
+      const accounts =
+        uniqueAccountIds.length > 0
+          ? await db
+              .select({
+                account: Account,
+                owner: User,
+              })
+              .from(Account)
+              .innerJoin(Member, and(eq(Member.accountId, Account.id), eq(Member.role, 'owner')))
+              .innerJoin(User, eq(User.id, Member.userId))
+              .where(inArray(Account.id, uniqueAccountIds))
+          : []
+
+      const accountsMap = new Map(
+        accounts.map(({ account, owner }) => [account.id, { account, owner }]),
+      )
 
       return {
-        apps: apps.map(({ app, account, owner }) => {
-          const oauthApp = oauthAppsMap.get(app.id)!
+        apps: authorizedApps.map(({ oauthApp, accessCreatedAt }) => {
+          const formatted = formatOAuthApp(oauthApp)
+          const accountInfo = accountsMap.get(oauthApp.accountId)
           return {
-            clientId: oauthApp.clientId,
+            ...formatted,
             access: {
-              createdAt: oauthApp.createdAt,
-              updatedAt: oauthApp.updatedAt,
+              createdAt: accessCreatedAt,
+              updatedAt: formatted.updatedAt,
             },
-            appId: app.id,
-            name: app.name,
-            imageUrl: app.metadata.imageUrl,
-            account: {
-              id: account.id,
-              name: account.name,
-            },
-            owner: {
-              id: owner.id,
-              name: owner.name,
-            },
+            account: accountInfo
+              ? {
+                  id: accountInfo.account.id,
+                  name: accountInfo.account.name,
+                }
+              : undefined,
+            owner: accountInfo
+              ? {
+                  id: accountInfo.owner.id,
+                  name: accountInfo.owner.name,
+                }
+              : undefined,
           }
         }),
       }
@@ -216,7 +341,7 @@ export const userRouter = {
     .route({
       method: 'DELETE',
       path: '/user/oauth-apps/{clientId}',
-      tags: ['me'],
+      tags: ['user'],
       summary: 'Revoke access token for a specific OAuth app',
     })
     .input(
@@ -225,13 +350,31 @@ export const userRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
+      const oauthApp = await getOAuthAppByClientId(input.clientId)
+      if (!oauthApp) {
+        throw new ORPCError('NOT_FOUND', {
+          message: 'OAuth app not found',
+        })
+      }
+
+      const clientIds = [oauthApp.clientId, oauthApp.publicClientId]
+
       await db.transaction(async (tx) => {
         await tx
           .delete(OAuthConsent)
           .where(
             and(
               eq(OAuthConsent.userId, context.auth.userId),
-              eq(OAuthConsent.clientId, input.clientId),
+              inArray(OAuthConsent.clientId, clientIds),
+            ),
+          )
+
+        await tx
+          .delete(OAuthRefreshToken)
+          .where(
+            and(
+              eq(OAuthRefreshToken.userId, context.auth.userId),
+              inArray(OAuthRefreshToken.clientId, clientIds),
             ),
           )
 
@@ -240,12 +383,12 @@ export const userRouter = {
           .where(
             and(
               eq(OAuthAccessToken.userId, context.auth.userId),
-              eq(OAuthAccessToken.clientId, input.clientId),
+              inArray(OAuthAccessToken.clientId, clientIds),
             ),
           )
           .returning()
 
-        await invalidateAccessTokensCache(...tokens.map((t) => t.accessToken!))
+        await invalidateAccessTokensCache(...tokens.map((t) => t.token))
       })
     }),
 }

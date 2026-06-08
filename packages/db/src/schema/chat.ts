@@ -18,8 +18,7 @@ import type { MessageContent } from '@cared/shared'
 import { messageContentSchema, messageRoleEnumValues, uiMessageSchema } from '@cared/shared'
 
 import { Account, User } from '.'
-import { Agent } from './agent'
-import { App } from './app'
+import { OAuthApp } from './oauth-app'
 import {
   generateId,
   makeIdValid,
@@ -63,9 +62,9 @@ export const Chat = pgTable(
   'chat',
   {
     id: text().primaryKey().notNull().$defaultFn(generateChatId),
-    appId: text()
+    oauthAppId: text()
       .notNull()
-      .references(() => App.id), // No action on delete
+      .references(() => OAuthApp.id, { onDelete: 'set null' }),
     accountId: text()
       .notNull()
       .references(() => Account.id, { onDelete: 'cascade' }),
@@ -80,8 +79,8 @@ export const Chat = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.appId),
-    index().on(table.accountId, table.userId, table.appId, table.debug),
+    index().on(table.oauthAppId),
+    index().on(table.accountId, table.userId, table.oauthAppId, table.debug),
     ...timestampsIndices(table),
   ],
 )
@@ -90,7 +89,7 @@ export type Chat = InferSelectModel<typeof Chat>
 
 export const CreateChatSchema = createInsertSchema(Chat, {
   id: makeIdValid('chat').optional(),
-  appId: z.string(),
+  oauthAppId: z.string(),
   userId: z.string(),
   debug: z.boolean().optional(),
   metadata: chatMetadataSchema,
@@ -102,7 +101,7 @@ export const UpdateChatSchema = createUpdateSchema(Chat, {
   id: z.string(),
   metadata: makeObjectNonempty(chatMetadataSchema).optional(),
 }).omit({
-  appId: true,
+  oauthAppId: true,
   userId: true,
   debug: true,
   ...timestampsOmits,
@@ -124,8 +123,6 @@ export const Message = pgTable(
       .notNull()
       .references(() => Chat.id, { onDelete: 'cascade' }),
     role: messageRoleEnum().notNull(),
-    // Agent id. Only set for assistant role messages.
-    agentId: text().references(() => Agent.id, { onDelete: 'set null' }),
     content: jsonb().$type<MessageContent>().notNull(),
     ...timestamps,
   },
@@ -136,7 +133,6 @@ export const Message = pgTable(
     }).onDelete('cascade'),
     index().on(table.parentId),
     index().on(table.chatId, table.role),
-    index().on(table.chatId, table.agentId),
     ...timestampsIndices(table),
   ],
 )
@@ -164,7 +160,6 @@ export const CreateMessageSchema = z.object({
   parentId: z.string().optional(),
   chatId: z.string(),
   role: uiMessageSchema.shape.role,
-  agentId: z.string().optional(),
   content: messageContentSchema,
 })
 

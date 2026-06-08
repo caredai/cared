@@ -10,7 +10,7 @@ import {
 } from '@appwrite.io/console'
 import { z } from 'zod/v4'
 
-import { userOrAppUserProtectedProcedure } from '../../orpc'
+import { userProtectedProcedure } from '../../orpc'
 import { appwriteFunctionsService } from '../../service/appwrite'
 
 // Base input: every procedure requires regionId for Appwrite region-scoped API
@@ -242,7 +242,7 @@ const metricOutputSchema = z.object({
 
 export const functionRouter = {
   /** Enable Functions API for the account in the given region (ensure project/user/key). */
-  enableFunctions: userOrAppUserProtectedProcedure
+  enableFunctions: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/functions/enable',
@@ -256,7 +256,7 @@ export const functionRouter = {
     }),
 
   /** List all available Appwrite regions. */
-  listRegions: userOrAppUserProtectedProcedure
+  listRegions: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/regions',
@@ -282,7 +282,7 @@ export const functionRouter = {
   /**
    * Get a list of all the project's functions. Cursor-based pagination with Query.limit, Query.orderDesc($createdAt), Query.cursorBefore.
    */
-  listFunctions: userOrAppUserProtectedProcedure
+  listFunctions: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions',
@@ -327,7 +327,7 @@ export const functionRouter = {
   /**
    * Create a new function. You can pass a list of permissions to allow different project users or team to execute the function using the client API.
    */
-  createFunction: userOrAppUserProtectedProcedure
+  createFunction: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/functions',
@@ -406,7 +406,7 @@ export const functionRouter = {
     }),
 
   /** Get a list of all runtimes that are currently active on your instance. */
-  listRuntimes: userOrAppUserProtectedProcedure
+  listRuntimes: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/runtimes',
@@ -444,7 +444,7 @@ export const functionRouter = {
     }),
 
   /** List allowed function specifications for this instance. */
-  listSpecifications: userOrAppUserProtectedProcedure
+  listSpecifications: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/specifications',
@@ -476,7 +476,7 @@ export const functionRouter = {
   /**
    * List available function templates. Cursor-based pagination (cursor is offset as string for templates API).
    */
-  listTemplates: userOrAppUserProtectedProcedure
+  listTemplates: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/templates',
@@ -527,7 +527,7 @@ export const functionRouter = {
     }),
 
   /** Get a function template using ID. You can use template details in create function method. */
-  getTemplate: userOrAppUserProtectedProcedure
+  getTemplate: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/templates/{templateId}',
@@ -551,7 +551,7 @@ export const functionRouter = {
    * Get usage metrics and statistics for all functions in the project. Not a list endpoint.
    * Use optional range: 24h, 30d, or 90d. Defaults to 30 days.
    */
-  getAllFunctionsUsage: userOrAppUserProtectedProcedure
+  getAllFunctionsUsage: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/usage',
@@ -666,7 +666,7 @@ export const functionRouter = {
     }),
 
   /** Get a function by its unique ID. */
-  getFunction: userOrAppUserProtectedProcedure
+  getFunction: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}',
@@ -687,7 +687,7 @@ export const functionRouter = {
     }),
 
   /** Update function by its unique ID. */
-  updateFunction: userOrAppUserProtectedProcedure
+  updateFunction: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/functions/{functionId}',
@@ -752,7 +752,7 @@ export const functionRouter = {
     }),
 
   /** Delete a function by its unique ID. */
-  deleteFunction: userOrAppUserProtectedProcedure
+  deleteFunction: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/functions/{functionId}',
@@ -768,7 +768,7 @@ export const functionRouter = {
     }),
 
   /** Update the function active deployment. Use this endpoint to switch the code deployment used when the function is executed. */
-  updateFunctionDeployment: userOrAppUserProtectedProcedure
+  updateFunctionDeployment: userProtectedProcedure
     .route({
       method: 'PUT',
       path: '/functions/{functionId}/deployment',
@@ -797,7 +797,7 @@ export const functionRouter = {
   /**
    * Get a list of all the function's code deployments. Cursor-based pagination.
    */
-  listDeployments: userOrAppUserProtectedProcedure
+  listDeployments: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}/deployments',
@@ -840,7 +840,7 @@ export const functionRouter = {
   /**
    * Create a new build for an existing function deployment. Rebuilds with updated function configuration (entrypoint, build commands). Build is queued and executed asynchronously.
    */
-  createDuplicateDeployment: userOrAppUserProtectedProcedure
+  createDuplicateDeployment: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/functions/{functionId}/deployments/{deploymentId}/duplicate',
@@ -872,7 +872,7 @@ export const functionRouter = {
   /**
    * Create a deployment based on a template. Use with listTemplates to find template details.
    */
-  createTemplateDeployment: userOrAppUserProtectedProcedure
+  createTemplateDeployment: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/functions/{functionId}/deployments/template',
@@ -913,7 +913,7 @@ export const functionRouter = {
   /**
    * Create a deployment when a function is connected to VCS. Create from branch, commit, or tag.
    */
-  createVcsDeployment: userOrAppUserProtectedProcedure
+  createVcsDeployment: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/functions/{functionId}/deployments/vcs',
@@ -945,7 +945,7 @@ export const functionRouter = {
     }),
 
   /** Get a function deployment by its unique ID. */
-  getDeployment: userOrAppUserProtectedProcedure
+  getDeployment: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}/deployments/{deploymentId}',
@@ -972,7 +972,7 @@ export const functionRouter = {
     }),
 
   /** Delete a code deployment by its unique ID. */
-  deleteDeployment: userOrAppUserProtectedProcedure
+  deleteDeployment: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/functions/{functionId}/deployments/{deploymentId}',
@@ -997,7 +997,7 @@ export const functionRouter = {
    * Cancel an ongoing function deployment build. If build is in progress it is stopped and marked canceled. If not started, marked canceled without executing.
    * Cannot cancel builds that already completed (status 'ready') or failed.
    */
-  updateDeploymentStatus: userOrAppUserProtectedProcedure
+  updateDeploymentStatus: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/functions/{functionId}/deployments/{deploymentId}/status',
@@ -1026,7 +1026,7 @@ export const functionRouter = {
   /**
    * Get a list of all the current user function execution logs. Cursor-based pagination.
    */
-  listExecutions: userOrAppUserProtectedProcedure
+  listExecutions: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}/executions',
@@ -1069,7 +1069,7 @@ export const functionRouter = {
   /**
    * Trigger a function execution. Returns current execution status. Call Get Execution to poll for updates. Execution runs asynchronously.
    */
-  createExecution: userOrAppUserProtectedProcedure
+  createExecution: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/functions/{functionId}/executions',
@@ -1110,7 +1110,7 @@ export const functionRouter = {
     }),
 
   /** Get a function execution log by its unique ID. */
-  getExecution: userOrAppUserProtectedProcedure
+  getExecution: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}/executions/{executionId}',
@@ -1137,7 +1137,7 @@ export const functionRouter = {
     }),
 
   /** Delete a function execution by its unique ID. */
-  deleteExecution: userOrAppUserProtectedProcedure
+  deleteExecution: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/functions/{functionId}/executions/{executionId}',
@@ -1161,7 +1161,7 @@ export const functionRouter = {
   /**
    * Get usage metrics and statistics for a specific function. View deployments, builds, executions, storage, compute time. Use range: 24h, 30d, or 90d. Default 30 days.
    */
-  getUsage: userOrAppUserProtectedProcedure
+  getUsage: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}/usage',
@@ -1262,7 +1262,7 @@ export const functionRouter = {
     }),
 
   /** Get a list of all variables of a specific function. */
-  listVariables: userOrAppUserProtectedProcedure
+  listVariables: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}/variables',
@@ -1289,7 +1289,7 @@ export const functionRouter = {
   /**
    * Create a new function environment variable. Accessible at runtime as environment variables.
    */
-  createVariable: userOrAppUserProtectedProcedure
+  createVariable: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/functions/{functionId}/variables',
@@ -1324,7 +1324,7 @@ export const functionRouter = {
     }),
 
   /** Get a variable by its unique ID. */
-  getVariable: userOrAppUserProtectedProcedure
+  getVariable: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/functions/{functionId}/variables/{variableId}',
@@ -1351,7 +1351,7 @@ export const functionRouter = {
     }),
 
   /** Update variable by its unique ID. */
-  updateVariable: userOrAppUserProtectedProcedure
+  updateVariable: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/functions/{functionId}/variables/{variableId}',
@@ -1381,7 +1381,7 @@ export const functionRouter = {
     }),
 
   /** Delete a variable by its unique ID. */
-  deleteVariable: userOrAppUserProtectedProcedure
+  deleteVariable: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/functions/{functionId}/variables/{variableId}',

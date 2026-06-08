@@ -1,6 +1,5 @@
 import {
   Activity,
-  Bot,
   Box,
   Brain,
   Cable,
@@ -9,6 +8,7 @@ import {
   Cylinder,
   Database,
   Key,
+  KeyRound,
   PocketKnife,
   Puzzle,
   Settings2,
@@ -83,9 +83,9 @@ const items: NavItem[] = [
     icon: Cylinder,
   },
   {
-    title: 'Apps',
-    url: '/apps',
-    icon: Bot,
+    title: 'OAuth Apps',
+    url: '/oauth-apps',
+    icon: KeyRound,
   },
   {
     title: 'Knowledge',

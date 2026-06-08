@@ -24,6 +24,7 @@ import {
   useNamespaceUsageLimits,
 } from '@/hooks/use-database'
 import { orpc } from '@/lib/orpc'
+import { ConnectDialog } from './connect-dialog'
 import {
   endpointStateLabel,
   endpointStateVariant,
@@ -31,7 +32,6 @@ import {
   formatHistoryRetention,
   RelativeTime,
 } from './database-format'
-import { ConnectDialog } from './connect-dialog'
 import { NamespaceMonitoringPanel } from './namespace-monitoring-panel'
 import { NamespaceUsageCard } from './namespace-usage-card'
 import { formatDatabaseRegion } from './region-label'
@@ -194,7 +194,7 @@ export function NamespaceDashboard({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <CardTitle className="text-base font-semibold">Namespace settings</CardTitle>
+              <CardTitle className="text-base font-semibold">Database namespace settings</CardTitle>
               <Button variant="link" className="h-auto p-0 text-sm" asChild>
                 <Link
                   to="/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/settings"

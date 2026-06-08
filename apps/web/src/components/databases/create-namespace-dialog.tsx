@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { useRouter } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
@@ -32,7 +33,17 @@ import { formatDatabaseRegion } from './region-label'
 const DEFAULT_PG_VERSION = '17'
 const DEFAULT_REGION = 'aws-us-west-2'
 
-export function CreateNamespaceDialog({ accountIdNoPrefix }: { accountIdNoPrefix: string }) {
+export function CreateNamespaceDialog({
+  accountIdNoPrefix,
+  menu,
+  trigger,
+  onSuccess,
+}: {
+  accountIdNoPrefix: string
+  menu?: (props: { trigger: (props: { children: ReactNode }) => ReactNode }) => ReactNode
+  trigger?: ReactNode
+  onSuccess?: () => void
+}) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -72,6 +83,11 @@ export function CreateNamespaceDialog({ accountIdNoPrefix }: { accountIdNoPrefix
       setOpen(false)
       resetForm()
 
+      if (onSuccess) {
+        onSuccess()
+        return
+      }
+
       const namespaceIdNoPrefix = stripIdPrefix(result.namespace.id)
       void router.navigate({
         to: '/acc_{$accountIdNoPrefix}/database_{$namespaceIdNoPrefix}/dashboard',
@@ -83,20 +99,28 @@ export function CreateNamespaceDialog({ accountIdNoPrefix }: { accountIdNoPrefix
   }
 
   const canSubmit = name.trim().length > 0
+  const Menu = menu
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-1" />
-          Create Namespace
-        </Button>
-      </DialogTrigger>
+      {Menu && (
+        <Menu trigger={({ children }) => <DialogTrigger asChild>{children}</DialogTrigger>} />
+      )}
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      {!Menu && !trigger && (
+        <DialogTrigger asChild>
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-1" />
+            Create database namespace
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Namespace</DialogTitle>
+          <DialogTitle>Create database namespace</DialogTitle>
           <DialogDescription>
-            Provision a new Postgres namespace. Choose a name, Postgres version, and region.
+            Provision a new Postgres database namespace. Choose a name, Postgres version, and
+            region.
           </DialogDescription>
         </DialogHeader>
         <CreateNamespaceFormFields

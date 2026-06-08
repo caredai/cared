@@ -4,7 +4,7 @@ import { index, jsonb, numeric, pgEnum, pgTable, text } from 'drizzle-orm/pg-cor
 import type { GenerationDetails } from '@cared/providers'
 import { createdAt, generateId } from '@cared/shared'
 
-import { App } from './app'
+import { OAuthApp } from './oauth-app'
 import { Account, User } from './auth-alias'
 
 export const expenseKinds = ['generation'] as const
@@ -22,16 +22,16 @@ export const Expense = pgTable(
       .notNull()
       .references(() => Account.id, { onDelete: 'cascade' }),
     userId: text().references(() => User.id, { onDelete: 'cascade' }), // spender
-    appId: text().references(() => App.id, { onDelete: 'cascade' }), // when use app
+    oauthAppId: text().references(() => OAuthApp.id, { onDelete: 'set null' }),
     kind: expenseKindEnum().notNull(),
     cost: numeric({ precision: 18, scale: 10 }), // in credits
     details: jsonb().$type<GenerationDetails>().notNull(),
     createdAt,
   },
   (table) => [
-    index().on(table.accountId, table.userId, table.appId),
-    index().on(table.accountId, table.appId),
-    index().on(table.userId, table.appId),
+    index().on(table.accountId, table.userId, table.oauthAppId),
+    index().on(table.accountId, table.oauthAppId),
+    index().on(table.userId, table.oauthAppId),
     index().on(table.createdAt),
   ],
 )

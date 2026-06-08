@@ -13,7 +13,7 @@ export const Route = createFileRoute('/user/api-tokens_/create')({
     )
     void context.queryClient.prefetchQuery(
       orpc.account.apiToken.list.queryOptions({
-        input: { scope: 'user' },
+        input: { credentialType: 'user' },
       }),
     )
   },
@@ -29,7 +29,7 @@ function CreateApiTokenPage() {
       />
 
       <Suspense fallback={<SkeletonCard />}>
-        <CreateApiToken scope="user" />
+        <CreateApiToken credentialType="user" />
       </Suspense>
     </>
   )

@@ -82,7 +82,7 @@ function storeMemory(ctx: Context) {
           .insert(Memory)
           .values({
             userId: ctx.userId,
-            appId: ctx.appId,
+            oauthAppId: ctx.appId,
             chatId: scope === 'chat' ? ctx.chatId : undefined,
             content,
           })

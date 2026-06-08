@@ -1,11 +1,10 @@
-import { apiKeyClient } from '@better-auth/api-key/client'
+import { oauthProviderClient } from '@better-auth/oauth-provider/client'
 import { passkeyClient } from '@better-auth/passkey/client'
 import {
   adminClient,
   customSessionClient,
   genericOAuthClient,
   jwtClient,
-  oidcClient,
   organizationClient,
   twoFactorClient,
 } from 'better-auth/client/plugins'
@@ -19,9 +18,8 @@ export const authClient = createAuthClient({
   basePath: `${getApiPath()}/auth`,
   plugins: [
     customSessionClient<typeof auth>(),
-    oidcClient(),
+    oauthProviderClient(),
     jwtClient(),
-    apiKeyClient(),
     twoFactorClient(),
     passkeyClient(),
     genericOAuthClient(),

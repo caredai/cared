@@ -1,6 +1,7 @@
 import { base64Url } from '@better-auth/utils/base64'
 import { createHash } from '@better-auth/utils/hash'
 
+import type { ApiTokenCredentialType } from '@cared/db/schema'
 import type { TokenPolicy } from '@cared/shared'
 import { generateKey } from '@cared/auth'
 import { and, eq } from '@cared/db'
@@ -8,6 +9,19 @@ import { db } from '@cared/db/client'
 import { ApiToken, User } from '@cared/db/schema'
 
 import { Cache } from './cache'
+
+/** Prefix for each API token credential type. */
+export const API_TOKEN_PREFIX_BY_CREDENTIAL_TYPE = {
+  account: 'crat_', // Cared Account API Token
+  user: 'crut_', // Cared User API Token
+} as const satisfies Record<ApiTokenCredentialType, string>
+
+export function isApiTokenCredential(value: string): boolean {
+  return (
+    value.startsWith(API_TOKEN_PREFIX_BY_CREDENTIAL_TYPE.account) ||
+    value.startsWith(API_TOKEN_PREFIX_BY_CREDENTIAL_TYPE.user)
+  )
+}
 
 export async function getApiTokenHash(token: string) {
   // See: https://github.com/better-auth/better-auth/blob/main/packages/better-auth/src/plugins/api-key/routes/verify-api-key.ts
@@ -17,15 +31,16 @@ export async function getApiTokenHash(token: string) {
   })
 }
 
-export async function generateApiToken() {
+export async function generateApiToken(credentialType: ApiTokenCredentialType) {
+  const prefix = API_TOKEN_PREFIX_BY_CREDENTIAL_TYPE[credentialType]
   const token = generateKey({
     length: 64,
-    prefix: 'sk_cr_',
+    prefix,
   })
   return {
     token,
     hash: await getApiTokenHash(token),
-    start: token.substring(0, 6 + 3),
+    start: token.substring(0, prefix.length + 3),
     end: token.substring(token.length - 3, token.length),
   }
 }
@@ -66,7 +81,7 @@ export async function invalidateApiTokensCacheByUser(userId: string) {
   const apiTokenHashes = await db
     .select({ hash: ApiToken.hash })
     .from(ApiToken)
-    .where(and(eq(ApiToken.scope, 'user'), eq(ApiToken.userId, userId)))
+    .where(and(eq(ApiToken.credentialType, 'user'), eq(ApiToken.userId, userId)))
   await cache.batchInvalidate(...apiTokenHashes.map(({ hash }) => hash))
 }
 
@@ -74,18 +89,3 @@ export async function getApiToken(token: string) {
   const hash = await getApiTokenHash(token)
   return await cache.get(hash)
 }
-
-export type ApiTokenAuth =
-  | {
-      scope: 'user'
-      userId: string
-      accountId: string
-      isAdmin?: boolean
-      policies: TokenPolicy[]
-    }
-  | {
-      scope: 'account'
-      accountId: string
-      userId?: string // for `dev.cared.api.ai.${string}.${string}`
-      policies: TokenPolicy[]
-    }

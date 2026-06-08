@@ -2,19 +2,36 @@ import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
 import type { AccountRole } from '@cared/auth'
-import { authHeaders, getAuth } from '@cared/auth'
-import { desc, eq } from '@cared/db'
+import { withAuthSession } from '@cared/auth'
+import { and, desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Account, Member, User } from '@cared/db/schema'
 
+import type { ProtectedAuth } from '../../auth'
 import { formatAccount, invalidateUserAccounts } from '../../operation'
-import { userPlainProtectedProcedure, userProtectedProcedure } from '../../orpc'
+import { protectedProcedure } from '../../orpc'
 import { formatInvitation } from '../../types'
-import { forwardSetCookieHeader } from '../../utils'
+
+async function getUserId(auth: ProtectedAuth): Promise<string> {
+  if (auth.type === 'account') {
+    const owner = await db.query.Member.findFirst({
+      where: and(eq(Member.accountId, auth.accountId), eq(Member.role, 'owner')),
+      columns: { userId: true },
+    })
+    if (!owner) {
+      throw new ORPCError('NOT_FOUND', { message: 'Account owner not found' })
+    }
+    return owner.userId
+  }
+  if (!auth.userId) {
+    throw new ORPCError('UNAUTHORIZED')
+  }
+  return auth.userId
+}
 
 export const accountRouter = {
   // ---- Account ----
-  create: userProtectedProcedure
+  create: protectedProcedure
     .route({
       method: 'POST',
       path: '/accounts',
@@ -28,17 +45,17 @@ export const accountRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
-      const account = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.createOrganization({
-        headers: authHeaders(context.headers),
-        body: {
-          name: input.name,
-          slug: 'slug', // slug will be set in `organizationCreation.beforeCreate`
-          // logo: input.logo,
-          keepCurrentActiveOrganization: false,
-        },
-      })
+      const account = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.createOrganization({
+          headers,
+          body: {
+            name: input.name,
+            slug: 'slug', // slug will be set in `organizationCreation.beforeCreate`
+            // logo: input.logo,
+            keepCurrentActiveOrganization: false,
+          },
+        }),
+      )
 
       await invalidateUserAccounts(
         ...account.members.map((m) => m?.userId).filter((id): id is string => Boolean(id)),
@@ -47,7 +64,7 @@ export const accountRouter = {
       return { account: formatAccount(account) }
     }),
 
-  list: userProtectedProcedure
+  list: protectedProcedure
     .route({
       method: 'GET',
       path: '/accounts',
@@ -55,6 +72,7 @@ export const accountRouter = {
       summary: 'List all accounts for current user',
     })
     .handler(async ({ context }) => {
+      const userId = await getUserId(context.auth)
       const accounts = await db
         .select({
           account: Account,
@@ -62,7 +80,7 @@ export const accountRouter = {
         })
         .from(Account)
         .innerJoin(Member, eq(Member.accountId, Account.id))
-        .where(eq(Member.userId, context.auth.userId))
+        .where(eq(Member.userId, userId))
         .orderBy(desc(Account.createdAt))
 
       return {
@@ -73,55 +91,20 @@ export const accountRouter = {
       }
     }),
 
-  setActive: userPlainProtectedProcedure
-    .route({
-      method: 'POST',
-      path: '/accounts/{id}/set-active',
-      tags: ['account'],
-      summary: 'Set active account for current user',
-    })
-    .input(
-      z.object({
-        id: z.string().min(32).nullable(),
-      }),
-    )
-    .handler(async ({ context, input }) => {
-      const { headers: resHeaders, response: account } = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.setActiveOrganization({
-        returnHeaders: true,
-        headers: authHeaders(context.headers),
-        body: {
-          organizationId: input.id,
-        },
-      })
-      if (!account && input.id) {
-        throw new ORPCError('INTERNAL_SERVER_ERROR', {
-          message: 'Failed to set active account',
-        })
-      }
-      forwardSetCookieHeader(context.resHeaders, resHeaders)
-    }),
-
-  get: userProtectedProcedure
+  get: protectedProcedure
     .route({
       method: 'GET',
-      path: '/accounts/{id}',
+      path: '/account',
       tags: ['account'],
-      summary: 'Get account details by ID',
+      summary: 'Get current account details',
     })
-    .input(
-      z.object({
-        id: z.string().min(1),
-      }),
-    )
-    .handler(async ({ context, input }) => {
-      const fullAccount = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.getFullOrganization({
-        headers: authHeaders(context.headers),
-        query: { organizationId: input.id },
-      })
+    .handler(async ({ context }) => {
+      const fullAccount = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.getFullOrganization({
+          headers,
+          query: { organizationId: context.auth.accountId },
+        }),
+      )
       if (!fullAccount) {
         throw new ORPCError('NOT_FOUND', { message: 'Account not found' })
       }
@@ -136,31 +119,30 @@ export const accountRouter = {
       }
     }),
 
-  update: userProtectedProcedure
+  update: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/accounts/{id}',
+      path: '/account',
       tags: ['account'],
-      summary: 'Update account details',
+      summary: 'Update current account details',
     })
     .input(
       z.object({
-        id: z.string().min(1),
         name: z.string().min(1).max(128),
       }),
     )
     .handler(async ({ context, input }) => {
-      const account = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.updateOrganization({
-        headers: authHeaders(context.headers),
-        body: {
-          organizationId: input.id,
-          data: {
-            name: input.name,
+      const account = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.updateOrganization({
+          headers,
+          body: {
+            organizationId: context.auth.accountId,
+            data: {
+              name: input.name,
+            },
           },
-        },
-      })
+        }),
+      )
       if (!account) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
           message: 'Failed to update account',
@@ -181,106 +163,82 @@ export const accountRouter = {
       return { account: formatAccount(account) }
     }),
 
-  delete: userProtectedProcedure
+  delete: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/accounts/{id}',
+      path: '/account',
       tags: ['account'],
-      summary: 'Delete account',
+      summary: 'Delete current account',
     })
-    .input(
-      z.object({
-        id: z.string().min(1),
-      }),
-    )
-    .handler(async ({ context, input }) => {
+    .handler(async ({ context }) => {
+      const accountId = context.auth.accountId
       const members = (
         await db.query.Member.findMany({
-          where: eq(Member.accountId, input.id),
+          where: eq(Member.accountId, accountId),
           columns: {
             userId: true,
           },
         })
       ).map(({ userId }) => userId)
 
-      await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.deleteOrganization({
-        headers: authHeaders(context.headers),
-        body: { organizationId: input.id },
-      })
+      await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.deleteOrganization({
+          headers,
+          body: { organizationId: accountId },
+        }),
+      )
 
       await invalidateUserAccounts(...members)
+
+      // TODO
     }),
 
   // ---- Invitations ----
-  createInvitation: userProtectedProcedure
+  createInvitation: protectedProcedure
     .route({
       method: 'POST',
-      path: '/accounts/{accountId}/invitations',
+      path: '/account/invitations',
       tags: ['account'],
-      summary: 'Create invitation for account',
+      summary: 'Create invitation for the current account',
     })
     .input(
       z.object({
-        accountId: z.string().min(32),
         email: z.email(),
         teamId: z.string().min(1).optional(),
         resend: z.boolean().optional(),
       }),
     )
     .handler(async ({ context, input }) => {
-      const inv = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.createInvitation({
-        headers: authHeaders(context.headers),
-        body: {
-          organizationId: input.accountId,
-          email: input.email,
-          role: 'member',
-          resend: input.resend,
-          teamId: input.teamId,
-        },
-      })
+      const inv = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.createInvitation({
+          headers,
+          body: {
+            organizationId: context.auth.accountId,
+            email: input.email,
+            role: 'member',
+            resend: input.resend,
+            teamId: input.teamId,
+          },
+        }),
+      )
       return { invitation: formatInvitation(inv) }
     }),
 
-  acceptInvitation: userProtectedProcedure
+  cancelInvitation: protectedProcedure
     .route({
       method: 'POST',
-      path: '/invitations/{invitationId}/accept',
-      tags: ['account'],
-      summary: 'Accept invitation',
-    })
-    .input(z.object({ invitationId: z.string().min(1) }))
-    .handler(async ({ context, input }) => {
-      const res = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.acceptInvitation({
-        headers: authHeaders(context.headers),
-        body: { invitationId: input.invitationId },
-      })
-
-      await invalidateUserAccounts(res.member.userId)
-
-      return { invitation: formatInvitation(res.invitation) }
-    }),
-
-  cancelInvitation: userProtectedProcedure
-    .route({
-      method: 'POST',
-      path: '/invitations/{invitationId}/cancel',
+      path: '/account/invitations/{invitationId}/cancel',
       tags: ['account'],
       summary: 'Cancel invitation',
     })
     .input(z.object({ invitationId: z.string().min(1) }))
     .handler(async ({ context, input }) => {
-      const invitation = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.cancelInvitation({
-        headers: authHeaders(context.headers),
-        body: { invitationId: input.invitationId },
-      })
+      const invitation = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.cancelInvitation({
+          headers,
+          body: { invitationId: input.invitationId },
+        }),
+      )
       if (!invitation) {
         throw new ORPCError('INTERNAL_SERVER_ERROR', {
           message: 'Failed to cancel invitation',
@@ -289,33 +247,10 @@ export const accountRouter = {
       return { invitation: formatInvitation(invitation) }
     }),
 
-  rejectInvitation: userProtectedProcedure
-    .route({
-      method: 'POST',
-      path: '/invitations/{invitationId}/reject',
-      tags: ['account'],
-      summary: 'Reject invitation',
-    })
-    .input(z.object({ invitationId: z.string().min(1) }))
-    .handler(async ({ context, input }) => {
-      const res = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.rejectInvitation({
-        headers: authHeaders(context.headers),
-        body: { invitationId: input.invitationId },
-      })
-      if (!res.invitation) {
-        throw new ORPCError('INTERNAL_SERVER_ERROR', {
-          message: 'Failed to reject invitation',
-        })
-      }
-      return { invitation: formatInvitation(res.invitation) }
-    }),
-
-  getInvitation: userProtectedProcedure
+  getInvitation: protectedProcedure
     .route({
       method: 'GET',
-      path: '/invitations/{invitationId}',
+      path: '/account/invitations/{invitationId}',
       tags: ['account'],
       summary: 'Get invitation details',
     })
@@ -326,12 +261,12 @@ export const accountRouter = {
         organizationSlug: _,
         inviterEmail,
         ...invitation
-      } = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.getInvitation({
-        headers: authHeaders(context.headers),
-        query: { id: input.invitationId },
-      })
+      } = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.getInvitation({
+          headers,
+          query: { id: input.invitationId },
+        }),
+      )
       const inviter = await db.query.User.findFirst({
         where: eq(User.email, inviterEmail),
       })
@@ -350,60 +285,42 @@ export const accountRouter = {
       }
     }),
 
-  listInvitations: userProtectedProcedure
+  listInvitations: protectedProcedure
     .route({
       method: 'GET',
-      path: '/accounts/{accountId}/invitations',
+      path: '/account/invitations',
       tags: ['account'],
-      summary: 'List account invitations',
-    })
-    .input(z.object({ accountId: z.string().min(32) }))
-    .handler(async ({ context, input }) => {
-      const invitations = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.listInvitations({
-        headers: authHeaders(context.headers),
-        query: { organizationId: input.accountId },
-      })
-      return { invitations: invitations.map(formatInvitation) }
-    }),
-
-  listUserInvitations: userProtectedProcedure
-    .route({
-      method: 'GET',
-      path: '/me/invitations',
-      tags: ['account'],
-      summary: 'List user invitations',
+      summary: 'List invitations for the current account',
     })
     .handler(async ({ context }) => {
-      const invitations = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.listUserInvitations({
-        headers: authHeaders(context.headers),
-      })
+      const invitations = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.listInvitations({
+          headers,
+          query: { organizationId: context.auth.accountId },
+        }),
+      )
       return { invitations: invitations.map(formatInvitation) }
     }),
 
   // ---- Members ----
-  listMembers: userProtectedProcedure
+  listMembers: protectedProcedure
     .route({
       method: 'GET',
-      path: '/accounts/{accountId}/members',
+      path: '/account/members',
       tags: ['account'],
-      summary: 'List account members',
+      summary: 'List members for the current account',
     })
-    .input(z.object({ accountId: z.string().min(32) }))
-    .handler(async ({ context, input }) => {
-      const res = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.listMembers({
-        headers: authHeaders(context.headers),
-        query: {
-          organizationId: input.accountId,
-          sortBy: 'createdAt',
-          sortDirection: 'desc',
-        },
-      })
+    .handler(async ({ context }) => {
+      const res = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.listMembers({
+          headers,
+          query: {
+            organizationId: context.auth.accountId,
+            sortBy: 'createdAt',
+            sortDirection: 'desc',
+          },
+        }),
+      )
       const owners = []
       const admins = []
       const members = []
@@ -419,16 +336,15 @@ export const accountRouter = {
       return { members: [...owners, ...admins, ...members] }
     }),
 
-  addMember: userProtectedProcedure
+  addMember: protectedProcedure
     .route({
       method: 'POST',
-      path: '/accounts/{accountId}/members',
+      path: '/account/members',
       tags: ['account'],
-      summary: 'Add member to account',
+      summary: 'Add member to the current account',
     })
     .input(
       z.object({
-        accountId: z.string().min(32),
         userId: z.string().min(1),
         role: z.enum(['admin', 'member']).default('member'),
         teamId: z.string().min(1).optional(),
@@ -436,159 +352,135 @@ export const accountRouter = {
     )
     .handler(async ({ input, context }) => {
       // NOTE: fix `auth.api.addMember` missing permission check
-      await context.auth.requirePermissions(
-        {
-          member: ['write'],
-        },
-        { accountId: input.accountId },
-      )
-
-      const member = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.addMember({
-        headers: authHeaders(context.headers),
-        body: {
-          organizationId: input.accountId,
-          userId: input.userId,
-          role: input.role,
-          teamId: input.teamId,
-        },
+      await context.auth.requirePermissions({
+        member: ['write'],
       })
+
+      const member = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.addMember({
+          headers,
+          body: {
+            organizationId: context.auth.accountId,
+            userId: input.userId,
+            role: input.role,
+            teamId: input.teamId,
+          },
+        }),
+      )
 
       await invalidateUserAccounts(member.userId)
 
       return { member }
     }),
 
-  removeMember: userProtectedProcedure
+  removeMember: protectedProcedure
     .route({
       method: 'DELETE',
-      path: '/accounts/{accountId}/members/{memberId}',
+      path: '/account/members/{memberId}',
       tags: ['account'],
-      summary: 'Remove member from account',
+      summary: 'Remove member from the current account',
     })
     .input(
       z.object({
-        accountId: z.string().min(32),
         memberId: z.string().min(1),
       }),
     )
     .handler(async ({ context, input }) => {
-      const res = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.removeMember({
-        headers: authHeaders(context.headers),
-        body: {
-          organizationId: input.accountId,
-          memberIdOrEmail: input.memberId,
-        },
-      })
+      const res = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.removeMember({
+          headers,
+          body: {
+            organizationId: context.auth.accountId,
+            memberIdOrEmail: input.memberId,
+          },
+        }),
+      )
 
       await invalidateUserAccounts(res.member.userId)
 
       return { member: res.member }
     }),
 
-  updateMemberRole: userProtectedProcedure
+  updateMemberRole: protectedProcedure
     .route({
       method: 'PATCH',
-      path: '/accounts/{accountId}/members/{memberId}',
+      path: '/account/members/{memberId}',
       tags: ['account'],
       summary: 'Update member role',
     })
     .input(
       z.object({
-        accountId: z.string().min(32),
         memberId: z.string().min(1),
         role: z.enum(['admin', 'member']),
       }),
     )
     .handler(async ({ context, input }) => {
-      const member = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.updateMemberRole({
-        headers: authHeaders(context.headers),
-        body: { organizationId: input.accountId, memberId: input.memberId, role: input.role },
-      })
+      const member = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
+        auth.api.updateMemberRole({
+          headers,
+          body: {
+            organizationId: context.auth.accountId,
+            memberId: input.memberId,
+            role: input.role,
+          },
+        }),
+      )
 
       await invalidateUserAccounts(member.userId)
 
       return { member }
     }),
 
-  transferOwnership: userProtectedProcedure
+  transferOwnership: protectedProcedure
     .route({
       method: 'POST',
-      path: '/accounts/{accountId}/transfer-ownership',
+      path: '/account/transfer-ownership',
       tags: ['account'],
-      summary: 'Transfer account ownership',
+      summary: 'Transfer ownership of the current account',
     })
     .input(
       z.object({
-        accountId: z.string().min(32),
         memberId: z.string().min(1),
       }),
     )
     .handler(async ({ input, context }) => {
+      const userId = await getUserId(context.auth)
       const previousOwnerMember = await db.query.Member.findFirst({
-        where: eq(Member.userId, context.auth.userId),
+        where: and(eq(Member.userId, userId), eq(Member.accountId, context.auth.accountId)),
       })
-      if (!previousOwnerMember) {
+      if (previousOwnerMember?.role !== 'owner') {
         throw new ORPCError('FORBIDDEN', {
-          message: 'You must be a member of the account to transfer ownership',
+          message: 'You must be the owner of the account to transfer ownership',
         })
       }
 
-      // First, update the target member's role to owner
-      const newOwner = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.updateMemberRole({
-        headers: authHeaders(context.headers),
-        body: {
-          organizationId: input.accountId,
-          memberId: input.memberId,
-          role: 'owner',
-        },
+      return await withAuthSession(userId, async (auth, headers) => {
+        // First, update the target member's role to owner
+        const newOwner = await auth.api.updateMemberRole({
+          headers,
+          body: {
+            organizationId: context.auth.accountId,
+            memberId: input.memberId,
+            role: 'owner',
+          },
+        })
+
+        // Then, update the current user's role to member
+        const previousOwner = await auth.api.updateMemberRole({
+          headers,
+          body: {
+            organizationId: context.auth.accountId,
+            memberId: previousOwnerMember.id,
+            role: 'member',
+          },
+        })
+
+        await invalidateUserAccounts(newOwner.userId, previousOwner.userId)
+
+        return {
+          newOwner,
+          previousOwner,
+        }
       })
-
-      // Then, update the current user's role to member
-      const previousOwner = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.updateMemberRole({
-        headers: authHeaders(context.headers),
-        body: {
-          organizationId: input.accountId,
-          memberId: previousOwnerMember.id,
-          role: 'member',
-        },
-      })
-
-      await invalidateUserAccounts(newOwner.userId, previousOwner.userId)
-
-      return {
-        newOwner,
-        previousOwner,
-      }
-    }),
-
-  leaveAccount: userProtectedProcedure
-    .route({
-      method: 'POST',
-      path: '/accounts/{accountId}/members/leave',
-      tags: ['account'],
-      summary: 'Leave account',
-    })
-    .input(z.object({ accountId: z.string().min(32) }))
-    .handler(async ({ context, input }) => {
-      const member = await getAuth(undefined, {
-        useOriginalAccessControl: true,
-      }).api.leaveOrganization({
-        headers: authHeaders(context.headers),
-        body: { organizationId: input.accountId },
-      })
-
-      await invalidateUserAccounts(member.userId)
-
-      return { member }
     }),
 }

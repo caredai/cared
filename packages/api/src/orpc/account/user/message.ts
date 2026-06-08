@@ -13,17 +13,17 @@ import {
   MessageVote,
 } from '@cared/db/schema'
 
-import type { UserOrAppUserContext } from '../../../orpc'
-import { userOrAppUserProtectedProcedure } from '../../../orpc'
+import type { UserContext } from '../../../orpc'
+import { userProtectedProcedure } from '../../../orpc'
 import { getChatById } from './chat'
 
-async function findMessageById(ctx: UserOrAppUserContext, id: string) {
+async function findMessageById(ctx: UserContext, id: string) {
   return await db.query.Message.findFirst({
     where: eq(Message.id, id),
   })
 }
 
-async function getMessageById(ctx: UserOrAppUserContext, id: string) {
+async function getMessageById(ctx: UserContext, id: string) {
   const message = await db.query.Message.findFirst({
     where: eq(Message.id, id),
   })
@@ -61,7 +61,7 @@ export const messageRouter = {
    * @param input - Object containing chat ID and pagination parameters
    * @returns List of messages with hasMore flag and pagination metadata
    */
-  list: userOrAppUserProtectedProcedure
+  list: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/messages',
@@ -124,7 +124,7 @@ export const messageRouter = {
    * @param input - Object containing chat ID and array of message IDs
    * @returns List of messages found by the provided IDs in the specified chat
    */
-  listByIds: userOrAppUserProtectedProcedure
+  listByIds: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/messages/list-by-ids',
@@ -147,7 +147,7 @@ export const messageRouter = {
       return { messages }
     }),
 
-  find: userOrAppUserProtectedProcedure
+  find: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/messages/{id}',
@@ -167,7 +167,7 @@ export const messageRouter = {
    * @param input - Object containing message ID
    * @returns The message if found
    */
-  get: userOrAppUserProtectedProcedure
+  get: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/messages/{id}',
@@ -187,7 +187,7 @@ export const messageRouter = {
    * @param input - The message data following the {@link CreateMessageSchema}
    * @returns The created message
    */
-  create: userOrAppUserProtectedProcedure
+  create: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/messages',
@@ -251,7 +251,7 @@ export const messageRouter = {
    * @param input - Object containing message ID and new content
    * @returns The updated message
    */
-  update: userOrAppUserProtectedProcedure
+  update: userProtectedProcedure
     .route({
       method: 'PATCH', // Using PATCH as we are partially updating the resource
       path: '/messages/{id}',
@@ -293,7 +293,7 @@ export const messageRouter = {
    *   - excludeSelf: Optional flag to exclude the specified message from deletion
    * @returns Object containing array of deleted messages
    */
-  delete: userOrAppUserProtectedProcedure
+  delete: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/messages/{id}',
@@ -406,7 +406,7 @@ export const messageRouter = {
    * @param input - The vote data following the {@link CreateMessageVoteSchema}
    * @returns The created or updated vote
    */
-  vote: userOrAppUserProtectedProcedure
+  vote: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/messages/vote',

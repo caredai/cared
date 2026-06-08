@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { noneAppUserProtectedProcedure } from '../../orpc'
+import { protectedProcedure } from '../../orpc'
 import {
   MAX_NAMESPACE_NAME_LENGTH,
   multiQueryInputSchema,
@@ -19,7 +19,7 @@ export const vectorRouter = {
    * Only accessible by authenticated users.
    * @returns List of namespaces
    */
-  listNamespaces: noneAppUserProtectedProcedure
+  listNamespaces: protectedProcedure
     .route({
       method: 'GET',
       path: '/vector/namespaces',
@@ -68,7 +68,7 @@ export const vectorRouter = {
    * Only accessible by authenticated users.
    * @returns Namespace metadata
    */
-  getNamespace: noneAppUserProtectedProcedure
+  getNamespace: protectedProcedure
     .route({
       method: 'GET',
       path: '/vector/namespaces/{namespace}',
@@ -95,7 +95,7 @@ export const vectorRouter = {
    * Only accessible by authenticated users.
    * @returns Success status
    */
-  deleteNamespace: noneAppUserProtectedProcedure
+  deleteNamespace: protectedProcedure
     .route({
       method: 'DELETE',
       path: '/vector/namespaces/{namespace}',
@@ -118,7 +118,7 @@ export const vectorRouter = {
    * Only accessible by authenticated users.
    * @returns Query results including rows, aggregations, and billing info
    */
-  query: noneAppUserProtectedProcedure
+  query: protectedProcedure
     .route({
       method: 'POST',
       path: '/vector/namespaces/{namespace}/query',
@@ -138,7 +138,7 @@ export const vectorRouter = {
    * Only accessible by authenticated users.
    * @returns Batched query results with billing details
    */
-  multiQuery: noneAppUserProtectedProcedure
+  multiQuery: protectedProcedure
     .route({
       method: 'POST',
       path: '/vector/namespaces/{namespace}/multi-query',
@@ -158,7 +158,7 @@ export const vectorRouter = {
    * Only accessible by authenticated users.
    * @returns Write operation status
    */
-  write: noneAppUserProtectedProcedure
+  write: protectedProcedure
     .route({
       method: 'POST',
       path: '/vector/namespaces/{namespace}',

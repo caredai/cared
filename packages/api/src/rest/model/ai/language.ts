@@ -740,13 +740,8 @@ export function handleError(
 }
 
 export function authId(auth: AuthContext) {
-  switch (auth.type) {
-    case 'apiToken':
-      switch (auth.scope) {
-        case 'account':
-          return auth.accountId
-      }
-      break
+  if (auth.type === 'account') {
+    return auth.accountId
   }
   return `${auth.accountId}:${auth.userId}`
 }

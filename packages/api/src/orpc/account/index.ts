@@ -1,7 +1,5 @@
 import { accountRouter as accountRouter_ } from './account'
-import { agentRouter } from './agent'
 import { apiTokenRouter } from './api-token'
-import { appRouter } from './app'
 import { creditsRouter } from './credits'
 import { databaseRouter } from './database'
 import { datasetRouter } from './dataset'
@@ -18,7 +16,6 @@ import { oauthAppRouter } from './oauth-app'
 import { providerKeyRouter } from './provider-key'
 import { sandboxRouter } from './sandbox'
 import { siteRouter } from './site'
-import { storageRouter } from './storage'
 import { stripeRouter } from './stripe'
 import { subscriptionRouter } from './subscriptions'
 import { telemetryRouter } from './telemetry'
@@ -29,13 +26,10 @@ import { vectorRouter } from './vector'
 export const accountRouter = {
   account: accountRouter_,
   user: userRouter,
-  app: appRouter,
   apiToken: apiTokenRouter,
   oauthApp: oauthAppRouter,
   providerKey: providerKeyRouter,
-  agent: agentRouter,
   dataset: datasetRouter,
-  storage: storageRouter,
   model: modelRouter,
   credits: creditsRouter,
   expense: expenseRouter,

@@ -40,7 +40,7 @@ export const expenseRouter = {
 
       // Filter by app if provided
       if (input.appId) {
-        conditions.push(eq(Expense.appId, input.appId))
+        conditions.push(eq(Expense.oauthAppId, input.appId))
       }
 
       // Pagination cursor

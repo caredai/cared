@@ -6,7 +6,7 @@ import { z } from 'zod/v4'
 
 import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
-import { App, Chat, Dataset } from '@cared/db/schema'
+import { Chat, Dataset, OAuthApp } from '@cared/db/schema'
 
 import type { Auth } from '../auth'
 import { env } from '../env'
@@ -114,9 +114,8 @@ export async function getS3Key({
       }
 
       case 'app': {
-        // Retrieve app to get accountId
-        const app = await db.query.App.findFirst({
-          where: eq(App.id, location.appId),
+        const app = await db.query.OAuthApp.findFirst({
+          where: eq(OAuthApp.id, location.appId),
         })
         if (!app) {
           throw new ORPCError('NOT_FOUND', {
@@ -124,7 +123,7 @@ export async function getS3Key({
           })
         }
 
-        await auth.requirePermissions({ app: ['write'] }, { accountId: app.accountId })
+        await auth.requirePermissions({ oauthApp: ['write'] }, { accountId: app.accountId })
 
         return `${app.accountId}/${location.appId}/${name}`
       }
@@ -141,8 +140,8 @@ export async function getS3Key({
         }
 
         // Get app to retrieve accountId
-        const app = await db.query.App.findFirst({
-          where: eq(App.id, chat.appId),
+        const app = await db.query.OAuthApp.findFirst({
+          where: eq(OAuthApp.id, chat.oauthAppId),
         })
         if (!app) {
           throw new ORPCError('NOT_FOUND', {
@@ -154,7 +153,7 @@ export async function getS3Key({
           throw new ORPCError('FORBIDDEN')
         }
 
-        return `${app.accountId}/${chat.appId}/${location.chatId}/${name}`
+        return `${app.accountId}/${chat.oauthAppId}/${location.chatId}/${name}`
       }
 
       default:
@@ -271,7 +270,8 @@ export function parseS3Url(url: string): ParsedS3Url | false | undefined {
   }
 
   // Check for app
-  if (!secondId.startsWith('app_')) {
+  // OAuth client prefix `oa_`.
+  if (!secondId.startsWith('oa_')) {
     return false
   }
 

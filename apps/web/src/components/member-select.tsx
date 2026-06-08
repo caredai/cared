@@ -17,13 +17,9 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
 import { cn } from '@cared/ui/lib/utils'
 
-import { useActiveAccountId } from '@/hooks/use-active'
-import { useMembers } from '@/hooks/use-members'
+import { useMembers, type Member } from '@/hooks/use-members'
 
-/**
- * Member interface representing account members
- */
-export type Member = ReturnType<typeof useMembers>[number]
+export type { Member }
 
 interface MemberSelectProps {
   /** Controlled open state */
@@ -52,11 +48,7 @@ export function MemberSelect({
   className,
   placeholder = 'Select member...',
 }: MemberSelectProps) {
-  // Get current active account
-  const { activeAccountId } = useActiveAccountId()
-
-  // Fetch members using the hook
-  const members = useMembers(activeAccountId)
+  const { members } = useMembers()
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = open !== undefined
   const isOpen = isControlled ? open : internalOpen
@@ -221,6 +213,32 @@ function MemberItem({ member, isSelected, onSelect }: MemberItemProps) {
   return <MemberItemTrigger isSelected={isSelected} member={member} onSelect={onSelect} />
 }
 
+/** Avatar, name, and email layout shared by member pickers and tables. */
+export function MemberIdentity({
+  member,
+  className,
+  avatarClassName,
+}: {
+  member: Member
+  className?: string
+  avatarClassName?: string
+}) {
+  return (
+    <div className={cn('flex min-w-0 items-center gap-2', className)}>
+      <Avatar className={cn('size-6', avatarClassName)}>
+        <AvatarImage alt={member.user.name} src={member.user.image ?? undefined} />
+        <AvatarFallback className="text-xs">
+          <UserIcon className="h-3 w-3" />
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-sm font-medium">{member.user.name}</span>
+        <span className="truncate text-muted-foreground text-xs">{member.user.email}</span>
+      </div>
+    </div>
+  )
+}
+
 const MemberItemTrigger = ({
   member,
   isSelected,
@@ -238,18 +256,7 @@ const MemberItemTrigger = ({
     value={member.id}
     {...props}
   >
-    <div className="flex min-w-0 flex-1 items-center gap-2">
-      <Avatar className="size-6">
-        <AvatarImage alt={member.user.name} src={member.user.image ?? undefined} />
-        <AvatarFallback className="text-xs">
-          <UserIcon className="h-3 w-3" />
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-sm font-medium">{member.user.name}</span>
-        <span className="truncate text-muted-foreground text-xs">{member.user.email}</span>
-      </div>
-    </div>
+    <MemberIdentity member={member} className="flex-1" />
     <Check className={cn('h-4 w-4 text-green-500', isSelected ? 'opacity-100' : 'opacity-0')} />
     {children}
   </CommandItem>

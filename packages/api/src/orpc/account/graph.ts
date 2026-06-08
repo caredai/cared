@@ -3,7 +3,7 @@ import { z } from 'zod/v4'
 
 import { graph as rg } from '@cared/redgw'
 
-import { noneAppUserProtectedProcedure } from '../../orpc'
+import { protectedProcedure } from '../../orpc'
 import { graphService } from '../../service/graph'
 
 export const graphRouter = {
@@ -12,7 +12,7 @@ export const graphRouter = {
    * @param input - Graph name
    * @returns The created graph
    */
-  create: noneAppUserProtectedProcedure
+  create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -28,7 +28,7 @@ export const graphRouter = {
    * List all graphs for an account.
    * @returns Array of graphs
    */
-  list: noneAppUserProtectedProcedure
+  list: protectedProcedure
     .input(
       z.object({
         limit: z.number().min(1).max(100).default(50),
@@ -49,7 +49,7 @@ export const graphRouter = {
    * Delete a graph.
    * @param input - Graph name
    */
-  delete: noneAppUserProtectedProcedure
+  delete: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -64,7 +64,7 @@ export const graphRouter = {
    * Copy a graph.
    * @param input - Source graph name and target graph name
    */
-  copy: noneAppUserProtectedProcedure
+  copy: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -92,7 +92,7 @@ export const graphRouter = {
    * Execute a query on a graph.
    * @param input - Graph name, query string, and optional parameters
    */
-  query: noneAppUserProtectedProcedure
+  query: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -118,7 +118,7 @@ export const graphRouter = {
    * Execute a readonly query on a graph.
    * @param input - Graph name, query string, and optional parameters
    */
-  readonlyQuery: noneAppUserProtectedProcedure
+  readonlyQuery: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -144,7 +144,7 @@ export const graphRouter = {
    * Explain a query execution plan.
    * @param input - Graph name and query string
    */
-  explain: noneAppUserProtectedProcedure
+  explain: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -172,7 +172,7 @@ export const graphRouter = {
    * Get slow log for a graph.
    * @param input - Graph name and optional reset flag
    */
-  slowLog: noneAppUserProtectedProcedure
+  slowLog: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -200,7 +200,7 @@ export const graphRouter = {
    * Create a constraint on a graph.
    * @param input - Graph name, constraint type, entity type, label, and attributes
    */
-  createConstraint: noneAppUserProtectedProcedure
+  createConstraint: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -230,7 +230,7 @@ export const graphRouter = {
    * Drop a constraint from a graph.
    * @param input - Graph name, constraint type, entity type, label, and attributes
    */
-  dropConstraint: noneAppUserProtectedProcedure
+  dropConstraint: protectedProcedure
     .input(
       z.object({
         graph: z.string(),
@@ -261,7 +261,7 @@ export const graphRouter = {
    * Create an index on a graph.
    * @param input - Graph name, index type, entity type, label, properties, and optional options
    */
-  createIndex: noneAppUserProtectedProcedure
+  createIndex: protectedProcedure
     .input(
       z.discriminatedUnion('idxType', [
         // RANGE and FULLTEXT index types
@@ -320,7 +320,7 @@ export const graphRouter = {
    * Drop an index from a graph.
    * @param input - Graph name, index type, entity type, label, and property
    */
-  dropIndex: noneAppUserProtectedProcedure
+  dropIndex: protectedProcedure
     .input(
       z.object({
         graph: z.string(),

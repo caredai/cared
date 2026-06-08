@@ -6,8 +6,8 @@ import { and, asc, desc, eq, gt, lt } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Artifact, ArtifactSuggestion, Chat } from '@cared/db/schema'
 
-import type { UserOrAppUserContext } from '../../../orpc'
-import { userOrAppUserProtectedProcedure } from '../../../orpc'
+import type { UserContext } from '../../../orpc'
+import { userProtectedProcedure } from '../../../orpc'
 
 /**
  * Verify that a chat belongs to the user and account.
@@ -16,7 +16,7 @@ import { userOrAppUserProtectedProcedure } from '../../../orpc'
  * @returns The chat if found and belongs to the user
  * @throws {ORPCError} If chat not found or doesn't belong to the user
  */
-async function verifyUserChat(ctx: UserOrAppUserContext, chatId: string) {
+async function verifyUserChat(ctx: UserContext, chatId: string) {
   const chat = await db.query.Chat.findFirst({
     where: eq(Chat.id, chatId),
   })
@@ -44,7 +44,7 @@ async function verifyUserChat(ctx: UserOrAppUserContext, chatId: string) {
  * @returns The artifact if found and belongs to the user
  * @throws {ORPCError} If artifact not found or doesn't belong to the user
  */
-async function verifyUserArtifact(ctx: UserOrAppUserContext, artifactId: string) {
+async function verifyUserArtifact(ctx: UserContext, artifactId: string) {
   const artifact = await db.query.Artifact.findFirst({
     where: eq(Artifact.id, artifactId),
     with: {
@@ -74,7 +74,7 @@ export const artifactRouter = {
    * Optionally filter by chatId.
    * Only accessible by authenticated users.
    */
-  list: userOrAppUserProtectedProcedure
+  list: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/artifacts',
@@ -151,7 +151,7 @@ export const artifactRouter = {
    * List all versions of an artifact by ID.
    * Only accessible by authenticated users.
    */
-  listVersionsById: userOrAppUserProtectedProcedure
+  listVersionsById: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/artifacts/{id}/versions',
@@ -222,7 +222,7 @@ export const artifactRouter = {
    * Delete all versions of an artifact after the specified version.
    * Only accessible by authenticated users.
    */
-  deleteVersionsByIdAfterVersion: userOrAppUserProtectedProcedure
+  deleteVersionsByIdAfterVersion: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/artifacts/{id}/versions',
@@ -267,7 +267,7 @@ export const artifactRouter = {
    * List suggestions for an artifact.
    * Only accessible by authenticated users.
    */
-  listSuggestions: userOrAppUserProtectedProcedure
+  listSuggestions: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/artifacts/suggestions',

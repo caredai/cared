@@ -4,7 +4,7 @@ import { createInsertSchema } from 'drizzle-zod'
 import { z } from 'zod/v4'
 
 import { User } from '.'
-import { App } from './app'
+import { OAuthApp } from './oauth-app'
 import { Chat } from './chat'
 import { generateId, timestamps, timestampsIndices, timestampsOmits } from './utils'
 
@@ -23,10 +23,10 @@ export const Memory = pgTable(
     userId: text()
       .notNull()
       .references(() => User.id, { onDelete: 'cascade' }),
-    // The memory is always associated with an app.
-    appId: text()
+    // The memory is always associated with an OAuth app.
+    oauthAppId: text()
       .notNull()
-      .references(() => App.id),
+      .references(() => OAuthApp.id),
     // Optional. If set, the memory is at `chat` level; otherwise, it's at `app` level.
     chatId: text().references(() => Chat.id),
     content: text().notNull(),
@@ -34,8 +34,8 @@ export const Memory = pgTable(
     ...timestamps,
   },
   (table) => [
-    index().on(table.userId, table.appId, table.chatId),
-    index().on(table.appId),
+    index().on(table.userId, table.oauthAppId, table.chatId),
+    index().on(table.oauthAppId),
     index().on(table.chatId),
     ...timestampsIndices(table),
   ],
@@ -46,7 +46,7 @@ export type Memory = InferSelectModel<typeof Memory>
 export const CreateMemorySchema = createInsertSchema(Memory, {
   content: z.string(),
   userId: z.string(),
-  appId: z.string(),
+  oauthAppId: z.string(),
   chatId: z.string().optional(),
   metadata: memoryMetadataSchema.optional(),
 }).omit({

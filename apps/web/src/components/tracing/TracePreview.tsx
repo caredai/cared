@@ -58,10 +58,10 @@ export function TracePreview({ trace }: { trace: TraceWithDetails }) {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {(typeof trace.latency === 'number' && trace.latency > 0) && (
+            {typeof trace.latency === 'number' && trace.latency > 0 && (
               <Badge variant="outline">Latency: {trace.latency.toFixed(2)}s</Badge>
             )}
-            {(typeof trace.totalCost === 'number' && trace.totalCost > 0) && (
+            {typeof trace.totalCost === 'number' && trace.totalCost > 0 && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <span>Cost: ${trace.totalCost.toFixed(6)}</span>
               </Badge>

@@ -1,7 +1,6 @@
 export interface Entity {
   userId?: string
   appId?: string
-  agentId?: string
   runId?: string
 }
 
@@ -21,7 +20,6 @@ export interface Memory extends Entity {
 export type BuiltinAttributeKey =
   | 'userId'
   | 'appId'
-  | 'agentId'
   | 'runId'
   | 'createdAt'
   | 'updatedAt'

@@ -53,6 +53,7 @@ patchedDependencies:
   '@daytonaio/sdk': patches/@daytonaio__sdk.patch
   better-auth: patches/better-auth.patch
   '@cloudflare/vite-plugin': patches/@cloudflare__vite-plugin.patch
+  next-s3-upload: patches/next-s3-upload.patch
 
 nodeLinker: hoisted
 linkWorkspacePackages: true

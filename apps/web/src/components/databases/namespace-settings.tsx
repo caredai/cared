@@ -360,11 +360,11 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
           <SettingsSection
             id="general"
             title="General"
-            description="Manage your namespace display name and identifier."
+            description="Manage your database namespace display name and identifier."
           >
             <div className="space-y-4 max-w-lg">
               <div className="space-y-2">
-                <Label htmlFor="namespace-id">Namespace ID</Label>
+                <Label htmlFor="namespace-id">Database namespace ID</Label>
                 <div className="flex gap-1">
                   <Input
                     id="namespace-id"
@@ -376,7 +376,7 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="namespace-name">Namespace name</Label>
+                <Label htmlFor="namespace-name">Database namespace name</Label>
                 <Input id="namespace-name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <Button
@@ -478,7 +478,7 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
 
           <SettingsSection id="collaborators" title="Collaborators">
             <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
-              You have not shared this namespace with anyone yet.
+              You have not shared this database namespace with anyone yet.
             </div>
             <Button variant="outline" size="sm" className="mt-4" disabled>
               Invite
@@ -536,7 +536,7 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
           <SettingsSection
             id="replication"
             title="Logical replication"
-            description="Replicate data changes from this namespace to external services. Cannot be disabled once enabled."
+            description="Replicate data changes from this database namespace to external services. Cannot be disabled once enabled."
           >
             <div className="space-y-4">
               <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
@@ -564,7 +564,7 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
           <SettingsSection
             id="transfer"
             title="Transfer project"
-            description="Move this namespace to another organization or create a claim link."
+            description="Move this database namespace to another organization or create a claim link."
           >
             <Button variant="outline" size="sm" disabled>
               Transfer project
@@ -576,7 +576,8 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
               <div className="flex gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
                 <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
                 <p>
-                  Permanently delete namespace <span className="font-mono">{namespace.id}</span>.
+                  Permanently delete database namespace{' '}
+                  <span className="font-mono">{namespace.id}</span>.
                   This action is not reversible.
                 </p>
               </div>
@@ -621,7 +622,7 @@ export function NamespaceSettings({ namespaceId, accountIdNoPrefix }: NamespaceS
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete namespace</AlertDialogTitle>
+            <AlertDialogTitle>Delete database namespace</AlertDialogTitle>
             <AlertDialogDescription>
               Permanently delete &quot;{namespace.name}&quot; and all associated Neon resources.
             </AlertDialogDescription>

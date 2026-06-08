@@ -6,9 +6,12 @@ import { generateId, timestamps, timestampsIndices } from '@cared/shared'
 
 import { Account, User } from './auth-alias'
 
-export const apiTokenScope = ['account', 'user'] as const
-export type ApiTokenScope = (typeof apiTokenScope)[number]
-export const apiTokenScopeEnum = pgEnum('apiTokenScope', apiTokenScope)
+export const apiTokenCredentialTypes = ['account', 'user'] as const
+export type ApiTokenCredentialType = (typeof apiTokenCredentialTypes)[number]
+export const apiTokenCredentialTypeEnum = pgEnum(
+  'apiTokenCredentialType',
+  apiTokenCredentialTypes,
+)
 
 export interface ApiTokenMetadata {
   start: string
@@ -34,15 +37,15 @@ export const ApiToken = pgTable(
       withTimezone: true,
     }),
     metadata: jsonb().$type<ApiTokenMetadata>().notNull(),
-    scope: apiTokenScopeEnum().notNull(),
+    credentialType: apiTokenCredentialTypeEnum().notNull(),
     accountId: text().references(() => Account.id, { onDelete: 'cascade' }),
     userId: text().references(() => User.id, { onDelete: 'cascade' }),
     ...timestamps,
   },
   (table) => [
     index().on(table.hash),
-    index().on(table.scope, table.accountId, table.userId),
-    index().on(table.scope, table.userId),
+    index().on(table.credentialType, table.accountId, table.userId),
+    index().on(table.credentialType, table.userId),
     ...timestampsIndices(table),
   ],
 )

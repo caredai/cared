@@ -6,7 +6,7 @@ import type {
   ModelNames,
 } from 'better-auth'
 import type { SecondaryStorage } from 'better-auth/db'
-import { apiKey } from '@better-auth/api-key'
+import { oauthProvider } from '@better-auth/oauth-provider'
 import { passkey } from '@better-auth/passkey'
 import { createRandomStringGenerator } from '@better-auth/utils/random'
 import { betterAuth } from 'better-auth'
@@ -20,16 +20,16 @@ import {
   customSession,
   genericOAuth,
   jwt,
-  oidcProvider,
   openAPI,
   organization,
+  testUtils,
   twoFactor,
 } from 'better-auth/plugins'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { sha256 } from 'viem'
 
 import type { Transaction } from '@cared/db/client'
-import { eq } from '@cared/db'
+import { desc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
 import { Account, AuthAccount, Member, User } from '@cared/db/schema'
 import { emails, getEmailAddresses } from '@cared/email'
@@ -48,11 +48,21 @@ import {
   hasSameRootDomain,
 } from './client'
 import { env } from './env'
-import { accountAc, accountRoles } from './permission'
+import {
+  accountAc,
+  accountRoles,
+  hasNonStandardOAuthScopes,
+  OAUTH_PROVIDER_SCOPES,
+  scopeId,
+} from './permission'
 import { customPlugin } from './plugin'
 
 export const maxAccounts = 2
 export const maxMembers = 100
+
+export const OAUTH_OPAQUE_ACCESS_TOKEN_PREFIX = 'croat_' as const
+export const OAUTH_REFRESH_TOKEN_PREFIX = 'crort_' as const
+export const OAUTH_CLIENT_SECRET_PREFIX = 'crocs_' as const
 
 const kv = getKV('auth')
 
@@ -65,13 +75,9 @@ export function authHeaders(headers: Headers) {
   return newHeaders
 }
 
-function getOptions(
-  tx?: Transaction,
-  opts?: {
-    useOriginalAccessControl: boolean
-  },
-) {
-  return {
+function getOptions(opts?: { tx?: Transaction; useOriginalAccessControl?: boolean }) {
+  const tx = opts?.tx
+  const options = {
     appName: 'cared',
     baseURL: getApiUrl(),
     basePath: `${getApiPath()}/auth`,
@@ -94,6 +100,8 @@ function getOptions(
       cookieCache: {
         enabled: true,
         maxAge: 60 * 60 * 12, // 12 hours
+        strategy: 'compact',
+        refreshCache: true,
       },
       additionalFields: {
         geolocation: {
@@ -113,14 +121,21 @@ function getOptions(
           returned: true,
         },
       },
-      storeSessionInDatabase: false,
+      // OAuth Provider requires `session.storeSessionInDatabase: true` when using secondaryStorage
+      storeSessionInDatabase: true,
     },
     account: {
+      updateAccountOnSignIn: true,
       modelName: 'authAccount',
       accountLinking: {
         enabled: true,
         allowDifferentEmails: false,
       },
+      storeStateStrategy: 'cookie',
+    },
+    verification: {
+      storeIdentifier: 'hashed',
+      storeInDatabase: false,
     },
     emailAndPassword: {
       enabled: true,
@@ -213,6 +228,24 @@ function getOptions(
           after: async (user, _ctx, ...args) => {
             // @ts-ignore
             await createDefaultAccountIfAbsent(user, args.at(0)?.tx as Transaction | undefined)
+          },
+        },
+      },
+      session: {
+        create: {
+          before: async (session) => {
+            const user = await (tx ?? db).query.User.findFirst({
+              where: eq(User.id, session.userId),
+            })
+            if (!user) {
+              throw new Error('User not found')
+            }
+            return {
+              data: {
+                ...session,
+                activeOrganizationId: user.defaultAccountId,
+              },
+            }
           },
         },
       },
@@ -366,48 +399,75 @@ function getOptions(
       genericOAuth({
         config: [],
       }),
-      oidcProvider({
+      oauthProvider({
+        scopes: [...OAUTH_PROVIDER_SCOPES],
         accessTokenExpiresIn: 7200, // 2 hours
+        m2mAccessTokenExpiresIn: 7200, // 2 hours
+        idTokenExpiresIn: 72000, // 20 hours
         refreshTokenExpiresIn: 604800, // 1 week
         codeExpiresIn: 600, // 10 minutes
-        allowDynamicClientRegistration: false,
-        requirePKCE: true,
+        clientReference: ({ session, user }) => {
+          // oauth client must be associated with an account
+          const activeAccountId = (session?.activeOrganizationId ?? user?.defaultAccountId) as
+            | string
+            | undefined
+          if (!activeAccountId) {
+            throw new APIError('BAD_REQUEST', {
+              message: 'no active account',
+            })
+          }
+          return activeAccountId
+        },
         loginPage: '/auth/sign-in',
         consentPage: '/auth/oauth2/consent',
-        /*
-        metadata: {
-          issuer: getBaseUrl(),
-          authorization_endpoint: '/oauth2/authorize',
-          token_endpoint: '/oauth2/token',
-          userinfo_endpoint: '/oauth2/userinfo',
-          jwks_uri: '/jwks',
+        postLogin: {
+          page: '/auth/select-account',
+          shouldRedirect: async ({ session, scopes }) => {
+            if (!hasNonStandardOAuthScopes(scopes)) {
+              return false
+            }
+            const accounts = await (tx ?? db)
+              .select({
+                account: Account,
+              })
+              .from(Account)
+              .innerJoin(Member, eq(Member.accountId, Account.id))
+              .where(eq(Member.userId, session.userId))
+              .orderBy(desc(Account.createdAt))
+            return (
+              accounts.length > 1 ||
+              !(
+                accounts.length === 1 && accounts.at(0)?.account.id === session.activeOrganizationId
+              )
+            )
+          },
+          consentReferenceId: ({ session, scopes }) => {
+            if (scopes.includes(scopeId('account', 'read'))) {
+              const activeAccountId = session.activeOrganizationId as string | undefined
+              if (!activeAccountId) {
+                throw new APIError('BAD_REQUEST', {
+                  message: 'no active account',
+                })
+              }
+              return activeAccountId
+            } else {
+              return undefined
+            }
+          },
         },
-        */
-      }),
-      apiKey({
-        apiKeyHeaders: 'X-API-KEY',
-        customKeyGenerator: generateKey,
-        customAPIKeyGetter: (ctx) => {
-          let apiKey = ctx.headers?.get('X-API-KEY')
-          if (!apiKey) {
-            const bearerToken = ctx.headers?.get('Authorization')?.replace('Bearer ', '')
-            if (bearerToken?.startsWith('sk_')) {
-              apiKey = bearerToken
+        customAccessTokenClaims({ referenceId, scopes }) {
+          if (referenceId && scopes.includes(scopeId('account', 'read'))) {
+            return {
+              accountId: referenceId,
             }
           }
-          return apiKey ? apiKey : null
+          return {}
         },
-        defaultPrefix: 'sk_',
-        minimumNameLength: 0,
-        maximumNameLength: 64,
-        enableMetadata: true,
-        // Only applies to the verification process for a given API key
-        rateLimit: {
-          enabled: true,
-          timeWindow: 1000 * 60, // 1 minute
-          maxRequests: 100,
+        prefix: {
+          opaqueAccessToken: OAUTH_OPAQUE_ACCESS_TOKEN_PREFIX,
+          refreshToken: OAUTH_REFRESH_TOKEN_PREFIX,
+          clientSecret: OAUTH_CLIENT_SECRET_PREFIX,
         },
-        enableSessionForAPIKeys: false,
       }),
       openAPI(),
       emailHarmony(),
@@ -452,10 +512,15 @@ function getOptions(
           '/jwks',
           '/token',
           '/.well-known/openid-configuration',
+          '/.well-known/oauth-authorization-server',
           '/oauth2/authorize',
           '/oauth2/consent',
+          '/oauth2/continue',
           '/oauth2/token',
+          '/oauth2/introspect',
+          '/oauth2/revoke',
           '/oauth2/userinfo',
+          '/oauth2/end-session',
           ...(env.NODE_ENV === 'development'
             ? [
                 '/reference',
@@ -471,7 +536,6 @@ function getOptions(
         }
       }),
       after: createAuthMiddleware(async (ctx) => {
-        // https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-visitor-location-headers
         if (ctx.path.startsWith('/callback')) {
           const headers = ctx.headers
           if (!headers) {
@@ -484,6 +548,7 @@ function getOptions(
 
           let update = false
 
+          // Set admin role if user email matches admin email
           if (
             env.ADMIN_USER_EMAIL &&
             session.user.email === env.ADMIN_USER_EMAIL &&
@@ -500,6 +565,8 @@ function getOptions(
               .where(eq(User.id, session.user.id))
           }
 
+          // Set geolocation if available
+          // https://developers.cloudflare.com/rules/transform/managed-transforms/reference/#add-visitor-location-headers
           const city = headers.get('cf-ipcity')
           const region = headers.get('cf-region')
           const country = headers.get('cf-ipcountry')
@@ -527,29 +594,90 @@ function getOptions(
       },
     },
     telemetry: { enabled: false },
+    experimental: {
+      joins: true, // database joins
+    },
   } satisfies BetterAuthOptions
-}
 
-export function getAuth(tx?: Transaction, opts?: Parameters<typeof getOptions>[1]) {
-  const options = getOptions(tx, opts)
-
-  return betterAuth({
+  return {
     ...options,
     plugins: [
       ...options.plugins,
       // eslint-disable-next-line @typescript-eslint/require-await
       customSession(async ({ user, session }) => {
+        const { activeOrganizationId, ...sessionFields } = session
+        const activeAccountId = activeOrganizationId ?? user.defaultAccountId
         // now both user and session will infer the fields added by plugins and your custom fields
         return {
           user,
-          session,
+          session: {
+            ...sessionFields,
+            activeAccountId,
+          },
         }
       }, options), // pass options here
     ],
-  })
+  }
 }
 
+export function getAuth(opts?: Parameters<typeof getOptions>[0]) {
+  const options = getOptions(opts)
+  return betterAuth(options)
+}
+
+export type AuthOptions = (typeof auth)['options']
+
 export const auth = getAuth()
+
+class MemoryStorage implements SecondaryStorage {
+  private map = new Map<string, string>()
+  get(key: string) {
+    return this.map.get(key)
+  }
+  set(key: string, value: string, _ttl?: number) {
+    this.map.set(key, value)
+  }
+  delete(key: string) {
+    this.map.delete(key)
+  }
+}
+
+export const auth2 = (() => {
+  const options = getOptions()
+  const plugins = options.plugins.filter((plugin) => plugin.id !== 'oauth-provider')
+  return betterAuth({
+    ...options,
+    session: {
+      ...options.session,
+      storeSessionInDatabase: false,
+    },
+    secondaryStorage: new MemoryStorage(),
+    rateLimit: {
+      enabled: false,
+    },
+    plugins: [
+      ...plugins,
+      testUtils(),
+    ],
+  })
+})()
+
+export async function withAuthSession<T>(
+  userId: string,
+  fn: (auth: typeof auth2, headers: Headers) => Promise<T>,
+): Promise<T> {
+  const ctx = await auth2.$context
+  // Create temporary session
+  const { session, headers } = await ctx.test.login({
+    userId,
+  })
+  try {
+    return await fn(auth2, authHeaders(headers))
+  } finally {
+    // Cleanup temporary session
+    await ctx.internalAdapter.deleteSession(session.token)
+  }
+}
 
 async function cacheProfileForAccount(id: string, profile: Record<string, any>) {
   await kv.set(`profile:${id}`, JSON.stringify(profile), { ex: 60 })
@@ -627,8 +755,6 @@ function modelPrefix(model: LiteralUnion<ModelNames, string>) {
       return 'aac'
     case 'session':
       return 'ses'
-    case 'verification':
-      return 'vrf'
     case 'rateLimit':
       return 'rl'
     case 'organization':
@@ -647,14 +773,14 @@ function modelPrefix(model: LiteralUnion<ModelNames, string>) {
       return 'passkey'
     case 'twoFactor':
       return '2fa'
-    case 'oauthApplication':
-      return 'oa'
+    case 'oauthClient':
+      return 'oc'
+    case 'oauthRefreshToken':
+      return 'ort'
     case 'oauthAccessToken':
       return 'oat'
     case 'oauthConsent':
-      return 'oc'
-    case 'apikey':
-      return 'ak'
+      return 'ocs'
     default:
       return model.slice(0, 6)
   }

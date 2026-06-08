@@ -1,6 +1,6 @@
 import { z } from 'zod/v4'
 
-import { userOrAppUserProtectedProcedure } from '../../orpc'
+import { userProtectedProcedure } from '../../orpc'
 import { daytonaService } from '../../service/daytona/daytona'
 
 const buildInfoSchema = z.object({
@@ -146,7 +146,7 @@ const containerRegistryPushAccessSchema = z.object({
 })
 
 export const sandboxRouter = {
-  enable: userOrAppUserProtectedProcedure
+  enable: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/enable',
@@ -159,7 +159,7 @@ export const sandboxRouter = {
       await daytonaService.ensure(context.auth.userId, context.auth.accountId)
     }),
 
-  listRegions: userOrAppUserProtectedProcedure
+  listRegions: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/regions',
@@ -199,7 +199,7 @@ export const sandboxRouter = {
       }
     }),
 
-  listSandboxes: userOrAppUserProtectedProcedure
+  listSandboxes: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/sandboxes',
@@ -296,7 +296,7 @@ export const sandboxRouter = {
       return await daytonaService.listSandboxes(context.auth.accountId, input)
     }),
 
-  getSandbox: userOrAppUserProtectedProcedure
+  getSandbox: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/sandboxes/{idOrName}',
@@ -314,7 +314,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  createSandbox: userOrAppUserProtectedProcedure
+  createSandbox: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes',
@@ -381,7 +381,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  deleteSandbox: userOrAppUserProtectedProcedure
+  deleteSandbox: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sandboxes/sandboxes/{idOrName}',
@@ -395,7 +395,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  startSandbox: userOrAppUserProtectedProcedure
+  startSandbox: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/start',
@@ -409,7 +409,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  stopSandbox: userOrAppUserProtectedProcedure
+  stopSandbox: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/stop',
@@ -423,7 +423,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  archiveSandbox: userOrAppUserProtectedProcedure
+  archiveSandbox: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/archive',
@@ -437,7 +437,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  createSandboxBackup: userOrAppUserProtectedProcedure
+  createSandboxBackup: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/backup',
@@ -451,7 +451,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  recoverSandbox: userOrAppUserProtectedProcedure
+  recoverSandbox: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/recover',
@@ -465,7 +465,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  setSandboxAutostopInterval: userOrAppUserProtectedProcedure
+  setSandboxAutostopInterval: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/autostop',
@@ -491,7 +491,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  setSandboxAutoArchiveInterval: userOrAppUserProtectedProcedure
+  setSandboxAutoArchiveInterval: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/autoarchive',
@@ -517,7 +517,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  setSandboxAutoDeleteInterval: userOrAppUserProtectedProcedure
+  setSandboxAutoDeleteInterval: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/autodelete',
@@ -542,7 +542,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  getSandboxPortPreviewUrl: userOrAppUserProtectedProcedure
+  getSandboxPortPreviewUrl: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/sandboxes/{idOrName}/ports/{port}/preview-url',
@@ -564,7 +564,7 @@ export const sandboxRouter = {
       )
     }),
 
-  getSandboxSignedPortPreviewUrl: userOrAppUserProtectedProcedure
+  getSandboxSignedPortPreviewUrl: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/sandboxes/{idOrName}/ports/{port}/signed-preview-url',
@@ -591,7 +591,7 @@ export const sandboxRouter = {
       )
     }),
 
-  expireSandboxSignedPortPreviewUrl: userOrAppUserProtectedProcedure
+  expireSandboxSignedPortPreviewUrl: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/ports/{port}/signed-preview-url/expire',
@@ -616,7 +616,7 @@ export const sandboxRouter = {
       return undefined
     }),
 
-  getSandboxBuildLogsUrl: userOrAppUserProtectedProcedure
+  getSandboxBuildLogsUrl: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/sandboxes/{idOrName}/build-logs-url',
@@ -629,7 +629,7 @@ export const sandboxRouter = {
       return await daytonaService.getBuildLogsUrl(context.auth.accountId, input.idOrName)
     }),
 
-  getSandboxToolboxProxyUrl: userOrAppUserProtectedProcedure
+  getSandboxToolboxProxyUrl: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/sandboxes/{id}/toolbox-proxy-url',
@@ -646,7 +646,7 @@ export const sandboxRouter = {
       return await daytonaService.getToolboxProxyUrl(context.auth.accountId, input.id)
     }),
 
-  createSandboxSshAccess: userOrAppUserProtectedProcedure
+  createSandboxSshAccess: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/sandboxes/{idOrName}/ssh-access',
@@ -684,7 +684,7 @@ export const sandboxRouter = {
       return { sshAccess }
     }),
 
-  revokeSandboxSshAccess: userOrAppUserProtectedProcedure
+  revokeSandboxSshAccess: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sandboxes/sandboxes/{idOrName}/ssh-access',
@@ -710,7 +710,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  validateSandboxSshAccess: userOrAppUserProtectedProcedure
+  validateSandboxSshAccess: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/ssh-access/validate',
@@ -728,7 +728,7 @@ export const sandboxRouter = {
       return await daytonaService.validateSshAccess(context.auth.accountId, input.token)
     }),
 
-  replaceSandboxLabels: userOrAppUserProtectedProcedure
+  replaceSandboxLabels: userProtectedProcedure
     .route({
       method: 'PUT',
       path: '/sandboxes/sandboxes/{idOrName}/labels',
@@ -753,7 +753,7 @@ export const sandboxRouter = {
       return { labels }
     }),
 
-  updateSandboxPublicStatus: userOrAppUserProtectedProcedure
+  updateSandboxPublicStatus: userProtectedProcedure
     .route({
       method: 'PUT',
       path: '/sandboxes/sandboxes/{idOrName}/public/{isPublic}',
@@ -776,7 +776,7 @@ export const sandboxRouter = {
       return { sandbox }
     }),
 
-  updateSandboxLastActivity: userOrAppUserProtectedProcedure
+  updateSandboxLastActivity: userProtectedProcedure
     .route({
       method: 'PUT',
       path: '/sandboxes/sandboxes/{id}/last-activity',
@@ -790,7 +790,7 @@ export const sandboxRouter = {
       return undefined
     }),
 
-  updateSandboxState: userOrAppUserProtectedProcedure
+  updateSandboxState: userProtectedProcedure
     .route({
       method: 'PUT',
       path: '/sandboxes/sandboxes/{id}/state',
@@ -841,7 +841,7 @@ export const sandboxRouter = {
       return undefined
     }),
 
-  listSnapshots: userOrAppUserProtectedProcedure
+  listSnapshots: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/snapshots',
@@ -887,7 +887,7 @@ export const sandboxRouter = {
       })
     }),
 
-  getSnapshot: userOrAppUserProtectedProcedure
+  getSnapshot: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/snapshots/{idOrName}',
@@ -901,7 +901,7 @@ export const sandboxRouter = {
       return { snapshot }
     }),
 
-  createSnapshot: userOrAppUserProtectedProcedure
+  createSnapshot: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/snapshots',
@@ -938,7 +938,7 @@ export const sandboxRouter = {
       return { snapshot }
     }),
 
-  removeSnapshot: userOrAppUserProtectedProcedure
+  removeSnapshot: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sandboxes/snapshots/{id}',
@@ -952,7 +952,7 @@ export const sandboxRouter = {
       return undefined
     }),
 
-  activateSnapshot: userOrAppUserProtectedProcedure
+  activateSnapshot: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/snapshots/{id}/activate',
@@ -966,7 +966,7 @@ export const sandboxRouter = {
       return { snapshot }
     }),
 
-  deactivateSnapshot: userOrAppUserProtectedProcedure
+  deactivateSnapshot: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/snapshots/{id}/deactivate',
@@ -980,7 +980,7 @@ export const sandboxRouter = {
       return undefined
     }),
 
-  getSnapshotBuildLogsUrl: userOrAppUserProtectedProcedure
+  getSnapshotBuildLogsUrl: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/snapshots/{id}/build-logs-url',
@@ -994,7 +994,7 @@ export const sandboxRouter = {
       return { url }
     }),
 
-  listVolumes: userOrAppUserProtectedProcedure
+  listVolumes: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/volumes',
@@ -1017,7 +1017,7 @@ export const sandboxRouter = {
       return { volumes }
     }),
 
-  getVolume: userOrAppUserProtectedProcedure
+  getVolume: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/volumes/{id}',
@@ -1031,7 +1031,7 @@ export const sandboxRouter = {
       return { volume }
     }),
 
-  getVolumeByName: userOrAppUserProtectedProcedure
+  getVolumeByName: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/volumes/by-name/{name}',
@@ -1045,7 +1045,7 @@ export const sandboxRouter = {
       return { volume }
     }),
 
-  createVolume: userOrAppUserProtectedProcedure
+  createVolume: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/volumes',
@@ -1059,7 +1059,7 @@ export const sandboxRouter = {
       return { volume }
     }),
 
-  deleteVolume: userOrAppUserProtectedProcedure
+  deleteVolume: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sandboxes/volumes/{id}',
@@ -1073,7 +1073,7 @@ export const sandboxRouter = {
       return undefined
     }),
 
-  getS3PushAccess: userOrAppUserProtectedProcedure
+  getS3PushAccess: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/object-storage/push-access',
@@ -1097,7 +1097,7 @@ export const sandboxRouter = {
       return { access }
     }),
 
-  listRegistries: userOrAppUserProtectedProcedure
+  listRegistries: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/registries',
@@ -1135,7 +1135,7 @@ export const sandboxRouter = {
       }
     }),
 
-  getRegistry: userOrAppUserProtectedProcedure
+  getRegistry: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/registries/{id}',
@@ -1171,7 +1171,7 @@ export const sandboxRouter = {
       }
     }),
 
-  createRegistry: userOrAppUserProtectedProcedure
+  createRegistry: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/sandboxes/registries',
@@ -1193,7 +1193,7 @@ export const sandboxRouter = {
       return { registry }
     }),
 
-  updateRegistry: userOrAppUserProtectedProcedure
+  updateRegistry: userProtectedProcedure
     .route({
       method: 'PATCH',
       path: '/sandboxes/registries/{id}',
@@ -1217,7 +1217,7 @@ export const sandboxRouter = {
       return { registry }
     }),
 
-  deleteRegistry: userOrAppUserProtectedProcedure
+  deleteRegistry: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/sandboxes/registries/{id}',
@@ -1231,7 +1231,7 @@ export const sandboxRouter = {
       return undefined
     }),
 
-  getRegistryTransientPushAccess: userOrAppUserProtectedProcedure
+  getRegistryTransientPushAccess: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/sandboxes/registries/transient-push-access',

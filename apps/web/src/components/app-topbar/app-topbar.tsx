@@ -9,15 +9,14 @@ import { Slash } from '@/components/slash'
 import { useCheckSession } from '@/hooks/use-session'
 import { AccountSwitcher } from './account-switcher'
 import { AdminEnterButton } from './admin-enter-button'
-import { AppSwitcher, useHasAppSwitcher } from './app-switcher'
+import { DatabaseSwitcher, useHasDatabaseSwitcher } from './database-switcher'
 import { TopBarActions } from './top-bar-actions'
 
 export function AppTopBar() {
   useCheckSession()
 
   const { toggleSidebar } = useSidebar()
-
-  const hasAppSwitcher = useHasAppSwitcher()
+  const hasDatabaseSwitcher = useHasDatabaseSwitcher()
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
@@ -29,18 +28,15 @@ export function AppTopBar() {
 
           <Slash className="hidden md:inline" />
 
-          {/* Account Switcher */}
           <AccountSwitcher />
 
-          {hasAppSwitcher && <Slash className="hidden md:inline" />}
+          {hasDatabaseSwitcher && <Slash className="hidden md:inline" />}
 
-          {/* App Switcher */}
-          <AppSwitcher />
+          {hasDatabaseSwitcher && <DatabaseSwitcher />}
 
           <AdminEnterButton />
         </div>
 
-        {/* Right side actions */}
         <div className="ml-auto flex items-center gap-2">
           <TopBarActions />
 

@@ -1,18 +1,16 @@
 import { useCallback, useState } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { useLocation } from '@tanstack/react-router'
 import { toast } from 'sonner'
 
 import { useSessionPublic } from '@/hooks/use-session'
 import { orpc } from '@/lib/orpc'
-import { stripIdPrefix } from '@/lib/utils'
 
 export type Account = ReturnType<typeof useAccounts>[number]
 
 export function useSetLastAccount() {
   const { session, refetchSession } = useSessionPublic()
 
-  const setActiveMutation = useMutation(orpc.account.account.setActive.mutationOptions())
+  const setActiveMutation = useMutation(orpc.user.setActiveAccount.mutationOptions())
 
   const [disabledSetLastAccount, setDisabledSetLastAccount] = useState(false)
 
@@ -69,7 +67,7 @@ export function useUpdateAccount() {
   )
 
   return useCallback(
-    async (input: { id: string; name: string }) => {
+    async (input: { name: string }) => {
       return await updateMutation.mutateAsync(input)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,20 +96,10 @@ export function useTransferAccountOwnership() {
   )
 
   return useCallback(
-    async (input: { accountId: string; memberId: string }) => {
+    async (input: { memberId: string }) => {
       return await transferMutation.mutateAsync(input)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   )
-}
-
-export function replaceRouteWithAccountId(route: string, id: string) {
-  return route.replace(/^\/acc_[^/]+/, `/acc_${stripIdPrefix(id)}`)
-}
-
-export function useReplaceRouteWithAccountId() {
-  const location = useLocation()
-  const pathname = location.pathname
-  return useCallback((id: string) => replaceRouteWithAccountId(pathname, id), [pathname])
 }

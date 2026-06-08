@@ -47,20 +47,11 @@ import { useTransferAccountOwnership, useUpdateAccount } from '@/hooks/use-accou
 import { useActiveAccount } from '@/hooks/use-active'
 import { useMembers } from '@/hooks/use-members'
 import { useSession } from '@/hooks/use-session'
-import { getActiveAccountId } from '@/lib/active'
 import { orpc } from '@/lib/orpc'
 
 export const Route = createFileRoute('/acc_{$accountIdNoPrefix}/settings')({
-  loader: async ({ context, params }) => {
-    const { activeAccountId } = await getActiveAccountId(params)
-
-    void context.queryClient.prefetchQuery(
-      orpc.account.account.listMembers.queryOptions({
-        input: {
-          accountId: activeAccountId,
-        },
-      }),
-    )
+  loader: ({ context }) => {
+    void context.queryClient.prefetchQuery(orpc.account.account.listMembers.queryOptions())
   },
   component: Settings,
 })
@@ -86,7 +77,7 @@ function Settings() {
   const [isTransferring, setIsTransferring] = useState(false)
 
   const activeAccount = useActiveAccount()
-  const members = useMembers(activeAccount?.id)
+  const { members } = useMembers()
 
   const currentUserMember = members.find((member) => member.userId === user.id)
   const isOwner = currentUserMember?.role === 'owner'
@@ -110,7 +101,6 @@ function Settings() {
     setIsUpdating(true)
     try {
       await updateAccount({
-        id: activeAccount?.id ?? '',
         name: data.name.trim(),
       })
       // Reset form with new name on success
@@ -126,7 +116,6 @@ function Settings() {
       setIsTransferring(true)
       try {
         await transferOwnership({
-          accountId: activeAccount?.id ?? '',
           memberId: selectedUserId,
         })
         // Reset dialog state on success

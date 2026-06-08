@@ -100,3 +100,5 @@ export {
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
 }
+
+export type BreadcrumbProps = React.ComponentProps<typeof Breadcrumb>

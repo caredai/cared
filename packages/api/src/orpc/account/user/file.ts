@@ -10,7 +10,7 @@ import { File, generateId } from '@cared/db/schema'
 
 import { s3Client } from '../../../client/s3'
 import { env } from '../../../env'
-import { userOrAppUserProtectedProcedure } from '../../../orpc'
+import { userProtectedProcedure } from '../../../orpc'
 import { deleteImage, extractImageKey, imageUrl } from '../../utils'
 
 const allowedExtensions = [
@@ -66,7 +66,7 @@ export const fileRouter = {
   /**
    * Create/upload a file directly to S3 and save to database
    */
-  create: userOrAppUserProtectedProcedure
+  create: userProtectedProcedure
     .route({
       method: 'POST',
       path: '/files',
@@ -143,7 +143,7 @@ export const fileRouter = {
   /**
    * List files for the current user in the account
    */
-  list: userOrAppUserProtectedProcedure
+  list: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/files',
@@ -204,7 +204,7 @@ export const fileRouter = {
   /**
    * Get file metadata from database and S3
    */
-  get: userOrAppUserProtectedProcedure
+  get: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/files/{id}',
@@ -243,7 +243,7 @@ export const fileRouter = {
   /**
    * Download a file
    */
-  retrieve: userOrAppUserProtectedProcedure
+  retrieve: userProtectedProcedure
     .route({
       method: 'GET',
       path: '/files/{id}/download',
@@ -303,7 +303,7 @@ export const fileRouter = {
   /**
    * Delete a file from S3 and database
    */
-  delete: userOrAppUserProtectedProcedure
+  delete: userProtectedProcedure
     .route({
       method: 'DELETE',
       path: '/files/{id}',

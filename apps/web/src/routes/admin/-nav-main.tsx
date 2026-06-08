@@ -1,4 +1,4 @@
-import { Bot, Brain, DatabaseZap } from 'lucide-react'
+import { Brain, DatabaseZap } from 'lucide-react'
 
 import { NavMain } from '@/components/app-sidebar/nav-main'
 import { MenuBreadcrumb } from '@/components/menu-breadcrumb'
@@ -8,22 +8,6 @@ const items = [
     title: 'Models',
     url: '/models',
     icon: Brain,
-  },
-  {
-    title: 'Apps',
-    url: '/apps',
-    icon: Bot,
-    isRoute: true,
-    items: [
-      {
-        title: 'Categories',
-        url: '/categories',
-      },
-      {
-        title: 'Tags',
-        url: '/tags',
-      },
-    ],
   },
   {
     title: 'Mock',

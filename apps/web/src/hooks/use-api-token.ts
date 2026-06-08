@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -6,14 +7,40 @@ import type { TokenPolicy } from '@cared/shared'
 
 import { orpc } from '@/lib/orpc'
 
-export function useApiTokens(scope: 'account' | 'user' = 'account') {
+function invalidateApiTokenQueries(
+  queryClient: QueryClient,
+  options: {
+    id?: string
+    credentialType?: 'account' | 'user'
+  } = {},
+) {
+  if (options.credentialType) {
+    void queryClient.invalidateQueries(
+      orpc.account.apiToken.list.queryOptions({
+        input: {
+          credentialType: options.credentialType,
+        },
+      }),
+    )
+  }
+
+  if (options.id) {
+    void queryClient.invalidateQueries(
+      orpc.account.apiToken.get.queryOptions({
+        input: { id: options.id },
+      }),
+    )
+  }
+}
+
+export function useApiTokens(credentialType: 'account' | 'user' = 'account') {
   const {
     data: { tokens },
     refetch: refetchApiTokens,
   } = useSuspenseQuery(
     orpc.account.apiToken.list.queryOptions({
       input: {
-        scope,
+        credentialType,
       },
     }),
   )
@@ -21,6 +48,22 @@ export function useApiTokens(scope: 'account' | 'user' = 'account') {
   return {
     apiTokens: tokens,
     refetchApiTokens,
+  }
+}
+
+export function useApiToken(id: string) {
+  const {
+    data: { token },
+    refetch: refetchApiToken,
+  } = useSuspenseQuery(
+    orpc.account.apiToken.get.queryOptions({
+      input: { id },
+    }),
+  )
+
+  return {
+    apiToken: token,
+    refetchApiToken,
   }
 }
 
@@ -38,12 +81,8 @@ export function useCreateApiToken() {
   const createMutation = useMutation(
     orpc.account.apiToken.create.mutationOptions({
       onSuccess: (_, variables) => {
-        void queryClient.invalidateQueries({
-          queryKey: orpc.account.apiToken.list.queryOptions({
-            input: {
-              scope: variables.scope,
-            },
-          }).queryKey,
+        invalidateApiTokenQueries(queryClient, {
+          credentialType: variables.credentialType,
         })
       },
       onError: (error) => {
@@ -56,7 +95,7 @@ export function useCreateApiToken() {
   return useCallback(
     async (input: {
       name: string
-      scope: 'account' | 'user'
+      credentialType: 'account' | 'user'
       policies: Omit<TokenPolicy, 'id'>[]
       enabled?: boolean
       expiresAt?: Date
@@ -69,18 +108,52 @@ export function useCreateApiToken() {
   )
 }
 
+export function useUpdateApiToken() {
+  const queryClient = useQueryClient()
+
+  const updateMutation = useMutation(
+    orpc.account.apiToken.update.mutationOptions({
+      onSuccess: (data, variables) => {
+        invalidateApiTokenQueries(queryClient, {
+          id: variables.id,
+          credentialType: data.token.credentialType,
+        })
+      },
+      onError: (error) => {
+        console.error('Failed to update API token:', error)
+        toast.error(`Failed to update API token: ${error.message}`)
+      },
+    }),
+  )
+
+  return {
+    updateApiToken: useCallback(
+      async (input: {
+        id: string
+        name?: string
+        policies?: Omit<TokenPolicy, 'id'>[]
+        enabled?: boolean
+        expiresAt?: Date | null
+        notBefore?: Date | null
+      }) => {
+        return await updateMutation.mutateAsync(input)
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [],
+    ),
+    isUpdating: updateMutation.isPending,
+  }
+}
+
 export function useRotateApiToken() {
   const queryClient = useQueryClient()
 
   const rotateMutation = useMutation(
     orpc.account.apiToken.rotate.mutationOptions({
-      onSuccess: (data) => {
-        void queryClient.invalidateQueries({
-          queryKey: orpc.account.apiToken.list.queryOptions({
-            input: {
-              scope: !data.token.userId ? 'account' : 'user',
-            },
-          }).queryKey,
+      onSuccess: (data, variables) => {
+        invalidateApiTokenQueries(queryClient, {
+          id: variables.id,
+          credentialType: data.token.credentialType,
         })
       },
       onError: (error) => {
@@ -104,13 +177,10 @@ export function useDeleteApiToken() {
 
   const deleteMutation = useMutation(
     orpc.account.apiToken.delete.mutationOptions({
-      onSuccess: (data) => {
-        void queryClient.invalidateQueries({
-          queryKey: orpc.account.apiToken.list.queryOptions({
-            input: {
-              scope: !data.token.userId ? 'account' : 'user',
-            },
-          }).queryKey,
+      onSuccess: (data, variables) => {
+        invalidateApiTokenQueries(queryClient, {
+          id: variables.id,
+          credentialType: data.token.credentialType,
         })
       },
       onError: (error) => {

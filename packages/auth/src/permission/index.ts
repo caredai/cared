@@ -1,3 +1,5 @@
 export * from './statement'
+export * from './roles'
 export * from './permission'
+export * from './scope'
 export * from './account'

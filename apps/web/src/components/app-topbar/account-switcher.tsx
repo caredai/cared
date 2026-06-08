@@ -17,8 +17,8 @@ import { cn } from '@cared/ui/lib/utils'
 
 import { CreateAccountDialog } from '@/components/create-account-dialog'
 import { UserInfo } from '@/components/user-info'
-import { useAccounts, useReplaceRouteWithAccountId, useSetLastAccount } from '@/hooks/use-account'
-import { useActive } from '@/hooks/use-active'
+import { useAccounts, useSetLastAccount } from '@/hooks/use-account'
+import { useActive, useReplaceRouteWithAccountId } from '@/hooks/use-active'
 import { useSession } from '@/hooks/use-session'
 import { stripIdPrefix } from '@/lib/utils'
 

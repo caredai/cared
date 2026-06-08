@@ -3,13 +3,11 @@ import { ORPCError, os } from '@orpc/server'
 import type { Auth } from './auth'
 import type { ResponseHeadersPluginContext } from '@orpc/server/plugins'
 import {
+  AccountProtectedAuth,
   AdminAuth,
-  AppUserAuth,
   authenticate,
-  NoneAppUserAuth,
   ProtectedAuth,
   UserAuth,
-  UserOrAppUserAuth,
   UserPlainAuth,
 } from './auth'
 import { env } from './env'
@@ -92,7 +90,7 @@ export const userProtectedProcedure = o
   .use(timingMiddleware)
   .use<UserContext>(({ context, next }) => {
     const authCtx = context.auth.ctx
-    if (!(authCtx?.type === 'user' || (authCtx?.type === 'apiToken' && authCtx.scope === 'user'))) {
+    if (authCtx?.type !== 'user') {
       throw new ORPCError('UNAUTHORIZED')
     }
     return next({
@@ -109,77 +107,54 @@ export type UserPlainContext = BaseContext & {
 
 export const userPlainProtectedProcedure = userProtectedProcedure.use<UserPlainContext>(
   ({ context, next }) => {
-    if (context.auth.ctx.type === 'apiToken') {
+    const authCtx = context.auth.ctx
+    if (authCtx.policies || authCtx.appId) {
       throw new ORPCError('UNAUTHORIZED')
     }
     return next({
       context: {
         ...context,
-        auth: new UserPlainAuth(context.auth.ctx),
+        auth: new UserPlainAuth(authCtx),
       },
     })
   },
 )
 
 export type AppUserContext = BaseContext & {
-  auth: AppUserAuth
+  auth: UserAuth & { appId: string }
 }
 
 export const appUserProtectedProcedure = o
   .use(timingMiddleware)
   .use<AppUserContext>(({ context, next }) => {
     const authCtx = context.auth.ctx
-    if (authCtx?.type !== 'appUser') {
+    if (authCtx?.type !== 'user' || !authCtx.appId) {
       throw new ORPCError('UNAUTHORIZED')
     }
+    const auth = new UserAuth(authCtx)
     return next({
       context: {
         ...context,
-        auth: new AppUserAuth(authCtx),
+        auth: Object.assign(auth, { appId: authCtx.appId }),
       },
     })
   })
 
-export type UserOrAppUserContext = BaseContext & {
-  auth: UserOrAppUserAuth
+export type AccountContext = BaseContext & {
+  auth: AccountProtectedAuth
 }
 
-export const userOrAppUserProtectedProcedure = o
+export const accountProtectedProcedure = o
   .use(timingMiddleware)
-  .use<UserOrAppUserContext>(({ context, next }) => {
+  .use<AccountContext>(({ context, next }) => {
     const authCtx = context.auth.ctx
-    if (
-      !(
-        authCtx?.type === 'user' ||
-        (authCtx?.type === 'apiToken' && authCtx.scope === 'user') ||
-        authCtx?.type === 'appUser'
-      )
-    ) {
+    if (authCtx?.type !== 'account') {
       throw new ORPCError('UNAUTHORIZED')
     }
     return next({
       context: {
         ...context,
-        auth: new UserOrAppUserAuth(authCtx),
-      },
-    })
-  })
-
-export type NoneAppUserContext = BaseContext & {
-  auth: NoneAppUserAuth
-}
-
-export const noneAppUserProtectedProcedure = o
-  .use(timingMiddleware)
-  .use<NoneAppUserContext>(({ context, next }) => {
-    const authCtx = context.auth.ctx
-    if (!(authCtx?.type === 'user' || authCtx?.type === 'apiToken')) {
-      throw new ORPCError('UNAUTHORIZED')
-    }
-    return next({
-      context: {
-        ...context,
-        auth: new NoneAppUserAuth(authCtx),
+        auth: new AccountProtectedAuth(authCtx),
       },
     })
   })
@@ -190,7 +165,7 @@ export type AdminContext = BaseContext & {
 
 export const adminProcedure = o.use(timingMiddleware).use<AdminContext>(({ context, next }) => {
   const authCtx = context.auth.ctx
-  if (!(authCtx?.type === 'user' || (authCtx?.type === 'apiToken' && authCtx.scope === 'user'))) {
+  if (authCtx?.type !== 'user') {
     throw new ORPCError('UNAUTHORIZED')
   }
   if (!authCtx.isAdmin) {

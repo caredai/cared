@@ -1,20 +1,20 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useLocation } from '@tanstack/react-router'
 
 import { useAccounts } from '@/hooks/use-account'
-import { useAllApps } from '@/hooks/use-app'
-import { addIdPrefix } from '@/lib/utils'
+import { useDatabaseNamespaces } from '@/hooks/use-database'
+import { addIdPrefix, stripIdPrefix } from '@/lib/utils'
 
 export function useActive() {
   const location = useLocation()
   const pathname = location.pathname
 
-  const activeApp = useApp(pathname)
-  const activeAccount = useAccount(pathname, activeApp?.app.accountId)
+  const activeAccount = useAccount(pathname)
+  const activeDatabaseNamespace = useDatabaseNamespace(pathname)
 
   return {
     activeAccount,
-    activeApp,
+    activeDatabaseNamespace,
   }
 }
 
@@ -24,34 +24,34 @@ export function useActiveAccount() {
   return useAccount(pathname)
 }
 
-export function useActiveApp() {
+export function useActiveDatabaseNamespace() {
   const location = useLocation()
   const pathname = location.pathname
-  return useApp(pathname)
+  return useDatabaseNamespace(pathname)
 }
 
-function useAccount(pathname: string, id?: string) {
+function useAccount(pathname: string) {
   const accounts = useAccounts()
 
   return useMemo(() => {
-    const accountId = id ?? getAccountId(pathname)
+    const accountId = getAccountId(pathname)
     if (!accountId) {
       return
     }
     return accounts.find((account) => account.id === accountId)
-  }, [accounts, pathname, id])
+  }, [accounts, pathname])
 }
 
-function useApp(pathname: string, id?: string) {
-  const apps = useAllApps()
+function useDatabaseNamespace(pathname: string) {
+  const namespaces = useDatabaseNamespaces()
 
   return useMemo(() => {
-    const appId = id ?? getAppId(pathname)
-    if (!appId) {
+    const databaseNamespaceId = getDatabaseNamespaceId(pathname)
+    if (!databaseNamespaceId) {
       return
     }
-    return apps.find((a) => a.app.id === appId)
-  }, [apps, pathname, id])
+    return namespaces.find((namespace) => namespace.id === databaseNamespaceId)
+  }, [namespaces, pathname])
 }
 
 export function useActiveAccountId() {
@@ -66,14 +66,37 @@ export function useActiveAccountId() {
   )
 }
 
-export function useActiveAppId() {
+export function useActiveDatabaseNamespaceId() {
   const location = useLocation()
   const pathname = location.pathname
   return useMemo(
     () => ({
-      activeAppId: getAppId(pathname),
-      activeAppIdNoPrefix: getAppIdNoPrefix(pathname),
+      activeDatabaseNamespaceId: getDatabaseNamespaceId(pathname),
+      activeDatabaseNamespaceIdNoPrefix: getDatabaseNamespaceIdNoPrefix(pathname),
     }),
+    [pathname],
+  )
+}
+
+export function replaceRouteWithAccountId(route: string, id: string) {
+  return route.replace(/^\/acc_[^/]+/, `/acc_${stripIdPrefix(id)}`)
+}
+
+export function useReplaceRouteWithAccountId() {
+  const location = useLocation()
+  const pathname = location.pathname
+  return useCallback((id: string) => replaceRouteWithAccountId(pathname, id), [pathname])
+}
+
+export function replaceRouteWithDatabaseNamespaceId(route: string, namespaceId: string) {
+  return route.replace(/\/database_[^/]+/, `/database_${stripIdPrefix(namespaceId)}`)
+}
+
+export function useReplaceRouteWithDatabaseNamespaceId() {
+  const location = useLocation()
+  const pathname = location.pathname
+  return useCallback(
+    (namespaceId: string) => replaceRouteWithDatabaseNamespaceId(pathname, namespaceId),
     [pathname],
   )
 }
@@ -88,12 +111,12 @@ function getAccountIdNoPrefix(pathname: string) {
   return matched?.length && matched[1] ? matched[1] : ''
 }
 
-function getAppId(pathname: string) {
-  const idNoPrefix = getAppIdNoPrefix(pathname)
-  return idNoPrefix ? addIdPrefix(idNoPrefix, 'app') : ''
+function getDatabaseNamespaceId(pathname: string) {
+  const idNoPrefix = getDatabaseNamespaceIdNoPrefix(pathname)
+  return idNoPrefix ? addIdPrefix(idNoPrefix, 'neon') : ''
 }
 
-function getAppIdNoPrefix(pathname: string) {
-  const matched = /\/acc_[^/]+\/app_([^/]+)/.exec(pathname)
+function getDatabaseNamespaceIdNoPrefix(pathname: string) {
+  const matched = /\/acc_[^/]+\/database_([^/]+)/.exec(pathname)
   return matched?.length && matched[1] ? matched[1] : ''
 }

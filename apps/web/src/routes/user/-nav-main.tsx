@@ -28,7 +28,7 @@ const items: NavItem[] = [
     icon: Key,
   },
   {
-    title: 'Applications',
+    title: 'OAuth Apps',
     url: '/applications',
     icon: Bot,
   },

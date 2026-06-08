@@ -7,6 +7,7 @@ import { db } from '@cared/db/client'
 import { Neon } from '@cared/db/schema'
 
 import type {
+  DatabaseDataApiSettings,
   DatabaseEndpointStatsGrouping,
   DatabaseEndpointType,
   DatabaseMaskingRule,
@@ -39,7 +40,6 @@ import {
   toNeonDataApiSettings,
   toNeonMaskingRule,
 } from '../../types'
-import type { DatabaseDataApiSettings } from '../../types'
 import { countProjectsBranches, formatEndpointStatsChart, getEndpointStats } from './api'
 
 export interface NeonSettings {
@@ -1483,19 +1483,14 @@ export class NeonService {
     databaseName: string,
   ) {
     const { namespace, client } = await this.getNamespaceClient(accountId, namespaceId)
-    await client.createProjectBranchDataApi(
-      namespace.projectId,
-      branchId,
-      databaseName,
-      {
-        auth_provider: 'external',
-        settings: {
-          db_schemas: ['public'],
-          db_anon_role: 'anonymous',
-          openapi_mode: 'disabled',
-        },
+    await client.createProjectBranchDataApi(namespace.projectId, branchId, databaseName, {
+      auth_provider: 'external',
+      settings: {
+        db_schemas: ['public'],
+        db_anon_role: 'anonymous',
+        openapi_mode: 'disabled',
       },
-    )
+    })
 
     const dataApiResponse = await client.getProjectBranchDataApi(
       namespace.projectId,

@@ -193,22 +193,8 @@ function DataApiTableRow({
 }) {
   return (
     <g>
-      <rect
-        x="14"
-        y={y}
-        width={idWidth}
-        height={6}
-        rx="2"
-        className="fill-muted-foreground/35"
-      />
-      <rect
-        x="52"
-        y={y}
-        width={nameWidth}
-        height={6}
-        rx="2"
-        className="fill-muted-foreground/35"
-      />
+      <rect x="14" y={y} width={idWidth} height={6} rx="2" className="fill-muted-foreground/35" />
+      <rect x="52" y={y} width={nameWidth} height={6} rx="2" className="fill-muted-foreground/35" />
     </g>
   )
 }

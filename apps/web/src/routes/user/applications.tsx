@@ -9,7 +9,7 @@ import { CircleSpinner } from '@cared/ui/components/spinner'
 import { LocalImage, RemoteImage } from '@/components/image'
 import { SectionTitle } from '@/components/section'
 import { orpc } from '@/lib/orpc'
-import defaultLogo from '/images/agent.png'
+import defaultLogo from '/images/oauth-app-default.svg'
 
 export const Route = createFileRoute('/user/applications')({
   loader: ({ context }) => {
@@ -27,8 +27,8 @@ function Applications() {
         void refetch()
       },
       onError: (error) => {
-        console.error('Failed to revoke OAuth application:', error)
-        toast.error(`Failed to revoke OAuth application: ${error.message}`)
+        console.error('Failed to revoke OAuth app:', error)
+        toast.error(`Failed to revoke OAuth app: ${error.message}`)
       },
     }),
   )
@@ -36,15 +36,14 @@ function Applications() {
   return (
     <>
       <SectionTitle
-        title="Authorized Applications"
-        description="Manage your authorized OAuth applications"
+        title="Authorized OAuth Apps"
       />
 
       <div className="space-y-4">
         {apps.apps.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-8">
-              <p className="text-muted-foreground">No authorized applications found</p>
+              <p className="text-muted-foreground">No authorized OAuth Apps found</p>
             </CardContent>
           </Card>
         ) : (
@@ -52,8 +51,8 @@ function Applications() {
             <Card key={app.clientId}>
               <CardContent className="flex items-center gap-4">
                 <div className="relative h-16 w-16 min-w-16 rounded-md overflow-hidden">
-                  {app.imageUrl ? (
-                    <RemoteImage src={app.imageUrl} alt={app.name} fill className="object-cover" />
+                  {app.logo ? (
+                    <RemoteImage src={app.logo} alt={app.name} fill className="object-cover" />
                   ) : (
                     <LocalImage src={defaultLogo} alt="App Logo" fill className="object-cover" />
                   )}
@@ -62,7 +61,7 @@ function Applications() {
                   <CardTitle className="truncate">{app.name}</CardTitle>
                   <CardDescription className="truncate">
                     Last used at {new Date(app.access.updatedAt).toLocaleDateString()} • Owned by{' '}
-                    {app.owner.name}
+                    {app.owner?.name}
                   </CardDescription>
                 </div>
                 <Button

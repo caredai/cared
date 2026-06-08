@@ -10,7 +10,7 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 
-import { auth } from '@cared/auth'
+import { auth, setupMcpRoutes } from '@cared/auth'
 import { getApiPath, getTrustedOrigins } from '@cared/auth/client'
 import { setupIntegrationGithubRoutes } from '@cared/integration'
 
@@ -90,6 +90,8 @@ export function newHonoApp(): HonoApp {
   app.route('/v2/flow', langflow)
 
   setupIntegrationGithubRoutes(app)
+
+  setupMcpRoutes(app)
 
   const rpcHandler = new RPCHandler(appRouter, {
     strictGetMethodPluginEnabled: false, // Replace Strict Get Method Plugin

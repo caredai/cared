@@ -32,7 +32,7 @@ export class ExpenseManager {
     return new ExpenseManager({
       accountId: auth.accountId,
       userId: 'userId' in auth ? auth.userId : undefined,
-      appId: auth.type === 'appUser' ? auth.appId : undefined,
+      appId: auth.type === 'user' ? auth.appId : undefined,
       waitUntil,
     })
   }
@@ -132,7 +132,7 @@ export class ExpenseManager {
         await db.insert(Expense).values({
           accountId: this.accountId,
           userId: this.userId,
-          appId: this.appId,
+          oauthAppId: this.appId,
           kind: 'generation',
           details,
         })
@@ -148,7 +148,7 @@ export class ExpenseManager {
       await db.insert(Expense).values({
         accountId: this.accountId,
         userId: this.userId,
-        appId: this.appId,
+        oauthAppId: this.appId,
         kind: 'generation',
         cost: cost.toString(),
         details,

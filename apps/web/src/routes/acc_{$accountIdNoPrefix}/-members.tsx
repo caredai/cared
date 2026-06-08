@@ -73,11 +73,11 @@ export function Members({ kind }: { kind: 'members' | 'invitations' }) {
 
   const { user } = useSession()
 
-  const { activeAccountId } = useActiveAccountId()
+  const { activeAccountIdNoPrefix } = useActiveAccountId()
 
   // Use separate hooks for each functionality
-  const members = useMembers(activeAccountId)
-  const invitations = useInvitations(activeAccountId)
+  const { members } = useMembers()
+  const { invitations } = useInvitations()
   const removeMember = useRemoveMember()
   const updateMemberRole = useUpdateMemberRole()
   const createInvitation = useCreateInvitation()
@@ -116,7 +116,7 @@ export function Members({ kind }: { kind: 'members' | 'invitations' }) {
     if (inviteEmail) {
       setIsInviting(true)
       try {
-        await createInvitation(activeAccountId, inviteEmail)
+        await createInvitation(inviteEmail)
         setIsInviteDialogOpen(false)
         setInviteEmail('')
         toast.success('Invitation sent successfully')
@@ -134,7 +134,7 @@ export function Members({ kind }: { kind: 'members' | 'invitations' }) {
     if (memberToDelete) {
       setIsRemovingMember(true)
       try {
-        await removeMember(activeAccountId, memberToDelete)
+        await removeMember(memberToDelete)
         setMemberToDelete(null)
         toast.success('Member removed successfully')
       } catch (error) {
@@ -151,7 +151,7 @@ export function Members({ kind }: { kind: 'members' | 'invitations' }) {
     if (memberToUpdateRole) {
       setIsUpdatingRole(true)
       try {
-        await updateMemberRole(activeAccountId, memberToUpdateRole.id, newRole)
+        await updateMemberRole(memberToUpdateRole.id, newRole)
         setMemberToUpdateRole(null)
         setNewRole('member')
         toast.success('Member role updated successfully')
@@ -267,12 +267,12 @@ export function Members({ kind }: { kind: 'members' | 'invitations' }) {
           if (value === 'members') {
             void navigate({
               to: '/acc_{$accountIdNoPrefix}/members',
-              params: { accountIdNoPrefix: activeAccountId },
+              params: { accountIdNoPrefix: activeAccountIdNoPrefix },
             })
           } else {
             void navigate({
               to: '/acc_{$accountIdNoPrefix}/members/invitations',
-              params: { accountIdNoPrefix: activeAccountId },
+              params: { accountIdNoPrefix: activeAccountIdNoPrefix },
             })
           }
         }}

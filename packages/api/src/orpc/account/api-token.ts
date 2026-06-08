@@ -1,15 +1,19 @@
 import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
 
-import type { ApiTokenScope } from '@cared/db/schema'
-import type { TokenPolicy } from '@cared/shared'
-import { checkPermissionsByRole, PERMISSION_GROUPS, PERMISSION_GROUPS_MAP } from '@cared/auth'
+import { PERMISSION_GROUPS, validateTokenPolicies } from '@cared/auth'
 import { and, asc, eq } from '@cared/db'
 import { db } from '@cared/db/client'
-import { ApiToken, apiTokenScope, generateId } from '@cared/db/schema'
-import { tokenPolicySchema } from '@cared/shared'
+import { ApiToken, apiTokenCredentialTypes } from '@cared/db/schema'
+import { TokenPolicy, tokenPolicySchema } from '@cared/shared'
 
-import { formatApiToken, generateApiToken, getApiTokenHash, getUserAccounts } from '../../operation'
+import {
+  formatApiToken,
+  generateApiToken,
+  getApiTokenHash,
+  getUserAccounts,
+  invalidateApiTokenCache,
+} from '../../operation'
 import { userPlainProtectedProcedure } from '../../orpc'
 
 export const apiTokenRouter = {
@@ -35,21 +39,19 @@ export const apiTokenRouter = {
     })
     .input(
       z.object({
-        scope: z.enum(apiTokenScope),
+        credentialType: z.enum(apiTokenCredentialTypes),
       }),
     )
     .handler(async ({ context, input }) => {
-      await context.auth.requirePermissions(
-        input.scope === 'account' ? { apiToken: ['read'] } : { userApiToken: ['read'] },
-      )
+      await context.auth.requirePermissions({ apiToken: ['read'] })
 
       const tokens = await db
         .select()
         .from(ApiToken)
         .where(
           and(
-            eq(ApiToken.scope, input.scope),
-            input.scope === 'account'
+            eq(ApiToken.credentialType, input.credentialType),
+            input.credentialType === 'account'
               ? eq(ApiToken.accountId, context.auth.accountId)
               : eq(ApiToken.userId, context.auth.userId),
           ),
@@ -83,7 +85,7 @@ export const apiTokenRouter = {
       }
 
       await context.auth.requirePermissions(
-        token.scope === 'account' ? { apiToken: ['read'] } : { userApiToken: ['read'] },
+        { apiToken: ['read'] },
         { accountId: token.accountId, userId: token.userId },
       )
 
@@ -102,15 +104,9 @@ export const apiTokenRouter = {
     .input(
       z
         .object({
-          scope: z.enum(apiTokenScope),
+          credentialType: z.enum(apiTokenCredentialTypes),
           name: z.string().min(1).max(64),
-          policies: z
-            .array(
-              tokenPolicySchema.omit({
-                id: true,
-              }),
-            )
-            .min(1),
+          policies: z.array(tokenPolicySchema).min(1),
           enabled: z.boolean().optional(),
           expiresAt: z
             .date()
@@ -135,33 +131,40 @@ export const apiTokenRouter = {
         ),
     )
     .handler(async ({ context, input }) => {
-      const policies: TokenPolicy[] = input.policies.map((policy) => ({
-        id: generateId('', ''),
-        ...policy,
-      }))
-
-      const { scope, userId, accountId } = await validateTokenPolicies(input.scope, policies)
+      let validated: Awaited<ReturnType<typeof validateTokenPolicies>>
+      try {
+        validated = await validateTokenPolicies(
+          input.credentialType,
+          input.policies,
+          getUserAccounts,
+          context.auth.userId,
+        )
+      } catch (error) {
+        throw new ORPCError('BAD_REQUEST', {
+          message: error instanceof Error ? error.message : 'Invalid token policies',
+        })
+      }
+      const { credentialType, formattedPolicies, userId, accountId } = validated
 
       await context.auth.requirePermissions(
-        scope === 'account'
-          ? { apiToken: ['write'] }
+        { apiToken: ['write'] },
+        credentialType === 'account'
+          ? {
+              accountId,
+            }
           : {
-              userApiToken: ['write'],
+              userId,
             },
-        {
-          accountId,
-          userId,
-        },
       )
 
-      const { token, hash, start, end } = await generateApiToken()
+      const { token, hash, start, end } = await generateApiToken(credentialType)
 
       const [newToken] = await db
         .insert(ApiToken)
         .values({
           name: input.name,
           hash,
-          policies,
+          policies: formattedPolicies,
           enabled: input.enabled ?? true,
           expiresAt: input.expiresAt,
           notBefore: input.notBefore,
@@ -169,8 +172,8 @@ export const apiTokenRouter = {
             start,
             end,
           },
-          scope,
-          accountId: scope === 'account' ? accountId : undefined,
+          credentialType,
+          accountId: credentialType === 'account' ? accountId : undefined,
           userId,
         })
         .returning()
@@ -180,6 +183,109 @@ export const apiTokenRouter = {
           ...formatApiToken(newToken!),
           token: token, // The raw token is only returned on creation.
         },
+      }
+    }),
+
+  update: userPlainProtectedProcedure
+    .route({
+      method: 'PATCH',
+      path: '/api-tokens/{id}',
+      tags: ['tokens'],
+      summary: 'Update an API token',
+    })
+    .input(
+      z
+        .object({
+          id: z.string(),
+          name: z.string().min(1).max(64).optional(),
+          policies: z.array(tokenPolicySchema).min(1).optional(),
+          enabled: z.boolean().optional(),
+          expiresAt: z.date().nullish(),
+          notBefore: z.date().nullish(),
+        })
+        .refine(
+          ({ expiresAt, notBefore }) =>
+            !expiresAt || !notBefore || expiresAt.getTime() > notBefore.getTime(),
+          {
+            message: 'expiresAt must be after notBefore',
+            path: ['expiresAt'],
+          },
+        ),
+    )
+    .handler(async ({ context, input }) => {
+      const existingToken = await db.query.ApiToken.findFirst({
+        where: eq(ApiToken.id, input.id),
+      })
+
+      if (!existingToken) {
+        throw new ORPCError('NOT_FOUND', { message: 'API token not found' })
+      }
+
+      let formattedPolicies: TokenPolicy[] | undefined
+      if (input.policies) {
+        let validated: Awaited<ReturnType<typeof validateTokenPolicies>>
+        try {
+          validated = await validateTokenPolicies(
+            existingToken.credentialType,
+            input.policies,
+            getUserAccounts,
+            context.auth.userId,
+          )
+        } catch (error) {
+          throw new ORPCError('BAD_REQUEST', {
+            message: error instanceof Error ? error.message : 'Invalid token policies',
+          })
+        }
+
+        if (existingToken.credentialType === 'account') {
+          if (validated.accountId !== existingToken.accountId) {
+            throw new ORPCError('BAD_REQUEST', {
+              message: 'Cannot change the account this API token is bound to',
+            })
+          }
+          if ((validated.userId ?? null) !== (existingToken.userId ?? null)) {
+            throw new ORPCError('BAD_REQUEST', {
+              message: 'Cannot change the member this API token is bound to',
+            })
+          }
+        } else {
+          if (validated.userId !== existingToken.userId) {
+            throw new ORPCError('BAD_REQUEST', {
+              message: 'Cannot change the user this API token is bound to',
+            })
+          }
+        }
+
+        formattedPolicies = validated.formattedPolicies
+      }
+
+      await context.auth.requirePermissions(
+        { apiToken: ['write'] },
+        existingToken.credentialType === 'account'
+          ? {
+              accountId: existingToken.accountId,
+            }
+          : {
+              userId: existingToken.userId,
+            },
+      )
+
+      const [updatedToken] = await db
+        .update(ApiToken)
+        .set({
+          name: input.name,
+          policies: formattedPolicies,
+          enabled: input.enabled,
+          expiresAt: input.expiresAt,
+          notBefore: input.notBefore,
+        })
+        .where(eq(ApiToken.id, input.id))
+        .returning()
+
+      await invalidateApiTokenCache(existingToken.hash)
+
+      return {
+        token: formatApiToken(updatedToken!),
       }
     }),
 
@@ -205,11 +311,11 @@ export const apiTokenRouter = {
       }
 
       await context.auth.requirePermissions(
-        existingToken.scope === 'account' ? { apiToken: ['write'] } : { userApiToken: ['write'] },
+        { apiToken: ['write'] },
         { accountId: existingToken.accountId, userId: existingToken.userId },
       )
 
-      const { token, hash, start, end } = await generateApiToken()
+      const { token, hash, start, end } = await generateApiToken(existingToken.credentialType)
 
       const [updatedToken] = await db
         .update(ApiToken)
@@ -293,7 +399,7 @@ export const apiTokenRouter = {
       }
 
       await context.auth.requirePermissions(
-        token.scope === 'account' ? { apiToken: ['write'] } : { userApiToken: ['write'] },
+        { apiToken: ['write'] },
         { accountId: token.accountId, userId: token.userId },
       )
 
@@ -303,106 +409,4 @@ export const apiTokenRouter = {
         token: formatApiToken(token),
       }
     }),
-}
-
-async function validateTokenPolicies(scope: ApiTokenScope, policies: TokenPolicy[]) {
-  const accountIds = new Set<string>()
-  const userIds = new Set<string>()
-  let needsUserScope = false
-
-  for (const policy of policies) {
-    const allowedScopes = new Set<string>()
-    for (const resource of Object.keys(policy.resources)) {
-      const parts = resource.substring('dev.cared.api.'.length).split('.')
-      const resourceType = parts[0]
-      switch (resourceType) {
-        case 'account':
-          if (parts[1] === '*') {
-            needsUserScope = true
-          } else {
-            accountIds.add(parts[1]!)
-          }
-          allowedScopes.add('dev.cared.api.account')
-          break
-        case 'user':
-          userIds.add(parts[1]!)
-          needsUserScope = true
-          allowedScopes.add('dev.cared.api.user')
-          break
-        case 'ai':
-          accountIds.add(parts[1]!)
-          userIds.add(parts[2]!)
-          allowedScopes.add('dev.cared.api.ai')
-          break
-      }
-    }
-
-    policy.permissionGroups.forEach((p) => {
-      const pg = PERMISSION_GROUPS_MAP.get(p.id)
-      if (!pg) {
-        throw new ORPCError('BAD_REQUEST', {
-          message: `Permission group ${p.id} not found.`,
-        })
-      }
-      if (!pg.scopes.some((pgScope) => allowedScopes.has(pgScope))) {
-        throw new ORPCError('BAD_REQUEST', {
-          message: `Permission group ${p.id} requires at least one resource scope in: ${pg.scopes.join(', ')}.`,
-        })
-      }
-    })
-  }
-
-  if (scope === 'user') {
-    if (userIds.size !== 1) {
-      throw new ORPCError('BAD_REQUEST', {
-        message: 'Policies for user scope must have exactly one userId.',
-      })
-    }
-    const userId = userIds.values().next().value!
-
-    const allAccounts = await getUserAccounts(userId)
-    const allAccountsMap = new Map(allAccounts.map((account) => [account.id, account]))
-    accountIds.forEach((id) => {
-      const account = allAccountsMap.get(id)
-      if (!account) {
-        throw new ORPCError('BAD_REQUEST', {
-          message: `Account ${id} not found.`,
-        })
-      }
-      const success = checkPermissionsByRole(account.role, { apiToken: ['write'] })
-      if (!success) {
-        throw new ORPCError('BAD_REQUEST', {
-          message: `You have no permission to create API tokens for account ${account.id}.`,
-        })
-      }
-    })
-
-    return {
-      scope,
-      userId,
-      accountIds: Array.from(accountIds),
-    }
-  } else {
-    if (accountIds.size !== 1) {
-      throw new ORPCError('BAD_REQUEST', {
-        message: 'Policies for account scope must have exactly one accountId.',
-      })
-    }
-    if (userIds.size > 1) {
-      throw new ORPCError('BAD_REQUEST', {
-        message: 'Policies for account scope cannot have multiple different userIds.',
-      })
-    }
-    if (needsUserScope) {
-      throw new ORPCError('BAD_REQUEST', {
-        message: 'Policies for account scope cannot have any user scope resource.',
-      })
-    }
-
-    return {
-      scope,
-      accountId: accountIds.values().next().value!,
-      userId: userIds.values().next().value,
-    }
-  }
 }

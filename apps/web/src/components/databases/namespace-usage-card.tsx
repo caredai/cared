@@ -4,11 +4,7 @@ import { Info } from 'lucide-react'
 import type { RouterOutputs } from '@cared/api'
 import type { DatabaseNamespaceUsageLimits } from '@cared/api/types'
 import { Card, CardContent } from '@cared/ui/components/card'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@cared/ui/components/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@cared/ui/components/tooltip'
 
 import { formatCuHours, formatStorageBytes } from './database-format'
 
@@ -63,32 +59,32 @@ export function NamespaceUsageCard({
           <UsageMetric
             label="Branches"
             value={`${branchCount} / ${usageLimits.maxBranches}`}
-            tooltip="Number of branches in this namespace"
+            tooltip="Number of branches in this database namespace"
           />
           <div className="hidden lg:block w-px self-stretch bg-border shrink-0" />
           <UsageMetric
             label="Compute"
             value={`${formatCuHours(computeUsed)} / ${usageLimits.maxComputeCuHours} CU-hrs`}
-            tooltip="Total compute time usage for this namespace"
+            tooltip="Total compute time usage for this database namespace"
           />
           <div className="hidden lg:block w-px self-stretch bg-border shrink-0" />
           <UsageMetric
             label="Storage"
             value={`${formatStorageBytes(storageUsed)} / ${formatStorageBytes(usageLimits.maxStorageBytes)}`}
-            tooltip="Total storage usage for this namespace"
+            tooltip="Total storage usage for this database namespace"
           />
           <div className="hidden lg:block w-px self-stretch bg-border shrink-0" />
           <UsageMetric
             label="Network transfer"
             value={`${formatStorageBytes(networkUsed)} / ${formatStorageBytes(usageLimits.maxDataTransferBytes)}`}
-            tooltip="Total network data transfer for this namespace"
+            tooltip="Total network data transfer for this database namespace"
           />
         </div>
         <div className="mt-4 flex items-start gap-2 text-xs text-muted-foreground">
           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>
             Usage since {periodStart}. Metrics may be delayed by an hour and are not updated for
-            inactive namespace.
+            inactive database namespaces.
           </span>
         </div>
       </CardContent>

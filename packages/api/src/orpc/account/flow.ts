@@ -2,7 +2,7 @@ import { z } from 'zod/v4'
 
 import { protectedProcedure } from '../../orpc'
 import { langflowService } from '../../service/langflow/langflow'
-import { getAppById } from './app'
+import { getOAuthAppById } from '../../operation/oauth-app'
 
 export const flowRouter = {
   enable: protectedProcedure
@@ -14,13 +14,13 @@ export const flowRouter = {
     })
     .input(
       z.object({
-        appId: z.string(),
+        oauthAppId: z.string(),
       }),
     )
     .handler(async ({ context, input }) => {
-      const app = await getAppById(context, input.appId)
+      const app = await getOAuthAppById(input.oauthAppId)
       await context.auth.requirePermissions({ pseudo: [] }, { accountId: app.accountId })
 
-      await langflowService.ensureProject(app.accountId, input.appId, app.name)
+      await langflowService.ensureProject(app.accountId, input.oauthAppId, app.name)
     }),
 }

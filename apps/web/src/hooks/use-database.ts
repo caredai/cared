@@ -864,8 +864,7 @@ export function useDatabaseBranchDataApiActions(namespaceId: string, branchId: s
     ) => updateMutation.mutateAsync({ namespaceId, branchId, databaseName, settings }),
     deleteDataApi: (databaseName: string) =>
       deleteMutation.mutateAsync({ namespaceId, branchId, databaseName }),
-    isPending:
-      createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
+    isPending: createMutation.isPending || updateMutation.isPending || deleteMutation.isPending,
   }
 }
 

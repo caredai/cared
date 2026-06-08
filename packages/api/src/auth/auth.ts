@@ -2,19 +2,19 @@ import assert from 'assert'
 import { ORPCError } from '@orpc/server'
 
 import type { AccountRole, StatementsSubset } from '@cared/auth'
+import type { OAuthAppScope, TokenPolicy } from '@cared/shared'
 import {
   auth as authApi,
   authHeaders,
+  checkPermissionsByOAuthAppScopes,
   checkPermissionsByRole,
-  checkTokenPolicies,
+  checkPermissionsByTokenPolicies,
 } from '@cared/auth'
 import { eq } from '@cared/db'
 import { db } from '@cared/db/client'
-import { App } from '@cared/db/schema'
+import { OAuthApp } from '@cared/db/schema'
 
-import type { ApiTokenAuth } from '../operation'
-import { getApiToken, getUserAccounts } from '../operation'
-import { getAccessToken } from '../operation/oauth-app'
+import { getAccessToken, getApiToken, getUserAccounts, isApiTokenCredential } from '../operation'
 import { isAdminUser } from '../operation/user'
 
 export type AuthContext =
@@ -23,67 +23,59 @@ export type AuthContext =
       userId: string
       accountId: string
       isAdmin?: boolean
+      appId?: string // for oauth apps
+      scopes?: OAuthAppScope[] // for oauth apps
+      policies?: TokenPolicy[] // for user api tokens
     }
   | {
-      type: 'appUser'
-      userId: string
+      type: 'account' // for account api tokens
       accountId: string
-      appId: string
+      userId?: string // `dev.cared.api.account.user`
+      policies: TokenPolicy[]
     }
-  | ({
-      type: 'apiToken'
-    } & ApiTokenAuth)
 
 export class Auth {
   constructor(public ctx?: AuthContext) {}
+
+  get type() {
+    return this.ctx?.type
+  }
 
   get isAuthenticated(): boolean {
     return !!this.ctx
   }
 
   get isUser(): boolean {
-    const auth = this.ctx
-    return (
-      auth?.type === 'user' ||
-      auth?.type === 'appUser' ||
-      (auth?.type === 'apiToken' && auth.scope === 'user')
-    )
+    return this.ctx?.type === 'user'
   }
 
   get isAdmin() {
     const auth = this.ctx
-    return (
-      (auth?.type === 'user' || (auth?.type === 'apiToken' && auth.scope === 'user')) &&
-      auth.isAdmin === true
-    )
+    return auth?.type === 'user' && auth.isAdmin === true
   }
 
   by() {
     const auth = this.ctx
     switch (auth?.type) {
-      case 'user':
-        return `${auth.userId}${auth.isAdmin ? ' (admin)' : ''}`
-      case 'appUser':
-        return `${auth.appId}:${auth.userId}`
-      case 'apiToken':
-        switch (auth.scope) {
-          case 'user':
-            return `${auth.userId}${auth.isAdmin ? ' (admin)' : ''} api key`
-          case 'account':
-            return `${auth.accountId} api key`
+      case 'user': {
+        let label = `${auth.userId}${auth.isAdmin ? ' (admin)' : ''}`
+        if (auth.policies !== undefined) {
+          label += ' api token'
         }
-        break
+        if (auth.appId) {
+          label += ` (${auth.appId})`
+        }
+        return label
+      }
+      case 'account':
+        return `${auth.accountId} api token`
     }
     return 'Anonymous'
   }
 
   async requirePermissions(
     permissions: StatementsSubset | undefined = undefined,
-    {
-      accountId,
-      userId,
-      roles,
-    }: {
+    checkFields: {
       accountId?: string | null
       userId?: string | null
       roles?: AccountRole[]
@@ -100,16 +92,18 @@ export class Auth {
       })
     }
 
-    if (accountId && accountId !== auth.accountId) {
+    // check account id
+    if (checkFields.accountId && checkFields.accountId !== auth.accountId) {
       throwError()
-      return
     }
-    if (userId && (!('userId' in auth) || userId !== auth.userId)) {
+    // check user id
+    if (checkFields.userId && checkFields.userId !== auth.userId) {
       throwError()
     }
 
-    if (auth.type === 'apiToken' && auth.scope === 'account') {
-      const success = checkTokenPolicies({
+    if (auth.type === 'account') {
+      // account api token
+      const success = checkPermissionsByTokenPolicies({
         permissions,
         policies: auth.policies,
         accountId: auth.accountId,
@@ -119,25 +113,38 @@ export class Auth {
         throwError()
       }
     } else {
-      const account = await getUserAccount(auth.userId, auth.accountId)
+      const userAccount = await getUserAccount(auth.userId, auth.accountId)
 
-      if (roles && !roles.includes(account.role)) {
+      // check role of user in account
+      if (checkFields.roles && !checkFields.roles.includes(userAccount.role)) {
         throwError()
       }
 
-      if (auth.type === 'apiToken') {
-        const success = checkTokenPolicies({
+      if (auth.policies) {
+        // user api token
+        const success = checkPermissionsByTokenPolicies({
           permissions,
           policies: auth.policies,
           userId: auth.userId,
           accountId: auth.accountId,
-          role: account.role,
+          role: userAccount.role,
+        })
+        if (!success) {
+          throwError()
+        }
+      } else if (auth.scopes) {
+        // oauth app access token
+        const success = checkPermissionsByOAuthAppScopes({
+          permissions,
+          scopes: auth.scopes,
+          role: userAccount.role,
         })
         if (!success) {
           throwError()
         }
       } else {
-        const success = checkPermissionsByRole(account.role, permissions ?? { pseudo: [] })
+        // session user
+        const success = checkPermissionsByRole(userAccount.role, permissions)
         if (!success) {
           throwError()
         }
@@ -163,9 +170,10 @@ async function getUserAccount(userId: string, accountId: string) {
 export async function authenticate(headers: Headers): Promise<Auth> {
   const bearerToken = headers.get('Authorization')?.replace('Bearer ', '') ?? ''
 
-  const apiToken = bearerToken.startsWith('sk_cr_')
-    ? bearerToken
-    : (headers.get('X-API-TOKEN') ?? headers.get('X-API-KEY'))
+  const apiToken =
+    bearerToken && isApiTokenCredential(bearerToken)
+      ? bearerToken
+      : (headers.get('X-API-TOKEN') ?? headers.get('X-API-KEY'))
 
   if (apiToken) {
     const key = await getApiToken(apiToken)
@@ -181,29 +189,26 @@ export async function authenticate(headers: Headers): Promise<Auth> {
       throw new ORPCError('UNAUTHORIZED')
     }
 
-    const auth: ApiTokenAuth =
-      key.scope === 'user'
-        ? {
-            scope: 'user',
-            userId: key.userId!,
-            accountId: headers.get('X-ACCOUNT-ID') ?? key.defaultAccountId!,
-            isAdmin: await isAdminUser(key.userId!),
-            policies: key.policies,
-          }
-        : {
-            scope: 'account',
-            accountId: key.accountId!,
-            userId: key.userId ?? undefined,
-            policies: key.policies,
-          }
-
-    return new Auth({
-      type: 'apiToken',
-      ...auth,
-    })
+    if (key.credentialType === 'user') {
+      const userId = key.userId!
+      return new Auth({
+        type: 'user',
+        userId,
+        accountId: headers.get('X-ACCOUNT-ID') ?? key.defaultAccountId!,
+        isAdmin: await isAdminUser(userId),
+        policies: key.policies,
+      })
+    } else {
+      return new Auth({
+        type: 'account',
+        accountId: key.accountId!,
+        userId: key.userId ?? undefined,
+        policies: key.policies,
+      })
+    }
   }
 
-  const accessToken = !bearerToken.startsWith('sk_cr_') && bearerToken
+  const accessToken = bearerToken && !isApiTokenCredential(bearerToken) ? bearerToken : undefined
   if (accessToken) {
     const info = await getAccessToken(accessToken)
     if (!info) {
@@ -211,8 +216,11 @@ export async function authenticate(headers: Headers): Promise<Auth> {
     }
 
     return new Auth({
-      type: 'appUser',
-      ...info,
+      type: 'user',
+      userId: info.userId,
+      accountId: info.accountId,
+      appId: info.appId,
+      scopes: info.scopes,
     })
   }
 
@@ -224,24 +232,23 @@ export async function authenticate(headers: Headers): Promise<Auth> {
     return new Auth()
   }
 
-  const accountId =
-    headers.get('X-ACCOUNT-ID') ?? session.activeOrganizationId ?? user.defaultAccountId
+  const accountId = headers.get('X-ACCOUNT-ID') ?? session.activeAccountId ?? user.defaultAccountId
 
   {
     const appId = headers.get('X-APP-ID')
     if (appId) {
-      const app = await db.query.App.findFirst({
-        where: eq(App.id, appId),
+      const app = await db.query.OAuthApp.findFirst({
+        where: eq(OAuthApp.id, appId),
       })
       if (!app) {
         return new Auth()
       }
 
       return new Auth({
-        type: 'appUser',
+        type: 'user',
         userId: session.userId,
         accountId,
-        appId,
+        appId: app.id,
       })
     }
   }
@@ -273,72 +280,39 @@ export class ProtectedAuth extends Auth {
   }
 }
 
-export class UserAuth extends ProtectedAuth {
-  type: 'user' | 'apiToken'
-  userId: string
+export class AccountProtectedAuth extends ProtectedAuth {
+  get type() {
+    return 'account' as const
+  }
 
-  constructor(
-    public ctx: Extract<AuthContext, { type: 'user' } | { type: 'apiToken'; scope: 'user' }>,
-  ) {
+  constructor(public ctx: Extract<AuthContext, { type: 'account' }>) {
     super(ctx)
-    this.type = ctx.type
-    this.userId = ctx.userId
   }
 }
 
-export class UserPlainAuth extends UserAuth {
-  type: 'user'
+export class UserAuth extends ProtectedAuth {
+  get type() {
+    return 'user' as const
+  }
+  userId: string
+  appId?: string
 
   constructor(public ctx: Extract<AuthContext, { type: 'user' }>) {
-    super(ctx)
-    this.type = ctx.type
-  }
-}
-
-export class AppUserAuth extends ProtectedAuth {
-  userId: string
-  appId: string
-
-  constructor(public ctx: Extract<AuthContext, { type: 'appUser' }>) {
     super(ctx)
     this.userId = ctx.userId
     this.appId = ctx.appId
   }
 }
 
-export class UserOrAppUserAuth extends ProtectedAuth {
-  type: 'user' | 'appUser' | 'apiToken'
-  userId: string
-  appId?: string
-
-  constructor(
-    public ctx: Extract<
-      AuthContext,
-      { type: 'user' } | { type: 'appUser' } | { type: 'apiToken'; scope: 'user' }
-    >,
-  ) {
+export class UserPlainAuth extends UserAuth {
+  constructor(public ctx: Extract<AuthContext, { type: 'user' }>) {
     super(ctx)
-    this.type = ctx.type
-    this.userId = ctx.userId
-    if (ctx.type === 'appUser') {
-      this.appId = ctx.appId
-    }
-  }
-}
-
-export class NoneAppUserAuth extends ProtectedAuth {
-  type: 'user' | 'apiToken'
-
-  constructor(public ctx: Extract<AuthContext, { type: 'user' } | { type: 'apiToken' }>) {
-    super(ctx)
-    this.type = ctx.type
+    assert(ctx.policies === undefined)
   }
 }
 
 export class AdminAuth extends UserAuth {
-  constructor(
-    public ctx: Extract<AuthContext, { type: 'user' } | { type: 'apiToken'; scope: 'user' }>,
-  ) {
+  constructor(public ctx: Extract<AuthContext, { type: 'user' }>) {
     super(ctx)
     assert(ctx.isAdmin)
   }
