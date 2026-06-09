@@ -1,11 +1,10 @@
 import {
   ExecutionMethod,
+  FunctionTemplateUseCase,
+  ProjectKeyScopes,
   Runtime,
-  Runtimes,
-  Scopes,
   TemplateReferenceType,
   UsageRange,
-  UseCases,
   VCSReferenceType,
 } from '@appwrite.io/console'
 import { z } from 'zod/v4'
@@ -86,9 +85,12 @@ const functionOutputSchema = z.object({
     description:
       'Is VCS connection in silent mode? In silent mode no comments are posted on pull or merge requests.',
   }),
-  specification: z
+  buildSpecification: z
     .string()
-    .meta({ description: 'Machine specification for builds and executions.' }),
+    .meta({ description: 'Machine specification for deployment builds.' }),
+  runtimeSpecification: z
+    .string()
+    .meta({ description: 'Machine specification for executions.' }),
   createdAt: z.date().meta({ description: 'Function creation date.' }),
   updatedAt: z.date().meta({ description: 'Function update date.' }),
 })
@@ -365,7 +367,7 @@ export const functionRouter = {
           .optional()
           .meta({ description: 'Entrypoint file path relative to providerRootDirectory' }),
         commands: z.string().optional().meta({ description: 'Build commands' }),
-        scopes: z.array(z.enum(Scopes)).max(100).optional().meta({
+        scopes: z.array(z.enum(ProjectKeyScopes)).max(100).optional().meta({
           description: 'Scopes allowed for API key auto-generated for every execution',
         }),
         installationId: z
@@ -388,10 +390,14 @@ export const functionRouter = {
           .string()
           .optional()
           .meta({ description: 'Path to function code in the linked repo' }),
-        specification: z
+        buildSpecification: z
           .string()
           .optional()
-          .meta({ description: 'Runtime specification for the function and builds' }),
+          .meta({ description: 'Build specification for function deployments' }),
+        runtimeSpecification: z
+          .string()
+          .optional()
+          .meta({ description: 'Runtime specification for function executions' }),
       }),
     )
     .output(z.object({ function: functionOutputSchema }))
@@ -496,12 +502,12 @@ export const functionRouter = {
           .default(20)
           .meta({ description: 'Number of results per page' }),
         runtimes: z
-          .array(z.enum(Runtimes))
+          .array(z.enum(Runtime))
           .max(100)
           .optional()
           .meta({ description: 'Runtimes for filtering templates' }),
         useCases: z
-          .array(z.enum(UseCases))
+          .array(z.enum(FunctionTemplateUseCase))
           .max(100)
           .optional()
           .meta({ description: 'Use cases for filtering templates' }),
@@ -736,7 +742,8 @@ export const functionRouter = {
           .string()
           .optional()
           .meta({ description: 'Path to function code in repo' }),
-        specification: z.string().optional().meta({ description: 'Runtime specification' }),
+        buildSpecification: z.string().optional().meta({ description: 'Build specification' }),
+        runtimeSpecification: z.string().optional().meta({ description: 'Runtime specification' }),
       }),
     )
     .output(z.object({ function: functionOutputSchema }))

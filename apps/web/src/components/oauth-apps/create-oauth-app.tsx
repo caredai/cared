@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from '@tanstack/react-router'
 import { PlusIcon } from 'lucide-react'
@@ -31,6 +31,7 @@ import {
   oauthAppScopesFormSchema,
   OAuthAppScopesFields,
   organizeApiScopes,
+  syncApiScopesFormValues,
 } from '@/components/oauth-apps/oauth-app-scopes-fields'
 import { UploadLogo } from '@/components/upload-logo'
 import { useActiveAccount } from '@/hooks/use-active'
@@ -115,6 +116,14 @@ export function CreateOAuthApp({ accountIdNoPrefix }: { accountIdNoPrefix: strin
       apiScopes: defaultApiScopes,
     },
   })
+
+  useEffect(() => {
+    form.setValue(
+      'apiScopes',
+      syncApiScopesFormValues(form.getValues('apiScopes'), organizedApiScopes),
+      { shouldDirty: false, shouldValidate: false },
+    )
+  }, [form, organizedApiScopes])
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,

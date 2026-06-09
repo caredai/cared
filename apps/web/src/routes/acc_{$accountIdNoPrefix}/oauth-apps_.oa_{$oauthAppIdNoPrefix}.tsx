@@ -32,7 +32,7 @@ import { Textarea } from '@cared/ui/components/textarea';
 import type { OAuthAppScopesFormValues } from '@/components/oauth-apps/oauth-app-scopes-fields';
 import { LocalImage, RemoteImage } from '@/components/image';
 import { InputWithEndAction } from '@/components/input-with-end-action';
-import { buildSelectedScopes, OAuthAppScopesFields, oauthAppScopesFormSchema, organizeApiScopes, parseScopesToFormValues } from '@/components/oauth-apps/oauth-app-scopes-fields';
+import { buildSelectedScopes, OAuthAppScopesFields, oauthAppScopesFormSchema, organizeApiScopes, parseScopesToFormValues, syncApiScopesFormValues } from '@/components/oauth-apps/oauth-app-scopes-fields';
 import { SectionTitle } from '@/components/section';
 import { SkeletonCard } from '@/components/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs';
@@ -324,7 +324,11 @@ function OAuthAppScopes({ oauthApp }: { oauthApp: OAuthApp }) {
   })
 
   useEffect(() => {
-    form.reset(parseScopesToFormValues(oauthApp.scopes ?? [], organizedApiScopes))
+    const parsed = parseScopesToFormValues(oauthApp.scopes ?? [], organizedApiScopes)
+    form.reset({
+      ...parsed,
+      apiScopes: syncApiScopesFormValues(parsed.apiScopes, organizedApiScopes),
+    })
   }, [form, oauthApp.scopes, organizedApiScopes])
 
   const isDirty = form.formState.isDirty

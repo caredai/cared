@@ -1,14 +1,13 @@
-import { Query, Sites } from '@appwrite.io/console'
+import { ID, Query, Sites } from '@appwrite.io/console'
 
 import type {
   Adapter,
   BuildRuntime,
   Framework,
-  Frameworks,
   Models,
+  SiteTemplateUseCase,
   TemplateReferenceType,
   UsageRange,
-  UseCases,
   VCSReferenceType,
 } from '@appwrite.io/console'
 import { AppwriteService, toDate } from './base'
@@ -55,7 +54,8 @@ function makeSite(s: Models.Site) {
     providerBranch: s.providerBranch,
     providerRootDirectory: s.providerRootDirectory,
     providerSilentMode: s.providerSilentMode,
-    specification: s.specification,
+    buildSpecification: s.buildSpecification,
+    runtimeSpecification: s.runtimeSpecification,
     buildRuntime: s.buildRuntime,
     adapter: s.adapter,
     fallbackFile: s.fallbackFile,
@@ -178,7 +178,8 @@ export class AppwriteSitesService extends AppwriteService {
       providerBranch?: string
       providerSilentMode?: boolean
       providerRootDirectory?: string
-      specification?: string
+      buildSpecification?: string
+      runtimeSpecification?: string
     },
   ) {
     const res = await this.#sites(regionId, accountId).create(params)
@@ -199,8 +200,8 @@ export class AppwriteSitesService extends AppwriteService {
     params: {
       cursor?: string
       limit?: number
-      frameworks?: Frameworks[]
-      useCases?: UseCases[]
+      frameworks?: Framework[]
+      useCases?: SiteTemplateUseCase[]
     },
   ) {
     const limit = params.limit ?? DEFAULT_LIST_LIMIT
@@ -251,7 +252,8 @@ export class AppwriteSitesService extends AppwriteService {
       providerBranch?: string
       providerSilentMode?: boolean
       providerRootDirectory?: string
-      specification?: string
+      buildSpecification?: string
+      runtimeSpecification?: string
     },
   ) {
     const res = await this.#sites(regionId, accountId).update(params)
@@ -396,7 +398,10 @@ export class AppwriteSitesService extends AppwriteService {
     regionId: string,
     params: { siteId: string; key: string; value: string; secret?: boolean },
   ) {
-    const res = await this.#sites(regionId, accountId).createVariable(params)
+    const res = await this.#sites(regionId, accountId).createVariable({
+      ...params,
+      variableId: ID.unique(),
+    })
     return makeVariable(res)
   }
 

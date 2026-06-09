@@ -1,4 +1,12 @@
-import { Account, AppwriteException, Client, Projects, Scopes, Teams } from '@appwrite.io/console'
+import {
+  Account,
+  AppwriteException,
+  Client,
+  Organization,
+  Project,
+  ProjectKeyScopes,
+  Teams,
+} from '@appwrite.io/console'
 import * as cookie from 'cookie-es'
 
 import { stripIdPrefix } from '@cared/shared'
@@ -103,18 +111,17 @@ export class AppwriteService {
   async #ensureProject(accountId: string, regionId: string, session: string) {
     const client = this.#consoleClient(regionId)
     client.setCookie(session)
-    const projects = new Projects(client)
+    const organization = new Organization(client)
 
     try {
-      return await projects.get({
+      return await organization.getProject({
         projectId: this.#projectId(accountId),
       })
     } catch (error) {
       if (error instanceof AppwriteException && error.code === 404) {
-        return await projects.create({
+        return await organization.createProject({
           projectId: this.#projectId(accountId),
           name: 'Default',
-          teamId: this.#teamId(accountId),
         })
       }
       throw error
@@ -128,88 +135,118 @@ export class AppwriteService {
 
     const client = this.#consoleClient(regionId)
     client.setCookie(session)
-    const projects = new Projects(client)
-    await projects.createKey({
-      projectId: this.#projectId(accountId),
+    client.setProject(this.#projectId(accountId))
+    const project = new Project(client)
+    await project.createKey({
       name: 'Default',
       keyId: this.#apiKeyId(accountId),
       scopes: [
-        Scopes.SessionsWrite,
-        Scopes.UsersRead,
-        Scopes.UsersWrite,
-        Scopes.TeamsRead,
-        Scopes.TeamsWrite,
-        Scopes.DatabasesRead,
-        Scopes.DatabasesWrite,
-        Scopes.CollectionsRead,
-        Scopes.CollectionsWrite,
-        Scopes.TablesRead,
-        Scopes.TablesWrite,
-        Scopes.AttributesRead,
-        Scopes.AttributesWrite,
-        Scopes.ColumnsRead,
-        Scopes.ColumnsWrite,
-        Scopes.IndexesRead,
-        Scopes.IndexesWrite,
-        Scopes.DocumentsRead,
-        Scopes.DocumentsWrite,
-        Scopes.RowsRead,
-        Scopes.RowsWrite,
-        Scopes.FilesRead,
-        Scopes.FilesWrite,
-        Scopes.BucketsRead,
-        Scopes.BucketsWrite,
-        Scopes.FunctionsRead,
-        Scopes.FunctionsWrite,
-        Scopes.SitesRead,
-        Scopes.SitesWrite,
-        Scopes.LogRead,
-        Scopes.LogWrite,
-        Scopes.ExecutionRead,
-        Scopes.ExecutionWrite,
-        Scopes.LocaleRead,
-        Scopes.AvatarsRead,
-        Scopes.HealthRead,
-        Scopes.ProvidersRead,
-        Scopes.ProvidersWrite,
-        Scopes.MessagesRead,
-        Scopes.MessagesWrite,
-        Scopes.TopicsRead,
-        Scopes.TopicsWrite,
-        Scopes.SubscribersRead,
-        Scopes.SubscribersWrite,
-        Scopes.TargetsRead,
-        Scopes.TargetsWrite,
-        Scopes.RulesRead,
-        Scopes.RulesWrite,
-        Scopes.MigrationsRead,
-        Scopes.MigrationsWrite,
-        Scopes.VcsRead,
-        Scopes.VcsWrite,
-        Scopes.AssistantRead,
-        Scopes.TokensRead,
-        Scopes.TokensWrite,
-        Scopes.PoliciesWrite,
-        Scopes.PoliciesRead,
-        Scopes.ArchivesRead,
-        Scopes.ArchivesWrite,
-        Scopes.RestorationsRead,
-        Scopes.RestorationsWrite,
-        Scopes.DomainsRead,
-        Scopes.DomainsWrite,
-        Scopes.EventsRead,
+        ProjectKeyScopes.ProjectRead,
+        ProjectKeyScopes.ProjectWrite,
+        ProjectKeyScopes.KeysRead,
+        ProjectKeyScopes.KeysWrite,
+        ProjectKeyScopes.PlatformsRead,
+        ProjectKeyScopes.PlatformsWrite,
+        ProjectKeyScopes.MocksRead,
+        ProjectKeyScopes.MocksWrite,
+        ProjectKeyScopes.PoliciesRead,
+        ProjectKeyScopes.PoliciesWrite,
+        ProjectKeyScopes.ProjectPoliciesRead,
+        ProjectKeyScopes.ProjectPoliciesWrite,
+        ProjectKeyScopes.TemplatesRead,
+        ProjectKeyScopes.TemplatesWrite,
+        ProjectKeyScopes.Oauth2Read,
+        ProjectKeyScopes.Oauth2Write,
+        ProjectKeyScopes.UsersRead,
+        ProjectKeyScopes.UsersWrite,
+        ProjectKeyScopes.SessionsRead,
+        ProjectKeyScopes.SessionsWrite,
+        ProjectKeyScopes.TeamsRead,
+        ProjectKeyScopes.TeamsWrite,
+        ProjectKeyScopes.DatabasesRead,
+        ProjectKeyScopes.DatabasesWrite,
+        ProjectKeyScopes.TablesRead,
+        ProjectKeyScopes.TablesWrite,
+        ProjectKeyScopes.ColumnsRead,
+        ProjectKeyScopes.ColumnsWrite,
+        ProjectKeyScopes.IndexesRead,
+        ProjectKeyScopes.IndexesWrite,
+        ProjectKeyScopes.RowsRead,
+        ProjectKeyScopes.RowsWrite,
+        ProjectKeyScopes.CollectionsRead,
+        ProjectKeyScopes.CollectionsWrite,
+        ProjectKeyScopes.AttributesRead,
+        ProjectKeyScopes.AttributesWrite,
+        ProjectKeyScopes.DocumentsRead,
+        ProjectKeyScopes.DocumentsWrite,
+        ProjectKeyScopes.BucketsRead,
+        ProjectKeyScopes.BucketsWrite,
+        ProjectKeyScopes.FilesRead,
+        ProjectKeyScopes.FilesWrite,
+        ProjectKeyScopes.TokensRead,
+        ProjectKeyScopes.TokensWrite,
+        ProjectKeyScopes.FunctionsRead,
+        ProjectKeyScopes.FunctionsWrite,
+        ProjectKeyScopes.ExecutionsRead,
+        ProjectKeyScopes.ExecutionsWrite,
+        ProjectKeyScopes.ExecutionRead,
+        ProjectKeyScopes.ExecutionWrite,
+        ProjectKeyScopes.SitesRead,
+        ProjectKeyScopes.SitesWrite,
+        ProjectKeyScopes.LogRead,
+        ProjectKeyScopes.LogWrite,
+        ProjectKeyScopes.ProvidersRead,
+        ProjectKeyScopes.ProvidersWrite,
+        ProjectKeyScopes.TopicsRead,
+        ProjectKeyScopes.TopicsWrite,
+        ProjectKeyScopes.SubscribersRead,
+        ProjectKeyScopes.SubscribersWrite,
+        ProjectKeyScopes.TargetsRead,
+        ProjectKeyScopes.TargetsWrite,
+        ProjectKeyScopes.MessagesRead,
+        ProjectKeyScopes.MessagesWrite,
+        ProjectKeyScopes.RulesRead,
+        ProjectKeyScopes.RulesWrite,
+        ProjectKeyScopes.WebhooksRead,
+        ProjectKeyScopes.WebhooksWrite,
+        ProjectKeyScopes.LocaleRead,
+        ProjectKeyScopes.AvatarsRead,
+        ProjectKeyScopes.HealthRead,
+        ProjectKeyScopes.AssistantRead,
+        ProjectKeyScopes.MigrationsRead,
+        ProjectKeyScopes.MigrationsWrite,
+        ProjectKeyScopes.SchedulesRead,
+        ProjectKeyScopes.SchedulesWrite,
+        ProjectKeyScopes.VcsRead,
+        ProjectKeyScopes.VcsWrite,
+        ProjectKeyScopes.InsightsRead,
+        ProjectKeyScopes.InsightsWrite,
+        ProjectKeyScopes.ReportsRead,
+        ProjectKeyScopes.ReportsWrite,
+        ProjectKeyScopes.PresencesRead,
+        ProjectKeyScopes.PresencesWrite,
+        ProjectKeyScopes.BackupsPoliciesRead,
+        ProjectKeyScopes.BackupsPoliciesWrite,
+        ProjectKeyScopes.ArchivesRead,
+        ProjectKeyScopes.ArchivesWrite,
+        ProjectKeyScopes.RestorationsRead,
+        ProjectKeyScopes.RestorationsWrite,
+        ProjectKeyScopes.DomainsRead,
+        ProjectKeyScopes.DomainsWrite,
+        ProjectKeyScopes.EventsRead,
+        ProjectKeyScopes.AppsRead,
+        ProjectKeyScopes.AppsWrite,
+        ProjectKeyScopes.UsageRead,
       ],
-      // @ts-ignore
       secret: this.#apiKeySecret(),
     })
   }
 
   async #checkApiKey(accountId: string, regionId: string) {
     const client = this.projectClient(regionId, accountId)
-    const projects = new Projects(client)
+    const project = new Project(client)
     try {
-      await projects.getKey({
-        projectId: this.#projectId(accountId),
+      await project.getKey({
         keyId: this.#apiKeyId(accountId),
       })
       return true

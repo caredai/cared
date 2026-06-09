@@ -47,13 +47,13 @@ patchedDependencies:
   vite-plugin-svgr: patches/vite-plugin-svgr.patch
   tsup: patches/tsup.patch
   uuid: patches/uuid.patch
-  '@appwrite.io/console': patches/@appwrite.io__console.patch
   '@daytonaio/api-client': patches/@daytonaio__api-client.patch
   '@daytonaio/toolbox-api-client': patches/@daytonaio__toolbox-api-client.patch
   '@daytonaio/sdk': patches/@daytonaio__sdk.patch
   better-auth: patches/better-auth.patch
   '@cloudflare/vite-plugin': patches/@cloudflare__vite-plugin.patch
   next-s3-upload: patches/next-s3-upload.patch
+  '@appwrite.io/console@13.2.0': patches/@appwrite.io__console@13.2.0.patch
 
 nodeLinker: hoisted
 linkWorkspacePackages: true

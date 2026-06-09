@@ -2,10 +2,9 @@ import {
   Adapter,
   BuildRuntime,
   Framework,
-  Frameworks,
+  SiteTemplateUseCase,
   TemplateReferenceType,
   UsageRange,
-  UseCases,
   VCSReferenceType,
 } from '@appwrite.io/console'
 import { z } from 'zod/v4'
@@ -24,8 +23,8 @@ const adapterSchema = z.enum(Adapter)
 const usageRangeSchema = z.enum(UsageRange)
 const templateReferenceTypeSchema = z.enum(TemplateReferenceType)
 const vcsReferenceTypeSchema = z.enum(VCSReferenceType)
-const frameworksSchema = z.array(z.enum(Frameworks)).max(100).optional()
-const useCasesSchema = z.array(z.enum(UseCases)).max(100).optional()
+const frameworksSchema = z.array(z.enum(Framework)).max(100).optional()
+const useCasesSchema = z.array(z.enum(SiteTemplateUseCase)).max(100).optional()
 
 // --- Output schemas (normalized API responses: id not $id, dates as Date); field descriptions from SDK types ---
 const siteVariableOutputSchema = z.object({
@@ -93,9 +92,12 @@ const siteOutputSchema = z.object({
     description:
       'Is VCS connection in silent mode? In silent mode no comments are posted on pull or merge requests.',
   }),
-  specification: z
+  buildSpecification: z
     .string()
-    .meta({ description: 'Machine specification for builds and executions.' }),
+    .meta({ description: 'Machine specification for deployment builds.' }),
+  runtimeSpecification: z
+    .string()
+    .meta({ description: 'Machine specification for SSR executions.' }),
   buildRuntime: z.string().meta({ description: 'Site build runtime.' }),
   adapter: z.string().meta({ description: 'Site framework adapter.' }),
   fallbackFile: z.string().meta({
@@ -392,10 +394,14 @@ export const siteRouter = {
           .string()
           .optional()
           .meta({ description: 'Path to site code in repo' }),
-        specification: z
+        buildSpecification: z
           .string()
           .optional()
-          .meta({ description: 'Framework specification for site and builds' }),
+          .meta({ description: 'Build specification for site deployments' }),
+        runtimeSpecification: z
+          .string()
+          .optional()
+          .meta({ description: 'Runtime specification for SSR executions' }),
       }),
     )
     .output(z.object({ site: siteOutputSchema }))
@@ -700,7 +706,8 @@ export const siteRouter = {
           .string()
           .optional()
           .meta({ description: 'Path to site code in repo' }),
-        specification: z.string().optional().meta({ description: 'Framework specification' }),
+        buildSpecification: z.string().optional().meta({ description: 'Build specification' }),
+        runtimeSpecification: z.string().optional().meta({ description: 'Runtime specification' }),
       }),
     )
     .output(z.object({ site: siteOutputSchema }))

@@ -1,0 +1,246 @@
+diff --git a/dist/cjs/sdk.js b/dist/cjs/sdk.js
+index f8f2d674d7e14bf876a3f53cbf6e4dfd7ceed177..02b613ee2b3fd620c5449d863b7bbef31a049c97 100644
+--- a/dist/cjs/sdk.js
++++ b/dist/cjs/sdk.js
+@@ -1322,6 +1322,10 @@ class Client {
+                 window.console.warn('Appwrite is using localStorage for session management. Increase your security by adding a custom domain as your API endpoint.');
+                 window.localStorage.setItem('cookieFallback', cookieFallback);
+             }
++            const setCookie = response.headers.getSetCookie();
++            if (data && typeof data === 'object' && setCookie) {
++                data.setCookie = setCookie;
++            }
+             if (data && typeof data === 'object') {
+                 Object.defineProperty(data, 'toString', {
+                     value: () => JSONbig.stringify(data),
+@@ -1822,12 +1826,14 @@ class Account {
+             params = {
+                 name: paramsOrFirst,
+                 scopes: rest[0],
+-                expire: rest[1]
++                expire: rest[1],
++                secret: rest[2]
+             };
+         }
+         const name = params.name;
+         const scopes = params.scopes;
+         const expire = params.expire;
++        const secret = params.secret;
+         if (typeof name === 'undefined') {
+             throw new AppwriteException('Missing required parameter: "name"');
+         }
+@@ -1845,6 +1851,9 @@ class Account {
+         if (typeof expire !== 'undefined') {
+             payload['expire'] = expire;
+         }
++        if (typeof secret !== 'undefined') {
++            payload['secret'] = secret;
++        }
+         const uri = new URL(this.client.config.endpoint + apiPath);
+         const apiHeaders = {
+             'X-Appwrite-Project': this.client.config.project,
+@@ -1884,13 +1893,15 @@ class Account {
+                 keyId: paramsOrFirst,
+                 name: rest[0],
+                 scopes: rest[1],
+-                expire: rest[2]
++                expire: rest[2],
++                secret: rest[3]
+             };
+         }
+         const keyId = params.keyId;
+         const name = params.name;
+         const scopes = params.scopes;
+         const expire = params.expire;
++        const secret = params.secret;
+         if (typeof keyId === 'undefined') {
+             throw new AppwriteException('Missing required parameter: "keyId"');
+         }
+@@ -1911,6 +1922,9 @@ class Account {
+         if (typeof expire !== 'undefined') {
+             payload['expire'] = expire;
+         }
++        if (typeof secret !== 'undefined') {
++            payload['secret'] = secret;
++        }
+         const uri = new URL(this.client.config.endpoint + apiPath);
+         const apiHeaders = {
+             'X-Appwrite-Project': this.client.config.project,
+diff --git a/dist/esm/sdk.js b/dist/esm/sdk.js
+index 674b800c09351a07b8351c2e091012ab5f8f43ec..eb8c83ca5ee29cf7046b3cdcb626dfd8c23c5c02 100644
+--- a/dist/esm/sdk.js
++++ b/dist/esm/sdk.js
+@@ -1320,6 +1320,10 @@ class Client {
+                 window.console.warn('Appwrite is using localStorage for session management. Increase your security by adding a custom domain as your API endpoint.');
+                 window.localStorage.setItem('cookieFallback', cookieFallback);
+             }
++            const setCookie = response.headers.getSetCookie();
++            if (data && typeof data === 'object' && setCookie) {
++                data.setCookie = setCookie;
++            }
+             if (data && typeof data === 'object') {
+                 Object.defineProperty(data, 'toString', {
+                     value: () => JSONbig.stringify(data),
+@@ -1820,12 +1824,14 @@ class Account {
+             params = {
+                 name: paramsOrFirst,
+                 scopes: rest[0],
+-                expire: rest[1]
++                expire: rest[1],
++                secret: rest[2]
+             };
+         }
+         const name = params.name;
+         const scopes = params.scopes;
+         const expire = params.expire;
++        const secret = params.secret;
+         if (typeof name === 'undefined') {
+             throw new AppwriteException('Missing required parameter: "name"');
+         }
+@@ -1843,6 +1849,9 @@ class Account {
+         if (typeof expire !== 'undefined') {
+             payload['expire'] = expire;
+         }
++        if (typeof secret !== 'undefined') {
++            payload['secret'] = secret;
++        }
+         const uri = new URL(this.client.config.endpoint + apiPath);
+         const apiHeaders = {
+             'X-Appwrite-Project': this.client.config.project,
+@@ -1882,13 +1891,15 @@ class Account {
+                 keyId: paramsOrFirst,
+                 name: rest[0],
+                 scopes: rest[1],
+-                expire: rest[2]
++                expire: rest[2],
++                secret: rest[3]
+             };
+         }
+         const keyId = params.keyId;
+         const name = params.name;
+         const scopes = params.scopes;
+         const expire = params.expire;
++        const secret = params.secret;
+         if (typeof keyId === 'undefined') {
+             throw new AppwriteException('Missing required parameter: "keyId"');
+         }
+@@ -1909,6 +1920,9 @@ class Account {
+         if (typeof expire !== 'undefined') {
+             payload['expire'] = expire;
+         }
++        if (typeof secret !== 'undefined') {
++            payload['secret'] = secret;
++        }
+         const uri = new URL(this.client.config.endpoint + apiPath);
+         const apiHeaders = {
+             'X-Appwrite-Project': this.client.config.project,
+diff --git a/dist/iife/sdk.js b/dist/iife/sdk.js
+index 996e78350e38e2684859e083928d2f01a67ce456..ba936f4358c96031b51ae10d66df69b2f1f18106 100644
+--- a/dist/iife/sdk.js
++++ b/dist/iife/sdk.js
+@@ -5120,6 +5120,10 @@
+                     window.console.warn('Appwrite is using localStorage for session management. Increase your security by adding a custom domain as your API endpoint.');
+                     window.localStorage.setItem('cookieFallback', cookieFallback);
+                 }
++                const setCookie = response.headers.getSetCookie();
++                if (data && typeof data === 'object' && setCookie) {
++                    data.setCookie = setCookie;
++                }
+                 if (data && typeof data === 'object') {
+                     Object.defineProperty(data, 'toString', {
+                         value: () => JSONbig.stringify(data),
+@@ -5620,12 +5624,14 @@
+                 params = {
+                     name: paramsOrFirst,
+                     scopes: rest[0],
+-                    expire: rest[1]
++                    expire: rest[1],
++                    secret: rest[2]
+                 };
+             }
+             const name = params.name;
+             const scopes = params.scopes;
+             const expire = params.expire;
++            const secret = params.secret;
+             if (typeof name === 'undefined') {
+                 throw new AppwriteException('Missing required parameter: "name"');
+             }
+@@ -5643,6 +5649,9 @@
+             if (typeof expire !== 'undefined') {
+                 payload['expire'] = expire;
+             }
++            if (typeof secret !== 'undefined') {
++                payload['secret'] = secret;
++            }
+             const uri = new URL(this.client.config.endpoint + apiPath);
+             const apiHeaders = {
+                 'X-Appwrite-Project': this.client.config.project,
+@@ -5682,13 +5691,15 @@
+                     keyId: paramsOrFirst,
+                     name: rest[0],
+                     scopes: rest[1],
+-                    expire: rest[2]
++                    expire: rest[2],
++                    secret: rest[3]
+                 };
+             }
+             const keyId = params.keyId;
+             const name = params.name;
+             const scopes = params.scopes;
+             const expire = params.expire;
++            const secret = params.secret;
+             if (typeof keyId === 'undefined') {
+                 throw new AppwriteException('Missing required parameter: "keyId"');
+             }
+@@ -5709,6 +5720,9 @@
+             if (typeof expire !== 'undefined') {
+                 payload['expire'] = expire;
+             }
++            if (typeof secret !== 'undefined') {
++                payload['secret'] = secret;
++            }
+             const uri = new URL(this.client.config.endpoint + apiPath);
+             const apiHeaders = {
+                 'X-Appwrite-Project': this.client.config.project,
+diff --git a/types/services/account.d.ts b/types/services/account.d.ts
+index 4be18f3d3345762c3cfff9ead1d4b62cd733e029..5571fc3d52478868ad1ad7e1317bdffa458f986a 100644
+--- a/types/services/account.d.ts
++++ b/types/services/account.d.ts
+@@ -333,6 +333,7 @@ export declare class Account {
+         name: string;
+         scopes: AccountKeyScopes[];
+         expire?: string;
++        secret?: string;
+     }): Promise<Models.Key>;
+     /**
+      * Create a new account API key.
+@@ -344,7 +345,7 @@ export declare class Account {
+      * @returns {Promise<Models.Key>}
+      * @deprecated Use the object parameter style method for a better developer experience.
+      */
+-    createKey(name: string, scopes: AccountKeyScopes[], expire?: string): Promise<Models.Key>;
++    createKey(name: string, scopes: AccountKeyScopes[], expire?: string, secret?: string): Promise<Models.Key>;
+     /**
+      * Get a key by its unique ID. This endpoint returns details about a specific API key in your account including it's scopes.
+      *
+diff --git a/types/services/project.d.ts b/types/services/project.d.ts
+index c691de5fff05c725f6bf14ae0ed930643858bc79..42fbd50d8030111e2eab97127911c35087d8f8ee 100644
+--- a/types/services/project.d.ts
++++ b/types/services/project.d.ts
+@@ -89,6 +89,7 @@ export declare class Project {
+         name: string;
+         scopes: ProjectKeyScopes[];
+         expire?: string;
++        secret?: string;
+     }): Promise<Models.Key>;
+     /**
+      * Create a new API key. It's recommended to have multiple API keys with strict scopes for separate functions within your project.
+@@ -103,7 +104,7 @@ export declare class Project {
+      * @returns {Promise<Models.Key>}
+      * @deprecated Use the object parameter style method for a better developer experience.
+      */
+-    createKey(keyId: string, name: string, scopes: ProjectKeyScopes[], expire?: string): Promise<Models.Key>;
++    createKey(keyId: string, name: string, scopes: ProjectKeyScopes[], expire?: string, secret?: string): Promise<Models.Key>;
+     /**
+      * Create a new ephemeral API key. It's recommended to have multiple API keys with strict scopes for separate functions within your project.
+      *

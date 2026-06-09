@@ -1,14 +1,13 @@
-import { Functions, Query } from '@appwrite.io/console'
+import { Functions, ID, Query } from '@appwrite.io/console'
 
 import type {
   ExecutionMethod,
+  FunctionTemplateUseCase,
   Models,
+  ProjectKeyScopes,
   Runtime,
-  Runtimes,
-  Scopes,
   TemplateReferenceType,
   UsageRange,
-  UseCases,
   VCSReferenceType,
 } from '@appwrite.io/console'
 import { AppwriteService, toDate } from './base'
@@ -57,7 +56,8 @@ function makeFunction(f: Models.Function) {
     providerBranch: f.providerBranch,
     providerRootDirectory: f.providerRootDirectory,
     providerSilentMode: f.providerSilentMode,
-    specification: f.specification,
+    buildSpecification: f.buildSpecification,
+    runtimeSpecification: f.runtimeSpecification,
     createdAt: toDate(f.$createdAt),
     updatedAt: toDate(f.$updatedAt),
   }
@@ -169,13 +169,14 @@ export class AppwriteFunctionsService extends AppwriteService {
       logging?: boolean
       entrypoint?: string
       commands?: string
-      scopes?: Scopes[]
+      scopes?: ProjectKeyScopes[]
       installationId?: string
       providerRepositoryId?: string
       providerBranch?: string
       providerSilentMode?: boolean
       providerRootDirectory?: string
-      specification?: string
+      buildSpecification?: string
+      runtimeSpecification?: string
     },
   ) {
     const res = await this.#functions(regionId, accountId).create(params)
@@ -196,8 +197,8 @@ export class AppwriteFunctionsService extends AppwriteService {
     params: {
       cursor?: string
       limit?: number
-      runtimes?: Runtimes[]
-      useCases?: UseCases[]
+      runtimes?: Runtime[]
+      useCases?: FunctionTemplateUseCase[]
     },
   ) {
     const limit = params.limit ?? DEFAULT_LIST_LIMIT
@@ -243,13 +244,14 @@ export class AppwriteFunctionsService extends AppwriteService {
       logging?: boolean
       entrypoint?: string
       commands?: string
-      scopes?: Scopes[]
+      scopes?: ProjectKeyScopes[]
       installationId?: string
       providerRepositoryId?: string
       providerBranch?: string
       providerSilentMode?: boolean
       providerRootDirectory?: string
-      specification?: string
+      buildSpecification?: string
+      runtimeSpecification?: string
     },
   ) {
     const res = await this.#functions(regionId, accountId).update(params)
@@ -424,7 +426,10 @@ export class AppwriteFunctionsService extends AppwriteService {
     regionId: string,
     params: { functionId: string; key: string; value: string; secret?: boolean },
   ) {
-    const res = await this.#functions(regionId, accountId).createVariable(params)
+    const res = await this.#functions(regionId, accountId).createVariable({
+      ...params,
+      variableId: ID.unique(),
+    })
     return makeVariable(res)
   }
 

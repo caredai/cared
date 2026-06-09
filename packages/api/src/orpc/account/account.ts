@@ -99,6 +99,8 @@ export const accountRouter = {
       summary: 'Get current account details',
     })
     .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ account: ['read'] })
+
       const fullAccount = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.getFullOrganization({
           headers,
@@ -132,6 +134,8 @@ export const accountRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
+      await context.auth.requirePermissions({ account: ['write'] })
+
       const account = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.updateOrganization({
           headers,
@@ -171,6 +175,8 @@ export const accountRouter = {
       summary: 'Delete current account',
     })
     .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ account: ['write'] })
+
       const accountId = context.auth.accountId
       const members = (
         await db.query.Member.findMany({
@@ -209,6 +215,8 @@ export const accountRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
+      await context.auth.requirePermissions({ invitation: ['write'] })
+
       const inv = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.createInvitation({
           headers,
@@ -233,6 +241,8 @@ export const accountRouter = {
     })
     .input(z.object({ invitationId: z.string().min(1) }))
     .handler(async ({ context, input }) => {
+      await context.auth.requirePermissions({ invitation: ['write'] })
+
       const invitation = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.cancelInvitation({
           headers,
@@ -256,6 +266,8 @@ export const accountRouter = {
     })
     .input(z.object({ invitationId: z.string().min(1) }))
     .handler(async ({ input, context }) => {
+      await context.auth.requirePermissions({ invitation: ['read'] })
+
       const {
         organizationName,
         organizationSlug: _,
@@ -293,6 +305,8 @@ export const accountRouter = {
       summary: 'List invitations for the current account',
     })
     .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ invitation: ['read'] })
+
       const invitations = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.listInvitations({
           headers,
@@ -311,6 +325,8 @@ export const accountRouter = {
       summary: 'List members for the current account',
     })
     .handler(async ({ context }) => {
+      await context.auth.requirePermissions({ member: ['read'] })
+
       const res = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.listMembers({
           headers,
@@ -351,10 +367,7 @@ export const accountRouter = {
       }),
     )
     .handler(async ({ input, context }) => {
-      // NOTE: fix `auth.api.addMember` missing permission check
-      await context.auth.requirePermissions({
-        member: ['write'],
-      })
+      await context.auth.requirePermissions({ member: ['write'] })
 
       const member = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.addMember({
@@ -386,6 +399,8 @@ export const accountRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
+      await context.auth.requirePermissions({ member: ['write'] })
+
       const res = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.removeMember({
           headers,
@@ -415,6 +430,8 @@ export const accountRouter = {
       }),
     )
     .handler(async ({ context, input }) => {
+      await context.auth.requirePermissions({ member: ['write'] })
+
       const member = await withAuthSession(await getUserId(context.auth), (auth, headers) =>
         auth.api.updateMemberRole({
           headers,
@@ -444,14 +461,14 @@ export const accountRouter = {
       }),
     )
     .handler(async ({ input, context }) => {
+      await context.auth.requirePermissions({ account: ['write'] }, { roles: ['owner'] })
+
       const userId = await getUserId(context.auth)
       const previousOwnerMember = await db.query.Member.findFirst({
         where: and(eq(Member.userId, userId), eq(Member.accountId, context.auth.accountId)),
       })
-      if (previousOwnerMember?.role !== 'owner') {
-        throw new ORPCError('FORBIDDEN', {
-          message: 'You must be the owner of the account to transfer ownership',
-        })
+      if (!previousOwnerMember) {
+        throw new ORPCError('NOT_FOUND', { message: 'Member not found' })
       }
 
       return await withAuthSession(userId, async (auth, headers) => {
