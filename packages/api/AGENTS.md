@@ -19,6 +19,9 @@ This file applies to `packages/api`.
 
 ## Patterns
 
+- Prefer `interface` over `type` when defining object shapes. Use `type` only when the construct requires it, such as unions, literal unions, mapped types, conditional types, or indexed-access aliases.
+- Import types with `import type { Foo }` instead of `import { type Foo }`.
+- Public fields exposed by oRPC routers or service-layer APIs must use lower camel case for both inputs and outputs.
 - Use `zod/v4` schemas for endpoint inputs.
 - For both oRPC and plain REST APIs, prefer `undefined` over `null` for optional input/output fields.
 - Use Zod `nullish` only when `undefined` and `null` have distinct meanings, such as "do not update this field" vs "set this field to null".

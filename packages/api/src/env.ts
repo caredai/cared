@@ -105,6 +105,10 @@ export const env = createEnv({
     APPWRITE_USER_PASSWORD: z.string().min(1).optional(),
     APPWRITE_PROJECT_KEY: z.string().length(256).optional(),
 
+    TEMPORAL_ADDRESS: z.string().min(1).default('localhost:7233'),
+    TEMPORAL_NAMESPACE: z.string().min(1).default('default'),
+    TEMPORAL_TASK_QUEUE: z.string().min(1).default('cared-api'),
+
     CACHE_MAX_SIZE: z
       .int()
       .positive()

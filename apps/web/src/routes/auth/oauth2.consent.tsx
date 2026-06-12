@@ -51,7 +51,7 @@ function Page() {
       accept,
     })
     if (result.data) {
-      window.location.href = result.data.redirectURI
+      window.location.href = result.data.url
     } else {
       console.error(result)
       // @ts-ignore

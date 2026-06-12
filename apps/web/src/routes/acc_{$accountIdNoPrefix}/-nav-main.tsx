@@ -4,9 +4,11 @@ import {
   Brain,
   Cable,
   CircleDollarSign,
+  Code2,
   Component,
   Cylinder,
   Database,
+  Globe2,
   Key,
   KeyRound,
   PocketKnife,
@@ -81,6 +83,16 @@ const items: NavItem[] = [
     title: 'Databases',
     url: '/databases',
     icon: Cylinder,
+  },
+  {
+    title: 'Functions',
+    url: '/functions',
+    icon: Code2,
+  },
+  {
+    title: 'Sites',
+    url: '/sites',
+    icon: Globe2,
   },
   {
     title: 'OAuth Apps',

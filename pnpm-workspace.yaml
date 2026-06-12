@@ -63,6 +63,7 @@ allowBuilds:
   '@google/genai': false
   '@prisma/client': false
   '@reown/appkit': false
+  '@swc/core': false
   '@upstash/qstash-cli': false
   bigint-buffer: false
   bufferutil: false

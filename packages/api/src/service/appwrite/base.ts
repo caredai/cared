@@ -9,6 +9,9 @@ import {
 } from '@appwrite.io/console'
 import * as cookie from 'cookie-es'
 
+import { inArray } from '@cared/db'
+import { db } from '@cared/db/client'
+import { AppwriteRegion as AppwriteRegionTable } from '@cared/db/schema'
 import { stripIdPrefix } from '@cared/shared'
 
 import { env } from '../../env'
@@ -27,6 +30,35 @@ export function toDate(v: string | number | Date | null | undefined): Date | und
 export interface AppwriteRegion {
   id: string
   name: string
+}
+
+export async function upsertAppwriteRegions(regions: AppwriteRegion[]) {
+  if (!regions.length) return []
+
+  for (const region of regions) {
+    await db
+      .insert(AppwriteRegionTable)
+      .values({
+        id: region.id,
+        name: region.name,
+        enabled: true,
+      })
+      .onConflictDoUpdate({
+        target: AppwriteRegionTable.id,
+        set: {
+          name: region.name,
+          enabled: true,
+          updatedAt: new Date(),
+        },
+      })
+  }
+
+  return db.query.AppwriteRegion.findMany({
+    where: inArray(
+      AppwriteRegionTable.id,
+      regions.map((region) => region.id),
+    ),
+  })
 }
 
 export class AppwriteService {
@@ -111,6 +143,7 @@ export class AppwriteService {
   async #ensureProject(accountId: string, regionId: string, session: string) {
     const client = this.#consoleClient(regionId)
     client.setCookie(session)
+    client.headers['X-Appwrite-Organization'] = this.#teamId(accountId)
     const organization = new Organization(client)
 
     try {

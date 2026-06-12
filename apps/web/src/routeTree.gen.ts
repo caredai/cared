@@ -37,6 +37,7 @@ import { Route as AdminModelsRouteImport } from './routes/admin/models'
 import { Route as AdminMockRouteImport } from './routes/admin/mock'
 import { Route as Acc_Char123accountIdNoPrefixChar125TracingRouteImport } from './routes/acc_{$accountIdNoPrefix}/tracing'
 import { Route as Acc_Char123accountIdNoPrefixChar125ToolsRouteImport } from './routes/acc_{$accountIdNoPrefix}/tools'
+import { Route as Acc_Char123accountIdNoPrefixChar125SitesRouteImport } from './routes/acc_{$accountIdNoPrefix}/sites'
 import { Route as Acc_Char123accountIdNoPrefixChar125SettingsRouteImport } from './routes/acc_{$accountIdNoPrefix}/settings'
 import { Route as Acc_Char123accountIdNoPrefixChar125SandboxesRouteImport } from './routes/acc_{$accountIdNoPrefix}/sandboxes'
 import { Route as Acc_Char123accountIdNoPrefixChar125OauthAppsRouteImport } from './routes/acc_{$accountIdNoPrefix}/oauth-apps'
@@ -44,6 +45,7 @@ import { Route as Acc_Char123accountIdNoPrefixChar125ModelsRouteImport } from '.
 import { Route as Acc_Char123accountIdNoPrefixChar125MembersRouteImport } from './routes/acc_{$accountIdNoPrefix}/members'
 import { Route as Acc_Char123accountIdNoPrefixChar125McpRouteImport } from './routes/acc_{$accountIdNoPrefix}/mcp'
 import { Route as Acc_Char123accountIdNoPrefixChar125IntegrationsRouteImport } from './routes/acc_{$accountIdNoPrefix}/integrations'
+import { Route as Acc_Char123accountIdNoPrefixChar125FunctionsRouteImport } from './routes/acc_{$accountIdNoPrefix}/functions'
 import { Route as Acc_Char123accountIdNoPrefixChar125DatabasesRouteImport } from './routes/acc_{$accountIdNoPrefix}/databases'
 import { Route as Acc_Char123accountIdNoPrefixChar125CreditsRouteImport } from './routes/acc_{$accountIdNoPrefix}/credits'
 import { Route as Acc_Char123accountIdNoPrefixChar125ApiTokensRouteImport } from './routes/acc_{$accountIdNoPrefix}/api-tokens'
@@ -220,6 +222,12 @@ const Acc_Char123accountIdNoPrefixChar125ToolsRoute =
     path: '/tools',
     getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
+const Acc_Char123accountIdNoPrefixChar125SitesRoute =
+  Acc_Char123accountIdNoPrefixChar125SitesRouteImport.update({
+    id: '/sites',
+    path: '/sites',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
 const Acc_Char123accountIdNoPrefixChar125SettingsRoute =
   Acc_Char123accountIdNoPrefixChar125SettingsRouteImport.update({
     id: '/settings',
@@ -260,6 +268,12 @@ const Acc_Char123accountIdNoPrefixChar125IntegrationsRoute =
   Acc_Char123accountIdNoPrefixChar125IntegrationsRouteImport.update({
     id: '/integrations',
     path: '/integrations',
+    getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
+  } as any)
+const Acc_Char123accountIdNoPrefixChar125FunctionsRoute =
+  Acc_Char123accountIdNoPrefixChar125FunctionsRouteImport.update({
+    id: '/functions',
+    path: '/functions',
     getParentRoute: () => Acc_Char123accountIdNoPrefixChar125RouteRoute,
   } as any)
 const Acc_Char123accountIdNoPrefixChar125DatabasesRoute =
@@ -504,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
   '/acc_{$accountIdNoPrefix}/databases': typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  '/acc_{$accountIdNoPrefix}/functions': typeof Acc_Char123accountIdNoPrefixChar125FunctionsRoute
   '/acc_{$accountIdNoPrefix}/integrations': typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
@@ -511,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/acc_{$accountIdNoPrefix}/oauth-apps': typeof Acc_Char123accountIdNoPrefixChar125OauthAppsRoute
   '/acc_{$accountIdNoPrefix}/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/sites': typeof Acc_Char123accountIdNoPrefixChar125SitesRoute
   '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
@@ -568,6 +584,7 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
   '/acc_{$accountIdNoPrefix}/databases': typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  '/acc_{$accountIdNoPrefix}/functions': typeof Acc_Char123accountIdNoPrefixChar125FunctionsRoute
   '/acc_{$accountIdNoPrefix}/integrations': typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
@@ -575,6 +592,7 @@ export interface FileRoutesByTo {
   '/acc_{$accountIdNoPrefix}/oauth-apps': typeof Acc_Char123accountIdNoPrefixChar125OauthAppsRoute
   '/acc_{$accountIdNoPrefix}/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/sites': typeof Acc_Char123accountIdNoPrefixChar125SitesRoute
   '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
@@ -637,6 +655,7 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/api-tokens': typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   '/acc_{$accountIdNoPrefix}/credits': typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
   '/acc_{$accountIdNoPrefix}/databases': typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  '/acc_{$accountIdNoPrefix}/functions': typeof Acc_Char123accountIdNoPrefixChar125FunctionsRoute
   '/acc_{$accountIdNoPrefix}/integrations': typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   '/acc_{$accountIdNoPrefix}/mcp': typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   '/acc_{$accountIdNoPrefix}/members': typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
@@ -644,6 +663,7 @@ export interface FileRoutesById {
   '/acc_{$accountIdNoPrefix}/oauth-apps': typeof Acc_Char123accountIdNoPrefixChar125OauthAppsRoute
   '/acc_{$accountIdNoPrefix}/sandboxes': typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   '/acc_{$accountIdNoPrefix}/settings': typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  '/acc_{$accountIdNoPrefix}/sites': typeof Acc_Char123accountIdNoPrefixChar125SitesRoute
   '/acc_{$accountIdNoPrefix}/tools': typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   '/acc_{$accountIdNoPrefix}/tracing': typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   '/admin/mock': typeof AdminMockRoute
@@ -707,6 +727,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/credits'
     | '/acc_{$accountIdNoPrefix}/databases'
+    | '/acc_{$accountIdNoPrefix}/functions'
     | '/acc_{$accountIdNoPrefix}/integrations'
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
@@ -714,6 +735,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/oauth-apps'
     | '/acc_{$accountIdNoPrefix}/sandboxes'
     | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/sites'
     | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
@@ -771,6 +793,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/credits'
     | '/acc_{$accountIdNoPrefix}/databases'
+    | '/acc_{$accountIdNoPrefix}/functions'
     | '/acc_{$accountIdNoPrefix}/integrations'
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
@@ -778,6 +801,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/oauth-apps'
     | '/acc_{$accountIdNoPrefix}/sandboxes'
     | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/sites'
     | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
@@ -839,6 +863,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/api-tokens'
     | '/acc_{$accountIdNoPrefix}/credits'
     | '/acc_{$accountIdNoPrefix}/databases'
+    | '/acc_{$accountIdNoPrefix}/functions'
     | '/acc_{$accountIdNoPrefix}/integrations'
     | '/acc_{$accountIdNoPrefix}/mcp'
     | '/acc_{$accountIdNoPrefix}/members'
@@ -846,6 +871,7 @@ export interface FileRouteTypes {
     | '/acc_{$accountIdNoPrefix}/oauth-apps'
     | '/acc_{$accountIdNoPrefix}/sandboxes'
     | '/acc_{$accountIdNoPrefix}/settings'
+    | '/acc_{$accountIdNoPrefix}/sites'
     | '/acc_{$accountIdNoPrefix}/tools'
     | '/acc_{$accountIdNoPrefix}/tracing'
     | '/admin/mock'
@@ -1113,6 +1139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125ToolsRouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
+    '/acc_{$accountIdNoPrefix}/sites': {
+      id: '/acc_{$accountIdNoPrefix}/sites'
+      path: '/sites'
+      fullPath: '/acc_{$accountIdNoPrefix}/sites'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125SitesRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
     '/acc_{$accountIdNoPrefix}/settings': {
       id: '/acc_{$accountIdNoPrefix}/settings'
       path: '/settings'
@@ -1160,6 +1193,13 @@ declare module '@tanstack/react-router' {
       path: '/integrations'
       fullPath: '/acc_{$accountIdNoPrefix}/integrations'
       preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRouteImport
+      parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
+    }
+    '/acc_{$accountIdNoPrefix}/functions': {
+      id: '/acc_{$accountIdNoPrefix}/functions'
+      path: '/functions'
+      fullPath: '/acc_{$accountIdNoPrefix}/functions'
+      preLoaderRoute: typeof Acc_Char123accountIdNoPrefixChar125FunctionsRouteImport
       parentRoute: typeof Acc_Char123accountIdNoPrefixChar125RouteRoute
     }
     '/acc_{$accountIdNoPrefix}/databases': {
@@ -1386,6 +1426,7 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125ApiTokensRoute: typeof Acc_Char123accountIdNoPrefixChar125ApiTokensRoute
   Acc_Char123accountIdNoPrefixChar125CreditsRoute: typeof Acc_Char123accountIdNoPrefixChar125CreditsRoute
   Acc_Char123accountIdNoPrefixChar125DatabasesRoute: typeof Acc_Char123accountIdNoPrefixChar125DatabasesRoute
+  Acc_Char123accountIdNoPrefixChar125FunctionsRoute: typeof Acc_Char123accountIdNoPrefixChar125FunctionsRoute
   Acc_Char123accountIdNoPrefixChar125IntegrationsRoute: typeof Acc_Char123accountIdNoPrefixChar125IntegrationsRoute
   Acc_Char123accountIdNoPrefixChar125McpRoute: typeof Acc_Char123accountIdNoPrefixChar125McpRoute
   Acc_Char123accountIdNoPrefixChar125MembersRoute: typeof Acc_Char123accountIdNoPrefixChar125MembersRoute
@@ -1393,6 +1434,7 @@ interface Acc_Char123accountIdNoPrefixChar125RouteRouteChildren {
   Acc_Char123accountIdNoPrefixChar125OauthAppsRoute: typeof Acc_Char123accountIdNoPrefixChar125OauthAppsRoute
   Acc_Char123accountIdNoPrefixChar125SandboxesRoute: typeof Acc_Char123accountIdNoPrefixChar125SandboxesRoute
   Acc_Char123accountIdNoPrefixChar125SettingsRoute: typeof Acc_Char123accountIdNoPrefixChar125SettingsRoute
+  Acc_Char123accountIdNoPrefixChar125SitesRoute: typeof Acc_Char123accountIdNoPrefixChar125SitesRoute
   Acc_Char123accountIdNoPrefixChar125ToolsRoute: typeof Acc_Char123accountIdNoPrefixChar125ToolsRoute
   Acc_Char123accountIdNoPrefixChar125TracingRoute: typeof Acc_Char123accountIdNoPrefixChar125TracingRoute
   Acc_Char123accountIdNoPrefixChar125IndexRoute: typeof Acc_Char123accountIdNoPrefixChar125IndexRoute
@@ -1416,6 +1458,8 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125CreditsRoute,
     Acc_Char123accountIdNoPrefixChar125DatabasesRoute:
       Acc_Char123accountIdNoPrefixChar125DatabasesRoute,
+    Acc_Char123accountIdNoPrefixChar125FunctionsRoute:
+      Acc_Char123accountIdNoPrefixChar125FunctionsRoute,
     Acc_Char123accountIdNoPrefixChar125IntegrationsRoute:
       Acc_Char123accountIdNoPrefixChar125IntegrationsRoute,
     Acc_Char123accountIdNoPrefixChar125McpRoute:
@@ -1430,6 +1474,8 @@ const Acc_Char123accountIdNoPrefixChar125RouteRouteChildren: Acc_Char123accountI
       Acc_Char123accountIdNoPrefixChar125SandboxesRoute,
     Acc_Char123accountIdNoPrefixChar125SettingsRoute:
       Acc_Char123accountIdNoPrefixChar125SettingsRoute,
+    Acc_Char123accountIdNoPrefixChar125SitesRoute:
+      Acc_Char123accountIdNoPrefixChar125SitesRoute,
     Acc_Char123accountIdNoPrefixChar125ToolsRoute:
       Acc_Char123accountIdNoPrefixChar125ToolsRoute,
     Acc_Char123accountIdNoPrefixChar125TracingRoute:

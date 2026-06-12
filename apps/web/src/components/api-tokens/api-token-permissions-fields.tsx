@@ -1,11 +1,7 @@
-import { Controller, type Control, type FieldValues } from 'react-hook-form'
+import type { Control, FieldValues } from 'react-hook-form'
+import { Controller } from 'react-hook-form'
 
-import {
-  Field,
-  FieldContent,
-  FieldError,
-  FieldLabel,
-} from '@cared/ui/components/field'
+import { Field, FieldContent, FieldError, FieldLabel } from '@cared/ui/components/field'
 import { Table, TableBody, TableCell, TableRow } from '@cared/ui/components/table'
 import { ToggleGroup, ToggleGroupItem } from '@cared/ui/components/toggle-group'
 

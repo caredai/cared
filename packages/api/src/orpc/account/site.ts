@@ -7,14 +7,29 @@ import {
   UsageRange,
   VCSReferenceType,
 } from '@appwrite.io/console'
+import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
+
+import { generateId } from '@cared/shared'
 
 import { userProtectedProcedure } from '../../orpc'
 import { appwriteSitesService } from '../../service/appwrite'
+import { upsertAppwriteRegions } from '../../service/appwrite/base'
+import { getAppwriteSite, listAppwriteSites } from '../../service/appwrite/sites'
+import { getWorkflowClient, taskQueue, workflowId } from '../../workflows/client'
+import { createSiteWorkflow } from '../../workflows/sites/workflows'
 
 // Base input: every procedure requires regionId for Appwrite region-scoped API
 const regionInput = z.object({
   regionId: z.string().meta({ description: 'Region ID' }),
+})
+
+const regionOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  enabled: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 const frameworkSchema = z.enum(Framework)
@@ -106,6 +121,33 @@ const siteOutputSchema = z.object({
   }),
   createdAt: z.date().meta({ description: 'Site creation date.' }),
   updatedAt: z.date().meta({ description: 'Site update date.' }),
+})
+
+const siteRegionOutputSchema = z.object({
+  siteId: z.string(),
+  regionId: z.string(),
+  syncStatus: z.enum(['pending', 'syncing', 'ready', 'failed', 'disabled']),
+  lastSyncedAt: z.date().nullable(),
+  syncError: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+const caredSiteOutputSchema = z.object({
+  id: z.string(),
+  accountId: z.string(),
+  name: z.string(),
+  primaryRegionId: z.string(),
+  activeDeploymentId: z.string().nullable(),
+  framework: z.string(),
+  deploymentMode: z.enum(['single_region', 'global']),
+  enabled: z.boolean(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  primaryRegion: regionOutputSchema,
+  regions: z.array(siteRegionOutputSchema),
+  primarySite: siteOutputSchema.optional(),
 })
 
 const deploymentOutputSchema = z.object({
@@ -264,6 +306,33 @@ const metricOutputSchema = z.object({
   date: z.string().meta({ description: 'Date string for the period.' }),
 })
 
+async function ensureConfiguredRegionsInDb() {
+  const regions = appwriteSitesService.listRegions()
+  await upsertAppwriteRegions(regions)
+  return regions
+}
+
+async function formatCaredSite(
+  accountId: string,
+  resource: Awaited<ReturnType<typeof getAppwriteSite>> extends infer T ? NonNullable<T> : never,
+) {
+  let primarySite: z.infer<typeof siteOutputSchema> | undefined
+  try {
+    primarySite = await appwriteSitesService.get(accountId, resource.site.primaryRegionId, {
+      siteId: resource.site.id,
+    })
+  } catch {
+    primarySite = undefined
+  }
+
+  return {
+    ...resource.site,
+    primaryRegion: resource.primaryRegion,
+    regions: resource.regions,
+    primarySite,
+  }
+}
+
 export const siteRouter = {
   /** Enable Sites API for the account in the given region (ensure project/user/key). */
   enableSites: userProtectedProcedure
@@ -301,6 +370,118 @@ export const siteRouter = {
     .handler(() => {
       const regions = appwriteSitesService.listRegions()
       return { regions }
+    }),
+
+  listCaredSites: userProtectedProcedure
+    .route({
+      method: 'GET',
+      path: '/sites/resources',
+      tags: ['sites'],
+      summary: 'List Cared sites',
+    })
+    .input(z.object({}).optional())
+    .output(z.object({ sites: z.array(caredSiteOutputSchema) }))
+    .handler(async ({ context }) => {
+      await ensureConfiguredRegionsInDb()
+      const resources = await listAppwriteSites(context.auth.accountId)
+      const sites = await Promise.all(
+        resources.map((resource) => formatCaredSite(context.auth.accountId, resource)),
+      )
+      return { sites }
+    }),
+
+  getCaredSite: userProtectedProcedure
+    .route({
+      method: 'GET',
+      path: '/sites/resources/{id}',
+      tags: ['sites'],
+      summary: 'Get a Cared site',
+    })
+    .input(z.object({ id: z.string() }))
+    .output(z.object({ site: caredSiteOutputSchema }))
+    .handler(async ({ context, input }) => {
+      await ensureConfiguredRegionsInDb()
+      const resource = await getAppwriteSite(context.auth.accountId, input.id)
+      if (!resource) {
+        throw new ORPCError('NOT_FOUND', { message: 'Site not found' })
+      }
+      return { site: await formatCaredSite(context.auth.accountId, resource) }
+    }),
+
+  createCaredSite: userProtectedProcedure
+    .route({
+      method: 'POST',
+      path: '/sites/resources',
+      tags: ['sites'],
+      summary: 'Create a Cared site',
+    })
+    .input(
+      z.discriminatedUnion('deploymentMode', [
+        z.object({
+          deploymentMode: z.literal('single_region'),
+          regionId: z.string(),
+          name: z.string().max(128),
+          framework: frameworkSchema,
+          buildRuntime: buildRuntimeSchema,
+          enabled: z.boolean().optional(),
+          logging: z.boolean().optional(),
+          timeout: z.number().optional(),
+          installCommand: z.string().optional(),
+          buildCommand: z.string().optional(),
+          outputDirectory: z.string().optional(),
+          adapter: adapterSchema.optional(),
+          installationId: z.string().optional(),
+          fallbackFile: z.string().optional(),
+          providerRepositoryId: z.string().optional(),
+          providerBranch: z.string().optional(),
+          providerSilentMode: z.boolean().optional(),
+          providerRootDirectory: z.string().optional(),
+          buildSpecification: z.string().optional(),
+          runtimeSpecification: z.string().optional(),
+        }),
+        z.object({
+          deploymentMode: z.literal('global'),
+          name: z.string().max(128),
+          framework: frameworkSchema,
+          buildRuntime: buildRuntimeSchema,
+          enabled: z.boolean().optional(),
+          logging: z.boolean().optional(),
+          timeout: z.number().optional(),
+          installCommand: z.string().optional(),
+          buildCommand: z.string().optional(),
+          outputDirectory: z.string().optional(),
+          adapter: adapterSchema.optional(),
+          installationId: z.string().optional(),
+          fallbackFile: z.string().optional(),
+          providerRepositoryId: z.string().optional(),
+          providerBranch: z.string().optional(),
+          providerSilentMode: z.boolean().optional(),
+          providerRootDirectory: z.string().optional(),
+          buildSpecification: z.string().optional(),
+          runtimeSpecification: z.string().optional(),
+        }),
+      ]),
+    )
+    .output(z.object({ site: caredSiteOutputSchema }))
+    .handler(async ({ context, input }) => {
+      const client = await getWorkflowClient()
+      const result = await client.execute(createSiteWorkflow, {
+        taskQueue: taskQueue(),
+        workflowId: workflowId(['site', 'create', context.auth.accountId, generateId('wf')]),
+        args: [
+          {
+            ...input,
+            accountId: context.auth.accountId,
+          },
+        ],
+      })
+
+      const resource = await getAppwriteSite(context.auth.accountId, result.siteId)
+      if (!resource) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Site record not found' })
+      }
+
+      return { site: await formatCaredSite(context.auth.accountId, resource) }
     }),
 
   /**

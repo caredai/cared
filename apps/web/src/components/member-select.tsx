@@ -17,7 +17,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@cared/ui/components/popover'
 import { cn } from '@cared/ui/lib/utils'
 
-import { useMembers, type Member } from '@/hooks/use-members'
+import type { Member } from '@/hooks/use-members'
+import { useMembers } from '@/hooks/use-members'
 
 export type { Member }
 

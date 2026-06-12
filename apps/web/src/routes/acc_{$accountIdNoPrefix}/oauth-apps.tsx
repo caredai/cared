@@ -55,10 +55,7 @@ function OAuthAppsPage() {
 
   return (
     <>
-      <SectionTitle
-        title="OAuth Apps"
-        description="Manage your OAuth Apps"
-      />
+      <SectionTitle title="OAuth Apps" description="Manage your OAuth Apps" />
 
       <Suspense fallback={<SkeletonCard />}>
         <OAuthAppsList accountIdNoPrefix={accountIdNoPrefix} />
@@ -127,7 +124,12 @@ function OAuthAppsList({ accountIdNoPrefix }: { accountIdNoPrefix: string }) {
                 {app.logo ? (
                   <RemoteImage src={app.logo} alt={app.name} fill className="object-cover" />
                 ) : (
-                  <LocalImage src={defaultLogo} alt="OAuth App Logo" fill className="object-cover" />
+                  <LocalImage
+                    src={defaultLogo}
+                    alt="OAuth App Logo"
+                    fill
+                    className="object-cover"
+                  />
                 )}
               </div>
               <div className="min-w-0 flex-1">
@@ -145,7 +147,7 @@ function OAuthAppsList({ accountIdNoPrefix }: { accountIdNoPrefix: string }) {
       {
         id: 'scopes',
         header: 'Scopes',
-        cell: ({ row }) => row.original.scopes.length,
+        cell: ({ row }) => row.original.scopes?.length ?? 0,
       },
       {
         id: 'redirectUris',
@@ -155,8 +157,7 @@ function OAuthAppsList({ accountIdNoPrefix }: { accountIdNoPrefix: string }) {
       {
         accessorKey: 'createdAt',
         header: 'Created',
-        cell: ({ row }) =>
-          formatDistance(row.original.createdAt, new Date(), { addSuffix: true }),
+        cell: ({ row }) => formatDistance(row.original.createdAt, new Date(), { addSuffix: true }),
       },
       {
         id: 'actions',
@@ -237,10 +238,7 @@ function OAuthAppsList({ accountIdNoPrefix }: { accountIdNoPrefix: string }) {
             Register an OAuth App to enable third-party integrations with your account.
           </p>
           <Button asChild>
-            <Link
-              to="/acc_{$accountIdNoPrefix}/oauth-apps/create"
-              params={{ accountIdNoPrefix }}
-            >
+            <Link to="/acc_{$accountIdNoPrefix}/oauth-apps/create" params={{ accountIdNoPrefix }}>
               <PlusIcon />
               New OAuth App
             </Link>
@@ -261,10 +259,7 @@ function OAuthAppsList({ accountIdNoPrefix }: { accountIdNoPrefix: string }) {
         onRowClick={(app) => navigateToApp(app.id)}
         beforeColumnsSelector={
           <Button asChild size="sm">
-            <Link
-              to="/acc_{$accountIdNoPrefix}/oauth-apps/create"
-              params={{ accountIdNoPrefix }}
-            >
+            <Link to="/acc_{$accountIdNoPrefix}/oauth-apps/create" params={{ accountIdNoPrefix }}>
               <PlusIcon />
               New OAuth App
             </Link>

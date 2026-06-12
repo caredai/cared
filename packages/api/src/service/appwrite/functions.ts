@@ -1,6 +1,15 @@
 import { Functions, ID, Query } from '@appwrite.io/console'
 
 import type {
+  AppwriteFunctionRegion as AppwriteFunctionRegionRow,
+  AppwriteFunction as AppwriteFunctionRow,
+  AppwriteRegion as AppwriteRegionRow,
+} from '@cared/db/schema'
+import { and, eq, inArray } from '@cared/db'
+import { db } from '@cared/db/client'
+import { AppwriteFunction, AppwriteFunctionRegion, AppwriteRegion } from '@cared/db/schema'
+
+import type {
   ExecutionMethod,
   FunctionTemplateUseCase,
   Models,
@@ -11,6 +20,107 @@ import type {
   VCSReferenceType,
 } from '@appwrite.io/console'
 import { AppwriteService, toDate } from './base'
+
+export interface FunctionWithRegions {
+  function: AppwriteFunctionRow
+  regions: AppwriteFunctionRegionRow[]
+  primaryRegion: AppwriteRegionRow
+}
+
+export async function createAppwriteFunctionRecord(params: {
+  functionId: string
+  accountId: string
+  name: string
+  primaryRegionId: string
+  regionIds: string[]
+  activeDeploymentId?: string | null
+  runtime: string
+  enabled?: boolean
+  metadata?: Record<string, unknown>
+}) {
+  return db.transaction(async (tx) => {
+    const [fn] = await tx
+      .insert(AppwriteFunction)
+      .values({
+        id: params.functionId,
+        accountId: params.accountId,
+        name: params.name,
+        primaryRegionId: params.primaryRegionId,
+        activeDeploymentId: params.activeDeploymentId,
+        runtime: params.runtime,
+        enabled: params.enabled ?? true,
+        metadata: params.metadata ?? {},
+      })
+      .returning()
+
+    if (!fn) throw new Error('Failed to create function record')
+
+    await tx.insert(AppwriteFunctionRegion).values(
+      params.regionIds.map((regionId) => ({
+        functionId: fn.id,
+        regionId,
+        syncStatus: regionId === params.primaryRegionId ? ('ready' as const) : ('pending' as const),
+        lastSyncedAt: regionId === params.primaryRegionId ? new Date() : null,
+      })),
+    )
+
+    return fn
+  })
+}
+
+export async function listAppwriteFunctions(accountId: string): Promise<FunctionWithRegions[]> {
+  const functions = await db.query.AppwriteFunction.findMany({
+    where: eq(AppwriteFunction.accountId, accountId),
+    orderBy: (table, { desc }) => [desc(table.createdAt)],
+  })
+
+  return Promise.all(functions.map(loadFunctionWithRegions))
+}
+
+export async function getAppwriteFunction(accountId: string, id: string) {
+  const fn = await db.query.AppwriteFunction.findFirst({
+    where: and(eq(AppwriteFunction.accountId, accountId), eq(AppwriteFunction.id, id)),
+  })
+  return fn ? loadFunctionWithRegions(fn) : undefined
+}
+
+export async function syncFunctionToRegions(functionId: string, regionIds: string[]) {
+  const targetRegionIds = [...new Set(regionIds)]
+  if (!targetRegionIds.length) return
+
+  const now = new Date()
+  await db
+    .update(AppwriteFunctionRegion)
+    .set({
+      syncStatus: 'pending',
+      lastSyncedAt: null,
+      syncError: 'Region sync is queued until cross-region function replication is enabled.',
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(AppwriteFunctionRegion.functionId, functionId),
+        inArray(AppwriteFunctionRegion.regionId, targetRegionIds),
+      ),
+    )
+}
+
+async function loadFunctionWithRegions(fn: AppwriteFunctionRow): Promise<FunctionWithRegions> {
+  const [regions, primaryRegion] = await Promise.all([
+    db.query.AppwriteFunctionRegion.findMany({
+      where: eq(AppwriteFunctionRegion.functionId, fn.id),
+    }),
+    db.query.AppwriteRegion.findFirst({
+      where: eq(AppwriteRegion.id, fn.primaryRegionId),
+    }),
+  ])
+
+  if (!primaryRegion) {
+    throw new Error(`Primary region not found for function ${fn.id}`)
+  }
+
+  return { function: fn, regions, primaryRegion }
+}
 
 const DEFAULT_LIST_LIMIT = 20
 

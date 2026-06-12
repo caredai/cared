@@ -1,6 +1,16 @@
 import { ID, Query, Sites } from '@appwrite.io/console'
 
 import type {
+  AppwriteRegion as AppwriteRegionRow,
+  AppwriteSiteDeploymentMode,
+  AppwriteSiteRegion as AppwriteSiteRegionRow,
+  AppwriteSite as AppwriteSiteRow,
+} from '@cared/db/schema'
+import { and, eq, inArray } from '@cared/db'
+import { db } from '@cared/db/client'
+import { AppwriteRegion, AppwriteSite, AppwriteSiteRegion } from '@cared/db/schema'
+
+import type {
   Adapter,
   BuildRuntime,
   Framework,
@@ -11,6 +21,109 @@ import type {
   VCSReferenceType,
 } from '@appwrite.io/console'
 import { AppwriteService, toDate } from './base'
+
+export interface SiteWithRegions {
+  site: AppwriteSiteRow
+  regions: AppwriteSiteRegionRow[]
+  primaryRegion: AppwriteRegionRow
+}
+
+export async function createAppwriteSiteRecord(params: {
+  siteId: string
+  accountId: string
+  name: string
+  primaryRegionId: string
+  regionIds: string[]
+  activeDeploymentId?: string | null
+  framework: string
+  deploymentMode: AppwriteSiteDeploymentMode
+  enabled?: boolean
+  metadata?: Record<string, unknown>
+}) {
+  return db.transaction(async (tx) => {
+    const [site] = await tx
+      .insert(AppwriteSite)
+      .values({
+        id: params.siteId,
+        accountId: params.accountId,
+        name: params.name,
+        primaryRegionId: params.primaryRegionId,
+        activeDeploymentId: params.activeDeploymentId,
+        framework: params.framework,
+        deploymentMode: params.deploymentMode,
+        enabled: params.enabled ?? true,
+        metadata: params.metadata ?? {},
+      })
+      .returning()
+
+    if (!site) throw new Error('Failed to create site record')
+
+    await tx.insert(AppwriteSiteRegion).values(
+      params.regionIds.map((regionId) => ({
+        siteId: site.id,
+        regionId,
+        syncStatus: regionId === params.primaryRegionId ? ('ready' as const) : ('pending' as const),
+        lastSyncedAt: regionId === params.primaryRegionId ? new Date() : null,
+      })),
+    )
+
+    return site
+  })
+}
+
+export async function listAppwriteSites(accountId: string): Promise<SiteWithRegions[]> {
+  const sites = await db.query.AppwriteSite.findMany({
+    where: eq(AppwriteSite.accountId, accountId),
+    orderBy: (table, { desc }) => [desc(table.createdAt)],
+  })
+
+  return Promise.all(sites.map(loadSiteWithRegions))
+}
+
+export async function getAppwriteSite(accountId: string, id: string) {
+  const site = await db.query.AppwriteSite.findFirst({
+    where: and(eq(AppwriteSite.accountId, accountId), eq(AppwriteSite.id, id)),
+  })
+  return site ? loadSiteWithRegions(site) : undefined
+}
+
+export async function syncSiteToRegions(siteId: string, regionIds: string[]) {
+  const targetRegionIds = [...new Set(regionIds)]
+  if (!targetRegionIds.length) return
+
+  const now = new Date()
+  await db
+    .update(AppwriteSiteRegion)
+    .set({
+      syncStatus: 'pending',
+      lastSyncedAt: null,
+      syncError: 'Region sync is queued until cross-region site replication is enabled.',
+      updatedAt: now,
+    })
+    .where(
+      and(
+        eq(AppwriteSiteRegion.siteId, siteId),
+        inArray(AppwriteSiteRegion.regionId, targetRegionIds),
+      ),
+    )
+}
+
+async function loadSiteWithRegions(site: AppwriteSiteRow): Promise<SiteWithRegions> {
+  const [regions, primaryRegion] = await Promise.all([
+    db.query.AppwriteSiteRegion.findMany({
+      where: eq(AppwriteSiteRegion.siteId, site.id),
+    }),
+    db.query.AppwriteRegion.findFirst({
+      where: eq(AppwriteRegion.id, site.primaryRegionId),
+    }),
+  ])
+
+  if (!primaryRegion) {
+    throw new Error(`Primary region not found for site ${site.id}`)
+  }
+
+  return { site, regions, primaryRegion }
+}
 
 const DEFAULT_LIST_LIMIT = 20
 

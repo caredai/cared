@@ -7,14 +7,29 @@ import {
   UsageRange,
   VCSReferenceType,
 } from '@appwrite.io/console'
+import { ORPCError } from '@orpc/server'
 import { z } from 'zod/v4'
+
+import { generateId } from '@cared/shared'
 
 import { userProtectedProcedure } from '../../orpc'
 import { appwriteFunctionsService } from '../../service/appwrite'
+import { upsertAppwriteRegions } from '../../service/appwrite/base'
+import { getAppwriteFunction, listAppwriteFunctions } from '../../service/appwrite/functions'
+import { getWorkflowClient, taskQueue, workflowId } from '../../workflows/client'
+import { createFunctionWorkflow } from '../../workflows/functions/workflows'
 
 // Base input: every procedure requires regionId for Appwrite region-scoped API
 const regionInput = z.object({
   regionId: z.string().meta({ description: 'Region ID' }),
+})
+
+const regionOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  enabled: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 })
 
 // Zod enums matching Appwrite console enums (for input validation)
@@ -88,11 +103,35 @@ const functionOutputSchema = z.object({
   buildSpecification: z
     .string()
     .meta({ description: 'Machine specification for deployment builds.' }),
-  runtimeSpecification: z
-    .string()
-    .meta({ description: 'Machine specification for executions.' }),
+  runtimeSpecification: z.string().meta({ description: 'Machine specification for executions.' }),
   createdAt: z.date().meta({ description: 'Function creation date.' }),
   updatedAt: z.date().meta({ description: 'Function update date.' }),
+})
+
+const functionRegionOutputSchema = z.object({
+  functionId: z.string(),
+  regionId: z.string(),
+  syncStatus: z.enum(['pending', 'syncing', 'ready', 'failed', 'disabled']),
+  lastSyncedAt: z.date().nullable(),
+  syncError: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+const caredFunctionOutputSchema = z.object({
+  id: z.string(),
+  accountId: z.string(),
+  name: z.string(),
+  primaryRegionId: z.string(),
+  activeDeploymentId: z.string().nullable(),
+  runtime: z.string(),
+  enabled: z.boolean(),
+  metadata: z.record(z.string(), z.unknown()),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  primaryRegion: regionOutputSchema,
+  regions: z.array(functionRegionOutputSchema),
+  primaryFunction: functionOutputSchema.optional(),
 })
 
 const deploymentOutputSchema = z.object({
@@ -242,6 +281,44 @@ const metricOutputSchema = z.object({
   date: z.string().meta({ description: 'Date string for the period.' }),
 })
 
+async function ensureConfiguredRegionsInDb() {
+  const regions = appwriteFunctionsService.listRegions()
+  await upsertAppwriteRegions(regions)
+  return regions
+}
+
+async function formatCaredFunction(
+  accountId: string,
+  resource: Awaited<ReturnType<typeof getAppwriteFunction>> extends infer T
+    ? NonNullable<T>
+    : never,
+) {
+  let primaryFunction: ReturnType<typeof makeCaredFunctionPrimary> | undefined
+  try {
+    const fn = await appwriteFunctionsService.getFunction(
+      accountId,
+      resource.function.primaryRegionId,
+      {
+        functionId: resource.function.id,
+      },
+    )
+    primaryFunction = makeCaredFunctionPrimary(fn)
+  } catch {
+    primaryFunction = undefined
+  }
+
+  return {
+    ...resource.function,
+    primaryRegion: resource.primaryRegion,
+    regions: resource.regions,
+    primaryFunction,
+  }
+}
+
+function makeCaredFunctionPrimary(fn: z.infer<typeof functionOutputSchema>) {
+  return fn
+}
+
 export const functionRouter = {
   /** Enable Functions API for the account in the given region (ensure project/user/key). */
   enableFunctions: userProtectedProcedure
@@ -279,6 +356,100 @@ export const functionRouter = {
     .handler(() => {
       const regions = appwriteFunctionsService.listRegions()
       return { regions }
+    }),
+
+  listCaredFunctions: userProtectedProcedure
+    .route({
+      method: 'GET',
+      path: '/functions/resources',
+      tags: ['functions'],
+      summary: 'List Cared functions',
+    })
+    .input(z.object({}).optional())
+    .output(z.object({ functions: z.array(caredFunctionOutputSchema) }))
+    .handler(async ({ context }) => {
+      await ensureConfiguredRegionsInDb()
+      const resources = await listAppwriteFunctions(context.auth.accountId)
+      const functions = await Promise.all(
+        resources.map((resource) => formatCaredFunction(context.auth.accountId, resource)),
+      )
+      return { functions }
+    }),
+
+  getCaredFunction: userProtectedProcedure
+    .route({
+      method: 'GET',
+      path: '/functions/resources/{id}',
+      tags: ['functions'],
+      summary: 'Get a Cared function',
+    })
+    .input(z.object({ id: z.string() }))
+    .output(z.object({ function: caredFunctionOutputSchema }))
+    .handler(async ({ context, input }) => {
+      await ensureConfiguredRegionsInDb()
+      const resource = await getAppwriteFunction(context.auth.accountId, input.id)
+      if (!resource) {
+        throw new ORPCError('NOT_FOUND', { message: 'Function not found' })
+      }
+      const fn = await formatCaredFunction(context.auth.accountId, resource)
+      return { function: fn }
+    }),
+
+  createCaredFunction: userProtectedProcedure
+    .route({
+      method: 'POST',
+      path: '/functions/resources',
+      tags: ['functions'],
+      summary: 'Create a Cared function',
+    })
+    .input(
+      z.object({
+        regionIds: z.array(z.string()).min(1).max(100),
+        name: z.string().max(128).meta({ description: 'Function name' }),
+        runtime: runtimeSchema.meta({ description: 'Execution runtime' }),
+        execute: z.array(z.string().max(64)).max(100).optional(),
+        events: z.array(z.string()).max(100).optional(),
+        schedule: z.string().optional(),
+        timeout: z.number().optional(),
+        enabled: z.boolean().optional(),
+        logging: z.boolean().optional(),
+        entrypoint: z.string().optional(),
+        commands: z.string().optional(),
+        scopes: z.array(z.enum(ProjectKeyScopes)).max(100).optional(),
+        installationId: z.string().optional(),
+        providerRepositoryId: z.string().optional(),
+        providerBranch: z.string().optional(),
+        providerSilentMode: z.boolean().optional(),
+        providerRootDirectory: z.string().optional(),
+        buildSpecification: z.string().optional(),
+        runtimeSpecification: z.string().optional(),
+      }),
+    )
+    .output(z.object({ function: caredFunctionOutputSchema }))
+    .handler(async ({ context, input }) => {
+      const client = await getWorkflowClient()
+      const result = await client.execute(createFunctionWorkflow, {
+        taskQueue: taskQueue(),
+        workflowId: workflowId([
+          'function',
+          'create',
+          context.auth.accountId,
+          generateId('wf'),
+        ]),
+        args: [
+          {
+            ...input,
+            accountId: context.auth.accountId,
+          },
+        ],
+      })
+
+      const resource = await getAppwriteFunction(context.auth.accountId, result.functionId)
+      if (!resource) {
+        throw new ORPCError('INTERNAL_SERVER_ERROR', { message: 'Function record not found' })
+      }
+
+      return { function: await formatCaredFunction(context.auth.accountId, resource) }
     }),
 
   /**
